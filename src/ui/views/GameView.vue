@@ -117,8 +117,8 @@ import { LocalGameRepository } from '@/infrastructure/repositories/LocalGameRepo
 import { GameFlowUseCase } from '@/application/usecases/GameFlowUseCase'
 import { PlayCardUseCase } from '@/application/usecases/PlayCardUseCase'
 import { CalculateScoreUseCase } from '@/application/usecases/CalculateScoreUseCase'
-import PlayerHand from '@/presentation/components/PlayerHand.vue'
-import GameBoard from '@/presentation/components/GameBoard.vue'
+import PlayerHand from '@/ui/components/PlayerHand.vue'
+import GameBoard from '@/ui/components/GameBoard.vue'
 
 // Reactive state
 const gameState = ref<GameState | null>(null)

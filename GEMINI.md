@@ -137,4 +137,4 @@ npm run format
 - **Code Style:** Enforced by ESLint and Prettier. Refer to `.eslintrc.cjs` and `.prettierrc.json` for specific rules.
 - **Type Checking:** TypeScript is used throughout the project, with `vue-tsc` for type checking `.vue` imports.
 - **Testing:** Unit tests are written using Vitest, and end-to-end tests are written using Playwright.
-- **Component Structure:** Vue components are organized within the `src/presentation/components` and `src/presentation/views` directories.
+- **Component Structure:** Vue components are organized within the `src/ui/components` and `src/ui/views` directories.
