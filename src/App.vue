@@ -6,7 +6,7 @@ const gameTitle = ref('花牌遊戲「来来」')
 
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 overscroll-none [touch-action:pan-y]"
+    class="flex flex-col min-h-dvh bg-gradient-to-br from-green-50 to-emerald-50 overscroll-none [touch-action:pan-y]"
   >
     <header
       class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 md:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 shadow-sm select-none"
@@ -18,7 +18,7 @@ const gameTitle = ref('花牌遊戲「来来」')
         <RouterLink to="/about" class="nav-link">About</RouterLink>
       </nav>
     </header>
-    <main class="flex-1 flex flex-col">
+    <main class="flex-1 overflow-auto">
       <RouterView />
     </main>
   </div>

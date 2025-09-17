@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-green-50 p-4">
+  <div class="min-h-full bg-green-50 p-4">
     <div class="text-center mb-6">
       <h1 class="text-3xl font-bold text-gray-800 mb-2">花牌遊戲 「来来」</h1>
       <div class="flex justify-center gap-6 text-sm text-gray-600">
