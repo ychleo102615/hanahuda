@@ -1,15 +1,11 @@
 <template>
-  <div 
-    :class="cardClasses"
-    @click="handleClick"
-    :data-card-id="card.id"
-  >
-    <div class="card-inner">
-      <div class="card-content">
-        <div class="card-suit">{{ card.month }}月</div>
-        <div class="card-type">{{ getTypeDisplay(card.type) }}</div>
-        <div class="card-name">{{ card.name }}</div>
-        <div class="card-points">{{ card.points }}点</div>
+  <div :class="cardClasses" @click="handleClick" :data-card-id="card.id">
+    <div class="w-full h-full p-1">
+      <div class="flex flex-col items-center justify-between h-full text-center">
+        <div class="text-xs font-bold text-gray-600">{{ card.month }}月</div>
+        <div :class="getTypeClasses(card.type)">{{ getTypeDisplay(card.type) }}</div>
+        <div class="text-[7px] text-gray-500 leading-tight px-1">{{ card.name }}</div>
+        <div :class="getPointsClasses(card.type)">{{ card.points }}点</div>
       </div>
     </div>
   </div>
@@ -35,24 +31,35 @@ const props = withDefaults(defineProps<Props>(), {
   selectable: false,
   selected: false,
   highlighted: false,
-  size: 'medium'
+  size: 'medium',
 })
 
 const emit = defineEmits<Emits>()
 
-const cardClasses = computed(() => [
-  'hanafuda-card',
-  `card-${props.size}`,
-  `card-${props.card.type}`,
-  `card-month-${props.card.month}`,
-  {
-    'card-selectable': props.selectable,
-    'card-selected': props.selected,
-    'card-highlighted': props.highlighted,
-    'hover:scale-105': props.selectable,
-    'cursor-pointer': props.selectable
+const cardClasses = computed(() => {
+  const baseClasses = [
+    'relative rounded-lg border-2 bg-white shadow-md transition-all duration-200',
+    props.size === 'small' ? 'w-12 h-16' : props.size === 'large' ? 'w-20 h-32' : 'w-16 h-24',
+    props.selectable ? 'cursor-pointer hover:scale-105' : '',
+    props.selected ? 'outline outline-2 outline-blue-500 outline-offset-2' : '',
+    props.highlighted ? 'outline outline-2 outline-yellow-400 outline-offset-2 shadow-lg' : '',
+  ]
+
+  // Card type specific styling
+  if (props.card.type === 'bright') {
+    baseClasses.push('bg-amber-100 border-amber-500')
+  } else if (props.card.type === 'animal') {
+    baseClasses.push('bg-green-100 border-green-500')
+  } else if (props.card.type === 'ribbon') {
+    baseClasses.push('bg-red-100 border-red-500')
+  } else if (props.card.type === 'plain') {
+    baseClasses.push('bg-gray-100 border-gray-400')
+  } else {
+    baseClasses.push('border-gray-300')
   }
-])
+
+  return baseClasses.filter(Boolean).join(' ')
+})
 
 const handleClick = () => {
   if (props.selectable) {
@@ -62,147 +69,33 @@ const handleClick = () => {
 
 const getTypeDisplay = (type: string): string => {
   const typeMap: Record<string, string> = {
-    'bright': '光',
-    'animal': '種',
-    'ribbon': '短',
-    'plain': 'カス'
+    bright: '光',
+    animal: '種',
+    ribbon: '短',
+    plain: 'カス',
   }
   return typeMap[type] || type
+}
+
+const getTypeClasses = (type: string): string => {
+  const baseClasses = 'text-xs font-semibold'
+  if (type === 'bright') return `${baseClasses} text-amber-700`
+  if (type === 'animal') return `${baseClasses} text-green-700`
+  if (type === 'ribbon') return `${baseClasses} text-red-600`
+  if (type === 'plain') return `${baseClasses} text-gray-600`
+  return baseClasses
+}
+
+const getPointsClasses = (type: string): string => {
+  const baseClasses = 'text-xs font-bold'
+  if (type === 'bright') return `${baseClasses} text-amber-800`
+  if (type === 'animal') return `${baseClasses} text-green-800`
+  if (type === 'ribbon') return `${baseClasses} text-red-700`
+  if (type === 'plain') return `${baseClasses} text-gray-800`
+  return baseClasses
 }
 </script>
 
 <style scoped>
-.hanafuda-card {
-  position: relative;
-  border-radius: 0.5rem;
-  border: 2px solid #d1d5db;
-  background-color: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s;
-}
-
-.card-small {
-  width: 3rem;
-  height: 4rem;
-}
-
-.card-medium {
-  width: 4rem;
-  height: 6rem;
-}
-
-.card-large {
-  width: 5rem;
-  height: 8rem;
-}
-
-.card-inner {
-  width: 100%;
-  height: 100%;
-  padding: 0.25rem;
-}
-
-.card-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  height: 100%;
-  text-align: center;
-}
-
-.card-suit {
-  font-size: 0.75rem;
-  font-weight: bold;
-  color: #4b5563;
-}
-
-.card-type {
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.card-name {
-  font-size: 7px;
-  color: #6b7280;
-  line-height: 1.25;
-  padding: 0 0.25rem;
-}
-
-.card-points {
-  font-size: 0.75rem;
-  font-weight: bold;
-}
-
-.card-bright {
-  background-color: #fef3c7;
-  border-color: #f59e0b;
-}
-
-.card-bright .card-type {
-  color: #b45309;
-}
-
-.card-bright .card-points {
-  color: #92400e;
-}
-
-.card-animal {
-  background-color: #dcfce7;
-  border-color: #22c55e;
-}
-
-.card-animal .card-type {
-  color: #15803d;
-}
-
-.card-animal .card-points {
-  color: #166534;
-}
-
-.card-ribbon {
-  background-color: #fecaca;
-  border-color: #ef4444;
-}
-
-.card-ribbon .card-type {
-  color: #dc2626;
-}
-
-.card-ribbon .card-points {
-  color: #b91c1c;
-}
-
-.card-plain {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
-}
-
-.card-plain .card-type {
-  color: #374151;
-}
-
-.card-plain .card-points {
-  color: #1f2937;
-}
-
-.card-selectable {
-  cursor: pointer;
-}
-
-.card-selectable:hover {
-  transform: scale(1.05);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-.card-selected {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-.card-highlighted {
-  outline: 2px solid #fbbf24;
-  outline-offset: 2px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
+/* All styling is now handled by Tailwind classes in the template */
 </style>

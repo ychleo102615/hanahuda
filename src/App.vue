@@ -3,88 +3,35 @@ import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <template>
-  <div class="app">
-    <header class="app-header">
-      <h1 class="app-title">花牌遊戲「来来」</h1>
-      <nav class="app-nav">
-        <RouterLink to="/" class="nav-link">Home</RouterLink>
-        <RouterLink to="/game" class="nav-link">Game</RouterLink>
-        <RouterLink to="/about" class="nav-link">About</RouterLink>
+  <div class="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <header
+      class="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 md:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-0 shadow-sm"
+    >
+      <h1 class="text-xl md:text-2xl font-bold text-gray-800 m-0">花牌遊戲「来来」</h1>
+      <nav class="flex gap-4 justify-center">
+        <RouterLink
+          to="/"
+          class="px-4 py-2 no-underline text-gray-600 rounded-md transition-all duration-200 font-medium hover:bg-gray-100 hover:text-gray-800 router-link-exact-active:bg-blue-500 router-link-exact-active:text-white"
+          >Home</RouterLink
+        >
+        <RouterLink
+          to="/game"
+          class="px-4 py-2 no-underline text-gray-600 rounded-md transition-all duration-200 font-medium hover:bg-gray-100 hover:text-gray-800 router-link-exact-active:bg-blue-500 router-link-exact-active:text-white"
+          >Game</RouterLink
+        >
+        <RouterLink
+          to="/about"
+          class="px-4 py-2 no-underline text-gray-600 rounded-md transition-all duration-200 font-medium hover:bg-gray-100 hover:text-gray-800 router-link-exact-active:bg-blue-500 router-link-exact-active:text-white"
+          >About</RouterLink
+        >
       </nav>
     </header>
-    <main class="app-main">
+    <main class="flex-1 flex flex-col">
       <RouterView />
     </main>
   </div>
 </template>
 
 <style scoped>
-.app {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-}
-
-.app-header {
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.app-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1f2937;
-  margin: 0;
-}
-
-.app-nav {
-  display: flex;
-  gap: 1rem;
-}
-
-.nav-link {
-  padding: 0.5rem 1rem;
-  text-decoration: none;
-  color: #4b5563;
-  border-radius: 0.375rem;
-  transition: all 0.2s;
-  font-weight: 500;
-}
-
-.nav-link:hover {
-  background-color: #f3f4f6;
-  color: #1f2937;
-}
-
-.nav-link.router-link-exact-active {
-  background-color: #3b82f6;
-  color: white;
-}
-
-.app-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-@media (max-width: 768px) {
-  .app-header {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
-  }
-  
-  .app-title {
-    font-size: 1.25rem;
-  }
-  
-  .app-nav {
-    justify-content: center;
-  }
-}
+/* Tailwind classes are now used in the template instead of custom CSS */
 </style>

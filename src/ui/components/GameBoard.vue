@@ -1,8 +1,10 @@
 <template>
-  <div class="game-board">
-    <div class="game-field">
-      <h3 class="field-title">Field Cards</h3>
-      <div class="field-cards">
+  <div class="bg-green-50 rounded-lg p-6 min-h-96">
+    <div class="mb-6">
+      <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">Field Cards</h3>
+      <div
+        class="flex flex-wrap gap-3 justify-center mb-4 min-h-32 p-4 bg-green-200 rounded-lg border-2 border-dashed border-green-500"
+      >
         <CardComponent
           v-for="card in fieldCards"
           :key="card.id"
@@ -13,47 +15,51 @@
           @click="handleFieldCardClick"
         />
       </div>
-      <div class="field-info">
-        <span class="field-count">Field: {{ fieldCards.length }} cards</span>
-        <span class="deck-count">Deck: {{ deckCount }} cards</span>
+      <div class="flex justify-center gap-4 text-sm text-gray-600">
+        <span class="bg-white px-2 py-1 rounded border border-gray-300"
+          >Field: {{ fieldCards.length }} cards</span
+        >
+        <span class="bg-white px-2 py-1 rounded border border-gray-300"
+          >Deck: {{ deckCount }} cards</span
+        >
       </div>
     </div>
 
-    <div class="game-actions">
+    <div class="flex justify-center gap-4 mb-4">
       <button
         v-if="showKoikoiDialog"
         @click="handleKoikoiDecision(true)"
-        class="koi-button koi-continue"
+        class="px-4 py-2 rounded-lg font-semibold text-white transition-all duration-200 border-none cursor-pointer bg-red-500 hover:bg-red-600 hover:scale-105"
       >
         こいこい (Continue)
       </button>
       <button
         v-if="showKoikoiDialog"
         @click="handleKoikoiDecision(false)"
-        class="koi-button koi-end"
+        class="px-4 py-2 rounded-lg font-semibold text-white transition-all duration-200 border-none cursor-pointer bg-blue-500 hover:bg-blue-600 hover:scale-105"
       >
         やめ (End Round)
       </button>
     </div>
 
-    <div v-if="lastMove" class="last-move">
-      <h4 class="move-title">Last Move</h4>
-      <div class="move-details">
+    <div v-if="lastMove" class="bg-gray-100 rounded-lg p-3 mb-4">
+      <h4 class="text-sm font-semibold text-gray-600 mb-2">Last Move</h4>
+      <div class="flex gap-4 text-xs text-gray-600">
         <span>Player: {{ getPlayerName(lastMove.playerId) }}</span>
         <span>Captured: {{ lastMove.capturedCards.length }} cards</span>
       </div>
     </div>
 
-    <div v-if="yakuDisplay.length > 0" class="yaku-display">
-      <h4 class="yaku-title">Yaku Achieved!</h4>
-      <div class="yaku-list">
+    <div v-if="yakuDisplay.length > 0" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+      <h4 class="text-lg font-bold text-amber-800 mb-3 text-center">Yaku Achieved!</h4>
+      <div class="flex flex-col gap-2">
         <div
           v-for="yaku in yakuDisplay"
           :key="yaku.yaku.name"
-          class="yaku-item"
+          class="flex justify-between items-center bg-white p-2 px-3 rounded border border-yellow-200"
         >
-          <span class="yaku-name">{{ yaku.yaku.name }}</span>
-          <span class="yaku-points">{{ yaku.points }} points</span>
+          <span class="font-semibold text-amber-700">{{ yaku.yaku.name }}</span>
+          <span class="text-yellow-600 font-bold">{{ yaku.points }} points</span>
         </div>
       </div>
     </div>
@@ -89,7 +95,7 @@ const props = withDefaults(defineProps<Props>(), {
   lastMove: null,
   showKoikoiDialog: false,
   yakuDisplay: () => [],
-  players: () => []
+  players: () => [],
 })
 
 const emit = defineEmits<Emits>()
@@ -103,7 +109,7 @@ const isMatchingCard = (fieldCard: Card): boolean => {
 
 const handleFieldCardClick = (card: Card) => {
   if (!props.canSelectField || !isMatchingCard(card)) return
-  
+
   selectedFieldCard.value = selectedFieldCard.value?.id === card.id ? null : card
   emit('fieldCardSelected', card)
 }
@@ -113,7 +119,7 @@ const handleKoikoiDecision = (continueGame: boolean) => {
 }
 
 const getPlayerName = (playerId: string): string => {
-  const player = props.players?.find(p => p.id === playerId)
+  const player = props.players?.find((p) => p.id === playerId)
   return player?.name || 'Unknown Player'
 }
 
@@ -121,155 +127,10 @@ defineExpose({
   clearFieldSelection: () => {
     selectedFieldCard.value = null
   },
-  getSelectedFieldCard: () => selectedFieldCard.value
+  getSelectedFieldCard: () => selectedFieldCard.value,
 })
 </script>
 
 <style scoped>
-.game-board {
-  background-color: #f0fdf4;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  min-height: 24rem;
-}
-
-.game-field {
-  margin-bottom: 1.5rem;
-}
-
-.field-title {
-  font-size: 1.125rem;
-  font-weight: bold;
-  color: #1f2937;
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.field-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: center;
-  margin-bottom: 1rem;
-  min-height: 8rem;
-  padding: 1rem;
-  background-color: #dcfce7;
-  border-radius: 0.5rem;
-  border: 2px dashed #22c55e;
-}
-
-.field-info {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  font-size: 0.875rem;
-  color: #4b5563;
-}
-
-.field-count,
-.deck-count {
-  background-color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  border: 1px solid #d1d5db;
-}
-
-.game-actions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.koi-button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  color: white;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-}
-
-.koi-button:hover {
-  transform: scale(1.05);
-}
-
-.koi-continue {
-  background-color: #ef4444;
-}
-
-.koi-continue:hover {
-  background-color: #dc2626;
-}
-
-.koi-end {
-  background-color: #3b82f6;
-}
-
-.koi-end:hover {
-  background-color: #2563eb;
-}
-
-.last-move {
-  background-color: #f3f4f6;
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.move-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.5rem;
-}
-
-.move-details {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.75rem;
-  color: #4b5563;
-}
-
-.yaku-display {
-  background-color: #fefce8;
-  border: 1px solid #fde047;
-  border-radius: 0.5rem;
-  padding: 1rem;
-}
-
-.yaku-title {
-  font-size: 1.125rem;
-  font-weight: bold;
-  color: #92400e;
-  margin-bottom: 0.75rem;
-  text-align: center;
-}
-
-.yaku-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.yaku-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: white;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.25rem;
-  border: 1px solid #fde047;
-}
-
-.yaku-name {
-  font-weight: 600;
-  color: #b45309;
-}
-
-.yaku-points {
-  color: #d97706;
-  font-weight: bold;
-}
+/* All styling is now handled by Tailwind classes in the template */
 </style>

@@ -1,37 +1,37 @@
 <template>
-  <div class="game-view">
-    <div class="game-header">
-      <h1 class="game-title">花牌遊戲 「来来」</h1>
-      <div class="game-info">
-        <span class="round-info">Round {{ currentRound }} / {{ maxRounds }}</span>
-        <span class="phase-info">Phase: {{ currentPhase }}</span>
+  <div class="min-h-screen bg-green-50 p-4">
+    <div class="text-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">花牌遊戲 「来来」</h1>
+      <div class="flex justify-center gap-6 text-sm text-gray-600">
+        <span>Round {{ currentRound }} / {{ maxRounds }}</span>
+        <span>Phase: {{ currentPhase }}</span>
       </div>
     </div>
 
-    <div v-if="!gameStarted" class="game-setup">
-      <div class="setup-panel">
-        <h2>Game Setup</h2>
-        <div class="player-setup">
+    <div v-if="!gameStarted" class="flex justify-center items-center min-h-96">
+      <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+        <h2 class="text-xl font-bold text-center mb-6">Game Setup</h2>
+        <div class="flex flex-col gap-4 mb-6">
           <input
             v-model="player1Name"
             placeholder="Player 1 Name"
-            class="player-input"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
           <input
             v-model="player2Name"
             placeholder="Player 2 Name"
-            class="player-input"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
-        <button @click="startNewGame" class="start-button">
+        <button @click="startNewGame" class="w-full bg-blue-500 text-white py-2 px-4 rounded-md font-semibold border-none cursor-pointer hover:bg-blue-600">
           Start Game
         </button>
       </div>
     </div>
 
-    <div v-else class="game-content">
+    <div v-else class="flex flex-col gap-6">
       <!-- Opponent -->
-      <div class="opponent-area">
+      <div class="max-w-4xl mx-auto">
         <PlayerHand
           v-if="opponent"
           :player="opponent"
@@ -42,7 +42,7 @@
       </div>
 
       <!-- Game Board -->
-      <div class="board-area">
+      <div class="max-w-4xl mx-auto">
         <GameBoard
           :field-cards="fieldCards"
           :deck-count="deckCount"
@@ -58,7 +58,7 @@
       </div>
 
       <!-- Current Player -->
-      <div class="player-area">
+      <div class="max-w-4xl mx-auto">
         <PlayerHand
           v-if="currentPlayerData"
           :player="currentPlayerData"
@@ -71,20 +71,20 @@
       </div>
 
       <!-- Game Actions -->
-      <div class="action-area">
+      <div class="flex justify-center gap-4">
         <button
           v-if="canPlayCard"
           @click="playSelectedCard"
           :disabled="!selectedHandCard"
-          class="play-button"
+          class="bg-green-500 text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           Play Card
         </button>
-        
+
         <button
           v-if="gamePhase === 'round_end'"
           @click="startNextRound"
-          class="next-round-button"
+          class="text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer bg-blue-500 hover:bg-blue-600"
         >
           Next Round
         </button>
@@ -92,14 +92,14 @@
         <button
           v-if="gamePhase === 'game_end'"
           @click="startNewGame"
-          class="new-game-button"
+          class="text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer bg-purple-500 hover:bg-purple-600"
         >
           New Game
         </button>
       </div>
 
       <!-- Game Status -->
-      <div v-if="gameMessage" class="game-message">
+      <div v-if="gameMessage" class="text-center text-lg font-semibold text-gray-600 bg-white rounded-lg p-4 max-w-2xl mx-auto shadow-md">
         {{ gameMessage }}
       </div>
     </div>
@@ -334,164 +334,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.game-view {
-  min-height: 100vh;
-  background-color: #f0fdf4;
-  padding: 1rem;
-}
-
-.game-header {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.game-title {
-  font-size: 1.875rem;
-  font-weight: bold;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-}
-
-.game-info {
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  font-size: 0.875rem;
-  color: #4b5563;
-}
-
-.game-setup {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 24rem;
-}
-
-.setup-panel {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
-  max-width: 28rem;
-  width: 100%;
-}
-
-.setup-panel h2 {
-  font-size: 1.25rem;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.player-setup {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.player-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  outline: none;
-}
-
-.player-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
-}
-
-.start-button {
-  width: 100%;
-  background-color: #3b82f6;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-}
-
-.start-button:hover {
-  background-color: #2563eb;
-}
-
-.game-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.opponent-area,
-.board-area,
-.player-area {
-  max-width: 64rem;
-  margin: 0 auto;
-}
-
-.action-area {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.play-button {
-  background-color: #22c55e;
-  color: white;
-  padding: 0.5rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-}
-
-.play-button:hover {
-  background-color: #16a34a;
-}
-
-.play-button:disabled {
-  background-color: #d1d5db;
-  cursor: not-allowed;
-}
-
-.next-round-button,
-.new-game-button {
-  color: white;
-  padding: 0.5rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-}
-
-.next-round-button {
-  background-color: #3b82f6;
-}
-
-.next-round-button:hover {
-  background-color: #2563eb;
-}
-
-.new-game-button {
-  background-color: #a855f7;
-}
-
-.new-game-button:hover {
-  background-color: #9333ea;
-}
-
-.game-message {
-  text-align: center;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #374151;
-  background-color: white;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  max-width: 32rem;
-  margin: 0 auto;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
+/* All styling is now handled by Tailwind classes in the template */
 </style>
