@@ -1,7 +1,7 @@
-import type { Card } from '../entities/Card'
-import { Player } from '../entities/Player'
-import type { GameState } from '../entities/GameState'
-import type { YakuResult } from '../entities/Yaku'
+import type { Card } from '@/domain/entities/Card'
+import { Player } from '@/domain/entities/Player'
+import type { GameState } from '@/domain/entities/GameState'
+import type { YakuResult } from '@/domain/entities/Yaku'
 
 export interface PlayCardRequest {
   playerId: string

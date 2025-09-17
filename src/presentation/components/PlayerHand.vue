@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { IPlayer } from '@/domain/interfaces/PlayerInterface'
+import type { IPlayer } from '@/application/ports/repositories/PlayerInterface'
 import type { Card } from '@/domain/entities/Card'
 import CardComponent from './CardComponent.vue'
 

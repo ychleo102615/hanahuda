@@ -1,4 +1,4 @@
-import type { Card } from '../entities/Card'
+import type { Card } from '@/domain/entities/Card'
 
 export interface IPlayer {
   readonly id: string

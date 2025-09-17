@@ -1,7 +1,8 @@
-import type { Card } from '../entities/Card'
-import type { GameMove } from '../entities/GameState'
-import { Yaku } from '../entities/Yaku'
-import type { GameRepository, PlayCardRequest, PlayCardResult } from '../interfaces/GameRepository'
+import type { Player } from '../../domain/entities/Player';
+import type { Card } from '../../domain/entities/Card'
+import type { GameMove } from '../../domain/entities/GameState'
+import { Yaku } from '../../domain/entities/Yaku'
+import type { GameRepository, PlayCardRequest, PlayCardResult } from '../ports/repositories/GameRepository'
 
 export class PlayCardUseCase {
   constructor(private gameRepository: GameRepository) {}
@@ -90,7 +91,7 @@ export class PlayCardUseCase {
         gameState.nextPlayer()
       }
 
-      if (gameState.deckCount === 0 && gameState.players.every(p => p.handCount === 0)) {
+      if (gameState.deckCount === 0 && gameState.players.every((p: Player) => p.handCount === 0)) {
         nextPhase = 'round_end'
         gameState.setPhase('round_end')
       }

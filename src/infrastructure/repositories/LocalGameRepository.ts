@@ -5,7 +5,7 @@ import type { GameState, GameMove } from '@/domain/entities/GameState'
 import { GameState as GameStateClass } from '@/domain/entities/GameState'
 import { Yaku } from '@/domain/entities/Yaku'
 import type { YakuResult } from '@/domain/entities/Yaku'
-import type { GameRepository, PlayCardRequest, PlayCardResult } from '@/domain/interfaces/GameRepository'
+import type { GameRepository, PlayCardRequest, PlayCardResult } from '@/application/ports/repositories/GameRepository'
 import { HANAFUDA_CARDS } from '@/shared/constants/gameConstants'
 import { v4 as uuidv4 } from 'uuid'
 

@@ -1,7 +1,7 @@
-import type { Card } from '../entities/Card'
-import { Yaku } from '../entities/Yaku'
-import type { YakuResult } from '../entities/Yaku'
-import type { GameRepository } from '../interfaces/GameRepository'
+import type { Card } from '../../domain/entities/Card'
+import { Yaku } from '../../domain/entities/Yaku'
+import type { YakuResult } from '../../domain/entities/Yaku'
+import type { GameRepository } from '../ports/repositories/GameRepository'
 
 export interface ScoreCalculationResult {
   yakuResults: YakuResult[]

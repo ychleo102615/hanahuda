@@ -1,9 +1,9 @@
-import type { Card, CardType } from '../entities/Card'
-import { CardEntity } from '../entities/Card'
-import { Player } from '../entities/Player'
-import type { GameState, RoundResult } from '../entities/GameState'
-import { GameState as GameStateClass } from '../entities/GameState'
-import type { GameRepository } from '../interfaces/GameRepository'
+import type { Card, CardType } from '../../domain/entities/Card'
+import { CardEntity } from '../../domain/entities/Card'
+import { Player } from '../../domain/entities/Player'
+import type { GameState, RoundResult } from '../../domain/entities/GameState'
+import { GameState as GameStateClass } from '../../domain/entities/GameState'
+import type { GameRepository } from '../ports/repositories/GameRepository'
 import { HANAFUDA_CARDS, GAME_SETTINGS } from '@/shared/constants/gameConstants'
 import { CalculateScoreUseCase } from './CalculateScoreUseCase'
 
@@ -46,7 +46,7 @@ export class GameFlowUseCase {
       if (card) fieldCards.push(card)
     }
 
-    gameState.players.forEach(player => {
+    gameState.players.forEach((player: Player) => {
       const hand: Card[] = []
       for (let i = 0; i < GAME_SETTINGS.CARDS_PER_PLAYER; i++) {
         const card = deck.pop()
@@ -171,7 +171,7 @@ export class GameFlowUseCase {
   }
 
   private checkGameEnd(gameState: GameState): boolean {
-    const maxScore = Math.max(...gameState.players.map(p => p.score))
+    const maxScore = Math.max(...gameState.players.map((p: Player) => p.score))
     return maxScore >= GAME_SETTINGS.WINNING_SCORE || gameState.round >= GAME_SETTINGS.MAX_ROUNDS
   }
 
@@ -182,8 +182,8 @@ export class GameFlowUseCase {
     }
 
     const players = gameState.players
-    const maxScore = Math.max(...players.map(p => p.score))
-    const winners = players.filter(p => p.score === maxScore)
+    const maxScore = Math.max(...players.map((p: Player) => p.score))
+    const winners = players.filter((p: Player) => p.score === maxScore)
     
     return winners.length === 1 ? winners[0] : null
   }

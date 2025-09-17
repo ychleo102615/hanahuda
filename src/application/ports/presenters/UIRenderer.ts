@@ -1,6 +1,6 @@
-import type { Card } from '../entities/Card'
-import type { Player } from '../entities/Player'
-import type { GameState } from '../entities/GameState'
+import type { Card } from '@/domain/entities/Card'
+import type { Player } from '@/domain/entities/Player'
+import type { GameState } from '@/domain/entities/GameState'
 
 export interface CardVisual {
   card: Card
