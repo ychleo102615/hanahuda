@@ -49,7 +49,7 @@
         <GameBoard
           :field-cards="fieldCards"
           :deck-count="deckCount"
-          :selected-hand-card="selectedHandCard"
+          :selected-hand-card="gameStore.uiState.selectedHandCard"
           :can-select-field="canSelectFieldCard"
           :last-move="lastMove"
           :show-koikoi-dialog="showKoikoiDialog"
@@ -78,7 +78,7 @@
         <button
           v-if="canPlayCard"
           @click="playSelectedCard"
-          :disabled="!selectedHandCard"
+          :disabled="!gameStore.uiState.selectedHandCard"
           class="bg-green-500 text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           Play Card
@@ -108,6 +108,14 @@
       >
         {{ gameMessage }}
       </div>
+
+      <!-- Error Display -->
+      <div
+        v-if="gameStore.uiState.error"
+        class="text-center text-lg font-semibold text-red-600 bg-red-50 rounded-lg p-4 max-w-2xl mx-auto shadow-md"
+      >
+        {{ gameStore.uiState.error }}
+      </div>
     </div>
   </div>
 </template>
@@ -115,231 +123,146 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { Card } from '@/domain/entities/Card'
-import { Player } from '@/domain/entities/Player'
-import type { IPlayer } from '@/application/ports/repositories/PlayerInterface'
-import type { GameState } from '@/domain/entities/GameState'
-import type { YakuResult } from '@/domain/entities/Yaku'
-import { LocalGameRepository } from '@/infrastructure/repositories/LocalGameRepository'
-import { GameFlowUseCase } from '@/application/usecases/GameFlowUseCase'
-import { PlayCardUseCase } from '@/application/usecases/PlayCardUseCase'
-import { CalculateScoreUseCase } from '@/application/usecases/CalculateScoreUseCase'
+import { DIContainer } from '@/infrastructure/di/DIContainer'
+import { GameController } from '@/ui/controllers/GameController'
+import { InputController, type InputHandler } from '@/ui/controllers/InputController'
+import { useGameStore } from '@/ui/stores/gameStore'
 import PlayerHand from '@/ui/components/PlayerHand.vue'
 import GameBoard from '@/ui/components/GameBoard.vue'
 import { onBeforeRouteLeave } from 'vue-router'
 
-// Reactive state
-const gameState = ref<GameState | null>(null)
-const gameId = ref<string>('')
-const gameStarted = ref(false)
-const selectedHandCard = ref<Card | null>(null)
-const selectedFieldCard = ref<Card | null>(null)
-const gameMessage = ref('')
-const yakuDisplay = ref<YakuResult[]>([])
-const showKoikoiDialog = ref(false)
+// Store
+const gameStore = useGameStore()
 
 // Player setup
 const player1Name = ref('Player 1')
 const player2Name = ref('Player 2')
 
-// Dependencies
-const gameRepository = new LocalGameRepository()
-const calculateScoreUseCase = new CalculateScoreUseCase(gameRepository)
-const gameFlowUseCase = new GameFlowUseCase(gameRepository, calculateScoreUseCase)
-const playCardUseCase = new PlayCardUseCase(gameRepository)
+// Dependencies - Setup DI Container
+const diContainer = DIContainer.createDefault(gameStore)
+const gameController = diContainer.resolve<GameController>(DIContainer.GAME_CONTROLLER)
+const inputController = diContainer.resolve<InputController>(DIContainer.INPUT_CONTROLLER)
 
 // Refs
 const playerHandRef = ref()
 
-// Computed properties
-const currentPlayerData = computed((): IPlayer | null => {
-  if (!gameState.value) return null
-  return gameState.value.players.find((p) => p.id === 'player1') || null
+// Computed properties from store
+const currentPlayerData = computed(() => gameStore.currentPlayerData)
+const opponent = computed(() => gameStore.opponent)
+const fieldCards = computed(() => [...gameStore.gameState.fieldCards])
+const deckCount = computed(() => gameStore.gameState.deckCount)
+const currentRound = computed(() => gameStore.gameState.round)
+const maxRounds = computed(() => gameStore.gameState.maxRounds)
+const currentPhase = computed(() => gameStore.gameState.phase)
+const gamePhase = computed(() => gameStore.gameState.phase)
+const lastMove = computed(() => {
+  const move = gameStore.gameState.lastMove
+  if (!move || !move.cardPlayed) return null
+  return {
+    cardId: move.cardPlayed.id,
+    playerId: move.playerId,
+    matchedCards: move.cardsMatched ? [...move.cardsMatched] : [],
+    capturedCards: move.cardsMatched ? [...move.cardsMatched] : [],
+    timestamp: new Date()
+  }
 })
+const gameStarted = computed(() => gameStore.gameState.gameStarted)
+const gameMessage = computed(() => gameStore.uiState.gameMessage)
+const yakuDisplay = computed(() =>
+  gameStore.uiState.yakuDisplay.map(yaku => ({
+    yaku: yaku.yaku,
+    cards: [...yaku.cards],
+    points: yaku.points
+  }))
+)
+const showKoikoiDialog = computed(() => gameStore.uiState.showKoikoiDialog)
 
-const opponent = computed((): IPlayer | null => {
-  if (!gameState.value) return null
-  return gameState.value.players.find((p) => p.id === 'player2') || null
-})
-
-const fieldCards = computed((): Card[] => {
-  return gameState.value?.field ? [...gameState.value.field] : []
-})
-const deckCount = computed(() => gameState.value?.deckCount || 0)
-const currentRound = computed(() => gameState.value?.round || 1)
-const maxRounds = computed(() => 12)
-const currentPhase = computed(() => gameState.value?.phase || 'setup')
-const gamePhase = computed(() => gameState.value?.phase)
-const lastMove = computed(() => gameState.value?.lastMove || null)
-
-const isPlayerTurn = computed(() => {
-  return (
-    gameState.value?.currentPlayer?.id === 'player1' &&
-    (gamePhase.value === 'playing' || gamePhase.value === 'koikoi')
-  )
-})
-
-const isOpponentTurn = computed(() => {
-  return gameState.value?.currentPlayer?.id === 'player2'
-})
-
-const canPlayCard = computed(() => {
-  return isPlayerTurn.value && selectedHandCard.value !== null
-})
-
-const canSelectFieldCard = computed(() => {
-  return selectedHandCard.value !== null && isPlayerTurn.value
-})
+const isPlayerTurn = computed(() => gameStore.isPlayerTurn)
+const isOpponentTurn = computed(() => gameStore.isOpponentTurn)
+const canPlayCard = computed(() => gameStore.canPlayCard)
+const canSelectFieldCard = computed(() => gameStore.canSelectFieldCard)
 
 const playerNames = computed(() => [
   { id: 'player1', name: player1Name.value },
   { id: 'player2', name: player2Name.value },
 ])
 
+// Input Handler Implementation
+const inputHandler: InputHandler = {
+  onHandCardSelected: (card: Card) => {
+    gameStore.setSelectedHandCard(card)
+    gameStore.setGameMessage(`Selected ${card.name}. Select a matching field card or play directly.`)
+  },
+  onFieldCardSelected: (card: Card) => {
+    gameStore.setSelectedFieldCard(card)
+    gameStore.setGameMessage(`Selected field card: ${card.name}`)
+  },
+  onPlayCardAction: async () => {
+    const handCard = gameStore.uiState.selectedHandCard
+    const fieldCard = gameStore.uiState.selectedFieldCard
+    if (!handCard) return
+
+    await gameController.playCard({
+      playerId: 'player1',
+      cardId: handCard.id,
+      selectedFieldCards: fieldCard ? [fieldCard.id] : undefined
+    })
+  },
+  onKoikoiDecision: async (continueGame: boolean) => {
+    await gameController.handleKoikoiDecision({
+      playerId: 'player1',
+      declareKoikoi: continueGame
+    })
+  },
+  onNextRoundAction: async () => {
+    await gameController.startNextRound()
+  },
+  onNewGameAction: async () => {
+    await startNewGame()
+  }
+}
+
 // Methods
 const startNewGame = async () => {
-  try {
-    gameMessage.value = 'Starting new game...'
-
-    const newGameId = await gameFlowUseCase.createGame()
-    gameId.value = newGameId
-
-    const player1 = new Player('player1', player1Name.value, true)
-    const player2 = new Player('player2', player2Name.value, false)
-
-    await gameFlowUseCase.setupGame(newGameId, player1, player2)
-    const dealtGameState = await gameFlowUseCase.dealCards(newGameId)
-
-    gameState.value = dealtGameState
-    gameStarted.value = true
-    gameMessage.value = `Game started! ${dealtGameState.currentPlayer?.name}'s turn`
-  } catch (error) {
-    gameMessage.value = `Error starting game: ${error}`
-    console.error('Error starting game:', error)
-  }
+  await gameController.startNewGame({
+    player1Name: player1Name.value,
+    player2Name: player2Name.value
+  })
 }
 
 const handleHandCardSelected = (card: Card) => {
-  selectedHandCard.value = card
-  gameMessage.value = `Selected ${card.name}. Select a matching field card or play directly.`
+  inputController.handleHandCardSelected(card)
 }
 
 const handleFieldCardSelected = (card: Card) => {
-  selectedFieldCard.value = card
-  gameMessage.value = `Selected field card: ${card.name}`
+  inputController.handleFieldCardSelected(card)
 }
 
 const playSelectedCard = async () => {
-  if (!selectedHandCard.value || !gameState.value) return
-
-  try {
-    const request = {
-      playerId: 'player1',
-      cardId: selectedHandCard.value.id,
-      selectedFieldCards: selectedFieldCard.value ? [selectedFieldCard.value.id] : undefined,
-    }
-
-    const result = await playCardUseCase.execute(gameId.value, request)
-
-    if (result.success) {
-      const updatedGameState = await gameRepository.getGameState(gameId.value)
-      if (updatedGameState) {
-        gameState.value = updatedGameState
-      }
-
-      if (result.yakuResults.length > 0) {
-        yakuDisplay.value = result.yakuResults
-        if (result.nextPhase === 'koikoi') {
-          showKoikoiDialog.value = true
-          gameMessage.value = 'You achieved Yaku! Declare Koi-Koi?'
-        }
-      } else {
-        gameMessage.value = `Played ${selectedHandCard.value.name}. Captured ${result.capturedCards.length} cards.`
-      }
-
-      clearSelections()
-
-      if (result.nextPhase === 'round_end') {
-        await handleRoundEnd()
-      }
-    } else {
-      gameMessage.value = result.error || 'Failed to play card'
-    }
-  } catch (error) {
-    gameMessage.value = `Error playing card: ${error}`
-    console.error('Error playing card:', error)
-  }
+  inputController.handlePlayCardAction()
 }
 
 const handleKoikoiDecision = async (continueGame: boolean) => {
-  if (!gameState.value) return
-
-  try {
-    if (continueGame) {
-      await gameFlowUseCase.handleKoikoiDeclaration(gameId.value, 'player1', true)
-      gameMessage.value = 'Koi-Koi declared! Game continues...'
-    } else {
-      await gameFlowUseCase.endRound(gameId.value)
-      gameMessage.value = 'Round ended!'
-      await handleRoundEnd()
-    }
-
-    showKoikoiDialog.value = false
-    yakuDisplay.value = []
-
-    const updatedGameState = await gameRepository.getGameState(gameId.value)
-    if (updatedGameState) {
-      gameState.value = updatedGameState
-    }
-  } catch (error) {
-    gameMessage.value = `Error handling Koi-Koi: ${error}`
-    console.error('Error handling Koi-Koi:', error)
-  }
-}
-
-const handleRoundEnd = async () => {
-  if (!gameState.value) return
-
-  const roundResult = gameState.value.roundResult
-  if (roundResult) {
-    if (roundResult.winner) {
-      gameMessage.value = `Round won by ${roundResult.winner.name}! Score: ${roundResult.score}`
-    } else {
-      gameMessage.value = 'Round ended in a draw!'
-    }
-  }
+  inputController.handleKoikoiDecision(continueGame)
 }
 
 const startNextRound = async () => {
-  try {
-    const updatedGameState = await gameFlowUseCase.startNextRound(gameId.value)
-    gameState.value = updatedGameState
-
-    if (updatedGameState.isGameOver) {
-      const winner = await gameFlowUseCase.getGameWinner(gameId.value)
-      gameMessage.value = winner ? `Game won by ${winner.name}!` : 'Game ended in a draw!'
-    } else {
-      gameMessage.value = `Round ${updatedGameState.round} started!`
-    }
-  } catch (error) {
-    gameMessage.value = `Error starting next round: ${error}`
-    console.error('Error starting next round:', error)
-  }
+  inputController.handleNextRoundAction()
 }
 
-const clearSelections = () => {
-  selectedHandCard.value = null
-  selectedFieldCard.value = null
-  playerHandRef.value?.clearSelection()
-}
 
 onMounted(() => {
-  gameMessage.value = 'Welcome to Hanafuda Koi-Koi! Set up your game to start.'
+  // Setup input handler
+  inputController.addHandler(inputHandler)
+
+  // Initialize game message
+  gameStore.setGameMessage('Welcome to Hanafuda Koi-Koi! Set up your game to start.')
 })
 
-onBeforeRouteLeave((to, from, next) => {
+onBeforeRouteLeave((_to, _from, next) => {
   // 僅在回合進行中才提示，避免在 setup 或 game_end 阶段打擾
-  const phase = gameState.value?.phase
-  const isInProgress = !!(gameStarted.value && (phase === 'playing' || phase === 'koikoi'))
+  const phase = gameStore.gameState.phase
+  const isInProgress = !!(gameStore.gameState.gameStarted && (phase === 'playing' || phase === 'koikoi'))
   if (isInProgress) {
     const ok = window.confirm('確定要離開遊戲嗎？未保存的進度可能會遺失。')
     if (!ok) return next(false)
