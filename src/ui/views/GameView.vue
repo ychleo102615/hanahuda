@@ -1,17 +1,19 @@
 <template>
-  <div class="min-h-full bg-green-50 p-4">
-    <div class="text-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">花牌遊戲 「来来」</h1>
-      <div class="flex justify-center gap-6 text-sm text-gray-600">
+  <div class="bg-green-50 overflow-hidden flex flex-col">
+    <!-- Header with game info -->
+    <div class="text-center py-2 px-4 bg-white shadow-sm">
+      <h1 class="text-xl font-bold text-gray-800">花牌遊戲 「来来」</h1>
+      <div class="flex justify-center gap-4 text-xs text-gray-600">
         <span>Round {{ currentRound }} / {{ maxRounds }}</span>
         <span>Phase: {{ currentPhase }}</span>
       </div>
     </div>
 
-    <div v-if="!gameStarted" class="flex justify-center items-center min-h-96">
-      <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-        <h2 class="text-xl font-bold text-center mb-6">Game Setup</h2>
-        <div class="flex flex-col gap-4 mb-6">
+    <!-- Game Setup (when not started) -->
+    <div v-if="!gameStarted" class="flex-1 flex justify-center items-center px-4 min-h-96">
+      <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+        <h2 class="text-xl font-bold text-center mb-4">Game Setup</h2>
+        <div class="flex flex-col gap-3 mb-4">
           <input
             v-model="player1Name"
             placeholder="Player 1 Name"
@@ -32,9 +34,10 @@
       </div>
     </div>
 
-    <div v-else class="flex flex-col gap-6">
-      <!-- Opponent -->
-      <div class="max-w-4xl mx-auto">
+    <!-- Game Layout (when started) -->
+    <div v-else class="flex-1 flex flex-col overflow-hidden">
+      <!-- Opponent at top -->
+      <div class="px-4 py-2 border-b border-green-200">
         <PlayerHand
           v-if="opponent"
           :player="opponent"
@@ -44,24 +47,63 @@
         />
       </div>
 
-      <!-- Game Board -->
-      <div class="max-w-4xl mx-auto">
-        <GameBoard
-          :field-cards="fieldCards"
-          :deck-count="deckCount"
-          :selected-hand-card="gameStore.uiState.selectedHandCard"
-          :can-select-field="canSelectFieldCard"
-          :last-move="lastMove"
-          :show-koikoi-dialog="showKoikoiDialog"
-          :yaku-display="yakuDisplay"
-          :players="playerNames"
-          @field-card-selected="handleFieldCardSelected"
-          @koikoi-decision="handleKoikoiDecision"
-        />
+      <!-- Middle section: Game Board + Actions + Status -->
+      <div class="flex-1 flex flex-col justify-center px-4 py-2 overflow-y-auto">
+        <!-- Game Board -->
+        <div class="mb-4">
+          <GameBoard
+            :field-cards="fieldCards"
+            :deck-count="deckCount"
+            :selected-hand-card="gameStore.uiState.selectedHandCard"
+            :can-select-field="canSelectFieldCard"
+            :last-move="lastMove"
+            :show-koikoi-dialog="showKoikoiDialog"
+            :yaku-display="yakuDisplay"
+            :players="playerNames"
+            @field-card-selected="handleFieldCardSelected"
+            @koikoi-decision="handleKoikoiDecision"
+          />
+        </div>
+
+        <!-- Game Actions -->
+        <div class="flex justify-center gap-4 mb-4">
+          <button
+            v-if="canPlayCard"
+            @click="playSelectedCard"
+            :disabled="!gameStore.uiState.selectedHandCard"
+            class="bg-green-500 text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            Play Card
+          </button>
+
+          <button
+            v-if="gamePhase === 'round_end'"
+            @click="startNextRound"
+            class="text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer bg-blue-500 hover:bg-blue-600"
+          >
+            Next Round
+          </button>
+
+          <button
+            v-if="gamePhase === 'game_end'"
+            @click="startNewGame"
+            class="text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer bg-purple-500 hover:bg-purple-600"
+          >
+            New Game
+          </button>
+        </div>
+
+        <!-- Game Status -->
+        <div
+          v-if="gameMessage"
+          class="text-center text-sm font-medium text-gray-600 bg-white rounded-lg p-3 mx-auto shadow-sm max-w-xl"
+        >
+          {{ gameMessage }}
+        </div>
       </div>
 
-      <!-- Current Player -->
-      <div class="max-w-4xl mx-auto">
+      <!-- Current Player at bottom -->
+      <div class="px-4 py-2 border-t border-green-200">
         <PlayerHand
           v-if="currentPlayerData"
           :player="currentPlayerData"
@@ -72,49 +114,23 @@
           ref="playerHandRef"
         />
       </div>
+    </div>
 
-      <!-- Game Actions -->
-      <div class="flex justify-center gap-4">
+    <!-- Error Display (floating overlay) -->
+    <div
+      v-if="gameStore.uiState.error"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full shadow-xl">
+        <div class="text-center text-lg font-semibold text-red-600 mb-4">
+          {{ gameStore.uiState.error }}
+        </div>
         <button
-          v-if="canPlayCard"
-          @click="playSelectedCard"
-          :disabled="!gameStore.uiState.selectedHandCard"
-          class="bg-green-500 text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          @click="gameStore.clearError()"
+          class="w-full bg-red-500 text-white py-2 px-4 rounded-md font-semibold border-none cursor-pointer hover:bg-red-600"
         >
-          Play Card
+          Close
         </button>
-
-        <button
-          v-if="gamePhase === 'round_end'"
-          @click="startNextRound"
-          class="text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer bg-blue-500 hover:bg-blue-600"
-        >
-          Next Round
-        </button>
-
-        <button
-          v-if="gamePhase === 'game_end'"
-          @click="startNewGame"
-          class="text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer bg-purple-500 hover:bg-purple-600"
-        >
-          New Game
-        </button>
-      </div>
-
-      <!-- Game Status -->
-      <div
-        v-if="gameMessage"
-        class="text-center text-lg font-semibold text-gray-600 bg-white rounded-lg p-4 max-w-2xl mx-auto shadow-md"
-      >
-        {{ gameMessage }}
-      </div>
-
-      <!-- Error Display -->
-      <div
-        v-if="gameStore.uiState.error"
-        class="text-center text-lg font-semibold text-red-600 bg-red-50 rounded-lg p-4 max-w-2xl mx-auto shadow-md"
-      >
-        {{ gameStore.uiState.error }}
       </div>
     </div>
   </div>
@@ -163,17 +179,17 @@ const lastMove = computed(() => {
     playerId: move.playerId,
     matchedCards: move.cardsMatched ? [...move.cardsMatched] : [],
     capturedCards: move.cardsMatched ? [...move.cardsMatched] : [],
-    timestamp: new Date()
+    timestamp: new Date(),
   }
 })
 const gameStarted = computed(() => gameStore.gameState.gameStarted)
 const gameMessage = computed(() => gameStore.uiState.gameMessage)
 const yakuDisplay = computed(() =>
-  gameStore.uiState.yakuDisplay.map(yaku => ({
+  gameStore.uiState.yakuDisplay.map((yaku) => ({
     yaku: yaku.yaku,
     cards: [...yaku.cards],
-    points: yaku.points
-  }))
+    points: yaku.points,
+  })),
 )
 const showKoikoiDialog = computed(() => gameStore.uiState.showKoikoiDialog)
 
@@ -191,7 +207,9 @@ const playerNames = computed(() => [
 const inputHandler: InputHandler = {
   onHandCardSelected: (card: Card) => {
     gameStore.setSelectedHandCard(card)
-    gameStore.setGameMessage(`Selected ${card.name}. Select a matching field card or play directly.`)
+    gameStore.setGameMessage(
+      `Selected ${card.name}. Select a matching field card or play directly.`,
+    )
   },
   onFieldCardSelected: (card: Card) => {
     gameStore.setSelectedFieldCard(card)
@@ -205,13 +223,13 @@ const inputHandler: InputHandler = {
     await gameController.playCard({
       playerId: 'player1',
       cardId: handCard.id,
-      selectedFieldCards: fieldCard ? [fieldCard.id] : undefined
+      selectedFieldCards: fieldCard ? [fieldCard.id] : undefined,
     })
   },
   onKoikoiDecision: async (continueGame: boolean) => {
     await gameController.handleKoikoiDecision({
       playerId: 'player1',
-      declareKoikoi: continueGame
+      declareKoikoi: continueGame,
     })
   },
   onNextRoundAction: async () => {
@@ -219,14 +237,14 @@ const inputHandler: InputHandler = {
   },
   onNewGameAction: async () => {
     await startNewGame()
-  }
+  },
 }
 
 // Methods
 const startNewGame = async () => {
   await gameController.startNewGame({
     player1Name: player1Name.value,
-    player2Name: player2Name.value
+    player2Name: player2Name.value,
   })
 }
 
@@ -250,7 +268,6 @@ const startNextRound = async () => {
   inputController.handleNextRoundAction()
 }
 
-
 onMounted(() => {
   // Setup input handler
   inputController.addHandler(inputHandler)
@@ -262,7 +279,10 @@ onMounted(() => {
 onBeforeRouteLeave((_to, _from, next) => {
   // 僅在回合進行中才提示，避免在 setup 或 game_end 阶段打擾
   const phase = gameStore.gameState.phase
-  const isInProgress = !!(gameStore.gameState.gameStarted && (phase === 'playing' || phase === 'koikoi'))
+  const isInProgress = !!(
+    gameStore.gameState.gameStarted &&
+    (phase === 'playing' || phase === 'koikoi')
+  )
   if (isInProgress) {
     const ok = window.confirm('確定要離開遊戲嗎？未保存的進度可能會遺失。')
     if (!ok) return next(false)

@@ -3,7 +3,7 @@ import { RouterLink } from 'vue-router'
 </script>
 
 <template>
-  <div class="home-view">
+  <div class="home-view min-w-0">
     <div class="hero-section">
       <h1 class="hero-title">花牌遊戲「来来」</h1>
       <h2 class="hero-subtitle">Hanafuda Koi-Koi</h2>
@@ -11,15 +11,11 @@ import { RouterLink } from 'vue-router'
         體驗傳統日本花牌遊戲的魅力，在這個數位化的來來遊戲中與對手比拼技巧與運氣。
       </p>
       <div class="hero-actions">
-        <RouterLink to="/game" class="play-button">
-          開始遊戲
-        </RouterLink>
-        <RouterLink to="/about" class="learn-button">
-          了解規則
-        </RouterLink>
+        <RouterLink to="/game" class="play-button"> 開始遊戲 </RouterLink>
+        <RouterLink to="/about" class="learn-button"> 了解規則 </RouterLink>
       </div>
     </div>
-    
+
     <div class="features-section">
       <h3 class="features-title">遊戲特色</h3>
       <div class="features-grid">
@@ -186,26 +182,26 @@ import { RouterLink } from 'vue-router'
   .hero-title {
     font-size: 2rem;
   }
-  
+
   .hero-subtitle {
     font-size: 1.25rem;
   }
-  
+
   .hero-description {
     font-size: 1rem;
   }
-  
+
   .hero-actions {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .play-button,
   .learn-button {
     width: 100%;
     max-width: 300px;
   }
-  
+
   .features-grid {
     grid-template-columns: 1fr;
   }

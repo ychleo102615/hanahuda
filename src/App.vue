@@ -18,7 +18,7 @@ const gameTitle = ref('花牌遊戲「来来」')
         <RouterLink to="/about" class="nav-link">About</RouterLink>
       </nav>
     </header>
-    <main class="flex-1 overflow-auto">
+    <main class="flex-1 overflow-auto flex flex-col">
       <RouterView />
     </main>
   </div>
