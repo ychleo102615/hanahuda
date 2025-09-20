@@ -79,9 +79,10 @@
   - InputController (輸入處理)
 - Presenters (Adapters)
   - VueGamePresenter (實作 GamePresenter，將 OutputDTO 寫入 Store)
-- Rendering
-  - DOMRenderer (HTML DOM 渲染)
-  - PixiJSRenderer (WebGL 渲染)
+- **Rendering**: 支援多種渲染方式
+  - 目前：Vue 元件負責 DOM 渲染（透過 Presenter 架構）
+  - 未來：可擴展 PixiJS/WebGL 渲染器
+  - 使用 Tailwind CSS 進行 DOM 樣式控制
 
 ## 開發目標
 
@@ -90,7 +91,7 @@
 - [ ] 設置 Vue 3 + TypeScript + Tailwind 專案
 - [ ] 實現 Clean Architecture 基礎結構
 - [ ] 建立花牌實體與基本遊戲邏輯
-- [ ] 實現 HTML DOM 版本的 UI
+- [ ] 實現 Vue 元件版本的 UI
 
 ### Phase 2: 遊戲功能完善
 
@@ -130,7 +131,7 @@
 ### 架構修正要點
 
 1. **Use Cases 遷移**: 從 `domain/usecases/` 移至 `application/use-cases/`
-2. **介面分離**: Repository 介面移至 Application/Ports；Presenter Port 新增於 Application/Ports；UI 渲染相關移至 UI 層
+2. **介面分離**: Repository 介面移至 Application/Ports；Presenter Port 新增於 Application/Ports；渲染方式由具體實現決定
 3. **DTOs 引入**: 使用資料傳輸對象隔離層級間的資料流
 4. **依賴注入**: 使用 DI 容器管理依賴關係
 5. **Ports & Adapters**: 明確定義對外介面與實現

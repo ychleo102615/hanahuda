@@ -5,7 +5,6 @@ import { CalculateScoreUseCase } from '@/application/usecases/CalculateScoreUseC
 import { GameController } from '@/ui/controllers/GameController'
 import { InputController } from '@/ui/controllers/InputController'
 import { VueGamePresenter } from '@/ui/presenters/VueGamePresenter'
-import { DOMRenderer } from '@/infrastructure/renderers/DOMRenderer'
 
 type ServiceKey = string | symbol
 type ServiceInstance = unknown
@@ -17,7 +16,6 @@ export class DIContainer {
   // Service keys
   static readonly GAME_REPOSITORY = Symbol('GameRepository')
   static readonly GAME_PRESENTER = Symbol('GamePresenter')
-  static readonly UI_RENDERER = Symbol('UIRenderer')
   static readonly GAME_FLOW_USE_CASE = Symbol('GameFlowUseCase')
   static readonly PLAY_CARD_USE_CASE = Symbol('PlayCardUseCase')
   static readonly CALCULATE_SCORE_USE_CASE = Symbol('CalculateScoreUseCase')
@@ -66,14 +64,9 @@ export class DIContainer {
   }
 
   // Setup default services
-  setupDefaultServices(gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>, rendererContainer?: HTMLElement): void {
+  setupDefaultServices(gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>): void {
     // Infrastructure layer
     this.registerSingleton(DIContainer.GAME_REPOSITORY, () => new LocalGameRepository())
-
-    // UI Renderer - only register if container is provided
-    if (rendererContainer) {
-      this.registerSingleton(DIContainer.UI_RENDERER, () => new DOMRenderer(rendererContainer))
-    }
 
     // Application layer
     this.registerSingleton(DIContainer.CALCULATE_SCORE_USE_CASE, () =>
@@ -113,9 +106,9 @@ export class DIContainer {
   }
 
   // Factory method to create a configured container
-  static createDefault(gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>, rendererContainer?: HTMLElement): DIContainer {
+  static createDefault(gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>): DIContainer {
     const container = new DIContainer()
-    container.setupDefaultServices(gameStore, rendererContainer)
+    container.setupDefaultServices(gameStore)
     return container
   }
 }
