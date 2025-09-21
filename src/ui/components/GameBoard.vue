@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-green-50 rounded-lg p-6 min-h-96">
+  <div class="bg-green-50 rounded-lg p-6">
     <div class="mb-6">
       <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">Field Cards</h3>
       <div
