@@ -11,6 +11,7 @@ export interface PlayCardRequest {
 
 export interface PlayCardResult {
   success: boolean
+  playedCard?: Card
   capturedCards: Card[]
   nextPhase: 'playing' | 'koikoi' | 'round_end'
   yakuResults: YakuResult[]

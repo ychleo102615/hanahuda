@@ -1,2 +1,6 @@
 @import "tailwindcss";
 @import './base.css';
+
+body {
+  min-width: 320px;
+}

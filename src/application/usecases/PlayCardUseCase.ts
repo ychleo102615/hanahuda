@@ -11,21 +11,21 @@ export class PlayCardUseCase {
     try {
       const gameState = await this.gameRepository.getGameState(gameId)
       if (!gameState) {
-        return { success: false, capturedCards: [], nextPhase: 'playing', yakuResults: [], error: 'Game not found' }
+        return { success: false, playedCard: undefined, capturedCards: [], nextPhase: 'playing', yakuResults: [], error: 'Game not found' }
       }
 
       const currentPlayer = gameState.currentPlayer
       if (!currentPlayer || currentPlayer.id !== request.playerId) {
-        return { success: false, capturedCards: [], nextPhase: 'playing', yakuResults: [], error: 'Not your turn' }
+        return { success: false, playedCard: undefined, capturedCards: [], nextPhase: 'playing', yakuResults: [], error: 'Not your turn' }
       }
 
       if (!currentPlayer.canPlayCard(request.cardId)) {
-        return { success: false, capturedCards: [], nextPhase: 'playing', yakuResults: [], error: 'Invalid card' }
+        return { success: false, playedCard: undefined, capturedCards: [], nextPhase: 'playing', yakuResults: [], error: 'Invalid card' }
       }
 
       const playedCard = currentPlayer.removeFromHand(request.cardId)
       if (!playedCard) {
-        return { success: false, capturedCards: [], nextPhase: 'playing', yakuResults: [], error: 'Card not found' }
+        return { success: false, playedCard: undefined, capturedCards: [], nextPhase: 'playing', yakuResults: [], error: 'Card not found' }
       }
 
       const fieldMatches = gameState.getFieldMatches(playedCard)
@@ -41,6 +41,7 @@ export class PlayCardUseCase {
           gameState.addToField([playedCard])
           return {
             success: false,
+            playedCard: undefined,
             capturedCards: [],
             nextPhase: 'playing',
             yakuResults: [],
@@ -100,6 +101,7 @@ export class PlayCardUseCase {
 
       return {
         success: true,
+        playedCard,
         capturedCards,
         nextPhase,
         yakuResults
@@ -107,6 +109,7 @@ export class PlayCardUseCase {
     } catch (error) {
       return {
         success: false,
+        playedCard: undefined,
         capturedCards: [],
         nextPhase: 'playing',
         yakuResults: [],

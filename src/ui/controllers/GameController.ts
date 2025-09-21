@@ -9,7 +9,7 @@ import type {
   StartGameInputDTO,
   PlayCardInputDTO,
   KoikoiDecisionInputDTO,
-  GameStateOutputDTO
+  GameStateOutputDTO,
 } from '@/application/dto/GameDTO'
 
 export class GameController {
@@ -20,7 +20,7 @@ export class GameController {
     private playCardUseCase: PlayCardUseCase,
     private calculateScoreUseCase: CalculateScoreUseCase,
     private gameRepository: GameRepository,
-    private gamePresenter: GamePresenter
+    private gamePresenter: GamePresenter,
   ) {}
 
   async startNewGame(input: StartGameInputDTO): Promise<void> {
@@ -40,17 +40,19 @@ export class GameController {
 
       this.gamePresenter.presentStartGameResult({
         gameId: newGameId,
-        success: true
+        success: true,
       })
 
       this.gamePresenter.presentGameState(gameStateDTO)
-      this.gamePresenter.presentGameMessage(`Game started! ${dealtGameState.currentPlayer?.name}'s turn`)
+      this.gamePresenter.presentGameMessage(
+        `Game started! ${dealtGameState.currentPlayer?.name}'s turn`,
+      )
     } catch (error) {
       const errorMessage = `Error starting game: ${error}`
       this.gamePresenter.presentStartGameResult({
         gameId: '',
         success: false,
-        error: errorMessage
+        error: errorMessage,
       })
       this.gamePresenter.presentError(errorMessage)
     }
@@ -81,7 +83,9 @@ export class GameController {
             this.gamePresenter.presentGameMessage('You achieved Yaku! Declare Koi-Koi?')
           }
         } else {
-          this.gamePresenter.presentGameMessage(`Played ${result.playedCard?.name}. Captured ${result.capturedCards.length} cards.`)
+          this.gamePresenter.presentGameMessage(
+            `Played ${result.playedCard?.name}. Captured ${result.capturedCards.length} cards.`,
+          )
         }
 
         if (result.nextPhase === 'round_end') {
@@ -121,13 +125,13 @@ export class GameController {
 
       this.gamePresenter.presentKoikoiDecision({
         success: true,
-        nextPhase: input.declareKoikoi ? 'playing' : 'round_end'
+        nextPhase: input.declareKoikoi ? 'playing' : 'round_end',
       })
     } catch (error) {
       this.gamePresenter.presentKoikoiDecision({
         success: false,
         nextPhase: '',
-        error: `Error handling Koi-Koi: ${error}`
+        error: `Error handling Koi-Koi: ${error}`,
       })
     }
   }
@@ -145,10 +149,7 @@ export class GameController {
 
       if (updatedGameState.isGameOver) {
         const winner = await this.gameFlowUseCase.getGameWinner(this.gameId)
-        this.gamePresenter.presentGameEnd(
-          winner ? winner.name : null,
-          winner ? winner.score : 0
-        )
+        this.gamePresenter.presentGameEnd(winner ? winner.name : null, winner ? winner.score : 0)
       } else {
         this.gamePresenter.presentGameMessage(`Round ${updatedGameState.round} started!`)
       }
@@ -204,7 +205,7 @@ export class GameController {
       isGameOver: gameState.isGameOver || false,
       lastMove: gameState.lastMove,
       roundResult: gameState.roundResult,
-      koikoiPlayer: gameState.koikoiPlayer
+      koikoiPlayer: gameState.koikoiPlayer,
     }
   }
 
