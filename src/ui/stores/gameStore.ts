@@ -67,22 +67,23 @@ export const useGameStore = defineStore('game', () => {
 
   // Computed properties
   const currentPlayerData = computed((): IPlayer | null => {
-    return gameState.value.players.find((p) => p.id === 'player1') || null
+    return gameState.value.currentPlayer
   })
 
   const opponent = computed((): IPlayer | null => {
-    return gameState.value.players.find((p) => p.id === 'player2') || null
+    if (!gameState.value.currentPlayer) return null
+    return gameState.value.players.find((p) => p.id !== gameState.value.currentPlayer?.id) || null
   })
 
   const isPlayerTurn = computed(() => {
     return (
-      gameState.value.currentPlayer?.id === 'player1' &&
+      gameState.value.currentPlayer !== null &&
       (gameState.value.phase === 'playing' || gameState.value.phase === 'koikoi')
     )
   })
 
   const isOpponentTurn = computed(() => {
-    return gameState.value.currentPlayer?.id === 'player2'
+    return gameState.value.currentPlayer !== null
   })
 
   const canPlayCard = computed(() => {

@@ -218,17 +218,21 @@ const inputHandler: InputHandler = {
   onPlayCardAction: async () => {
     const handCard = gameStore.uiState.selectedHandCard
     const fieldCard = gameStore.uiState.selectedFieldCard
-    if (!handCard) return
+    const currentPlayerId = gameStore.gameState.currentPlayer?.id
+    if (!handCard || !currentPlayerId) return
 
     await gameController.playCard({
-      playerId: 'player1',
+      playerId: currentPlayerId,
       cardId: handCard.id,
       selectedFieldCards: fieldCard ? [fieldCard.id] : undefined,
     })
   },
   onKoikoiDecision: async (continueGame: boolean) => {
+    const currentPlayerId = gameStore.gameState.currentPlayer?.id
+    if (!currentPlayerId) return
+
     await gameController.handleKoikoiDecision({
-      playerId: 'player1',
+      playerId: currentPlayerId,
       declareKoikoi: continueGame,
     })
   },
