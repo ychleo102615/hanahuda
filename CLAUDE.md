@@ -14,6 +14,8 @@
 
 ## Clean Architecture 分層設計
 
+**🚨 這些規則絕對不可忽略**
+
 ### 1. Domain Layer (領域層)
 
 - **Entities**: 遊戲核心實體
@@ -84,6 +86,21 @@
   - 未來：可擴展 PixiJS/WebGL 渲染器
   - 使用 Tailwind CSS 進行 DOM 樣式控制
 
+### 架構約束
+
+- **依賴方向**: 必須嚴格遵循由外向內的依賴方向
+- **Domain Layer**: 最內層。不依賴任何其他層級，完全獨立。領域層不可依賴任何外部框架或庫
+- **Application Layer**: Domain外層。只能依賴 Domain Layer。用例屬於 Application Layer，負責編排業務流程
+- **Infrastructure Layer**: Application外層。實作 Application/Ports（Repositories/外部服務），可依賴 Domain 與 Application
+- **UI Layer**: Application外層。僅依賴 Application 層（Use Cases/Ports），不直接依賴 Infrastructure；由 Composition Root 注入實作
+- 適配器不可互相依賴，presenter, controller, repository應互相保持獨立，只透過usecase互動。
+
+# 任務完成檢查清單
+
+請在完成每個任務後確認：
+
+- [ ] 是否遵循架構約束?
+
 ## 開發目標
 
 ### Phase 1: 基礎架構建立
@@ -121,21 +138,6 @@
 3. **開閉原則**: 對擴展開放，對修改關閉
 4. **介面隔離**: 依賴於抽象而非具體實現
 
-### 分層依賴規則
-
-- **Domain Layer**: 不依賴任何其他層級，完全獨立
-- **Application Layer**: 只能依賴 Domain Layer
-- **Infrastructure Layer**: 實作 Application/Ports（Repositories/外部服務），可依賴 Domain 與 Application
-- **UI Layer**: 僅依賴 Application 層（Use Cases/Ports），不直接依賴 Infrastructure；由 Composition Root 注入實作
-
-### 架構修正要點
-
-1. **Use Cases 遷移**: 從 `domain/usecases/` 移至 `application/use-cases/`
-2. **介面分離**: Repository 介面移至 Application/Ports；Presenter Port 新增於 Application/Ports；渲染方式由具體實現決定
-3. **DTOs 引入**: 使用資料傳輸對象隔離層級間的資料流
-4. **依賴注入**: 使用 DI 容器管理依賴關係
-5. **Ports & Adapters**: 明確定義對外介面與實現
-
 ## 配置說明
 
 ### Vite 配置
@@ -155,30 +157,3 @@
 - Domain 層單元測試（核心邏輯）
 - Application 層整合測試
 - UI 層元件測試
-
-## 注意事項
-
-### 架構約束
-
-- **Domain Layer 純度**: 領域層不可依賴任何外部框架或庫
-- **Use Cases 位置**: 用例屬於 Application Layer，負責編排業務流程
-- **介面分離原則**: UI/Presenter 相關介面不應出現在 Domain Layer；Presenter Port 位於 Application
-- **依賴方向**: 必須嚴格遵循由外向內的依賴方向
-
-### 重構指導
-
-1. **現有 Use Cases**: 需從 `domain/usecases/` 遷移至 `application/use-cases/`
-2. **Repository 介面**: 簡化為純資料存取，移除業務邏輯方法，並移至 **application/ports/repositories/**
-3. **Presenter Port**: 新增 \
-   application/ports/presenters/GamePresenter.ts；由 ui/presenters/VueGamePresenter.ts 實作
-4. **UI 介面**: 從 `domain/interfaces/` 移至 `infrastructure/renderers/`
-5. **依賴注入**: 建立 DI 容器統一管理依賴關係
-
-這個修正後的架構設計讓你可以：
-
-1. 維持真正的 Clean Architecture 原則
-2. 輕鬆切換 DOM 和 WebGL 渲染
-3. 無痛轉換本地邏輯到伺服器 API
-4. 確保各層級責任清晰分離
-5. 提升程式碼的可測試性和可維護性
-6. 支援依賴注入和控制反轉
