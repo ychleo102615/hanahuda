@@ -144,11 +144,43 @@ export class GameFlowUseCase {
       gameState.setPhase('playing')
       gameState.nextPlayer()
     } else {
-      await this.endRound(gameId)
+      // 不聲明 Koi-Koi，設置階段為準備結束回合
+      gameState.setPhase('round_end')
     }
 
     await this.gameRepository.saveGame(gameId, gameState)
     return gameState
+  }
+
+  async handleKoikoiDecision(gameId: string, playerId: string, declareKoikoi: boolean): Promise<void> {
+    try {
+      if (declareKoikoi) {
+        await this.handleKoikoiDeclaration(gameId, playerId, true)
+      } else {
+        await this.endRound(gameId)
+      }
+
+      // 通知 UI 更新
+      if (this.presenter) {
+        const gameState = await this.gameRepository.getGameState(gameId)
+        if (gameState) {
+          const gameStateDTO = this.mapGameStateToDTO(gameId, gameState)
+          this.presenter.presentGameState(gameStateDTO)
+
+          if (declareKoikoi) {
+            this.presenter.presentGameMessage('Koi-Koi declared! Game continues.')
+          } else {
+            this.presenter.presentGameMessage('Round ended.')
+            await this.handleRoundEndPresentation(gameId)
+          }
+        }
+      }
+    } catch (error) {
+      if (this.presenter) {
+        this.presenter.presentError(`Error handling Koi-Koi decision: ${error}`)
+      }
+      throw error
+    }
   }
 
   async endRound(gameId: string): Promise<GameState> {
@@ -212,6 +244,13 @@ export class GameFlowUseCase {
 
     if (gameState.round >= GAME_SETTINGS.MAX_ROUNDS) {
       gameState.setPhase('game_end')
+
+      // 通知 UI 遊戲結束
+      if (this.presenter) {
+        const winner = await this.getGameWinner(gameId)
+        const finalScore = winner ? winner.score : 0
+        this.presenter.presentGameEnd(winner?.name || null, finalScore)
+      }
     } else {
       // 清空場上的牌
       gameState.setField([])
@@ -222,11 +261,28 @@ export class GameFlowUseCase {
       // 創建新牌組並發牌
       const deck = await this.createShuffledDeck()
       gameState.setDeck(deck)
-      await this.dealCards(gameId)
+
+      // 先保存狀態變更，然後發牌
+      await this.gameRepository.saveGame(gameId, gameState)
+      const updatedGameState = await this.dealCards(gameId)
+
+      // 通知 UI 新回合開始
+      if (this.presenter) {
+        const gameStateDTO = this.mapGameStateToDTO(gameId, updatedGameState)
+        this.presenter.presentGameState(gameStateDTO)
+        this.presenter.presentGameMessage(`Round ${updatedGameState.round} started! ${updatedGameState.currentPlayer?.name}'s turn`)
+        this.presenter.clearYakuDisplay()
+        this.presenter.presentKoikoiDialog(false)
+      }
     }
 
-    await this.gameRepository.saveGame(gameId, gameState)
-    return gameState
+    // 獲取最終的遊戲狀態
+    const finalGameState = await this.gameRepository.getGameState(gameId)
+    if (!finalGameState) {
+      throw new Error('Game state not found after update')
+    }
+
+    return finalGameState
   }
 
   private async createShuffledDeck(): Promise<Card[]> {

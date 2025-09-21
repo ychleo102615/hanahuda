@@ -41,11 +41,7 @@ export class GameController {
     }
 
     try {
-      if (input.declareKoikoi) {
-        await this.gameFlowUseCase.handleKoikoiDeclaration(this.gameId, input.playerId, true)
-      } else {
-        await this.gameFlowUseCase.endRound(this.gameId)
-      }
+      await this.gameFlowUseCase.handleKoikoiDecision(this.gameId, input.playerId, input.declareKoikoi)
     } catch (error) {
       console.error('Error handling Koi-Koi:', error)
       throw error

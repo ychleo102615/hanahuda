@@ -77,6 +77,37 @@
             Play Card
           </button>
 
+          <!-- Round End Result Display -->
+          <div
+            v-if="gamePhase === 'round_end' && roundResult"
+            class="bg-yellow-100 border border-yellow-300 rounded-lg p-4 mb-4 text-center"
+          >
+            <h3 class="text-lg font-bold text-yellow-800 mb-2">Round {{ currentRound }} Results</h3>
+            <div v-if="roundResult.winner" class="text-green-700 font-medium">
+              🎉 {{ roundResult.winner.name }} wins this round!
+              <br>
+              Score: {{ roundResult.score }} points
+            </div>
+            <div v-else class="text-gray-700 font-medium">
+              ⚖️ Round ended in a draw!
+            </div>
+            <div v-if="roundResult.yakuResults && roundResult.yakuResults.length > 0" class="mt-2">
+              <div class="text-sm text-gray-600">Yaku achieved:</div>
+              <div class="flex flex-wrap justify-center gap-1 mt-1">
+                <span
+                  v-for="yaku in roundResult.yakuResults"
+                  :key="yaku.yaku.name"
+                  class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs"
+                >
+                  {{ yaku.yaku.name }} ({{ yaku.points }}pts)
+                </span>
+              </div>
+            </div>
+            <div v-if="roundResult.koikoiDeclared" class="text-blue-600 text-sm mt-2">
+              🗾 Koi-Koi was declared!
+            </div>
+          </div>
+
           <button
             v-if="gamePhase === 'round_end'"
             @click="startNextRound"
@@ -198,6 +229,7 @@ const yakuDisplay = computed(() =>
   })),
 )
 const showKoikoiDialog = computed(() => gameStore.uiState.showKoikoiDialog)
+const roundResult = computed(() => gameStore.gameState.roundResult)
 
 const isPlayerTurn = computed(() => gameStore.isPlayerTurn)
 const isOpponentTurn = computed(() => gameStore.isOpponentTurn)
