@@ -10,7 +10,8 @@
           :key="card.id"
           :card="card"
           :selectable="canSelectField && isMatchingCard(card)"
-          :highlighted="isMatchingCard(card) && canSelectField"
+          :highlighted="isHoverPreview(card) || (isSelectedCardMatch(card) && canSelectField)"
+          :class="{ 'animate-pulse': isSelectedCardMatch(card) && canSelectField }"
           size="medium"
           @click="handleFieldCardClick"
         />
@@ -77,6 +78,7 @@ interface Props {
   fieldCards: Card[]
   deckCount: number
   selectedHandCard?: Card | null
+  hoveredHandCard?: Card | null
   canSelectField?: boolean
   lastMove?: GameMove | null
   showKoikoiDialog?: boolean
@@ -91,6 +93,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   selectedHandCard: null,
+  hoveredHandCard: null,
   canSelectField: false,
   lastMove: null,
   showKoikoiDialog: false,
@@ -103,8 +106,17 @@ const emit = defineEmits<Emits>()
 const selectedFieldCard = ref<Card | null>(null)
 
 const isMatchingCard = (fieldCard: Card): boolean => {
-  if (!props.selectedHandCard || !props.canSelectField) return false
-  return props.selectedHandCard.suit === fieldCard.suit
+  const handCard = props.selectedHandCard || props.hoveredHandCard
+  if (!handCard || !props.canSelectField) return false
+  return handCard.suit === fieldCard.suit
+}
+
+const isSelectedCardMatch = (fieldCard: Card): boolean => {
+  return !!props.selectedHandCard && props.selectedHandCard.suit === fieldCard.suit
+}
+
+const isHoverPreview = (fieldCard: Card): boolean => {
+  return !!props.hoveredHandCard && props.hoveredHandCard.suit === fieldCard.suit && !isSelectedCardMatch(fieldCard)
 }
 
 const handleFieldCardClick = (card: Card) => {

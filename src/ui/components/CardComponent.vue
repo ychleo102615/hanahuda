@@ -1,5 +1,11 @@
 <template>
-  <div :class="cardClasses" @click="handleClick" :data-card-id="card.id">
+  <div
+    :class="cardClasses"
+    @click="handleClick"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
+    :data-card-id="card.id"
+  >
     <div class="w-full h-full p-1">
       <div class="flex flex-col items-center justify-between h-full text-center">
         <div class="text-xs font-bold text-gray-600">{{ card.month }}月</div>
@@ -25,6 +31,8 @@ interface Props {
 
 interface Emits {
   (e: 'click', card: Card): void
+  (e: 'mouseenter', card: Card): void
+  (e: 'mouseleave', card: Card): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -65,6 +73,14 @@ const handleClick = () => {
   if (props.selectable) {
     emit('click', props.card)
   }
+}
+
+const handleMouseEnter = () => {
+  emit('mouseenter', props.card)
+}
+
+const handleMouseLeave = () => {
+  emit('mouseleave', props.card)
 }
 
 const getTypeDisplay = (type: string): string => {

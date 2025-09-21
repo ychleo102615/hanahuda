@@ -55,6 +55,7 @@
             :field-cards="fieldCards"
             :deck-count="deckCount"
             :selected-hand-card="gameStore.uiState.selectedHandCard"
+            :hovered-hand-card="hoveredHandCard"
             :can-select-field="canSelectFieldCard"
             :last-move="lastMove"
             :show-koikoi-dialog="showKoikoiDialog"
@@ -111,6 +112,8 @@
           :show-captured="true"
           :is-current-player="isPlayerTurn"
           @card-selected="handleHandCardSelected"
+          @card-hovered="handleHandCardHovered"
+          @card-unhovered="handleHandCardUnhovered"
           ref="playerHandRef"
         />
       </div>
@@ -153,6 +156,9 @@ const gameStore = useGameStore()
 // Player setup
 const player1Name = ref('Player 1')
 const player2Name = ref('Player 2')
+
+// Hover state
+const hoveredHandCard = ref<Card | null>(null)
 
 // Dependencies - Setup DI Container
 const diContainer = DIContainer.createDefault(gameStore)
@@ -270,6 +276,15 @@ const handleKoikoiDecision = async (continueGame: boolean) => {
 
 const startNextRound = async () => {
   inputController.handleNextRoundAction()
+}
+
+const handleHandCardHovered = (card: Card) => {
+  if (!isPlayerTurn.value) return
+  hoveredHandCard.value = card
+}
+
+const handleHandCardUnhovered = () => {
+  hoveredHandCard.value = null
 }
 
 onMounted(() => {

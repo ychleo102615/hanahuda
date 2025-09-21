@@ -24,6 +24,8 @@
           :selected="selectedCardId === card.id"
           size="medium"
           @click="handleCardClick"
+          @mouseenter="handleCardHover"
+          @mouseleave="handleCardUnhover"
         />
       </div>
     </div>
@@ -57,6 +59,8 @@ interface Props {
 
 interface Emits {
   (e: 'cardSelected', card: Card): void
+  (e: 'cardHovered', card: Card): void
+  (e: 'cardUnhovered', card: Card): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -78,6 +82,14 @@ const handleCardClick = (card: Card) => {
     selectedCardId.value = card.id
     emit('cardSelected', card)
   }
+}
+
+const handleCardHover = (card: Card) => {
+  emit('cardHovered', card)
+}
+
+const handleCardUnhover = (card: Card) => {
+  emit('cardUnhovered', card)
 }
 
 defineExpose({
