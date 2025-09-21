@@ -7,11 +7,11 @@ import { InputController } from '@/ui/controllers/InputController'
 import { VueGamePresenter } from '@/ui/presenters/VueGamePresenter'
 
 type ServiceKey = string | symbol
-type ServiceInstance = unknown
+type ServiceFactory<T = unknown> = () => T
 
 export class DIContainer {
-  private services = new Map<ServiceKey, ServiceInstance>()
-  private singletons = new Map<ServiceKey, ServiceInstance>()
+  private services = new Map<ServiceKey, ServiceFactory>()
+  private singletons = new Map<ServiceKey, unknown>()
 
   // Service keys
   static readonly GAME_REPOSITORY = Symbol('GameRepository')
@@ -49,7 +49,7 @@ export class DIContainer {
     if (!factory) {
       throw new Error(`Service not registered: ${String(key)}`)
     }
-    return factory()
+    return factory() as T
   }
 
   // Check if a service is registered
@@ -73,15 +73,20 @@ export class DIContainer {
       new CalculateScoreUseCase(this.resolve(DIContainer.GAME_REPOSITORY))
     )
 
-    this.registerSingleton(DIContainer.GAME_FLOW_USE_CASE, () =>
-      new GameFlowUseCase(
+    this.registerSingleton(DIContainer.PLAY_CARD_USE_CASE, () =>
+      new PlayCardUseCase(
         this.resolve(DIContainer.GAME_REPOSITORY),
-        this.resolve(DIContainer.CALCULATE_SCORE_USE_CASE)
+        gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined
       )
     )
 
-    this.registerSingleton(DIContainer.PLAY_CARD_USE_CASE, () =>
-      new PlayCardUseCase(this.resolve(DIContainer.GAME_REPOSITORY))
+    this.registerSingleton(DIContainer.GAME_FLOW_USE_CASE, () =>
+      new GameFlowUseCase(
+        this.resolve(DIContainer.GAME_REPOSITORY),
+        this.resolve(DIContainer.CALCULATE_SCORE_USE_CASE),
+        gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
+        this.resolve(DIContainer.PLAY_CARD_USE_CASE)
+      )
     )
 
     // UI layer - only register if gameStore is provided
@@ -91,18 +96,12 @@ export class DIContainer {
 
     this.registerSingleton(DIContainer.INPUT_CONTROLLER, () => new InputController())
 
-    // Game Controller - only register if both presenter and other dependencies are available
-    if (gameStore) {
-      this.registerSingleton(DIContainer.GAME_CONTROLLER, () =>
-        new GameController(
-          this.resolve(DIContainer.GAME_FLOW_USE_CASE),
-          this.resolve(DIContainer.PLAY_CARD_USE_CASE),
-          this.resolve(DIContainer.CALCULATE_SCORE_USE_CASE),
-          this.resolve(DIContainer.GAME_REPOSITORY),
-          this.resolve(DIContainer.GAME_PRESENTER)
-        )
+    // Game Controller
+    this.registerSingleton(DIContainer.GAME_CONTROLLER, () =>
+      new GameController(
+        this.resolve(DIContainer.GAME_FLOW_USE_CASE)
       )
-    }
+    )
   }
 
   // Factory method to create a configured container

@@ -3,9 +3,13 @@ import type { Card } from '../../domain/entities/Card'
 import type { GameMove } from '../../domain/entities/GameState'
 import { Yaku } from '../../domain/entities/Yaku'
 import type { GameRepository, PlayCardRequest, PlayCardResult } from '../ports/repositories/GameRepository'
+import type { GamePresenter } from '../ports/presenters/GamePresenter'
 
 export class PlayCardUseCase {
-  constructor(private gameRepository: GameRepository) {}
+  constructor(
+    private gameRepository: GameRepository,
+    private presenter?: GamePresenter,
+  ) {}
 
   async execute(gameId: string, request: PlayCardRequest): Promise<PlayCardResult> {
     try {
@@ -84,10 +88,16 @@ export class PlayCardUseCase {
       const hasYaku = yakuResults.length > 0
 
       let nextPhase: 'playing' | 'koikoi' | 'round_end' = 'playing'
-      
+
       if (hasYaku) {
-        nextPhase = 'koikoi'
-        gameState.setPhase('koikoi')
+        if (currentPlayer.handCount > 0) {
+          nextPhase = 'koikoi'
+          gameState.setPhase('koikoi')
+        } else {
+          // 玩家湊成役但沒有手牌，直接結算回合
+          nextPhase = 'round_end'
+          gameState.setPhase('round_end')
+        }
       } else {
         gameState.nextPlayer()
       }

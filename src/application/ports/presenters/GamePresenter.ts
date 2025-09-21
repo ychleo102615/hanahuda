@@ -5,6 +5,7 @@ import type {
   StartGameOutputDTO
 } from '@/application/dto/GameDTO'
 import type { YakuResult } from '@/domain/entities/Yaku'
+import type { Card } from '@/domain/entities/Card'
 
 export interface GamePresenter {
   presentGameState(gameState: GameStateOutputDTO): void
@@ -26,4 +27,9 @@ export interface GamePresenter {
   presentGameEnd(winner: string | null, finalScore: number): void
 
   presentRoundEnd(winner: string | null, score: number): void
+
+  // UI state management methods
+  clearYakuDisplay(): void
+
+  presentCardSelection(handCard: Card | null, fieldCard: Card | null): void
 }

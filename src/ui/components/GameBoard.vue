@@ -68,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { Card } from '@/domain/entities/Card'
 import type { GameMove } from '@/domain/entities/GameState'
 import type { YakuResult } from '@/domain/entities/Yaku'
@@ -116,7 +116,11 @@ const isSelectedCardMatch = (fieldCard: Card): boolean => {
 }
 
 const isHoverPreview = (fieldCard: Card): boolean => {
-  return !!props.hoveredHandCard && props.hoveredHandCard.suit === fieldCard.suit && !isSelectedCardMatch(fieldCard)
+  return (
+    !!props.hoveredHandCard &&
+    props.hoveredHandCard.suit === fieldCard.suit &&
+    !isSelectedCardMatch(fieldCard)
+  )
 }
 
 const handleFieldCardClick = (card: Card) => {
@@ -141,6 +145,15 @@ defineExpose({
   },
   getSelectedFieldCard: () => selectedFieldCard.value,
 })
+
+// 監控fieldcards變化
+watch(
+  () => props.fieldCards,
+  (newFieldCards) => {
+    console.log('Field cards changed:', newFieldCards)
+    console.trace()
+  },
+)
 </script>
 
 <style scoped>

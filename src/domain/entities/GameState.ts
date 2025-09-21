@@ -115,8 +115,8 @@ export class GameState {
 
   removeFromField(cardIds: string[]): Card[] {
     const removed: Card[] = []
-    cardIds.forEach(id => {
-      const index = this._field.findIndex(c => c.id === id)
+    cardIds.forEach((id) => {
+      const index = this._field.findIndex((c) => c.id === id)
       if (index !== -1) {
         removed.push(...this._field.splice(index, 1))
       }
@@ -125,7 +125,7 @@ export class GameState {
   }
 
   getFieldMatches(card: Card): Card[] {
-    return this._field.filter(fieldCard => card.suit === fieldCard.suit)
+    return this._field.filter((fieldCard) => card.suit === fieldCard.suit)
   }
 
   setPhase(phase: GamePhase): void {
@@ -161,7 +161,7 @@ export class GameState {
     this._lastMove = null
     this._koikoiPlayer = null
     this._roundResult = null
-    this._players.forEach(player => player.resetRound())
+    this._players.forEach((player) => player.resetRound())
   }
 
   reset(): void {
@@ -178,21 +178,22 @@ export class GameState {
   }
 
   getPlayerById(id: string): Player | null {
-    return this._players.find(p => p.id === id) || null
+    return this._players.find((p) => p.id === id) || null
   }
 
   getOpponent(playerId: string): Player | null {
-    return this._players.find(p => p.id !== playerId) || null
+    return this._players.find((p) => p.id !== playerId) || null
   }
 
   canPlayerAct(playerId: string): boolean {
-    return this.currentPlayer?.id === playerId && 
-           (this._phase === 'playing' || this._phase === 'koikoi')
+    return (
+      this.currentPlayer?.id === playerId && (this._phase === 'playing' || this._phase === 'koikoi')
+    )
   }
 
   clone(): GameState {
     const cloned = new GameState()
-    cloned._players = this._players.map(p => p.clone())
+    cloned._players = this._players.map((p) => p.clone())
     cloned._deck = [...this._deck]
     cloned._field = [...this._field]
     cloned._currentPlayerIndex = this._currentPlayerIndex
