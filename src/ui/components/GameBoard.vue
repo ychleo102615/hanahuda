@@ -26,7 +26,21 @@
       </div>
     </div>
 
-    <div class="flex justify-center gap-4 mb-4">
+    <div v-if="yakuDisplay.length > 0" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+      <h4 class="text-lg font-bold text-amber-800 mb-3 text-center">Yaku Achieved!</h4>
+      <div class="flex flex-col gap-2">
+        <div
+          v-for="yaku in yakuDisplay"
+          :key="yaku.yaku.name"
+          class="flex justify-between items-center bg-white p-2 px-3 rounded border border-yellow-200"
+        >
+          <span class="font-semibold text-amber-700">{{ yaku.yaku.name }}</span>
+          <span class="text-yellow-600 font-bold">{{ yaku.points }} points</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-center gap-4 mt-4">
       <button
         v-if="showKoikoiDialog"
         @click="handleKoikoiDecision(true)"
@@ -41,28 +55,6 @@
       >
         やめ (End Round)
       </button>
-    </div>
-
-    <div v-if="lastMove" class="bg-gray-100 rounded-lg p-3 mb-4">
-      <h4 class="text-sm font-semibold text-gray-600 mb-2">Last Move</h4>
-      <div class="flex gap-4 text-xs text-gray-600">
-        <span>Player: {{ getPlayerName(lastMove.playerId) }}</span>
-        <span>Captured: {{ lastMove.capturedCards.length }} cards</span>
-      </div>
-    </div>
-
-    <div v-if="yakuDisplay.length > 0" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-      <h4 class="text-lg font-bold text-amber-800 mb-3 text-center">Yaku Achieved!</h4>
-      <div class="flex flex-col gap-2">
-        <div
-          v-for="yaku in yakuDisplay"
-          :key="yaku.yaku.name"
-          class="flex justify-between items-center bg-white p-2 px-3 rounded border border-yellow-200"
-        >
-          <span class="font-semibold text-amber-700">{{ yaku.yaku.name }}</span>
-          <span class="text-yellow-600 font-bold">{{ yaku.points }} points</span>
-        </div>
-      </div>
     </div>
   </div>
 </template>

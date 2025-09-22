@@ -164,6 +164,10 @@ export class GameFlowUseCase {
       if (this.presenter) {
         const gameState = await this.gameRepository.getGameState(gameId)
         if (gameState) {
+          // 清理 UI 狀態
+          this.presenter.clearYakuDisplay()
+          this.presenter.presentKoikoiDialog(false)
+
           const gameStateDTO = this.mapGameStateToDTO(gameId, gameState)
           this.presenter.presentGameState(gameStateDTO)
 
