@@ -5,40 +5,39 @@
       isCurrentPlayer ? 'border-blue-500 border-2' : '',
     ]"
   >
-    <div class="mb-4">
-      <h3 class="text-lg font-bold text-gray-800 mb-2">{{ player.name }}</h3>
-      <div class="flex gap-4 text-sm text-gray-600">
-        <span class="font-semibold text-blue-500">Score: {{ player.score }}</span>
-        <span class="text-gray-500">Hand: {{ player.handCount }}</span>
-        <span class="text-gray-500">Captured: {{ player.capturedCount }}</span>
+    <div class="flex mb-4">
+      <div class="flex-1">
+        <div class="mb-4 mr-4 flex justify-between">
+          <h3 class="text-lg font-bold text-gray-800 mb-2">{{ player.name }}</h3>
+          <div class="flex gap-4 text-sm text-gray-600">
+            <span class="font-semibold text-blue-500">Score: {{ player.score }}</span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <CardComponent
+            v-for="card in player.hand"
+            :key="card.id"
+            :card="card"
+            :selectable="canPlayCards"
+            :selected="selectedCardId === card.id"
+            size="medium"
+            @click="handleCardClick"
+            @mouseenter="handleCardHover"
+            @mouseleave="handleCardUnhover"
+          />
+        </div>
       </div>
-    </div>
 
-    <div class="mb-4">
-      <div class="flex flex-wrap gap-2">
-        <CardComponent
-          v-for="card in player.hand"
-          :key="card.id"
-          :card="card"
-          :selectable="canPlayCards"
-          :selected="selectedCardId === card.id"
-          size="medium"
-          @click="handleCardClick"
-          @mouseenter="handleCardHover"
-          @mouseleave="handleCardUnhover"
-        />
-      </div>
-    </div>
-
-    <div v-if="showCaptured" class="border-t border-gray-200 pt-4">
-      <h4 class="text-sm font-semibold text-gray-600 mb-2">Captured Cards</h4>
-      <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-        <CardComponent
-          v-for="card in player.captured"
-          :key="`captured-${card.id}`"
-          :card="card"
-          size="small"
-        />
+      <div v-if="showCaptured" class="border-l border-gray-200 pl-4 flex-1">
+        <h4 class="text-sm font-semibold text-gray-600 mb-2">Captured Cards</h4>
+        <div class="flex flex-wrap gap-1 overflow-y-auto">
+          <CardComponent
+            v-for="card in player.captured"
+            :key="`captured-${card.id}`"
+            :card="card"
+            size="small"
+          />
+        </div>
       </div>
     </div>
   </div>
