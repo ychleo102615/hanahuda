@@ -30,13 +30,51 @@
 
       <div v-if="showCaptured" class="border-l border-gray-200 pl-4 flex-1">
         <h4 class="text-sm font-semibold text-gray-600 mb-2">Captured Cards</h4>
-        <div class="flex flex-wrap gap-1 overflow-y-auto">
-          <CardComponent
-            v-for="card in player.captured"
-            :key="`captured-${card.id}`"
-            :card="card"
-            size="small"
-          />
+        <div class="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-6 overflow-y-auto">
+          <div v-if="hikariCards.length > 0" class="flex-shrink-0">
+            <h5 class="text-xs font-medium text-amber-600 mb-1">光</h5>
+            <div class="flex flex-wrap gap-1">
+              <CardComponent
+                v-for="card in hikariCards"
+                :key="`hikari-${card.id}`"
+                :card="card"
+                size="small"
+              />
+            </div>
+          </div>
+          <div v-if="taneCards.length > 0" class="flex-shrink-0">
+            <h5 class="text-xs font-medium text-green-600 mb-1">種</h5>
+            <div class="flex flex-wrap gap-1">
+              <CardComponent
+                v-for="card in taneCards"
+                :key="`tane-${card.id}`"
+                :card="card"
+                size="small"
+              />
+            </div>
+          </div>
+          <div v-if="tanzakuCards.length > 0" class="flex-shrink-0">
+            <h5 class="text-xs font-medium text-red-600 mb-1">短歌</h5>
+            <div class="flex flex-wrap gap-1">
+              <CardComponent
+                v-for="card in tanzakuCards"
+                :key="`tanzaku-${card.id}`"
+                :card="card"
+                size="small"
+              />
+            </div>
+          </div>
+          <div v-if="kasCards.length > 0" class="flex-shrink-0">
+            <h5 class="text-xs font-medium text-gray-500 mb-1">渣</h5>
+            <div class="flex flex-wrap gap-1">
+              <CardComponent
+                v-for="card in kasCards"
+                :key="`kas-${card.id}`"
+                :card="card"
+                size="small"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -44,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { IPlayer } from '@/application/ports/repositories/PlayerInterface'
 import type { Card } from '@/domain/entities/Card'
 import CardComponent from './CardComponent.vue'
@@ -90,6 +128,23 @@ const handleCardHover = (card: Card) => {
 const handleCardUnhover = (card: Card) => {
   emit('cardUnhovered', card)
 }
+
+// Group captured cards by type
+const hikariCards = computed(() =>
+  props.player.captured.filter(card => card.type === 'bright')
+)
+
+const taneCards = computed(() =>
+  props.player.captured.filter(card => card.type === 'animal')
+)
+
+const tanzakuCards = computed(() =>
+  props.player.captured.filter(card => card.type === 'ribbon')
+)
+
+const kasCards = computed(() =>
+  props.player.captured.filter(card => card.type === 'plain')
+)
 
 defineExpose({
   clearSelection: () => {
