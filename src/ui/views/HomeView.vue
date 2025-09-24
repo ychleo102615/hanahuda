@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import LicenseFooter from '../components/LicenseFooter.vue'
 </script>
 
 <template>
@@ -41,6 +42,9 @@ import { RouterLink } from 'vue-router'
         </div>
       </div>
     </div>
+
+    <!-- 授權聲明區塊 -->
+    <LicenseFooter />
   </div>
 </template>
 
