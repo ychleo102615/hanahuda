@@ -2,26 +2,26 @@
   <div class="bg-green-50 overflow-hidden flex flex-col">
     <!-- Header with game info -->
     <div class="text-center py-2 px-4 bg-white shadow-sm">
-      <h1 class="text-xl font-bold text-gray-800">花牌遊戲 「来来」</h1>
+      <h1 class="text-xl font-bold text-gray-800">{{ t('game.title') }}</h1>
       <div class="flex justify-center gap-4 text-xs text-gray-600">
-        <span>Round {{ currentRound }} / {{ maxRounds }}</span>
-        <span>Phase: {{ currentPhase }}</span>
+        <span>{{ t('game.round', { round: currentRound, maxRounds: maxRounds }) }}</span>
+        <span>{{ t('game.phase', { phase: t(`game.phases.${currentPhase}`) }) }}</span>
       </div>
     </div>
 
     <!-- Game Setup (when not started) -->
     <div v-if="!gameStarted" class="flex-1 flex justify-center items-center px-4 min-h-96">
       <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
-        <h2 class="text-xl font-bold text-center mb-4">Game Setup</h2>
+        <h2 class="text-xl font-bold text-center mb-4">{{ t('game.setup.title') }}</h2>
         <div class="flex flex-col gap-3 mb-4">
           <input
             v-model="player1Name"
-            placeholder="Player 1 Name"
+            :placeholder="t('game.setup.player1')"
             class="w-full px-3 py-2 border border-gray-300 rounded-md outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
           <input
             v-model="player2Name"
-            placeholder="Player 2 Name"
+            :placeholder="t('game.setup.player2')"
             class="w-full px-3 py-2 border border-gray-300 rounded-md outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
@@ -29,7 +29,7 @@
           @click="startNewGame"
           class="w-full bg-blue-500 text-white py-2 px-4 rounded-md font-semibold border-none cursor-pointer hover:bg-blue-600"
         >
-          Start Game
+          {{ t('game.setup.start') }}
         </button>
       </div>
     </div>
@@ -71,17 +71,17 @@
           v-if="gamePhase === 'round_end' && roundResult"
           class="bg-yellow-100 border border-yellow-300 rounded-lg p-4 mb-4 text-center"
         >
-          <h3 class="text-lg font-bold text-yellow-800 mb-2">Round {{ currentRound }} Results</h3>
+          <h3 class="text-lg font-bold text-yellow-800 mb-2">{{ t('game.roundResult.title', { round: currentRound }) }}</h3>
           <div v-if="roundResult.winner" class="text-green-700 font-medium">
-            🎉 {{ roundResult.winner.name }} wins this round!
+            {{ t('game.roundResult.winner', { winner: roundResult.winner.name }) }}
             <br>
-            Score: {{ roundResult.score }} points
+            {{ t('game.roundResult.score', { score: roundResult.score }) }}
           </div>
           <div v-else class="text-gray-700 font-medium">
-            ⚖️ Round ended in a draw!
+            {{ t('game.roundResult.draw') }}
           </div>
           <div v-if="roundResult.yakuResults && roundResult.yakuResults.length > 0" class="mt-2">
-            <div class="text-sm text-gray-600">Yaku achieved:</div>
+            <div class="text-sm text-gray-600">{{ t('game.roundResult.yakuAchieved') }}</div>
             <div class="flex flex-wrap justify-center gap-1 mt-1">
               <span
                 v-for="yaku in roundResult.yakuResults"
@@ -93,7 +93,7 @@
             </div>
           </div>
           <div v-if="roundResult.koikoiDeclared" class="text-blue-600 text-sm mt-2">
-            🗾 Koi-Koi was declared!
+            {{ t('game.roundResult.koikoiDeclared') }}
           </div>
         </div>
 
@@ -105,7 +105,7 @@
             :disabled="!gameStore.uiState.selectedHandCard"
             class="bg-green-500 text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            Play Card
+            {{ t('game.actions.playCard') }}
           </button>
 
           <button
@@ -113,7 +113,7 @@
             @click="startNextRound"
             class="text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer bg-blue-500 hover:bg-blue-600"
           >
-            Next Round
+            {{ t('game.actions.nextRound') }}
           </button>
 
           <button
@@ -121,7 +121,7 @@
             @click="startNewGame"
             class="text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer bg-purple-500 hover:bg-purple-600"
           >
-            New Game
+            {{ t('game.actions.newGame') }}
           </button>
         </div>
 
@@ -163,7 +163,7 @@
           @click="gameStore.clearError()"
           class="w-full bg-red-500 text-white py-2 px-4 rounded-md font-semibold border-none cursor-pointer hover:bg-red-600"
         >
-          Close
+          {{ t('errors.close') }}
         </button>
       </div>
     </div>
@@ -177,16 +177,18 @@ import { DIContainer } from '@/infrastructure/di/DIContainer'
 import { GameController } from '@/ui/controllers/GameController'
 import { InputController, type InputHandler } from '@/ui/controllers/InputController'
 import { useGameStore } from '@/ui/stores/gameStore'
+import { useLocale } from '@/ui/composables/useLocale'
 import PlayerHand from '@/ui/components/PlayerHand.vue'
 import GameBoard from '@/ui/components/GameBoard.vue'
 import { onBeforeRouteLeave } from 'vue-router'
 
-// Store
+// Store and Locale
 const gameStore = useGameStore()
+const { t } = useLocale()
 
 // Player setup
-const player1Name = ref('Player 1')
-const player2Name = ref('Player 2')
+const player1Name = ref(t('game.setup.player1'))
+const player2Name = ref(t('game.setup.player2'))
 
 // Hover state
 const hoveredHandCard = ref<Card | null>(null)
@@ -246,12 +248,12 @@ const inputHandler: InputHandler = {
   onHandCardSelected: (card: Card) => {
     gameStore.setSelectedHandCard(card)
     gameStore.setGameMessage(
-      `Selected ${card.name}. Select a matching field card or play directly.`,
+      t('game.messages.selectedCard', { cardName: t(`cards.names.${card.name}`) || card.name })
     )
   },
   onFieldCardSelected: (card: Card) => {
     gameStore.setSelectedFieldCard(card)
-    gameStore.setGameMessage(`Selected field card: ${card.name}`)
+    gameStore.setGameMessage(t('game.messages.selectedFieldCard', { cardName: t(`cards.names.${card.name}`) || card.name }))
   },
   onPlayCardAction: async () => {
     const handCard = gameStore.uiState.selectedHandCard
@@ -324,7 +326,7 @@ onMounted(() => {
   inputController.addHandler(inputHandler)
 
   // Initialize game message
-  gameStore.setGameMessage('Welcome to Hanafuda Koi-Koi! Set up your game to start.')
+  gameStore.setGameMessage(t('game.messages.welcome'))
 })
 
 onBeforeRouteLeave((_to, _from, next) => {
@@ -335,7 +337,8 @@ onBeforeRouteLeave((_to, _from, next) => {
     (phase === 'playing' || phase === 'koikoi')
   )
   if (isInProgress) {
-    const ok = window.confirm('確定要離開遊戲嗎？未保存的進度可能會遺失。')
+    const confirmMessage = t('game.messages.confirmLeave') || '確定要離開遊戲嗎？未保存的進度可能會遺失。'
+    const ok = window.confirm(confirmMessage)
     if (!ok) return next(false)
   }
   next()

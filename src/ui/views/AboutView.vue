@@ -1,103 +1,108 @@
+<script setup lang="ts">
+import { useLocale } from '@/ui/composables/useLocale'
+
+const { t } = useLocale()
+</script>
+
 <template>
   <div class="about-view">
     <div class="about-container">
-      <h1 class="about-title">遊戲規則</h1>
+      <h1 class="about-title">{{ t('about.title') }}</h1>
       
       <div class="rules-section">
-        <h2 class="section-title">基本概念</h2>
+        <h2 class="section-title">{{ t('about.basicConcept.title') }}</h2>
         <p class="section-text">
-          花牌（Hanafuda）是一種日本傳統紙牌遊戲，使用48張牌，分為12套，每套代表一個月份。
-          「來來」（Koi-Koi）是花牌最受歡迎的玩法之一。
+          {{ t('about.basicConcept.description') }}
         </p>
       </div>
 
       <div class="rules-section">
-        <h2 class="section-title">牌的種類</h2>
+        <h2 class="section-title">{{ t('about.cardTypes.title') }}</h2>
         <div class="card-types">
           <div class="card-type">
             <div class="type-icon bright">光</div>
             <div class="type-info">
-              <h3>光札 (Hikari)</h3>
-              <p>最高價值的牌，共5張，每張20點</p>
+              <h3>{{ t('about.cardTypes.hikari.name') }}</h3>
+              <p>{{ t('about.cardTypes.hikari.description') }}</p>
             </div>
           </div>
           <div class="card-type">
             <div class="type-icon animal">種</div>
             <div class="type-info">
-              <h3>種札 (Tane)</h3>
-              <p>動物圖案的牌，共9張，每張10點</p>
+              <h3>{{ t('about.cardTypes.tane.name') }}</h3>
+              <p>{{ t('about.cardTypes.tane.description') }}</p>
             </div>
           </div>
           <div class="card-type">
             <div class="type-icon ribbon">短</div>
             <div class="type-info">
-              <h3>短冊 (Tan)</h3>
-              <p>帶有詩句的牌，共10張，每張5點</p>
+              <h3>{{ t('about.cardTypes.tan.name') }}</h3>
+              <p>{{ t('about.cardTypes.tan.description') }}</p>
             </div>
           </div>
           <div class="card-type">
             <div class="type-icon plain">カス</div>
             <div class="type-info">
-              <h3>カス札 (Kasu)</h3>
-              <p>素牌，共24張，每張1點</p>
+              <h3>{{ t('about.cardTypes.kasu.name') }}</h3>
+              <p>{{ t('about.cardTypes.kasu.description') }}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div class="rules-section">
-        <h2 class="section-title">遊戲流程</h2>
+        <h2 class="section-title">{{ t('about.gameFlow.title') }}</h2>
         <ol class="game-flow">
-          <li>雙方各分到8張手牌，場上放8張牌</li>
-          <li>輪流出牌，與場上同月份的牌配對</li>
-          <li>配對成功則拿取兩張牌</li>
-          <li>從牌堆抽一張，同樣嘗試配對</li>
-          <li>當有人形成役種時可選擇「來來」或結束</li>
+          <li>{{ t('about.gameFlow.steps.0') }}</li>
+          <li>{{ t('about.gameFlow.steps.1') }}</li>
+          <li>{{ t('about.gameFlow.steps.2') }}</li>
+          <li>{{ t('about.gameFlow.steps.3') }}</li>
+          <li>{{ t('about.gameFlow.steps.4') }}</li>
         </ol>
       </div>
 
       <div class="rules-section">
-        <h2 class="section-title">主要役種</h2>
+        <h2 class="section-title">{{ t('about.yaku.title') }}</h2>
         <div class="yaku-list">
           <div class="yaku-item">
-            <span class="yaku-name">五光</span>
-            <span class="yaku-points">10點</span>
-            <span class="yaku-desc">收集全部5張光札</span>
+            <span class="yaku-name">{{ t('about.yaku.gokou.name') }}</span>
+            <span class="yaku-points">{{ t('about.yaku.gokou.points') }}</span>
+            <span class="yaku-desc">{{ t('about.yaku.gokou.description') }}</span>
           </div>
           <div class="yaku-item">
-            <span class="yaku-name">四光</span>
-            <span class="yaku-points">8點</span>
-            <span class="yaku-desc">收集4張光札</span>
+            <span class="yaku-name">{{ t('about.yaku.shikou.name') }}</span>
+            <span class="yaku-points">{{ t('about.yaku.shikou.points') }}</span>
+            <span class="yaku-desc">{{ t('about.yaku.shikou.description') }}</span>
           </div>
           <div class="yaku-item">
-            <span class="yaku-name">三光</span>
-            <span class="yaku-points">5點</span>
-            <span class="yaku-desc">收集3張光札</span>
+            <span class="yaku-name">{{ t('about.yaku.sankou.name') }}</span>
+            <span class="yaku-points">{{ t('about.yaku.sankou.points') }}</span>
+            <span class="yaku-desc">{{ t('about.yaku.sankou.description') }}</span>
           </div>
           <div class="yaku-item">
-            <span class="yaku-name">猪鹿蝶</span>
-            <span class="yaku-points">5點</span>
-            <span class="yaku-desc">收集萩・紅葉・牡丹的種札</span>
+            <span class="yaku-name">{{ t('about.yaku.inoshikacho.name') }}</span>
+            <span class="yaku-points">{{ t('about.yaku.inoshikacho.points') }}</span>
+            <span class="yaku-desc">{{ t('about.yaku.inoshikacho.description') }}</span>
           </div>
           <div class="yaku-item">
-            <span class="yaku-name">赤短</span>
-            <span class="yaku-points">5點</span>
-            <span class="yaku-desc">收集松・梅・櫻的短冊</span>
+            <span class="yaku-name">{{ t('about.yaku.akatan.name') }}</span>
+            <span class="yaku-points">{{ t('about.yaku.akatan.points') }}</span>
+            <span class="yaku-desc">{{ t('about.yaku.akatan.description') }}</span>
           </div>
         </div>
       </div>
 
       <div class="rules-section">
-        <h2 class="section-title">「來來」策略</h2>
+        <h2 class="section-title">{{ t('about.strategy.title') }}</h2>
         <p class="section-text">
-          當你形成役種時，可以選擇：
+          {{ t('about.strategy.description') }}
         </p>
         <ul class="strategy-list">
-          <li><strong>結束遊戲</strong>：立即獲得當前分數</li>
-          <li><strong>宣告「來來」</strong>：繼續遊戲，目標是獲得更多役種，但風險是對手可能逆轉</li>
+          <li>{{ t('about.strategy.options.0') }}</li>
+          <li>{{ t('about.strategy.options.1') }}</li>
         </ul>
         <p class="section-text">
-          「來來」宣告後，如果最終獲勝，分數會翻倍！
+          {{ t('about.strategy.bonus') }}
         </p>
       </div>
     </div>

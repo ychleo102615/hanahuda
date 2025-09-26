@@ -1,7 +1,7 @@
 <template>
   <div class="bg-green-50 rounded-lg p-6">
     <div class="mb-6">
-      <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">Field Cards</h3>
+      <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">{{ t('game.board.fieldCards') }}</h3>
       <div
         class="flex flex-wrap gap-3 justify-center mb-4 min-h-32 p-4 bg-green-200 rounded-lg border-2 border-dashed border-green-500"
       >
@@ -18,16 +18,16 @@
       </div>
       <div class="flex justify-center gap-4 text-sm text-gray-600">
         <span class="bg-white px-2 py-1 rounded border border-gray-300"
-          >Field: {{ fieldCards.length }} cards</span
+          >{{ t('game.board.field') }}: {{ fieldCards.length }} {{ t('game.board.cards') }}</span
         >
         <span class="bg-white px-2 py-1 rounded border border-gray-300"
-          >Deck: {{ deckCount }} cards</span
+          >{{ t('game.board.deck') }}: {{ deckCount }} {{ t('game.board.cards') }}</span
         >
       </div>
     </div>
 
     <div v-if="yakuDisplay.length > 0" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-      <h4 class="text-lg font-bold text-amber-800 mb-3 text-center">Yaku Achieved!</h4>
+      <h4 class="text-lg font-bold text-amber-800 mb-3 text-center">{{ t('game.board.yakuAchieved') }}</h4>
       <div class="flex flex-col gap-2">
         <div
           v-for="yaku in yakuDisplay"
@@ -35,7 +35,7 @@
           class="flex justify-between items-center bg-white p-2 px-3 rounded border border-yellow-200"
         >
           <span class="font-semibold text-amber-700">{{ yaku.yaku.name }}</span>
-          <span class="text-yellow-600 font-bold">{{ yaku.points }} points</span>
+          <span class="text-yellow-600 font-bold">{{ yaku.points }} {{ t('game.board.points') }}</span>
         </div>
       </div>
     </div>
@@ -46,14 +46,14 @@
         @click="handleKoikoiDecision(true)"
         class="px-4 py-2 rounded-lg font-semibold text-white transition-all duration-200 border-none cursor-pointer bg-red-500 hover:bg-red-600 hover:scale-105"
       >
-        こいこい (Continue)
+        {{ t('game.board.koikoiContinue') }}
       </button>
       <button
         v-if="showKoikoiDialog"
         @click="handleKoikoiDecision(false)"
         class="px-4 py-2 rounded-lg font-semibold text-white transition-all duration-200 border-none cursor-pointer bg-blue-500 hover:bg-blue-600 hover:scale-105"
       >
-        やめ (End Round)
+        {{ t('game.board.stopGame') }}
       </button>
     </div>
   </div>
@@ -64,7 +64,10 @@ import { ref, watch } from 'vue'
 import type { Card } from '@/domain/entities/Card'
 import type { GameMove } from '@/domain/entities/GameState'
 import type { YakuResult } from '@/domain/entities/Yaku'
+import { useLocale } from '@/ui/composables/useLocale'
 import CardComponent from './CardComponent.vue'
+
+const { t } = useLocale()
 
 interface Props {
   fieldCards: Card[]

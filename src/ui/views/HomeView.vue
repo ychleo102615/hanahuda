@@ -1,44 +1,47 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { useLocale } from '@/ui/composables/useLocale'
 import LicenseFooter from '../components/LicenseFooter.vue'
+
+const { t } = useLocale()
 </script>
 
 <template>
   <div class="home-view min-w-0">
     <div class="hero-section">
-      <h1 class="hero-title">花牌遊戲「来来」</h1>
-      <h2 class="hero-subtitle">Hanafuda Koi-Koi</h2>
+      <h1 class="hero-title">{{ t('home.title') }}</h1>
+      <h2 class="hero-subtitle">{{ t('home.subtitle') }}</h2>
       <p class="hero-description">
-        體驗傳統日本花牌遊戲的魅力，在這個數位化的來來遊戲中與對手比拼技巧與運氣。
+        {{ t('home.description') }}
       </p>
       <div class="hero-actions">
-        <RouterLink to="/game" class="play-button"> 開始遊戲 </RouterLink>
-        <RouterLink to="/about" class="learn-button"> 了解規則 </RouterLink>
+        <RouterLink to="/game" class="play-button">{{ t('home.actions.play') }}</RouterLink>
+        <RouterLink to="/about" class="learn-button">{{ t('home.actions.learn') }}</RouterLink>
       </div>
     </div>
 
     <div class="features-section">
-      <h3 class="features-title">遊戲特色</h3>
+      <h3 class="features-title">{{ t('home.features.title') }}</h3>
       <div class="features-grid">
         <div class="feature-card">
           <div class="feature-icon">🎴</div>
-          <h4 class="feature-name">傳統花牌</h4>
-          <p class="feature-description">48張精美花牌，12個月份各具特色</p>
+          <h4 class="feature-name">{{ t('home.features.cards.title') }}</h4>
+          <p class="feature-description">{{ t('home.features.cards.description') }}</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🏆</div>
-          <h4 class="feature-name">役種系統</h4>
-          <p class="feature-description">光札、種札、短冊等多種組合</p>
+          <h4 class="feature-name">{{ t('home.features.yaku.title') }}</h4>
+          <p class="feature-description">{{ t('home.features.yaku.description') }}</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">⚡</div>
-          <h4 class="feature-name">來來宣言</h4>
-          <p class="feature-description">刺激的風險決策，加倍得分機會</p>
+          <h4 class="feature-name">{{ t('home.features.koikoi.title') }}</h4>
+          <p class="feature-description">{{ t('home.features.koikoi.description') }}</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🎯</div>
-          <h4 class="feature-name">策略對戰</h4>
-          <p class="feature-description">考驗記憶力與判斷力的智慧遊戲</p>
+          <h4 class="feature-name">{{ t('home.features.strategy.title') }}</h4>
+          <p class="feature-description">{{ t('home.features.strategy.description') }}</p>
         </div>
       </div>
     </div>

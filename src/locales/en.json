@@ -1,0 +1,245 @@
+{
+  "app": {
+    "title": "Hanafuda Game \"Koi-Koi\"",
+    "nav": {
+      "home": "Home",
+      "game": "Game",
+      "about": "About",
+      "language": "Language"
+    }
+  },
+  "home": {
+    "title": "Hanafuda Game \"Koi-Koi\"",
+    "subtitle": "Hanafuda Koi-Koi",
+    "description": "Experience the charm of traditional Japanese flower card games, competing with opponents in skill and luck in this digital Koi-Koi game.",
+    "actions": {
+      "play": "Start Game",
+      "learn": "Learn Rules"
+    },
+    "features": {
+      "title": "Game Features",
+      "cards": {
+        "title": "Traditional Hanafuda",
+        "description": "48 beautiful flower cards, each of 12 months with unique characteristics"
+      },
+      "yaku": {
+        "title": "Yaku System",
+        "description": "Various combinations including Hikari, Tane, Tanzaku and more"
+      },
+      "koikoi": {
+        "title": "Koi-Koi Declaration",
+        "description": "Exciting risk decisions with chances to double your score"
+      },
+      "strategy": {
+        "title": "Strategic Battle",
+        "description": "A wisdom game testing memory and judgment"
+      }
+    }
+  },
+  "about": {
+    "title": "Game Rules",
+    "basicConcept": {
+      "title": "Basic Concept",
+      "description": "Hanafuda is a traditional Japanese card game using 48 cards divided into 12 suits, each representing a month. \"Koi-Koi\" is one of the most popular ways to play Hanafuda."
+    },
+    "cardTypes": {
+      "title": "Card Types",
+      "hikari": {
+        "name": "Hikari (Bright)",
+        "description": "Highest value cards, 5 cards total, 20 points each"
+      },
+      "tane": {
+        "name": "Tane (Animal)",
+        "description": "Cards with animal patterns, 9 cards total, 10 points each"
+      },
+      "tan": {
+        "name": "Tanzaku (Ribbon)",
+        "description": "Cards with poetry, 10 cards total, 5 points each"
+      },
+      "kasu": {
+        "name": "Kasu (Plain)",
+        "description": "Plain cards, 24 cards total, 1 point each"
+      }
+    },
+    "gameFlow": {
+      "title": "Game Flow",
+      "steps": [
+        "Each player gets 8 hand cards, 8 cards placed on field",
+        "Take turns playing cards, matching with same month on field",
+        "If matched successfully, take both cards",
+        "Draw one card from deck, attempt to match similarly",
+        "When someone forms a yaku, can choose \"Koi-Koi\" or end"
+      ]
+    },
+    "yaku": {
+      "title": "Main Yaku",
+      "gokou": {
+        "name": "Gokō (Five Brights)",
+        "points": "10 pts",
+        "description": "Collect all 5 Hikari cards"
+      },
+      "shikou": {
+        "name": "Shikō (Four Brights)",
+        "points": "8 pts",
+        "description": "Collect 4 Hikari cards"
+      },
+      "sankou": {
+        "name": "Sankō (Three Brights)",
+        "points": "5 pts",
+        "description": "Collect 3 Hikari cards"
+      },
+      "inoshikacho": {
+        "name": "Ino-Shika-Chō (Boar-Deer-Butterfly)",
+        "points": "5 pts",
+        "description": "Collect Tane cards of Bush Clover, Maple, and Peony"
+      },
+      "akatan": {
+        "name": "Aka-tan (Red Ribbons)",
+        "points": "5 pts",
+        "description": "Collect Tanzaku of Pine, Plum, and Cherry"
+      }
+    },
+    "strategy": {
+      "title": "\"Koi-Koi\" Strategy",
+      "description": "When you form a yaku, you can choose:",
+      "options": [
+        "End game: Immediately get current score",
+        "Declare \"Koi-Koi\": Continue game aiming for more yaku, but risk opponent's comeback"
+      ],
+      "bonus": "After declaring \"Koi-Koi\", if you win in the end, your score will be doubled!"
+    }
+  },
+  "game": {
+    "title": "Hanafuda Game \"Koi-Koi\"",
+    "round": "Round {round} / {maxRounds}",
+    "phase": "Phase: {phase}",
+    "setup": {
+      "title": "Game Setup",
+      "player1": "Player 1",
+      "player2": "Player 2",
+      "start": "Start Game"
+    },
+    "actions": {
+      "playCard": "Play Card",
+      "nextRound": "Next Round",
+      "newGame": "New Game"
+    },
+    "messages": {
+      "welcome": "Welcome to Hanafuda Koi-Koi! Set up your game to start.",
+      "selectedCard": "Selected {cardName}. Select a matching field card or play directly.",
+      "selectedFieldCard": "Selected field card: {cardName}",
+      "confirmLeave": "Are you sure you want to leave the game? Unsaved progress may be lost."
+    },
+    "roundResult": {
+      "title": "Round {round} Results",
+      "winner": "🎉 {winner} wins this round!",
+      "score": "Score: {score} points",
+      "draw": "⚖️ Round ended in a draw!",
+      "yakuAchieved": "Yaku achieved:",
+      "koikoiDeclared": "🗾 Koi-Koi was declared!"
+    },
+    "phases": {
+      "setup": "Setup",
+      "playing": "Playing",
+      "koikoi": "Koi-Koi",
+      "round_end": "Round End",
+      "game_end": "Game End"
+    },
+    "koikoi": {
+      "dialog": {
+        "title": "Yaku Achieved!",
+        "message": "You achieved {yaku}! Do you want to:",
+        "continue": "Koi-Koi! (Continue game)",
+        "stop": "Stop (End round)"
+      }
+    },
+    "board": {
+      "fieldCards": "Field Cards",
+      "field": "Field",
+      "deck": "Deck",
+      "cards": "cards",
+      "yakuAchieved": "Yaku Achieved!",
+      "points": "points",
+      "koikoiContinue": "こいこい (Continue)",
+      "stopGame": "Stop (End)"
+    },
+    "player": {
+      "score": "Score",
+      "capturedCards": "Captured Cards"
+    }
+  },
+  "cards": {
+    "months": {
+      "1": "Pine (松)",
+      "2": "Plum (梅)",
+      "3": "Cherry (桜)",
+      "4": "Wisteria (藤)",
+      "5": "Iris (菖蒲)",
+      "6": "Peony (牡丹)",
+      "7": "Bush Clover (萩)",
+      "8": "Pampas Grass (芒)",
+      "9": "Chrysanthemum (菊)",
+      "10": "Maple (紅葉)",
+      "11": "Willow (柳)",
+      "12": "Paulownia (桐)"
+    },
+    "names": {
+      "松に鶴(まつにつる)": "Pine with Crane",
+      "松のカス": "Pine Kasu",
+      "梅に鶯(うめにうぐいす)": "Plum with Bush Warbler",
+      "梅に短冊(うめにたんざく)": "Plum with Tanzaku",
+      "梅のカス": "Plum Kasu",
+      "桜に幕(さくらにまく)": "Cherry with Curtain",
+      "桜に短冊(さくらにたんざく)": "Cherry with Tanzaku",
+      "桜のカス": "Cherry Kasu",
+      "桜のカス2": "Cherry Kasu",
+      "藤に杜鵑(ふじにほととぎす)": "Wisteria with Cuckoo",
+      "藤に短冊(ふじにたんざく)": "Wisteria with Tanzaku",
+      "藤のカス": "Wisteria Kasu",
+      "藤のカス2": "Wisteria Kasu",
+      "菖蒲に八橋(あやめにやつはし)": "Iris with Eight Plank Bridge",
+      "菖蒲に短冊(あやめにたんざく)": "Iris with Tanzaku",
+      "菖蒲のカス": "Iris Kasu",
+      "菖蒲のカス2": "Iris Kasu",
+      "牡丹に蝶(ぼたんにちょう)": "Peony with Butterfly",
+      "牡丹に短冊(ぼたんにたんざく)": "Peony with Tanzaku",
+      "牡丹のカス": "Peony Kasu",
+      "牡丹のカス2": "Peony Kasu",
+      "萩に猪(はぎにいのしし)": "Bush Clover with Boar",
+      "萩に短冊(はぎにたんざく)": "Bush Clover with Tanzaku",
+      "萩のカス": "Bush Clover Kasu",
+      "萩のカス2": "Bush Clover Kasu",
+      "芒に月(すすきにつき)": "Pampas Grass with Moon",
+      "芒に雁(すすきにかり)": "Pampas Grass with Wild Geese",
+      "芒のカス": "Pampas Grass Kasu",
+      "芒のカス2": "Pampas Grass Kasu",
+      "菊に盃(きくにさかずき)": "Chrysanthemum with Sake Cup",
+      "菊に短冊(きくにたんざく)": "Chrysanthemum with Tanzaku",
+      "菊のカス": "Chrysanthemum Kasu",
+      "菊のカス2": "Chrysanthemum Kasu",
+      "紅葉に鹿(もみじにしか)": "Maple with Deer",
+      "紅葉に短冊(もみじにたんざく)": "Maple with Tanzaku",
+      "紅葉のカス": "Maple Kasu",
+      "紅葉のカス2": "Maple Kasu",
+      "柳に小野道風(やなぎにおののとうふう)": "Willow with Ono no Tōfū",
+      "柳に燕(やなぎにつばめ)": "Willow with Swallow",
+      "柳に短冊(やなぎにたんざく)": "Willow with Tanzaku",
+      "柳のカス": "Willow Kasu",
+      "桐に鳳凰(きりにほうおう)": "Paulownia with Phoenix",
+      "桐のカス": "Paulownia Kasu",
+      "桐のカス2": "Paulownia Kasu",
+      "桐のカス3": "Paulownia Kasu"
+    }
+  },
+  "errors": {
+    "close": "Close"
+  },
+  "license": {
+    "title": "Image Resource License",
+    "description": "Card artwork adapted from Hanafuda deck designed by Louie Mantia, licensed under Creative Commons Attribution-ShareAlike 4.0 International License. You are free to share and adapt the material, but must provide appropriate credit and license your derivative works under the same license.",
+    "ccLicense": "CC BY-SA 4.0",
+    "originalSource": "Original Source",
+    "ccLicenseLabel": "View Creative Commons BY-SA 4.0 License",
+    "originalSourceLabel": "View original resource source"
+  }
+}

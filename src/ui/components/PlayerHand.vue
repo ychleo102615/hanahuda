@@ -10,7 +10,7 @@
         <div class="mb-4 mr-4 flex justify-between">
           <h3 class="text-lg font-bold text-gray-800 mb-2">{{ player.name }}</h3>
           <div class="flex gap-4 text-sm text-gray-600">
-            <span class="font-semibold text-blue-500">Score: {{ player.score }}</span>
+            <span class="font-semibold text-blue-500">{{ t('game.player.score') }}: {{ player.score }}</span>
           </div>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -29,7 +29,7 @@
       </div>
 
       <div v-if="showCaptured" class="border-l border-gray-200 pl-4 flex-1">
-        <h4 class="text-sm font-semibold text-gray-600 mb-2">Captured Cards</h4>
+        <h4 class="text-sm font-semibold text-gray-600 mb-2">{{ t('game.player.capturedCards') }}</h4>
         <div class="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-6 overflow-y-auto">
           <div v-if="hikariCards.length > 0" class="flex-shrink-0">
             <h5 class="text-xs font-medium text-amber-600 mb-1">光</h5>
@@ -85,7 +85,10 @@
 import { ref, computed } from 'vue'
 import type { IPlayer } from '@/application/ports/repositories/PlayerInterface'
 import type { Card } from '@/domain/entities/Card'
+import { useLocale } from '@/ui/composables/useLocale'
 import CardComponent from './CardComponent.vue'
+
+const { t } = useLocale()
 
 interface Props {
   player: IPlayer
