@@ -2,109 +2,109 @@ export const HANAFUDA_CARDS = {
   JANUARY: {
     MONTH: 1,
     CARDS: [
-      { suit: 1, type: 'bright', points: 20, name: '松に鶴' },
-      { suit: 1, type: 'ribbon', points: 5, name: '松に赤短' },
-      { suit: 1, type: 'plain', points: 1, name: '松のカス' },
-      { suit: 1, type: 'plain', points: 1, name: '松のカス' }
+      { suit: 1, type: 'bright', points: 20, name: 'jan_bright_1' },
+      { suit: 1, type: 'ribbon', points: 5, name: 'jan_ribbon_1' },
+      { suit: 1, type: 'plain', points: 1, name: 'jan_plain_1' },
+      { suit: 1, type: 'plain', points: 1, name: 'jan_plain_2' }
     ]
   },
   FEBRUARY: {
     MONTH: 2,
     CARDS: [
-      { suit: 2, type: 'animal', points: 10, name: '梅にうぐいす' },
-      { suit: 2, type: 'ribbon', points: 5, name: '梅に赤短' },
-      { suit: 2, type: 'plain', points: 1, name: '梅のカス' },
-      { suit: 2, type: 'plain', points: 1, name: '梅のカス' }
+      { suit: 2, type: 'animal', points: 10, name: 'feb_animal_1' },
+      { suit: 2, type: 'ribbon', points: 5, name: 'feb_ribbon_1' },
+      { suit: 2, type: 'plain', points: 1, name: 'feb_plain_1' },
+      { suit: 2, type: 'plain', points: 1, name: 'feb_plain_2' }
     ]
   },
   MARCH: {
     MONTH: 3,
     CARDS: [
-      { suit: 3, type: 'bright', points: 20, name: '桜に幕' },
-      { suit: 3, type: 'ribbon', points: 5, name: '桜に赤短' },
-      { suit: 3, type: 'plain', points: 1, name: '桜のカス' },
-      { suit: 3, type: 'plain', points: 1, name: '桜のカス' }
+      { suit: 3, type: 'bright', points: 20, name: 'mar_bright_1' },
+      { suit: 3, type: 'ribbon', points: 5, name: 'mar_ribbon_1' },
+      { suit: 3, type: 'plain', points: 1, name: 'mar_plain_1' },
+      { suit: 3, type: 'plain', points: 1, name: 'mar_plain_2' }
     ]
   },
   APRIL: {
     MONTH: 4,
     CARDS: [
-      { suit: 4, type: 'animal', points: 10, name: '藤にほととぎす' },
-      { suit: 4, type: 'ribbon', points: 5, name: '藤に短冊' },
-      { suit: 4, type: 'plain', points: 1, name: '藤のカス' },
-      { suit: 4, type: 'plain', points: 1, name: '藤のカス' }
+      { suit: 4, type: 'animal', points: 10, name: 'apr_animal_1' },
+      { suit: 4, type: 'ribbon', points: 5, name: 'apr_ribbon_1' },
+      { suit: 4, type: 'plain', points: 1, name: 'apr_plain_1' },
+      { suit: 4, type: 'plain', points: 1, name: 'apr_plain_2' }
     ]
   },
   MAY: {
     MONTH: 5,
     CARDS: [
-      { suit: 5, type: 'animal', points: 10, name: '菖蒲にやつはし' },
-      { suit: 5, type: 'ribbon', points: 5, name: '菖蒲に短冊' },
-      { suit: 5, type: 'plain', points: 1, name: '菖蒲のカス' },
-      { suit: 5, type: 'plain', points: 1, name: '菖蒲のカス' }
+      { suit: 5, type: 'animal', points: 10, name: 'may_animal_1' },
+      { suit: 5, type: 'ribbon', points: 5, name: 'may_ribbon_1' },
+      { suit: 5, type: 'plain', points: 1, name: 'may_plain_1' },
+      { suit: 5, type: 'plain', points: 1, name: 'may_plain_2' }
     ]
   },
   JUNE: {
     MONTH: 6,
     CARDS: [
-      { suit: 6, type: 'animal', points: 10, name: '牡丹に蝶' },
-      { suit: 6, type: 'ribbon', points: 5, name: '牡丹に青短' },
-      { suit: 6, type: 'plain', points: 1, name: '牡丹のカス' },
-      { suit: 6, type: 'plain', points: 1, name: '牡丹のカス' }
+      { suit: 6, type: 'animal', points: 10, name: 'jun_animal_1' },
+      { suit: 6, type: 'ribbon', points: 5, name: 'jun_ribbon_1' },
+      { suit: 6, type: 'plain', points: 1, name: 'jun_plain_1' },
+      { suit: 6, type: 'plain', points: 1, name: 'jun_plain_2' }
     ]
   },
   JULY: {
     MONTH: 7,
     CARDS: [
-      { suit: 7, type: 'animal', points: 10, name: '萩にいのしし' },
-      { suit: 7, type: 'ribbon', points: 5, name: '萩に短冊' },
-      { suit: 7, type: 'plain', points: 1, name: '萩のカス' },
-      { suit: 7, type: 'plain', points: 1, name: '萩のカス' }
+      { suit: 7, type: 'animal', points: 10, name: 'jul_animal_1' },
+      { suit: 7, type: 'ribbon', points: 5, name: 'jul_ribbon_1' },
+      { suit: 7, type: 'plain', points: 1, name: 'jul_plain_1' },
+      { suit: 7, type: 'plain', points: 1, name: 'jul_plain_2' }
     ]
   },
   AUGUST: {
     MONTH: 8,
     CARDS: [
-      { suit: 8, type: 'bright', points: 20, name: '芒に月' },
-      { suit: 8, type: 'animal', points: 10, name: '芒に雁' },
-      { suit: 8, type: 'plain', points: 1, name: '芒のカス' },
-      { suit: 8, type: 'plain', points: 1, name: '芒のカス' }
+      { suit: 8, type: 'bright', points: 20, name: 'aug_bright_1' },
+      { suit: 8, type: 'animal', points: 10, name: 'aug_animal_1' },
+      { suit: 8, type: 'plain', points: 1, name: 'aug_plain_1' },
+      { suit: 8, type: 'plain', points: 1, name: 'aug_plain_2' }
     ]
   },
   SEPTEMBER: {
     MONTH: 9,
     CARDS: [
-      { suit: 9, type: 'animal', points: 10, name: '菊に杯' },
-      { suit: 9, type: 'ribbon', points: 5, name: '菊に青短' },
-      { suit: 9, type: 'plain', points: 1, name: '菊のカス' },
-      { suit: 9, type: 'plain', points: 1, name: '菊のカス' }
+      { suit: 9, type: 'animal', points: 10, name: 'sep_animal_1' },
+      { suit: 9, type: 'ribbon', points: 5, name: 'sep_ribbon_1' },
+      { suit: 9, type: 'plain', points: 1, name: 'sep_plain_1' },
+      { suit: 9, type: 'plain', points: 1, name: 'sep_plain_2' }
     ]
   },
   OCTOBER: {
     MONTH: 10,
     CARDS: [
-      { suit: 10, type: 'animal', points: 10, name: '紅葉に鹿' },
-      { suit: 10, type: 'ribbon', points: 5, name: '紅葉に青短' },
-      { suit: 10, type: 'plain', points: 1, name: '紅葉のカス' },
-      { suit: 10, type: 'plain', points: 1, name: '紅葉のカス' }
+      { suit: 10, type: 'animal', points: 10, name: 'oct_animal_1' },
+      { suit: 10, type: 'ribbon', points: 5, name: 'oct_ribbon_1' },
+      { suit: 10, type: 'plain', points: 1, name: 'oct_plain_1' },
+      { suit: 10, type: 'plain', points: 1, name: 'oct_plain_2' }
     ]
   },
   NOVEMBER: {
     MONTH: 11,
     CARDS: [
-      { suit: 11, type: 'bright', points: 20, name: '柳に小野道風' },
-      { suit: 11, type: 'animal', points: 10, name: '柳に燕' },
-      { suit: 11, type: 'ribbon', points: 5, name: '柳に短冊' },
-      { suit: 11, type: 'plain', points: 1, name: '柳のカス' }
+      { suit: 11, type: 'bright', points: 20, name: 'nov_bright_1' },
+      { suit: 11, type: 'animal', points: 10, name: 'nov_animal_1' },
+      { suit: 11, type: 'ribbon', points: 5, name: 'nov_ribbon_1' },
+      { suit: 11, type: 'plain', points: 1, name: 'nov_plain_1' }
     ]
   },
   DECEMBER: {
     MONTH: 12,
     CARDS: [
-      { suit: 12, type: 'bright', points: 20, name: '桐に鳳凰' },
-      { suit: 12, type: 'plain', points: 1, name: '桐のカス' },
-      { suit: 12, type: 'plain', points: 1, name: '桐のカス' },
-      { suit: 12, type: 'plain', points: 1, name: '桐のカス' }
+      { suit: 12, type: 'bright', points: 20, name: 'dec_bright_1' },
+      { suit: 12, type: 'plain', points: 1, name: 'dec_plain_1' },
+      { suit: 12, type: 'plain', points: 1, name: 'dec_plain_2' },
+      { suit: 12, type: 'plain', points: 1, name: 'dec_plain_3' }
     ]
   }
 } as const

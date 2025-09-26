@@ -5,6 +5,7 @@ import { CalculateScoreUseCase } from '@/application/usecases/CalculateScoreUseC
 import { GameController } from '@/ui/controllers/GameController'
 import { InputController } from '@/ui/controllers/InputController'
 import { VueGamePresenter } from '@/ui/presenters/VueGamePresenter'
+import { LocalStorageLocaleService } from '@/infrastructure/services/LocaleService'
 
 type ServiceKey = string | symbol
 type ServiceFactory<T = unknown> = () => T
@@ -16,6 +17,7 @@ export class DIContainer {
   // Service keys
   static readonly GAME_REPOSITORY = Symbol('GameRepository')
   static readonly GAME_PRESENTER = Symbol('GamePresenter')
+  static readonly LOCALE_SERVICE = Symbol('LocaleService')
   static readonly GAME_FLOW_USE_CASE = Symbol('GameFlowUseCase')
   static readonly PLAY_CARD_USE_CASE = Symbol('PlayCardUseCase')
   static readonly CALCULATE_SCORE_USE_CASE = Symbol('CalculateScoreUseCase')
@@ -67,6 +69,7 @@ export class DIContainer {
   setupDefaultServices(gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>): void {
     // Infrastructure layer
     this.registerSingleton(DIContainer.GAME_REPOSITORY, () => new LocalGameRepository())
+    this.registerSingleton(DIContainer.LOCALE_SERVICE, () => new LocalStorageLocaleService())
 
     // Application layer
     this.registerSingleton(DIContainer.CALCULATE_SCORE_USE_CASE, () =>
@@ -91,7 +94,9 @@ export class DIContainer {
 
     // UI layer - only register if gameStore is provided
     if (gameStore) {
-      this.registerSingleton(DIContainer.GAME_PRESENTER, () => new VueGamePresenter(gameStore))
+      this.registerSingleton(DIContainer.GAME_PRESENTER, () =>
+        new VueGamePresenter(gameStore, this.resolve(DIContainer.LOCALE_SERVICE))
+      )
     }
 
     this.registerSingleton(DIContainer.INPUT_CONTROLLER, () => new InputController())

@@ -4,6 +4,7 @@ import type {
   PlayCardInputDTO,
   KoikoiDecisionInputDTO,
 } from '@/application/dto/GameDTO'
+import type { Card } from '@/domain/entities/Card'
 
 export class GameController {
   private gameId: string = ''
@@ -57,6 +58,15 @@ export class GameController {
       await this.gameFlowUseCase.startNextRound(this.gameId)
     } catch (error) {
       console.error('Error starting next round:', error)
+      throw error
+    }
+  }
+
+  async handleCardSelection(card: Card, isHandCard: boolean): Promise<void> {
+    try {
+      await this.gameFlowUseCase.handleCardSelection(card, isHandCard)
+    } catch (error) {
+      console.error('Error handling card selection:', error)
       throw error
     }
   }

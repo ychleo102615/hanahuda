@@ -18,9 +18,9 @@ export interface GamePresenter {
 
   presentYakuDisplay(yakuResults: YakuResult[]): void
 
-  presentGameMessage(message: string): void
+  presentGameMessage(messageKey: string, params?: Record<string, string | number>): void
 
-  presentError(error: string): void
+  presentError(errorKey: string, params?: Record<string, string | number>): void
 
   presentKoikoiDialog(show: boolean): void
 

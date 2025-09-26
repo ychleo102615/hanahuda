@@ -8,9 +8,13 @@ import type {
 import type { YakuResult } from '@/domain/entities/Yaku'
 import type { useGameStore } from '@/ui/stores/gameStore'
 import type { Card } from '@/domain/entities/Card'
+import type { LocaleService } from '@/infrastructure/services/LocaleService'
 
 export class VueGamePresenter implements GamePresenter {
-  constructor(private gameStore: ReturnType<typeof useGameStore>) {}
+  constructor(
+    private gameStore: ReturnType<typeof useGameStore>,
+    private localeService: LocaleService
+  ) {}
 
   presentGameState(gameState: GameStateOutputDTO): void {
     this.gameStore.updateGameState({
@@ -71,13 +75,29 @@ export class VueGamePresenter implements GamePresenter {
     this.gameStore.setYakuDisplay(yakuResults)
   }
 
-  presentGameMessage(message: string): void {
-    this.gameStore.setGameMessage(message)
+  presentGameMessage(messageKey: string, params?: Record<string, string | number>): void {
+    // Handle nested translation for card names
+    const translatedParams: Record<string, string | number> = {}
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        if (typeof value === 'string' && value.startsWith('cards.names.')) {
+          // Simple translation with safe English keys
+          const translatedCardName = this.localeService.translate(value)
+          translatedParams[key] = translatedCardName
+        } else {
+          translatedParams[key] = value
+        }
+      }
+    }
+
+    const translatedMessage = this.localeService.translate(messageKey, translatedParams)
+    this.gameStore.setGameMessage(translatedMessage)
     this.gameStore.clearError() // Clear error when showing regular message
   }
 
-  presentError(error: string): void {
-    this.gameStore.setError(error)
+  presentError(errorKey: string, params?: Record<string, string | number>): void {
+    const translatedError = this.localeService.translate(errorKey, params)
+    this.gameStore.setError(translatedError)
     this.gameStore.setGameMessage('') // Clear regular message when showing error
   }
 
@@ -86,9 +106,9 @@ export class VueGamePresenter implements GamePresenter {
   }
 
   presentGameEnd(winner: string | null, finalScore: number): void {
-    const message = winner
-      ? `Game won by ${winner}! Final score: ${finalScore}`
-      : 'Game ended in a draw!'
+    const messageKey = winner ? 'game.messages.gameWon' : 'game.messages.gameDraw'
+    const params = winner ? { winner, finalScore } : undefined
+    const message = this.localeService.translate(messageKey, params)
 
     this.gameStore.setGameMessage(message)
     this.gameStore.setGameOver(true)
@@ -96,9 +116,9 @@ export class VueGamePresenter implements GamePresenter {
   }
 
   presentRoundEnd(winner: string | null, score: number): void {
-    const message = winner
-      ? `Round won by ${winner}! Score: ${score}`
-      : 'Round ended in a draw!'
+    const messageKey = winner ? 'game.messages.roundWon' : 'game.messages.roundDraw'
+    const params = winner ? { winner, score } : undefined
+    const message = this.localeService.translate(messageKey, params)
 
     this.gameStore.setGameMessage(message)
     this.gameStore.setPhase('round_end')

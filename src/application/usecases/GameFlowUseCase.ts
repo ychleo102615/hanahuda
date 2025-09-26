@@ -30,7 +30,7 @@ export class GameFlowUseCase {
         this.presenter.clearYakuDisplay()
         this.presenter.presentKoikoiDialog(false)
         this.presenter.presentCardSelection(null, null)
-        this.presenter.presentGameMessage('Starting new game...')
+        this.presenter.presentGameMessage('game.messages.startingGame')
       }
 
       const newGameId = await this.createGame()
@@ -52,7 +52,8 @@ export class GameFlowUseCase {
 
         this.presenter.presentGameState(gameStateDTO)
         this.presenter.presentGameMessage(
-          `Game started! ${dealtGameState.currentPlayer?.name}'s turn`,
+          'game.messages.gameStarted',
+          { playerName: dealtGameState.currentPlayer?.name || '' }
         )
       }
 
@@ -66,7 +67,7 @@ export class GameFlowUseCase {
           success: false,
           error: errorMessage,
         })
-        this.presenter.presentError(errorMessage)
+        this.presenter.presentError('errors.startGameFailed', { error: String(error) })
       }
 
       throw error
@@ -172,16 +173,16 @@ export class GameFlowUseCase {
           this.presenter.presentGameState(gameStateDTO)
 
           if (declareKoikoi) {
-            this.presenter.presentGameMessage('Koi-Koi declared! Game continues.')
+            this.presenter.presentGameMessage('game.messages.koikoiDeclared')
           } else {
-            this.presenter.presentGameMessage('Round ended.')
+            this.presenter.presentGameMessage('game.messages.roundEnded')
             await this.handleRoundEndPresentation(gameId)
           }
         }
       }
     } catch (error) {
       if (this.presenter) {
-        this.presenter.presentError(`Error handling Koi-Koi decision: ${error}`)
+        this.presenter.presentError('errors.koikoiDecisionFailed', { error: String(error) })
       }
       throw error
     }
@@ -274,7 +275,10 @@ export class GameFlowUseCase {
       if (this.presenter) {
         const gameStateDTO = this.mapGameStateToDTO(gameId, updatedGameState)
         this.presenter.presentGameState(gameStateDTO)
-        this.presenter.presentGameMessage(`Round ${updatedGameState.round} started! ${updatedGameState.currentPlayer?.name}'s turn`)
+        this.presenter.presentGameMessage(
+          'game.messages.nextRoundStarted',
+          { round: updatedGameState.round, playerName: updatedGameState.currentPlayer?.name || '' }
+        )
         this.presenter.clearYakuDisplay()
         this.presenter.presentKoikoiDialog(false)
       }
@@ -313,6 +317,18 @@ export class GameFlowUseCase {
     return cards
   }
 
+  async handleCardSelection(card: Card, isHandCard: boolean): Promise<void> {
+    if (this.presenter) {
+      // Pass the card name key for translation in presenter
+      const cardNameKey = `cards.names.${card.name}`
+      if (isHandCard) {
+        this.presenter.presentGameMessage('game.messages.selectedCard', { cardName: cardNameKey })
+      } else {
+        this.presenter.presentGameMessage('game.messages.selectedFieldCard', { cardName: cardNameKey })
+      }
+    }
+  }
+
   async handlePlayCard(gameId: string, input: PlayCardInputDTO): Promise<void> {
     if (!this.playCardUseCase) {
       throw new Error('PlayCardUseCase not available')
@@ -347,7 +363,7 @@ export class GameFlowUseCase {
       }
     } catch (error) {
       if (this.presenter) {
-        this.presenter.presentError(`Error playing card: ${error}`)
+        this.presenter.presentError('errors.playCardFailed', { error: String(error) })
       }
       throw error
     }
@@ -360,15 +376,17 @@ export class GameFlowUseCase {
 
       if (playResult.nextPhase === 'koikoi') {
         this.presenter.presentKoikoiDialog(true)
-        this.presenter.presentGameMessage('You achieved Yaku! Declare Koi-Koi?')
+        this.presenter.presentGameMessage('game.messages.koikoiAchieved')
       } else if (playResult.nextPhase === 'round_end') {
-        this.presenter.presentGameMessage(
-          'You achieved Yaku! Round ends automatically (no hand cards).'
-        )
+        this.presenter.presentGameMessage('game.messages.roundAutoEnd')
       }
     } else if (this.presenter) {
       this.presenter.presentGameMessage(
-        `Played ${playResult.playedCard?.name}. Captured ${playResult.capturedCards.length} cards.`
+        'game.messages.cardPlayed',
+        {
+          cardName: playResult.playedCard?.name ? `cards.names.${playResult.playedCard.name}` : '',
+          capturedCount: playResult.capturedCards.length
+        }
       )
     }
 
@@ -391,14 +409,14 @@ export class GameFlowUseCase {
         if (roundResult.winner) {
           this.presenter.presentRoundEnd(roundResult.winner.name, roundResult.score)
         } else {
-          this.presenter.presentGameMessage('Round ended in a draw! No points awarded.')
+          this.presenter.presentGameMessage('game.messages.roundDrawNoPoints')
           if (roundResult.yakuResults.length > 0) {
             this.presenter.presentYakuDisplay(roundResult.yakuResults)
           }
         }
       }
     } catch (error) {
-      this.presenter.presentError(`Error handling round end: ${error}`)
+      this.presenter.presentError('errors.roundEndFailed', { error: String(error) })
     }
   }
 

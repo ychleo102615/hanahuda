@@ -247,13 +247,11 @@ const playerNames = computed(() => [
 const inputHandler: InputHandler = {
   onHandCardSelected: (card: Card) => {
     gameStore.setSelectedHandCard(card)
-    gameStore.setGameMessage(
-      t('game.messages.selectedCard', { cardName: t(`cards.names.${card.name}`) || card.name })
-    )
+    gameController.handleCardSelection(card, true)
   },
   onFieldCardSelected: (card: Card) => {
     gameStore.setSelectedFieldCard(card)
-    gameStore.setGameMessage(t('game.messages.selectedFieldCard', { cardName: t(`cards.names.${card.name}`) || card.name }))
+    gameController.handleCardSelection(card, false)
   },
   onPlayCardAction: async () => {
     const handCard = gameStore.uiState.selectedHandCard
