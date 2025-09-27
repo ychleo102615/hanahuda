@@ -76,22 +76,7 @@ export class VueGamePresenter implements GamePresenter {
   }
 
   presentGameMessage(messageKey: string, params?: Record<string, string | number>): void {
-    // Handle nested translation for card names
-    const translatedParams: Record<string, string | number> = {}
-    if (params) {
-      for (const [key, value] of Object.entries(params)) {
-        if (typeof value === 'string' && value.startsWith('cards.names.')) {
-          // Simple translation with safe English keys
-          const translatedCardName = this.localeService.translate(value)
-          translatedParams[key] = translatedCardName
-        } else {
-          translatedParams[key] = value
-        }
-      }
-    }
-
-    const translatedMessage = this.localeService.translate(messageKey, translatedParams)
-    this.gameStore.setGameMessage(translatedMessage)
+    this.gameStore.setGameMessage(messageKey, params)
     this.gameStore.clearError() // Clear error when showing regular message
   }
 

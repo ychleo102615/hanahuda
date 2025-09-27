@@ -32,7 +32,8 @@ export interface UIGameState {
 export interface UIInteractionState {
   selectedHandCard: Card | null
   selectedFieldCard: Card | null
-  gameMessage: string
+  gameMessageKey: string | null
+  gameMessageParams?: Record<string, string | number>
   yakuDisplay: YakuResult[]
   showKoikoiDialog: boolean
   isLoading: boolean
@@ -58,7 +59,8 @@ export const useGameStore = defineStore('game', () => {
   const uiState = ref<UIInteractionState>({
     selectedHandCard: null,
     selectedFieldCard: null,
-    gameMessage: 'Welcome to Hanafuda Koi-Koi! Set up your game to start.',
+    gameMessageKey: 'game.messages.welcome',
+    gameMessageParams: undefined,
     yakuDisplay: [],
     showKoikoiDialog: false,
     isLoading: false,
@@ -152,8 +154,9 @@ export const useGameStore = defineStore('game', () => {
     uiState.value.selectedFieldCard = card
   }
 
-  const setGameMessage = (message: string) => {
-    uiState.value.gameMessage = message
+  const setGameMessage = (messageKey: string | null, params?: Record<string, string | number>) => {
+    uiState.value.gameMessageKey = messageKey
+    uiState.value.gameMessageParams = params
   }
 
   const setYakuDisplay = (yakuResults: YakuResult[]) => {
@@ -198,7 +201,8 @@ export const useGameStore = defineStore('game', () => {
     uiState.value = {
       selectedHandCard: null,
       selectedFieldCard: null,
-      gameMessage: 'Welcome to Hanafuda Koi-Koi! Set up your game to start.',
+      gameMessageKey: 'game.messages.welcome',
+      gameMessageParams: undefined,
       yakuDisplay: [],
       showKoikoiDialog: false,
       isLoading: false,

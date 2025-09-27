@@ -226,7 +226,27 @@ const lastMove = computed(() => {
   }
 })
 const gameStarted = computed(() => gameStore.gameState.gameStarted)
-const gameMessage = computed(() => gameStore.uiState.gameMessage)
+const gameMessage = computed(() => {
+  const messageKey = gameStore.uiState.gameMessageKey
+  if (!messageKey) return ''
+
+  const params = gameStore.uiState.gameMessageParams
+  // Handle nested translation for card names
+  const translatedParams: Record<string, string | number> = {}
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (typeof value === 'string' && value.startsWith('cards.names.')) {
+        // Simple translation with safe English keys
+        const translatedCardName = t(value)
+        translatedParams[key] = translatedCardName
+      } else {
+        translatedParams[key] = value
+      }
+    }
+  }
+
+  return t(messageKey, translatedParams)
+})
 const yakuDisplay = computed(() =>
   gameStore.uiState.yakuDisplay.map((yaku) => ({
     yaku: yaku.yaku,
@@ -358,7 +378,7 @@ onMounted(() => {
   inputController.addHandler(inputHandler)
 
   // Initialize game message
-  gameStore.setGameMessage(t('game.messages.welcome'))
+  gameStore.setGameMessage('game.messages.welcome')
 
   // Watch for error changes to start auto-dismiss timer
   const { uiState } = gameStore
