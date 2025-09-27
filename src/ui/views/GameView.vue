@@ -150,28 +150,27 @@
       </div>
     </div>
 
-    <!-- Error Display (floating overlay) -->
-    <div
-      v-if="gameStore.uiState.error"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-    >
-      <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full shadow-xl">
-        <div class="text-center text-lg font-semibold text-red-600 mb-4">
-          {{ gameStore.uiState.error }}
-        </div>
-        <button
-          @click="gameStore.clearError()"
-          class="w-full bg-red-500 text-white py-2 px-4 rounded-md font-semibold border-none cursor-pointer hover:bg-red-600"
+    <!-- Error Display (toast notification) -->
+    <Transition name="toast" appear>
+      <div
+        v-if="gameStore.uiState.error && isToastVisible"
+        class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+      >
+        <div
+          class="bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg max-w-sm mx-4 pointer-events-auto cursor-pointer"
+          @click="clearErrorWithAnimation"
         >
-          {{ t('errors.close') }}
-        </button>
+          <div class="text-center text-sm font-medium text-red-800">
+            {{ gameStore.uiState.error }}
+          </div>
+        </div>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import type { Card } from '@/domain/entities/Card'
 import { DIContainer } from '@/infrastructure/di/DIContainer'
 import { GameController } from '@/ui/controllers/GameController'
@@ -192,6 +191,11 @@ const player2Name = ref(t('game.setup.player2'))
 
 // Hover state
 const hoveredHandCard = ref<Card | null>(null)
+
+// Toast auto-dismiss timer and animation
+const toastTimerRef = ref<number | null>(null)
+const isToastVisible = ref(false)
+const toastFadeTimerRef = ref<number | null>(null)
 
 // Dependencies - Setup DI Container
 const diContainer = DIContainer.createDefault(gameStore)
@@ -319,12 +323,84 @@ const handleHandCardUnhovered = () => {
   hoveredHandCard.value = null
 }
 
+const clearErrorWithAnimation = () => {
+  if (toastTimerRef.value) {
+    clearTimeout(toastTimerRef.value)
+    toastTimerRef.value = null
+  }
+
+  // Hide toast - this will trigger the leave transition
+  isToastVisible.value = false
+
+  // Clear error after transition completes
+  toastFadeTimerRef.value = window.setTimeout(() => {
+    gameStore.clearError()
+    toastFadeTimerRef.value = null
+  }, 300) // Match transition duration
+}
+
+const startErrorTimer = () => {
+  if (toastTimerRef.value) {
+    clearTimeout(toastTimerRef.value)
+  }
+
+  // Show toast
+  isToastVisible.value = true
+
+  // Auto-dismiss after 1 second
+  toastTimerRef.value = window.setTimeout(() => {
+    clearErrorWithAnimation()
+  }, 1000)
+}
+
 onMounted(() => {
   // Setup input handler
   inputController.addHandler(inputHandler)
 
   // Initialize game message
   gameStore.setGameMessage(t('game.messages.welcome'))
+
+  // Watch for error changes to start auto-dismiss timer
+  const { uiState } = gameStore
+  let lastError = uiState.error
+
+  const checkErrorChange = () => {
+    const currentError = uiState.error
+    if (currentError && currentError !== lastError) {
+      startErrorTimer()
+      lastError = currentError
+    } else if (!currentError && lastError) {
+      // Error was cleared, cancel timers and hide toast
+      if (toastTimerRef.value) {
+        clearTimeout(toastTimerRef.value)
+        toastTimerRef.value = null
+      }
+      if (toastFadeTimerRef.value) {
+        clearTimeout(toastFadeTimerRef.value)
+        toastFadeTimerRef.value = null
+      }
+      isToastVisible.value = false
+      lastError = currentError
+    }
+  }
+
+  const unwatchError = gameStore.$subscribe(checkErrorChange)
+
+  // Also check immediately in case there's already an error
+  if (uiState.error) {
+    startErrorTimer()
+  }
+
+  // Cleanup timers on unmount
+  onBeforeUnmount(() => {
+    if (toastTimerRef.value) {
+      clearTimeout(toastTimerRef.value)
+    }
+    if (toastFadeTimerRef.value) {
+      clearTimeout(toastFadeTimerRef.value)
+    }
+    unwatchError()
+  })
 })
 
 onBeforeRouteLeave(async (_to, _from, next) => {
@@ -353,5 +429,29 @@ onBeforeRouteLeave(async (_to, _from, next) => {
 </script>
 
 <style scoped>
-/* All styling is now handled by Tailwind classes in the template */
+/* Toast transition animations */
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.toast-enter-from {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.toast-enter-to {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.toast-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.toast-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
 </style>

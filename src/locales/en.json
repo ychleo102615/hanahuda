@@ -254,11 +254,13 @@
   },
   "errors": {
     "close": "Close",
+    "autoClose": "Click to close or auto-close in 1 second",
     "startGameFailed": "Failed to start game: {error}",
     "koikoiDecisionFailed": "Error handling Koi-Koi decision: {error}",
     "playCardFailed": "Error playing card: {error}",
     "roundEndFailed": "Error handling round end: {error}",
-    "resetGameFailed": "Failed to reset game: {error}"
+    "resetGameFailed": "Failed to reset game: {error}",
+    "multipleMatchesFound": "Multiple matches found, please select one field card"
   },
   "license": {
     "title": "Image Resource License",

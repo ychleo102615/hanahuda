@@ -3,7 +3,7 @@ import type {
   GameStateOutputDTO,
   PlayCardOutputDTO,
   KoikoiDecisionOutputDTO,
-  StartGameOutputDTO
+  StartGameOutputDTO,
 } from '@/application/dto/GameDTO'
 import type { YakuResult } from '@/domain/entities/Yaku'
 import type { useGameStore } from '@/ui/stores/gameStore'
@@ -13,7 +13,7 @@ import type { LocaleService } from '@/infrastructure/services/LocaleService'
 export class VueGamePresenter implements GamePresenter {
   constructor(
     private gameStore: ReturnType<typeof useGameStore>,
-    private localeService: LocaleService
+    private localeService: LocaleService,
   ) {}
 
   presentGameState(gameState: GameStateOutputDTO): void {
@@ -29,7 +29,7 @@ export class VueGamePresenter implements GamePresenter {
       isGameOver: gameState.isGameOver,
       lastMove: gameState.lastMove,
       roundResult: gameState.roundResult,
-      koikoiPlayer: gameState.koikoiPlayer
+      koikoiPlayer: gameState.koikoiPlayer,
     })
   }
 
@@ -98,7 +98,6 @@ export class VueGamePresenter implements GamePresenter {
   presentError(errorKey: string, params?: Record<string, string | number>): void {
     const translatedError = this.localeService.translate(errorKey, params)
     this.gameStore.setError(translatedError)
-    this.gameStore.setGameMessage('') // Clear regular message when showing error
   }
 
   presentKoikoiDialog(show: boolean): void {

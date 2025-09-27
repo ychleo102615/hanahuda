@@ -49,7 +49,7 @@ export class PlayCardUseCase {
             capturedCards: [],
             nextPhase: 'playing',
             yakuResults: [],
-            error: 'Multiple matches found, please select one'
+            error: 'errors.multipleMatchesFound'
           }
         }
         capturedCards = [playedCard, ...selectedFieldCards]

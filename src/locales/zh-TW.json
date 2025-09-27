@@ -254,11 +254,13 @@
   },
   "errors": {
     "close": "關閉",
+    "autoClose": "點擊關閉或1秒後自動消失",
     "startGameFailed": "遊戲啟動失敗：{error}",
     "koikoiDecisionFailed": "來來決策處理失敗：{error}",
     "playCardFailed": "出牌失敗：{error}",
     "roundEndFailed": "回合結束處理失敗：{error}",
-    "resetGameFailed": "遊戲重置失敗：{error}"
+    "resetGameFailed": "遊戲重置失敗：{error}",
+    "multipleMatchesFound": "發現多個配對，請選擇一個場牌"
   },
   "license": {
     "title": "圖像資源授權聲明",
