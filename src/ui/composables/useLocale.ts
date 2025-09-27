@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { LocalStorageLocaleService } from '@/infrastructure/services/LocaleService'
 
-const localeService = new LocalStorageLocaleService()
+const localeService = LocalStorageLocaleService.getInstance()
 const currentLocale = ref(localeService.getCurrentLocale())
 
 export function useLocale() {

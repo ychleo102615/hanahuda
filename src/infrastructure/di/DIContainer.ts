@@ -71,7 +71,7 @@ export class DIContainer {
   setupDefaultServices(gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>): void {
     // Infrastructure layer
     this.registerSingleton(DIContainer.GAME_REPOSITORY, () => new LocalGameRepository())
-    this.registerSingleton(DIContainer.LOCALE_SERVICE, () => new LocalStorageLocaleService())
+    this.registerSingleton(DIContainer.LOCALE_SERVICE, () => LocalStorageLocaleService.getInstance())
 
     // Application layer
     this.registerSingleton(DIContainer.CALCULATE_SCORE_USE_CASE, () =>

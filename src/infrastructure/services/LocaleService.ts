@@ -10,17 +10,18 @@ import zhTW from '../../locales/zh-TW.json'
 import en from '../../locales/en.json'
 
 export class LocalStorageLocaleService implements LocaleService {
+  private static instance: LocalStorageLocaleService | null = null
   private currentLocale: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private translations: Record<string, any> = {
     'zh-TW': zhTW,
-    'en': en
+    en: en,
   }
   private readonly defaultLocale = 'zh-TW'
   private readonly availableLocales = ['zh-TW', 'en']
   private readonly storageKey = 'hanafuda-locale'
 
-  constructor() {
+  private constructor() {
     // 從 localStorage 讀取語言設定，若無則使用瀏覽器語言或預設語言
     const saved = localStorage.getItem(this.storageKey)
     const browserLang = navigator.language
@@ -33,6 +34,13 @@ export class LocalStorageLocaleService implements LocaleService {
     }
 
     this.currentLocale = initialLocale
+  }
+
+  static getInstance(): LocalStorageLocaleService {
+    if (!LocalStorageLocaleService.instance) {
+      LocalStorageLocaleService.instance = new LocalStorageLocaleService()
+    }
+    return LocalStorageLocaleService.instance
   }
 
   getCurrentLocale(): string {
