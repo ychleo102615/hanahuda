@@ -141,7 +141,8 @@
       "roundAutoEnd": "您達成了役種！回合自動結束（沒有手牌）。",
       "cardPlayed": "出了 {cardName}。獲得了 {capturedCount} 張牌。",
       "roundDrawNoPoints": "回合平局！沒有得分。",
-      "nextRoundStarted": "第 {round} 回合開始！輪到 {playerName}"
+      "nextRoundStarted": "第 {round} 回合開始！輪到 {playerName}",
+      "gameReset": "遊戲已重置"
     },
     "roundResult": {
       "title": "第 {round} 回合結果",
@@ -256,7 +257,8 @@
     "startGameFailed": "遊戲啟動失敗：{error}",
     "koikoiDecisionFailed": "來來決策處理失敗：{error}",
     "playCardFailed": "出牌失敗：{error}",
-    "roundEndFailed": "回合結束處理失敗：{error}"
+    "roundEndFailed": "回合結束處理失敗：{error}",
+    "resetGameFailed": "遊戲重置失敗：{error}"
   },
   "license": {
     "title": "圖像資源授權聲明",

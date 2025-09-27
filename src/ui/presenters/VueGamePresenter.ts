@@ -138,6 +138,14 @@ export class VueGamePresenter implements GamePresenter {
     this.gameStore.setYakuDisplay([])
   }
 
+  clearError(): void {
+    this.gameStore.clearError()
+  }
+
+  presentGameReset(): void {
+    this.gameStore.resetGame()
+  }
+
   resetPresenter(): void {
     this.gameStore.resetGame()
   }

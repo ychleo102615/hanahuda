@@ -2,6 +2,7 @@ import { LocalGameRepository } from '@/infrastructure/repositories/LocalGameRepo
 import { GameFlowUseCase } from '@/application/usecases/GameFlowUseCase'
 import { PlayCardUseCase } from '@/application/usecases/PlayCardUseCase'
 import { CalculateScoreUseCase } from '@/application/usecases/CalculateScoreUseCase'
+import { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
 import { GameController } from '@/ui/controllers/GameController'
 import { InputController } from '@/ui/controllers/InputController'
 import { VueGamePresenter } from '@/ui/presenters/VueGamePresenter'
@@ -21,6 +22,7 @@ export class DIContainer {
   static readonly GAME_FLOW_USE_CASE = Symbol('GameFlowUseCase')
   static readonly PLAY_CARD_USE_CASE = Symbol('PlayCardUseCase')
   static readonly CALCULATE_SCORE_USE_CASE = Symbol('CalculateScoreUseCase')
+  static readonly RESET_GAME_USE_CASE = Symbol('ResetGameUseCase')
   static readonly GAME_CONTROLLER = Symbol('GameController')
   static readonly INPUT_CONTROLLER = Symbol('InputController')
 
@@ -76,6 +78,13 @@ export class DIContainer {
       new CalculateScoreUseCase(this.resolve(DIContainer.GAME_REPOSITORY))
     )
 
+    this.registerSingleton(DIContainer.RESET_GAME_USE_CASE, () =>
+      new ResetGameUseCase(
+        this.resolve(DIContainer.GAME_REPOSITORY),
+        gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined
+      )
+    )
+
     this.registerSingleton(DIContainer.PLAY_CARD_USE_CASE, () =>
       new PlayCardUseCase(
         this.resolve(DIContainer.GAME_REPOSITORY),
@@ -104,7 +113,8 @@ export class DIContainer {
     // Game Controller
     this.registerSingleton(DIContainer.GAME_CONTROLLER, () =>
       new GameController(
-        this.resolve(DIContainer.GAME_FLOW_USE_CASE)
+        this.resolve(DIContainer.GAME_FLOW_USE_CASE),
+        this.resolve(DIContainer.RESET_GAME_USE_CASE)
       )
     )
   }

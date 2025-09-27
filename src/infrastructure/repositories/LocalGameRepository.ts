@@ -292,4 +292,14 @@ export class LocalGameRepository implements GameRepository {
   async deleteGame(gameId: string): Promise<boolean> {
     return this.games.delete(gameId)
   }
+
+  async clearAllGames(): Promise<boolean> {
+    try {
+      this.games.clear()
+      return true
+    } catch (error) {
+      console.error('Failed to clear all games:', error)
+      return false
+    }
+  }
 }

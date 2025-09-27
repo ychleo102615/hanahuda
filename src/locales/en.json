@@ -141,7 +141,8 @@
       "roundAutoEnd": "You achieved Yaku! Round ends automatically (no hand cards).",
       "cardPlayed": "Played {cardName}. Captured {capturedCount} cards.",
       "roundDrawNoPoints": "Round ended in a draw! No points awarded.",
-      "nextRoundStarted": "Round {round} started! {playerName}'s turn"
+      "nextRoundStarted": "Round {round} started! {playerName}'s turn",
+      "gameReset": "Game has been reset"
     },
     "roundResult": {
       "title": "Round {round} Results",
@@ -256,7 +257,8 @@
     "startGameFailed": "Failed to start game: {error}",
     "koikoiDecisionFailed": "Error handling Koi-Koi decision: {error}",
     "playCardFailed": "Error playing card: {error}",
-    "roundEndFailed": "Error handling round end: {error}"
+    "roundEndFailed": "Error handling round end: {error}",
+    "resetGameFailed": "Failed to reset game: {error}"
   },
   "license": {
     "title": "Image Resource License",

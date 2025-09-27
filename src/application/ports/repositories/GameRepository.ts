@@ -47,4 +47,6 @@ export interface GameRepository {
   loadGame(gameId: string): Promise<GameState | null>
   
   deleteGame(gameId: string): Promise<boolean>
+
+  clearAllGames(): Promise<boolean>
 }

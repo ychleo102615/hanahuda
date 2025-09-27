@@ -327,7 +327,7 @@ onMounted(() => {
   gameStore.setGameMessage(t('game.messages.welcome'))
 })
 
-onBeforeRouteLeave((_to, _from, next) => {
+onBeforeRouteLeave(async (_to, _from, next) => {
   // 僅在回合進行中才提示，避免在 setup 或 game_end 阶段打擾
   const phase = gameStore.gameState.phase
   const isInProgress = !!(
@@ -339,6 +339,15 @@ onBeforeRouteLeave((_to, _from, next) => {
     const ok = window.confirm(confirmMessage)
     if (!ok) return next(false)
   }
+
+  // 離開時重置遊戲狀態
+  try {
+    await gameController.resetGame()
+  } catch (error) {
+    console.error('Error resetting game on route leave:', error)
+    // 即使重置失敗也繼續離開
+  }
+
   next()
 })
 </script>

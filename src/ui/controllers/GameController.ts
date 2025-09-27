@@ -1,4 +1,5 @@
 import type { GameFlowUseCase } from '@/application/usecases/GameFlowUseCase'
+import type { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
 import type {
   StartGameInputDTO,
   PlayCardInputDTO,
@@ -11,6 +12,7 @@ export class GameController {
 
   constructor(
     private gameFlowUseCase: GameFlowUseCase,
+    private resetGameUseCase: ResetGameUseCase,
   ) {}
 
   async startNewGame(input: StartGameInputDTO): Promise<void> {
@@ -67,6 +69,16 @@ export class GameController {
       await this.gameFlowUseCase.handleCardSelection(card, isHandCard)
     } catch (error) {
       console.error('Error handling card selection:', error)
+      throw error
+    }
+  }
+
+  async resetGame(): Promise<void> {
+    try {
+      await this.resetGameUseCase.execute({ gameId: this.gameId })
+      this.gameId = ''
+    } catch (error) {
+      console.error('Error resetting game:', error)
       throw error
     }
   }

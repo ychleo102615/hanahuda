@@ -31,5 +31,9 @@ export interface GamePresenter {
   // UI state management methods
   clearYakuDisplay(): void
 
+  clearError(): void
+
   presentCardSelection(handCard: Card | null, fieldCard: Card | null): void
+
+  presentGameReset(): void
 }
