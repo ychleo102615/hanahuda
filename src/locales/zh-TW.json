@@ -179,6 +179,10 @@
     "player": {
       "score": "得分",
       "capturedCards": "獲得卡牌"
+    },
+    "tooltip": {
+      "month": "月",
+      "points": "點"
     }
   },
   "cards": {

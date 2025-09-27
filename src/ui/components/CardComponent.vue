@@ -16,7 +16,7 @@
     >
       <div class="text-xs font-bold">{{ card.month }}月</div>
       <div class="card__type text-xs font-semibold">{{ getTypeDisplay(card.type) }}</div>
-      <div class="text-[7px] leading-tight px-1">{{ card.name }}</div>
+      <div class="text-[7px] leading-tight px-1">{{ t(`cards.names.${card.name}`) }}</div>
       <div class="card__points text-xs font-bold">{{ card.points }}点</div>
     </div>
 
@@ -27,11 +27,13 @@
     >
       <div class="flex flex-col gap-1">
         <div class="font-bold text-center text-white">
-          {{ card.month }}月 - {{ getTypeDisplay(card.type) }}
+          {{ card.month }}{{ t('game.tooltip.month') }} - {{ getTypeDisplay(card.type) }}
         </div>
-        <div class="text-xs text-gray-200 text-center">{{ card.name }}</div>
+        <div class="text-xs text-gray-200 text-center">{{ t(`cards.names.${card.name}`) }}</div>
         <div class="text-xs text-center">
-          <span class="card__tooltip-points font-semibold"> {{ card.points }}點 </span>
+          <span class="card__tooltip-points font-semibold">
+            {{ card.points }}{{ t('game.tooltip.points') }}
+          </span>
         </div>
       </div>
       <!-- Arrow -->
@@ -47,9 +49,12 @@ import { computed, ref } from 'vue'
 import type { Card } from '@/domain/entities/Card'
 import SvgIcon from './SvgIcon.vue'
 import { getCardSvgName } from '@/shared/utils/cardAssetMapping'
+import { useLocale } from '@/ui/composables/useLocale'
 
 // 懸停狀態管理
 const isHovered = ref(false)
+
+const { t } = useLocale()
 
 interface Props {
   card: Card

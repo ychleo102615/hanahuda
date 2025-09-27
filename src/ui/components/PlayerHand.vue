@@ -30,7 +30,7 @@
 
       <div v-if="showCaptured" class="border-l border-gray-200 pl-4 flex-1">
         <h4 class="text-sm font-semibold text-gray-600 mb-2">{{ t('game.player.capturedCards') }}</h4>
-        <div class="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-6 overflow-y-auto">
+        <div class="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-6 max-h-40 overflow-y-auto">
           <div v-if="hikariCards.length > 0" class="flex-shrink-0">
             <h5 class="text-xs font-medium text-amber-600 mb-1">光</h5>
             <div class="flex flex-wrap gap-1">

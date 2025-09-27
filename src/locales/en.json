@@ -179,6 +179,10 @@
     "player": {
       "score": "Score",
       "capturedCards": "Captured Cards"
+    },
+    "tooltip": {
+      "month": "Month",
+      "points": "Points"
     }
   },
   "cards": {
