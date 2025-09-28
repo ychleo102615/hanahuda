@@ -1,7 +1,31 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useLocale } from '@/ui/composables/useLocale'
+import { YAKU_COMBINATIONS } from '@/shared/constants/gameConstants'
 
 const { t } = useLocale()
+
+// Mapping from constant names to translation keys
+const yakuKeyMapping: Record<string, string> = {
+  'GOKO': 'gokou',
+  'SHIKO': 'shikou',
+  'AME_SHIKO': 'ameshikou',
+  'SANKO': 'sankou',
+  'INO_SHIKA_CHO': 'inoshikacho',
+  'AKA_TAN': 'akatan',
+  'AO_TAN': 'aotan',
+  'TANE': 'tane',
+  'TAN': 'tan',
+  'KASU': 'kasu'
+}
+
+const yakuList = computed(() => {
+  return Object.entries(YAKU_COMBINATIONS).map(([key, yaku]) => ({
+    key: yakuKeyMapping[key] || key.toLowerCase(),
+    name: yaku.name,
+    points: yaku.points
+  }))
+})
 </script>
 
 <template>
@@ -64,30 +88,14 @@ const { t } = useLocale()
       <div class="rules-section">
         <h2 class="section-title">{{ t('about.yaku.title') }}</h2>
         <div class="yaku-list">
-          <div class="yaku-item">
-            <span class="yaku-name">{{ t('about.yaku.gokou.name') }}</span>
-            <span class="yaku-points">{{ t('about.yaku.gokou.points') }}</span>
-            <span class="yaku-desc">{{ t('about.yaku.gokou.description') }}</span>
-          </div>
-          <div class="yaku-item">
-            <span class="yaku-name">{{ t('about.yaku.shikou.name') }}</span>
-            <span class="yaku-points">{{ t('about.yaku.shikou.points') }}</span>
-            <span class="yaku-desc">{{ t('about.yaku.shikou.description') }}</span>
-          </div>
-          <div class="yaku-item">
-            <span class="yaku-name">{{ t('about.yaku.sankou.name') }}</span>
-            <span class="yaku-points">{{ t('about.yaku.sankou.points') }}</span>
-            <span class="yaku-desc">{{ t('about.yaku.sankou.description') }}</span>
-          </div>
-          <div class="yaku-item">
-            <span class="yaku-name">{{ t('about.yaku.inoshikacho.name') }}</span>
-            <span class="yaku-points">{{ t('about.yaku.inoshikacho.points') }}</span>
-            <span class="yaku-desc">{{ t('about.yaku.inoshikacho.description') }}</span>
-          </div>
-          <div class="yaku-item">
-            <span class="yaku-name">{{ t('about.yaku.akatan.name') }}</span>
-            <span class="yaku-points">{{ t('about.yaku.akatan.points') }}</span>
-            <span class="yaku-desc">{{ t('about.yaku.akatan.description') }}</span>
+          <div
+            v-for="yaku in yakuList"
+            :key="yaku.key"
+            class="yaku-item"
+          >
+            <span class="yaku-name">{{ t(`about.yaku.${yaku.key}.name`) }}</span>
+            <span class="yaku-points">{{ t(`about.yaku.${yaku.key}.points`) }}</span>
+            <span class="yaku-desc">{{ t(`about.yaku.${yaku.key}.description`) }}</span>
           </div>
         </div>
       </div>

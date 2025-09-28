@@ -7,6 +7,8 @@ export interface YakuRule {
   readonly requiredCards: readonly CardType[]
   readonly minCount?: number
   readonly specific?: readonly number[]
+  readonly excludeCards?: readonly number[]
+  readonly includeCards?: readonly number[]
 }
 
 export interface YakuResult {
@@ -24,6 +26,7 @@ export class Yaku {
     const ribbonCards = capturedCards.filter(c => c.type === CARD_TYPES.RIBBON)
     const plainCards = capturedCards.filter(c => c.type === CARD_TYPES.PLAIN)
 
+    // Check bright card yaku with proper November card handling
     if (brightCards.length >= 5) {
       results.push({
         yaku: YAKU_COMBINATIONS.GOKO,
@@ -31,17 +34,32 @@ export class Yaku {
         points: YAKU_COMBINATIONS.GOKO.points
       })
     } else if (brightCards.length === 4) {
-      results.push({
-        yaku: YAKU_COMBINATIONS.SHIKO,
-        cards: brightCards,
-        points: YAKU_COMBINATIONS.SHIKO.points
-      })
+      const hasNovemberBright = brightCards.some(card => card.suit === 11)
+      if (hasNovemberBright) {
+        // 雨四光 (Ame-Shiko) - includes November bright card
+        results.push({
+          yaku: YAKU_COMBINATIONS.AME_SHIKO,
+          cards: brightCards,
+          points: YAKU_COMBINATIONS.AME_SHIKO.points
+        })
+      } else {
+        // 四光 (Shiko) - excludes November bright card
+        results.push({
+          yaku: YAKU_COMBINATIONS.SHIKO,
+          cards: brightCards,
+          points: YAKU_COMBINATIONS.SHIKO.points
+        })
+      }
     } else if (brightCards.length === 3) {
-      results.push({
-        yaku: YAKU_COMBINATIONS.SANKO,
-        cards: brightCards,
-        points: YAKU_COMBINATIONS.SANKO.points
-      })
+      const hasNovemberBright = brightCards.some(card => card.suit === 11)
+      if (!hasNovemberBright) {
+        // 三光 (Sanko) - only valid without November bright card
+        results.push({
+          yaku: YAKU_COMBINATIONS.SANKO,
+          cards: brightCards,
+          points: YAKU_COMBINATIONS.SANKO.points
+        })
+      }
     }
 
     const inoShikaCho = Yaku.checkInoShikaCho(animalCards)

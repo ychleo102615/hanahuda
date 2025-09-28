@@ -118,8 +118,9 @@ export const CARD_TYPES = {
 
 export const YAKU_COMBINATIONS = {
   GOKO: { name: '五光', points: 10, requiredCards: ['bright'], minCount: 5 },
-  SHIKO: { name: '四光', points: 8, requiredCards: ['bright'], minCount: 4 },
-  SANKO: { name: '三光', points: 5, requiredCards: ['bright'], minCount: 3 },
+  SHIKO: { name: '四光', points: 8, requiredCards: ['bright'], minCount: 4, excludeCards: [11] },
+  AME_SHIKO: { name: '雨四光', points: 7, requiredCards: ['bright'], minCount: 4, includeCards: [11] },
+  SANKO: { name: '三光', points: 5, requiredCards: ['bright'], minCount: 3, excludeCards: [11] },
   INO_SHIKA_CHO: { name: '猪鹿蝶', points: 5, requiredCards: ['animal'], specific: [7, 10, 6] },
   AKA_TAN: { name: '赤短', points: 5, requiredCards: ['ribbon'], specific: [1, 2, 3] },
   AO_TAN: { name: '青短', points: 5, requiredCards: ['ribbon'], specific: [6, 9, 10] },

@@ -81,12 +81,17 @@
       "shikou": {
         "name": "Shikō (Four Brights)",
         "points": "8 pts",
-        "description": "Collect 4 Hikari cards"
+        "description": "Collect 4 Hikari cards (excluding the November Rain card)"
+      },
+      "ameshikou": {
+        "name": "Ame-Shikō (Rain Four Brights)",
+        "points": "7 pts",
+        "description": "Collect 4 Hikari cards, must include the November Rain card (Ono no Tōfū)"
       },
       "sankou": {
         "name": "Sankō (Three Brights)",
         "points": "5 pts",
-        "description": "Collect 3 Hikari cards"
+        "description": "Collect 3 Hikari cards (excluding the November Rain card)"
       },
       "inoshikacho": {
         "name": "Ino-Shika-Chō (Boar-Deer-Butterfly)",
@@ -97,6 +102,26 @@
         "name": "Aka-tan (Red Ribbons)",
         "points": "5 pts",
         "description": "Collect Tanzaku of Pine, Plum, and Cherry"
+      },
+      "aotan": {
+        "name": "Ao-tan (Blue Ribbons)",
+        "points": "5 pts",
+        "description": "Collect Tanzaku of Peony, Chrysanthemum, and Maple"
+      },
+      "tane": {
+        "name": "Tane (Animals)",
+        "points": "1+ pts",
+        "description": "Collect 5+ Animal cards, +1 point for each extra"
+      },
+      "tan": {
+        "name": "Tan (Ribbons)",
+        "points": "1+ pts",
+        "description": "Collect 5+ Ribbon cards, +1 point for each extra"
+      },
+      "kasu": {
+        "name": "Kasu (Plains)",
+        "points": "1+ pts",
+        "description": "Collect 10+ Plain cards, +1 point for each extra"
       }
     },
     "strategy": {

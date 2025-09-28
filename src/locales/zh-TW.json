@@ -81,12 +81,17 @@
       "shikou": {
         "name": "四光",
         "points": "8點",
-        "description": "收集4張光札"
+        "description": "收集4張光札（不包含十一月的雨光牌）"
+      },
+      "ameshikou": {
+        "name": "雨四光",
+        "points": "7點",
+        "description": "收集4張光札，必須包含十一月的雨光牌（小野道風）"
       },
       "sankou": {
         "name": "三光",
         "points": "5點",
-        "description": "收集3張光札"
+        "description": "收集3張光札（不包含十一月的雨光牌）"
       },
       "inoshikacho": {
         "name": "猪鹿蝶",
@@ -97,6 +102,26 @@
         "name": "赤短",
         "points": "5點",
         "description": "收集松・梅・櫻的短冊"
+      },
+      "aotan": {
+        "name": "青短",
+        "points": "5點",
+        "description": "收集牡丹・菊・紅葉的短冊"
+      },
+      "tane": {
+        "name": "タネ",
+        "points": "1點起",
+        "description": "收集5張以上種札，超過部分每張+1點"
+      },
+      "tan": {
+        "name": "タン",
+        "points": "1點起",
+        "description": "收集5張以上短冊，超過部分每張+1點"
+      },
+      "kasu": {
+        "name": "カス",
+        "points": "1點起",
+        "description": "收集10張以上素牌，超過部分每張+1點"
       }
     },
     "strategy": {
