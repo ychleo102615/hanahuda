@@ -4,7 +4,6 @@ import { PlayCardUseCase } from '@/application/usecases/PlayCardUseCase'
 import { CalculateScoreUseCase } from '@/application/usecases/CalculateScoreUseCase'
 import { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
 import { GameController } from '@/ui/controllers/GameController'
-import { InputController } from '@/ui/controllers/InputController'
 import { VueGamePresenter } from '@/ui/presenters/VueGamePresenter'
 import { LocalStorageLocaleService } from '@/infrastructure/services/LocaleService'
 
@@ -24,7 +23,6 @@ export class DIContainer {
   static readonly CALCULATE_SCORE_USE_CASE = Symbol('CalculateScoreUseCase')
   static readonly RESET_GAME_USE_CASE = Symbol('ResetGameUseCase')
   static readonly GAME_CONTROLLER = Symbol('GameController')
-  static readonly INPUT_CONTROLLER = Symbol('InputController')
 
   // Register a service factory
   register<T>(key: ServiceKey, factory: () => T): void {
@@ -68,59 +66,73 @@ export class DIContainer {
   }
 
   // Setup default services
-  setupDefaultServices(gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>): void {
+  setupDefaultServices(
+    gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>,
+  ): void {
     // Infrastructure layer
     this.registerSingleton(DIContainer.GAME_REPOSITORY, () => new LocalGameRepository())
-    this.registerSingleton(DIContainer.LOCALE_SERVICE, () => LocalStorageLocaleService.getInstance())
+    this.registerSingleton(DIContainer.LOCALE_SERVICE, () =>
+      LocalStorageLocaleService.getInstance(),
+    )
 
     // Application layer
-    this.registerSingleton(DIContainer.CALCULATE_SCORE_USE_CASE, () =>
-      new CalculateScoreUseCase(this.resolve(DIContainer.GAME_REPOSITORY))
+    this.registerSingleton(
+      DIContainer.CALCULATE_SCORE_USE_CASE,
+      () => new CalculateScoreUseCase(this.resolve(DIContainer.GAME_REPOSITORY)),
     )
 
-    this.registerSingleton(DIContainer.RESET_GAME_USE_CASE, () =>
-      new ResetGameUseCase(
-        this.resolve(DIContainer.GAME_REPOSITORY),
-        gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined
-      )
+    this.registerSingleton(
+      DIContainer.RESET_GAME_USE_CASE,
+      () =>
+        new ResetGameUseCase(
+          this.resolve(DIContainer.GAME_REPOSITORY),
+          gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
+        ),
     )
 
-    this.registerSingleton(DIContainer.PLAY_CARD_USE_CASE, () =>
-      new PlayCardUseCase(
-        this.resolve(DIContainer.GAME_REPOSITORY),
-        gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined
-      )
+    this.registerSingleton(
+      DIContainer.PLAY_CARD_USE_CASE,
+      () =>
+        new PlayCardUseCase(
+          this.resolve(DIContainer.GAME_REPOSITORY),
+          gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
+        ),
     )
 
-    this.registerSingleton(DIContainer.GAME_FLOW_USE_CASE, () =>
-      new GameFlowUseCase(
-        this.resolve(DIContainer.GAME_REPOSITORY),
-        this.resolve(DIContainer.CALCULATE_SCORE_USE_CASE),
-        gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
-        this.resolve(DIContainer.PLAY_CARD_USE_CASE)
-      )
+    this.registerSingleton(
+      DIContainer.GAME_FLOW_USE_CASE,
+      () =>
+        new GameFlowUseCase(
+          this.resolve(DIContainer.GAME_REPOSITORY),
+          this.resolve(DIContainer.CALCULATE_SCORE_USE_CASE),
+          gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
+          this.resolve(DIContainer.PLAY_CARD_USE_CASE),
+        ),
     )
 
     // UI layer - only register if gameStore is provided
     if (gameStore) {
-      this.registerSingleton(DIContainer.GAME_PRESENTER, () =>
-        new VueGamePresenter(gameStore, this.resolve(DIContainer.LOCALE_SERVICE))
+      this.registerSingleton(
+        DIContainer.GAME_PRESENTER,
+        () => new VueGamePresenter(gameStore, this.resolve(DIContainer.LOCALE_SERVICE)),
       )
     }
 
-    this.registerSingleton(DIContainer.INPUT_CONTROLLER, () => new InputController())
-
     // Game Controller
-    this.registerSingleton(DIContainer.GAME_CONTROLLER, () =>
-      new GameController(
-        this.resolve(DIContainer.GAME_FLOW_USE_CASE),
-        this.resolve(DIContainer.RESET_GAME_USE_CASE)
-      )
+    this.registerSingleton(
+      DIContainer.GAME_CONTROLLER,
+      () =>
+        new GameController(
+          this.resolve(DIContainer.GAME_FLOW_USE_CASE),
+          this.resolve(DIContainer.RESET_GAME_USE_CASE),
+        ),
     )
   }
 
   // Factory method to create a configured container
-  static createDefault(gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>): DIContainer {
+  static createDefault(
+    gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>,
+  ): DIContainer {
     const container = new DIContainer()
     container.setupDefaultServices(gameStore)
     return container

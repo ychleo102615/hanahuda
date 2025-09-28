@@ -71,10 +71,12 @@
           v-if="gamePhase === 'round_end' && roundResult"
           class="bg-yellow-100 border border-yellow-300 rounded-lg p-4 mb-4 text-center"
         >
-          <h3 class="text-lg font-bold text-yellow-800 mb-2">{{ t('game.roundResult.title', { round: currentRound }) }}</h3>
+          <h3 class="text-lg font-bold text-yellow-800 mb-2">
+            {{ t('game.roundResult.title', { round: currentRound }) }}
+          </h3>
           <div v-if="roundResult.winner" class="text-green-700 font-medium">
             {{ t('game.roundResult.winner', { winner: roundResult.winner.name }) }}
-            <br>
+            <br />
             {{ t('game.roundResult.score', { score: roundResult.score }) }}
           </div>
           <div v-else class="text-gray-700 font-medium">
@@ -174,7 +176,6 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import type { Card } from '@/domain/entities/Card'
 import { DIContainer } from '@/infrastructure/di/DIContainer'
 import { GameController } from '@/ui/controllers/GameController'
-import { InputController, type InputHandler } from '@/ui/controllers/InputController'
 import { useGameStore } from '@/ui/stores/gameStore'
 import { useLocale } from '@/ui/composables/useLocale'
 import PlayerHand from '@/ui/components/PlayerHand.vue'
@@ -200,7 +201,6 @@ const toastFadeTimerRef = ref<number | null>(null)
 // Dependencies - Setup DI Container
 const diContainer = DIContainer.createDefault(gameStore)
 const gameController = diContainer.resolve<GameController>(DIContainer.GAME_CONTROLLER)
-const inputController = diContainer.resolve<InputController>(DIContainer.INPUT_CONTROLLER)
 
 // Refs
 const playerHandRef = ref()
@@ -267,44 +267,7 @@ const playerNames = computed(() => [
   { id: 'player2', name: player2Name.value },
 ])
 
-// Input Handler Implementation
-const inputHandler: InputHandler = {
-  onHandCardSelected: (card: Card) => {
-    gameStore.setSelectedHandCard(card)
-    gameController.handleCardSelection(card, true)
-  },
-  onFieldCardSelected: (card: Card) => {
-    gameStore.setSelectedFieldCard(card)
-    gameController.handleCardSelection(card, false)
-  },
-  onPlayCardAction: async () => {
-    const handCard = gameStore.uiState.selectedHandCard
-    const fieldCard = gameStore.uiState.selectedFieldCard
-    const currentPlayerId = gameStore.gameState.currentPlayer?.id
-    if (!handCard || !currentPlayerId) return
-
-    await gameController.playCard({
-      playerId: currentPlayerId,
-      cardId: handCard.id,
-      selectedFieldCards: fieldCard ? [fieldCard.id] : undefined,
-    })
-  },
-  onKoikoiDecision: async (continueGame: boolean) => {
-    const currentPlayerId = gameStore.gameState.currentPlayer?.id
-    if (!currentPlayerId) return
-
-    await gameController.handleKoikoiDecision({
-      playerId: currentPlayerId,
-      declareKoikoi: continueGame,
-    })
-  },
-  onNextRoundAction: async () => {
-    await gameController.startNextRound()
-  },
-  onNewGameAction: async () => {
-    await startNewGame()
-  },
-}
+// Direct event handlers
 
 // Methods
 const startNewGame = async () => {
@@ -315,23 +278,40 @@ const startNewGame = async () => {
 }
 
 const handleHandCardSelected = (card: Card) => {
-  inputController.handleHandCardSelected(card)
+  gameStore.setSelectedHandCard(card)
+  // Clear field selection when hand card changes
+  gameStore.setSelectedFieldCard(null)
 }
 
 const handleFieldCardSelected = (card: Card) => {
-  inputController.handleFieldCardSelected(card)
+  gameStore.setSelectedFieldCard(card)
 }
 
 const playSelectedCard = async () => {
-  inputController.handlePlayCardAction()
+  const handCard = gameStore.uiState.selectedHandCard
+  const fieldCard = gameStore.uiState.selectedFieldCard
+  const currentPlayerId = gameStore.gameState.currentPlayer?.id
+  if (!handCard || !currentPlayerId) return
+
+  await gameController.playCard({
+    playerId: currentPlayerId,
+    cardId: handCard.id,
+    selectedFieldCards: fieldCard ? [fieldCard.id] : undefined,
+  })
 }
 
 const handleKoikoiDecision = async (continueGame: boolean) => {
-  inputController.handleKoikoiDecision(continueGame)
+  const currentPlayerId = gameStore.gameState.currentPlayer?.id
+  if (!currentPlayerId) return
+
+  await gameController.handleKoikoiDecision({
+    playerId: currentPlayerId,
+    declareKoikoi: continueGame,
+  })
 }
 
 const startNextRound = async () => {
-  inputController.handleNextRoundAction()
+  await gameController.startNextRound()
 }
 
 const handleHandCardHovered = (card: Card) => {
@@ -374,9 +354,6 @@ const startErrorTimer = () => {
 }
 
 onMounted(() => {
-  // Setup input handler
-  inputController.addHandler(inputHandler)
-
   // Initialize game message
   gameStore.setGameMessage('game.messages.welcome')
 
@@ -431,7 +408,8 @@ onBeforeRouteLeave(async (_to, _from, next) => {
     (phase === 'playing' || phase === 'koikoi')
   )
   if (isInProgress) {
-    const confirmMessage = t('game.messages.confirmLeave') || '確定要離開遊戲嗎？未保存的進度可能會遺失。'
+    const confirmMessage =
+      t('game.messages.confirmLeave') || '確定要離開遊戲嗎？未保存的進度可能會遺失。'
     const ok = window.confirm(confirmMessage)
     if (!ok) return next(false)
   }
