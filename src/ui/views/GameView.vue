@@ -296,7 +296,7 @@ const playSelectedCard = async () => {
   await gameController.playCard({
     playerId: currentPlayerId,
     cardId: handCard.id,
-    selectedFieldCards: fieldCard ? [fieldCard.id] : undefined,
+    selectedFieldCard: fieldCard?.id,
   })
 }
 

@@ -34,14 +34,37 @@ export class PlayCardUseCase {
 
       const fieldMatches = gameState.getFieldMatches(playedCard)
       let capturedCards: Card[] = []
-      let selectedFieldCards: Card[] = []
+      let matchedFieldCards: Card[] = []
 
-      if (fieldMatches.length > 0) {
-        if (request.selectedFieldCards && request.selectedFieldCards.length > 0) {
-          selectedFieldCards = gameState.removeFromField(request.selectedFieldCards)
+      if (request.selectedFieldCard) {
+        // 當指定場牌時，驗證是否能與玩家牌配對
+        const selectedCard = fieldMatches.find(card => card.id === request.selectedFieldCard)
+        if (!selectedCard) {
+          return {
+            success: false,
+            playedCard: undefined,
+            capturedCards: [],
+            nextPhase: 'playing',
+            yakuResults: [],
+            error: 'errors.invalidFieldCardSelection'
+          }
+        }
+        // 配對成功，移除場牌並捕獲
+        const removedCards = gameState.removeFromField([request.selectedFieldCard])
+        matchedFieldCards = removedCards
+        capturedCards = [playedCard, ...removedCards]
+      } else {
+        // 當未指定場牌時，自動尋找配對
+        if (fieldMatches.length === 0) {
+          // 無配對，將玩家牌置於場上
+          gameState.addToField([playedCard])
         } else if (fieldMatches.length === 1) {
-          selectedFieldCards = gameState.removeFromField([fieldMatches[0].id])
+          // 唯一配對，自動捕獲
+          const removedCards = gameState.removeFromField([fieldMatches[0].id])
+          matchedFieldCards = removedCards
+          capturedCards = [playedCard, ...removedCards]
         } else {
+          // 多重配對，顯示錯誤
           gameState.addToField([playedCard])
           return {
             success: false,
@@ -52,9 +75,6 @@ export class PlayCardUseCase {
             error: 'errors.multipleMatchesFound'
           }
         }
-        capturedCards = [playedCard, ...selectedFieldCards]
-      } else {
-        gameState.addToField([playedCard])
       }
 
       const deckCard = gameState.drawCard()
@@ -78,7 +98,7 @@ export class PlayCardUseCase {
       const move: GameMove = {
         playerId: request.playerId,
         cardId: request.cardId,
-        matchedCards: selectedFieldCards,
+        matchedCards: matchedFieldCards,
         capturedCards,
         timestamp: new Date()
       }

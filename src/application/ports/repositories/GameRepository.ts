@@ -6,7 +6,7 @@ import type { YakuResult } from '@/domain/entities/Yaku'
 export interface PlayCardRequest {
   playerId: string
   cardId: string
-  selectedFieldCards?: string[]
+  selectedFieldCard?: string
 }
 
 export interface PlayCardResult {

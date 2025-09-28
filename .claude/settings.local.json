@@ -11,7 +11,10 @@
       "mcp__playwright__browser_hover",
       "Bash(npm run lint)",
       "Bash(npm run dev:*)",
-      "mcp__playwright__browser_evaluate"
+      "mcp__playwright__browser_evaluate",
+      "Bash(npm run lint:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []

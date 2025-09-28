@@ -102,12 +102,33 @@ export class LocalGameRepository implements GameRepository {
     let capturedCards: Card[] = []
     let selectedFieldCards: Card[] = []
 
-    if (fieldMatches.length > 0) {
-      if (request.selectedFieldCards && request.selectedFieldCards.length > 0) {
-        selectedFieldCards = gameState.removeFromField(request.selectedFieldCards)
+    if (request.selectedFieldCard) {
+      // 當指定場牌時，驗證是否能與玩家牌配對
+      const selectedCard = fieldMatches.find(card => card.id === request.selectedFieldCard)
+      if (!selectedCard) {
+        currentPlayer.addToHand(playedCard)
+        return {
+          success: false,
+          capturedCards: [],
+          nextPhase: 'playing',
+          yakuResults: [],
+          error: 'errors.invalidFieldCardSelection'
+        }
+      }
+      // 配對成功，移除場牌並捕獲
+      selectedFieldCards = gameState.removeFromField([request.selectedFieldCard])
+      capturedCards = [playedCard, ...selectedFieldCards]
+    } else {
+      // 當未指定場牌時，自動尋找配對
+      if (fieldMatches.length === 0) {
+        // 無配對，將玩家牌置於場上
+        gameState.addToField([playedCard])
       } else if (fieldMatches.length === 1) {
+        // 唯一配對，自動捕獲
         selectedFieldCards = gameState.removeFromField([fieldMatches[0].id])
+        capturedCards = [playedCard, ...selectedFieldCards]
       } else {
+        // 多重配對，顯示錯誤
         currentPlayer.addToHand(playedCard)
         return {
           success: false,
@@ -117,9 +138,6 @@ export class LocalGameRepository implements GameRepository {
           error: 'errors.multipleMatchesFound'
         }
       }
-      capturedCards = [playedCard, ...selectedFieldCards]
-    } else {
-      gameState.addToField([playedCard])
     }
 
     const deckCard = gameState.drawCard()

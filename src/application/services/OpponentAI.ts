@@ -1,5 +1,4 @@
 import type { GameState } from '@/domain/entities/GameState';
-import type { Card } from '@/domain/entities/Card';
 import type { PlayCardRequest } from '../ports/repositories/GameRepository';
 
 export class OpponentAI {
@@ -20,7 +19,7 @@ export class OpponentAI {
         return {
           playerId: opponent.id,
           cardId: handCard.id,
-          selectedFieldCards: [matches[0].id],
+          selectedFieldCard: matches[0].id,
         };
       }
     }
