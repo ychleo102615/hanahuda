@@ -1,7 +1,9 @@
 <template>
   <div class="bg-green-50 rounded-lg p-6">
     <div class="mb-6">
-      <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">{{ t('game.board.fieldCards') }}</h3>
+      <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">
+        {{ t('game.board.fieldCards') }}
+      </h3>
       <div
         class="flex flex-wrap gap-3 justify-center mb-4 min-h-32 p-4 bg-green-200 rounded-lg border-2 border-dashed border-green-500"
       >
@@ -28,7 +30,9 @@
     </div>
 
     <div v-if="yakuDisplay.length > 0" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-      <h4 class="text-lg font-bold text-amber-800 mb-3 text-center">{{ t('game.board.yakuAchieved') }}</h4>
+      <h4 class="text-lg font-bold text-amber-800 mb-3 text-center">
+        {{ t('game.board.yakuAchieved') }}
+      </h4>
       <div class="flex flex-col gap-2">
         <div
           v-for="yaku in yakuDisplay"
@@ -36,7 +40,9 @@
           class="flex justify-between items-center bg-white p-2 px-3 rounded border border-yellow-200"
         >
           <span class="font-semibold text-amber-700">{{ yaku.yaku.name }}</span>
-          <span class="text-yellow-600 font-bold">{{ yaku.points }} {{ t('game.board.points') }}</span>
+          <span class="text-yellow-600 font-bold"
+            >{{ yaku.points }} {{ t('game.board.points') }}</span
+          >
         </div>
       </div>
     </div>
@@ -107,17 +113,20 @@ const selectedFieldCard = ref<Card | null>(null)
 
 const isMatchingCard = (fieldCard: Card): boolean => {
   if (!props.canSelectField) return false
-  return props.selectedMatchingFieldCards.some(card => card.id === fieldCard.id)
+  return props.selectedMatchingFieldCards.some((card) => card.id === fieldCard.id)
 }
 
 const isSelectedCardMatch = (fieldCard: Card): boolean => {
-  return !!props.selectedHandCard && props.selectedMatchingFieldCards.some(card => card.id === fieldCard.id)
+  return (
+    !!props.selectedHandCard &&
+    props.selectedMatchingFieldCards.some((card) => card.id === fieldCard.id)
+  )
 }
 
 const isHoverPreview = (fieldCard: Card): boolean => {
   return (
     !!props.hoveredHandCard &&
-    props.hoveredMatchingFieldCards.some(card => card.id === fieldCard.id)
+    props.hoveredMatchingFieldCards.some((card) => card.id === fieldCard.id)
   )
 }
 
@@ -138,15 +147,6 @@ defineExpose({
   },
   getSelectedFieldCard: () => selectedFieldCard.value,
 })
-
-// 監控fieldcards變化
-watch(
-  () => props.fieldCards,
-  (newFieldCards) => {
-    console.log('Field cards changed:', newFieldCards)
-    console.trace()
-  },
-)
 </script>
 
 <style scoped>
