@@ -32,6 +32,7 @@ export interface UIGameState {
 export interface UIInteractionState {
   selectedHandCard: Card | null
   selectedFieldCard: Card | null
+  matchingFieldCards: Card[]
   gameMessageKey: string | null
   gameMessageParams?: Record<string, string | number>
   yakuDisplay: YakuResult[]
@@ -59,6 +60,7 @@ export const useGameStore = defineStore('game', () => {
   const uiState = ref<UIInteractionState>({
     selectedHandCard: null,
     selectedFieldCard: null,
+    matchingFieldCards: [],
     gameMessageKey: 'game.messages.welcome',
     gameMessageParams: undefined,
     yakuDisplay: [],
@@ -93,7 +95,11 @@ export const useGameStore = defineStore('game', () => {
   })
 
   const canSelectFieldCard = computed(() => {
-    return uiState.value.selectedHandCard !== null && isPlayerTurn.value
+    return (
+      uiState.value.selectedHandCard !== null &&
+      isPlayerTurn.value &&
+      uiState.value.matchingFieldCards.length > 0
+    )
   })
 
   // Actions for updating game state
@@ -154,6 +160,10 @@ export const useGameStore = defineStore('game', () => {
     uiState.value.selectedFieldCard = card
   }
 
+  const setMatchingFieldCards = (cards: Card[]) => {
+    uiState.value.matchingFieldCards = cards
+  }
+
   const setGameMessage = (messageKey: string | null, params?: Record<string, string | number>) => {
     uiState.value.gameMessageKey = messageKey
     uiState.value.gameMessageParams = params
@@ -178,6 +188,7 @@ export const useGameStore = defineStore('game', () => {
   const clearSelections = () => {
     uiState.value.selectedHandCard = null
     uiState.value.selectedFieldCard = null
+    uiState.value.matchingFieldCards = []
   }
 
   const clearError = () => {
@@ -201,6 +212,7 @@ export const useGameStore = defineStore('game', () => {
     uiState.value = {
       selectedHandCard: null,
       selectedFieldCard: null,
+      matchingFieldCards: [],
       gameMessageKey: 'game.messages.welcome',
       gameMessageParams: undefined,
       yakuDisplay: [],
@@ -240,6 +252,7 @@ export const useGameStore = defineStore('game', () => {
     // UI state actions
     setSelectedHandCard,
     setSelectedFieldCard,
+    setMatchingFieldCards,
     setGameMessage,
     setYakuDisplay,
     setShowKoikoiDialog,

@@ -3,6 +3,7 @@ import { GameFlowUseCase } from '@/application/usecases/GameFlowUseCase'
 import { PlayCardUseCase } from '@/application/usecases/PlayCardUseCase'
 import { CalculateScoreUseCase } from '@/application/usecases/CalculateScoreUseCase'
 import { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
+import { GetMatchingCardsUseCase } from '@/application/usecases/GetMatchingCardsUseCase'
 import { GameController } from '@/ui/controllers/GameController'
 import { VueGamePresenter } from '@/ui/presenters/VueGamePresenter'
 import { LocalStorageLocaleService } from '@/infrastructure/services/LocaleService'
@@ -22,6 +23,7 @@ export class DIContainer {
   static readonly PLAY_CARD_USE_CASE = Symbol('PlayCardUseCase')
   static readonly CALCULATE_SCORE_USE_CASE = Symbol('CalculateScoreUseCase')
   static readonly RESET_GAME_USE_CASE = Symbol('ResetGameUseCase')
+  static readonly GET_MATCHING_CARDS_USE_CASE = Symbol('GetMatchingCardsUseCase')
   static readonly GAME_CONTROLLER = Symbol('GameController')
 
   // Register a service factory
@@ -82,6 +84,11 @@ export class DIContainer {
     )
 
     this.registerSingleton(
+      DIContainer.GET_MATCHING_CARDS_USE_CASE,
+      () => new GetMatchingCardsUseCase(this.resolve(DIContainer.GAME_REPOSITORY)),
+    )
+
+    this.registerSingleton(
       DIContainer.RESET_GAME_USE_CASE,
       () =>
         new ResetGameUseCase(
@@ -125,6 +132,7 @@ export class DIContainer {
         new GameController(
           this.resolve(DIContainer.GAME_FLOW_USE_CASE),
           this.resolve(DIContainer.RESET_GAME_USE_CASE),
+          this.resolve(DIContainer.GET_MATCHING_CARDS_USE_CASE),
         ),
     )
   }

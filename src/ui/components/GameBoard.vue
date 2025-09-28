@@ -74,6 +74,7 @@ interface Props {
   deckCount: number
   selectedHandCard?: Card | null
   hoveredHandCard?: Card | null
+  matchingFieldCards?: readonly Card[]
   canSelectField?: boolean
   lastMove?: GameMove | null
   showKoikoiDialog?: boolean
@@ -89,6 +90,7 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   selectedHandCard: null,
   hoveredHandCard: null,
+  matchingFieldCards: () => [],
   canSelectField: false,
   lastMove: null,
   showKoikoiDialog: false,
@@ -101,20 +103,19 @@ const emit = defineEmits<Emits>()
 const selectedFieldCard = ref<Card | null>(null)
 
 const isMatchingCard = (fieldCard: Card): boolean => {
-  const handCard = props.selectedHandCard || props.hoveredHandCard
-  if (!handCard || !props.canSelectField) return false
-  return handCard.suit === fieldCard.suit
+  if (!props.canSelectField) return false
+  return props.matchingFieldCards.some(card => card.id === fieldCard.id)
 }
 
 const isSelectedCardMatch = (fieldCard: Card): boolean => {
-  return !!props.selectedHandCard && props.selectedHandCard.suit === fieldCard.suit
+  return !!props.selectedHandCard && props.matchingFieldCards.some(card => card.id === fieldCard.id)
 }
 
 const isHoverPreview = (fieldCard: Card): boolean => {
   return (
     !!props.hoveredHandCard &&
-    props.hoveredHandCard.suit === fieldCard.suit &&
-    !isSelectedCardMatch(fieldCard)
+    !props.selectedHandCard &&
+    props.matchingFieldCards.some(card => card.id === fieldCard.id)
   )
 }
 
@@ -127,11 +128,6 @@ const handleFieldCardClick = (card: Card) => {
 
 const handleKoikoiDecision = (continueGame: boolean) => {
   emit('koikoiDecision', continueGame)
-}
-
-const getPlayerName = (playerId: string): string => {
-  const player = props.players?.find((p) => p.id === playerId)
-  return player?.name || 'Unknown Player'
 }
 
 defineExpose({

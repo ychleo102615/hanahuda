@@ -1,10 +1,12 @@
 import type { GameFlowUseCase } from '@/application/usecases/GameFlowUseCase'
 import type { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
+import type { GetMatchingCardsUseCase } from '@/application/usecases/GetMatchingCardsUseCase'
 import type {
   StartGameInputDTO,
   PlayCardInputDTO,
   KoikoiDecisionInputDTO,
 } from '@/application/dto/GameDTO'
+import type { Card } from '@/domain/entities/Card'
 
 export class GameController {
   private gameId: string = ''
@@ -12,6 +14,7 @@ export class GameController {
   constructor(
     private gameFlowUseCase: GameFlowUseCase,
     private resetGameUseCase: ResetGameUseCase,
+    private getMatchingCardsUseCase: GetMatchingCardsUseCase,
   ) {}
 
   async startNewGame(input: StartGameInputDTO): Promise<void> {
@@ -79,5 +82,29 @@ export class GameController {
 
   getGameId(): string {
     return this.gameId
+  }
+
+  async getMatchingCards(handCard: Card): Promise<{
+    matchingFieldCards: Card[]
+    canSelectField: boolean
+  }> {
+    if (!this.gameId) {
+      return { matchingFieldCards: [], canSelectField: false }
+    }
+
+    try {
+      const result = await this.getMatchingCardsUseCase.execute({
+        gameId: this.gameId,
+        handCard
+      })
+
+      return {
+        matchingFieldCards: result.matchingFieldCards,
+        canSelectField: result.canSelectField
+      }
+    } catch (error) {
+      console.error('Error getting matching cards:', error)
+      return { matchingFieldCards: [], canSelectField: false }
+    }
   }
 }
