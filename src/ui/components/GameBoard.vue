@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import type { Card } from '@/domain/entities/Card'
 import type { GameMove } from '@/domain/entities/GameState'
 import type { YakuResult } from '@/domain/entities/Yaku'

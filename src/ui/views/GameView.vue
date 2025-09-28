@@ -65,6 +65,7 @@
             :players="playerNames"
             @field-card-selected="handleFieldCardSelected"
             @koikoi-decision="handleKoikoiDecision"
+            ref="gameBoardRef"
           />
         </div>
 
@@ -206,6 +207,7 @@ const gameController = diContainer.resolve<GameController>(DIContainer.GAME_CONT
 
 // Refs
 const playerHandRef = ref()
+const gameBoardRef = ref()
 
 // Computed properties from store
 const currentPlayerData = computed(() => gameStore.currentPlayerData)
@@ -283,6 +285,8 @@ const handleHandCardSelected = async (card: Card) => {
   gameStore.setSelectedHandCard(card)
   // Clear field selection when hand card changes
   gameStore.setSelectedFieldCard(null)
+  // Also clear GameBoard component's internal selection state
+  gameBoardRef.value?.clearFieldSelection()
 
   // 獲取可配對的場牌
   try {

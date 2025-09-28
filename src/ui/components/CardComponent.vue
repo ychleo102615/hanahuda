@@ -101,21 +101,17 @@ const cardClasses = computed(() => {
 
   // 特效處理
   if (props.hoveredHighlight) {
-    // Hover 高亮: 閃爍 + 放大
+    // Hover 高亮: 整張卡片閃爍 + 放大
     baseClasses.push('animate-pulse scale-110')
-  }
-
-  if (props.selectedHighlight) {
-    // Selected 高亮: 閃爍效果
-    baseClasses.push('animate-pulse')
   }
 
   // 邊框高亮優先級處理 (加粗 outline)
   if (props.selected) {
+    // 選中配對完成：深藍色邊框，不閃爍
     baseClasses.push('outline outline-4 outline-blue-500 outline-offset-2')
   } else if (props.selectedHighlight) {
-    // 如果沒有 selected，selectedHighlight 使用淺藍色
-    baseClasses.push('outline outline-4 outline-blue-300 outline-offset-2 shadow-lg')
+    // 選中配對未完成：淡藍色邊框 + outline 閃爍
+    baseClasses.push('outline outline-4 outline-blue-300 outline-offset-2 shadow-lg animate-pulse-outline')
   } else if (props.highlighted) {
     // 保留原有的通用高亮
     baseClasses.push('outline outline-4 outline-yellow-400 outline-offset-2 shadow-lg')
@@ -216,5 +212,21 @@ const getTypeDisplay = (type: string): string => {
 /* Tooltip theme colors */
 .card__tooltip-points {
   color: var(--card-tooltip);
+}
+
+/* Custom outline pulse animation - matching Tailwind's animate-pulse timing */
+@keyframes pulse-outline-blue {
+  0%, 100% {
+    outline-color: rgb(147 197 253); /* blue-300 - same as Tailwind */
+  }
+  50% {
+    outline-color: rgba(147, 197, 253, 0.4); /* blue-300 with reduced opacity */
+  }
+}
+
+.animate-pulse-outline {
+  animation: pulse-outline-blue 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  /* Ensure animation takes priority over Tailwind color */
+  animation-fill-mode: both;
 }
 </style>
