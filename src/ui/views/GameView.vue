@@ -56,7 +56,8 @@
             :deck-count="deckCount"
             :selected-hand-card="gameStore.uiState.selectedHandCard"
             :hovered-hand-card="hoveredHandCard"
-            :matching-field-cards="gameStore.uiState.matchingFieldCards"
+            :selected-matching-field-cards="gameStore.uiState.selectedMatchingFieldCards"
+            :hovered-matching-field-cards="gameStore.uiState.hoveredMatchingFieldCards"
             :can-select-field="canSelectFieldCard"
             :last-move="lastMove"
             :show-koikoi-dialog="showKoikoiDialog"
@@ -286,10 +287,10 @@ const handleHandCardSelected = async (card: Card) => {
   // 獲取可配對的場牌
   try {
     const matchingResult = await gameController.getMatchingCards(card)
-    gameStore.setMatchingFieldCards(matchingResult.matchingFieldCards)
+    gameStore.setSelectedMatchingFieldCards(matchingResult.matchingFieldCards)
   } catch (error) {
     console.error('Error getting matching cards:', error)
-    gameStore.setMatchingFieldCards([])
+    gameStore.setSelectedMatchingFieldCards([])
   }
 }
 
@@ -331,30 +332,17 @@ const handleHandCardHovered = async (card: Card) => {
   // 獲取可配對的場牌來提示使用者
   try {
     const matchingResult = await gameController.getMatchingCards(card)
-    gameStore.setMatchingFieldCards(matchingResult.matchingFieldCards)
+    gameStore.setHoveredMatchingFieldCards(matchingResult.matchingFieldCards)
   } catch (error) {
     console.error('Error getting matching cards on hover:', error)
-    gameStore.setMatchingFieldCards([])
+    gameStore.setHoveredMatchingFieldCards([])
   }
 }
 
-const handleHandCardUnhovered = async () => {
+const handleHandCardUnhovered = () => {
   hoveredHandCard.value = null
-
-  // 如果有選中的手牌，保持其配對提示；否則清除配對提示
-  if (gameStore.uiState.selectedHandCard) {
-    try {
-      const matchingResult = await gameController.getMatchingCards(
-        gameStore.uiState.selectedHandCard,
-      )
-      gameStore.setMatchingFieldCards(matchingResult.matchingFieldCards)
-    } catch (error) {
-      console.error('Error getting matching cards after unhover:', error)
-      gameStore.setMatchingFieldCards([])
-    }
-  } else {
-    gameStore.setMatchingFieldCards([])
-  }
+  // 清除 hover 配對提示
+  gameStore.setHoveredMatchingFieldCards([])
 }
 
 const clearErrorWithAnimation = () => {

@@ -61,6 +61,8 @@ interface Props {
   selectable?: boolean
   selected?: boolean
   highlighted?: boolean
+  selectedHighlight?: boolean
+  hoveredHighlight?: boolean
   size?: 'small' | 'medium' | 'large'
   showCardInfo?: boolean
   enableHoverTooltip?: boolean
@@ -76,6 +78,8 @@ const props = withDefaults(defineProps<Props>(), {
   selectable: false,
   selected: false,
   highlighted: false,
+  selectedHighlight: false,
+  hoveredHighlight: false,
   size: 'medium',
   showCardInfo: false,
   enableHoverTooltip: true,
@@ -91,11 +95,31 @@ const cardClasses = computed(() => {
     'flex-shrink-0 inline-block',
     // 互動狀態
     props.selectable ? 'cursor-pointer hover:scale-105' : '',
-    props.selected ? 'outline outline-2 outline-blue-500 outline-offset-2' : '',
-    props.highlighted ? 'outline outline-2 outline-yellow-400 outline-offset-2 shadow-lg' : '',
     // 主題修飾類別
     `card--${props.card.type}`,
   ]
+
+  // 特效處理
+  if (props.hoveredHighlight) {
+    // Hover 高亮: 閃爍 + 放大
+    baseClasses.push('animate-pulse scale-110')
+  }
+
+  if (props.selectedHighlight) {
+    // Selected 高亮: 閃爍效果
+    baseClasses.push('animate-pulse')
+  }
+
+  // 邊框高亮優先級處理 (加粗 outline)
+  if (props.selected) {
+    baseClasses.push('outline outline-4 outline-blue-500 outline-offset-2')
+  } else if (props.selectedHighlight) {
+    // 如果沒有 selected，selectedHighlight 使用淺藍色
+    baseClasses.push('outline outline-4 outline-blue-300 outline-offset-2 shadow-lg')
+  } else if (props.highlighted) {
+    // 保留原有的通用高亮
+    baseClasses.push('outline outline-4 outline-yellow-400 outline-offset-2 shadow-lg')
+  }
 
   return baseClasses.filter(Boolean).join(' ')
 })

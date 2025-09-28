@@ -10,8 +10,9 @@
           :key="card.id"
           :card="card"
           :selectable="canSelectField && isMatchingCard(card)"
-          :highlighted="isHoverPreview(card) || (isSelectedCardMatch(card) && canSelectField)"
-          :class="{ 'animate-pulse': isSelectedCardMatch(card) && canSelectField }"
+          :selected="selectedFieldCard?.id === card.id"
+          :selected-highlight="isSelectedCardMatch(card) && canSelectField"
+          :hovered-highlight="isHoverPreview(card)"
           size="medium"
           @click="handleFieldCardClick"
         />
@@ -74,7 +75,8 @@ interface Props {
   deckCount: number
   selectedHandCard?: Card | null
   hoveredHandCard?: Card | null
-  matchingFieldCards?: readonly Card[]
+  selectedMatchingFieldCards?: readonly Card[]
+  hoveredMatchingFieldCards?: readonly Card[]
   canSelectField?: boolean
   lastMove?: GameMove | null
   showKoikoiDialog?: boolean
@@ -90,7 +92,8 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   selectedHandCard: null,
   hoveredHandCard: null,
-  matchingFieldCards: () => [],
+  selectedMatchingFieldCards: () => [],
+  hoveredMatchingFieldCards: () => [],
   canSelectField: false,
   lastMove: null,
   showKoikoiDialog: false,
@@ -104,18 +107,17 @@ const selectedFieldCard = ref<Card | null>(null)
 
 const isMatchingCard = (fieldCard: Card): boolean => {
   if (!props.canSelectField) return false
-  return props.matchingFieldCards.some(card => card.id === fieldCard.id)
+  return props.selectedMatchingFieldCards.some(card => card.id === fieldCard.id)
 }
 
 const isSelectedCardMatch = (fieldCard: Card): boolean => {
-  return !!props.selectedHandCard && props.matchingFieldCards.some(card => card.id === fieldCard.id)
+  return !!props.selectedHandCard && props.selectedMatchingFieldCards.some(card => card.id === fieldCard.id)
 }
 
 const isHoverPreview = (fieldCard: Card): boolean => {
   return (
     !!props.hoveredHandCard &&
-    !props.selectedHandCard &&
-    props.matchingFieldCards.some(card => card.id === fieldCard.id)
+    props.hoveredMatchingFieldCards.some(card => card.id === fieldCard.id)
   )
 }
 
