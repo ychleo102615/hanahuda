@@ -1,4 +1,4 @@
-import type { GameFlowUseCase } from '@/application/usecases/GameFlowUseCase'
+import type { GameFlowCoordinator } from '@/application/usecases/GameFlowCoordinator'
 import type { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
 import type { GetMatchingCardsUseCase } from '@/application/usecases/GetMatchingCardsUseCase'
 import type {
@@ -12,14 +12,14 @@ export class GameController {
   private gameId: string = ''
 
   constructor(
-    private gameFlowUseCase: GameFlowUseCase,
+    private gameFlowCoordinator: GameFlowCoordinator,
     private resetGameUseCase: ResetGameUseCase,
     private getMatchingCardsUseCase: GetMatchingCardsUseCase,
   ) {}
 
   async startNewGame(input: StartGameInputDTO): Promise<void> {
     try {
-      const newGameId = await this.gameFlowUseCase.startNewGame(input)
+      const newGameId = await this.gameFlowCoordinator.startNewGame(input)
       this.gameId = newGameId
     } catch (error) {
       console.error('Error starting game:', error)
@@ -33,7 +33,7 @@ export class GameController {
     }
 
     try {
-      await this.gameFlowUseCase.handlePlayCard(this.gameId, input)
+      await this.gameFlowCoordinator.handlePlayCard(this.gameId, input)
     } catch (error) {
       console.error('Error playing card:', error)
       throw error
@@ -46,7 +46,7 @@ export class GameController {
     }
 
     try {
-      await this.gameFlowUseCase.handleKoikoiDecision(
+      await this.gameFlowCoordinator.handleKoikoiDecision(
         this.gameId,
         input.playerId,
         input.declareKoikoi,
@@ -63,7 +63,7 @@ export class GameController {
     }
 
     try {
-      await this.gameFlowUseCase.startNextRound(this.gameId)
+      await this.gameFlowCoordinator.startNextRound(this.gameId)
     } catch (error) {
       console.error('Error starting next round:', error)
       throw error

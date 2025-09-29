@@ -75,3 +75,10 @@ export interface CalculateScoreOutputDTO {
   player1Yaku: YakuResult[]
   player2Yaku: YakuResult[]
 }
+
+export interface SetUpGameResult {
+  success: boolean
+  gameId: string
+  gameState?: GameStateOutputDTO
+  error?: string
+}

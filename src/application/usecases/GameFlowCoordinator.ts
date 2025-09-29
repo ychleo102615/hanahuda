@@ -1,31 +1,27 @@
-import type { Card, CardType } from '../../domain/entities/Card'
-import { CardEntity } from '../../domain/entities/Card'
+import type { Card } from '../../domain/entities/Card'
 import { Player } from '../../domain/entities/Player'
 import type { GameState, RoundResult } from '../../domain/entities/GameState'
-import { GameState as GameStateClass } from '../../domain/entities/GameState'
 import type { GameRepository } from '../ports/repositories/GameRepository'
 import type { GamePresenter } from '../ports/presenters/GamePresenter'
 import type { YakuResult } from '../../domain/entities/Yaku'
 import type { StartGameInputDTO, GameStateOutputDTO, PlayCardInputDTO, PlayCardOutputDTO } from '../dto/GameDTO'
-import { HANAFUDA_CARDS, GAME_SETTINGS } from '@/shared/constants/gameConstants'
+import { GAME_SETTINGS } from '@/shared/constants/gameConstants'
 import { CalculateScoreUseCase } from './CalculateScoreUseCase'
 import { PlayCardUseCase } from './PlayCardUseCase'
+import { SetUpNewGameUseCase } from './SetUpNewGameUseCase'
 
-export class GameFlowUseCase {
+export class GameFlowCoordinator {
   constructor(
     private gameRepository: GameRepository,
     private calculateScoreUseCase: CalculateScoreUseCase,
+    private setUpNewGameUseCase: SetUpNewGameUseCase,
     private presenter?: GamePresenter,
     private playCardUseCase?: PlayCardUseCase,
   ) {}
 
-  async createGame(): Promise<string> {
-    return await this.gameRepository.createGame()
-  }
-
   async startNewGame(input: StartGameInputDTO): Promise<string> {
     try {
-      // 清空 UI 狀態
+      // 1. UI 準備和清理
       if (this.presenter) {
         this.presenter.clearYakuDisplay()
         this.presenter.presentKoikoiDialog(false)
@@ -33,39 +29,43 @@ export class GameFlowUseCase {
         this.presenter.presentGameMessage('game.messages.startingGame')
       }
 
-      const newGameId = await this.createGame()
+      // 2. 委派純業務邏輯給 UseCase
+      const result = await this.setUpNewGameUseCase.execute(input)
 
-      const player1 = new Player('player1', input.player1Name, true)
-      const player2 = new Player('player2', input.player2Name, false)
-
-      await this.setupGame(newGameId, player1, player2)
-      const dealtGameState = await this.dealCards(newGameId)
-
-      // 通知 UI 更新
+      // 3. 基於業務結果進行 UI 協調
       if (this.presenter) {
-        const gameStateDTO = this.mapGameStateToDTO(newGameId, dealtGameState)
+        if (result.success && result.gameState) {
+          this.presenter.presentStartGameResult({
+            gameId: result.gameId,
+            success: true,
+          })
 
-        this.presenter.presentStartGameResult({
-          gameId: newGameId,
-          success: true,
-        })
-
-        this.presenter.presentGameState(gameStateDTO)
-        this.presenter.presentGameMessage(
-          'game.messages.gameStarted',
-          { playerName: dealtGameState.currentPlayer?.name || '' }
-        )
+          this.presenter.presentGameState(result.gameState)
+          this.presenter.presentGameMessage(
+            'game.messages.gameStarted',
+            { playerName: result.gameState.currentPlayer?.name || '' }
+          )
+        } else {
+          this.presenter.presentStartGameResult({
+            gameId: '',
+            success: false,
+            error: result.error,
+          })
+          this.presenter.presentError('errors.startGameFailed', { error: result.error || 'Unknown error' })
+        }
       }
 
-      return newGameId
-    } catch (error) {
-      const errorMessage = `Error starting game: ${error}`
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to start game')
+      }
 
+      return result.gameId
+    } catch (error) {
       if (this.presenter) {
         this.presenter.presentStartGameResult({
           gameId: '',
           success: false,
-          error: errorMessage,
+          error: String(error),
         })
         this.presenter.presentError('errors.startGameFailed', { error: String(error) })
       }
@@ -74,53 +74,6 @@ export class GameFlowUseCase {
     }
   }
 
-  async setupGame(gameId: string, player1: Player, player2: Player): Promise<GameState> {
-    const gameState = new GameStateClass()
-
-    gameState.addPlayer(player1)
-    gameState.addPlayer(player2)
-
-    const deck = await this.createShuffledDeck()
-    gameState.setDeck(deck)
-
-    gameState.setPhase('setup')
-    await this.gameRepository.saveGame(gameId, gameState)
-
-    return gameState
-  }
-
-  async dealCards(gameId: string): Promise<GameState> {
-    console.log('Dealing cards...')
-    const gameState = await this.gameRepository.getGameState(gameId)
-    if (!gameState) {
-      throw new Error('Game not found')
-    }
-
-    const deck = [...gameState.deck]
-    const fieldCards: Card[] = []
-
-    for (let i = 0; i < GAME_SETTINGS.CARDS_ON_FIELD; i++) {
-      const card = deck.pop()
-      if (card) fieldCards.push(card)
-    }
-
-    gameState.players.forEach((player: Player) => {
-      const hand: Card[] = []
-      for (let i = 0; i < GAME_SETTINGS.CARDS_PER_PLAYER; i++) {
-        const card = deck.pop()
-        if (card) hand.push(card)
-      }
-      player.setHand(hand)
-    })
-
-    gameState.setDeck(deck)
-    gameState.setField(fieldCards)
-    gameState.setPhase('playing')
-    gameState.setCurrentPlayer(0)
-
-    await this.gameRepository.saveGame(gameId, gameState)
-    return gameState
-  }
 
   async handleKoikoiDeclaration(
     gameId: string,
@@ -264,12 +217,12 @@ export class GameFlowUseCase {
       gameState.nextRound()
 
       // 創建新牌組並發牌
-      const deck = await this.createShuffledDeck()
+      const deck = await this.setUpNewGameUseCase.createShuffledDeck()
       gameState.setDeck(deck)
 
       // 先保存狀態變更，然後發牌
       await this.gameRepository.saveGame(gameId, gameState)
-      const updatedGameState = await this.dealCards(gameId)
+      const updatedGameState = await this.setUpNewGameUseCase.dealCards(gameId)
 
       // 通知 UI 新回合開始
       if (this.presenter) {
@@ -293,29 +246,6 @@ export class GameFlowUseCase {
     return finalGameState
   }
 
-  private async createShuffledDeck(): Promise<Card[]> {
-    const cards: Card[] = []
-
-    Object.values(HANAFUDA_CARDS).forEach((monthData) => {
-      monthData.CARDS.forEach((cardData, index) => {
-        const card = new CardEntity(
-          cardData.suit,
-          cardData.type as CardType,
-          cardData.points,
-          cardData.name,
-          index,
-        )
-        cards.push(card)
-      })
-    })
-
-    for (let i = cards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[cards[i], cards[j]] = [cards[j], cards[i]]
-    }
-
-    return cards
-  }
 
   async handleCardSelection(card: Card, isHandCard: boolean): Promise<void> {
     if (this.presenter) {
