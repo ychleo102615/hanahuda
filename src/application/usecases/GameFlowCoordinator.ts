@@ -8,13 +8,15 @@ import type { StartGameInputDTO, GameStateOutputDTO, PlayCardInputDTO, PlayCardO
 import { GAME_SETTINGS } from '@/shared/constants/gameConstants'
 import { CalculateScoreUseCase } from './CalculateScoreUseCase'
 import { PlayCardUseCase } from './PlayCardUseCase'
-import { SetUpNewGameUseCase } from './SetUpNewGameUseCase'
+import { SetUpGameUseCase } from './SetUpGameUseCase'
+import { SetUpRoundUseCase } from './SetUpRoundUseCase'
 
 export class GameFlowCoordinator {
   constructor(
     private gameRepository: GameRepository,
     private calculateScoreUseCase: CalculateScoreUseCase,
-    private setUpNewGameUseCase: SetUpNewGameUseCase,
+    private setUpGameUseCase: SetUpGameUseCase,
+    private setUpRoundUseCase: SetUpRoundUseCase,
     private presenter?: GamePresenter,
     private playCardUseCase?: PlayCardUseCase,
   ) {}
@@ -29,37 +31,35 @@ export class GameFlowCoordinator {
         this.presenter.presentGameMessage('game.messages.startingGame')
       }
 
-      // 2. 委派純業務邏輯給 UseCase
-      const result = await this.setUpNewGameUseCase.execute(input)
+      // 2. 委派遊戲初始化給 SetUpGameUseCase
+      const gameResult = await this.setUpGameUseCase.execute(input)
 
-      // 3. 基於業務結果進行 UI 協調
-      if (this.presenter) {
-        if (result.success && result.gameState) {
-          this.presenter.presentStartGameResult({
-            gameId: result.gameId,
-            success: true,
-          })
-
-          this.presenter.presentGameState(result.gameState)
-          this.presenter.presentGameMessage(
-            'game.messages.gameStarted',
-            { playerName: result.gameState.currentPlayer?.name || '' }
-          )
-        } else {
-          this.presenter.presentStartGameResult({
-            gameId: '',
-            success: false,
-            error: result.error,
-          })
-          this.presenter.presentError('errors.startGameFailed', { error: result.error || 'Unknown error' })
-        }
+      if (!gameResult.success) {
+        throw new Error(gameResult.error || 'Failed to create game')
       }
 
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to start game')
+      // 3. 委派回合設置給 SetUpRoundUseCase
+      const roundResult = await this.setUpRoundUseCase.execute(gameResult.gameId)
+
+      if (!roundResult.success) {
+        throw new Error(roundResult.error || 'Failed to set up round')
       }
 
-      return result.gameId
+      // 4. 基於業務結果進行 UI 協調
+      if (this.presenter && roundResult.gameState) {
+        this.presenter.presentStartGameResult({
+          gameId: gameResult.gameId,
+          success: true,
+        })
+
+        this.presenter.presentGameState(roundResult.gameState)
+        this.presenter.presentGameMessage(
+          'game.messages.gameStarted',
+          { playerName: roundResult.gameState.currentPlayer?.name || '' }
+        )
+      }
+
+      return gameResult.gameId
     } catch (error) {
       if (this.presenter) {
         this.presenter.presentStartGameResult({
@@ -216,13 +216,18 @@ export class GameFlowCoordinator {
       // 進入下一回合（這會自動重置玩家狀態和遊戲狀態）
       gameState.nextRound()
 
-      // 創建新牌組並發牌
-      const deck = await this.setUpNewGameUseCase.createShuffledDeck()
-      gameState.setDeck(deck)
-
-      // 先保存狀態變更，然後發牌
+      // 先保存狀態變更，然後委派給 SetUpRoundUseCase 處理發牌
       await this.gameRepository.saveGame(gameId, gameState)
-      const updatedGameState = await this.setUpNewGameUseCase.dealCards(gameId)
+      const roundResult = await this.setUpRoundUseCase.execute(gameId)
+
+      if (!roundResult.success) {
+        throw new Error(roundResult.error || 'Failed to set up new round')
+      }
+
+      const updatedGameState = await this.gameRepository.getGameState(gameId)
+      if (!updatedGameState) {
+        throw new Error('Game state not found after round setup')
+      }
 
       // 通知 UI 新回合開始
       if (this.presenter) {

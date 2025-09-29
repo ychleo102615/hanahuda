@@ -4,7 +4,8 @@ import { PlayCardUseCase } from '@/application/usecases/PlayCardUseCase'
 import { CalculateScoreUseCase } from '@/application/usecases/CalculateScoreUseCase'
 import { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
 import { GetMatchingCardsUseCase } from '@/application/usecases/GetMatchingCardsUseCase'
-import { SetUpNewGameUseCase } from '@/application/usecases/SetUpNewGameUseCase'
+import { SetUpGameUseCase } from '@/application/usecases/SetUpGameUseCase'
+import { SetUpRoundUseCase } from '@/application/usecases/SetUpRoundUseCase'
 import { GameController } from '@/ui/controllers/GameController'
 import { VueGamePresenter } from '@/ui/presenters/VueGamePresenter'
 import { LocalStorageLocaleService } from '@/infrastructure/services/LocaleService'
@@ -21,7 +22,8 @@ export class DIContainer {
   static readonly GAME_PRESENTER = Symbol('GamePresenter')
   static readonly LOCALE_SERVICE = Symbol('LocaleService')
   static readonly GAME_FLOW_COORDINATOR = Symbol('GameFlowCoordinator')
-  static readonly SET_UP_NEW_GAME_USE_CASE = Symbol('SetUpNewGameUseCase')
+  static readonly SET_UP_GAME_USE_CASE = Symbol('SetUpGameUseCase')
+  static readonly SET_UP_ROUND_USE_CASE = Symbol('SetUpRoundUseCase')
   static readonly PLAY_CARD_USE_CASE = Symbol('PlayCardUseCase')
   static readonly CALCULATE_SCORE_USE_CASE = Symbol('CalculateScoreUseCase')
   static readonly RESET_GAME_USE_CASE = Symbol('ResetGameUseCase')
@@ -91,8 +93,13 @@ export class DIContainer {
     )
 
     this.registerSingleton(
-      DIContainer.SET_UP_NEW_GAME_USE_CASE,
-      () => new SetUpNewGameUseCase(this.resolve(DIContainer.GAME_REPOSITORY)),
+      DIContainer.SET_UP_GAME_USE_CASE,
+      () => new SetUpGameUseCase(this.resolve(DIContainer.GAME_REPOSITORY)),
+    )
+
+    this.registerSingleton(
+      DIContainer.SET_UP_ROUND_USE_CASE,
+      () => new SetUpRoundUseCase(this.resolve(DIContainer.GAME_REPOSITORY)),
     )
 
     this.registerSingleton(
@@ -119,7 +126,8 @@ export class DIContainer {
         new GameFlowCoordinator(
           this.resolve(DIContainer.GAME_REPOSITORY),
           this.resolve(DIContainer.CALCULATE_SCORE_USE_CASE),
-          this.resolve(DIContainer.SET_UP_NEW_GAME_USE_CASE),
+          this.resolve(DIContainer.SET_UP_GAME_USE_CASE),
+          this.resolve(DIContainer.SET_UP_ROUND_USE_CASE),
           gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
           this.resolve(DIContainer.PLAY_CARD_USE_CASE),
         ),

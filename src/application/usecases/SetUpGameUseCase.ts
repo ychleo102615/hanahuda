@@ -1,17 +1,22 @@
-import type { Card, CardType } from '../../domain/entities/Card'
-import { CardEntity } from '../../domain/entities/Card'
 import { Player } from '../../domain/entities/Player'
 import type { GameState } from '../../domain/entities/GameState'
 import { GameState as GameStateClass } from '../../domain/entities/GameState'
 import type { GameRepository } from '../ports/repositories/GameRepository'
 import type { StartGameInputDTO, SetUpGameResult, GameStateOutputDTO } from '../dto/GameDTO'
-import { HANAFUDA_CARDS, GAME_SETTINGS } from '@/shared/constants/gameConstants'
+import { DeckService } from '../../domain/services/DeckService'
 
-export class SetUpNewGameUseCase {
+export class SetUpGameUseCase {
+  private deckService: DeckService
+
   constructor(
     private gameRepository: GameRepository,
-  ) {}
+  ) {
+    this.deckService = new DeckService()
+  }
 
+  /**
+   * 創建新遊戲（不包含發牌邏輯）
+   */
   async execute(input: StartGameInputDTO): Promise<SetUpGameResult> {
     try {
       const newGameId = await this.createGame()
@@ -19,10 +24,8 @@ export class SetUpNewGameUseCase {
       const player1 = new Player('player1', input.player1Name, true)
       const player2 = new Player('player2', input.player2Name, false)
 
-      await this.setupGame(newGameId, player1, player2)
-      const dealtGameState = await this.dealCards(newGameId)
-
-      const gameStateDTO = this.mapGameStateToDTO(newGameId, dealtGameState)
+      const gameState = await this.setupGame(newGameId, player1, player2)
+      const gameStateDTO = this.mapGameStateToDTO(newGameId, gameState)
 
       return {
         success: true,
@@ -48,69 +51,14 @@ export class SetUpNewGameUseCase {
     gameState.addPlayer(player1)
     gameState.addPlayer(player2)
 
-    const deck = await this.createShuffledDeck()
+    // 創建牌組但不發牌（發牌由 SetUpRoundUseCase 處理）
+    const deck = this.deckService.createShuffledDeck()
     gameState.setDeck(deck)
 
     gameState.setPhase('setup')
     await this.gameRepository.saveGame(gameId, gameState)
 
     return gameState
-  }
-
-  async dealCards(gameId: string): Promise<GameState> {
-    const gameState = await this.gameRepository.getGameState(gameId)
-    if (!gameState) {
-      throw new Error('Game not found')
-    }
-
-    const deck = [...gameState.deck]
-    const fieldCards: Card[] = []
-
-    for (let i = 0; i < GAME_SETTINGS.CARDS_ON_FIELD; i++) {
-      const card = deck.pop()
-      if (card) fieldCards.push(card)
-    }
-
-    gameState.players.forEach((player: Player) => {
-      const hand: Card[] = []
-      for (let i = 0; i < GAME_SETTINGS.CARDS_PER_PLAYER; i++) {
-        const card = deck.pop()
-        if (card) hand.push(card)
-      }
-      player.setHand(hand)
-    })
-
-    gameState.setDeck(deck)
-    gameState.setField(fieldCards)
-    gameState.setPhase('playing')
-    gameState.setCurrentPlayer(0)
-
-    await this.gameRepository.saveGame(gameId, gameState)
-    return gameState
-  }
-
-  async createShuffledDeck(): Promise<Card[]> {
-    const cards: Card[] = []
-
-    Object.values(HANAFUDA_CARDS).forEach((monthData) => {
-      monthData.CARDS.forEach((cardData, index) => {
-        const card = new CardEntity(
-          cardData.suit,
-          cardData.type as CardType,
-          cardData.points,
-          cardData.name,
-          index,
-        )
-        cards.push(card)
-      })
-    })
-
-    for (let i = cards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[cards[i], cards[j]] = [cards[j], cards[i]]
-    }
-
-    return cards
   }
 
   private mapGameStateToDTO(gameId: string, gameState: GameState): GameStateOutputDTO {
