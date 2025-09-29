@@ -4,7 +4,12 @@ import type { GameState, RoundResult } from '../../domain/entities/GameState'
 import type { GameRepository } from '../ports/repositories/GameRepository'
 import type { GamePresenter } from '../ports/presenters/GamePresenter'
 import type { YakuResult } from '../../domain/entities/Yaku'
-import type { StartGameInputDTO, GameStateOutputDTO, PlayCardInputDTO, PlayCardOutputDTO } from '../dto/GameDTO'
+import type {
+  StartGameInputDTO,
+  GameStateOutputDTO,
+  PlayCardInputDTO,
+  PlayCardOutputDTO,
+} from '../dto/GameDTO'
 import { GAME_SETTINGS } from '@/shared/constants/gameConstants'
 import { CalculateScoreUseCase } from './CalculateScoreUseCase'
 import { PlayCardUseCase } from './PlayCardUseCase'
@@ -53,10 +58,9 @@ export class GameFlowCoordinator {
         })
 
         this.presenter.presentGameState(roundResult.gameState)
-        this.presenter.presentGameMessage(
-          'game.messages.gameStarted',
-          { playerName: roundResult.gameState.currentPlayer?.name || '' }
-        )
+        this.presenter.presentGameMessage('game.messages.gameStarted', {
+          playerName: roundResult.gameState.currentPlayer?.name || '',
+        })
       }
 
       return gameResult.gameId
@@ -73,7 +77,6 @@ export class GameFlowCoordinator {
       throw error
     }
   }
-
 
   async handleKoikoiDeclaration(
     gameId: string,
@@ -106,7 +109,11 @@ export class GameFlowCoordinator {
     return gameState
   }
 
-  async handleKoikoiDecision(gameId: string, playerId: string, declareKoikoi: boolean): Promise<void> {
+  async handleKoikoiDecision(
+    gameId: string,
+    playerId: string,
+    declareKoikoi: boolean,
+  ): Promise<void> {
     try {
       if (declareKoikoi) {
         await this.handleKoikoiDeclaration(gameId, playerId, true)
@@ -233,10 +240,10 @@ export class GameFlowCoordinator {
       if (this.presenter) {
         const gameStateDTO = this.mapGameStateToDTO(gameId, updatedGameState)
         this.presenter.presentGameState(gameStateDTO)
-        this.presenter.presentGameMessage(
-          'game.messages.nextRoundStarted',
-          { round: updatedGameState.round, playerName: updatedGameState.currentPlayer?.name || '' }
-        )
+        this.presenter.presentGameMessage('game.messages.nextRoundStarted', {
+          round: updatedGameState.round,
+          playerName: updatedGameState.currentPlayer?.name || '',
+        })
         this.presenter.clearYakuDisplay()
         this.presenter.presentKoikoiDialog(false)
       }
@@ -249,19 +256,6 @@ export class GameFlowCoordinator {
     }
 
     return finalGameState
-  }
-
-
-  async handleCardSelection(card: Card, isHandCard: boolean): Promise<void> {
-    if (this.presenter) {
-      // Pass the card name key for translation in presenter
-      const cardNameKey = `cards.names.${card.name}`
-      if (isHandCard) {
-        this.presenter.presentGameMessage('game.messages.selectedCard', { cardName: cardNameKey })
-      } else {
-        this.presenter.presentGameMessage('game.messages.selectedFieldCard', { cardName: cardNameKey })
-      }
-    }
   }
 
   async handlePlayCard(gameId: string, input: PlayCardInputDTO): Promise<void> {
@@ -304,7 +298,10 @@ export class GameFlowCoordinator {
     }
   }
 
-  private async handlePostPlayCardFlow(gameId: string, playResult: PlayCardOutputDTO): Promise<void> {
+  private async handlePostPlayCardFlow(
+    gameId: string,
+    playResult: PlayCardOutputDTO,
+  ): Promise<void> {
     // 處理役種結果
     if (playResult.yakuResults.length > 0 && this.presenter) {
       this.presenter.presentYakuDisplay(playResult.yakuResults)
@@ -316,13 +313,10 @@ export class GameFlowCoordinator {
         this.presenter.presentGameMessage('game.messages.roundAutoEnd')
       }
     } else if (this.presenter) {
-      this.presenter.presentGameMessage(
-        'game.messages.cardPlayed',
-        {
-          cardName: playResult.playedCard?.name ? `cards.names.${playResult.playedCard.name}` : '',
-          capturedCount: playResult.capturedCards.length
-        }
-      )
+      this.presenter.presentGameMessage('game.messages.cardPlayed', {
+        cardName: playResult.playedCard?.name ? `cards.names.${playResult.playedCard.name}` : '',
+        capturedCount: playResult.capturedCards.length,
+      })
     }
 
     // 處理回合結束
@@ -369,18 +363,22 @@ export class GameFlowCoordinator {
   }
 
   private mapGameStateToDTO(gameId: string, gameState: GameState): GameStateOutputDTO {
-    const lastMove = gameState.lastMove ? {
-      playerId: gameState.lastMove.playerId,
-      cardPlayed: gameState.lastMove.capturedCards[0] || null, // 簡化處理
-      cardsMatched: gameState.lastMove.matchedCards
-    } : undefined
+    const lastMove = gameState.lastMove
+      ? {
+          playerId: gameState.lastMove.playerId,
+          cardPlayed: gameState.lastMove.capturedCards[0] || null, // 簡化處理
+          cardsMatched: gameState.lastMove.matchedCards,
+        }
+      : undefined
 
-    const roundResult = gameState.roundResult ? {
-      winner: gameState.roundResult.winner,
-      score: gameState.roundResult.score,
-      yakuResults: gameState.roundResult.yakuResults,
-      koikoiDeclared: gameState.roundResult.koikoiDeclared
-    } : undefined
+    const roundResult = gameState.roundResult
+      ? {
+          winner: gameState.roundResult.winner,
+          score: gameState.roundResult.score,
+          yakuResults: gameState.roundResult.yakuResults,
+          koikoiDeclared: gameState.roundResult.koikoiDeclared,
+        }
+      : undefined
 
     return {
       gameId: gameId,

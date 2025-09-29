@@ -92,9 +92,8 @@ export class VueGamePresenter implements GamePresenter {
   presentGameEnd(winner: string | null, finalScore: number): void {
     const messageKey = winner ? 'game.messages.gameWon' : 'game.messages.gameDraw'
     const params = winner ? { winner, finalScore } : undefined
-    const message = this.localeService.translate(messageKey, params)
 
-    this.gameStore.setGameMessage(message)
+    this.gameStore.setGameMessage(messageKey, params)
     this.gameStore.setGameOver(true)
     this.gameStore.setPhase('game_end')
   }
@@ -102,9 +101,8 @@ export class VueGamePresenter implements GamePresenter {
   presentRoundEnd(winner: string | null, score: number): void {
     const messageKey = winner ? 'game.messages.roundWon' : 'game.messages.roundDraw'
     const params = winner ? { winner, score } : undefined
-    const message = this.localeService.translate(messageKey, params)
 
-    this.gameStore.setGameMessage(message)
+    this.gameStore.setGameMessage(messageKey, params)
     this.gameStore.setPhase('round_end')
   }
 
