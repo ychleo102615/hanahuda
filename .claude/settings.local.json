@@ -14,7 +14,9 @@
       "mcp__playwright__browser_evaluate",
       "Bash(npm run lint:*)",
       "Bash(npm run test:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx playwright install:*)"
     ],
     "deny": [],
     "ask": []

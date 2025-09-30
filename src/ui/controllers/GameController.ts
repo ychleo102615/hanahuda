@@ -7,6 +7,7 @@ import type {
   KoikoiDecisionInputDTO,
 } from '@/application/dto/GameDTO'
 import type { Card } from '@/domain/entities/Card'
+import type { GameUICoordinator } from '@/features/game-ui/application/coordinators/GameUICoordinator'
 
 export class GameController {
   private gameId: string = ''
@@ -15,12 +16,20 @@ export class GameController {
     private gameFlowCoordinator: GameFlowCoordinator,
     private resetGameUseCase: ResetGameUseCase,
     private getMatchingCardsUseCase: GetMatchingCardsUseCase,
+    private gameUICoordinator?: GameUICoordinator, // 新增：可選的 GameUICoordinator
   ) {}
 
   async startNewGame(input: StartGameInputDTO): Promise<void> {
     try {
-      const newGameId = await this.gameFlowCoordinator.startNewGame(input)
-      this.gameId = newGameId
+      // 優先使用新的 GameUICoordinator（事件驅動架構）
+      if (this.gameUICoordinator) {
+        const newGameId = await this.gameUICoordinator.startNewGame(input)
+        this.gameId = newGameId
+      } else {
+        // 降級使用舊的 GameFlowCoordinator
+        const newGameId = await this.gameFlowCoordinator.startNewGame(input)
+        this.gameId = newGameId
+      }
     } catch (error) {
       console.error('Error starting game:', error)
       throw error

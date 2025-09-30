@@ -9,6 +9,9 @@ import { SetUpRoundUseCase } from '@/application/usecases/SetUpRoundUseCase'
 import { GameController } from '@/ui/controllers/GameController'
 import { VueGamePresenter } from '@/ui/presenters/VueGamePresenter'
 import { LocalStorageLocaleService } from '@/infrastructure/services/LocaleService'
+import { InMemoryEventBus } from '@/infrastructure/events/InMemoryEventBus'
+import { GameEngineCoordinator } from '@/features/game-engine/application/usecases/GameEngineCoordinator'
+import { GameUICoordinator } from '@/features/game-ui/application/coordinators/GameUICoordinator'
 
 type ServiceKey = string | symbol
 type ServiceFactory<T = unknown> = () => T
@@ -29,6 +32,10 @@ export class DIContainer {
   static readonly RESET_GAME_USE_CASE = Symbol('ResetGameUseCase')
   static readonly GET_MATCHING_CARDS_USE_CASE = Symbol('GetMatchingCardsUseCase')
   static readonly GAME_CONTROLLER = Symbol('GameController')
+  // New services for event-driven architecture
+  static readonly EVENT_BUS = Symbol('EventBus')
+  static readonly GAME_ENGINE_COORDINATOR = Symbol('GameEngineCoordinator')
+  static readonly GAME_UI_COORDINATOR = Symbol('GameUICoordinator')
 
   // Register a service factory
   register<T>(key: ServiceKey, factory: () => T): void {
@@ -80,6 +87,7 @@ export class DIContainer {
     this.registerSingleton(DIContainer.LOCALE_SERVICE, () =>
       LocalStorageLocaleService.getInstance(),
     )
+    this.registerSingleton(DIContainer.EVENT_BUS, () => new InMemoryEventBus())
 
     // Application layer
     this.registerSingleton(
@@ -133,11 +141,34 @@ export class DIContainer {
         ),
     )
 
+    // New event-driven coordinators
+    this.registerSingleton(
+      DIContainer.GAME_ENGINE_COORDINATOR,
+      () =>
+        new GameEngineCoordinator(
+          this.resolve(DIContainer.GAME_REPOSITORY),
+          this.resolve(DIContainer.SET_UP_GAME_USE_CASE),
+          this.resolve(DIContainer.SET_UP_ROUND_USE_CASE),
+          this.resolve(DIContainer.EVENT_BUS),
+        ),
+    )
+
     // UI layer - only register if gameStore is provided
     if (gameStore) {
       this.registerSingleton(
         DIContainer.GAME_PRESENTER,
         () => new VueGamePresenter(gameStore, this.resolve(DIContainer.LOCALE_SERVICE)),
+      )
+
+      this.registerSingleton(
+        DIContainer.GAME_UI_COORDINATOR,
+        () =>
+          new GameUICoordinator(
+            this.resolve(DIContainer.GAME_ENGINE_COORDINATOR),
+            this.resolve(DIContainer.GAME_REPOSITORY),
+            this.resolve(DIContainer.GAME_PRESENTER),
+            this.resolve(DIContainer.EVENT_BUS),
+          ),
       )
     }
 
@@ -149,6 +180,7 @@ export class DIContainer {
           this.resolve(DIContainer.GAME_FLOW_COORDINATOR),
           this.resolve(DIContainer.RESET_GAME_USE_CASE),
           this.resolve(DIContainer.GET_MATCHING_CARDS_USE_CASE),
+          gameStore ? this.resolve(DIContainer.GAME_UI_COORDINATOR) : undefined,
         ),
     )
   }
