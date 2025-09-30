@@ -20,7 +20,7 @@
 
 - **依賴方向**: 必須嚴格遵循由外向內的依賴方向
 - **Domain Layer**: 最內層。不依賴任何其他層級，完全獨立。領域層不可依賴任何外部框架或庫
-- **Application Layer**: Domain外層。只能依賴 Domain Layer。用例屬於 Application Layer，負責編排業務流程。包含比較高階的協調者 Coordinator UseCase 和低階的小步驟 UseCase。
+- **Application Layer**: Domain外層。只能依賴 Domain Layer。用例屬於 Application Layer，負責編排業務流程。包含比較高階的協調者 Coordinator UseCase 和低階的小步驟 UseCase。透過依賴注入取得實踐了 Application 層的 Ports 的 Presenter 或是 Gateway，藉此導出控制流。
 - **Infrastructure Layer**: Application外層。實作 Application/Ports（Repositories/外部服務），可依賴 Domain 與 Application
 - **UI Layer**: Application外層。僅依賴 Application 層（Use Cases/Ports），不直接依賴 Infrastructure；由 Composition Root 注入實作
 - 適配器不可互相依賴，presenter, controller, repository應互相保持獨立，只透過usecase互動。
