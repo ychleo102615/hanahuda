@@ -42,7 +42,13 @@ export class GameController {
     }
 
     try {
-      await this.gameFlowCoordinator.handlePlayCard(this.gameId, input)
+      // 優先使用新的 GameUICoordinator（事件驅動架構）
+      if (this.gameUICoordinator) {
+        await this.gameUICoordinator.playCard(this.gameId, input)
+      } else {
+        // 降級使用舊的 GameFlowCoordinator
+        await this.gameFlowCoordinator.handlePlayCard(this.gameId, input)
+      }
     } catch (error) {
       console.error('Error playing card:', error)
       throw error
@@ -55,11 +61,17 @@ export class GameController {
     }
 
     try {
-      await this.gameFlowCoordinator.handleKoikoiDecision(
-        this.gameId,
-        input.playerId,
-        input.declareKoikoi,
-      )
+      // 優先使用新的 GameUICoordinator（事件驅動架構）
+      if (this.gameUICoordinator) {
+        await this.gameUICoordinator.makeKoikoiDecision(this.gameId, input)
+      } else {
+        // 降級使用舊的 GameFlowCoordinator
+        await this.gameFlowCoordinator.handleKoikoiDecision(
+          this.gameId,
+          input.playerId,
+          input.declareKoikoi,
+        )
+      }
     } catch (error) {
       console.error('Error handling Koi-Koi:', error)
       throw error
@@ -72,7 +84,13 @@ export class GameController {
     }
 
     try {
-      await this.gameFlowCoordinator.startNextRound(this.gameId)
+      // 優先使用新的 GameUICoordinator（事件驅動架構）
+      if (this.gameUICoordinator) {
+        await this.gameUICoordinator.startNextRound(this.gameId)
+      } else {
+        // 降級使用舊的 GameFlowCoordinator
+        await this.gameFlowCoordinator.startNextRound(this.gameId)
+      }
     } catch (error) {
       console.error('Error starting next round:', error)
       throw error

@@ -149,6 +149,8 @@ export class DIContainer {
           this.resolve(DIContainer.GAME_REPOSITORY),
           this.resolve(DIContainer.SET_UP_GAME_USE_CASE),
           this.resolve(DIContainer.SET_UP_ROUND_USE_CASE),
+          this.resolve(DIContainer.PLAY_CARD_USE_CASE),
+          this.resolve(DIContainer.CALCULATE_SCORE_USE_CASE),
           this.resolve(DIContainer.EVENT_BUS),
         ),
     )
