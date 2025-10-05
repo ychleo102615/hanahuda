@@ -2,15 +2,16 @@ import type { GamePresenter } from '@/features/game-ui/application/ports/present
 import type { GameRepository } from '@/features/game-engine/application/ports/repositories/GameRepository'
 import type { GameEngineCoordinator } from '@/features/game-engine/application/usecases/GameEngineCoordinator'
 import type { IntegrationEventSubscriber } from '@/shared/events/integration-event-subscriber'
-import type {
-  GameCreatedEventData,
-  RoundStartedEventData,
-  CardPlayedEventData,
-  YakuAchievedEventData,
-  PlayerTurnChangedEventData,
-  KoikoiDecisionMadeEventData,
-  RoundEndedEventData,
-  GameEndedEventData,
+import {
+  IntegrationEventType,
+  type GameCreatedEventData,
+  type RoundStartedEventData,
+  type CardPlayedEventData,
+  type YakuAchievedEventData,
+  type PlayerTurnChangedEventData,
+  type KoikoiDecisionMadeEventData,
+  type RoundEndedEventData,
+  type GameEndedEventData,
 } from '@/shared/events/integration-events'
 import type {
   StartGameInputDTO,
@@ -30,43 +31,43 @@ export class GameUICoordinator {
 
   private subscribeToEvents(): void {
     // 訂閱遊戲創建事件
-    this.eventSubscriber.subscribe<GameCreatedEventData>('GameCreated', (event) =>
+    this.eventSubscriber.subscribe<GameCreatedEventData>(IntegrationEventType.GameCreated, (event) =>
       this.handleGameCreated(event),
     )
 
     // 訂閱回合開始事件
-    this.eventSubscriber.subscribe<RoundStartedEventData>('RoundStarted', (event) =>
+    this.eventSubscriber.subscribe<RoundStartedEventData>(IntegrationEventType.RoundStarted, (event) =>
       this.handleRoundStarted(event),
     )
 
     // 訂閱出牌事件
-    this.eventSubscriber.subscribe<CardPlayedEventData>('CardPlayed', (event) =>
+    this.eventSubscriber.subscribe<CardPlayedEventData>(IntegrationEventType.CardPlayed, (event) =>
       this.handleCardPlayed(event),
     )
 
     // 訂閱役種達成事件
-    this.eventSubscriber.subscribe<YakuAchievedEventData>('YakuAchieved', (event) =>
+    this.eventSubscriber.subscribe<YakuAchievedEventData>(IntegrationEventType.YakuAchieved, (event) =>
       this.handleYakuAchieved(event),
     )
 
     // 訂閱玩家切換事件
-    this.eventSubscriber.subscribe<PlayerTurnChangedEventData>('PlayerTurnChanged', (event) =>
+    this.eventSubscriber.subscribe<PlayerTurnChangedEventData>(IntegrationEventType.PlayerTurnChanged, (event) =>
       this.handlePlayerTurnChanged(event),
     )
 
     // 訂閱 Koikoi 決策事件
     this.eventSubscriber.subscribe<KoikoiDecisionMadeEventData>(
-      'KoikoiDecisionMade',
+      IntegrationEventType.KoikoiDecisionMade,
       (event) => this.handleKoikoiDecisionMade(event),
     )
 
     // 訂閱回合結束事件
-    this.eventSubscriber.subscribe<RoundEndedEventData>('RoundEnded', (event) =>
+    this.eventSubscriber.subscribe<RoundEndedEventData>(IntegrationEventType.RoundEnded, (event) =>
       this.handleRoundEnded(event),
     )
 
     // 訂閱遊戲結束事件
-    this.eventSubscriber.subscribe<GameEndedEventData>('GameEnded', (event) =>
+    this.eventSubscriber.subscribe<GameEndedEventData>(IntegrationEventType.GameEnded, (event) =>
       this.handleGameEnded(event),
     )
   }

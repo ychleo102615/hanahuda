@@ -1,8 +1,31 @@
+// ============ 事件類型常數 ============
+
+/**
+ * 遊戲整合事件類型常數
+ * 使用 const object 而非 string literals 以提供類型安全和 IDE 自動完成
+ */
+export const IntegrationEventType = {
+  GameCreated: 'GameCreated',
+  RoundStarted: 'RoundStarted',
+  CardPlayed: 'CardPlayed',
+  YakuAchieved: 'YakuAchieved',
+  PlayerTurnChanged: 'PlayerTurnChanged',
+  KoikoiDecisionMade: 'KoikoiDecisionMade',
+  RoundEnded: 'RoundEnded',
+  GameEnded: 'GameEnded',
+} as const
+
+/**
+ * 事件類型的聯合類型
+ */
+export type IntegrationEventTypeValue =
+  (typeof IntegrationEventType)[keyof typeof IntegrationEventType]
+
 // ============ 基礎接口 ============
 
 export interface IntegrationEvent {
   readonly eventId: string
-  readonly eventType: string
+  readonly eventType: IntegrationEventTypeValue
   readonly occurredAt: string
   readonly aggregateId: string // gameId
   readonly version: number
@@ -38,7 +61,7 @@ export interface PlayerStateDTO {
  * 時機：SetUpGameUseCase 執行後
  */
 export interface GameCreatedEventData extends IntegrationEvent {
-  readonly eventType: 'GameCreated'
+  readonly eventType: typeof IntegrationEventType.GameCreated
   readonly payload: {
     readonly gameId: string
     readonly players: Array<{
@@ -55,7 +78,7 @@ export interface GameCreatedEventData extends IntegrationEvent {
  * 時機：SetUpRoundUseCase 執行後（第一回合或新回合）
  */
 export interface RoundStartedEventData extends IntegrationEvent {
-  readonly eventType: 'RoundStarted'
+  readonly eventType: typeof IntegrationEventType.RoundStarted
   readonly payload: {
     readonly gameId: string
     readonly round: number
@@ -73,7 +96,7 @@ export interface RoundStartedEventData extends IntegrationEvent {
  * 時機：PlayCardUseCase 執行後
  */
 export interface CardPlayedEventData extends IntegrationEvent {
-  readonly eventType: 'CardPlayed'
+  readonly eventType: typeof IntegrationEventType.CardPlayed
   readonly payload: {
     readonly gameId: string
     readonly playerId: string
@@ -93,7 +116,7 @@ export interface CardPlayedEventData extends IntegrationEvent {
  * 時機：PlayCardUseCase 檢測到役種後
  */
 export interface YakuAchievedEventData extends IntegrationEvent {
-  readonly eventType: 'YakuAchieved'
+  readonly eventType: typeof IntegrationEventType.YakuAchieved
   readonly payload: {
     readonly gameId: string
     readonly playerId: string
@@ -114,7 +137,7 @@ export interface YakuAchievedEventData extends IntegrationEvent {
  * 時機：玩家做出 Koikoi 決策後
  */
 export interface KoikoiDecisionMadeEventData extends IntegrationEvent {
-  readonly eventType: 'KoikoiDecisionMade'
+  readonly eventType: typeof IntegrationEventType.KoikoiDecisionMade
   readonly payload: {
     readonly gameId: string
     readonly playerId: string
@@ -129,7 +152,7 @@ export interface KoikoiDecisionMadeEventData extends IntegrationEvent {
  * 時機：endRound 執行後
  */
 export interface RoundEndedEventData extends IntegrationEvent {
-  readonly eventType: 'RoundEnded'
+  readonly eventType: typeof IntegrationEventType.RoundEnded
   readonly payload: {
     readonly gameId: string
     readonly round: number
@@ -157,7 +180,7 @@ export interface RoundEndedEventData extends IntegrationEvent {
  * 時機：達到最大回合數或玩家決定結束遊戲
  */
 export interface GameEndedEventData extends IntegrationEvent {
-  readonly eventType: 'GameEnded'
+  readonly eventType: typeof IntegrationEventType.GameEnded
   readonly payload: {
     readonly gameId: string
     readonly winnerId: string | null
@@ -177,7 +200,7 @@ export interface GameEndedEventData extends IntegrationEvent {
  * 時機：出牌完成後（沒有役種的情況）
  */
 export interface PlayerTurnChangedEventData extends IntegrationEvent {
-  readonly eventType: 'PlayerTurnChanged'
+  readonly eventType: typeof IntegrationEventType.PlayerTurnChanged
   readonly payload: {
     readonly gameId: string
     readonly currentPlayerId: string

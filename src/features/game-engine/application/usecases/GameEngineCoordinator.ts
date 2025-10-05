@@ -5,17 +5,18 @@ import type { SetUpRoundUseCase } from '@/features/game-engine/application/useca
 import type { PlayCardUseCase } from '@/features/game-engine/application/usecases/PlayCardUseCase'
 import type { CalculateScoreUseCase } from '@/features/game-engine/application/usecases/CalculateScoreUseCase'
 import type { IntegrationEventPublisher } from '@/shared/events/integration-event-publisher'
-import type {
-  GameCreatedEventData,
-  RoundStartedEventData,
-  CardPlayedEventData,
-  YakuAchievedEventData,
-  PlayerTurnChangedEventData,
-  KoikoiDecisionMadeEventData,
-  RoundEndedEventData,
-  GameEndedEventData,
-  CardDTO,
-  PlayerStateDTO,
+import {
+  IntegrationEventType,
+  type GameCreatedEventData,
+  type RoundStartedEventData,
+  type CardPlayedEventData,
+  type YakuAchievedEventData,
+  type PlayerTurnChangedEventData,
+  type KoikoiDecisionMadeEventData,
+  type RoundEndedEventData,
+  type GameEndedEventData,
+  type CardDTO,
+  type PlayerStateDTO,
 } from '@/shared/events/integration-events'
 import type {
   StartGameInputDTO,
@@ -49,7 +50,7 @@ export class GameEngineCoordinator {
     // 2. 發布 GameCreatedEvent
     const gameCreatedEvent: GameCreatedEventData = {
       eventId: nanoid(),
-      eventType: 'GameCreated',
+      eventType: IntegrationEventType.GameCreated,
       occurredAt: new Date().toISOString(),
       aggregateId: gameResult.gameId,
       version: 1,
@@ -81,7 +82,7 @@ export class GameEngineCoordinator {
     const gameState = roundResult.gameState
     const roundStartedEvent: RoundStartedEventData = {
       eventId: nanoid(),
-      eventType: 'RoundStarted',
+      eventType: IntegrationEventType.RoundStarted,
       occurredAt: new Date().toISOString(),
       aggregateId: gameResult.gameId,
       version: 1,
@@ -127,7 +128,7 @@ export class GameEngineCoordinator {
     // 3. 發布 CardPlayedEvent
     const cardPlayedEvent: CardPlayedEventData = {
       eventId: nanoid(),
-      eventType: 'CardPlayed',
+      eventType: IntegrationEventType.CardPlayed,
       occurredAt: new Date().toISOString(),
       aggregateId: gameId,
       version: 1,
@@ -151,7 +152,7 @@ export class GameEngineCoordinator {
 
       const yakuAchievedEvent: YakuAchievedEventData = {
         eventId: nanoid(),
-        eventType: 'YakuAchieved',
+        eventType: IntegrationEventType.YakuAchieved,
         occurredAt: new Date().toISOString(),
         aggregateId: gameId,
         version: 1,
@@ -177,7 +178,7 @@ export class GameEngineCoordinator {
       if (newCurrentPlayer) {
         const playerTurnChangedEvent: PlayerTurnChangedEventData = {
           eventId: nanoid(),
-          eventType: 'PlayerTurnChanged',
+          eventType: IntegrationEventType.PlayerTurnChanged,
           occurredAt: new Date().toISOString(),
           aggregateId: gameId,
           version: 1,
@@ -228,7 +229,7 @@ export class GameEngineCoordinator {
     // 3. 發布 KoikoiDecisionMadeEvent
     const koikoiDecisionEvent: KoikoiDecisionMadeEventData = {
       eventId: nanoid(),
-      eventType: 'KoikoiDecisionMade',
+      eventType: IntegrationEventType.KoikoiDecisionMade,
       occurredAt: new Date().toISOString(),
       aggregateId: gameId,
       version: 1,
@@ -300,7 +301,7 @@ export class GameEngineCoordinator {
     // 5. 發布 RoundEndedEvent
     const roundEndedEvent: RoundEndedEventData = {
       eventId: nanoid(),
-      eventType: 'RoundEnded',
+      eventType: IntegrationEventType.RoundEnded,
       occurredAt: new Date().toISOString(),
       aggregateId: gameId,
       version: 1,
@@ -348,7 +349,7 @@ export class GameEngineCoordinator {
 
       const gameEndedEvent: GameEndedEventData = {
         eventId: nanoid(),
-        eventType: 'GameEnded',
+        eventType: IntegrationEventType.GameEnded,
         occurredAt: new Date().toISOString(),
         aggregateId: gameId,
         version: 1,
@@ -381,7 +382,7 @@ export class GameEngineCoordinator {
       const updatedGameState = roundResult.gameState
       const roundStartedEvent: RoundStartedEventData = {
         eventId: nanoid(),
-        eventType: 'RoundStarted',
+        eventType: IntegrationEventType.RoundStarted,
         occurredAt: new Date().toISOString(),
         aggregateId: gameId,
         version: 1,
