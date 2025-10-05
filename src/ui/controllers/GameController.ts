@@ -1,4 +1,3 @@
-import type { GameFlowCoordinator } from '@/application/usecases/GameFlowCoordinator'
 import type { ResetGameUseCase } from '@/features/game-engine/application/usecases/ResetGameUseCase'
 import type { GetMatchingCardsUseCase } from '@/features/game-engine/application/usecases/GetMatchingCardsUseCase'
 import type {
@@ -13,23 +12,15 @@ export class GameController {
   private gameId: string = ''
 
   constructor(
-    private gameFlowCoordinator: GameFlowCoordinator,
+    private gameUICoordinator: GameUICoordinator,
     private resetGameUseCase: ResetGameUseCase,
     private getMatchingCardsUseCase: GetMatchingCardsUseCase,
-    private gameUICoordinator?: GameUICoordinator, // 新增：可選的 GameUICoordinator
   ) {}
 
   async startNewGame(input: StartGameInputDTO): Promise<void> {
     try {
-      // 優先使用新的 GameUICoordinator（事件驅動架構）
-      if (this.gameUICoordinator) {
-        const newGameId = await this.gameUICoordinator.startNewGame(input)
-        this.gameId = newGameId
-      } else {
-        // 降級使用舊的 GameFlowCoordinator
-        const newGameId = await this.gameFlowCoordinator.startNewGame(input)
-        this.gameId = newGameId
-      }
+      const newGameId = await this.gameUICoordinator.startNewGame(input)
+      this.gameId = newGameId
     } catch (error) {
       console.error('Error starting game:', error)
       throw error
@@ -42,13 +33,7 @@ export class GameController {
     }
 
     try {
-      // 優先使用新的 GameUICoordinator（事件驅動架構）
-      if (this.gameUICoordinator) {
-        await this.gameUICoordinator.playCard(this.gameId, input)
-      } else {
-        // 降級使用舊的 GameFlowCoordinator
-        await this.gameFlowCoordinator.handlePlayCard(this.gameId, input)
-      }
+      await this.gameUICoordinator.playCard(this.gameId, input)
     } catch (error) {
       console.error('Error playing card:', error)
       throw error
@@ -61,17 +46,7 @@ export class GameController {
     }
 
     try {
-      // 優先使用新的 GameUICoordinator（事件驅動架構）
-      if (this.gameUICoordinator) {
-        await this.gameUICoordinator.makeKoikoiDecision(this.gameId, input)
-      } else {
-        // 降級使用舊的 GameFlowCoordinator
-        await this.gameFlowCoordinator.handleKoikoiDecision(
-          this.gameId,
-          input.playerId,
-          input.declareKoikoi,
-        )
-      }
+      await this.gameUICoordinator.makeKoikoiDecision(this.gameId, input)
     } catch (error) {
       console.error('Error handling Koi-Koi:', error)
       throw error
@@ -84,13 +59,7 @@ export class GameController {
     }
 
     try {
-      // 優先使用新的 GameUICoordinator（事件驅動架構）
-      if (this.gameUICoordinator) {
-        await this.gameUICoordinator.startNextRound(this.gameId)
-      } else {
-        // 降級使用舊的 GameFlowCoordinator
-        await this.gameFlowCoordinator.startNextRound(this.gameId)
-      }
+      await this.gameUICoordinator.startNextRound(this.gameId)
     } catch (error) {
       console.error('Error starting next round:', error)
       throw error

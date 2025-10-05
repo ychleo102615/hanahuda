@@ -1,5 +1,4 @@
 import { LocalGameRepository } from '@/infrastructure/repositories/LocalGameRepository'
-import { GameFlowCoordinator } from '@/application/usecases/GameFlowCoordinator'
 import { PlayCardUseCase } from '@/features/game-engine/application/usecases/PlayCardUseCase'
 import { CalculateScoreUseCase } from '@/features/game-engine/application/usecases/CalculateScoreUseCase'
 import { ResetGameUseCase } from '@/features/game-engine/application/usecases/ResetGameUseCase'
@@ -24,7 +23,6 @@ export class DIContainer {
   static readonly GAME_REPOSITORY = Symbol('GameRepository')
   static readonly GAME_PRESENTER = Symbol('GamePresenter')
   static readonly LOCALE_SERVICE = Symbol('LocaleService')
-  static readonly GAME_FLOW_COORDINATOR = Symbol('GameFlowCoordinator')
   static readonly SET_UP_GAME_USE_CASE = Symbol('SetUpGameUseCase')
   static readonly SET_UP_ROUND_USE_CASE = Symbol('SetUpRoundUseCase')
   static readonly PLAY_CARD_USE_CASE = Symbol('PlayCardUseCase')
@@ -32,7 +30,6 @@ export class DIContainer {
   static readonly RESET_GAME_USE_CASE = Symbol('ResetGameUseCase')
   static readonly GET_MATCHING_CARDS_USE_CASE = Symbol('GetMatchingCardsUseCase')
   static readonly GAME_CONTROLLER = Symbol('GameController')
-  // New services for event-driven architecture
   static readonly EVENT_BUS = Symbol('EventBus')
   static readonly GAME_ENGINE_COORDINATOR = Symbol('GameEngineCoordinator')
   static readonly GAME_UI_COORDINATOR = Symbol('GameUICoordinator')
@@ -128,20 +125,7 @@ export class DIContainer {
         ),
     )
 
-    this.registerSingleton(
-      DIContainer.GAME_FLOW_COORDINATOR,
-      () =>
-        new GameFlowCoordinator(
-          this.resolve(DIContainer.GAME_REPOSITORY),
-          this.resolve(DIContainer.CALCULATE_SCORE_USE_CASE),
-          this.resolve(DIContainer.SET_UP_GAME_USE_CASE),
-          this.resolve(DIContainer.SET_UP_ROUND_USE_CASE),
-          gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
-          this.resolve(DIContainer.PLAY_CARD_USE_CASE),
-        ),
-    )
-
-    // New event-driven coordinators
+    // Event-driven coordinators
     this.registerSingleton(
       DIContainer.GAME_ENGINE_COORDINATOR,
       () =>
@@ -155,34 +139,35 @@ export class DIContainer {
         ),
     )
 
-    // UI layer - only register if gameStore is provided
-    if (gameStore) {
-      this.registerSingleton(
-        DIContainer.GAME_PRESENTER,
-        () => new VueGamePresenter(gameStore, this.resolve(DIContainer.LOCALE_SERVICE)),
-      )
-
-      this.registerSingleton(
-        DIContainer.GAME_UI_COORDINATOR,
-        () =>
-          new GameUICoordinator(
-            this.resolve(DIContainer.GAME_ENGINE_COORDINATOR),
-            this.resolve(DIContainer.GAME_REPOSITORY),
-            this.resolve(DIContainer.GAME_PRESENTER),
-            this.resolve(DIContainer.EVENT_BUS),
-          ),
-      )
+    // UI layer - requires gameStore
+    if (!gameStore) {
+      throw new Error('gameStore is required for DIContainer setup')
     }
+
+    this.registerSingleton(
+      DIContainer.GAME_PRESENTER,
+      () => new VueGamePresenter(gameStore, this.resolve(DIContainer.LOCALE_SERVICE)),
+    )
+
+    this.registerSingleton(
+      DIContainer.GAME_UI_COORDINATOR,
+      () =>
+        new GameUICoordinator(
+          this.resolve(DIContainer.GAME_ENGINE_COORDINATOR),
+          this.resolve(DIContainer.GAME_REPOSITORY),
+          this.resolve(DIContainer.GAME_PRESENTER),
+          this.resolve(DIContainer.EVENT_BUS),
+        ),
+    )
 
     // Game Controller
     this.registerSingleton(
       DIContainer.GAME_CONTROLLER,
       () =>
         new GameController(
-          this.resolve(DIContainer.GAME_FLOW_COORDINATOR),
+          this.resolve(DIContainer.GAME_UI_COORDINATOR),
           this.resolve(DIContainer.RESET_GAME_USE_CASE),
           this.resolve(DIContainer.GET_MATCHING_CARDS_USE_CASE),
-          gameStore ? this.resolve(DIContainer.GAME_UI_COORDINATOR) : undefined,
         ),
     )
   }
