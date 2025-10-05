@@ -1,9 +1,9 @@
 import { nanoid } from 'nanoid'
-import type { GameRepository } from '@/application/ports/repositories/GameRepository'
-import type { SetUpGameUseCase } from '@/application/usecases/SetUpGameUseCase'
-import type { SetUpRoundUseCase } from '@/application/usecases/SetUpRoundUseCase'
-import type { PlayCardUseCase } from '@/application/usecases/PlayCardUseCase'
-import type { CalculateScoreUseCase } from '@/application/usecases/CalculateScoreUseCase'
+import type { GameRepository } from '@/features/game-engine/application/ports/repositories/GameRepository'
+import type { SetUpGameUseCase } from '@/features/game-engine/application/usecases/SetUpGameUseCase'
+import type { SetUpRoundUseCase } from '@/features/game-engine/application/usecases/SetUpRoundUseCase'
+import type { PlayCardUseCase } from '@/features/game-engine/application/usecases/PlayCardUseCase'
+import type { CalculateScoreUseCase } from '@/features/game-engine/application/usecases/CalculateScoreUseCase'
 import type { IntegrationEventPublisher } from '@/shared/events/integration-event-publisher'
 import type {
   GameCreatedEventData,
@@ -23,10 +23,10 @@ import type {
   PlayCardInputDTO,
   PlayCardOutputDTO,
   KoikoiDecisionInputDTO,
-} from '@/application/dto/GameDTO'
-import type { Card } from '@/domain/entities/Card'
-import type { Player } from '@/domain/entities/Player'
-import type { GameState } from '@/domain/entities/GameState'
+} from '@/features/game-engine/application/dto/GameDTO'
+import type { Card } from '@/features/game-engine/domain/entities/Card'
+import type { Player } from '@/features/game-engine/domain/entities/Player'
+import type { GameState } from '@/features/game-engine/domain/entities/GameState'
 import { GAME_SETTINGS } from '@/shared/constants/gameConstants'
 
 export class GameEngineCoordinator {

@@ -1,5 +1,5 @@
-import type { GamePresenter } from '@/application/ports/presenters/GamePresenter'
-import type { GameRepository } from '@/application/ports/repositories/GameRepository'
+import type { GamePresenter } from '@/features/game-ui/application/ports/presenters/GamePresenter'
+import type { GameRepository } from '@/features/game-engine/application/ports/repositories/GameRepository'
 import type { GameEngineCoordinator } from '@/features/game-engine/application/usecases/GameEngineCoordinator'
 import type { IntegrationEventSubscriber } from '@/shared/events/integration-event-subscriber'
 import type {
@@ -16,7 +16,7 @@ import type {
   StartGameInputDTO,
   PlayCardInputDTO,
   KoikoiDecisionInputDTO,
-} from '@/application/dto/GameDTO'
+} from '@/features/game-engine/application/dto/GameDTO'
 
 export class GameUICoordinator {
   constructor(

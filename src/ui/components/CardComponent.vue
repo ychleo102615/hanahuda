@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Card } from '@/domain/entities/Card'
+import type { Card } from '@/features/game-engine/domain/entities/Card'
 import SvgIcon from './SvgIcon.vue'
 import { getCardSvgName } from '@/shared/utils/cardAssetMapping'
 import { useLocale } from '@/ui/composables/useLocale'

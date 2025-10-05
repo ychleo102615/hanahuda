@@ -1,20 +1,20 @@
-import type { Card } from '../../domain/entities/Card'
-import { Player } from '../../domain/entities/Player'
-import type { GameState, RoundResult } from '../../domain/entities/GameState'
-import type { GameRepository } from '../ports/repositories/GameRepository'
-import type { GamePresenter } from '../ports/presenters/GamePresenter'
-import type { YakuResult } from '../../domain/entities/Yaku'
+import type { Card } from '@/features/game-engine/domain/entities/Card'
+import { Player } from '@/features/game-engine/domain/entities/Player'
+import type { GameState, RoundResult } from '@/features/game-engine/domain/entities/GameState'
+import type { GameRepository } from '@/features/game-engine/application/ports/repositories/GameRepository'
+import type { GamePresenter } from '@/features/game-ui/application/ports/presenters/GamePresenter'
+import type { YakuResult } from '@/features/game-engine/domain/entities/Yaku'
 import type {
   StartGameInputDTO,
   GameStateOutputDTO,
   PlayCardInputDTO,
   PlayCardOutputDTO,
-} from '../dto/GameDTO'
+} from '@/features/game-engine/application/dto/GameDTO'
 import { GAME_SETTINGS } from '@/shared/constants/gameConstants'
-import { CalculateScoreUseCase } from './CalculateScoreUseCase'
-import { PlayCardUseCase } from './PlayCardUseCase'
-import { SetUpGameUseCase } from './SetUpGameUseCase'
-import { SetUpRoundUseCase } from './SetUpRoundUseCase'
+import { CalculateScoreUseCase } from '@/features/game-engine/application/usecases/CalculateScoreUseCase'
+import { PlayCardUseCase } from '@/features/game-engine/application/usecases/PlayCardUseCase'
+import { SetUpGameUseCase } from '@/features/game-engine/application/usecases/SetUpGameUseCase'
+import { SetUpRoundUseCase } from '@/features/game-engine/application/usecases/SetUpRoundUseCase'
 
 export class GameFlowCoordinator {
   constructor(

@@ -176,7 +176,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import type { Card } from '@/domain/entities/Card'
+import type { Card } from '@/features/game-engine/domain/entities/Card'
 import { DIContainer } from '@/infrastructure/di/DIContainer'
 import { GameController } from '@/ui/controllers/GameController'
 import { useGameStore } from '@/ui/stores/gameStore'

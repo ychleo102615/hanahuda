@@ -6,7 +6,7 @@ test.describe('Game Start Flow', () => {
     await page.goto('/game')
 
     // 2. 確認遊戲設置畫面顯示
-    await expect(page.locator('h2')).toContainText('Setup')
+    await expect(page.locator('h2')).toContainText(/Setup|遊戲設置/)
 
     // 3. 填寫玩家名稱
     const player1Input = page.locator('input').nth(0)
@@ -20,7 +20,7 @@ test.describe('Game Start Flow', () => {
     await startButton.click()
 
     // 5. 等待遊戲開始（遊戲設置畫面消失）
-    await expect(page.locator('h2').filter({ hasText: /Setup/ })).not.toBeVisible({
+    await expect(page.locator('h2').filter({ hasText: /Setup|遊戲設置/ })).not.toBeVisible({
       timeout: 3000,
     })
 
@@ -52,7 +52,7 @@ test.describe('Game Start Flow', () => {
     await page.waitForTimeout(2000)
 
     // 驗證遊戲已開始（設置畫面消失）
-    await expect(page.locator('h2').filter({ hasText: /Setup/ })).not.toBeVisible()
+    await expect(page.locator('h2').filter({ hasText: /Setup|遊戲設置/ })).not.toBeVisible()
   })
 
   test('should display game after start', async ({ page }) => {

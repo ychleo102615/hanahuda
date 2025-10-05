@@ -1,13 +1,13 @@
-import type { GamePresenter } from '@/application/ports/presenters/GamePresenter'
+import type { GamePresenter } from '@/features/game-ui/application/ports/presenters/GamePresenter'
 import type {
   GameStateOutputDTO,
   PlayCardOutputDTO,
   KoikoiDecisionOutputDTO,
   StartGameOutputDTO,
-} from '@/application/dto/GameDTO'
-import type { YakuResult } from '@/domain/entities/Yaku'
+} from '@/features/game-engine/application/dto/GameDTO'
+import type { YakuResult } from '@/features/game-engine/domain/entities/Yaku'
 import type { useGameStore } from '@/ui/stores/gameStore'
-import type { Card } from '@/domain/entities/Card'
+import type { Card } from '@/features/game-engine/domain/entities/Card'
 import type { LocaleService } from '@/infrastructure/services/LocaleService'
 
 export class VueGamePresenter implements GamePresenter {

@@ -1,6 +1,6 @@
-import type { Card } from '@/domain/entities/Card'
-import type { IPlayer } from '@/application/ports/repositories/PlayerInterface'
-import type { YakuResult } from '@/domain/entities/Yaku'
+import type { Card } from '@/features/game-engine/domain/entities/Card'
+import type { IPlayer } from '@/features/game-engine/application/ports/repositories/PlayerInterface'
+import type { YakuResult } from '@/features/game-engine/domain/entities/Yaku'
 
 export interface PlayCardInputDTO {
   playerId: string

@@ -1,12 +1,12 @@
 import type { GameFlowCoordinator } from '@/application/usecases/GameFlowCoordinator'
-import type { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
-import type { GetMatchingCardsUseCase } from '@/application/usecases/GetMatchingCardsUseCase'
+import type { ResetGameUseCase } from '@/features/game-engine/application/usecases/ResetGameUseCase'
+import type { GetMatchingCardsUseCase } from '@/features/game-engine/application/usecases/GetMatchingCardsUseCase'
 import type {
   StartGameInputDTO,
   PlayCardInputDTO,
   KoikoiDecisionInputDTO,
-} from '@/application/dto/GameDTO'
-import type { Card } from '@/domain/entities/Card'
+} from '@/features/game-engine/application/dto/GameDTO'
+import type { Card } from '@/features/game-engine/domain/entities/Card'
 import type { GameUICoordinator } from '@/features/game-ui/application/coordinators/GameUICoordinator'
 
 export class GameController {

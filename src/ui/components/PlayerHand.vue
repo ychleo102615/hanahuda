@@ -83,8 +83,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { IPlayer } from '@/application/ports/repositories/PlayerInterface'
-import type { Card } from '@/domain/entities/Card'
+import type { IPlayer } from '@/features/game-engine/application/ports/repositories/PlayerInterface'
+import type { Card } from '@/features/game-engine/domain/entities/Card'
 import { useLocale } from '@/ui/composables/useLocale'
 import CardComponent from './CardComponent.vue'
 

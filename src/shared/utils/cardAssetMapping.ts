@@ -1,4 +1,4 @@
-import type { Card } from '@/domain/entities/Card'
+import type { Card } from '@/features/game-engine/domain/entities/Card'
 import { HANAFUDA_CARDS } from '@/shared/constants/gameConstants'
 
 /**
