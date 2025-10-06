@@ -2,10 +2,34 @@ import type { Card } from '@/features/game-engine/domain/entities/Card'
 import type { IPlayer } from '@/features/game-engine/application/ports/repositories/PlayerInterface'
 import type { YakuResult } from '@/features/game-engine/domain/entities/Yaku'
 
+/**
+ * 出牌請求 DTO
+ */
 export interface PlayCardInputDTO {
   playerId: string
   cardId: string
   selectedFieldCard?: string
+}
+
+/**
+ * PlayCardUseCase 內部使用的請求格式（與 InputDTO 相同）
+ */
+export interface PlayCardRequest {
+  playerId: string
+  cardId: string
+  selectedFieldCard?: string
+}
+
+/**
+ * PlayCardUseCase 內部使用的結果格式
+ */
+export interface PlayCardResult {
+  success: boolean
+  playedCard?: Card
+  capturedCards: Card[]
+  nextPhase: 'playing' | 'koikoi' | 'round_end'
+  yakuResults: YakuResult[]
+  error?: string
 }
 
 export interface PlayCardOutputDTO {

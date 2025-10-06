@@ -1,5 +1,5 @@
 import type { GameState } from '@/features/game-engine/domain/entities/GameState';
-import type { PlayCardRequest } from '../ports/repositories/GameRepository';
+import type { PlayCardRequest } from '../dto/GameDTO';
 
 export class OpponentAI {
   static decideMove(gameState: GameState): PlayCardRequest | null {

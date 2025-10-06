@@ -2,7 +2,8 @@ import type { Player } from '../../domain/entities/Player';
 import type { Card } from '../../domain/entities/Card'
 import type { GameMove } from '../../domain/entities/GameState'
 import { Yaku } from '../../domain/entities/Yaku'
-import type { GameRepository, PlayCardRequest, PlayCardResult } from '../ports/repositories/GameRepository'
+import type { GameRepository } from '../ports/repositories/GameRepository'
+import type { PlayCardRequest, PlayCardResult } from '../dto/GameDTO'
 
 export class PlayCardUseCase {
   constructor(
