@@ -5,6 +5,7 @@ import type { SetUpRoundUseCase } from '@/features/game-engine/application/useca
 import type { PlayCardUseCase } from '@/features/game-engine/application/usecases/PlayCardUseCase'
 import type { CalculateScoreUseCase } from '@/features/game-engine/application/usecases/CalculateScoreUseCase'
 import type { IntegrationEventPublisher } from '@/shared/events/integration-event-publisher'
+import type { IPlayer } from '@/features/game-engine/application/ports/repositories/PlayerInterface'
 import {
   IntegrationEventType,
   type GameCreatedEventData,
@@ -418,13 +419,13 @@ export class GameEngineCoordinator {
     }
   }
 
-  private mapPlayerToDTO(player: Player): PlayerStateDTO {
+  private mapPlayerToDTO(player: IPlayer): PlayerStateDTO {
     return {
       id: player.id,
       name: player.name,
       isHuman: player.isHuman,
-      handCards: player.hand.map((c) => this.mapCardToDTO(c)),
-      capturedCards: player.captured.map((c) => this.mapCardToDTO(c)),
+      handCards: [...player.hand].map((c) => this.mapCardToDTO(c)),
+      capturedCards: [...player.captured].map((c) => this.mapCardToDTO(c)),
       score: player.score,
     }
   }
