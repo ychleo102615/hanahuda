@@ -3,12 +3,10 @@ import type { Card } from '../../domain/entities/Card'
 import type { GameMove } from '../../domain/entities/GameState'
 import { Yaku } from '../../domain/entities/Yaku'
 import type { GameRepository, PlayCardRequest, PlayCardResult } from '../ports/repositories/GameRepository'
-import type { GamePresenter } from '../ports/presenters/GamePresenter'
 
 export class PlayCardUseCase {
   constructor(
     private gameRepository: GameRepository,
-    private presenter?: GamePresenter,
   ) {}
 
   async execute(gameId: string, request: PlayCardRequest): Promise<PlayCardResult> {

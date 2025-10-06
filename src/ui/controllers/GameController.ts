@@ -1,4 +1,3 @@
-import type { ResetGameUseCase } from '@/features/game-engine/application/usecases/ResetGameUseCase'
 import type { GetMatchingCardsUseCase } from '@/features/game-engine/application/usecases/GetMatchingCardsUseCase'
 import type {
   StartGameInputDTO,
@@ -13,7 +12,6 @@ export class GameController {
 
   constructor(
     private gameUICoordinator: GameUICoordinator,
-    private resetGameUseCase: ResetGameUseCase,
     private getMatchingCardsUseCase: GetMatchingCardsUseCase,
   ) {}
 
@@ -68,7 +66,7 @@ export class GameController {
 
   async resetGame(): Promise<void> {
     try {
-      await this.resetGameUseCase.execute({ gameId: this.gameId })
+      await this.gameUICoordinator.resetGame(this.gameId)
       this.gameId = ''
     } catch (error) {
       console.error('Error resetting game:', error)

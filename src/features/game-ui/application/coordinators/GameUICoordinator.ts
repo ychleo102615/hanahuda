@@ -2,6 +2,9 @@ import type { GamePresenter } from '@/features/game-ui/application/ports/present
 import type { GameRepository } from '@/features/game-engine/application/ports/repositories/GameRepository'
 import type { GameEngineCoordinator } from '@/features/game-engine/application/usecases/GameEngineCoordinator'
 import type { IntegrationEventSubscriber } from '@/shared/events/integration-event-subscriber'
+import type { ResetGameUseCase } from '@/features/game-engine/application/usecases/ResetGameUseCase'
+import type { YakuResult } from '@/features/game-engine/domain/entities/Yaku'
+import { YAKU_COMBINATIONS } from '@/shared/constants/gameConstants'
 import {
   IntegrationEventType,
   type GameCreatedEventData,
@@ -25,8 +28,17 @@ export class GameUICoordinator {
     private gameRepository: GameRepository,
     private presenter: GamePresenter,
     private eventSubscriber: IntegrationEventSubscriber,
+    private resetGameUseCase: ResetGameUseCase,
   ) {
     this.subscribeToEvents()
+  }
+
+  /**
+   * 通過 yaku 名稱查找對應的 YakuRule
+   */
+  private findYakuRuleByName(name: string): any {
+    const entry = Object.values(YAKU_COMBINATIONS).find(rule => rule.name === name)
+    return entry || null
   }
 
   private subscribeToEvents(): void {
@@ -142,7 +154,14 @@ export class GameUICoordinator {
             cardsMatched: gameState.lastMove.matchedCards,
           }
         : undefined,
-      roundResult: gameState.roundResult,
+      roundResult: gameState.roundResult
+        ? {
+            winner: gameState.roundResult.winner,
+            score: gameState.roundResult.score,
+            yakuResults: gameState.roundResult.yakuResults,
+            koikoiDeclared: gameState.roundResult.koikoiDeclared,
+          }
+        : undefined,
       koikoiPlayer: gameState.koikoiPlayer || undefined,
     }
 
@@ -160,14 +179,20 @@ export class GameUICoordinator {
   }
 
   private handleYakuAchieved(event: YakuAchievedEventData): void {
-    // 顯示役種
-    this.presenter.presentYakuDisplay(
-      event.payload.yakuResults.map((yaku) => ({
-        yaku: { name: yaku.name, points: yaku.score },
-        points: yaku.score,
-        cards: [], // 簡化：不傳遞卡牌詳情
-      })),
-    )
+    // 顯示役種 - 將事件中的簡化 yaku 轉換為完整的 YakuResult
+    const yakuResults: YakuResult[] = event.payload.yakuResults
+      .map((yaku) => {
+        const yakuRule = this.findYakuRuleByName(yaku.name)
+        if (!yakuRule) return null
+        return {
+          yaku: yakuRule as any,
+          points: yaku.score,
+          cards: [], // 簡化：不傳遞卡牌詳情
+        } as YakuResult
+      })
+      .filter((result) => result !== null) as YakuResult[]
+
+    this.presenter.presentYakuDisplay(yakuResults)
 
     // 如果可以宣告 Koikoi，顯示對話框
     if (event.payload.canDeclareKoikoi) {
@@ -211,7 +236,14 @@ export class GameUICoordinator {
             cardsMatched: gameState.lastMove.matchedCards,
           }
         : undefined,
-      roundResult: gameState.roundResult,
+      roundResult: gameState.roundResult
+        ? {
+            winner: gameState.roundResult.winner,
+            score: gameState.roundResult.score,
+            yakuResults: gameState.roundResult.yakuResults,
+            koikoiDeclared: gameState.roundResult.koikoiDeclared,
+          }
+        : undefined,
       koikoiPlayer: gameState.koikoiPlayer || undefined,
     }
 
@@ -233,13 +265,20 @@ export class GameUICoordinator {
       // 平局
       this.presenter.presentGameMessage('game.messages.roundDrawNoPoints')
       if (event.payload.yakuResults.length > 0) {
-        this.presenter.presentYakuDisplay(
-          event.payload.yakuResults.map((yaku) => ({
-            yaku: { name: yaku.name, points: yaku.score },
-            points: yaku.score,
-            cards: [], // 簡化
-          })),
-        )
+        // 將事件中的簡化 yaku 轉換為完整的 YakuResult
+        const yakuResults: YakuResult[] = event.payload.yakuResults
+          .map((yaku) => {
+            const yakuRule = this.findYakuRuleByName(yaku.name)
+            if (!yakuRule) return null
+            return {
+              yaku: yakuRule as any,
+              points: yaku.score,
+              cards: [], // 簡化
+            } as YakuResult
+          })
+          .filter((result) => result !== null) as YakuResult[]
+
+        this.presenter.presentYakuDisplay(yakuResults)
       }
     }
   }
@@ -326,6 +365,33 @@ export class GameUICoordinator {
       await this.gameEngineCoordinator.startNextRound(gameId)
     } catch (error) {
       this.presenter.presentError('errors.startNextRoundFailed', { error: String(error) })
+      throw error
+    }
+  }
+
+  /**
+   * UI 層的公開方法：重置遊戲
+   */
+  async resetGame(gameId?: string): Promise<void> {
+    try {
+      // 清空 UI 狀態
+      this.presenter.clearYakuDisplay()
+      this.presenter.presentKoikoiDialog(false)
+      this.presenter.presentCardSelection(null, null)
+      this.presenter.clearError()
+
+      // 調用業務邏輯清除遊戲數據
+      const result = await this.resetGameUseCase.execute({ gameId })
+
+      if (result.success) {
+        // 重置遊戲狀態到初始狀態
+        this.presenter.presentGameReset()
+        this.presenter.presentGameMessage('game.messages.gameReset')
+      } else {
+        throw new Error(result.error || 'Reset game failed')
+      }
+    } catch (error) {
+      this.presenter.presentError('errors.resetGameFailed', { error: String(error) })
       throw error
     }
   }

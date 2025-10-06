@@ -109,20 +109,12 @@ export class DIContainer {
 
     this.registerSingleton(
       DIContainer.RESET_GAME_USE_CASE,
-      () =>
-        new ResetGameUseCase(
-          this.resolve(DIContainer.GAME_REPOSITORY),
-          gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
-        ),
+      () => new ResetGameUseCase(this.resolve(DIContainer.GAME_REPOSITORY)),
     )
 
     this.registerSingleton(
       DIContainer.PLAY_CARD_USE_CASE,
-      () =>
-        new PlayCardUseCase(
-          this.resolve(DIContainer.GAME_REPOSITORY),
-          gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
-        ),
+      () => new PlayCardUseCase(this.resolve(DIContainer.GAME_REPOSITORY)),
     )
 
     // Event-driven coordinators
@@ -157,6 +149,7 @@ export class DIContainer {
           this.resolve(DIContainer.GAME_REPOSITORY),
           this.resolve(DIContainer.GAME_PRESENTER),
           this.resolve(DIContainer.EVENT_BUS),
+          this.resolve(DIContainer.RESET_GAME_USE_CASE),
         ),
     )
 
@@ -166,7 +159,6 @@ export class DIContainer {
       () =>
         new GameController(
           this.resolve(DIContainer.GAME_UI_COORDINATOR),
-          this.resolve(DIContainer.RESET_GAME_USE_CASE),
           this.resolve(DIContainer.GET_MATCHING_CARDS_USE_CASE),
         ),
     )
