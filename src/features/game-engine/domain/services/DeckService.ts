@@ -52,14 +52,14 @@ export class DeckService {
       if (card) fieldCards.push(card)
     }
 
-    // 直接對現有 Player 實例發手牌
+    // 透過 GameState 發手牌（保護聚合邊界）
     gameState.players.forEach((player) => {
       const hand: Card[] = []
       for (let i = 0; i < GAME_SETTINGS.CARDS_PER_PLAYER; i++) {
         const card = workingDeck.pop()
         if (card) hand.push(card)
       }
-      player.setHand(hand)
+      gameState.dealHandToPlayer(player.id, hand)
     })
 
     // 更新遊戲狀態

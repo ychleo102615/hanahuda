@@ -191,6 +191,46 @@ export class GameState {
     )
   }
 
+  /**
+   * 從玩家手牌中出牌（保護 Player 聚合邊界）
+   * @param playerId 玩家 ID
+   * @param cardId 牌 ID
+   * @returns 打出的牌，如果失敗則返回 null
+   */
+  playCardFromHand(playerId: string, cardId: string): Card | null {
+    const player = this.getPlayerById(playerId)
+    if (!player) {
+      return null
+    }
+    return player.removeFromHand(cardId)
+  }
+
+  /**
+   * 添加捕獲的牌到玩家的捕獲堆（保護 Player 聚合邊界）
+   * @param playerId 玩家 ID
+   * @param cards 要添加的牌
+   */
+  addCapturedCards(playerId: string, cards: Card[]): void {
+    const player = this.getPlayerById(playerId)
+    if (!player) {
+      throw new Error(`Player ${playerId} not found`)
+    }
+    player.addToCaptured(cards)
+  }
+
+  /**
+   * 發牌給玩家（保護 Player 聚合邊界）
+   * @param playerId 玩家 ID
+   * @param cards 要發的牌
+   */
+  dealHandToPlayer(playerId: string, cards: Card[]): void {
+    const player = this.getPlayerById(playerId)
+    if (!player) {
+      throw new Error(`Player ${playerId} not found`)
+    }
+    player.setHand(cards)
+  }
+
   clone(): GameState {
     const cloned = new GameState()
     cloned._players = this._players.map((p) => p.clone())

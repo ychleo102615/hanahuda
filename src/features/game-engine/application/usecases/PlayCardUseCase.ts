@@ -26,7 +26,8 @@ export class PlayCardUseCase {
         return { success: false, playedCard: undefined, capturedCards: [], nextPhase: 'playing', yakuResults: [], error: 'Invalid card' }
       }
 
-      const playedCard = currentPlayer.removeFromHand(request.cardId)
+      // 透過 GameState 出牌（保護聚合邊界）
+      const playedCard = gameState.playCardFromHand(request.playerId, request.cardId)
       if (!playedCard) {
         return { success: false, playedCard: undefined, capturedCards: [], nextPhase: 'playing', yakuResults: [], error: 'Card not found' }
       }
@@ -90,8 +91,9 @@ export class PlayCardUseCase {
         }
       }
 
+      // 透過 GameState 添加捕獲的牌（保護聚合邊界）
       if (capturedCards.length > 0) {
-        currentPlayer.addToCaptured(capturedCards)
+        gameState.addCapturedCards(request.playerId, capturedCards)
       }
 
       const move: GameMove = {
