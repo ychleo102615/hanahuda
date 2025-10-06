@@ -14,9 +14,8 @@
       v-if="showCardInfo"
       class="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-between p-1 text-white text-center"
     >
-      <div class="text-xs font-bold">{{ card.month }}月</div>
+      <div class="text-xs font-bold">{{ card.suit }}月</div>
       <div class="card__type text-xs font-semibold">{{ getTypeDisplay(card.type) }}</div>
-      <div class="text-[7px] leading-tight px-1">{{ t(`cards.names.${card.name}`) }}</div>
       <div class="card__points text-xs font-bold">{{ card.points }}点</div>
     </div>
 
@@ -27,9 +26,8 @@
     >
       <div class="flex flex-col gap-1">
         <div class="font-bold text-center text-white">
-          {{ card.month }}{{ t('game.tooltip.month') }} - {{ getTypeDisplay(card.type) }}
+          {{ card.suit }}{{ t('game.tooltip.month') }} - {{ getTypeDisplay(card.type) }}
         </div>
-        <div class="text-xs text-gray-200 text-center">{{ t(`cards.names.${card.name}`) }}</div>
         <div class="text-xs text-center">
           <span class="card__tooltip-points font-semibold">
             {{ card.points }}{{ t('game.tooltip.points') }}

@@ -1,23 +1,86 @@
 import type { Card } from '@/features/game-engine/domain/entities/Card'
-import { HANAFUDA_CARDS } from '@/shared/constants/gameConstants'
 
 /**
- * 將花牌資料對應到 SVG 檔案名稱
+ * 將花牌 ID 對應到 SVG 檔案名稱
  * 支援多種渲染器使用（DOM/PIXI）
  */
 
-// 月份英文對應
-const MONTH_NAMES = [
-  '', 'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-] as const
+/**
+ * Card ID 到 SVG 檔案名稱的映射表
+ * ID 範圍: 1-48
+ */
+const CARD_ID_TO_SVG_MAP: Record<number, string> = {
+  // January (1月)
+  1: 'Hanafuda_January_Hikari',
+  2: 'Hanafuda_January_Tanzaku',
+  3: 'Hanafuda_January_Kasu_1',
+  4: 'Hanafuda_January_Kasu_2',
 
-// 花牌類型對應到 SVG 檔名
-const CARD_TYPE_MAPPING: Record<string, string> = {
-  'bright': 'Hikari',
-  'animal': 'Tane',
-  'ribbon': 'Tanzaku',
-  'plain': 'Kasu'
+  // February (2月)
+  5: 'Hanafuda_February_Tane',
+  6: 'Hanafuda_February_Tanzaku',
+  7: 'Hanafuda_February_Kasu_1',
+  8: 'Hanafuda_February_Kasu_2',
+
+  // March (3月)
+  9: 'Hanafuda_March_Hikari',
+  10: 'Hanafuda_March_Tanzaku',
+  11: 'Hanafuda_March_Kasu_1',
+  12: 'Hanafuda_March_Kasu_2',
+
+  // April (4月)
+  13: 'Hanafuda_April_Tane',
+  14: 'Hanafuda_April_Tanzaku',
+  15: 'Hanafuda_April_Kasu_1',
+  16: 'Hanafuda_April_Kasu_2',
+
+  // May (5月)
+  17: 'Hanafuda_May_Tane',
+  18: 'Hanafuda_May_Tanzaku',
+  19: 'Hanafuda_May_Kasu_1',
+  20: 'Hanafuda_May_Kasu_2',
+
+  // June (6月)
+  21: 'Hanafuda_June_Tane',
+  22: 'Hanafuda_June_Tanzaku',
+  23: 'Hanafuda_June_Kasu_1',
+  24: 'Hanafuda_June_Kasu_2',
+
+  // July (7月)
+  25: 'Hanafuda_July_Tane',
+  26: 'Hanafuda_July_Tanzaku',
+  27: 'Hanafuda_July_Kasu_1',
+  28: 'Hanafuda_July_Kasu_2',
+
+  // August (8月)
+  29: 'Hanafuda_August_Hikari',
+  30: 'Hanafuda_August_Tane',
+  31: 'Hanafuda_August_Kasu_1',
+  32: 'Hanafuda_August_Kasu_2',
+
+  // September (9月)
+  33: 'Hanafuda_September_Tane',
+  34: 'Hanafuda_September_Tanzaku',
+  35: 'Hanafuda_September_Kasu_1',
+  36: 'Hanafuda_September_Kasu_2',
+
+  // October (10月)
+  37: 'Hanafuda_October_Tane',
+  38: 'Hanafuda_October_Tanzaku',
+  39: 'Hanafuda_October_Kasu_1',
+  40: 'Hanafuda_October_Kasu_2',
+
+  // November (11月) - 只有一張 Kasu，不帶數字
+  41: 'Hanafuda_November_Hikari',
+  42: 'Hanafuda_November_Tane',
+  43: 'Hanafuda_November_Tanzaku',
+  44: 'Hanafuda_November_Kasu',
+
+  // December (12月)
+  45: 'Hanafuda_December_Hikari',
+  46: 'Hanafuda_December_Kasu_1',
+  47: 'Hanafuda_December_Kasu_2',
+  48: 'Hanafuda_December_Kasu_3'
 } as const
 
 /**
@@ -26,71 +89,13 @@ const CARD_TYPE_MAPPING: Record<string, string> = {
  * @returns SVG 檔案名稱（不含副檔名）
  */
 export function getCardSvgName(card: Card): string {
-  const monthName = MONTH_NAMES[card.month]
-  const typeName = CARD_TYPE_MAPPING[card.type]
+  const svgName = CARD_ID_TO_SVG_MAP[card.id]
 
-  if (!monthName || !typeName) {
-    throw new Error(`Invalid card data: month=${card.month}, type=${card.type}`)
-  }
-
-  // 基本檔名格式: Hanafuda_[Month]_[Type]
-  let svgName = `Hanafuda_${monthName}_${typeName}`
-
-  // 處理有多張相同類型卡片的情況（主要是 Kasu）
-  if (card.type === 'plain') {
-    const cardIndex = extractCardIndexFromId(card.id)
-
-    // 特殊處理：11月（November）只有一張 Kasu，沒有數字後綴
-    if (card.month === 11) {
-      // November_Kasu 不加數字
-    } else {
-      // 根據月份限制最大索引數
-      const maxKasuCount = getMaxKasuCountForMonth(card.month)
-      const actualIndex = Math.min(cardIndex, maxKasuCount)
-
-      if (actualIndex > 1) {
-        svgName += `_${actualIndex}`
-      }
-    }
+  if (!svgName) {
+    throw new Error(`Invalid card ID: ${card.id}. Valid range is 1-48.`)
   }
 
   return svgName
-}
-
-/**
- * 從 Card ID 提取卡片索引
- * Card ID 格式: "suit-type-index"
- * @param cardId 卡片 ID
- * @returns 卡片索引（從 1 開始）
- */
-function extractCardIndexFromId(cardId: string): number {
-  const parts = cardId.split('-')
-  if (parts.length >= 3) {
-    const index = parseInt(parts[2], 10)
-    return isNaN(index) ? 1 : index + 1 // SVG 檔名從 1 開始
-  }
-  return 1
-}
-
-/**
- * 獲取每個月份的最大 Kasu 卡片數量
- * @param month 月份 (1-12)
- * @returns 該月份的最大 Kasu 數量
- */
-function getMaxKasuCountForMonth(month: number): number {
-  // 從 gameConstants 中動態計算每個月份的 plain 類型卡片數量
-  const monthNames = ['', 'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-                      'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'] as const
-
-  const monthKey = monthNames[month] as keyof typeof HANAFUDA_CARDS
-
-  if (!monthKey || !HANAFUDA_CARDS[monthKey]) {
-    return 2 // 預設值
-  }
-
-  // 計算該月份 plain 類型卡片的數量
-  const plainCards = HANAFUDA_CARDS[monthKey].CARDS.filter(card => card.type === 'plain')
-  return plainCards.length
 }
 
 /**

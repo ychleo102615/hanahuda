@@ -413,9 +413,7 @@ export class GameEngineCoordinator {
       id: card.id,
       suit: card.suit,
       type: card.type,
-      points: card.points,
-      name: card.name,
-      month: card.month,
+      points: card.points
     }
   }
 

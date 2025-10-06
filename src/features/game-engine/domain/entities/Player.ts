@@ -50,7 +50,7 @@ export class Player implements PlayerInfo {
     this._hand.push(card)
   }
 
-  removeFromHand(cardId: string): Card | null {
+  removeFromHand(cardId: number): Card | null {
     const index = this._hand.findIndex(c => c.id === cardId)
     if (index !== -1) {
       return this._hand.splice(index, 1)[0]
@@ -88,11 +88,11 @@ export class Player implements PlayerInfo {
     this.clearCaptured()
   }
 
-  hasCard(cardId: string): boolean {
+  hasCard(cardId: number): boolean {
     return this._hand.some(c => c.id === cardId)
   }
 
-  canPlayCard(cardId: string): boolean {
+  canPlayCard(cardId: number): boolean {
     return this.hasCard(cardId)
   }
 

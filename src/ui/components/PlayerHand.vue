@@ -111,7 +111,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-const selectedCardId = ref<string | null>(null)
+const selectedCardId = ref<number | null>(null)
 
 const handleCardClick = (card: Card) => {
   if (!props.canPlayCards) return

@@ -12,13 +12,12 @@ export class DeckService {
 
     // 創建所有花牌
     Object.values(HANAFUDA_CARDS).forEach((monthData) => {
-      monthData.CARDS.forEach((cardData, index) => {
+      monthData.CARDS.forEach((cardData) => {
         const card = new CardEntity(
+          cardData.id,
           cardData.suit,
           cardData.type as CardType,
-          cardData.points,
-          cardData.name,
-          index,
+          cardData.points
         )
         cards.push(card)
       })

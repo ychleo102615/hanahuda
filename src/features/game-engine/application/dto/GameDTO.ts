@@ -7,8 +7,8 @@ import type { YakuResult } from '@/features/game-engine/domain/entities/Yaku'
  */
 export interface PlayCardInputDTO {
   playerId: string
-  cardId: string
-  selectedFieldCard?: string
+  cardId: number
+  selectedFieldCard?: number
 }
 
 /**
@@ -16,8 +16,8 @@ export interface PlayCardInputDTO {
  */
 export interface PlayCardRequest {
   playerId: string
-  cardId: string
-  selectedFieldCard?: string
+  cardId: number
+  selectedFieldCard?: number
 }
 
 /**

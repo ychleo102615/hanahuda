@@ -170,9 +170,7 @@ export class GameUICoordinator {
     // 顯示出牌消息
     if (event.payload.capturedCards.length > 0) {
       this.presenter.presentGameMessage('game.messages.cardPlayed', {
-        cardName: event.payload.playedCard.name
-          ? `cards.names.${event.payload.playedCard.name}`
-          : '',
+        cardInfo: `${event.payload.playedCard.suit}月-${event.payload.playedCard.type}`,
         capturedCount: event.payload.capturedCards.length,
       })
     }

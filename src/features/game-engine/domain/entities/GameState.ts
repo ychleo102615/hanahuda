@@ -7,7 +7,7 @@ export type GameAction = 'play_card' | 'capture_cards' | 'declare_koikoi' | 'end
 
 export interface GameMove {
   readonly playerId: string
-  readonly cardId: string
+  readonly cardId: number
   readonly matchedCards: Card[]
   readonly capturedCards: Card[]
   readonly timestamp: Date
@@ -113,7 +113,7 @@ export class GameState {
     this._field.push(...cards)
   }
 
-  removeFromField(cardIds: string[]): Card[] {
+  removeFromField(cardIds: number[]): Card[] {
     const removed: Card[] = []
     cardIds.forEach((id) => {
       const index = this._field.findIndex((c) => c.id === id)
@@ -197,7 +197,7 @@ export class GameState {
    * @param cardId 牌 ID
    * @returns 打出的牌，如果失敗則返回 null
    */
-  playCardFromHand(playerId: string, cardId: string): Card | null {
+  playCardFromHand(playerId: string, cardId: number): Card | null {
     const player = this.getPlayerById(playerId)
     if (!player) {
       return null

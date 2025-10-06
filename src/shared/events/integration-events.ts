@@ -34,12 +34,10 @@ export interface IntegrationEvent {
 // ============ 卡牌 DTO ============
 
 export interface CardDTO {
-  readonly id: string
+  readonly id: number
   readonly suit: number
   readonly type: string
   readonly points: number
-  readonly name: string
-  readonly month: number
 }
 
 // ============ 玩家 DTO ============
@@ -102,7 +100,7 @@ export interface CardPlayedEventData extends IntegrationEvent {
     readonly playerId: string
     readonly playerName: string
     readonly playedCard: CardDTO // 玩家打出的牌
-    readonly selectedFieldCardId?: string // 玩家選擇的場牌 ID（如果有多張可配對）
+    readonly selectedFieldCardId?: number // 玩家選擇的場牌 ID（如果有多張可配對）
     readonly capturedCards: CardDTO[] // 所有捕獲的牌（包含玩家牌+場牌+牌堆牌）
     readonly deckCard?: CardDTO // 從牌堆翻出的牌
     readonly deckCardCaptured: boolean // 牌堆牌是否被捕獲
@@ -124,7 +122,7 @@ export interface YakuAchievedEventData extends IntegrationEvent {
     readonly yakuResults: Array<{
       readonly name: string
       readonly score: number
-      readonly cardIds: string[]
+      readonly cardIds: number[]
     }>
     readonly totalScore: number
     readonly canDeclareKoikoi: boolean // 是否還有手牌可繼續
@@ -162,7 +160,7 @@ export interface RoundEndedEventData extends IntegrationEvent {
     readonly yakuResults: Array<{
       readonly name: string
       readonly score: number
-      readonly cardIds: string[]
+      readonly cardIds: number[]
     }>
     readonly koikoiDeclared: boolean
     readonly players: Array<{

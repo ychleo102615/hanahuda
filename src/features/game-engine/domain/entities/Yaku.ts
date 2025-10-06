@@ -118,28 +118,28 @@ export class Yaku {
 
   private static checkInoShikaCho(animalCards: Card[]): Card[] {
     const required = [7, 10, 6]
-    const found = required.map(month => 
-      animalCards.find(card => card.month === month)
+    const found = required.map(suit =>
+      animalCards.find(card => card.suit === suit)
     ).filter(Boolean) as Card[]
-    
+
     return found.length === 3 ? found : []
   }
 
   private static checkAkaTan(ribbonCards: Card[]): Card[] {
     const required = [1, 2, 3]
-    const found = required.map(month => 
-      ribbonCards.find(card => card.month === month)
+    const found = required.map(suit =>
+      ribbonCards.find(card => card.suit === suit)
     ).filter(Boolean) as Card[]
-    
+
     return found.length === 3 ? found : []
   }
 
   private static checkAoTan(ribbonCards: Card[]): Card[] {
     const required = [6, 9, 10]
-    const found = required.map(month => 
-      ribbonCards.find(card => card.month === month)
+    const found = required.map(suit =>
+      ribbonCards.find(card => card.suit === suit)
     ).filter(Boolean) as Card[]
-    
+
     return found.length === 3 ? found : []
   }
 
