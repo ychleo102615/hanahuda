@@ -16,7 +16,14 @@
       "Bash(npm run test:*)",
       "Bash(npm run:*)",
       "Bash(npx playwright test:*)",
-      "Bash(npx playwright install:*)"
+      "Bash(npx playwright install:*)",
+      "Bash(mkdir:*)",
+      "Bash(git mv:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find:*)",
+      "Bash({} +)",
+      "Bash(src/features/game-engine/application/usecases/GameEngineCoordinator.ts)",
+      "Bash(src/features/game-ui/application/coordinators/GameUICoordinator.ts)"
     ],
     "deny": [],
     "ask": []
