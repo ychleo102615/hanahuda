@@ -108,23 +108,43 @@ describe('Contract Testing: Integration Events', () => {
 
 ## 事件列表
 
-本專案定義以下整合事件：
+本專案定義以下整合事件（v2.0 優化版）：
 
-| 事件類型 | 描述 | 傳輸模式 |
+### 核心事件
+
+| 事件類型 | 描述 | 傳輸模式 | 嵌套結構 |
+|---------|------|---------|---------|
+| `GameInitializedEvent` | 遊戲初始化 | 完整快照 | + `TurnTransition` |
+| `CardPlayedEvent` | 玩家出牌（完整流程） | 增量事件 | + `MatchResult` (hand)<br>+ `MatchResult` (deck)<br>+ `TurnTransition` (可選) |
+| `MatchSelectedEvent` | 玩家完成多重配對選擇 | 增量事件 | + `YakuResult[]`<br>+ `TurnTransition` |
+| `KoikoiDeclaredEvent` | Koi-Koi 宣告 | 增量事件 | + `TurnTransition` (可選) |
+| `RoundEndedEvent` | 回合結束 | 增量事件 | - |
+| `GameEndedEvent` | 遊戲結束 | 增量事件 | - |
+| `GameAbandonedEvent` | 玩家放棄遊戲 | 增量事件 | - |
+
+### 共用數據結構
+
+| 結構名稱 | 用途 | 包含欄位 |
 |---------|------|---------|
-| `GameInitializedEvent` | 遊戲初始化 | 完整快照 |
-| `CardPlayedEvent` | 玩家出牌 | 增量事件 |
-| `DeckCardRevealedEvent` | 牌堆翻牌（多重配對） | 增量事件 |
-| `MatchSelectionRequiredEvent` | 需要選擇配對 | 增量事件 |
-| `MatchSelectionTimeoutEvent` | 選擇配對逾時 | 增量事件 |
-| `PlayerTurnChangedEvent` | 玩家回合切換 | 增量事件 |
-| `YakuAchievedEvent` | 役種達成 | 增量事件 |
-| `KoikoiDeclaredEvent` | Koi-Koi 宣告 | 增量事件 |
-| `RoundEndedEvent` | 回合結束 | 增量事件 |
-| `GameEndedEvent` | 遊戲結束 | 增量事件 |
-| `GameAbandonedEvent` | 玩家放棄遊戲 | 增量事件 |
+| `MatchResult` | 配對結果 | `sourceCardId`, `sourceType`, `matchType`, `matchedFieldCardId`, `capturedCardIds`, `selectableFieldCardIds`, `selectedFieldCardId`, `autoSelected`, `selectionTimeout`, `achievedYaku` |
+| `TurnTransition` | 回合切換資訊 | `previousPlayerId`, `currentPlayerId`, `reason` |
+| `YakuResult` | 役種結果 | `yaku`, `points`, `cardIds` |
 
-詳細的事件結構請參考 `integration-events-schema.json`。
+### v2.0 優化說明
+
+**優勢**：
+- 減少事件數量：一次出牌從 3-4 個事件減少到 1-2 個事件
+- 原子性更好：相關信息在同一事件中，避免 UI 接收到部分狀態
+- 簡化 UI 邏輯：不需要跨事件維護狀態
+
+**刪除的事件**（已合併到新結構中）：
+- ❌ `DeckCardRevealedEvent` → 合併到 `CardPlayedEvent.deckMatch`
+- ❌ `MatchSelectionRequiredEvent` → 合併到 `CardPlayedEvent.deckMatch` (`matchType: 'multiple_matches'`)
+- ❌ `MatchSelectionTimeoutEvent` → 合併到 `MatchSelectedEvent.autoSelected`
+- ❌ `PlayerTurnChangedEvent` → 嵌套到各事件的 `turnTransition`
+- ❌ `YakuAchievedEvent` → 嵌套到 `MatchResult.achievedYaku`
+
+詳細的事件結構請參考 `integration-events-schema.json` 和 `OPTIMIZATION_PROPOSAL.md`。
 
 ## 參考資料
 

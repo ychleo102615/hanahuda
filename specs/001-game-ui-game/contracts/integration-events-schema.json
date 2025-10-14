@@ -2,8 +2,8 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://hanahuda.example.com/schemas/integration-events.json",
   "title": "Hanahuda Integration Events Schema",
-  "description": "JSON Schema definitions for integration events between game-engine and game-ui Bounded Contexts",
-  "version": "1.0.0",
+  "description": "JSON Schema definitions for integration events between game-engine and game-ui Bounded Contexts (Optimized)",
+  "version": "2.0.0",
   "definitions": {
     "IntegrationEvent": {
       "type": "object",
@@ -31,13 +31,108 @@
         }
       }
     },
+    "YakuResult": {
+      "type": "object",
+      "description": "Yaku achievement result",
+      "required": ["yaku", "points", "cardIds"],
+      "properties": {
+        "yaku": {
+          "type": "string",
+          "enum": ["GOKO", "SHIKO", "AME_SHIKO", "SANKO", "INOSHIKACHO", "AKA_TAN", "AO_TAN", "TANE", "TAN", "KASU"],
+          "description": "Yaku type"
+        },
+        "points": {
+          "type": "number",
+          "minimum": 1,
+          "description": "Points for this yaku"
+        },
+        "cardIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Card IDs that compose this yaku"
+        }
+      }
+    },
+    "MatchResult": {
+      "type": "object",
+      "description": "Card matching result (hand or deck card)",
+      "required": ["sourceCardId", "sourceType", "matchType"],
+      "properties": {
+        "sourceCardId": {
+          "type": "string",
+          "description": "Source card ID (hand or deck)"
+        },
+        "sourceType": {
+          "type": "string",
+          "enum": ["hand", "deck"],
+          "description": "Source type"
+        },
+        "matchType": {
+          "type": "string",
+          "enum": ["no_match", "single_match", "multiple_matches"],
+          "description": "Match type"
+        },
+        "matchedFieldCardId": {
+          "type": "string",
+          "description": "Matched field card ID (for single_match)"
+        },
+        "capturedCardIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Captured card IDs (includes source and matched cards)"
+        },
+        "selectableFieldCardIds": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Selectable field card IDs (for multiple_matches, requires player selection)"
+        },
+        "selectedFieldCardId": {
+          "type": "string",
+          "description": "Selected field card ID (null if not yet selected)"
+        },
+        "autoSelected": {
+          "type": "boolean",
+          "description": "Whether the selection was automatic (timeout)"
+        },
+        "selectionTimeout": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Selection timeout in milliseconds (for multiple_matches)"
+        },
+        "achievedYaku": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/YakuResult" },
+          "description": "Yaku achieved after this match"
+        }
+      }
+    },
+    "TurnTransition": {
+      "type": "object",
+      "description": "Turn transition information",
+      "required": ["previousPlayerId", "currentPlayerId", "reason"],
+      "properties": {
+        "previousPlayerId": {
+          "type": ["string", "null"],
+          "description": "Previous player ID (null for game initialization)"
+        },
+        "currentPlayerId": {
+          "type": "string",
+          "description": "Current player ID"
+        },
+        "reason": {
+          "type": "string",
+          "enum": ["game_initialized", "card_played", "koikoi_declared"],
+          "description": "Reason for turn transition"
+        }
+      }
+    },
     "GameInitializedEvent": {
       "allOf": [
         { "$ref": "#/definitions/IntegrationEvent" },
         {
           "type": "object",
           "description": "Game initialization event with full state snapshot",
-          "required": ["gameState", "cardDefinitions"],
+          "required": ["gameState", "cardDefinitions", "turnTransition"],
           "properties": {
             "eventType": { "const": "GameInitialized" },
             "gameState": {
@@ -102,6 +197,10 @@
                   }
                 }
               }
+            },
+            "turnTransition": {
+              "$ref": "#/definitions/TurnTransition",
+              "description": "Initial turn information"
             }
           }
         }
@@ -112,78 +211,67 @@
         { "$ref": "#/definitions/IntegrationEvent" },
         {
           "type": "object",
-          "description": "Player played a card from hand",
-          "required": ["playerId", "playedCardId", "handCapturedCardIds", "deckCardId", "deckCapturedCardIds"],
+          "description": "Player played a card from hand with complete match results",
+          "required": ["playerId", "playedCardId", "handMatch", "deckMatch"],
           "properties": {
             "eventType": { "const": "CardPlayed" },
             "playerId": { "type": "string" },
             "playedCardId": { "type": "string" },
-            "handMatchedFieldCardId": { "type": "string" },
-            "handCapturedCardIds": {
-              "type": "array",
-              "items": { "type": "string" }
+            "handMatch": {
+              "$ref": "#/definitions/MatchResult",
+              "description": "Hand card match result"
             },
-            "deckCardId": { "type": "string" },
-            "deckMatchedFieldCardId": { "type": "string" },
-            "deckCapturedCardIds": {
-              "type": "array",
-              "items": { "type": "string" }
+            "deckMatch": {
+              "$ref": "#/definitions/MatchResult",
+              "description": "Deck card match result"
             },
-            "animationHint": {
-              "type": "object",
-              "properties": {
-                "handCard": {
-                  "type": "object",
-                  "required": ["from", "to"],
-                  "properties": {
-                    "from": { "const": "hand" },
-                    "to": { "type": "string", "enum": ["field", "captured"] }
-                  }
-                },
-                "deckCard": {
-                  "type": "object",
-                  "required": ["from", "to"],
-                  "properties": {
-                    "from": { "const": "deck" },
-                    "to": { "type": "string", "enum": ["field", "captured"] }
-                  }
-                }
-              }
+            "turnTransition": {
+              "oneOf": [
+                { "$ref": "#/definitions/TurnTransition" },
+                { "type": "null" }
+              ],
+              "description": "Turn transition (null if waiting for player selection)"
             }
           }
         }
       ]
     },
-    "YakuAchievedEvent": {
+    "MatchSelectedEvent": {
       "allOf": [
         { "$ref": "#/definitions/IntegrationEvent" },
         {
           "type": "object",
-          "description": "Player achieved one or more yaku",
-          "required": ["playerId", "yakuResults", "totalScore"],
+          "description": "Player completed multiple match selection (or timeout auto-selected)",
+          "required": ["playerId", "sourceCardId", "selectedFieldCardId", "autoSelected", "capturedCardIds"],
           "properties": {
-            "eventType": { "const": "YakuAchieved" },
+            "eventType": { "const": "MatchSelected" },
             "playerId": { "type": "string" },
-            "yakuResults": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "object",
-                "required": ["yaku", "points", "cardIds"],
-                "properties": {
-                  "yaku": {
-                    "type": "string",
-                    "enum": ["GOKO", "SHIKO", "AME_SHIKO", "SANKO", "INOSHIKACHO", "AKA_TAN", "AO_TAN", "TANE", "TAN", "KASU"]
-                  },
-                  "points": { "type": "number", "minimum": 1 },
-                  "cardIds": {
-                    "type": "array",
-                    "items": { "type": "string" }
-                  }
-                }
-              }
+            "sourceCardId": {
+              "type": "string",
+              "description": "Source card ID (deck card in multiple match scenario)"
             },
-            "totalScore": { "type": "number", "minimum": 1 }
+            "selectedFieldCardId": {
+              "type": "string",
+              "description": "Selected field card ID"
+            },
+            "autoSelected": {
+              "type": "boolean",
+              "description": "Whether auto-selected due to timeout"
+            },
+            "capturedCardIds": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Captured card IDs after selection"
+            },
+            "achievedYaku": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/YakuResult" },
+              "description": "Yaku achieved after this match"
+            },
+            "turnTransition": {
+              "$ref": "#/definitions/TurnTransition",
+              "description": "Turn transition after selection"
+            }
           }
         }
       ]
@@ -201,6 +289,13 @@
             "declared": {
               "type": "boolean",
               "description": "true = koikoi (continue), false = shobu (end round)"
+            },
+            "turnTransition": {
+              "oneOf": [
+                { "$ref": "#/definitions/TurnTransition" },
+                { "type": "null" }
+              ],
+              "description": "Turn transition (null if shobu - round ends)"
             }
           }
         }
@@ -235,7 +330,7 @@
                       "playerId": { "type": "string" },
                       "yakuResults": {
                         "type": "array",
-                        "items": { "$ref": "#/definitions/YakuAchievedEvent/allOf/1/properties/yakuResults/items" }
+                        "items": { "$ref": "#/definitions/YakuResult" }
                       },
                       "baseScore": { "type": "number", "minimum": 0 },
                       "multiplier": { "type": "number", "enum": [1, 2] },
@@ -306,21 +401,6 @@
             "winnerId": { "type": "string" },
             "currentRound": { "type": "integer", "minimum": 1, "maximum": 12 },
             "phase": { "type": "string" }
-          }
-        }
-      ]
-    },
-    "PlayerTurnChangedEvent": {
-      "allOf": [
-        { "$ref": "#/definitions/IntegrationEvent" },
-        {
-          "type": "object",
-          "description": "Current player changed",
-          "required": ["currentPlayerId", "previousPlayerId"],
-          "properties": {
-            "eventType": { "const": "PlayerTurnChanged" },
-            "currentPlayerId": { "type": "string" },
-            "previousPlayerId": { "type": "string" }
           }
         }
       ]

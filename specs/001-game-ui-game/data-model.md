@@ -69,7 +69,119 @@ export interface IntegrationEvent {
 
 ---
 
-### 遊戲事件定義
+### 共用數據結構（v2.0）
+
+在進入具體事件定義前，先定義共用的嵌套數據結構：
+
+#### YakuResult（役種結果）
+
+```typescript
+/**
+ * 役種結果
+ *
+ * 用於表示玩家達成的役種資訊
+ */
+export interface YakuResult {
+  /** 役種類型 */
+  readonly yaku:
+    | 'GOKO'        // 五光 (10分)
+    | 'SHIKO'       // 四光 (8分)
+    | 'AME_SHIKO'   // 雨四光 (7分)
+    | 'SANKO'       // 三光 (5分)
+    | 'INOSHIKACHO' // 猪鹿蝶 (5分)
+    | 'AKA_TAN'     // 赤短 (5分)
+    | 'AO_TAN'      // 青短 (5分)
+    | 'TANE'        // 種 (1+分)
+    | 'TAN'         // 短 (1+分)
+    | 'KASU'        // カス (1+分)
+
+  /** 本役種的分數 */
+  readonly points: number
+
+  /** 構成此役種的牌 ID 列表（供 UI 高亮顯示） */
+  readonly cardIds: string[]
+}
+```
+
+#### MatchResult（配對結果）
+
+```typescript
+/**
+ * 配對結果
+ *
+ * 表示手牌或牌堆卡牌的配對結果，包含三種情況：
+ * 1. no_match: 無配對，牌放到場上
+ * 2. single_match: 單一配對，自動捕獲
+ * 3. multiple_matches: 多重配對，需要玩家選擇
+ */
+export interface MatchResult {
+  /** 來源牌 ID（手牌或牌堆卡牌） */
+  readonly sourceCardId: string
+
+  /** 來源類型 */
+  readonly sourceType: 'hand' | 'deck'
+
+  /** 配對類型 */
+  readonly matchType: 'no_match' | 'single_match' | 'multiple_matches'
+
+  /** 配對到的場牌 ID（單一配對時） */
+  readonly matchedFieldCardId?: string
+
+  /** 捕獲的牌 ID 列表（包含來源牌和配對場牌） */
+  readonly capturedCardIds: string[]
+
+  /** 可選擇的場牌 ID 列表（多重配對時） */
+  readonly selectableFieldCardIds?: string[]
+
+  /** 已選擇的場牌 ID（多重配對選擇後） */
+  readonly selectedFieldCardId?: string
+
+  /** 是否自動選擇（超時） */
+  readonly autoSelected?: boolean
+
+  /** 選擇時限（毫秒，多重配對時） */
+  readonly selectionTimeout?: number
+
+  /** 配對成功後達成的役種 */
+  readonly achievedYaku?: YakuResult[]
+}
+```
+
+#### TurnTransition（回合切換）
+
+```typescript
+/**
+ * 回合切換資訊
+ *
+ * 表示玩家回合的切換，嵌套在各種事件中，取代獨立的 PlayerTurnChangedEvent
+ */
+export interface TurnTransition {
+  /** 前一位玩家 ID（遊戲初始化時為 null） */
+  readonly previousPlayerId: string | null
+
+  /** 當前玩家 ID */
+  readonly currentPlayerId: string
+
+  /** 回合切換原因 */
+  readonly reason: 'game_initialized' | 'card_played' | 'koikoi_declared'
+}
+```
+
+---
+
+### 遊戲事件定義（v2.0 優化版）
+
+**v2.0 主要改進**：
+- 減少事件數量：一次出牌從 3-4 個事件減少到 1-2 個事件
+- 嵌套數據結構：`MatchResult`, `TurnTransition`, `YakuResult`
+- 原子性更好：相關信息在同一事件中
+
+**刪除的事件**（已合併到新結構中）：
+- ❌ `DeckCardRevealedEvent` → 合併到 `CardPlayedEvent.deckMatch`
+- ❌ `MatchSelectionRequiredEvent` → 合併到 `CardPlayedEvent.deckMatch`
+- ❌ `MatchSelectionTimeoutEvent` → 合併到 `MatchSelectedEvent`
+- ❌ `PlayerTurnChangedEvent` → 嵌套到各事件的 `turnTransition`
+- ❌ `YakuAchievedEvent` → 嵌套到 `MatchResult.achievedYaku`
 
 #### 1. GameInitializedEvent（完整快照）
 
@@ -126,6 +238,9 @@ export interface GameInitializedEvent extends IntegrationEvent {
     readonly type: 'bright' | 'animal' | 'ribbon' | 'plain'
     readonly points: number      // 點數 (20, 10, 5, 1)
   }>
+
+  /** 初始回合資訊（v2.0 新增） */
+  readonly turnTransition: TurnTransition
 }
 ```
 
@@ -133,17 +248,24 @@ export interface GameInitializedEvent extends IntegrationEvent {
 - `deckCardCount`: 只傳遞數量而非具體牌面，防止作弊（日後前後端分離時）
 - `cardDefinitions`: 雖然不變，但為了讓 game-ui BC 完全獨立，包含在初始化事件中
 - `players[].handCardIds`: 單機模式下可傳遞所有玩家手牌，日後可依模式過濾
+- `turnTransition`: **v2.0 新增**，提供初始玩家資訊（previousPlayerId 為 null，reason 為 'game_initialized'）
 
 ---
 
-#### 2. CardPlayedEvent（增量事件）
+#### 2. CardPlayedEvent（增量事件）（v2.0 重構）
 
 ```typescript
 /**
- * 玩家出牌事件
+ * 玩家出牌事件（v2.0）
  *
  * 代表玩家已成功出牌並完成配對與捕獲流程。
  * 此事件為增量事件，僅包含變化資訊。
+ *
+ * v2.0 重大改進：
+ * - 使用 MatchResult 結構表示手牌和牌堆配對結果
+ * - 直接包含 achievedYaku，取代獨立的 YakuAchievedEvent
+ * - 包含 turnTransition，取代獨立的 PlayerTurnChangedEvent
+ * - 支援多重配對場景（turnTransition 為 null 表示等待玩家選擇）
  */
 export interface CardPlayedEvent extends IntegrationEvent {
   readonly eventType: 'CardPlayed'
@@ -154,196 +276,78 @@ export interface CardPlayedEvent extends IntegrationEvent {
   /** 從手牌打出的牌 ID */
   readonly playedCardId: string
 
-  /** 手牌配對到的場牌 ID（若無配對則為 undefined） */
-  readonly handMatchedFieldCardId?: string
+  /** 手牌配對結果 */
+  readonly handMatch: MatchResult
 
-  /** 手牌捕獲的牌 ID 列表（[playedCardId, handMatchedFieldCardId] 或 [playedCardId]） */
-  readonly handCapturedCardIds: string[]
+  /** 牌堆翻牌配對結果 */
+  readonly deckMatch: MatchResult
 
-  /** 從牌堆翻出的牌 ID */
-  readonly deckCardId: string
-
-  /** 翻牌配對到的場牌 ID（若無配對則為 undefined） */
-  readonly deckMatchedFieldCardId?: string
-
-  /** 翻牌捕獲的牌 ID 列表（[deckCardId, deckMatchedFieldCardId] 或空陣列） */
-  readonly deckCapturedCardIds: string[]
-
-  /** 動畫上下文資訊（供 UI 使用） */
-  readonly animationHint?: {
-    /** 手牌動畫：從手牌到場上或捕獲區 */
-    readonly handCard: {
-      readonly from: 'hand'
-      readonly to: 'field' | 'captured'
-    }
-    /** 翻牌動畫：從牌堆到場上或捕獲區 */
-    readonly deckCard: {
-      readonly from: 'deck'
-      readonly to: 'field' | 'captured'
-    }
-  }
+  /** 回合切換資訊（null 表示等待玩家選擇或 Koi-Koi 決策） */
+  readonly turnTransition: TurnTransition | null
 }
 ```
 
-**欄位設計理由**:
-- 區分手牌和翻牌的配對與捕獲，UI 需要分別呈現兩個動畫序列
-- `animationHint` 為可選欄位，單機模式下可直接從其他欄位推導，但為了日後擴展保留
-- `handCapturedCardIds` 和 `deckCapturedCardIds` 是陣列而非單一 ID，因為可能無配對（空陣列）或有配對（2 元素陣列）
+**v2.0 設計理由**:
+- **嵌套結構**: 使用 `MatchResult` 統一表示配對結果，包含配對類型、捕獲牌、役種等完整資訊
+- **減少事件數量**: 原本需要 3-4 個事件（CardPlayed + YakuAchieved + PlayerTurnChanged），現在只需 1 個
+- **原子性**: 所有相關信息（配對、役種、回合切換）在同一事件中，避免 UI 接收到部分狀態
+- **明確狀態**: `turnTransition: null` 表示尚未切換回合（等待多重配對選擇或 Koi-Koi 決策）
+- **移除 animationHint**: 可從 `matchType` 和 `capturedCardIds` 推導動畫路徑
 
 ---
 
-#### 3. DeckCardRevealedEvent（增量事件）
+#### 3. MatchSelectedEvent（增量事件）（v2.0 新增）
 
 ```typescript
 /**
- * 牌堆翻牌事件（有多重配對時）
+ * 配對選擇完成事件（v2.0 新增）
  *
- * 當牌堆翻出的牌與場上有多張同月份牌可配對時，發布此事件通知 game-ui 等待玩家選擇。
+ * 當玩家完成多重配對選擇（或超時自動選擇）時發布此事件。
  *
- * 觸發時機：
- * - 翻牌後檢測到場上有 2+ 張可配對的牌
- * - 必須在玩家選擇或超時前暫停遊戲流程
+ * 此事件合併了原本的 MatchSelectionTimeoutEvent，透過 autoSelected 欄位區分。
  */
-export interface DeckCardRevealedEvent extends IntegrationEvent {
-  readonly eventType: 'DeckCardRevealed'
+export interface MatchSelectedEvent extends IntegrationEvent {
+  readonly eventType: 'MatchSelected'
 
-  /** 翻出的牌 ID */
-  readonly deckCardId: string
-
-  /** 可配對的場牌 ID 列表（至少 2 張） */
-  readonly matchableFieldCardIds: string[]
-}
-```
-
----
-
-#### 4. MatchSelectionRequiredEvent（增量事件）
-
-```typescript
-/**
- * 需要玩家選擇配對事件
- *
- * 當出現多重配對情況時（手牌或翻牌），要求玩家在限定時間內選擇一張場牌配對。
- */
-export interface MatchSelectionRequiredEvent extends IntegrationEvent {
-  readonly eventType: 'MatchSelectionRequired'
-
-  /** 需要選擇配對的牌 ID（手牌或翻牌） */
-  readonly sourceCardId: string
-
-  /** 配對來源 */
-  readonly sourceType: 'hand' | 'deck'
-
-  /** 可選擇的場牌 ID 列表 */
-  readonly selectableFieldCardIds: string[]
-
-  /** 選擇時限（毫秒），預設 10000 (10 秒) */
-  readonly timeoutMs: number
-}
-```
-
----
-
-#### 5. MatchSelectionTimeoutEvent（增量事件）
-
-```typescript
-/**
- * 選擇配對逾時事件
- *
- * 當玩家在限定時間內未選擇配對時，game-engine 自動按優先順序選擇並發布此事件。
- *
- * 自動選擇優先順序：光 > 種 > 短 > カス，同類型按場牌出現順序
- */
-export interface MatchSelectionTimeoutEvent extends IntegrationEvent {
-  readonly eventType: 'MatchSelectionTimeout'
-
-  /** 自動選擇的場牌 ID */
-  readonly autoSelectedFieldCardId: string
-
-  /** 選擇理由（供 UI 顯示提示） */
-  readonly reason: 'timeout_auto_select'
-}
-```
-
----
-
-#### 6. PlayerTurnChangedEvent（增量事件）
-
-```typescript
-/**
- * 玩家回合切換事件
- *
- * 代表當前玩家已完成行動，切換到下一位玩家。
- */
-export interface PlayerTurnChangedEvent extends IntegrationEvent {
-  readonly eventType: 'PlayerTurnChanged'
-
-  /** 新的當前玩家 ID */
-  readonly currentPlayerId: string
-
-  /** 前一位玩家 ID */
-  readonly previousPlayerId: string
-}
-```
-
----
-
-#### 7. YakuAchievedEvent（增量事件）
-
-```typescript
-/**
- * 役種達成事件
- *
- * 當玩家捕獲的牌形成役種時發布此事件。
- * 若玩家同時湊成多個役種，此事件會包含所有役種列表。
- */
-export interface YakuAchievedEvent extends IntegrationEvent {
-  readonly eventType: 'YakuAchieved'
-
-  /** 達成役種的玩家 ID */
+  /** 選擇的玩家 ID */
   readonly playerId: string
 
-  /** 達成的役種列表 */
-  readonly yakuResults: ReadonlyArray<{
-    /** 役種類型 */
-    readonly yaku:
-      | 'GOKO'        // 五光 (10分)
-      | 'SHIKO'       // 四光 (8分)
-      | 'AME_SHIKO'   // 雨四光 (7分)
-      | 'SANKO'       // 三光 (5分)
-      | 'INOSHIKACHO' // 猪鹿蝶 (5分)
-      | 'AKA_TAN'     // 赤短 (5分)
-      | 'AO_TAN'      // 青短 (5分)
-      | 'TANE'        // 種 (1+分)
-      | 'TAN'         // 短 (1+分)
-      | 'KASU'        // カス (1+分)
+  /** 來源牌 ID（通常是牌堆卡牌） */
+  readonly sourceCardId: string
 
-    /** 本役種的分數 */
-    readonly points: number
+  /** 已選擇的場牌 ID */
+  readonly selectedFieldCardId: string
 
-    /** 構成此役種的牌 ID 列表（供 UI 高亮顯示） */
-    readonly cardIds: string[]
-  }>
+  /** 是否自動選擇（超時） */
+  readonly autoSelected: boolean
 
-  /** 當前回合總分（所有役種分數總和，未計 Koi-Koi 加倍） */
-  readonly totalScore: number
+  /** 捕獲的牌 ID 列表 */
+  readonly capturedCardIds: string[]
+
+  /** 選擇後達成的役種 */
+  readonly achievedYaku?: YakuResult[]
+
+  /** 回合切換資訊 */
+  readonly turnTransition: TurnTransition
 }
 ```
 
-**欄位設計理由**:
-- `yaku` 使用字串字面值而非 enum，為日後 Protobuf 轉換保留彈性
-- `cardIds` 供 UI 高亮顯示構成役種的牌
-- `totalScore` 是原始分數，尚未計算 Koi-Koi 加倍
+**設計理由**:
+- 取代舊的 `DeckCardRevealedEvent` + `MatchSelectionRequiredEvent` + `MatchSelectionTimeoutEvent`
+- `autoSelected` 明確區分玩家主動選擇或超時自動選擇
+- 包含役種和回合切換資訊，保持原子性
 
 ---
 
-#### 8. KoikoiDeclaredEvent（增量事件）
+#### 4. KoikoiDeclaredEvent（增量事件）（v2.0 更新）
 
 ```typescript
 /**
- * Koi-Koi 宣告事件
+ * Koi-Koi 宣告事件（v2.0 更新）
  *
  * 當玩家選擇宣告 Koi-Koi（繼續遊玩）或選擇勝負（結束回合）時發布此事件。
+ *
+ * v2.0 改進：包含 turnTransition，取代獨立的 PlayerTurnChangedEvent
  */
 export interface KoikoiDeclaredEvent extends IntegrationEvent {
   readonly eventType: 'KoikoiDeclared'
@@ -353,12 +357,19 @@ export interface KoikoiDeclaredEvent extends IntegrationEvent {
 
   /** 是否選擇 Koi-Koi（true: 繼續, false: 勝負） */
   readonly declared: boolean
+
+  /** 回合切換資訊（如果選擇勝負則為 null，因為回合結束） */
+  readonly turnTransition: TurnTransition | null
 }
 ```
 
+**v2.0 設計理由**:
+- 選擇 Koi-Koi (declared = true)：包含 `turnTransition`，切換到對手回合
+- 選擇勝負 (declared = false)：`turnTransition` 為 null，因為回合即將結束，接著發送 `RoundEndedEvent`
+
 ---
 
-#### 9. RoundEndedEvent（增量事件）
+#### 5. RoundEndedEvent（增量事件）
 
 ```typescript
 /**
