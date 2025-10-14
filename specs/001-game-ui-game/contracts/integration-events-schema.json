@@ -1,0 +1,329 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://hanahuda.example.com/schemas/integration-events.json",
+  "title": "Hanahuda Integration Events Schema",
+  "description": "JSON Schema definitions for integration events between game-engine and game-ui Bounded Contexts",
+  "version": "1.0.0",
+  "definitions": {
+    "IntegrationEvent": {
+      "type": "object",
+      "description": "Base integration event that all events inherit from",
+      "required": ["eventId", "eventType", "timestamp", "sequenceNumber"],
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for this event"
+        },
+        "eventType": {
+          "type": "string",
+          "description": "Event type in PastTense format"
+        },
+        "timestamp": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Unix timestamp in milliseconds"
+        },
+        "sequenceNumber": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential number for event ordering and loss detection"
+        }
+      }
+    },
+    "GameInitializedEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/IntegrationEvent" },
+        {
+          "type": "object",
+          "description": "Game initialization event with full state snapshot",
+          "required": ["gameState", "cardDefinitions"],
+          "properties": {
+            "eventType": { "const": "GameInitialized" },
+            "gameState": {
+              "type": "object",
+              "required": ["gameId", "currentRound", "phase", "currentPlayerId", "players", "fieldCardIds", "deckCardCount", "koikoiPlayerId"],
+              "properties": {
+                "gameId": { "type": "string" },
+                "currentRound": { "type": "integer", "minimum": 1, "maximum": 12 },
+                "phase": {
+                  "type": "string",
+                  "enum": ["setup", "dealing", "playing", "koikoi", "round_end", "game_end"]
+                },
+                "currentPlayerId": { "type": "string" },
+                "players": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "object",
+                    "required": ["id", "name", "handCardIds", "capturedCardIds", "totalScore", "roundScore"],
+                    "properties": {
+                      "id": { "type": "string" },
+                      "name": { "type": "string" },
+                      "handCardIds": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      },
+                      "capturedCardIds": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      },
+                      "totalScore": { "type": "number", "minimum": 0 },
+                      "roundScore": { "type": "number", "minimum": 0 }
+                    }
+                  }
+                },
+                "fieldCardIds": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "deckCardCount": { "type": "integer", "minimum": 0 },
+                "koikoiPlayerId": { "type": ["string", "null"] }
+              }
+            },
+            "cardDefinitions": {
+              "type": "array",
+              "minItems": 48,
+              "maxItems": 48,
+              "items": {
+                "type": "object",
+                "required": ["id", "suit", "type", "points"],
+                "properties": {
+                  "id": { "type": "string", "pattern": "^\\d{1,2}-(bright|animal|ribbon|plain)-\\d$" },
+                  "suit": { "type": "integer", "minimum": 1, "maximum": 12 },
+                  "type": {
+                    "type": "string",
+                    "enum": ["bright", "animal", "ribbon", "plain"]
+                  },
+                  "points": {
+                    "type": "integer",
+                    "enum": [1, 5, 10, 20]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CardPlayedEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/IntegrationEvent" },
+        {
+          "type": "object",
+          "description": "Player played a card from hand",
+          "required": ["playerId", "playedCardId", "handCapturedCardIds", "deckCardId", "deckCapturedCardIds"],
+          "properties": {
+            "eventType": { "const": "CardPlayed" },
+            "playerId": { "type": "string" },
+            "playedCardId": { "type": "string" },
+            "handMatchedFieldCardId": { "type": "string" },
+            "handCapturedCardIds": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "deckCardId": { "type": "string" },
+            "deckMatchedFieldCardId": { "type": "string" },
+            "deckCapturedCardIds": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "animationHint": {
+              "type": "object",
+              "properties": {
+                "handCard": {
+                  "type": "object",
+                  "required": ["from", "to"],
+                  "properties": {
+                    "from": { "const": "hand" },
+                    "to": { "type": "string", "enum": ["field", "captured"] }
+                  }
+                },
+                "deckCard": {
+                  "type": "object",
+                  "required": ["from", "to"],
+                  "properties": {
+                    "from": { "const": "deck" },
+                    "to": { "type": "string", "enum": ["field", "captured"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "YakuAchievedEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/IntegrationEvent" },
+        {
+          "type": "object",
+          "description": "Player achieved one or more yaku",
+          "required": ["playerId", "yakuResults", "totalScore"],
+          "properties": {
+            "eventType": { "const": "YakuAchieved" },
+            "playerId": { "type": "string" },
+            "yakuResults": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["yaku", "points", "cardIds"],
+                "properties": {
+                  "yaku": {
+                    "type": "string",
+                    "enum": ["GOKO", "SHIKO", "AME_SHIKO", "SANKO", "INOSHIKACHO", "AKA_TAN", "AO_TAN", "TANE", "TAN", "KASU"]
+                  },
+                  "points": { "type": "number", "minimum": 1 },
+                  "cardIds": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            },
+            "totalScore": { "type": "number", "minimum": 1 }
+          }
+        }
+      ]
+    },
+    "KoikoiDeclaredEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/IntegrationEvent" },
+        {
+          "type": "object",
+          "description": "Player declared koikoi or shobu",
+          "required": ["playerId", "declared"],
+          "properties": {
+            "eventType": { "const": "KoikoiDeclared" },
+            "playerId": { "type": "string" },
+            "declared": {
+              "type": "boolean",
+              "description": "true = koikoi (continue), false = shobu (end round)"
+            }
+          }
+        }
+      ]
+    },
+    "RoundEndedEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/IntegrationEvent" },
+        {
+          "type": "object",
+          "description": "Round ended with result",
+          "required": ["winnerId", "roundResult"],
+          "properties": {
+            "eventType": { "const": "RoundEnded" },
+            "winnerId": {
+              "type": ["string", "null"],
+              "description": "Winner ID or null for draw"
+            },
+            "roundResult": {
+              "type": "object",
+              "required": ["round", "playerResults", "koikoiDeclared", "koikoiPlayerId"],
+              "properties": {
+                "round": { "type": "integer", "minimum": 1, "maximum": 12 },
+                "playerResults": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "object",
+                    "required": ["playerId", "yakuResults", "baseScore", "multiplier", "finalScore"],
+                    "properties": {
+                      "playerId": { "type": "string" },
+                      "yakuResults": {
+                        "type": "array",
+                        "items": { "$ref": "#/definitions/YakuAchievedEvent/allOf/1/properties/yakuResults/items" }
+                      },
+                      "baseScore": { "type": "number", "minimum": 0 },
+                      "multiplier": { "type": "number", "enum": [1, 2] },
+                      "finalScore": { "type": "number", "minimum": 0 }
+                    }
+                  }
+                },
+                "koikoiDeclared": { "type": "boolean" },
+                "koikoiPlayerId": { "type": ["string", "null"] }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "GameEndedEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/IntegrationEvent" },
+        {
+          "type": "object",
+          "description": "Game ended with final result",
+          "required": ["winnerId", "reason", "finalResult"],
+          "properties": {
+            "eventType": { "const": "GameEnded" },
+            "winnerId": {
+              "type": ["string", "null"],
+              "description": "Winner ID or null for draw"
+            },
+            "reason": {
+              "type": "string",
+              "enum": ["all_rounds_completed", "player_abandoned"]
+            },
+            "finalResult": {
+              "type": "object",
+              "required": ["playerFinalScores", "roundsPlayed"],
+              "properties": {
+                "playerFinalScores": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "object",
+                    "required": ["playerId", "totalScore", "roundsWon"],
+                    "properties": {
+                      "playerId": { "type": "string" },
+                      "totalScore": { "type": "number", "minimum": 0 },
+                      "roundsWon": { "type": "integer", "minimum": 0 }
+                    }
+                  }
+                },
+                "roundsPlayed": { "type": "integer", "minimum": 1, "maximum": 12 }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "GameAbandonedEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/IntegrationEvent" },
+        {
+          "type": "object",
+          "description": "Player abandoned the game",
+          "required": ["abandonedPlayerId", "winnerId", "currentRound", "phase"],
+          "properties": {
+            "eventType": { "const": "GameAbandoned" },
+            "abandonedPlayerId": { "type": "string" },
+            "winnerId": { "type": "string" },
+            "currentRound": { "type": "integer", "minimum": 1, "maximum": 12 },
+            "phase": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "PlayerTurnChangedEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/IntegrationEvent" },
+        {
+          "type": "object",
+          "description": "Current player changed",
+          "required": ["currentPlayerId", "previousPlayerId"],
+          "properties": {
+            "eventType": { "const": "PlayerTurnChanged" },
+            "currentPlayerId": { "type": "string" },
+            "previousPlayerId": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}
