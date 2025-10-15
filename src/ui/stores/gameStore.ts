@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed, readonly } from 'vue'
-import type { Card } from '@/domain/entities/Card'
+import type { Card } from '@/game-engine/domain/entities/Card'
 import type { IPlayer } from '@/application/ports/repositories/PlayerInterface'
-import type { YakuResult } from '@/domain/entities/Yaku'
+import type { YakuResult } from '@/game-engine/domain/entities/Yaku'
 
 export interface UIGameState {
   gameId: string

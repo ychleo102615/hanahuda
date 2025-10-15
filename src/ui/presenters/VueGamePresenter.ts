@@ -5,9 +5,9 @@ import type {
   KoikoiDecisionOutputDTO,
   StartGameOutputDTO,
 } from '@/application/dto/GameDTO'
-import type { YakuResult } from '@/domain/entities/Yaku'
+import type { YakuResult } from '@/game-engine/domain/entities/Yaku'
 import type { useGameStore } from '@/ui/stores/gameStore'
-import type { Card } from '@/domain/entities/Card'
+import type { Card } from '@/game-engine/domain/entities/Card'
 import type { LocaleService } from '@/infrastructure/services/LocaleService'
 
 export class VueGamePresenter implements GamePresenter {

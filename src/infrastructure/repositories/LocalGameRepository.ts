@@ -1,10 +1,10 @@
-import type { Card, CardType } from '@/domain/entities/Card'
-import { CardEntity } from '@/domain/entities/Card'
-import { Player } from '@/domain/entities/Player'
-import type { GameState, GameMove } from '@/domain/entities/GameState'
-import { GameState as GameStateClass } from '@/domain/entities/GameState'
-import { Yaku } from '@/domain/entities/Yaku'
-import type { YakuResult } from '@/domain/entities/Yaku'
+import type { Card, CardType } from '@/game-engine/domain/entities/Card'
+import { CardEntity } from '@/game-engine/domain/entities/Card'
+import { Player } from '@/game-engine/domain/entities/Player'
+import type { GameState, GameMove } from '@/game-engine/domain/entities/GameState'
+import { GameState as GameStateClass } from '@/game-engine/domain/entities/GameState'
+import { Yaku } from '@/game-engine/domain/entities/Yaku'
+import type { YakuResult } from '@/game-engine/domain/entities/Yaku'
 import type { GameRepository, PlayCardRequest, PlayCardResult } from '@/application/ports/repositories/GameRepository'
 import { HANAFUDA_CARDS } from '@/shared/constants/gameConstants'
 import { v4 as uuidv4 } from 'uuid'
@@ -45,7 +45,7 @@ export class LocalGameRepository implements GameRepository {
 
     const deck = await this.shuffleDeck()
     gameState.setDeck(deck)
-    
+
     return await this.dealCards(gameId)
   }
 
@@ -57,44 +57,44 @@ export class LocalGameRepository implements GameRepository {
   async playCard(gameId: string, request: PlayCardRequest): Promise<PlayCardResult> {
     const gameState = this.games.get(gameId)
     if (!gameState) {
-      return { 
-        success: false, 
-        capturedCards: [], 
-        nextPhase: 'playing', 
-        yakuResults: [], 
-        error: 'Game not found' 
+      return {
+        success: false,
+        capturedCards: [],
+        nextPhase: 'playing',
+        yakuResults: [],
+        error: 'Game not found'
       }
     }
 
     const currentPlayer = gameState.currentPlayer
     if (!currentPlayer || currentPlayer.id !== request.playerId) {
-      return { 
-        success: false, 
-        capturedCards: [], 
-        nextPhase: 'playing', 
-        yakuResults: [], 
-        error: 'Not your turn' 
+      return {
+        success: false,
+        capturedCards: [],
+        nextPhase: 'playing',
+        yakuResults: [],
+        error: 'Not your turn'
       }
     }
 
     if (!currentPlayer.canPlayCard(request.cardId)) {
-      return { 
-        success: false, 
-        capturedCards: [], 
-        nextPhase: 'playing', 
-        yakuResults: [], 
-        error: 'Invalid card' 
+      return {
+        success: false,
+        capturedCards: [],
+        nextPhase: 'playing',
+        yakuResults: [],
+        error: 'Invalid card'
       }
     }
 
     const playedCard = currentPlayer.removeFromHand(request.cardId)
     if (!playedCard) {
-      return { 
-        success: false, 
-        capturedCards: [], 
-        nextPhase: 'playing', 
-        yakuResults: [], 
-        error: 'Card not found in hand' 
+      return {
+        success: false,
+        capturedCards: [],
+        nextPhase: 'playing',
+        yakuResults: [],
+        error: 'Card not found in hand'
       }
     }
 
@@ -171,7 +171,7 @@ export class LocalGameRepository implements GameRepository {
     const hasYaku = yakuResults.length > 0
 
     let nextPhase: 'playing' | 'koikoi' | 'round_end' = 'playing'
-    
+
     if (hasYaku) {
       nextPhase = 'koikoi'
       gameState.setPhase('koikoi')
@@ -210,7 +210,7 @@ export class LocalGameRepository implements GameRepository {
     gameState.setKoikoiPlayer(playerId)
     gameState.setPhase('playing')
     gameState.nextPlayer()
-    
+
     return true
   }
 
@@ -226,7 +226,7 @@ export class LocalGameRepository implements GameRepository {
 
   async shuffleDeck(): Promise<Card[]> {
     const cards: Card[] = []
-    
+
     Object.values(HANAFUDA_CARDS).forEach(monthData => {
       monthData.CARDS.forEach((cardData, index) => {
         const card = new CardEntity(
@@ -256,7 +256,7 @@ export class LocalGameRepository implements GameRepository {
 
     const deck = [...gameState.deck]
     const fieldCards: Card[] = []
-    
+
     for (let i = 0; i < 8; i++) {
       const card = deck.pop()
       if (card) fieldCards.push(card)
@@ -285,7 +285,7 @@ export class LocalGameRepository implements GameRepository {
   }> {
     const yakuResults = Yaku.checkYaku(capturedCards)
     const totalScore = Yaku.calculateTotalScore(yakuResults)
-    
+
     return {
       yakuResults,
       totalScore

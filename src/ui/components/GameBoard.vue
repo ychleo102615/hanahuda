@@ -68,9 +68,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { Card } from '@/domain/entities/Card'
-import type { GameMove } from '@/domain/entities/GameState'
-import type { YakuResult } from '@/domain/entities/Yaku'
+import type { Card } from '@/game-engine/domain/entities/Card'
+import type { GameMove } from '@/game-engine/domain/entities/GameState'
+import type { YakuResult } from '@/game-engine/domain/entities/Yaku'
 import { useLocale } from '@/ui/composables/useLocale'
 import CardComponent from './CardComponent.vue'
 

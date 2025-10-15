@@ -96,12 +96,12 @@
 
 ### 整合與配置
 
-- [ ] T049 [US1] 更新 DIContainer 整合兩個 BC 在 src/infrastructure/di/DIContainer.ts
-- [ ] T050 [US1] 更新 main.ts 配置事件訂閱和 BC 整合
-- [ ] T051 [US1] 更新所有 import 路徑使用新的 BC 結構
-- [ ] T052 [US1] 確保 TypeScript 編譯通過，無跨 BC 依賴錯誤
+- [x] T049 [US1] 更新 DIContainer 整合兩個 BC 在 src/infrastructure/di/DIContainer.ts
+- [x] T050 [US1] 更新 main.ts 配置事件訂閱和 BC 整合
+- [x] T051 [US1] 更新所有 import 路徑使用新的 BC 結構
+- [x] T052 [US1] 確保 TypeScript 編譯通過，無跨 BC 依賴錯誤
 
-**檢查點**: 此時使用者故事 1 應該完全功能正常且可獨立測試
+**檢查點**: ✅ 使用者故事 1 已完成 - TypeScript 編譯通過，所有 import 路徑已更新，EventBus 已整合
 
 ---
 

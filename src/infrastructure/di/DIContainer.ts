@@ -1,14 +1,26 @@
 import { LocalGameRepository } from '@/infrastructure/repositories/LocalGameRepository'
-import { GameFlowCoordinator } from '@/application/usecases/GameFlowCoordinator'
-import { PlayCardUseCase } from '@/application/usecases/PlayCardUseCase'
-import { CalculateScoreUseCase } from '@/application/usecases/CalculateScoreUseCase'
+import { LocalStorageLocaleService } from '@/infrastructure/services/LocaleService'
+
+// Game Engine BC
+import { GameFlowCoordinator } from '@/game-engine/application/usecases/GameFlowCoordinator'
+import { PlayCardUseCase } from '@/game-engine/application/usecases/PlayCardUseCase'
+import { CalculateScoreUseCase } from '@/game-engine/application/usecases/CalculateScoreUseCase'
+import { SetUpGameUseCase } from '@/game-engine/application/usecases/SetUpGameUseCase'
+import { SetUpRoundUseCase } from '@/game-engine/application/usecases/SetUpRoundUseCase'
 import { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
 import { GetMatchingCardsUseCase } from '@/application/usecases/GetMatchingCardsUseCase'
-import { SetUpGameUseCase } from '@/application/usecases/SetUpGameUseCase'
-import { SetUpRoundUseCase } from '@/application/usecases/SetUpRoundUseCase'
+
+// Game UI BC (future use)
+import { UpdateGameViewUseCase } from '@/game-ui/application/usecases/UpdateGameViewUseCase'
+import { HandleUserInputUseCase } from '@/game-ui/application/usecases/HandleUserInputUseCase'
+
+// Legacy UI (still in use for Phase 3)
 import { GameController } from '@/ui/controllers/GameController'
 import { VueGamePresenter } from '@/ui/presenters/VueGamePresenter'
-import { LocalStorageLocaleService } from '@/infrastructure/services/LocaleService'
+
+// Shared - Event Bus
+import { InMemoryEventBus } from '@/shared/events/base/EventBus'
+import type { IEventBus } from '@/shared/events/ports/IEventBus'
 
 type ServiceKey = string | symbol
 type ServiceFactory<T = unknown> = () => T
@@ -21,6 +33,9 @@ export class DIContainer {
   static readonly GAME_REPOSITORY = Symbol('GameRepository')
   static readonly GAME_PRESENTER = Symbol('GamePresenter')
   static readonly LOCALE_SERVICE = Symbol('LocaleService')
+  static readonly EVENT_BUS = Symbol('EventBus')
+
+  // Game Engine BC
   static readonly GAME_FLOW_COORDINATOR = Symbol('GameFlowCoordinator')
   static readonly SET_UP_GAME_USE_CASE = Symbol('SetUpGameUseCase')
   static readonly SET_UP_ROUND_USE_CASE = Symbol('SetUpRoundUseCase')
@@ -28,7 +43,11 @@ export class DIContainer {
   static readonly CALCULATE_SCORE_USE_CASE = Symbol('CalculateScoreUseCase')
   static readonly RESET_GAME_USE_CASE = Symbol('ResetGameUseCase')
   static readonly GET_MATCHING_CARDS_USE_CASE = Symbol('GetMatchingCardsUseCase')
+
+  // Game UI BC
   static readonly GAME_CONTROLLER = Symbol('GameController')
+  static readonly UPDATE_GAME_VIEW_USE_CASE = Symbol('UpdateGameViewUseCase')
+  static readonly HANDLE_USER_INPUT_USE_CASE = Symbol('HandleUserInputUseCase')
 
   // Register a service factory
   register<T>(key: ServiceKey, factory: () => T): void {
@@ -75,16 +94,30 @@ export class DIContainer {
   setupDefaultServices(
     gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>,
   ): void {
-    // Infrastructure layer
+    // ====== Shared Infrastructure ======
+
+    // Event Bus - must be initialized first
+    this.registerSingleton(DIContainer.EVENT_BUS, () => {
+      const eventBus = new InMemoryEventBus('hanahuda-game')
+      // Start the event bus immediately
+      eventBus.start()
+      return eventBus
+    })
+
+    // Legacy infrastructure (to be refactored)
     this.registerSingleton(DIContainer.GAME_REPOSITORY, () => new LocalGameRepository())
     this.registerSingleton(DIContainer.LOCALE_SERVICE, () =>
       LocalStorageLocaleService.getInstance(),
     )
 
-    // Application layer
+    // ====== Game Engine BC ======
+
     this.registerSingleton(
       DIContainer.CALCULATE_SCORE_USE_CASE,
-      () => new CalculateScoreUseCase(this.resolve(DIContainer.GAME_REPOSITORY)),
+      () => new CalculateScoreUseCase(
+        this.resolve(DIContainer.GAME_REPOSITORY),
+        this.resolve(DIContainer.EVENT_BUS),
+      ),
     )
 
     this.registerSingleton(
@@ -94,12 +127,18 @@ export class DIContainer {
 
     this.registerSingleton(
       DIContainer.SET_UP_GAME_USE_CASE,
-      () => new SetUpGameUseCase(this.resolve(DIContainer.GAME_REPOSITORY)),
+      () => new SetUpGameUseCase(
+        this.resolve(DIContainer.GAME_REPOSITORY),
+        this.resolve(DIContainer.EVENT_BUS),
+      ),
     )
 
     this.registerSingleton(
       DIContainer.SET_UP_ROUND_USE_CASE,
-      () => new SetUpRoundUseCase(this.resolve(DIContainer.GAME_REPOSITORY)),
+      () => new SetUpRoundUseCase(
+        this.resolve(DIContainer.GAME_REPOSITORY),
+        this.resolve(DIContainer.EVENT_BUS),
+      ),
     )
 
     this.registerSingleton(
@@ -116,6 +155,7 @@ export class DIContainer {
       () =>
         new PlayCardUseCase(
           this.resolve(DIContainer.GAME_REPOSITORY),
+          this.resolve(DIContainer.EVENT_BUS),
           gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
         ),
     )
@@ -125,6 +165,7 @@ export class DIContainer {
       () =>
         new GameFlowCoordinator(
           this.resolve(DIContainer.GAME_REPOSITORY),
+          this.resolve(DIContainer.EVENT_BUS),
           this.resolve(DIContainer.CALCULATE_SCORE_USE_CASE),
           this.resolve(DIContainer.SET_UP_GAME_USE_CASE),
           this.resolve(DIContainer.SET_UP_ROUND_USE_CASE),
@@ -133,12 +174,17 @@ export class DIContainer {
         ),
     )
 
-    // UI layer - only register if gameStore is provided
+    // ====== Legacy UI (for backward compatibility) ======
+
+    // UI Presenter - only register if gameStore is provided
     if (gameStore) {
       this.registerSingleton(
         DIContainer.GAME_PRESENTER,
         () => new VueGamePresenter(gameStore, this.resolve(DIContainer.LOCALE_SERVICE)),
       )
+
+      // Note: Game UI BC use cases (UpdateGameViewUseCase, HandleUserInputUseCase)
+      // will be registered in future phases when migrating to the new game-ui BC
     }
 
     // Game Controller
@@ -160,6 +206,20 @@ export class DIContainer {
     const container = new DIContainer()
     container.setupDefaultServices(gameStore)
     return container
+  }
+
+  // For accessing game-ui BC store in future phases
+  static createWithNewStore(
+    gameStore?: ReturnType<typeof import('@/game-ui/presentation/stores/gameStore').useGameStore>,
+  ): DIContainer {
+    const container = new DIContainer()
+    // Future implementation for game-ui BC
+    return container
+  }
+
+  // Get the EventBus instance for event subscription
+  getEventBus(): IEventBus {
+    return this.resolve<IEventBus>(DIContainer.EVENT_BUS)
   }
 }
 

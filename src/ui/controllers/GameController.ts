@@ -1,4 +1,4 @@
-import type { GameFlowCoordinator } from '@/application/usecases/GameFlowCoordinator'
+import type { GameFlowCoordinator } from '@/game-engine/application/usecases/GameFlowCoordinator'
 import type { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
 import type { GetMatchingCardsUseCase } from '@/application/usecases/GetMatchingCardsUseCase'
 import type {
@@ -6,7 +6,7 @@ import type {
   PlayCardInputDTO,
   KoikoiDecisionInputDTO,
 } from '@/application/dto/GameDTO'
-import type { Card } from '@/domain/entities/Card'
+import type { Card } from '@/game-engine/domain/entities/Card'
 
 export class GameController {
   private gameId: string = ''

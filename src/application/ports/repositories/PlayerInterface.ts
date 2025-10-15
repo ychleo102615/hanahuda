@@ -1,4 +1,4 @@
-import type { Card } from '@/domain/entities/Card'
+import type { Card } from '@/game-engine/domain/entities/Card'
 
 export interface IPlayer {
   readonly id: string

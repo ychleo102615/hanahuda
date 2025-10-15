@@ -1,4 +1,4 @@
-import type { GameState } from '@/domain/entities/GameState'
+import type { GameState } from '@/game-engine/domain/entities/GameState'
 import type { PlayCardRequest } from '@/application/ports/repositories/GameRepository'
 
 /**

@@ -4,8 +4,8 @@ import type {
   KoikoiDecisionOutputDTO,
   StartGameOutputDTO
 } from '@/application/dto/GameDTO'
-import type { YakuResult } from '@/domain/entities/Yaku'
-import type { Card } from '@/domain/entities/Card'
+import type { YakuResult } from '@/game-engine/domain/entities/Yaku'
+import type { Card } from '@/game-engine/domain/entities/Card'
 
 export interface GamePresenter {
   presentGameState(gameState: GameStateOutputDTO): void
