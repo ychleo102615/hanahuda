@@ -82,17 +82,17 @@
 
 ### Game UI BC 實作
 
-- [ ] T038 [P] [US1] 建立 GameViewModel 實體 src/game-ui/domain/models/GameViewModel.ts
-- [ ] T039 [P] [US1] 建立 PlayerViewModel 值物件 src/game-ui/domain/models/PlayerViewModel.ts
-- [ ] T040 [US1] 實作 UICardMatchingService 在 src/game-ui/domain/services/UICardMatchingService.ts
-- [ ] T041 [P] [US1] 定義事件訂閱者 Port src/game-ui/application/ports/IEventSubscriber.ts
-- [ ] T042 [P] [US1] 定義 UI 呈現器 Port src/game-ui/application/ports/IUIPresenter.ts
-- [ ] T043 [US1] 實作 UpdateGameViewUseCase 在 src/game-ui/application/usecases/UpdateGameViewUseCase.ts
-- [ ] T044 [US1] 實作 HandleUserInputUseCase 在 src/game-ui/application/usecases/HandleUserInputUseCase.ts
-- [ ] T045 [US1] 實作事件匯流排適配器 src/game-ui/infrastructure/adapters/EventBusAdapter.ts
-- [ ] T046 [US1] 移動並重構 GameController 到 src/game-ui/presentation/controllers/GameController.ts
-- [ ] T047 [US1] 移動並重構 VueGamePresenter 到 src/game-ui/presentation/presenters/VueGamePresenter.ts
-- [ ] T048 [US1] 移動並重構 gameStore 到 src/game-ui/presentation/stores/gameStore.ts
+- [x] T038 [P] [US1] 建立 GameViewModel 實體 src/game-ui/domain/models/GameViewModel.ts
+- [x] T039 [P] [US1] 建立 PlayerViewModel 值物件 src/game-ui/domain/models/PlayerViewModel.ts
+- [x] T040 [US1] 實作 UICardMatchingService 在 src/game-ui/domain/services/UICardMatchingService.ts
+- [x] T041 [P] [US1] 定義事件訂閱者 Port src/game-ui/application/ports/IEventSubscriber.ts
+- [x] T042 [P] [US1] 定義 UI 呈現器 Port src/game-ui/application/ports/IUIPresenter.ts
+- [x] T043 [US1] 實作 UpdateGameViewUseCase 在 src/game-ui/application/usecases/UpdateGameViewUseCase.ts
+- [x] T044 [US1] 實作 HandleUserInputUseCase 在 src/game-ui/application/usecases/HandleUserInputUseCase.ts
+- [x] T045 [US1] 實作事件匯流排適配器 src/game-ui/infrastructure/adapters/EventBusAdapter.ts
+- [x] T046 [US1] 移動並重構 GameController 到 src/game-ui/presentation/controllers/GameController.ts
+- [x] T047 [US1] 移動並重構 VueGamePresenter 到 src/game-ui/presentation/presenters/VueGamePresenter.ts
+- [x] T048 [US1] 移動並重構 gameStore 到 src/game-ui/presentation/stores/gameStore.ts
 
 ### 整合與配置
 
