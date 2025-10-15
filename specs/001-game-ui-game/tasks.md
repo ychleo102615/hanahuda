@@ -72,13 +72,13 @@
 - [x] T028 [P] [US1] 移動 DeckService 到 src/game-engine/domain/services/DeckService.ts
 - [x] T029 [US1] 實作 EngineCardMatchingService 在 src/game-engine/domain/services/EngineCardMatchingService.ts
 - [x] T030 [P] [US1] 定義事件發布者 Port src/game-engine/application/ports/IEventPublisher.ts
-- [ ] T031 [US1] 移動並重構 SetUpGameUseCase 到 src/game-engine/application/usecases/SetUpGameUseCase.ts
-- [ ] T032 [US1] 移動並重構 SetUpRoundUseCase 到 src/game-engine/application/usecases/SetUpRoundUseCase.ts
-- [ ] T033 [US1] 移動並重構 PlayCardUseCase 到 src/game-engine/application/usecases/PlayCardUseCase.ts
-- [ ] T034 [US1] 移動並重構 CalculateScoreUseCase 到 src/game-engine/application/usecases/CalculateScoreUseCase.ts
-- [ ] T035 [US1] 移動並重構 GameFlowCoordinator 到 src/game-engine/application/usecases/GameFlowCoordinator.ts
-- [ ] T036 [P] [US1] 移動 OpponentAI 服務到 src/game-engine/application/services/OpponentAI.ts
-- [ ] T037 [US1] 實作事件匯流排適配器 src/game-engine/infrastructure/adapters/EventBusAdapter.ts
+- [x] T031 [US1] 移動並重構 SetUpGameUseCase 到 src/game-engine/application/usecases/SetUpGameUseCase.ts
+- [x] T032 [US1] 移動並重構 SetUpRoundUseCase 到 src/game-engine/application/usecases/SetUpRoundUseCase.ts
+- [x] T033 [US1] 移動並重構 PlayCardUseCase 到 src/game-engine/application/usecases/PlayCardUseCase.ts
+- [x] T034 [US1] 移動並重構 CalculateScoreUseCase 到 src/game-engine/application/usecases/CalculateScoreUseCase.ts
+- [x] T035 [US1] 移動並重構 GameFlowCoordinator 到 src/game-engine/application/usecases/GameFlowCoordinator.ts
+- [x] T036 [P] [US1] 移動 OpponentAI 服務到 src/game-engine/application/services/OpponentAI.ts
+- [x] T037 [US1] 實作事件匯流排適配器 src/game-engine/infrastructure/adapters/EventBusAdapter.ts
 
 ### Game UI BC 實作
 
