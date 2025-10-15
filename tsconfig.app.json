@@ -7,7 +7,10 @@
     "resolveJsonModule": true,
 
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@game-engine/*": ["./src/game-engine/*"],
+      "@game-ui/*": ["./src/game-ui/*"],
+      "@shared/*": ["./src/shared/*"]
     }
   }
 }

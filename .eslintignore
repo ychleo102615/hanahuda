@@ -1,0 +1,30 @@
+# Node.js dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Generated files
+*.min.js
+*.bundle.js
+*.d.ts
+
+# Test outputs
+test-results/
+playwright-report/
+
+# Logs
+*.log
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Environment
+.env*
+
+# OS
+.DS_Store
+Thumbs.db

@@ -20,11 +20,11 @@
 
 **目的**: 專案初始化和基本結構建立
 
-- [ ] T001 建立 Bounded Context 目錄結構 src/game-engine/, src/game-ui/, src/shared/
-- [ ] T002 [P] 配置 TypeScript 路徑映射支援 @game-engine/*, @game-ui/*, @shared/* 別名
-- [ ] T003 [P] 配置 ESLint 邊界檢查規則防止跨 BC 依賴在 eslint.config.ts
-- [ ] T004 [P] 新增 npm 腳本 lint:boundaries 在 package.json
-- [ ] T005 建立邊界檢查腳本 .specify/scripts/check-bc-boundaries.js
+- [x] T001 建立 Bounded Context 目錄結構 src/game-engine/, src/game-ui/, src/shared/
+- [x] T002 [P] 配置 TypeScript 路徑映射支援 @game-engine/*, @game-ui/*, @shared/* 別名
+- [x] T003 [P] 配置 ESLint 邊界檢查規則防止跨 BC 依賴在 eslint.config.ts
+- [x] T004 [P] 新增 npm 腳本 lint:boundaries 在 package.json
+- [x] T005 建立邊界檢查腳本 .specify/scripts/check-bc-boundaries.js
 
 ---
 
@@ -34,24 +34,24 @@
 
 **⚠️ 關鍵**: 在此階段完成前，無法開始任何使用者故事的工作
 
-- [ ] T006 定義整合事件基礎介面 src/shared/events/base/IntegrationEvent.ts
-- [ ] T007 [P] 定義嵌套數據結構 src/shared/events/base/YakuResult.ts
-- [ ] T008 [P] 定義嵌套數據結構 src/shared/events/base/MatchResult.ts
-- [ ] T009 [P] 定義嵌套數據結構 src/shared/events/base/TurnTransition.ts
-- [ ] T010 [P] 定義 GameInitializedEvent 介面 src/shared/events/game/GameInitializedEvent.ts
-- [ ] T011 [P] 定義 CardPlayedEvent 介面 src/shared/events/game/CardPlayedEvent.ts
-- [ ] T012 [P] 定義 MatchSelectedEvent 介面 src/shared/events/game/MatchSelectedEvent.ts
-- [ ] T013 [P] 定義 KoikoiDeclaredEvent 介面 src/shared/events/game/KoikoiDeclaredEvent.ts
-- [ ] T014 [P] 定義 RoundEndedEvent 介面 src/shared/events/game/RoundEndedEvent.ts
-- [ ] T015 [P] 定義 GameEndedEvent 介面 src/shared/events/game/GameEndedEvent.ts
-- [ ] T016 [P] 定義 GameAbandonedEvent 介面 src/shared/events/game/GameAbandonedEvent.ts
-- [ ] T017 定義事件發布者介面 src/shared/events/ports/IEventPublisher.ts
-- [ ] T018 [P] 定義事件訂閱者介面 src/shared/events/ports/IEventSubscriber.ts
-- [ ] T019 [P] 定義事件匯流排介面 src/shared/events/ports/IEventBus.ts
-- [ ] T020 實作事件日誌記錄器 src/shared/events/base/EventLogger.ts
-- [ ] T021 實作記憶體內事件匯流排 src/shared/events/base/EventBus.ts
-- [ ] T022 [P] 定義花牌配對服務介面 src/shared/services/ICardMatchingService.ts
-- [ ] T023 [P] 建立共享常數定義 src/shared/constants/GameConstants.ts
+- [x] T006 定義整合事件基礎介面 src/shared/events/base/IntegrationEvent.ts
+- [x] T007 [P] 定義嵌套數據結構 src/shared/events/base/YakuResult.ts
+- [x] T008 [P] 定義嵌套數據結構 src/shared/events/base/MatchResult.ts
+- [x] T009 [P] 定義嵌套數據結構 src/shared/events/base/TurnTransition.ts
+- [x] T010 [P] 定義 GameInitializedEvent 介面 src/shared/events/game/GameInitializedEvent.ts
+- [x] T011 [P] 定義 CardPlayedEvent 介面 src/shared/events/game/CardPlayedEvent.ts
+- [x] T012 [P] 定義 MatchSelectedEvent 介面 src/shared/events/game/MatchSelectedEvent.ts
+- [x] T013 [P] 定義 KoikoiDeclaredEvent 介面 src/shared/events/game/KoikoiDeclaredEvent.ts
+- [x] T014 [P] 定義 RoundEndedEvent 介面 src/shared/events/game/RoundEndedEvent.ts
+- [x] T015 [P] 定義 GameEndedEvent 介面 src/shared/events/game/GameEndedEvent.ts
+- [x] T016 [P] 定義 GameAbandonedEvent 介面 src/shared/events/game/GameAbandonedEvent.ts
+- [x] T017 定義事件發布者介面 src/shared/events/ports/IEventPublisher.ts
+- [x] T018 [P] 定義事件訂閱者介面 src/shared/events/ports/IEventSubscriber.ts
+- [x] T019 [P] 定義事件匯流排介面 src/shared/events/ports/IEventBus.ts
+- [x] T020 實作事件日誌記錄器 src/shared/events/base/EventLogger.ts
+- [x] T021 實作記憶體內事件匯流排 src/shared/events/base/EventBus.ts
+- [x] T022 [P] 定義花牌配對服務介面 src/shared/services/ICardMatchingService.ts
+- [x] T023 [P] 建立共享常數定義 src/shared/constants/GameConstants.ts
 
 **檢查點**: 基礎設施就緒 - 現在可以開始平行實作使用者故事
 

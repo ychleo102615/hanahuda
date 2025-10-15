@@ -20,15 +20,51 @@ export default defineConfigWithVueTs(
 
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
-  
+
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
   },
-  
+
   {
     ...pluginPlaywright.configs['flat/recommended'],
     files: ['e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },
+
+  // Bounded Context boundary enforcement
+  {
+    name: 'bc-boundaries',
+    files: ['src/**/*.{ts,tsx,vue}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/game-engine/**'],
+              from: 'game-ui',
+              message: 'game-ui BC cannot directly import from game-engine BC. Use events for communication.',
+            },
+            {
+              group: ['**/game-ui/**'],
+              from: 'game-engine',
+              message: 'game-engine BC cannot directly import from game-ui BC. Use events for communication.',
+            },
+            {
+              group: ['@game-engine/**'],
+              from: 'game-ui',
+              message: 'game-ui BC cannot directly import from game-engine BC. Use events for communication.',
+            },
+            {
+              group: ['@game-ui/**'],
+              from: 'game-engine',
+              message: 'game-engine BC cannot directly import from game-ui BC. Use events for communication.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   skipFormatting,
 )

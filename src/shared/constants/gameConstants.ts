@@ -111,7 +111,7 @@ export const HANAFUDA_CARDS = {
 
 export const CARD_TYPES = {
   BRIGHT: 'bright',
-  ANIMAL: 'animal', 
+  ANIMAL: 'animal',
   RIBBON: 'ribbon',
   PLAIN: 'plain'
 } as const
@@ -135,3 +135,59 @@ export const GAME_SETTINGS = {
   MAX_ROUNDS: 12,
   WINNING_SCORE: 3
 } as const
+
+// Additional constants for BC architecture
+export const TOTAL_CARDS = 48
+export const MIN_PLAYERS = 2
+export const MAX_PLAYERS = 2
+
+// Timing (milliseconds)
+export const MATCH_SELECTION_TIMEOUT = 10000  // 10 seconds
+export const ANIMATION_DURATION = 1000        // 1 second
+export const AI_THINK_TIME = 1500             // 1.5 seconds
+
+// Scoring
+export const KOIKOI_MULTIPLIER = 2
+export const WIN_SCORE_THRESHOLD = 50
+
+// Event Configuration
+export const EVENT_CONFIG = {
+  MAX_SEQUENCE_NUMBER: 999999,
+  HEARTBEAT_INTERVAL: 30000,   // 30 seconds
+  MAX_EVENT_HISTORY: 1000,
+  SYNC_TIMEOUT: 5000           // 5 seconds
+} as const
+
+// UI Configuration
+export const UI_CONFIG = {
+  CARD_ANIMATION_SPEED: 300,   // milliseconds
+  HIGHLIGHT_DURATION: 2000,    // milliseconds
+  NOTIFICATION_DURATION: 3000, // milliseconds
+  DEBOUNCE_DELAY: 100         // milliseconds
+} as const
+
+// Game Phases
+export const GAME_PHASES = [
+  'setup',
+  'dealing',
+  'playing',
+  'koikoi',
+  'round_end',
+  'game_end'
+] as const
+
+export type GamePhase = typeof GAME_PHASES[number]
+
+// Card suits (months)
+export const CARD_SUITS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+] as const
+
+export type CardSuit = typeof CARD_SUITS[number]
+
+// Card types
+export const CARD_TYPES_ARRAY = [
+  'bright', 'animal', 'ribbon', 'plain'
+] as const
+
+export type CardType = typeof CARD_TYPES_ARRAY[number]
