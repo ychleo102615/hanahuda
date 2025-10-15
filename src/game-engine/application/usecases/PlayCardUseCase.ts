@@ -64,10 +64,9 @@ export class PlayCardUseCase {
       const deckMatch = await this.processDeckCardMatch(gameState, currentPlayer)
 
       // Add captured cards to player
-      const allCapturedCards = [...handMatch.matchResult.capturedCardIds, ...deckMatch.capturedCardIds]
+      const allCapturedCards = [...handMatch.capturedCards, ...deckMatch.capturedCards]
       if (allCapturedCards.length > 0) {
-        const capturedCardObjects = this.getCardsByIds(gameState, allCapturedCards)
-        currentPlayer.addToCaptured(capturedCardObjects)
+        currentPlayer.addToCaptured(allCapturedCards)
       }
 
       // Record the move
@@ -75,7 +74,7 @@ export class PlayCardUseCase {
         playerId: request.playerId,
         cardId: request.cardId,
         matchedCards: handMatch.matchedCards,
-        capturedCards: allCapturedCards.map(id => this.findCardById(gameState, id)).filter(Boolean) as Card[],
+        capturedCards: allCapturedCards,
         timestamp: new Date()
       }
       gameState.addMove(move)
@@ -118,7 +117,7 @@ export class PlayCardUseCase {
       }
 
       // Skip saving due to type compatibility - events handle synchronization
-      // await this.gameRepository.saveGame(gameId, gameState)
+      await this.gameRepository.saveGame(gameId, gameState)
 
       // Publish CardPlayedEvent
       await this.publishCardPlayedEvent(
@@ -133,7 +132,7 @@ export class PlayCardUseCase {
       return {
         success: true,
         playedCard,
-        capturedCards: allCapturedCards.map(id => this.findCardById(gameState, id)).filter(Boolean) as Card[],
+        capturedCards: allCapturedCards,
         nextPhase,
         yakuResults: yakuResults.map(yaku => ({
           yaku: yaku.yaku,
@@ -164,10 +163,12 @@ export class PlayCardUseCase {
     success: boolean
     matchResult: MatchResult
     matchedCards: Card[]
+    capturedCards: Card[]
     result?: PlayCardResult
   }> {
     const fieldMatches = gameState.getFieldMatches(playedCard)
-    let capturedCards: string[] = []
+    let capturedCardIds: string[] = []
+    let capturedCards: Card[] = []
     let matchedCards: Card[] = []
     let matchType: 'no_match' | 'single_match' | 'multiple_matches'
     let matchedFieldCardId: string | undefined
@@ -181,20 +182,22 @@ export class PlayCardUseCase {
           success: false,
           matchResult: {} as MatchResult,
           matchedCards: [],
+          capturedCards: [],
           result: {
             success: false,
             playedCard: undefined,
             capturedCards: [],
             nextPhase: 'playing',
             yakuResults: [],
-            error: 'errors.invalidFieldCardSelection'
+            error: 'Invalid field card selection'
           }
         }
       }
       // Successful match
       const removedCards = gameState.removeFromField([selectedFieldCard])
       matchedCards = removedCards
-      capturedCards = [playedCard.id, selectedFieldCard]
+      capturedCards = [playedCard, ...removedCards]
+      capturedCardIds = [playedCard.id, selectedFieldCard]
       matchType = 'single_match'
       matchedFieldCardId = selectedFieldCard
     } else {
@@ -204,11 +207,13 @@ export class PlayCardUseCase {
         gameState.addToField([playedCard])
         matchType = 'no_match'
         capturedCards = []
+        capturedCardIds = []
       } else if (fieldMatches.length === 1) {
         // Single match - automatic capture
         const removedCards = gameState.removeFromField([fieldMatches[0].id])
         matchedCards = removedCards
-        capturedCards = [playedCard.id, fieldMatches[0].id]
+        capturedCards = [playedCard, ...removedCards]
+        capturedCardIds = [playedCard.id, fieldMatches[0].id]
         matchType = 'single_match'
         matchedFieldCardId = fieldMatches[0].id
       } else {
@@ -218,11 +223,13 @@ export class PlayCardUseCase {
         matchType = 'multiple_matches'
         selectableFieldCardIds = fieldMatches.map((card: Card) => card.id)
         capturedCards = []
+        capturedCardIds = []
 
         return {
           success: false,
           matchResult: {} as MatchResult,
           matchedCards: [],
+          capturedCards: [],
           result: {
             success: false,
             playedCard: undefined,
@@ -240,7 +247,7 @@ export class PlayCardUseCase {
       sourceType: 'hand',
       matchType,
       matchedFieldCardId,
-      capturedCardIds: capturedCards,
+      capturedCardIds: capturedCardIds,
       selectableFieldCardIds,
       achievedYaku: [] // Will be calculated after both hand and deck matches
     }
@@ -248,14 +255,15 @@ export class PlayCardUseCase {
     return {
       success: true,
       matchResult,
-      matchedCards
+      matchedCards,
+      capturedCards
     }
   }
 
   /**
    * Process deck card reveal and matching
    */
-  private async processDeckCardMatch(gameState: any, currentPlayer: any): Promise<MatchResult> {
+  private async processDeckCardMatch(gameState: any, currentPlayer: any): Promise<MatchResult & { capturedCards: Card[] }> {
     const deckCard = gameState.drawCard()
     if (!deckCard) {
       // No deck card available
@@ -264,12 +272,14 @@ export class PlayCardUseCase {
         sourceType: 'deck',
         matchType: 'no_match',
         capturedCardIds: [],
+        capturedCards: [],
         achievedYaku: []
       }
     }
 
     const deckMatches = gameState.getFieldMatches(deckCard)
-    let capturedCards: string[] = []
+    let capturedCardIds: string[] = []
+    let capturedCards: Card[] = []
     let matchType: 'no_match' | 'single_match' | 'multiple_matches'
     let matchedFieldCardId: string | undefined
 
@@ -277,16 +287,20 @@ export class PlayCardUseCase {
       // No match - deck card goes to field
       gameState.addToField([deckCard])
       matchType = 'no_match'
+      capturedCards = []
+      capturedCardIds = []
     } else if (deckMatches.length === 1) {
       // Single match - automatic capture
       const matched = gameState.removeFromField([deckMatches[0].id])
-      capturedCards = [deckCard.id, deckMatches[0].id]
+      capturedCards = [deckCard, ...matched]
+      capturedCardIds = [deckCard.id, deckMatches[0].id]
       matchType = 'single_match'
       matchedFieldCardId = deckMatches[0].id
     } else {
       // Multiple matches - auto-select first (or implement priority logic)
       const firstMatch = gameState.removeFromField([deckMatches[0].id])
-      capturedCards = [deckCard.id, deckMatches[0].id]
+      capturedCards = [deckCard, ...firstMatch]
+      capturedCardIds = [deckCard.id, deckMatches[0].id]
       matchType = 'single_match' // Treated as single after auto-selection
       matchedFieldCardId = deckMatches[0].id
     }
@@ -294,7 +308,7 @@ export class PlayCardUseCase {
     // Check for Yaku after deck card capture
     let achievedYaku: YakuResult[] = []
     if (capturedCards.length > 0) {
-      const allCaptured = [...currentPlayer.captured, ...this.getCardsByIds(gameState, capturedCards)]
+      const allCaptured = [...currentPlayer.captured, ...capturedCards]
       const yakuResults = Yaku.checkYaku(allCaptured)
       achievedYaku = yakuResults.map(yaku => ({
         yaku: yaku.yaku as any,
@@ -308,7 +322,8 @@ export class PlayCardUseCase {
       sourceType: 'deck',
       matchType,
       matchedFieldCardId,
-      capturedCardIds: capturedCards,
+      capturedCardIds: capturedCardIds,
+      capturedCards: capturedCards,
       achievedYaku
     }
   }
