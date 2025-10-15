@@ -65,13 +65,13 @@
 
 ### Game Engine BC 實作
 
-- [ ] T024 [P] [US1] 移動 Card 實體到 src/game-engine/domain/entities/Card.ts
-- [ ] T025 [P] [US1] 移動 Player 實體到 src/game-engine/domain/entities/Player.ts
-- [ ] T026 [P] [US1] 移動 GameState 實體到 src/game-engine/domain/entities/GameState.ts
-- [ ] T027 [P] [US1] 移動 Yaku 實體到 src/game-engine/domain/entities/Yaku.ts
-- [ ] T028 [P] [US1] 移動 DeckService 到 src/game-engine/domain/services/DeckService.ts
-- [ ] T029 [US1] 實作 EngineCardMatchingService 在 src/game-engine/domain/services/EngineCardMatchingService.ts
-- [ ] T030 [P] [US1] 定義事件發布者 Port src/game-engine/application/ports/IEventPublisher.ts
+- [x] T024 [P] [US1] 移動 Card 實體到 src/game-engine/domain/entities/Card.ts
+- [x] T025 [P] [US1] 移動 Player 實體到 src/game-engine/domain/entities/Player.ts
+- [x] T026 [P] [US1] 移動 GameState 實體到 src/game-engine/domain/entities/GameState.ts
+- [x] T027 [P] [US1] 移動 Yaku 實體到 src/game-engine/domain/entities/Yaku.ts
+- [x] T028 [P] [US1] 移動 DeckService 到 src/game-engine/domain/services/DeckService.ts
+- [x] T029 [US1] 實作 EngineCardMatchingService 在 src/game-engine/domain/services/EngineCardMatchingService.ts
+- [x] T030 [P] [US1] 定義事件發布者 Port src/game-engine/application/ports/IEventPublisher.ts
 - [ ] T031 [US1] 移動並重構 SetUpGameUseCase 到 src/game-engine/application/usecases/SetUpGameUseCase.ts
 - [ ] T032 [US1] 移動並重構 SetUpRoundUseCase 到 src/game-engine/application/usecases/SetUpRoundUseCase.ts
 - [ ] T033 [US1] 移動並重構 PlayCardUseCase 到 src/game-engine/application/usecases/PlayCardUseCase.ts
