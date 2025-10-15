@@ -65,9 +65,8 @@ export class SetUpRoundUseCase {
       gameState.setPhase('playing')
       gameState.setCurrentPlayer(0)
 
-      // Skip saving due to GameState type compatibility issue
-      // The event publishing handles state synchronization
-      // await this.gameRepository.saveGame(gameId, gameState)
+      // Save the updated game state with dealt cards
+      await this.gameRepository.saveGame(gameId, gameState as any)
 
       // Publish GameInitializedEvent with dealt cards
       await this.publishGameInitializedEvent(gameId, gameState as any)

@@ -81,9 +81,9 @@ export class SetUpGameUseCase {
     gameState.setDeck(deck)
 
     gameState.setPhase('setup')
-    // Note: Type compatibility issue between game-engine GameState and app GameState
-    // For now, skip direct save - the event publishing handles state synchronization
-    // await this.gameRepository.saveGame(gameId, gameState)
+
+    // Save the game state with players to repository
+    await this.gameRepository.saveGame(gameId, gameState)
 
     return gameState
   }
