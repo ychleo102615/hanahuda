@@ -213,10 +213,11 @@
 - [ ] T090 [P] 加入契約測試使用 JSON Schema 驗證在 tests/contract/
 - [ ] T091 [P] 加入 BC 邊界測試在 tests/unit/architecture/
 - [ ] T092 [P] 加入整合事件結構測試在 tests/integration/events/
-- [ ] T093 [P] 程式碼清理和重構
-- [ ] T094 [P] 效能優化跨所有故事
-- [ ] T095 [P] 文件更新在 docs/ 和 README.md
-- [ ] T096 執行 quickstart.md 驗證
+- [ ] T093 [P] 驗證整合事件結構 Protocol Buffers 相容性
+- [ ] T094 [P] 程式碼清理和重構
+- [ ] T095 [P] 效能優化跨所有故事
+- [ ] T096 [P] 文件更新在 docs/ 和 README.md
+- [ ] T097 執行 quickstart.md 驗證
 
 ---
 
@@ -302,7 +303,7 @@ Task: "移動 Yaku 實體到 src/game-engine/domain/entities/Yaku.ts"
 
 ## 總結
 
-- **總任務數**: 96 個任務
+- **總任務數**: 97 個任務
 - **使用者故事 1 任務數**: 29 個（T024-T052）
 - **使用者故事 2 任務數**: 13 個（T053-T065）
 - **使用者故事 3 任務數**: 7 個（T066-T072）
