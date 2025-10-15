@@ -185,9 +185,4 @@ export const CARD_SUITS = [
 
 export type CardSuit = typeof CARD_SUITS[number]
 
-// Card types
-export const CARD_TYPES_ARRAY = [
-  'bright', 'animal', 'ribbon', 'plain'
-] as const
-
-export type CardType = typeof CARD_TYPES_ARRAY[number]
+export type CardType = typeof CARD_TYPES[keyof typeof CARD_TYPES]
