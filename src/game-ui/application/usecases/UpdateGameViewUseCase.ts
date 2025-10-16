@@ -278,7 +278,7 @@ export class UpdateGameViewUseCase {
       .withYakuResults([]) // Clear yaku display
 
     if (event.continueGame) {
-      // Player declared Koi-Koi
+      // Player declared Koi-Koi - continue playing
       updatedViewModel = updatedViewModel
         .withKoikoiPlayer(event.playerId)
         .withPhase('playing')
@@ -292,25 +292,28 @@ export class UpdateGameViewUseCase {
       this.presenter.presentMessage('game.messages.koikoiDeclared', {
         playerName: updatedViewModel.getPlayer(event.playerId)?.name || '',
       })
+
+      // Handle turn transition (only if continuing game)
+      // turnTransition will be present when continuing
+      if (event.turnTransition) {
+        updatedViewModel = updatedViewModel.withCurrentPlayer(event.turnTransition.currentPlayerId)
+
+        const playersWithTurn = updatedViewModel.players.map(p =>
+          updatePlayerViewModel(p, { isCurrentPlayer: p.id === event.turnTransition!.currentPlayerId })
+        )
+        updatedViewModel = updatedViewModel.withPlayers(playersWithTurn)
+
+        this.presenter.presentTurnTransition(
+          event.turnTransition.previousPlayerId || event.playerId,
+          event.turnTransition.currentPlayerId,
+          event.turnTransition.reason
+        )
+      }
     } else {
-      // Player stopped, round ends
+      // Player chose "shobu" - round ends (no turn transition)
       updatedViewModel = updatedViewModel.withPhase('round_end')
       this.presenter.presentMessage('game.messages.roundEnding')
     }
-
-    // Handle turn transition
-    updatedViewModel = updatedViewModel.withCurrentPlayer(event.turnTransition.currentPlayerId)
-
-    const updatedPlayers = updatedViewModel.players.map(p =>
-      updatePlayerViewModel(p, { isCurrentPlayer: p.id === event.turnTransition.currentPlayerId })
-    )
-    updatedViewModel = updatedViewModel.withPlayers(updatedPlayers)
-
-    this.presenter.presentTurnTransition(
-      event.turnTransition.previousPlayerId || event.playerId,
-      event.turnTransition.currentPlayerId,
-      event.turnTransition.reason
-    )
 
     this.gameViewModel = updatedViewModel
     this.presenter.clearKoikoiDialog()

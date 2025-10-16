@@ -28,6 +28,10 @@ export interface KoikoiDeclaredEvent extends IntegrationEvent {
   /** Current round score for this player */
   readonly currentScore: number
 
-  /** Turn transition after declaration */
-  readonly turnTransition: TurnTransition
+  /**
+   * Turn transition after declaration
+   * null when player chooses "shobu" (round ends)
+   * present when player chooses "Koi-Koi" (continues playing)
+   */
+  readonly turnTransition: TurnTransition | null
 }

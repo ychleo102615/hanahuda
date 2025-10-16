@@ -124,7 +124,7 @@ export class GameFlowCoordinator {
     const currentYaku = currentYakuResults.yakuResults.map(yaku => yaku.yaku.name)
     const currentScore = currentYakuResults.totalScore
 
-    let turnTransition: TurnTransition
+    let turnTransition: TurnTransition | null
 
     if (declareKoikoi) {
       if ((player as any).handCount === 0) {
@@ -141,13 +141,9 @@ export class GameFlowCoordinator {
         reason: 'koikoi_declared'
       }
     } else {
-      // Not declaring Koi-Koi, prepare to end round
+      // Not declaring Koi-Koi, prepare to end round (no turn transition)
       gameState.setPhase('round_end')
-      turnTransition = {
-        previousPlayerId: playerId,
-        currentPlayerId: playerId, // Same player until round ends
-        reason: 'koikoi_declared'
-      }
+      turnTransition = null
     }
 
     // Publish KoikoiDeclaredEvent
@@ -370,7 +366,7 @@ export class GameFlowCoordinator {
     continueGame: boolean,
     currentYaku: string[],
     currentScore: number,
-    turnTransition: TurnTransition
+    turnTransition: TurnTransition | null
   ): Promise<void> {
     const event: KoikoiDeclaredEvent = {
       eventId: uuidv4(),

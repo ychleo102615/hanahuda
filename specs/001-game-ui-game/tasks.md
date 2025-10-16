@@ -113,15 +113,15 @@
 
 ### 事件驅動重構
 
-- [ ] T053 [P] [US2] 重構 SetUpGameUseCase 發布 GameInitializedEvent
-- [ ] T054 [P] [US2] 重構 PlayCardUseCase 發布 CardPlayedEvent 和 MatchSelectedEvent
-- [ ] T055 [P] [US2] 重構 GameFlowCoordinator 發布 KoikoiDeclaredEvent
-- [ ] T056 [P] [US2] 重構 CalculateScoreUseCase 發布 RoundEndedEvent 和 GameEndedEvent
-- [ ] T057 [US2] 實作事件序號機制檢測遺失在 EventBus
-- [ ] T058 [US2] 實作 GameViewModel 的增量事件處理邏輯
-- [ ] T059 [US2] 實作事件遺失檢測與完整狀態同步機制
-- [ ] T060 [P] [US2] 加入事件日誌記錄到所有 UseCase
-- [ ] T061 [US2] 實作 UI 事件訂閱器在 UpdateGameViewUseCase
+- [x] T053 [P] [US2] 重構 SetUpGameUseCase 發布 GameInitializedEvent
+- [x] T054 [P] [US2] 重構 PlayCardUseCase 發布 CardPlayedEvent 和 MatchSelectedEvent
+- [x] T055 [P] [US2] 重構 GameFlowCoordinator 發布 KoikoiDeclaredEvent
+- [x] T056 [P] [US2] 重構 CalculateScoreUseCase 發布 RoundEndedEvent 和 GameEndedEvent
+- [x] T057 [US2] 實作事件序號機制檢測遺失在 EventBus
+- [x] T058 [US2] 實作 GameViewModel 的增量事件處理邏輯
+- [x] T059 [US2] 實作事件遺失檢測與完整狀態同步機制
+- [x] T060 [P] [US2] 加入事件日誌記錄到所有 UseCase
+- [x] T061 [US2] 實作 UI 事件訂閱器在 UpdateGameViewUseCase
 
 ### 狀態同步優化
 
