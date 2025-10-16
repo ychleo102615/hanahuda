@@ -96,8 +96,8 @@ export class AbandonGameUseCase {
         input.reason || 'user_quit'
       )
 
-      // Clean up game state from repository
-      await this.gameRepository.deleteGame(input.gameId)
+      // Note: Game state cleanup (deleteGame) is handled by the coordinator
+      // to ensure UI updates are completed first
 
       return {
         success: true,

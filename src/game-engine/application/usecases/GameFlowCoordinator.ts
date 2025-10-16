@@ -379,10 +379,42 @@ export class GameFlowCoordinator {
         throw new Error(result.error || 'Failed to abandon game')
       }
 
-      // Notify UI about game abandonment
-      if (this.presenter) {
-        this.presenter.presentGameMessage('game.messages.gameAbandoned')
-        this.presenter.presentGameEnd(null, 0)
+      // Get game state to find winner and update roundResult
+      const gameState = await this.gameRepository.getGameState(gameId)
+      if (gameState && this.presenter) {
+        // Find winner (opponent of abandoning player)
+        const players = (gameState as any).players
+        const winner = players.find((p: any) => p.id === result.winnerId)
+        const abandoningPlayer = players.find((p: any) => p.id === playerId)
+
+        // Set roundResult so GameView can display winner info
+        const roundResult: any = {
+          winner: winner || null,
+          score: winner ? (winner as any).score : 0,
+          yakuResults: [],
+          koikoiDeclared: false,
+        }
+        ;(gameState as any).setRoundResult(roundResult)
+        ;(gameState as any).setPhase('game_end')
+
+        // Save updated game state
+        await this.gameRepository.saveGame(gameId, gameState)
+
+        // Update UI with correct game state
+        const gameStateDTO = this.mapGameStateToDTO(gameId, gameState)
+        this.presenter.presentGameState(gameStateDTO)
+
+        // Show abandonment message with winner
+        this.presenter.presentGameMessage('game.messages.gameAbandonedByPlayer', {
+          abandoningPlayer: abandoningPlayer?.name || 'Unknown',
+          winner: winner?.name || 'Unknown',
+        })
+
+        // Present game end with winner
+        this.presenter.presentGameEnd(winner?.name || null, winner ? (winner as any).score : 0)
+
+        // Clean up game state from repository after UI updates
+        await this.gameRepository.deleteGame(gameId)
       }
     } catch (error) {
       if (this.presenter) {
