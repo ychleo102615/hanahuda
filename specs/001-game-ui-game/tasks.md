@@ -162,14 +162,14 @@
 
 ### 遊戲規則修正
 
-- [ ] T073 [P] [US4] 修正 Koi-Koi 計分加倍邏輯在 CalculateScoreUseCase
-- [ ] T074 [P] [US4] 補充場上 3 張配對自動捕獲邏輯在 PlayCardUseCase
-- [ ] T075 [US4] 實作牌堆翻牌優先順序自動選擇在 EngineCardMatchingService
-- [ ] T076 [US4] 實作多重配對處理邏輯，要求玩家選擇配對
-- [ ] T077 [P] [US4] 驗證 11 月雨光特殊規則在 Yaku 類別
-- [ ] T078 [P] [US4] 驗證所有 10 種標準役種判定邏輯
-- [ ] T079 [US4] 實作平局判定處理（雙方無役種）
-- [ ] T080 [US4] 加入遊戲結束條件檢查邏輯
+- [x] T073 [P] [US4] 修正 Koi-Koi 計分加倍邏輯在 CalculateScoreUseCase
+- [x] T074 [P] [US4] 補充場上 3 張配對自動捕獲邏輯在 PlayCardUseCase
+- [x] T075 [US4] 實作牌堆翻牌優先順序自動選擇在 EngineCardMatchingService
+- [x] T076 [US4] 實作多重配對處理邏輯，要求玩家選擇配對
+- [x] T077 [P] [US4] 驗證 11 月雨光特殊規則在 Yaku 類別
+- [x] T078 [P] [US4] 驗證所有 10 種標準役種判定邏輯
+- [x] T079 [US4] 實作平局判定處理(雙方無役種)
+- [x] T080 [US4] 加入遊戲結束條件檢查邏輯
 
 **檢查點**: 所有花牌規則應正確實施並通過測試案例
 

@@ -105,15 +105,37 @@ export class CalculateScoreUseCase {
     let player2Score = player2Result.totalScore
     let koikoiMultiplier = 1
 
-    // Apply Koi-Koi multiplier
-    if (koikoiPlayer === player1Id && koikoiCount > 0) {
-      player1Score = this.calculateKoikoiBonus(player1Score, koikoiCount)
-      koikoiMultiplier = KOIKOI_MULTIPLIER
-    } else if (koikoiPlayer === player2Id && koikoiCount > 0) {
-      player2Score = this.calculateKoikoiBonus(player2Score, koikoiCount)
-      koikoiMultiplier = KOIKOI_MULTIPLIER
+    // First determine the initial winner based on yaku scores
+    const initialWinner = this.compareScores(player1Score, player2Score)
+
+    // Apply Koi-Koi multiplier according to standard rules:
+    // - If declarer wins: declarer's score × multiplier
+    // - If opponent wins: opponent's score × multiplier, declarer gets 0
+    if (koikoiPlayer && koikoiCount > 0 && initialWinner !== 'draw') {
+      const winnerId = initialWinner === 'player1' ? player1Id : player2Id
+
+      if (winnerId === koikoiPlayer) {
+        // Declarer won - apply multiplier to declarer's score
+        if (initialWinner === 'player1') {
+          player1Score = this.calculateKoikoiBonus(player1Score, koikoiCount)
+        } else {
+          player2Score = this.calculateKoikoiBonus(player2Score, koikoiCount)
+        }
+        koikoiMultiplier = KOIKOI_MULTIPLIER
+      } else {
+        // Opponent won - apply multiplier to winner, declarer gets 0
+        if (initialWinner === 'player1') {
+          player1Score = this.calculateKoikoiBonus(player1Score, koikoiCount)
+          player2Score = 0  // Declarer (player2) gets 0
+        } else {
+          player2Score = this.calculateKoikoiBonus(player2Score, koikoiCount)
+          player1Score = 0  // Declarer (player1) gets 0
+        }
+        koikoiMultiplier = KOIKOI_MULTIPLIER
+      }
     }
 
+    // Recalculate winner after Koi-Koi multiplier
     const winner = this.compareScores(player1Score, player2Score)
     const winnerId = winner === 'player1' ? player1Id :
                      winner === 'player2' ? player2Id : null

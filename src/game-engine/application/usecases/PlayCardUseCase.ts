@@ -11,6 +11,7 @@ import type { TurnTransition } from '@/shared/events/base/TurnTransition'
 import type { YakuResult } from '@/shared/events/base/YakuResult'
 import { MATCH_SELECTION_TIMEOUT } from '@/shared/constants/gameConstants'
 import { v4 as uuidv4 } from 'uuid'
+import { EngineCardMatchingService } from '../../domain/services/EngineCardMatchingService'
 
 /**
  * Play Card Use Case (Game Engine BC)
@@ -27,11 +28,15 @@ import { v4 as uuidv4 } from 'uuid'
  * - Publish CardPlayedEvent with complete match information
  */
 export class PlayCardUseCase {
+  private cardMatchingService: EngineCardMatchingService
+
   constructor(
     private gameRepository: GameRepository,
     private eventPublisher: IEventPublisher,
     private presenter?: GamePresenter,
-  ) {}
+  ) {
+    this.cardMatchingService = new EngineCardMatchingService()
+  }
 
   async execute(gameId: string, request: PlayCardRequest): Promise<PlayCardResult> {
     try {
@@ -216,9 +221,42 @@ export class PlayCardUseCase {
         capturedCardIds = [playedCard.id, fieldMatches[0].id]
         matchType = 'single_match'
         matchedFieldCardId = fieldMatches[0].id
-      } else {
-        // Multiple matches - requires player selection
+      } else if (fieldMatches.length === 2) {
+        // Two matches - requires player selection
         // For now, place card on field and require selection in next step
+        gameState.addToField([playedCard])
+        matchType = 'multiple_matches'
+        selectableFieldCardIds = fieldMatches.map((card: Card) => card.id)
+        capturedCards = []
+        capturedCardIds = []
+
+        return {
+          success: false,
+          matchResult: {} as MatchResult,
+          matchedCards: [],
+          capturedCards: [],
+          result: {
+            success: false,
+            playedCard: undefined,
+            capturedCards: [],
+            nextPhase: 'playing',
+            yakuResults: [],
+            error: 'errors.multipleMatchesFound'
+          }
+        }
+      } else if (fieldMatches.length === 3) {
+        // Three matches - automatic capture all (三枚合わせ rule)
+        // Player plays the 4th card of the same suit, captures all 3 field cards
+        const fieldCardIds = fieldMatches.map((card: Card) => card.id)
+        const removedCards = gameState.removeFromField(fieldCardIds)
+        matchedCards = removedCards
+        capturedCards = [playedCard, ...removedCards]
+        capturedCardIds = [playedCard.id, ...fieldCardIds]
+        matchType = 'single_match' // Treated as single match (automatic)
+        matchedFieldCardId = undefined // Multiple cards captured
+      } else {
+        // More than 3 matches (should not happen in standard game)
+        // Treat as multiple matches requiring selection
         gameState.addToField([playedCard])
         matchType = 'multiple_matches'
         selectableFieldCardIds = fieldMatches.map((card: Card) => card.id)
@@ -297,12 +335,14 @@ export class PlayCardUseCase {
       matchType = 'single_match'
       matchedFieldCardId = deckMatches[0].id
     } else {
-      // Multiple matches - auto-select first (or implement priority logic)
-      const firstMatch = gameState.removeFromField([deckMatches[0].id])
-      capturedCards = [deckCard, ...firstMatch]
-      capturedCardIds = [deckCard.id, deckMatches[0].id]
+      // Multiple matches - auto-select based on priority (bright > animal > ribbon > plain)
+      const matchingFieldCardIds = deckMatches.map((card: Card) => card.id)
+      const selectedCardId = this.cardMatchingService.selectAutoMatch(deckCard.id, matchingFieldCardIds)
+      const matched = gameState.removeFromField([selectedCardId])
+      capturedCards = [deckCard, ...matched]
+      capturedCardIds = [deckCard.id, selectedCardId]
       matchType = 'single_match' // Treated as single after auto-selection
-      matchedFieldCardId = deckMatches[0].id
+      matchedFieldCardId = selectedCardId
     }
 
     // Check for Yaku after deck card capture
