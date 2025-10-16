@@ -70,6 +70,20 @@ export class GameController {
     }
   }
 
+  async abandonGame(playerId: string): Promise<void> {
+    if (!this.gameId) {
+      throw new Error('No active game')
+    }
+
+    try {
+      await this.gameFlowCoordinator.handleAbandonGame(this.gameId, playerId)
+      this.gameId = ''
+    } catch (error) {
+      console.error('Error abandoning game:', error)
+      throw error
+    }
+  }
+
   async resetGame(): Promise<void> {
     try {
       await this.resetGameUseCase.execute({ gameId: this.gameId })

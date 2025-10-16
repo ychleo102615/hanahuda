@@ -82,6 +82,12 @@ export interface IUIPresenter {
   clearKoikoiDialog(): void
 
   /**
+   * Present abandon game confirmation dialog
+   * Returns a promise that resolves to true if user confirms, false otherwise
+   */
+  presentAbandonConfirmation(playerId: string): Promise<boolean>
+
+  /**
    * Present round end summary
    */
   presentRoundEnd(

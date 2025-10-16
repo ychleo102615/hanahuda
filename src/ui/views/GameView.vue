@@ -123,10 +123,18 @@
 
           <button
             v-if="gamePhase === 'game_end'"
-            @click="startNewGame"
+            @click="resetToSetup"
             class="text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer bg-purple-500 hover:bg-purple-600"
           >
             {{ t('game.actions.newGame') }}
+          </button>
+
+          <button
+            v-if="gameStarted && gamePhase !== 'game_end'"
+            @click="handleAbandonGame"
+            class="text-white py-2 px-6 rounded-lg font-semibold border-none cursor-pointer bg-red-500 hover:bg-red-600"
+          >
+            {{ t('game.actions.abandonGame') }}
           </button>
         </div>
 
@@ -327,6 +335,33 @@ const handleKoikoiDecision = async (continueGame: boolean) => {
 
 const startNextRound = async () => {
   await gameController.startNextRound()
+}
+
+const resetToSetup = () => {
+  // Reset UI state only, without communicating with game-engine
+  // This allows the user to start a new game from the setup screen
+  gameStore.resetGame()
+}
+
+const handleAbandonGame = async () => {
+  const currentPlayerId = gameStore.gameState.currentPlayer?.id
+  if (!currentPlayerId) {
+    console.error('No current player to abandon game')
+    return
+  }
+
+  const confirmMessage = t('game.messages.abandonConfirmation') || '確定要放棄遊戲嗎？'
+  const confirmed = window.confirm(confirmMessage)
+
+  if (!confirmed) {
+    return
+  }
+
+  try {
+    await gameController.abandonGame(currentPlayerId)
+  } catch (error) {
+    console.error('Error abandoning game:', error)
+  }
 }
 
 const handleHandCardHovered = async (card: Card) => {

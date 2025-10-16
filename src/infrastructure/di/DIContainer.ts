@@ -7,6 +7,7 @@ import { PlayCardUseCase } from '@/game-engine/application/usecases/PlayCardUseC
 import { CalculateScoreUseCase } from '@/game-engine/application/usecases/CalculateScoreUseCase'
 import { SetUpGameUseCase } from '@/game-engine/application/usecases/SetUpGameUseCase'
 import { SetUpRoundUseCase } from '@/game-engine/application/usecases/SetUpRoundUseCase'
+import { AbandonGameUseCase } from '@/game-engine/application/usecases/AbandonGameUseCase'
 import { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
 import { GetMatchingCardsUseCase } from '@/application/usecases/GetMatchingCardsUseCase'
 
@@ -41,6 +42,7 @@ export class DIContainer {
   static readonly SET_UP_ROUND_USE_CASE = Symbol('SetUpRoundUseCase')
   static readonly PLAY_CARD_USE_CASE = Symbol('PlayCardUseCase')
   static readonly CALCULATE_SCORE_USE_CASE = Symbol('CalculateScoreUseCase')
+  static readonly ABANDON_GAME_USE_CASE = Symbol('AbandonGameUseCase')
   static readonly RESET_GAME_USE_CASE = Symbol('ResetGameUseCase')
   static readonly GET_MATCHING_CARDS_USE_CASE = Symbol('GetMatchingCardsUseCase')
 
@@ -142,6 +144,14 @@ export class DIContainer {
     )
 
     this.registerSingleton(
+      DIContainer.ABANDON_GAME_USE_CASE,
+      () => new AbandonGameUseCase(
+        this.resolve(DIContainer.GAME_REPOSITORY),
+        this.resolve(DIContainer.EVENT_BUS),
+      ),
+    )
+
+    this.registerSingleton(
       DIContainer.RESET_GAME_USE_CASE,
       () =>
         new ResetGameUseCase(
@@ -171,6 +181,7 @@ export class DIContainer {
           this.resolve(DIContainer.SET_UP_ROUND_USE_CASE),
           gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
           this.resolve(DIContainer.PLAY_CARD_USE_CASE),
+          this.resolve(DIContainer.ABANDON_GAME_USE_CASE),
         ),
     )
 

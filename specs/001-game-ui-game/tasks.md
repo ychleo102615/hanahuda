@@ -142,15 +142,15 @@
 
 ### 放棄遊戲功能實作
 
-- [ ] T066 [P] [US3] 實作 AbandonGameUseCase 在 src/game-engine/application/usecases/AbandonGameUseCase.ts
-- [ ] T067 [US3] 在 GameController 新增 abandonGame 方法
-- [ ] T068 [US3] 在 VueGamePresenter 新增確認對話框顯示
-- [ ] T069 [P] [US3] 在 gameStore 新增放棄遊戲狀態管理
-- [ ] T070 [US3] 在 GameView 新增放棄遊戲按鈕 UI 元件
-- [ ] T071 [US3] 實作 GameAbandonedEvent 事件處理邏輯
-- [ ] T072 [US3] 在所有遊戲階段都可觸發放棄功能
+- [x] T066 [P] [US3] 實作 AbandonGameUseCase 在 src/game-engine/application/usecases/AbandonGameUseCase.ts
+- [x] T067 [US3] 在 GameController 新增 abandonGame 方法
+- [x] T068 [US3] 在 VueGamePresenter 新增確認對話框顯示
+- [x] T069 [P] [US3] 在 gameStore 新增放棄遊戲狀態管理
+- [x] T070 [US3] 在 GameView 新增放棄遊戲按鈕 UI 元件
+- [x] T071 [US3] 實作 GameAbandonedEvent 事件處理邏輯
+- [x] T072 [US3] 在所有遊戲階段都可觸發放棄功能
 
-**檢查點**: 放棄遊戲功能應在所有階段正常運作
+**檢查點**: ✅ 放棄遊戲功能已完成 - 所有階段都可觸發放棄功能
 
 ---
 

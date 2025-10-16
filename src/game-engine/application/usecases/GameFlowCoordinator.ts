@@ -21,6 +21,7 @@ import { CalculateScoreUseCase } from './CalculateScoreUseCase'
 import { PlayCardUseCase } from './PlayCardUseCase'
 import { SetUpGameUseCase } from './SetUpGameUseCase'
 import { SetUpRoundUseCase } from './SetUpRoundUseCase'
+import type { AbandonGameUseCase } from './AbandonGameUseCase'
 import { v4 as uuidv4 } from 'uuid'
 
 /**
@@ -48,6 +49,7 @@ export class GameFlowCoordinator {
     private setUpRoundUseCase: SetUpRoundUseCase,
     private presenter?: GamePresenter,
     private playCardUseCase?: PlayCardUseCase,
+    private abandonGameUseCase?: AbandonGameUseCase,
   ) {}
 
   async startNewGame(input: StartGameInputDTO): Promise<string> {
@@ -353,6 +355,38 @@ export class GameFlowCoordinator {
     } catch (error) {
       if (this.presenter) {
         this.presenter.presentError('errors.playCardFailed', { error: String(error) })
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Handle abandon game
+   */
+  async handleAbandonGame(gameId: string, playerId: string): Promise<void> {
+    if (!this.abandonGameUseCase) {
+      throw new Error('AbandonGameUseCase not available')
+    }
+
+    try {
+      const result = await this.abandonGameUseCase.execute({
+        gameId,
+        abandoningPlayerId: playerId,
+        reason: 'user_quit',
+      })
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to abandon game')
+      }
+
+      // Notify UI about game abandonment
+      if (this.presenter) {
+        this.presenter.presentGameMessage('game.messages.gameAbandoned')
+        this.presenter.presentGameEnd(null, 0)
+      }
+    } catch (error) {
+      if (this.presenter) {
+        this.presenter.presentError('errors.abandonGameFailed', { error: String(error) })
       }
       throw error
     }

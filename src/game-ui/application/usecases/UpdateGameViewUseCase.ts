@@ -9,6 +9,7 @@ import type { MatchSelectedEvent } from '@/shared/events/game/MatchSelectedEvent
 import type { KoikoiDeclaredEvent } from '@/shared/events/game/KoikoiDeclaredEvent'
 import type { RoundEndedEvent } from '@/shared/events/game/RoundEndedEvent'
 import type { GameEndedEvent } from '@/shared/events/game/GameEndedEvent'
+import type { GameAbandonedEvent } from '@/shared/events/game/GameAbandonedEvent'
 
 /**
  * Update Game View Use Case (Game UI BC)
@@ -74,6 +75,10 @@ export class UpdateGameViewUseCase {
 
       case 'GameEnded':
         await this.handleGameEnded(event as GameEndedEvent)
+        break
+
+      case 'GameAbandoned':
+        await this.handleGameAbandoned(event as GameAbandonedEvent)
         break
 
       default:
@@ -380,6 +385,44 @@ export class UpdateGameViewUseCase {
       winnerScore?.totalScore || 0,
       event.totalRounds
     )
+  }
+
+  /**
+   * Handle GameAbandonedEvent
+   */
+  private async handleGameAbandoned(event: GameAbandonedEvent): Promise<void> {
+    if (!this.gameViewModel) {
+      console.error('Cannot process GameAbandoned event without initialized game')
+      return
+    }
+
+    const updatedViewModel = this.gameViewModel
+      .withEventSequence(event.sequenceNumber)
+      .withPhase('game_end')
+
+    this.gameViewModel = updatedViewModel
+
+    // Get winner and abandoning player names
+    const winnerName = updatedViewModel.getPlayer(event.winnerId)?.name || 'Unknown'
+    const abandoningPlayerName = updatedViewModel.getPlayer(event.abandoningPlayerId)?.name || 'Unknown'
+
+    // Find winner's score at abandonment
+    const winnerScore = event.scoresAtAbandonment.find((s) => s.playerId === event.winnerId)
+
+    // Present game end with abandonment information
+    // Use presentGameEnd to properly mark game as over and show winner
+    this.presenter.presentGameEnd(
+      event.winnerId,
+      winnerName,
+      winnerScore?.totalScore || 0,
+      event.roundNumber
+    )
+
+    // Also show specific abandonment message
+    this.presenter.presentMessage('game.messages.gameAbandonedByPlayer', {
+      abandoningPlayer: abandoningPlayerName,
+      winner: winnerName,
+    })
   }
 
   // ==================== Helper Methods ====================

@@ -316,10 +316,10 @@ export class HandleUserInputUseCase {
   /**
    * Handle abandon game
    */
-  private handleAbandonGame(
+  private async handleAbandonGame(
     command: Extract<UserInputCommand, { type: 'ABANDON_GAME' }>,
     gameViewModel: GameViewModel
-  ): UserInputResult {
+  ): Promise<UserInputResult> {
     const { gameId, playerId } = command
 
     // Validate game is not already over
@@ -331,7 +331,18 @@ export class HandleUserInputUseCase {
       }
     }
 
-    // Show confirmation (in real implementation, this would be async)
+    // Show confirmation dialog and wait for user response
+    const confirmed = await this.presenter.presentAbandonConfirmation(playerId)
+
+    if (!confirmed) {
+      // User cancelled the abandon action
+      return {
+        success: false,
+        error: 'Abandon cancelled by user',
+      }
+    }
+
+    // User confirmed, show abandonment message
     this.presenter.presentMessage('game.messages.gameAbandoned', {
       playerName: gameViewModel.getPlayer(playerId)?.name || '',
     })

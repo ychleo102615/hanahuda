@@ -130,6 +130,24 @@ export class VueGamePresenter implements IUIPresenter {
     this.gameStore.setYakuDisplay([])
   }
 
+  async presentAbandonConfirmation(playerId: string): Promise<boolean> {
+    // Show confirmation dialog in the store
+    return new Promise<boolean>((resolve) => {
+      const currentViewModel = this.gameStore.gameViewModel
+      const player = currentViewModel?.getPlayer(playerId)
+      const playerName = player?.name || 'Player'
+
+      // Use browser's native confirm dialog for now
+      // In future, this should use a custom Vue dialog component
+      const message = this.localeService.translate('game.messages.abandonConfirmation', {
+        playerName,
+      })
+
+      const confirmed = confirm(message)
+      resolve(confirmed)
+    })
+  }
+
   presentRoundEnd(
     winnerId: string | null,
     winnerName: string | null,
