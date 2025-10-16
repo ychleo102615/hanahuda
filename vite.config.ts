@@ -44,6 +44,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@game-engine': fileURLToPath(new URL('./src/game-engine', import.meta.url)),
+      '@game-ui': fileURLToPath(new URL('./src/game-ui', import.meta.url)),
+      '@shared': fileURLToPath(new URL('./src/shared', import.meta.url)),
     },
   },
 })

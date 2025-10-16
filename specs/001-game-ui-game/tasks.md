@@ -125,10 +125,10 @@
 
 ### 狀態同步優化
 
-- [ ] T062 [P] [US2] 優化 CardPlayedEvent 包含 MatchResult 嵌套結構
-- [ ] T063 [P] [US2] 優化 KoikoiDeclaredEvent 包含 TurnTransition 嵌套結構
-- [ ] T064 [US2] 驗證所有非初始化事件大小 < 1KB
-- [ ] T065 [US2] 實作事件通訊延遲監控 < 10ms
+- [x] T062 [P] [US2] 優化 CardPlayedEvent 包含 MatchResult 嵌套結構
+- [x] T063 [P] [US2] 優化 KoikoiDeclaredEvent 包含 TurnTransition 嵌套結構
+- [x] T064 [US2] 驗證所有非初始化事件大小 < 1KB
+- [x] T065 [US2] 實作事件通訊延遲監控 < 10ms
 
 **檢查點**: 此時使用者故事 1 和 2 都應該獨立運作
 
