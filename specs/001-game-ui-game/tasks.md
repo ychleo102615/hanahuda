@@ -222,11 +222,11 @@
 
 **目的**: 影響多個使用者故事的改進
 
-- [ ] T090 [P] 加入契約測試使用 JSON Schema 驗證在 tests/contract/
-- [ ] T091 [P] 加入 BC 邊界測試在 tests/unit/architecture/
-- [ ] T092 [P] 加入整合事件結構測試在 tests/integration/events/
+- [x] T090 [P] 加入契約測試使用 JSON Schema 驗證在 tests/contract/
+- [x] T091 [P] 加入 BC 邊界測試在 tests/unit/architecture/
+- [x] T092 [P] 加入整合事件結構測試在 tests/integration/events/
 - [ ] T093 [P] 驗證整合事件結構 Protocol Buffers 相容性
-- [ ] T094 [P] 程式碼清理和重構
+- [x] T094 [P] 程式碼清理和重構（修正 BC 邊界違規：移動 cardAssetMapping.ts 到 UI 層）
 - [ ] T095 [P] 效能優化跨所有故事
 - [ ] T096 [P] 文件更新在 docs/ 和 README.md
 - [ ] T097 執行 quickstart.md 驗證

@@ -48,7 +48,7 @@
 import { computed, ref } from 'vue'
 import type { Card } from '@/game-engine/domain/entities/Card'
 import SvgIcon from './SvgIcon.vue'
-import { getCardSvgName } from '@/shared/utils/cardAssetMapping'
+import { getCardSvgName } from '@/ui/utils/cardAssetMapping'
 import { useLocale } from '@/ui/composables/useLocale'
 
 // 懸停狀態管理
