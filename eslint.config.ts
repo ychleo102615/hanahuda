@@ -32,32 +32,35 @@ export default defineConfigWithVueTs(
   },
 
   // Bounded Context boundary enforcement
+  // Note: BC boundaries are enforced by the check-bc-boundaries.js script
+  // Run: npm run lint:boundaries
   {
-    name: 'bc-boundaries',
-    files: ['src/**/*.{ts,tsx,vue}'],
+    name: 'bc-boundaries/game-ui',
+    files: ['src/game-ui/**/*.{ts,tsx,vue}'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: ['**/game-engine/**'],
-              from: 'game-ui',
+              group: ['**/game-engine/**', '@game-engine/**'],
               message: 'game-ui BC cannot directly import from game-engine BC. Use events for communication.',
             },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    name: 'bc-boundaries/game-engine',
+    files: ['src/game-engine/**/*.{ts,tsx,vue}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
             {
-              group: ['**/game-ui/**'],
-              from: 'game-engine',
-              message: 'game-engine BC cannot directly import from game-ui BC. Use events for communication.',
-            },
-            {
-              group: ['@game-engine/**'],
-              from: 'game-ui',
-              message: 'game-ui BC cannot directly import from game-engine BC. Use events for communication.',
-            },
-            {
-              group: ['@game-ui/**'],
-              from: 'game-engine',
+              group: ['**/game-ui/**', '@game-ui/**'],
               message: 'game-engine BC cannot directly import from game-ui BC. Use events for communication.',
             },
           ],

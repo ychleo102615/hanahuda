@@ -1,4 +1,3 @@
-import type { Card } from '../../domain/entities/Card'
 import { Player } from '../../domain/entities/Player'
 import type { GameState, RoundResult } from '../../domain/entities/GameState'
 import type { GameRepository } from '../ports/repositories/GameRepository'

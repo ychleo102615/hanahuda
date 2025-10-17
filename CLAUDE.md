@@ -5,7 +5,18 @@
 ## 專案概述
 
 使用 Vue 3 + TypeScript + Tailwind CSS 開發的日本花牌遊戲，嚴格採用 Clean Architecture 架構並融入 Domain Driven Development 概念設計，支援多種 UI 實現方式（HTML DOM 或 WebGL/PixiJS）及遊戲邏輯切換（本地邏輯或服務器 API）。支持多語系顯示。
-預計將遊戲功能分成兩大部份：`game-engine`, `game-ui`兩大 Boundary Context，彼此透過整合事件溝通，並且嚴格保持彼此隔離。
+
+### 當前狀態 ✅
+
+專案已完成 **Game UI-Engine 分離架構重構** (Feature Branch: `001-game-ui-game`)
+
+- ✅ 已將遊戲功能分成 `game-engine` 和 `game-ui` 兩大 Bounded Context
+- ✅ 兩個 BC 透過整合事件溝通，嚴格保持隔離
+- ✅ 實作 7 種核心整合事件（增量設計，事件大小 < 1KB）
+- ✅ 完整花牌規則實施（10 種役種 + 特殊規則）
+- ✅ 單機遊玩模式正常運作
+- ✅ TypeScript 編譯通過，BC 邊界檢查通過
+- ⚠️ 測試通過率 94.3%（82/87，5 個 AI 測試待修復）
 
 ## Clean Architecture 分層設計
 

@@ -62,7 +62,7 @@ export class AbandonGameUseCase {
       }
 
       // Validate abandoning player exists
-      const abandoningPlayer = (gameState as any).players.find((p: any) => p.id === input.abandoningPlayerId)
+      const abandoningPlayer = gameState.players.find(p => p.id === input.abandoningPlayerId)
       if (!abandoningPlayer) {
         return {
           success: false,
@@ -71,7 +71,7 @@ export class AbandonGameUseCase {
       }
 
       // Determine winner (opponent of abandoning player)
-      const winner = (gameState as any).players.find((p: any) => p.id !== input.abandoningPlayerId)
+      const winner = gameState.players.find(p => p.id !== input.abandoningPlayerId)
       if (!winner) {
         return {
           success: false,
@@ -90,9 +90,9 @@ export class AbandonGameUseCase {
         input.gameId,
         input.abandoningPlayerId,
         winner.id,
-        (gameState as any).round,
-        (gameState as any).phase,
-        (gameState as any).players,
+        gameState.round,
+        gameState.phase,
+        gameState.players,
         input.reason || 'user_quit'
       )
 
@@ -120,7 +120,7 @@ export class AbandonGameUseCase {
     winnerId: string,
     roundNumber: number,
     gamePhase: 'setup' | 'dealing' | 'playing' | 'koikoi' | 'round_end',
-    players: any[],
+    players: readonly import('@/game-engine/domain/entities/Player').Player[],
     reason: 'user_quit' | 'timeout' | 'connection_lost'
   ): Promise<void> {
     const event: GameAbandonedEvent = {

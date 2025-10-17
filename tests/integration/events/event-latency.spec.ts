@@ -288,12 +288,12 @@ describe('Event Latency Monitoring', () => {
         sequenceNumber: 1,
       })
 
-      let statsBefore = eventBus.getLatencyStats()
+      const statsBefore = eventBus.getLatencyStats()
       expect(statsBefore.totalEvents).toBe(1)
 
       eventBus.clearHistory()
 
-      let statsAfter = eventBus.getLatencyStats()
+      const statsAfter = eventBus.getLatencyStats()
       expect(statsAfter.totalEvents).toBe(0)
       expect(statsAfter.totalLatency).toBe(0)
       expect(statsAfter.averageLatency).toBe(0)

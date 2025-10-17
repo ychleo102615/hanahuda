@@ -1,4 +1,6 @@
 import type { GameState } from '@/game-engine/domain/entities/GameState'
+import type { Card } from '@/game-engine/domain/entities/Card'
+import type { YakuResult } from '@/game-engine/domain/entities/Yaku'
 import type { PlayCardRequest } from '@/application/ports/repositories/GameRepository'
 
 /**
@@ -95,7 +97,7 @@ export class OpponentAI {
    * @returns true to continue (Koi-Koi), false to end round
    */
   static decideKoikoi(
-    yakuResults: any[],
+    yakuResults: YakuResult[],
     currentScore: number,
     handCount: number
   ): boolean {
@@ -125,7 +127,7 @@ export class OpponentAI {
    * @param matches - Available field cards to match
    * @returns Selected field card
    */
-  static selectFieldCard(matches: any[]): any {
+  static selectFieldCard(matches: Card[]): Card | null {
     if (matches.length === 0) {
       return null
     }
