@@ -193,16 +193,28 @@
 
 ---
 
-## Phase 8: 進階功能（可選）
+## Phase 8: 進階功能（可選）⏭️ 已略過
 
 **目標**: 實作牌堆翻牌限時選擇等進階功能
 
+**狀態**: ⏭️ **SKIPPED** - 已略過實作
+
+**略過原因**:
+1. ✅ **現有實作已符合標準花牌規則**: `EngineCardMatchingService.selectAutoMatch()` 已實作基於優先級（光 > 種 > 短 > カス）的自動選擇邏輯
+2. ✅ **使用者體驗更佳**: 牌堆翻牌的自動選擇避免了每次都需要等待 10 秒的不必要延遲，使遊戲節奏更流暢
+3. ⚠️ **實作成本高於收益**: 需要重構 `PlayCardUseCase`、新增 `SelectMatchUseCase`、修改前端 UI、處理超時邏輯等，但對單機 AI 對戰模式的策略意義有限
+4. 📋 **v2.0 事件結構已簡化**: data-model.md v2.0 將 `MatchSelectionRequiredEvent` 和 `MatchSelectionTimeoutEvent` 合併到現有事件結構中，實作限時選擇需要額外的狀態管理
+
+**替代方案**: 保持現有的自動選擇實作，符合大部分傳統花牌遊戲的設計
+
 ### 限時選擇機制
 
-- [ ] T086 [P] 實作牌堆翻牌限時選擇 UI 在 GameView
-- [ ] T087 [P] 實作選擇超時自動處理邏輯
-- [ ] T088 實作 MatchSelectionRequiredEvent 處理流程
-- [ ] T089 實作 MatchSelectionTimeoutEvent 處理流程
+- [⏭️] T086 [P] 實作牌堆翻牌限時選擇 UI 在 GameView（已略過）
+- [⏭️] T087 [P] 實作選擇超時自動處理邏輯（已略過）
+- [⏭️] T088 實作 MatchSelectionRequiredEvent 處理流程（已略過 - v2.0 已合併到 CardPlayedEvent）
+- [⏭️] T089 實作 MatchSelectionTimeoutEvent 處理流程（已略過 - v2.0 已合併到 MatchSelectedEvent）
+
+**檢查點**: ⏭️ Phase 8 已略過 - 現有自動選擇邏輯已滿足需求
 
 ---
 
