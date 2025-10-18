@@ -1,24 +1,16 @@
 import type { Card } from '../../domain/entities/Card'
 import { Player } from '../../domain/entities/Player'
 import type { GameState, RoundResult } from '../../domain/entities/GameState'
-import type { GameState as AppGameState, RoundResult as AppRoundResult } from '@/game-engine/domain/entities/GameState'
-import type { Player as AppPlayer } from '@/game-engine/domain/entities/Player'
 import type { IEventPublisher } from '../ports/IEventPublisher'
-import type { GameRepository } from '@/application/ports/repositories/GameRepository'
-import type { GamePresenter } from '@/application/ports/presenters/GamePresenter'
+import type { IGameStateRepository } from '../ports/IGameStateRepository'
 import type { YakuResult } from '../../domain/entities/Yaku'
-import type {
-  StartGameInputDTO,
-  GameStateOutputDTO,
-  PlayCardInputDTO,
-  PlayCardOutputDTO,
-} from '@/application/dto/GameDTO'
+import type { StartGameInputDTO, PlayCardInputDTO, KoikoiDecisionInputDTO } from '../dto/GameInputDTO'
 import type { KoikoiDeclaredEvent } from '@/shared/events/game/KoikoiDeclaredEvent'
 import type { GameEndedEvent } from '@/shared/events/game/GameEndedEvent'
 import type { TurnTransition } from '@/shared/events/base/TurnTransition'
 import { GAME_SETTINGS } from '@/shared/constants/gameConstants'
 import { CalculateScoreUseCase } from './CalculateScoreUseCase'
-import { PlayCardUseCase } from './PlayCardUseCase'
+import { PlayCardUseCase, type PlayCardResult } from './PlayCardUseCase'
 import { SetUpGameUseCase } from './SetUpGameUseCase'
 import { SetUpRoundUseCase } from './SetUpRoundUseCase'
 import type { AbandonGameUseCase } from './AbandonGameUseCase'
@@ -27,27 +19,26 @@ import { v4 as uuidv4 } from 'uuid'
 /**
  * Game Flow Coordinator (Game Engine BC)
  *
- * Refactored from the original application layer to game-engine BC.
- * Now publishes events for major game flow transitions:
- * - KoikoiDeclaredEvent when players make Koi-Koi decisions
- * - GameEndedEvent when games complete
+ * 重構後的遊戲流程協調器,完全屬於 game-engine BC。
+ * 發布整合事件來通知其他 BC (如 game-ui):
+ * - KoikoiDeclaredEvent 當玩家做出來來決策時
+ * - GameEndedEvent 當遊戲結束時
  *
- * Responsibilities:
- * - Coordinate between different use cases
- * - Handle game flow logic (Koi-Koi decisions, round transitions)
- * - Publish integration events for game state changes
- * - Present UI updates through presenter
+ * 職責:
+ * - 協調不同的 Use Cases
+ * - 處理遊戲流程邏輯 (來來決策、回合轉換)
+ * - 發布整合事件以通知狀態變更
+ * - ⚠️ 不再依賴 Presenter - 所有 UI 更新透過整合事件完成
  */
 export class GameFlowCoordinator {
   private gameStartTime: number = 0
 
   constructor(
-    private gameRepository: GameRepository,
+    private gameRepository: IGameStateRepository,
     private eventPublisher: IEventPublisher,
     private calculateScoreUseCase: CalculateScoreUseCase,
     private setUpGameUseCase: SetUpGameUseCase,
     private setUpRoundUseCase: SetUpRoundUseCase,
-    private presenter?: GamePresenter,
     private playCardUseCase?: PlayCardUseCase,
     private abandonGameUseCase?: AbandonGameUseCase,
   ) {}
@@ -56,52 +47,26 @@ export class GameFlowCoordinator {
     try {
       this.gameStartTime = Date.now()
 
-      // 1. UI preparation and cleanup
-      if (this.presenter) {
-        this.presenter.clearYakuDisplay()
-        this.presenter.presentKoikoiDialog(false)
-        this.presenter.presentCardSelection(null, null)
-        this.presenter.presentGameMessage('game.messages.startingGame')
-      }
-
-      // 2. Delegate game initialization to SetUpGameUseCase
+      // 1. Delegate game initialization to SetUpGameUseCase
+      // (SetUpGameUseCase will publish GameInitializedEvent for UI updates)
       const gameResult = await this.setUpGameUseCase.execute(input)
 
       if (!gameResult.success) {
         throw new Error(gameResult.error || 'Failed to create game')
       }
 
-      // 3. Delegate round setup to SetUpRoundUseCase
+      // 2. Delegate round setup to SetUpRoundUseCase
+      // (SetUpRoundUseCase will publish GameInitializedEvent with dealt cards)
       const roundResult = await this.setUpRoundUseCase.execute(gameResult.gameId)
 
       if (!roundResult.success) {
         throw new Error(roundResult.error || 'Failed to set up round')
       }
 
-      // 4. UI coordination based on business results
-      if (this.presenter && roundResult.gameState) {
-        this.presenter.presentStartGameResult({
-          gameId: gameResult.gameId,
-          success: true,
-        })
-
-        this.presenter.presentGameState(roundResult.gameState)
-        this.presenter.presentGameMessage('game.messages.gameStarted', {
-          playerName: roundResult.gameState.currentPlayer?.name || '',
-        })
-      }
-
+      // Note: UI updates are handled by game-ui BC listening to GameInitializedEvent
       return gameResult.gameId
     } catch (error) {
-      if (this.presenter) {
-        this.presenter.presentStartGameResult({
-          gameId: '',
-          success: false,
-          error: String(error),
-        })
-        this.presenter.presentError('errors.startGameFailed', { error: String(error) })
-      }
-
+      // Note: Error presentation is handled by game-ui BC
       throw error
     }
   }
@@ -157,7 +122,7 @@ export class GameFlowCoordinator {
       turnTransition
     )
 
-    await this.gameRepository.saveGame(gameId, gameState)
+    await this.gameRepository.saveGameState(gameId, gameState)
     return gameState
   }
 
@@ -173,29 +138,9 @@ export class GameFlowCoordinator {
         await this.endRound(gameId)
       }
 
-      // Notify UI update
-      if (this.presenter) {
-        const gameState = await this.gameRepository.getGameState(gameId)
-        if (gameState) {
-          // Clean UI state
-          this.presenter.clearYakuDisplay()
-          this.presenter.presentKoikoiDialog(false)
-
-          const gameStateDTO = this.mapGameStateToDTO(gameId, gameState)
-          this.presenter.presentGameState(gameStateDTO)
-
-          if (declareKoikoi) {
-            this.presenter.presentGameMessage('game.messages.koikoiDeclared')
-          } else {
-            this.presenter.presentGameMessage('game.messages.roundEnded')
-            await this.handleRoundEndPresentation(gameId)
-          }
-        }
-      }
+      // Note: UI updates are handled by game-ui BC listening to KoikoiDeclaredEvent and RoundEndedEvent
     } catch (error) {
-      if (this.presenter) {
-        this.presenter.presentError('errors.koikoiDecisionFailed', { error: String(error) })
-      }
+      // Note: Error presentation is handled by game-ui BC
       throw error
     }
   }
@@ -256,7 +201,7 @@ export class GameFlowCoordinator {
     ;(gameState as any).setRoundResult(roundResult)
     ;(gameState as any).setPhase('round_end')
 
-    await this.gameRepository.saveGame(gameId, gameState)
+    await this.gameRepository.saveGameState(gameId, gameState)
     return gameState
   }
 
@@ -272,12 +217,7 @@ export class GameFlowCoordinator {
       // Publish GameEndedEvent
       await this.publishGameEndedEvent(gameId, gameState)
 
-      // Notify UI game end
-      if (this.presenter) {
-        const winner = await this.getGameWinner(gameId)
-        const finalScore = winner ? (winner as any).score : 0
-        this.presenter.presentGameEnd(winner?.name || null, finalScore)
-      }
+      // Note: UI updates are handled by game-ui BC listening to GameEndedEvent
     } else {
       // Clear field cards
       gameState.setField([])
@@ -286,7 +226,7 @@ export class GameFlowCoordinator {
       gameState.nextRound()
 
       // Save state changes first, then delegate to SetUpRoundUseCase for dealing
-      await this.gameRepository.saveGame(gameId, gameState)
+      await this.gameRepository.saveGameState(gameId, gameState)
       const roundResult = await this.setUpRoundUseCase.execute(gameId)
 
       if (!roundResult.success) {
@@ -298,17 +238,7 @@ export class GameFlowCoordinator {
         throw new Error('Game state not found after round setup')
       }
 
-      // Notify UI new round started
-      if (this.presenter) {
-        const gameStateDTO = this.mapGameStateToDTO(gameId, updatedGameState)
-        this.presenter.presentGameState(gameStateDTO)
-        this.presenter.presentGameMessage('game.messages.nextRoundStarted', {
-          round: updatedGameState.round,
-          playerName: updatedGameState.currentPlayer?.name || '',
-        })
-        this.presenter.clearYakuDisplay()
-        this.presenter.presentKoikoiDialog(false)
-      }
+      // Note: UI updates for new round are handled by game-ui BC listening to RoundStartedEvent
     }
 
     // Get final game state
@@ -329,10 +259,7 @@ export class GameFlowCoordinator {
       // Execute card play
       const result = await this.playCardUseCase.execute(gameId, input)
 
-      // Notify UI of play result
-      if (this.presenter) {
-        this.presenter.presentPlayCardResult(result)
-      }
+      // Note: UI updates are handled by game-ui BC listening to CardPlayedEvent
 
       if (result.success) {
         // Get updated game state
@@ -341,21 +268,14 @@ export class GameFlowCoordinator {
           throw new Error('Game state not found after playing card')
         }
 
-        // Update UI game state
-        if (this.presenter) {
-          const gameStateDTO = this.mapGameStateToDTO(gameId, updatedGameState)
-          this.presenter.presentGameState(gameStateDTO)
-        }
+        // Note: Game state updates are handled by game-ui BC listening to CardPlayedEvent
 
         // Handle post-play card flow
         await this.handlePostPlayCardFlow(gameId, result)
-      } else if (result.error && this.presenter) {
-        this.presenter.presentError(result.error)
       }
+      // Note: Error presentation is handled by game-ui BC
     } catch (error) {
-      if (this.presenter) {
-        this.presenter.presentError('errors.playCardFailed', { error: String(error) })
-      }
+      // Note: Error presentation is handled by game-ui BC
       throw error
     }
   }
@@ -381,13 +301,12 @@ export class GameFlowCoordinator {
 
       // Get game state to find winner and update roundResult
       const gameState = await this.gameRepository.getGameState(gameId)
-      if (gameState && this.presenter) {
+      if (gameState) {
         // Find winner (opponent of abandoning player)
         const players = (gameState as any).players
         const winner = players.find((p: any) => p.id === result.winnerId)
-        const abandoningPlayer = players.find((p: any) => p.id === playerId)
 
-        // Set roundResult so GameView can display winner info
+        // Set roundResult for game state integrity
         const roundResult: any = {
           winner: winner || null,
           score: winner ? (winner as any).score : 0,
@@ -398,28 +317,15 @@ export class GameFlowCoordinator {
         ;(gameState as any).setPhase('game_end')
 
         // Save updated game state
-        await this.gameRepository.saveGame(gameId, gameState)
+        await this.gameRepository.saveGameState(gameId, gameState)
 
-        // Update UI with correct game state
-        const gameStateDTO = this.mapGameStateToDTO(gameId, gameState)
-        this.presenter.presentGameState(gameStateDTO)
+        // Note: UI updates are handled by game-ui BC listening to GameAbandonedEvent
 
-        // Show abandonment message with winner
-        this.presenter.presentGameMessage('game.messages.gameAbandonedByPlayer', {
-          abandoningPlayer: abandoningPlayer?.name || 'Unknown',
-          winner: winner?.name || 'Unknown',
-        })
-
-        // Present game end with winner
-        this.presenter.presentGameEnd(winner?.name || null, winner ? (winner as any).score : 0)
-
-        // Clean up game state from repository after UI updates
+        // Clean up game state from repository after state updates
         await this.gameRepository.deleteGame(gameId)
       }
     } catch (error) {
-      if (this.presenter) {
-        this.presenter.presentError('errors.abandonGameFailed', { error: String(error) })
-      }
+      // Note: Error presentation is handled by game-ui BC
       throw error
     }
   }
@@ -490,52 +396,14 @@ export class GameFlowCoordinator {
 
   private async handlePostPlayCardFlow(
     gameId: string,
-    playResult: PlayCardOutputDTO,
+    playResult: PlayCardResult,
   ): Promise<void> {
-    // Handle yaku results
-    if (playResult.yakuResults.length > 0 && this.presenter) {
-      this.presenter.presentYakuDisplay(playResult.yakuResults)
-
-      if (playResult.nextPhase === 'koikoi') {
-        this.presenter.presentKoikoiDialog(true)
-        this.presenter.presentGameMessage('game.messages.koikoiAchieved')
-      } else if (playResult.nextPhase === 'round_end') {
-        this.presenter.presentGameMessage('game.messages.roundAutoEnd')
-      }
-    } else if (this.presenter) {
-      this.presenter.presentGameMessage('game.messages.cardPlayed', {
-        cardName: playResult.playedCard?.name ? `cards.names.${playResult.playedCard.name}` : '',
-        capturedCount: playResult.capturedCards.length,
-      })
-    }
+    // Note: Yaku display and messages are handled by game-ui BC listening to CardPlayedEvent
 
     // Handle round end
     if (playResult.nextPhase === 'round_end') {
       await this.endRound(gameId)
-      await this.handleRoundEndPresentation(gameId)
-    }
-  }
-
-  private async handleRoundEndPresentation(gameId: string): Promise<void> {
-    if (!this.presenter) return
-
-    try {
-      const gameState = await this.gameRepository.getGameState(gameId)
-      if (!gameState) return
-
-      const roundResult = gameState.roundResult
-      if (roundResult) {
-        if (roundResult.winner) {
-          this.presenter.presentRoundEnd(roundResult.winner.name, roundResult.score)
-        } else {
-          this.presenter.presentGameMessage('game.messages.roundDrawNoPoints')
-          if (roundResult.yakuResults.length > 0) {
-            this.presenter.presentYakuDisplay(roundResult.yakuResults)
-          }
-        }
-      }
-    } catch (error) {
-      this.presenter.presentError('errors.roundEndFailed', { error: String(error) })
+      // Note: Round end presentation is handled by game-ui BC listening to RoundEndedEvent
     }
   }
 
@@ -552,36 +420,4 @@ export class GameFlowCoordinator {
     return winners.length === 1 ? winners[0] : null
   }
 
-  private mapGameStateToDTO(gameId: string, gameState: any): GameStateOutputDTO {
-    const lastMove = gameState.lastMove
-      ? {
-          playerId: gameState.lastMove.playerId,
-          cardPlayed: gameState.lastMove.capturedCards[0] || null,
-          cardsMatched: gameState.lastMove.matchedCards,
-        }
-      : undefined
-
-    const roundResult = gameState.roundResult
-      ? {
-          winner: gameState.roundResult.winner,
-          score: gameState.roundResult.score,
-          yakuResults: gameState.roundResult.yakuResults,
-          koikoiDeclared: gameState.roundResult.koikoiDeclared,
-        }
-      : undefined
-
-    return {
-      gameId: gameId,
-      players: [...gameState.players],
-      currentPlayer: gameState.currentPlayer,
-      fieldCards: [...gameState.field],
-      deckCount: gameState.deckCount,
-      round: gameState.round,
-      phase: gameState.phase,
-      isGameOver: gameState.isGameOver,
-      lastMove: lastMove,
-      roundResult: roundResult,
-      koikoiPlayer: gameState.koikoiPlayer || undefined,
-    }
-  }
 }

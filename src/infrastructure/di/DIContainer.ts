@@ -166,7 +166,6 @@ export class DIContainer {
         new PlayCardUseCase(
           this.resolve(DIContainer.GAME_REPOSITORY),
           this.resolve(DIContainer.EVENT_BUS),
-          gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
         ),
     )
 
@@ -179,7 +178,6 @@ export class DIContainer {
           this.resolve(DIContainer.CALCULATE_SCORE_USE_CASE),
           this.resolve(DIContainer.SET_UP_GAME_USE_CASE),
           this.resolve(DIContainer.SET_UP_ROUND_USE_CASE),
-          gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
           this.resolve(DIContainer.PLAY_CARD_USE_CASE),
           this.resolve(DIContainer.ABANDON_GAME_USE_CASE),
         ),

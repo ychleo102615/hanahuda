@@ -1,19 +1,12 @@
 import type { GameState } from '../../domain/entities/GameState'
 import { DeckService } from '../../domain/services/DeckService'
 import type { IEventPublisher } from '../ports/IEventPublisher'
-import type { GameRepository } from '@/application/ports/repositories/GameRepository'
-import type { GameStateOutputDTO } from '@/application/dto/GameDTO'
-import type { GameState as AppGameState } from '@/game-engine/domain/entities/GameState'
+import type { IGameStateRepository } from '../ports/IGameStateRepository'
+import type { SetUpRoundResult } from '../dto/GameResultDTO'
 import type { GameInitializedEvent } from '@/shared/events/game/GameInitializedEvent'
 import type { TurnTransition } from '@/shared/events/base/TurnTransition'
 import { HANAFUDA_CARDS } from '@/shared/constants/gameConstants'
 import { v4 as uuidv4 } from 'uuid'
-
-export interface SetUpRoundResult {
-  success: boolean
-  gameState?: GameStateOutputDTO
-  error?: string
-}
 
 /**
  * Set Up Round Use Case (Game Engine BC)
@@ -32,7 +25,7 @@ export class SetUpRoundUseCase {
   private deckService: DeckService
 
   constructor(
-    private gameRepository: GameRepository,
+    private gameRepository: IGameStateRepository,
     private eventPublisher: IEventPublisher
   ) {
     this.deckService = new DeckService()
@@ -66,16 +59,14 @@ export class SetUpRoundUseCase {
       gameState.setCurrentPlayer(0)
 
       // Save the updated game state with dealt cards
-      await this.gameRepository.saveGame(gameId, gameState as any)
+      await this.gameRepository.saveGameState(gameId, gameState as any)
 
       // Publish GameInitializedEvent with dealt cards
       await this.publishGameInitializedEvent(gameId, gameState as any)
 
-      const gameStateDTO = this.mapGameStateToDTO(gameId, gameState as any)
-
       return {
         success: true,
-        gameState: gameStateDTO
+        gameState: gameState as GameState
       }
     } catch (error) {
       return {
@@ -149,34 +140,5 @@ export class SetUpRoundUseCase {
     })
 
     return cards
-  }
-
-  private mapGameStateToDTO(gameId: string, gameState: any): GameStateOutputDTO {
-    const lastMove = gameState.lastMove ? {
-      playerId: gameState.lastMove.playerId,
-      cardPlayed: gameState.lastMove.capturedCards[0] || null,
-      cardsMatched: gameState.lastMove.matchedCards
-    } : undefined
-
-    const roundResult = gameState.roundResult ? {
-      winner: gameState.roundResult.winner,
-      score: gameState.roundResult.score,
-      yakuResults: gameState.roundResult.yakuResults,
-      koikoiDeclared: gameState.roundResult.koikoiDeclared
-    } : undefined
-
-    return {
-      gameId: gameId,
-      players: [...gameState.players],
-      currentPlayer: gameState.currentPlayer,
-      fieldCards: [...gameState.field],
-      deckCount: gameState.deckCount,
-      round: gameState.round,
-      phase: gameState.phase,
-      isGameOver: gameState.isGameOver,
-      lastMove: lastMove,
-      roundResult: roundResult,
-      koikoiPlayer: gameState.koikoiPlayer || undefined,
-    }
   }
 }

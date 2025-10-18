@@ -3,8 +3,8 @@ import type { Card } from '../../domain/entities/Card'
 import type { GameMove } from '../../domain/entities/GameState'
 import { Yaku } from '../../domain/entities/Yaku'
 import type { IEventPublisher } from '../ports/IEventPublisher'
-import type { GameRepository, PlayCardRequest, PlayCardResult } from '@/application/ports/repositories/GameRepository'
-import type { GamePresenter } from '@/application/ports/presenters/GamePresenter'
+import type { IGameStateRepository } from '../ports/IGameStateRepository'
+import type { PlayCardInputDTO } from '../dto/GameInputDTO'
 import type { CardPlayedEvent } from '@/shared/events/game/CardPlayedEvent'
 import type { MatchResult } from '@/shared/events/base/MatchResult'
 import type { TurnTransition } from '@/shared/events/base/TurnTransition'
@@ -12,6 +12,27 @@ import type { YakuResult } from '@/shared/events/base/YakuResult'
 import { MATCH_SELECTION_TIMEOUT } from '@/shared/constants/gameConstants'
 import { v4 as uuidv4 } from 'uuid'
 import { EngineCardMatchingService } from '../../domain/services/EngineCardMatchingService'
+
+/**
+ * PlayCardRequest - Internal request structure
+ */
+export interface PlayCardRequest {
+  playerId: string
+  cardId: string
+  selectedFieldCard?: string
+}
+
+/**
+ * PlayCardResult - Internal result structure
+ */
+export interface PlayCardResult {
+  success: boolean
+  playedCard: Card | undefined
+  capturedCards: Card[]
+  nextPhase: 'playing' | 'koikoi' | 'round_end'
+  yakuResults: YakuResult[]
+  error?: string
+}
 
 /**
  * Play Card Use Case (Game Engine BC)
@@ -31,9 +52,8 @@ export class PlayCardUseCase {
   private cardMatchingService: EngineCardMatchingService
 
   constructor(
-    private gameRepository: GameRepository,
-    private eventPublisher: IEventPublisher,
-    private presenter?: GamePresenter,
+    private gameRepository: IGameStateRepository,
+    private eventPublisher: IEventPublisher
   ) {
     this.cardMatchingService = new EngineCardMatchingService()
   }
@@ -121,8 +141,8 @@ export class PlayCardUseCase {
         turnTransition = null
       }
 
-      // Skip saving due to type compatibility - events handle synchronization
-      await this.gameRepository.saveGame(gameId, gameState)
+      // Save game state
+      await this.gameRepository.saveGameState(gameId, gameState)
 
       // Publish CardPlayedEvent
       await this.publishCardPlayedEvent(
@@ -140,9 +160,9 @@ export class PlayCardUseCase {
         capturedCards: allCapturedCards,
         nextPhase,
         yakuResults: yakuResults.map(yaku => ({
-          yaku: yaku.yaku,
+          yaku: yaku.yaku.name as any,
           points: yaku.points,
-          cards: yaku.cards
+          cardIds: yaku.cards.map(card => card.id)
         }))
       }
     } catch (error) {

@@ -1,7 +1,15 @@
 import type { GameState } from '@/game-engine/domain/entities/GameState'
 import type { Card } from '@/game-engine/domain/entities/Card'
 import type { YakuResult } from '@/game-engine/domain/entities/Yaku'
-import type { PlayCardRequest } from '@/application/ports/repositories/GameRepository'
+
+/**
+ * PlayCardRequest - Internal request structure for OpponentAI
+ */
+export interface PlayCardRequest {
+  playerId: string
+  cardId: string
+  selectedFieldCard?: string
+}
 
 /**
  * Opponent AI Service (Game Engine BC)

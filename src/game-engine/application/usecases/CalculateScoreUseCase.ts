@@ -2,7 +2,7 @@ import type { Card } from '../../domain/entities/Card'
 import { Yaku } from '../../domain/entities/Yaku'
 import type { YakuResult } from '../../domain/entities/Yaku'
 import type { IEventPublisher } from '../ports/IEventPublisher'
-import type { GameRepository } from '@/application/ports/repositories/GameRepository'
+import type { IGameStateRepository } from '../ports/IGameStateRepository'
 import type { RoundEndedEvent } from '@/shared/events/game/RoundEndedEvent'
 import type { YakuResult as EventYakuResult } from '@/shared/events/base/YakuResult'
 import { KOIKOI_MULTIPLIER } from '@/shared/constants/gameConstants'
@@ -44,7 +44,7 @@ export interface RoundEndResult {
  */
 export class CalculateScoreUseCase {
   constructor(
-    private gameRepository: GameRepository,
+    private gameRepository: IGameStateRepository,
     private eventPublisher: IEventPublisher
   ) {}
 

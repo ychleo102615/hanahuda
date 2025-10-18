@@ -49,18 +49,18 @@
 
 ### User Story 1 的實施
 
-- [ ] T008 [P] [US1] 更新 SetUpGameUseCase 移除對 @/application/ 的依賴在 src/game-engine/application/usecases/SetUpGameUseCase.ts
-- [ ] T009 [P] [US1] 更新 SetUpRoundUseCase 移除對 @/application/ 的依賴在 src/game-engine/application/usecases/SetUpRoundUseCase.ts
-- [ ] T010 [P] [US1] 更新 PlayCardUseCase 移除對 @/application/ 的依賴在 src/game-engine/application/usecases/PlayCardUseCase.ts
-- [ ] T011 [P] [US1] 更新 AbandonGameUseCase 移除對 @/application/ 的依賴在 src/game-engine/application/usecases/AbandonGameUseCase.ts
-- [ ] T012 [P] [US1] 更新 CalculateScoreUseCase 移除對 @/application/dto/ 的依賴在 src/game-engine/application/usecases/CalculateScoreUseCase.ts
-- [ ] T013 [P] [US1] 更新 OpponentAI 移除對 @/application/dto/ 的依賴在 src/game-engine/application/services/OpponentAI.ts
-- [ ] T014 [US1] 重構 GameFlowCoordinator 移除 GamePresenter 參數和所有 presenter 呼叫在 src/game-engine/application/usecases/GameFlowCoordinator.ts
-- [ ] T015 [US1] 確認所有整合事件 (7 種) 在 GameFlowCoordinator 中正確發布
-- [ ] T016 [US1] 實作 SelectMatchUseCase 處理多重配對選擇並發布 MatchSelectedEvent 在 src/game-engine/application/usecases/SelectMatchUseCase.ts
-- [ ] T017 [US1] 驗證 game-engine BC 邊界: 執行 `grep -r "from '@/application/'" src/game-engine/` 確認無結果
-- [ ] T018 [US1] 執行 TypeScript 編譯檢查確認無跨 BC 依賴錯誤
-- [ ] T019 [US1] 執行測試確認通過率仍 >= 94%
+- [X] T008 [P] [US1] 更新 SetUpGameUseCase 移除對 @/application/ 的依賴在 src/game-engine/application/usecases/SetUpGameUseCase.ts
+- [X] T009 [P] [US1] 更新 SetUpRoundUseCase 移除對 @/application/ 的依賴在 src/game-engine/application/usecases/SetUpRoundUseCase.ts
+- [X] T010 [P] [US1] 更新 PlayCardUseCase 移除對 @/application/ 的依賴在 src/game-engine/application/usecases/PlayCardUseCase.ts
+- [X] T011 [P] [US1] 更新 AbandonGameUseCase 移除對 @/application/ 的依賴在 src/game-engine/application/usecases/AbandonGameUseCase.ts
+- [X] T012 [P] [US1] 更新 CalculateScoreUseCase 移除對 @/application/dto/ 的依賴在 src/game-engine/application/usecases/CalculateScoreUseCase.ts
+- [X] T013 [P] [US1] 更新 OpponentAI 移除對 @/application/dto/ 的依賴在 src/game-engine/application/services/OpponentAI.ts
+- [X] T014 [US1] 重構 GameFlowCoordinator 移除 GamePresenter 參數和所有 presenter 呼叫在 src/game-engine/application/usecases/GameFlowCoordinator.ts
+- [X] T015 [US1] 確認所有整合事件 (7 種) 在 GameFlowCoordinator 中正確發布
+- [X] T016 [US1] 實作 SelectMatchUseCase 處理多重配對選擇並發布 MatchSelectedEvent 在 src/game-engine/application/usecases/SelectMatchUseCase.ts
+- [X] T017 [US1] 驗證 game-engine BC 邊界: 執行 `grep -r "from '@/application/'" src/game-engine/` 確認無結果
+- [X] T018 [US1] 執行 TypeScript 編譯檢查確認無跨 BC 依賴錯誤
+- [X] T019 [US1] 執行測試確認通過率仍 >= 94%
 
 **檢查點**: 此時 User Story 1 應該完全功能正常且可獨立測試
 

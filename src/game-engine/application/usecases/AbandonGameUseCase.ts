@@ -1,5 +1,6 @@
 import type { IEventPublisher } from '../ports/IEventPublisher'
-import type { GameRepository } from '@/application/ports/repositories/GameRepository'
+import type { IGameStateRepository } from '../ports/IGameStateRepository'
+import type { AbandonGameInputDTO } from '../dto/GameInputDTO'
 import type { GameAbandonedEvent } from '@/shared/events/game/GameAbandonedEvent'
 import type { GamePhase } from '@/shared/constants/gameConstants'
 import { v4 as uuidv4 } from 'uuid'
@@ -17,16 +18,10 @@ import { v4 as uuidv4 } from 'uuid'
  * - Publish GameAbandonedEvent for game-ui BC
  */
 
-interface AbandonGameInputDTO {
-  /** Game unique identifier */
-  readonly gameId: string
-  /** Player who is abandoning the game */
-  readonly abandoningPlayerId: string
-  /** Optional reason for abandonment */
-  readonly reason?: 'user_quit' | 'timeout' | 'connection_lost'
-}
-
-interface AbandonGameResult {
+/**
+ * AbandonGameResult - Internal result structure
+ */
+export interface AbandonGameResult {
   readonly success: boolean
   readonly winnerId?: string
   readonly error?: string
@@ -34,7 +29,7 @@ interface AbandonGameResult {
 
 export class AbandonGameUseCase {
   constructor(
-    private gameRepository: GameRepository,
+    private gameRepository: IGameStateRepository,
     private eventPublisher: IEventPublisher
   ) {}
 
@@ -84,7 +79,7 @@ export class AbandonGameUseCase {
       gameState.setPhase('game_end')
 
       // Save updated game state
-      await this.gameRepository.saveGame(input.gameId, gameState)
+      await this.gameRepository.saveGameState(input.gameId, gameState)
 
       // Publish GameAbandonedEvent
       await this.publishGameAbandonedEvent(
