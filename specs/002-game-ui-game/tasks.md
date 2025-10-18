@@ -32,10 +32,10 @@
 
 **⚠️ 重要**: 所有使用者故事的工作都不能在此階段完成前開始
 
-- [ ] T004 [P] 建立 IGameStateRepository 介面在 src/game-engine/application/ports/IGameStateRepository.ts
-- [ ] T005 [P] 建立 Input DTOs 目錄和檔案在 src/game-engine/application/dto/GameInputDTO.ts
-- [ ] T006 [P] 建立 Internal DTOs 在 src/game-engine/application/dto/GameResultDTO.ts
-- [ ] T007 更新 LocalGameRepository 實作 IGameStateRepository 介面在 src/game-engine/infrastructure/adapters/LocalGameRepository.ts
+- [X] T004 [P] 建立 IGameStateRepository 介面在 src/game-engine/application/ports/IGameStateRepository.ts
+- [X] T005 [P] 建立 Input DTOs 目錄和檔案在 src/game-engine/application/dto/GameInputDTO.ts
+- [X] T006 [P] 建立 Internal DTOs 在 src/game-engine/application/dto/GameResultDTO.ts
+- [X] T007 更新 LocalGameRepository 實作 IGameStateRepository 介面在 src/game-engine/infrastructure/adapters/LocalGameRepository.ts
 
 **檢查點**: 基礎層就緒 - 使用者故事實施現在可以開始並行進行
 
