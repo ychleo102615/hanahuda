@@ -1,6 +1,7 @@
 import type { IEventPublisher } from '../ports/IEventPublisher'
 import type { GameRepository } from '@/application/ports/repositories/GameRepository'
 import type { GameAbandonedEvent } from '@/shared/events/game/GameAbandonedEvent'
+import type { GamePhase } from '@/shared/constants/gameConstants'
 import { v4 as uuidv4 } from 'uuid'
 
 /**
@@ -119,7 +120,7 @@ export class AbandonGameUseCase {
     abandoningPlayerId: string,
     winnerId: string,
     roundNumber: number,
-    gamePhase: 'setup' | 'dealing' | 'playing' | 'koikoi' | 'round_end',
+    gamePhase: GamePhase,
     players: readonly import('@/game-engine/domain/entities/Player').Player[],
     reason: 'user_quit' | 'timeout' | 'connection_lost'
   ): Promise<void> {

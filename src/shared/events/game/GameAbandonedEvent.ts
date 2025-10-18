@@ -1,4 +1,5 @@
 import type { IntegrationEvent } from '../base/IntegrationEvent'
+import type { GamePhase } from '@/shared/constants/gameConstants'
 
 /**
  * Game Abandoned Event
@@ -22,7 +23,7 @@ export interface GameAbandonedEvent extends IntegrationEvent {
   readonly roundNumber: number
 
   /** Game phase when abandonment occurred */
-  readonly gamePhase: 'setup' | 'dealing' | 'playing' | 'koikoi' | 'round_end'
+  readonly gamePhase: GamePhase
 
   /** Scores at the time of abandonment */
   readonly scoresAtAbandonment: readonly {
