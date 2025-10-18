@@ -1,10 +1,9 @@
-import type { Card } from '../../domain/entities/Card'
-import { Player } from '../../domain/entities/Player'
-import type { GameState, RoundResult } from '../../domain/entities/GameState'
 import type { IEventPublisher } from '../ports/IEventPublisher'
 import type { IGameStateRepository } from '../ports/IGameStateRepository'
+import { Player } from '../../domain/entities/Player'
+import type { GameState, RoundResult } from '../../domain/entities/GameState'
 import type { YakuResult } from '../../domain/entities/Yaku'
-import type { StartGameInputDTO, PlayCardInputDTO, KoikoiDecisionInputDTO } from '../dto/GameInputDTO'
+import type { StartGameInputDTO, PlayCardInputDTO } from '../dto/GameInputDTO'
 import type { KoikoiDeclaredEvent } from '@/shared/events/game/KoikoiDeclaredEvent'
 import type { GameEndedEvent } from '@/shared/events/game/GameEndedEvent'
 import type { TurnTransition } from '@/shared/events/base/TurnTransition'
@@ -75,26 +74,26 @@ export class GameFlowCoordinator {
     gameId: string,
     playerId: string,
     declareKoikoi: boolean,
-  ): Promise<any> {
+  ): Promise<GameState> {
     const gameState = await this.gameRepository.getGameState(gameId)
     if (!gameState) {
       throw new Error('Game not found')
     }
 
-    const player = (gameState as any).players.find((p: any) => p.id === playerId)
+    const player = gameState.players.find((p: Player) => p.id === playerId)
     if (!player) {
       throw new Error('Player not found')
     }
 
     // Get current yaku and score for event
-    const currentYakuResults = await this.calculateScoreUseCase.execute((player as any).captured)
+    const currentYakuResults = await this.calculateScoreUseCase.execute(player.captured)
     const currentYaku = currentYakuResults.yakuResults.map(yaku => yaku.yaku.name)
     const currentScore = currentYakuResults.totalScore
 
     let turnTransition: TurnTransition | null
 
     if (declareKoikoi) {
-      if ((player as any).handCount === 0) {
+      if (player.handCount === 0) {
         throw new Error('Cannot declare Koi-Koi without hand cards')
       }
       gameState.setKoikoiPlayer(playerId)
@@ -145,13 +144,13 @@ export class GameFlowCoordinator {
     }
   }
 
-  async endRound(gameId: string): Promise<any> {
+  async endRound(gameId: string): Promise<GameState> {
     const gameState = await this.gameRepository.getGameState(gameId)
     if (!gameState) {
       throw new Error('Game not found')
     }
 
-    const players = (gameState as any).players
+    const players = gameState.players
     if (players.length !== 2) {
       throw new Error('Invalid number of players')
     }
@@ -159,19 +158,19 @@ export class GameFlowCoordinator {
     // Use the refactored CalculateScoreUseCase with event publishing
     const result = await this.calculateScoreUseCase.calculateRoundWinner(
       gameId,
-      (gameState as any).round,
+      gameState.round,
       players[0].captured,
       players[1].captured,
       players[0].id,
       players[1].id,
       players[0].score,
       players[1].score,
-      (gameState as any).koikoiPlayer || undefined,
+      gameState.koikoiPlayer || undefined,
       1, // koikoiCount - simplified for now
       'yaku_achieved'
     )
 
-    let winner: any = null
+    let winner: Player | null = null
     let winnerYakuResults: YakuResult[] = []
     let winnerScore: number = 0
 
@@ -191,21 +190,21 @@ export class GameFlowCoordinator {
       winnerScore = 0
     }
 
-    const roundResult: any = {
+    const roundResult: RoundResult = {
       winner,
       yakuResults: winnerYakuResults,
       score: winnerScore,
-      koikoiDeclared: (gameState as any).koikoiPlayer !== null,
+      koikoiDeclared: gameState.koikoiPlayer !== null,
     }
 
-    ;(gameState as any).setRoundResult(roundResult)
-    ;(gameState as any).setPhase('round_end')
+    gameState.setRoundResult(roundResult)
+    gameState.setPhase('round_end')
 
     await this.gameRepository.saveGameState(gameId, gameState)
     return gameState
   }
 
-  async startNextRound(gameId: string): Promise<any> {
+  async startNextRound(gameId: string): Promise<GameState> {
     const gameState = await this.gameRepository.getGameState(gameId)
     if (!gameState) {
       throw new Error('Game not found')
@@ -303,18 +302,18 @@ export class GameFlowCoordinator {
       const gameState = await this.gameRepository.getGameState(gameId)
       if (gameState) {
         // Find winner (opponent of abandoning player)
-        const players = (gameState as any).players
-        const winner = players.find((p: any) => p.id === result.winnerId)
+        const players = gameState.players
+        const winner = players.find((p: Player) => p.id === result.winnerId)
 
         // Set roundResult for game state integrity
-        const roundResult: any = {
+        const roundResult: RoundResult = {
           winner: winner || null,
-          score: winner ? (winner as any).score : 0,
+          score: winner ? winner.score : 0,
           yakuResults: [],
           koikoiDeclared: false,
         }
-        ;(gameState as any).setRoundResult(roundResult)
-        ;(gameState as any).setPhase('game_end')
+        gameState.setRoundResult(roundResult)
+        gameState.setPhase('game_end')
 
         // Save updated game state
         await this.gameRepository.saveGameState(gameId, gameState)
@@ -358,18 +357,18 @@ export class GameFlowCoordinator {
   /**
    * Publish GameEndedEvent to game-ui BC
    */
-  private async publishGameEndedEvent(gameId: string, gameState: any): Promise<void> {
+  private async publishGameEndedEvent(gameId: string, gameState: GameState): Promise<void> {
     const gameEndTime = Date.now()
     const gameDuration = gameEndTime - this.gameStartTime
 
     // Determine winner
     const players = gameState.players
-    const maxScore = Math.max(...players.map((p: any) => p.score))
-    const winners = players.filter((p: any) => p.score === maxScore)
+    const maxScore = Math.max(...players.map((p: Player) => p.score))
+    const winners = players.filter((p: Player) => p.score === maxScore)
     const winnerId = winners.length === 1 ? winners[0].id : null
 
     // Calculate rounds won (simplified)
-    const finalScores = players.map((player: any) => ({
+    const finalScores = players.map((player: Player) => ({
       playerId: player.id,
       playerName: player.name,
       totalScore: player.score,
@@ -407,15 +406,15 @@ export class GameFlowCoordinator {
     }
   }
 
-  async getGameWinner(gameId: string): Promise<any> {
+  async getGameWinner(gameId: string): Promise<Player | null> {
     const gameState = await this.gameRepository.getGameState(gameId)
-    if (!gameState || !(gameState as any).isGameOver) {
+    if (!gameState || !gameState.isGameOver) {
       return null
     }
 
-    const players = (gameState as any).players
-    const maxScore = Math.max(...players.map((p: any) => p.score))
-    const winners = players.filter((p: any) => p.score === maxScore)
+    const players = gameState.players
+    const maxScore = Math.max(...players.map((p: Player) => p.score))
+    const winners = players.filter((p: Player) => p.score === maxScore)
 
     return winners.length === 1 ? winners[0] : null
   }

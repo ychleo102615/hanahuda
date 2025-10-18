@@ -90,7 +90,7 @@ export class UpdateGameViewUseCase {
    * Handle GameInitializedEvent - Full state snapshot
    */
   private async handleGameInitialized(event: GameInitializedEvent): Promise<void> {
-    const { gameState, cardDefinitions, turnTransition } = event
+    const { gameState, cardDefinitions } = event
 
     // Create player view models
     const players: PlayerViewModel[] = gameState.players.map((p) =>

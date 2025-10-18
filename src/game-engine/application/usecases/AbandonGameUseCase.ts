@@ -123,7 +123,7 @@ export class AbandonGameUseCase {
       eventId: uuidv4(),
       eventType: 'GameAbandoned',
       timestamp: Date.now(),
-      sequenceNumber: await this.eventPublisher.getNextSequenceNumber(),
+      sequenceNumber: this.eventPublisher.getNextSequenceNumber(),
       gameId,
       abandoningPlayerId,
       winnerId,
