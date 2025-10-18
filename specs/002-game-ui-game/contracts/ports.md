@@ -165,15 +165,10 @@ export class EventBusAdapter implements IEventPublisher {
  *
  * 責任: 將 GameViewModel 更新呈現到 UI (Pinia Store)
  * 實作位置: Presentation Layer
+ * 設計原則: 保留現有實作的完整接口，避免破壞性變更
  */
 export interface IUIPresenter {
   // === 狀態更新 ===
-
-  /**
-   * 呈現增量狀態更新
-   * @param gameViewModel 更新後的遊戲視圖模型
-   */
-  presentStateUpdate(gameViewModel: GameViewModel): void
 
   /**
    * 呈現完整遊戲狀態 (用於初始化或完整同步)
@@ -181,48 +176,47 @@ export interface IUIPresenter {
    */
   presentGameState(gameViewModel: GameViewModel): void
 
-  // === 動畫 ===
+  /**
+   * 呈現增量狀態更新
+   * @param updates 部分更新的遊戲視圖模型
+   */
+  presentStateUpdate(updates: Partial<GameViewModel>): void
+
+  // === 用戶反饋與動畫 ===
 
   /**
-   * 呈現卡片播放動畫
-   * @param cardId 卡片 ID
-   * @param targetArea 目標區域 ('field' | 'captured')
+   * 呈現卡片出牌動畫
+   * @param playerId 出牌玩家 ID
+   * @param cardId 出牌卡片 ID
+   * @param handMatch 手牌配對結果
    */
-  presentCardPlayAnimation(cardId: string, targetArea: 'field' | 'captured'): void
+  presentCardPlayAnimation(playerId: string, cardId: string, handMatch: MatchResult): void
 
   /**
    * 呈現牌堆翻牌動畫
    * @param cardId 翻出的卡片 ID
+   * @param deckMatch 牌堆配對結果
    */
-  presentDeckRevealAnimation(cardId: string): void
+  presentDeckRevealAnimation(cardId: string, deckMatch: MatchResult): void
 
   /**
-   * 呈現回合轉換動畫
-   * @param fromPlayerId 前一個玩家 ID
-   * @param toPlayerId 當前玩家 ID
+   * 呈現役種達成顯示
+   * @param playerId 達成役種的玩家 ID
+   * @param yakuResults 役種結果陣列
    */
-  presentTurnTransition(fromPlayerId: string, toPlayerId: string): void
-
-  // === UI 元素 ===
-
-  /**
-   * 呈現役種達成提示
-   * @param yakuNames 役種名稱陣列
-   * @param score 得分
-   */
-  presentYakuAchievement(yakuNames: string[], score: number): void
-
-  /**
-   * 呈現/隱藏來來對話框
-   * @param show true=顯示, false=隱藏
-   */
-  presentKoikoiDialog(show: boolean): void
+  presentYakuAchievement(playerId: string, yakuResults: readonly YakuResult[]): void
 
   /**
    * 呈現配對選擇 UI (多重配對時)
-   * @param matchingCardIds 可選擇的場牌 IDs
+   * @param sourceCardId 來源卡片 ID
+   * @param selectableCardIds 可選擇的場牌 IDs
+   * @param timeoutMs 選擇逾時時間 (毫秒)
    */
-  presentMatchSelection(matchingCardIds: string[]): void
+  presentMatchSelection(
+    sourceCardId: string,
+    selectableCardIds: readonly string[],
+    timeoutMs: number
+  ): void
 
   /**
    * 清除配對選擇 UI
@@ -230,25 +224,64 @@ export interface IUIPresenter {
   clearMatchSelection(): void
 
   /**
+   * 呈現回合轉換動畫
+   * @param fromPlayerId 前一個玩家 ID
+   * @param toPlayerId 當前玩家 ID
+   * @param reason 轉換原因
+   */
+  presentTurnTransition(fromPlayerId: string, toPlayerId: string, reason: string): void
+
+  // === 對話框 ===
+
+  /**
+   * 呈現來來決策對話框
+   * @param playerId 做決策的玩家 ID
+   * @param currentYaku 當前達成的役種
+   * @param currentScore 當前得分
+   */
+  presentKoikoiDialog(playerId: string, currentYaku: readonly YakuResult[], currentScore: number): void
+
+  /**
    * 清除來來對話框
    */
   clearKoikoiDialog(): void
+
+  /**
+   * 呈現放棄遊戲確認對話框
+   * @param playerId 請求放棄的玩家 ID
+   * @returns Promise<boolean> 用戶確認則返回 true
+   */
+  presentAbandonConfirmation(playerId: string): Promise<boolean>
 
   // === 遊戲結束 ===
 
   /**
    * 呈現回合結束
    * @param winnerId 獲勝者 ID (null=平局)
+   * @param winnerName 獲勝者名稱 (null=平局)
    * @param score 得分
+   * @param yakuResults 回合中達成的役種
    */
-  presentRoundEnd(winnerId: string | null, score: number): void
+  presentRoundEnd(
+    winnerId: string | null,
+    winnerName: string | null,
+    score: number,
+    yakuResults: readonly YakuResult[]
+  ): void
 
   /**
    * 呈現遊戲結束
    * @param winnerId 獲勝者 ID (null=平手)
+   * @param winnerName 獲勝者名稱 (null=平手)
    * @param finalScore 最終得分
+   * @param totalRounds 總回合數
    */
-  presentGameEnd(winnerId: string | null, finalScore: number): void
+  presentGameEnd(
+    winnerId: string | null,
+    winnerName: string | null,
+    finalScore: number,
+    totalRounds: number
+  ): void
 
   // === 訊息與錯誤 ===
 
@@ -257,27 +290,60 @@ export interface IUIPresenter {
    * @param messageKey 訊息國際化鍵值
    * @param params 參數
    */
-  presentMessage(messageKey: string, params?: Record<string, string | number>): void
+  presentMessage(messageKey: string, params?: Record<string, any>): void
 
   /**
    * 呈現錯誤訊息
    * @param errorKey 錯誤國際化鍵值
    * @param params 參數
    */
-  presentError(errorKey: string, params?: Record<string, string | number>): void
+  presentError(errorKey: string, params?: Record<string, any>): void
+
+  // === 載入狀態 ===
 
   /**
-   * 清除錯誤訊息
+   * 呈現載入狀態
+   * @param isLoading 是否載入中
+   * @param message 載入訊息 (可選)
    */
-  clearError(): void
+  presentLoading(isLoading: boolean, message?: string): void
+
+  // === 清理 ===
+
+  /**
+   * 清除所有 UI 狀態 (用於遊戲重置)
+   */
+  clearAll(): void
 }
 ```
 
 **設計約束**:
-- ✅ 必須是同步方法 (void 返回)
+- ✅ 必須是同步方法 (除 presentAbandonConfirmation 外都是 void 返回)
 - ✅ 不可包含業務邏輯
 - ✅ 僅負責 UI 狀態更新
 - ✅ 必須支援多次調用
+
+**設計決策與說明**:
+
+本接口包含了 game-ui BC 開發階段已實作的所有方法。雖然這些方法超出了舊 GamePresenter 的最小化接口範圍，但基於以下原因保留：
+
+1. **現有實作依賴**: UpdateGameViewUseCase 已在使用這些方法（如動畫、配對選擇、回合轉換）
+2. **避免功能退化**: 移除這些方法會導致遊戲體驗變差，測試失敗
+3. **本次重構目標**: BC 分離，而非功能精簡
+4. **後續優化機會**: 建議在獨立的 Feature 中重新評估這些方法的必要性
+
+**與舊 GamePresenter 的差異**:
+
+| 方法 | 舊接口 | 新接口 | 差異說明 |
+|------|-------|-------|---------|
+| presentKoikoiDialog | `(show: boolean)` | `(playerId, yaku[], score)` | 新增玩家和役種資訊 |
+| presentRoundEnd | `(winnerId, score)` | `(winnerId, winnerName, score, yaku[])` | 新增名稱和役種 |
+| presentGameEnd | `(winnerId, finalScore)` | `(winnerId, winnerName, finalScore, totalRounds)` | 新增名稱和回合數 |
+| presentCardPlayAnimation | ❌ 不存在 | ✅ 新增 | 動畫支援 |
+| presentDeckRevealAnimation | ❌ 不存在 | ✅ 新增 | 動畫支援 |
+| presentTurnTransition | ❌ 不存在 | ✅ 新增 | 動畫支援 |
+| presentMatchSelection | ❌ 不存在 | ✅ 新增 | 配對選擇 UI |
+| presentAbandonConfirmation | ❌ 不存在 | ✅ 新增 | 放棄確認 |
 
 **實作範例**:
 
@@ -289,20 +355,27 @@ export class VueGamePresenter implements IUIPresenter {
     private localeService: LocaleService
   ) {}
 
-  presentStateUpdate(gameViewModel: GameViewModel): void {
-    this.gameStore.setGameViewModel(gameViewModel)
-  }
-
   presentGameState(gameViewModel: GameViewModel): void {
     this.gameStore.setGameViewModel(gameViewModel)
     this.gameStore.setGameStarted(true)
   }
 
-  presentCardPlayAnimation(cardId: string, targetArea: 'field' | 'captured'): void {
-    this.gameStore.addAnimation({
+  presentCardPlayAnimation(playerId: string, cardId: string, handMatch: MatchResult): void {
+    this.gameStore.triggerAnimation({
       type: 'card_play',
+      playerId,
       cardId,
-      targetArea,
+      matchType: handMatch.matchType,
+      capturedCardIds: handMatch.capturedCardIds as string[],
+    })
+    this.gameStore.clearSelections()
+  }
+
+  presentKoikoiDialog(playerId: string, currentYaku: readonly YakuResult[], currentScore: number): void {
+    this.gameStore.showKoikoiDialog({
+      playerId,
+      yakuResults: currentYaku as YakuResult[],
+      currentScore,
     })
   }
 

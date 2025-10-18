@@ -435,36 +435,49 @@ class UICardMatchingService implements ICardMatchingService {
 ```typescript
 export interface IUIPresenter {
   // 狀態更新
-  presentStateUpdate(gameViewModel: GameViewModel): void
   presentGameState(gameViewModel: GameViewModel): void
+  presentStateUpdate(updates: Partial<GameViewModel>): void
 
-  // 動畫
-  presentCardPlayAnimation(cardId: string, targetArea: 'field' | 'captured'): void
-  presentDeckRevealAnimation(cardId: string): void
-  presentTurnTransition(fromPlayerId: string, toPlayerId: string): void
-
-  // UI 元素
-  presentYakuAchievement(yakuNames: string[], score: number): void
-  presentKoikoiDialog(show: boolean): void
-  presentMatchSelection(matchingCardIds: string[]): void
+  // 用戶反饋與動畫
+  presentCardPlayAnimation(playerId: string, cardId: string, handMatch: MatchResult): void
+  presentDeckRevealAnimation(cardId: string, deckMatch: MatchResult): void
+  presentYakuAchievement(playerId: string, yakuResults: readonly YakuResult[]): void
+  presentMatchSelection(sourceCardId: string, selectableCardIds: readonly string[], timeoutMs: number): void
   clearMatchSelection(): void
+  presentTurnTransition(fromPlayerId: string, toPlayerId: string, reason: string): void
+
+  // 對話框
+  presentKoikoiDialog(playerId: string, currentYaku: readonly YakuResult[], currentScore: number): void
   clearKoikoiDialog(): void
+  presentAbandonConfirmation(playerId: string): Promise<boolean>
 
   // 遊戲結束
-  presentRoundEnd(winnerId: string | null, score: number): void
-  presentGameEnd(winnerId: string | null, finalScore: number): void
+  presentRoundEnd(winnerId: string | null, winnerName: string | null, score: number, yakuResults: readonly YakuResult[]): void
+  presentGameEnd(winnerId: string | null, winnerName: string | null, finalScore: number, totalRounds: number): void
 
   // 訊息與錯誤
-  presentMessage(messageKey: string, params?: Record<string, string | number>): void
-  presentError(errorKey: string, params?: Record<string, string | number>): void
-  clearError(): void
+  presentMessage(messageKey: string, params?: Record<string, any>): void
+  presentError(errorKey: string, params?: Record<string, any>): void
+
+  // 載入狀態
+  presentLoading(isLoading: boolean, message?: string): void
+
+  // 清理
+  clearAll(): void
 }
 ```
 
 **設計特點**:
-- ✅ 使用 Card ID 而非 Entity
-- ✅ 接受 GameViewModel 而非 GameState
-- ✅ 提供豐富的 UI 呈現方法
+- ✅ **保留現有實作的完整接口** - 包含 game-ui BC 開發階段已實作的所有方法
+- ✅ **避免破壞性變更** - 保持與 UpdateGameViewUseCase 和 VueGamePresenter 的相容性
+- ✅ **增強的用戶體驗** - 提供動畫、轉場、配對選擇等 UI 反饋機制
+- ⚠️ **超出最小接口範圍** - 包含比舊 GamePresenter 更豐富的功能
+
+**設計決策**:
+- 本次重構的核心目標是 **BC 分離**，而非功能精簡
+- 這些方法已在 game-ui BC 實作中被 UpdateGameViewUseCase 使用
+- 移除這些方法會導致功能退化和測試失敗
+- 建議在後續 Feature 中重新評估這些方法的必要性
 
 #### **IEventSubscriber** (事件訂閱者)
 
