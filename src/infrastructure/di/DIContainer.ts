@@ -1,4 +1,4 @@
-import { LocalGameRepository } from '@/infrastructure/repositories/LocalGameRepository'
+import { LocalGameRepository } from '@/game-engine/infrastructure/adapters/LocalGameRepository'
 import { LocalStorageLocaleService } from '@/infrastructure/services/LocaleService'
 
 // Game Engine BC
