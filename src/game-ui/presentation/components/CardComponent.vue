@@ -47,7 +47,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { CardDefinition } from '@/game-ui/domain/models/GameViewModel'
-import SvgIcon from '@/ui/components/SvgIcon.vue'
+import SvgIcon from '@/game-ui/presentation/components/SvgIcon.vue'
 import { getCardSvgName } from '@/game-ui/presentation/utils/cardAssetMapping'
 import { useLocale } from '@/ui/composables/useLocale'
 

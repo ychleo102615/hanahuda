@@ -74,17 +74,17 @@
 
 ### User Story 2 的實施
 
-- [x] T020 [P] [US2] 遷移 CardComponent.vue 從 src/ui/components/ 到 src/game-ui/presentation/components/CardComponent.vue 並更新 props 使用 CardDefinition
-- [x] T021 [P] [US2] 遷移 GameBoard.vue 從 src/ui/components/ 到 src/game-ui/presentation/components/GameBoard.vue 並更新使用 GameViewModel
-- [x] T022 [P] [US2] 遷移 PlayerHand.vue 從 src/ui/components/ 到 src/game-ui/presentation/components/PlayerHand.vue 並更新使用 PlayerViewModel
-- [x] T023 [P] [US2] 遷移其他 UI components (如 YakuDisplay, ScoreBoard 等) 到 src/game-ui/presentation/components/
-- [x] T024 [P] [US2] 遷移 cardAssetMapping.ts 到 src/game-ui/presentation/utils/cardAssetMapping.ts
-- [x] T025 [US2] 擴展 DIContainer 新增 game-ui BC 服務鍵和註冊方法在 src/infrastructure/di/DIContainer.ts
-- [x] T026 [US2] 實作 DIContainer.setupGameUIServices() 方法註冊所有 game-ui BC 元件
-- [x] T027 [US2] 實作 DIContainer.createWithGameUI() 靜態工廠方法
-- [ ] T028 [US2] 更新 main.ts 在 app.mount 後初始化 DIContainer 並設置事件訂閱在 src/main.ts
+- [X] T020 [P] [US2] 遷移 CardComponent.vue 從 src/ui/components/ 到 src/game-ui/presentation/components/CardComponent.vue 並更新 props 使用 CardDefinition
+- [X] T021 [P] [US2] 遷移 GameBoard.vue 從 src/ui/components/ 到 src/game-ui/presentation/components/GameBoard.vue 並更新使用 GameViewModel
+- [X] T022 [P] [US2] 遷移 PlayerHand.vue 從 src/ui/components/ 到 src/game-ui/presentation/components/PlayerHand.vue 並更新使用 PlayerViewModel
+- [X] T023 [P] [US2] 遷移其他 UI components (如 YakuDisplay, ScoreBoard 等) 到 src/game-ui/presentation/components/
+- [X] T024 [P] [US2] 遷移 cardAssetMapping.ts 到 src/game-ui/presentation/utils/cardAssetMapping.ts
+- [X] T025 [US2] 擴展 DIContainer 新增 game-ui BC 服務鍵和註冊方法在 src/infrastructure/di/DIContainer.ts
+- [X] T026 [US2] 實作 DIContainer.setupGameUIServices() 方法註冊所有 game-ui BC 元件
+- [X] T027 [US2] 實作 DIContainer.createWithGameUI() 靜態工廠方法
+- [X] T028 [US2] 更新 main.ts 在 app.mount 後初始化 DIContainer 並設置事件訂閱在 src/main.ts
 - [ ] T029 [US2] 更新 GameView.vue 使用新的 game-ui BC Controller 和 Store 在 src/game-ui/presentation/views/GameView.vue
-- [ ] T030 [US2] 在 main.ts 配置全局事件訂閱,連接 EventBus 與 UpdateGameViewUseCase
+- [X] T030 [US2] 在 main.ts 配置全局事件訂閱,連接 EventBus 與 UpdateGameViewUseCase
 - [ ] T031 [US2] 驗證 UI components 都已遷移: `ls src/ui/components/` 應為空或僅剩待移除檔案
 - [ ] T032 [US2] 驗證 GameView.vue 正確使用新的 DIContainer: 手動測試載入頁面無錯誤
 

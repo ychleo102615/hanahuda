@@ -1,6 +1,9 @@
 import type { PlayerViewModel } from './PlayerViewModel'
 import type { YakuResult } from '@/shared/events/base/YakuResult'
 
+// Re-export PlayerViewModel for convenience
+export type { PlayerViewModel } from './PlayerViewModel'
+
 /**
  * Card Definition (UI-specific)
  *

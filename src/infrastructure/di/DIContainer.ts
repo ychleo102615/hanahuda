@@ -11,9 +11,12 @@ import { AbandonGameUseCase } from '@/game-engine/application/usecases/AbandonGa
 import { ResetGameUseCase } from '@/application/usecases/ResetGameUseCase'
 import { GetMatchingCardsUseCase } from '@/application/usecases/GetMatchingCardsUseCase'
 
-// Game UI BC (future use)
+// Game UI BC
 import { UpdateGameViewUseCase } from '@/game-ui/application/usecases/UpdateGameViewUseCase'
 import { HandleUserInputUseCase } from '@/game-ui/application/usecases/HandleUserInputUseCase'
+import { GameController as UIGameController } from '@/game-ui/presentation/controllers/GameController'
+import { VueGamePresenter as UIVueGamePresenter } from '@/game-ui/presentation/presenters/VueGamePresenter'
+import { EventBusAdapter as UIEventBusAdapter } from '@/game-ui/infrastructure/adapters/EventBusAdapter'
 
 // Legacy UI (still in use for Phase 3)
 import { GameController } from '@/ui/controllers/GameController'
@@ -222,15 +225,10 @@ export class DIContainer {
       throw new Error('Event Bus must be initialized before setting up Game UI BC services')
     }
 
-    // Import game-ui BC components dynamically to avoid circular dependencies
-    const GameController = require('@/game-ui/presentation/controllers/GameController').GameController
-    const VueGamePresenter = require('@/game-ui/presentation/presenters/VueGamePresenter').VueGamePresenter
-    const EventBusAdapter = require('@/game-ui/infrastructure/adapters/EventBusAdapter').EventBusAdapter
-
     // UI Presenter
     this.registerSingleton(
       DIContainer.UI_GAME_PRESENTER,
-      () => new VueGamePresenter(gameUIStore),
+      () => new UIVueGamePresenter(gameUIStore, this.resolve(DIContainer.LOCALE_SERVICE)),
     )
 
     // Update Game View UseCase
@@ -242,22 +240,28 @@ export class DIContainer {
     // Handle User Input UseCase
     this.registerSingleton(
       DIContainer.HANDLE_USER_INPUT_USE_CASE,
-      () => new HandleUserInputUseCase(),
+      () => new HandleUserInputUseCase(this.resolve(DIContainer.UI_GAME_PRESENTER)),
     )
 
     // Event Subscriber (EventBusAdapter)
     this.registerSingleton(
       DIContainer.UI_EVENT_SUBSCRIBER,
-      () => new EventBusAdapter(this.resolve(DIContainer.EVENT_BUS)),
+      () => new UIEventBusAdapter(this.resolve(DIContainer.EVENT_BUS)),
     )
 
     // UI Game Controller
     this.registerSingleton(
       DIContainer.UI_GAME_CONTROLLER,
       () =>
-        new GameController(
-          this.resolve(DIContainer.GAME_FLOW_COORDINATOR),
+        new UIGameController(
           this.resolve(DIContainer.HANDLE_USER_INPUT_USE_CASE),
+          this.resolve(DIContainer.UPDATE_GAME_VIEW_USE_CASE),
+          async (command: any) => {
+            // Send command to game-engine BC via GameFlowCoordinator
+            const coordinator = this.resolve(DIContainer.GAME_FLOW_COORDINATOR)
+            // This is a placeholder - actual implementation depends on command type
+            console.log('Sending command to game-engine:', command)
+          }
         ),
     )
   }
