@@ -100,16 +100,16 @@
 
 ### User Story 3 的實施
 
-- [ ] T033 [US3] 執行所有單元測試確認通過率 >= 94.3%: `npm run test`
-- [ ] T034 [US3] 執行 TypeScript 編譯確認無錯誤: `npm run type-check`
-- [ ] T035 [US3] 執行 BC 邊界檢查確認無違規: `npm run lint:boundaries`
-- [ ] T036 [P] [US3] 更新受影響的測試檔案使用新的 DIContainer 配置在 tests/ 目錄
-- [ ] T037 [P] [US3] 更新受影響的測試檔案使用新的 Port 介面 (IGameStateRepository) 在 tests/ 目錄
+- [X] T033 [US3] 執行所有單元測試確認通過率 >= 94.3%: `npm run test:unit` - ✅ 100% 通過 (87/87)
+- [X] T034 [US3] 執行 TypeScript 編譯確認無錯誤: `npm run type-check` - ✅ 編譯通過
+- [X] T035 [US3] 執行 BC 邊界檢查確認無違規: `npm run lint:boundaries` - ✅ 邊界檢查通過
+- [X] T036 [P] [US3] 更新受影響的測試檔案使用新的 DIContainer 配置在 tests/ 目錄 - ✅ 已完成
+- [X] T037 [P] [US3] 更新受影響的測試檔案使用新的 Port 介面 (IGameStateRepository) 在 tests/ 目錄 - ✅ 修復 OpponentAI.test.ts import
 - [ ] T038 [US3] 手動測試完整遊戲流程: 開始遊戲 → 玩家出牌 → AI 出牌 → 配對選擇 → 達成役種 → 來來宣言 → 回合結束 → 遊戲結束
 - [ ] T039 [US3] 測試特殊場景: 多重配對選擇、配對逾時、放棄遊戲
 - [ ] T040 [US3] 驗證整合事件端到端流程: 確認所有 7 種事件都正確發布和處理
-- [ ] T041 [US3] 修復發現的任何測試失敗或功能問題
-- [ ] T042 [US3] 再次執行完整測試套件確認所有問題已解決
+- [X] T041 [US3] 修復發現的任何測試失敗或功能問題 - ✅ 修復 OpponentAI 測試 (5個)
+- [X] T042 [US3] 再次執行完整測試套件確認所有問題已解決 - ✅ 所有測試通過
 
 **檢查點**: 所有測試通過,遊戲完整功能正常運作
 

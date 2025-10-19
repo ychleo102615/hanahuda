@@ -364,6 +364,11 @@ export class HandleUserInputUseCase {
    * This is a read-only check for UI feedback
    */
   canPlayCard(gameViewModel: GameViewModel, playerId: string, cardId: string): boolean {
+    // Lazy initialization if not already done
+    if (!this.cardMatchingService) {
+      this.cardMatchingService = new UICardMatchingService(gameViewModel.cardDefinitions)
+    }
+
     if (gameViewModel.currentPlayerId !== playerId) {
       return false
     }
@@ -384,8 +389,9 @@ export class HandleUserInputUseCase {
    * Get possible matches for a card (for UI highlighting)
    */
   getPossibleMatches(gameViewModel: GameViewModel, cardId: string): string[] {
+    // Lazy initialization if not already done
     if (!this.cardMatchingService) {
-      return []
+      this.cardMatchingService = new UICardMatchingService(gameViewModel.cardDefinitions)
     }
 
     return this.cardMatchingService.findMatches(cardId, gameViewModel.fieldCardIds)

@@ -3,7 +3,6 @@ import { OpponentAI } from '@/game-engine/application/services/OpponentAI'
 import { GameState } from '@/game-engine/domain/entities/GameState'
 import { Player } from '@/game-engine/domain/entities/Player'
 import { CardEntity, type Card } from '@/game-engine/domain/entities/Card'
-import type { PlayCardRequest } from '@/application/ports/repositories/GameRepository'
 
 // 輔助函式：建立測試用卡牌
 function createCard(suit: number, type: 'bright' | 'animal' | 'ribbon' | 'plain', index: number = 0): Card {
@@ -24,7 +23,7 @@ describe('OpponentAI', () => {
 
   beforeEach(() => {
     // 建立測試用遊戲狀態
-    gameState = new GameState('test-game')
+    gameState = new GameState()
 
     // 建立玩家
     humanPlayer = new Player('player1', 'Human Player')
@@ -59,7 +58,7 @@ describe('OpponentAI', () => {
       // 給 AI 一些手牌
       const handCard1 = createCard(1, 'plain', 0)
       const handCard2 = createCard(2, 'bright', 0)
-      aiPlayer.addToHand([handCard1, handCard2])
+      aiPlayer.setHand([handCard1, handCard2])
 
       // 場上放置一些牌
       const fieldCard1 = createCard(1, 'ribbon', 0) // 可與 handCard1 配對
@@ -84,7 +83,7 @@ describe('OpponentAI', () => {
     it('應該選擇多重配對中的最高分牌', () => {
       // 給 AI 一張手牌
       const handCard = createCard(1, 'plain', 0)
-      aiPlayer.addToHand([handCard])
+      aiPlayer.setHand([handCard])
 
       // 場上放置多張同月份的牌
       const fieldCard1 = createCard(1, 'ribbon', 0)
@@ -109,7 +108,7 @@ describe('OpponentAI', () => {
       const handCard1 = createCard(1, 'plain', 0)
       const handCard2 = createCard(2, 'ribbon', 0)
       const handCard3 = createCard(3, 'bright', 0)
-      aiPlayer.addToHand([handCard1, handCard2, handCard3])
+      aiPlayer.setHand([handCard1, handCard2, handCard3])
 
       // 場上放置不同月份的牌
       const fieldCard1 = createCard(4, 'plain', 0)
@@ -133,7 +132,7 @@ describe('OpponentAI', () => {
       // 給 AI 兩張手牌
       const handCard1 = createCard(1, 'plain', 0)
       const handCard2 = createCard(2, 'plain', 0)
-      aiPlayer.addToHand([handCard1, handCard2])
+      aiPlayer.setHand([handCard1, handCard2])
 
       // 場上放置牌：月份1有多張可配對，月份2只有一張但分數相同
       const fieldCard1 = createCard(1, 'ribbon', 0)
@@ -227,7 +226,7 @@ describe('OpponentAI', () => {
       const handCard1 = createCard(1, 'plain', 0)
       const handCard2 = createCard(2, 'animal', 0)
       const handCard3 = createCard(3, 'ribbon', 0)
-      aiPlayer.addToHand([handCard1, handCard2, handCard3])
+      aiPlayer.setHand([handCard1, handCard2, handCard3])
 
       // 場上的牌
       const fieldCard1 = createCard(1, 'ribbon', 0)
