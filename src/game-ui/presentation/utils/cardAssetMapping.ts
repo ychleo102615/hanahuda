@@ -116,3 +116,43 @@ export function getCardSvgSymbolId(card: CardDefinition, prefix: string = 'icon'
   const svgName = getCardSvgName(card)
   return `${prefix}-${svgName}`
 }
+
+/**
+ * 從 HANAFUDA_CARDS 常數中查找卡片名稱
+ * @param suit 月份 (1-12)
+ * @param type 卡片類型
+ * @param cardId 卡片 ID (用於區分同類型的多張卡片)
+ * @returns 卡片名稱
+ */
+export function getCardNameFromConstants(
+  suit: number,
+  type: 'bright' | 'animal' | 'ribbon' | 'plain',
+  cardId: string
+): string {
+  const monthNames = ['', 'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+                      'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'] as const
+
+  const monthKey = monthNames[suit] as keyof typeof HANAFUDA_CARDS
+
+  // Default fallback name
+  let cardName = `${monthKey?.toLowerCase()}_${type}_1`
+
+  if (monthKey && HANAFUDA_CARDS[monthKey]) {
+    const matchingCards = HANAFUDA_CARDS[monthKey].CARDS.filter(c => c.type === type)
+
+    if (matchingCards.length > 0) {
+      // Extract index from cardId (format: "suit-type-index")
+      const parts = cardId.split('-')
+      const index = parts.length >= 3 ? parseInt(parts[2], 10) : 0
+
+      // Use the matching card's name if available
+      if (matchingCards[index]) {
+        cardName = matchingCards[index].name
+      } else if (matchingCards[0]) {
+        cardName = matchingCards[0].name
+      }
+    }
+  }
+
+  return cardName
+}

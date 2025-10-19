@@ -1,4 +1,4 @@
-import { GameViewModel } from '../../domain/models/GameViewModel'
+import { GameViewModel, type CardDefinition } from '../../domain/models/GameViewModel'
 import type { PlayerViewModel } from '../../domain/models/PlayerViewModel'
 import { createPlayerViewModel, updatePlayerViewModel } from '../../domain/models/PlayerViewModel'
 import type { IUIPresenter } from '../ports/IUIPresenter'
@@ -10,6 +10,7 @@ import type { KoikoiDeclaredEvent } from '@/shared/events/game/KoikoiDeclaredEve
 import type { RoundEndedEvent } from '@/shared/events/game/RoundEndedEvent'
 import type { GameEndedEvent } from '@/shared/events/game/GameEndedEvent'
 import type { GameAbandonedEvent } from '@/shared/events/game/GameAbandonedEvent'
+import { getCardNameFromConstants } from '../../presentation/utils/cardAssetMapping'
 
 /**
  * Update Game View Use Case (Game UI BC)
@@ -87,10 +88,30 @@ export class UpdateGameViewUseCase {
   }
 
   /**
+   * Convert event card definitions to UI CardDefinition format
+   *
+   * 注意: 使用 presentation layer 的 cardAssetMapping 工具來查找卡片名稱,
+   * 避免重複實作相同邏輯
+   */
+  private convertCardDefinitions(
+    eventCardDefs: readonly { id: string; suit: number; type: 'bright' | 'animal' | 'ribbon' | 'plain'; points: number }[]
+  ): CardDefinition[] {
+    return eventCardDefs.map(eventCard => ({
+      id: eventCard.id,
+      suit: eventCard.suit,
+      type: eventCard.type,
+      points: eventCard.points,
+      month: eventCard.suit, // month is the same as suit
+      name: getCardNameFromConstants(eventCard.suit, eventCard.type, eventCard.id)
+    }))
+  }
+
+  /**
    * Handle GameInitializedEvent - Full state snapshot
    */
   private async handleGameInitialized(event: GameInitializedEvent): Promise<void> {
-    const { gameState, cardDefinitions } = event
+    const { gameState } = event
+    const cardDefinitions = this.convertCardDefinitions(event.cardDefinitions)
 
     // Create player view models
     const players: PlayerViewModel[] = gameState.players.map((p) =>
