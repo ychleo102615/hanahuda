@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import { useLocale } from '@/ui/composables/useLocale'
-import LicenseFooter from '../components/LicenseFooter.vue'
+import LicenseFooter from '@/game-ui/presentation/components/LicenseFooter.vue'
 
 const { t } = useLocale()
 </script>

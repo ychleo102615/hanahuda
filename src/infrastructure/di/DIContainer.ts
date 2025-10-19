@@ -18,10 +18,6 @@ import { GameController as UIGameController } from '@/game-ui/presentation/contr
 import { VueGamePresenter as UIVueGamePresenter } from '@/game-ui/presentation/presenters/VueGamePresenter'
 import { EventBusAdapter as UIEventBusAdapter } from '@/game-ui/infrastructure/adapters/EventBusAdapter'
 
-// Legacy UI (still in use for Phase 3)
-import { GameController } from '@/ui/controllers/GameController'
-import { VueGamePresenter } from '@/ui/presenters/VueGamePresenter'
-
 // Shared - Event Bus
 import { InMemoryEventBus } from '@/shared/events/base/EventBus'
 import type { IEventBus } from '@/shared/events/ports/IEventBus'
@@ -35,7 +31,6 @@ export class DIContainer {
 
   // Service keys
   static readonly GAME_REPOSITORY = Symbol('GameRepository')
-  static readonly GAME_PRESENTER = Symbol('GamePresenter')
   static readonly LOCALE_SERVICE = Symbol('LocaleService')
   static readonly EVENT_BUS = Symbol('EventBus')
 
@@ -48,9 +43,6 @@ export class DIContainer {
   static readonly ABANDON_GAME_USE_CASE = Symbol('AbandonGameUseCase')
   static readonly RESET_GAME_USE_CASE = Symbol('ResetGameUseCase')
   static readonly GET_MATCHING_CARDS_USE_CASE = Symbol('GetMatchingCardsUseCase')
-
-  // Legacy UI (temporary)
-  static readonly GAME_CONTROLLER = Symbol('GameController')
 
   // Game UI BC
   static readonly UI_GAME_CONTROLLER = Symbol('UIGameController')
@@ -101,9 +93,7 @@ export class DIContainer {
   }
 
   // Setup default services
-  setupDefaultServices(
-    gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>,
-  ): void {
+  setupDefaultServices(): void {
     // ====== Shared Infrastructure ======
 
     // Event Bus - must be initialized first
@@ -164,7 +154,7 @@ export class DIContainer {
       () =>
         new ResetGameUseCase(
           this.resolve(DIContainer.GAME_REPOSITORY),
-          gameStore ? this.resolve(DIContainer.GAME_PRESENTER) : undefined,
+          undefined,
         ),
     )
 
@@ -191,29 +181,6 @@ export class DIContainer {
         ),
     )
 
-    // ====== Legacy UI (for backward compatibility) ======
-
-    // UI Presenter - only register if gameStore is provided
-    if (gameStore) {
-      this.registerSingleton(
-        DIContainer.GAME_PRESENTER,
-        () => new VueGamePresenter(gameStore, this.resolve(DIContainer.LOCALE_SERVICE)),
-      )
-
-      // Note: Game UI BC use cases (UpdateGameViewUseCase, HandleUserInputUseCase)
-      // will be registered in future phases when migrating to the new game-ui BC
-    }
-
-    // Game Controller
-    this.registerSingleton(
-      DIContainer.GAME_CONTROLLER,
-      () =>
-        new GameController(
-          this.resolve(DIContainer.GAME_FLOW_COORDINATOR),
-          this.resolve(DIContainer.RESET_GAME_USE_CASE),
-          this.resolve(DIContainer.GET_MATCHING_CARDS_USE_CASE),
-        ),
-    )
   }
 
   // Setup game-ui BC services (new architecture)
@@ -308,11 +275,9 @@ export class DIContainer {
   }
 
   // Factory method to create a configured container
-  static createDefault(
-    gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>,
-  ): DIContainer {
+  static createDefault(): DIContainer {
     const container = new DIContainer()
-    container.setupDefaultServices(gameStore)
+    container.setupDefaultServices()
     return container
   }
 
