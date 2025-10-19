@@ -258,9 +258,50 @@ export class DIContainer {
           this.resolve(DIContainer.UPDATE_GAME_VIEW_USE_CASE),
           async (command: any) => {
             // Send command to game-engine BC via GameFlowCoordinator
-            const coordinator = this.resolve(DIContainer.GAME_FLOW_COORDINATOR)
-            // This is a placeholder - actual implementation depends on command type
-            console.log('Sending command to game-engine:', command)
+            const coordinator = this.resolve<GameFlowCoordinator>(DIContainer.GAME_FLOW_COORDINATOR)
+
+            switch (command.type) {
+              case 'START_GAME':
+                await coordinator.startNewGame({
+                  player1Name: command.player1Name,
+                  player2Name: command.player2Name,
+                })
+                break
+
+              case 'PLAY_CARD':
+                await coordinator.handlePlayCard(command.gameId, {
+                  playerId: command.playerId,
+                  cardId: command.cardId,
+                  selectedFieldCard: command.selectedFieldCard,
+                })
+                break
+
+              case 'SELECT_MATCH':
+                // Match selection is handled within PlayCardUseCase
+                // This command should not reach here in the current architecture
+                console.warn('SELECT_MATCH command received - this should be handled by PlayCardUseCase')
+                break
+
+              case 'DECLARE_KOIKOI':
+                await coordinator.handleKoikoiDecision(
+                  command.gameId,
+                  command.playerId,
+                  command.continueGame,
+                )
+                break
+
+              case 'START_NEXT_ROUND':
+                await coordinator.startNextRound(command.gameId)
+                break
+
+              case 'ABANDON_GAME':
+                await coordinator.handleAbandonGame(command.gameId, command.playerId)
+                break
+
+              default:
+                console.error('Unknown command type:', command.type)
+                throw new Error(`Unknown command type: ${command.type}`)
+            }
           }
         ),
     )

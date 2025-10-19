@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/ui/views/HomeView.vue'
-import GameView from '@/ui/views/GameView.vue'
+import GameView from '@/game-ui/presentation/views/GameView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
