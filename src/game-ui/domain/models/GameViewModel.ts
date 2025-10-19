@@ -12,6 +12,8 @@ export interface CardDefinition {
   readonly suit: number
   readonly type: 'bright' | 'animal' | 'ribbon' | 'plain'
   readonly points: number
+  readonly name: string // 卡片名稱,用於顯示
+  readonly month: number // 月份,等同於 suit
 }
 
 /**

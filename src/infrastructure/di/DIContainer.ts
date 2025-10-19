@@ -46,8 +46,13 @@ export class DIContainer {
   static readonly RESET_GAME_USE_CASE = Symbol('ResetGameUseCase')
   static readonly GET_MATCHING_CARDS_USE_CASE = Symbol('GetMatchingCardsUseCase')
 
-  // Game UI BC
+  // Legacy UI (temporary)
   static readonly GAME_CONTROLLER = Symbol('GameController')
+
+  // Game UI BC
+  static readonly UI_GAME_CONTROLLER = Symbol('UIGameController')
+  static readonly UI_GAME_PRESENTER = Symbol('UIGamePresenter')
+  static readonly UI_EVENT_SUBSCRIBER = Symbol('UIEventSubscriber')
   static readonly UPDATE_GAME_VIEW_USE_CASE = Symbol('UpdateGameViewUseCase')
   static readonly HANDLE_USER_INPUT_USE_CASE = Symbol('HandleUserInputUseCase')
 
@@ -208,6 +213,55 @@ export class DIContainer {
     )
   }
 
+  // Setup game-ui BC services (new architecture)
+  setupGameUIServices(
+    gameUIStore: ReturnType<typeof import('@/game-ui/presentation/stores/gameStore').useGameStore>,
+  ): void {
+    // Game UI BC infrastructure must be set up after Event Bus
+    if (!this.has(DIContainer.EVENT_BUS)) {
+      throw new Error('Event Bus must be initialized before setting up Game UI BC services')
+    }
+
+    // Import game-ui BC components dynamically to avoid circular dependencies
+    const GameController = require('@/game-ui/presentation/controllers/GameController').GameController
+    const VueGamePresenter = require('@/game-ui/presentation/presenters/VueGamePresenter').VueGamePresenter
+    const EventBusAdapter = require('@/game-ui/infrastructure/adapters/EventBusAdapter').EventBusAdapter
+
+    // UI Presenter
+    this.registerSingleton(
+      DIContainer.UI_GAME_PRESENTER,
+      () => new VueGamePresenter(gameUIStore),
+    )
+
+    // Update Game View UseCase
+    this.registerSingleton(
+      DIContainer.UPDATE_GAME_VIEW_USE_CASE,
+      () => new UpdateGameViewUseCase(this.resolve(DIContainer.UI_GAME_PRESENTER)),
+    )
+
+    // Handle User Input UseCase
+    this.registerSingleton(
+      DIContainer.HANDLE_USER_INPUT_USE_CASE,
+      () => new HandleUserInputUseCase(),
+    )
+
+    // Event Subscriber (EventBusAdapter)
+    this.registerSingleton(
+      DIContainer.UI_EVENT_SUBSCRIBER,
+      () => new EventBusAdapter(this.resolve(DIContainer.EVENT_BUS)),
+    )
+
+    // UI Game Controller
+    this.registerSingleton(
+      DIContainer.UI_GAME_CONTROLLER,
+      () =>
+        new GameController(
+          this.resolve(DIContainer.GAME_FLOW_COORDINATOR),
+          this.resolve(DIContainer.HANDLE_USER_INPUT_USE_CASE),
+        ),
+    )
+  }
+
   // Factory method to create a configured container
   static createDefault(
     gameStore?: ReturnType<typeof import('@/ui/stores/gameStore').useGameStore>,
@@ -217,12 +271,15 @@ export class DIContainer {
     return container
   }
 
-  // For accessing game-ui BC store in future phases
-  static createWithNewStore(
-    gameStore?: ReturnType<typeof import('@/game-ui/presentation/stores/gameStore').useGameStore>,
+  // Factory method to create a container with game-ui BC services
+  static createWithGameUI(
+    gameUIStore: ReturnType<typeof import('@/game-ui/presentation/stores/gameStore').useGameStore>,
   ): DIContainer {
     const container = new DIContainer()
-    // Future implementation for game-ui BC
+    // Setup game-engine BC and shared infrastructure first
+    container.setupDefaultServices()
+    // Then setup game-ui BC services
+    container.setupGameUIServices(gameUIStore)
     return container
   }
 
