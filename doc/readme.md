@@ -5,15 +5,17 @@
 **通訊方案**: REST + SSE (Server-Sent Events) + 命令-事件模式
 **修訂說明**:
 - v1.4: **移除特定語言程式碼，改為語言無關的資料格式定義**
-  - 移除所有 TypeScript/Java/JavaScript 程式碼範例
+  - 移除所有 TypeScript/Java/JavaScript/CSS 可執行程式碼
+  - 保留設計要點與架構說明（以文字描述呈現）
   - 移除前端架構設計（Vue、Pinia 等特定技術選型）
   - 將 FlowStage enum 改為表格形式定義
   - 將所有 DTO 定義改為 JSON 格式範例
+  - 第 2.1.2 節：CSS 代碼改為響應式設計要點說明
   - 第 2.1.3 節：從具體實作改為功能需求描述
   - 第 4.3.2 節：GameSnapshotRestore 改為 JSON 範例
   - 第 4.3.3 節：移除 TypeScript 程式碼，改為實作要點說明
   - 第 5.3 節：所有 Java DTO 改為 JSON 格式，移除 Domain Model 和 Mapper 範例
-  - **符合 PRD 文件原則**：不包含架構設計細節，僅定義資料格式與功能需求
+  - **符合 PRD 文件原則**：不包含可執行代碼，僅定義資料格式與功能需求
 - v1.3: **統一前後端交互規格**
   - 完全對齊 game-flow.md 的命令-事件模式
   - 重新定義所有 REST API 端點（映射至 game-flow.md 命令）
@@ -177,63 +179,17 @@
    - Hover 效果:可選牌會輕微放大
    - 選中效果:選中的牌有明顯 highlight
 
-**響應式設計**
+**響應式設計要點**
 
-```css
-/* 示意性 CSS 架構 */
-.game-container {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.header-info {
-  flex: 0 0 10%;
-  min-height: 80px;
-}
-
-.opponent-captured-area {
-  flex: 0 0 15%;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.field-cards-area {
-  flex: 0 0 30%;
-  display: grid;
-  grid-template-rows: repeat(2, 1fr);
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.player-captured-area {
-  flex: 0 0 15%;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.player-hand-area {
-  flex: 0 0 25%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* 手機直向模式調整 */
-@media (max-width: 768px) and (orientation: portrait) {
-  .field-cards-area {
-    flex: 0 0 25%;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-  }
-  
-  .player-hand-area {
-    flex: 0 0 30%;
-    overflow-x: auto;
-  }
-}
-```
+- **遊戲容器**：固定 100vh × 100vw，使用 Flexbox 垂直排列，禁止溢出滾動
+- **頂部資訊列**：佔 10% 高度，最小高度 80px
+- **對手已獲得牌區**：佔 15% 高度，允許橫向滾動
+- **場中央牌區**：佔 30% 高度，使用 Grid 布局（2 行 × 4 列）
+- **玩家已獲得牌區**：佔 15% 高度，允許橫向滾動
+- **玩家手牌區**：佔 25% 高度，使用 Flexbox 置中對齊
+- **手機直向模式調整**：
+  - 場牌區改為 2 列 × 4 行
+  - 手牌區增加至 30% 高度並允許橫向滾動
 
 ---
 
@@ -303,7 +259,7 @@
 #### 核心業務邏輯
 
 **遊戲規則服務 (GameRuleService)**
-- 驗證行動合法性
+- 驗證操作合法性
   - 檢查牌是否在玩家手中
   - 檢查配對是否有效(同月份)
 - 處理配對邏輯
@@ -464,7 +420,7 @@ data: {"player_id":"player-uuid","source_card_id":"xxx","possible_targets":["yyy
 - **遊戲狀態查詢**: < 200ms
 - **SSE 事件推送延遲**: < 100ms
 - **支援並發遊戲數**: 100+ (MVP 階段)
-- **對手行動計算時間**: < 1 秒
+- **對手操作計算時間**: < 1 秒
 
 ### 3.2 可擴展性設計
 
@@ -544,7 +500,7 @@ Phase 3 (分散式):
 
 **設計原則**
 - **RESTful API**: 處理一次性操作與狀態查詢
-- **SSE**: 處理 Server 主動推送事件(對手行動、遊戲狀態更新)
+- **SSE**: 處理 Server 主動推送事件(對手操作、遊戲狀態更新)
 
 **為什麼選擇 SSE?**
 
@@ -558,7 +514,7 @@ Phase 3 (分散式):
 | **WebSocket** | 雙向通訊、低延遲 | 複雜度高、需要額外管理 | 即時多人互動 |
 
 **MVP 採用 SSE 的理由**:
-1. ✅ 滿足 Server 主動推送需求(對手行動、遊戲事件)
+1. ✅ 滿足 Server 主動推送需求(對手操作、遊戲事件)
 2. ✅ 實作簡單,Spring 原生支援
 3. ✅ 自動重連機制
 4. ✅ 適合單向事件流(Server → Client)
@@ -1334,7 +1290,7 @@ adapter/
 1. 玩家選牌 → 高亮可配對牌 → 確認選擇
 2. 動畫流暢,反饋即時
 3. 役種達成時,特效明顯,文字清晰
-4. 對手行動時,顯示「對手思考中」,避免使用者困惑
+4. 對手操作時,顯示「對手思考中」,避免使用者困惑
 
 ---
 
@@ -1387,10 +1343,54 @@ adapter/
 ### Phase 3: Use Case 與 API 實作 (Week 3-4)
 
 **Application Layer**
-待定
+
+核心 Use Cases（對應 game-flow.md 命令）：
+
+- [ ] **JoinGameUseCase** - 處理玩家加入遊戲或重連
+  - 檢查 session_token 是否存在（重連邏輯）
+  - 建立新遊戲或恢復現有遊戲狀態
+  - 配對對手（MVP 為電腦對手）
+  - 初始化遊戲狀態並發牌
+
+- [ ] **PlayHandCardUseCase** - 處理玩家打出手牌
+  - 驗證牌是否在玩家手中
+  - 驗證當前 FlowStage 是否為 AWAITING_HAND_PLAY
+  - 檢查配對邏輯（單一配對 vs. 多重配對）
+  - 觸發相應的 SSE 事件
+
+- [ ] **SelectMatchedCardUseCase** - 處理玩家選擇配對目標
+  - 驗證當前 FlowStage 是否為 AWAITING_SELECTION
+  - 驗證選擇的目標是否合法
+  - 完成配對並更新遊戲狀態
+  - 觸發後續流程（翻牌、役種檢測）
+
+- [ ] **MakeKoiKoiDecisionUseCase** - 處理 Koi-Koi 決策
+  - 驗證當前 FlowStage 是否為 AWAITING_DECISION
+  - 處理「繼續」或「勝負」決策
+  - 更新 Koi-Koi 倍率或結算分數
+  - 判斷局是否結束
+
+- [ ] **ExecuteOpponentTurnUseCase** - 執行對手回合
+  - 呼叫 OpponentStrategy 選擇手牌
+  - 自動處理配對邏輯
+  - 處理對手的 Koi-Koi 決策
+  - 推送對手操作的 SSE 事件
+
+- [ ] **DetectYakuUseCase** - 檢測役種
+  - 分析玩家已獲得牌
+  - 判斷成立的役種列表
+  - 計算基礎分數
 
 **Adapter Layer - REST API**
-待定
+
+REST API 端點實作（詳見第 2.2 節完整定義）：
+
+- [ ] **POST /api/v1/games/join** - 對應 JoinGameUseCase
+- [ ] **POST /api/v1/games/{gameId}/turns/play-card** - 對應 PlayHandCardUseCase
+- [ ] **POST /api/v1/games/{gameId}/turns/select-match** - 對應 SelectMatchedCardUseCase
+- [ ] **POST /api/v1/games/{gameId}/rounds/decision** - 對應 MakeKoiKoiDecisionUseCase
+- [ ] **GET /api/v1/games/{gameId}/events** - SSE 事件推送端點
+- [ ] **GET /api/v1/games/{gameId}/snapshot** - 獲取遊戲狀態快照（用於 Fallback）
 
 **Repository 實作**
 - [ ] JPA Entities
@@ -1520,7 +1520,7 @@ adapter/
 | 風險 | 影響程度 | 可能性 | 緩解策略 |
 |------|---------|--------|---------|
 | 新手學習曲線過高 | 高 | 中 | 互動式教學;清晰的規則說明;tooltips |
-| 遊戲節奏過慢 | 中 | 中 | 對手行動動畫可加速;提供「快速模式」 |
+| 遊戲節奏過慢 | 中 | 中 | 對手操作動畫可加速;提供「快速模式」 |
 | 缺乏長期吸引力 | 中 | 高 | 規劃成就系統、排行榜(Post-MVP) |
 | 國際玩家對花牌不熟悉 | 高 | 高 | 強化文化背景介紹;提供詳細規則 |
 
