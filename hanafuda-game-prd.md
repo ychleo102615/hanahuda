@@ -1,9 +1,19 @@
 # 日本花牌(Hanafuda Koi-Koi)遊戲企劃書 (PRD)
 
-**版本**: 1.3
+**版本**: 1.4
 **最後更新**: 2025-10-20
 **通訊方案**: REST + SSE (Server-Sent Events) + 命令-事件模式
 **修訂說明**:
+- v1.4: **移除特定語言程式碼，改為語言無關的資料格式定義**
+  - 移除所有 TypeScript/Java/JavaScript 程式碼範例
+  - 移除前端架構設計（Vue、Pinia 等特定技術選型）
+  - 將 FlowStage enum 改為表格形式定義
+  - 將所有 DTO 定義改為 JSON 格式範例
+  - 第 2.1.3 節：從具體實作改為功能需求描述
+  - 第 4.3.2 節：GameSnapshotRestore 改為 JSON 範例
+  - 第 4.3.3 節：移除 TypeScript 程式碼，改為實作要點說明
+  - 第 5.3 節：所有 Java DTO 改為 JSON 格式，移除 Domain Model 和 Mapper 範例
+  - **符合 PRD 文件原則**：不包含架構設計細節，僅定義資料格式與功能需求
 - v1.3: **統一前後端交互規格**
   - 完全對齊 game-flow.md 的命令-事件模式
   - 重新定義所有 REST API 端點（映射至 game-flow.md 命令）
@@ -11,9 +21,7 @@
   - 引入 `FlowStage` 狀態機機制（`AWAITING_HAND_PLAY`, `AWAITING_SELECTION`, `AWAITING_DECISION`）
   - 採用核心資料結構（`Card`, `YakuScore`, `CardCapture`）
   - 修改斷線重連為快照模式（`GameSnapshotRestore`）
-  - 擴展第 2.1.3 節：詳細描述前端實作（SSE 事件處理、狀態管理、玩家操作）
   - 更新第 4.2 節：完整通訊流程圖（涵蓋 6 個階段）
-  - 更新第 5.3 節：詳細 DTO 定義（包含所有 SSE 事件與 API 請求 DTO）
 - v1.2: 術語調整(opponent/YAKU/行動)、API 配對邏輯修正、簡化 SSE 事件說明、移除資料庫設計與範例程式碼
 - v1.1: 修正重大問題(架構矛盾、牌數錯誤、SSE 機制、事件順序、架構實踐)
 
@@ -231,434 +239,39 @@
 
 #### 2.1.3 核心遊戲功能
 
-本節描述前端如何實作核心遊戲邏輯，遵循 [game-flow.md](./game-flow.md) 定義的命令-事件模式。
-
----
-
-**前端架構概覽**
-
-```
-┌────────────────────────────────────────────────────────┐
-│                    Vue Components                       │
-│  ┌────────────┐  ┌────────────┐  ┌──────────────┐    │
-│  │ GameBoard  │  │ PlayerHand │  │ DecisionModal│    │
-│  └────────────┘  └────────────┘  └──────────────┘    │
-│         ↓                ↓                ↓            │
-│  ┌──────────────────────────────────────────────┐    │
-│  │          Game State (Pinia Store)            │    │
-│  │  - flowStage, cards, scores, activePlayer    │    │
-│  └──────────────────────────────────────────────┘    │
-│         ↑                                       ↓      │
-│  ┌──────────────┐                      ┌────────────┐ │
-│  │ SSE Handler  │                      │ API Client │ │
-│  │ (EventSource)│                      │ (Axios)    │ │
-│  └──────────────┘                      └────────────┘ │
-│         ↑                                       ↓      │
-└─────────┼───────────────────────────────────────┼─────┘
-          │                                       │
-          └───────────────┬───────────────────────┘
-                          │
-                    Backend (REST + SSE)
-```
-
----
-
-**1. 遊戲初始化流程**
-
-```typescript
-// GameService.ts
-export class GameService {
-  private eventSource: EventSource | null = null;
-  private gameStore = useGameStore();
-
-  async joinGame(playerId: string, sessionToken?: string) {
-    // 1. 發送加入命令
-    const response = await api.post('/api/v1/games/join', {
-      player_id: playerId,
-      session_token: sessionToken
-    });
-
-    const { game_id, session_token: newToken } = response.data;
-
-    // 2. 保存 session token
-    localStorage.setItem('session_token', newToken);
-    this.gameStore.setGameId(game_id);
-
-    // 3. 建立 SSE 連接
-    this.connectSSE(game_id, newToken);
-  }
-
-  connectSSE(gameId: string, sessionToken: string) {
-    this.eventSource = new EventSource(
-      `/api/v1/games/${gameId}/events?sessionToken=${sessionToken}`
-    );
-
-    // 監聽所有事件
-    this.eventSource.addEventListener('GameStarted', this.handleGameStarted);
-    this.eventSource.addEventListener('RoundDealt', this.handleRoundDealt);
-    this.eventSource.addEventListener('TurnStarted', this.handleTurnStarted);
-    this.eventSource.addEventListener('CardPlayedFromHand', this.handleCardPlayedFromHand);
-    this.eventSource.addEventListener('CardFlippedFromDeck', this.handleCardFlippedFromDeck);
-    this.eventSource.addEventListener('TurnSelectionRequired', this.handleTurnSelectionRequired);
-    this.eventSource.addEventListener('TurnYakuFormed', this.handleTurnYakuFormed);
-    this.eventSource.addEventListener('TurnEnded', this.handleTurnEnded);
-    this.eventSource.addEventListener('RoundDecisionMade', this.handleRoundDecisionMade);
-    this.eventSource.addEventListener('RoundScored', this.handleRoundScored);
-    this.eventSource.addEventListener('GameFinished', this.handleGameFinished);
-    this.eventSource.addEventListener('GameSnapshotRestore', this.handleSnapshot);
-    this.eventSource.addEventListener('TurnError', this.handleTurnError);
-
-    // 錯誤處理
-    this.eventSource.onerror = () => this.handleSSEError();
-  }
-}
-```
-
----
-
-**2. FlowStage 狀態管理**
-
-前端根據 `FlowStage` 決定啟用哪些 UI 操作：
-
-```typescript
-// stores/gameStore.ts
-export const useGameStore = defineStore('game', {
-  state: () => ({
-    flowStage: 'AWAITING_HAND_PLAY' as FlowStage,
-    activePlayerId: '',
-    selectionContext: null as SelectionContext | null,
-    currentYaku: [] as YakuScore[],
-    // ... 其他狀態
-  }),
-
-  getters: {
-    canPlayHandCard: (state) =>
-      state.flowStage === 'AWAITING_HAND_PLAY' &&
-      state.activePlayerId === state.playerId,
-
-    canSelectMatch: (state) =>
-      state.flowStage === 'AWAITING_SELECTION' &&
-      state.activePlayerId === state.playerId,
-
-    canMakeDecision: (state) =>
-      state.flowStage === 'AWAITING_DECISION' &&
-      state.activePlayerId === state.playerId,
-  },
-
-  actions: {
-    setFlowStage(stage: FlowStage, context?: any) {
-      this.flowStage = stage;
-
-      // 根據狀態更新 UI
-      switch (stage) {
-        case 'AWAITING_HAND_PLAY':
-          this.enableHandCardSelection();
-          break;
-        case 'AWAITING_SELECTION':
-          this.showMatchSelectionUI(context);
-          break;
-        case 'AWAITING_DECISION':
-          this.showDecisionModal();
-          break;
-      }
-    }
-  }
-});
-```
-
----
-
-**3. SSE 事件處理**
-
-**TurnStarted - 回合開始**
-
-```typescript
-handleTurnStarted(event: MessageEvent) {
-  const data: TurnStartedEvent = JSON.parse(event.data);
-
-  this.gameStore.setActivePlayer(data.active_player_id);
-  this.gameStore.setFlowStage(data.required_stage);
-
-  // UI 提示
-  if (data.active_player_id === this.gameStore.playerId) {
-    showNotification('你的回合', 'info');
-  } else {
-    showNotification('對手回合', 'info');
-  }
-}
-```
-
-**CardPlayedFromHand - 打出手牌**
-
-```typescript
-handleCardPlayedFromHand(event: MessageEvent) {
-  const data: CardPlayedFromHandEvent = JSON.parse(event.data);
-  const { player_id, capture } = data;
-
-  // 1. 移除手牌
-  this.gameStore.removeCardFromHand(capture.source_card.card_id);
-
-  // 2. 根據 target_zone 更新牌面
-  if (capture.target_zone === 'FIELD') {
-    // 無配對，牌留在場上
-    this.gameStore.addCardsToField([capture.source_card]);
-  } else {
-    // 有配對，移到得分區
-    const allCaptured = [capture.source_card, ...capture.captured_cards];
-    this.gameStore.addCardsToDepository(player_id, allCaptured);
-    this.gameStore.removeCardsFromField(capture.captured_cards.map(c => c.card_id));
-  }
-
-  // 3. 播放動畫
-  if (capture.target_zone === 'DEPOSITORY') {
-    playCardCaptureAnimation(capture.source_card, capture.captured_cards);
-  }
-}
-```
-
-**TurnSelectionRequired - 需要選擇配對**
-
-```typescript
-handleTurnSelectionRequired(event: MessageEvent) {
-  const data: TurnSelectionRequiredEvent = JSON.parse(event.data);
-
-  this.gameStore.setFlowStage('AWAITING_SELECTION', {
-    sourceCardId: data.source_card_id,
-    possibleTargets: data.possible_targets
-  });
-
-  // 高亮可選擇的場牌
-  this.highlightCards(data.possible_targets);
-}
-
-// 玩家選擇後發送命令
-async selectMatchedCard(sourceCardId: string, selectedTargetId: string) {
-  await api.post(`/api/v1/games/${this.gameId}/turns/select-match`, {
-    source_card_id: sourceCardId,
-    selected_target_id: selectedTargetId
-  });
-
-  // 後續會收到 CardPlayedFromHand 或 CardFlippedFromDeck 事件
-}
-```
-
-**TurnYakuFormed - 形成役種**
-
-```typescript
-handleTurnYakuFormed(event: MessageEvent) {
-  const data: TurnYakuFormedEvent = JSON.parse(event.data);
-
-  // 1. 更新役種列表
-  this.gameStore.setCurrentYaku(data.newly_formed_yaku);
-
-  // 2. 播放役種特效
-  playYakuFormationAnimation(data.newly_formed_yaku);
-
-  // 3. 切換到決策階段
-  this.gameStore.setFlowStage('AWAITING_DECISION');
-
-  // 4. 顯示 Koi-Koi 決策 Modal（僅對當前玩家）
-  if (data.player_id === this.gameStore.playerId) {
-    this.showDecisionModal(data.newly_formed_yaku, data.current_base_score);
-  }
-}
-
-// 玩家做決策
-async makeDecision(decisionType: 'KOI_KOI' | 'END_ROUND') {
-  await api.post(`/api/v1/games/${this.gameId}/rounds/decision`, {
-    decision_type: decisionType
-  });
-
-  // 後續會收到 RoundDecisionMade 事件
-}
-```
-
-**RoundScored - 局結束結算**
-
-```typescript
-handleRoundScored(event: MessageEvent) {
-  const data: RoundScoredEvent = JSON.parse(event.data);
-
-  // 1. 更新分數
-  Object.entries(data.final_score_change).forEach(([playerId, change]) => {
-    this.gameStore.addScore(playerId, change);
-  });
-
-  // 2. 顯示結算畫面
-  showRoundResultModal({
-    winner: data.winning_player_id,
-    yaku: data.yaku_list,
-    multipliers: data.total_multipliers,
-    scoreChanges: data.final_score_change
-  });
-
-  // 3. 等待下一局（會收到 RoundDealt 事件）
-}
-```
-
-**GameSnapshotRestore - 斷線重連**
-
-```typescript
-handleSnapshot(event: MessageEvent) {
-  const snapshot: GameSnapshotRestore = JSON.parse(event.data);
-
-  // 完整恢復遊戲狀態（詳見 4.3.2 節）
-  this.gameStore.restoreFromSnapshot(snapshot);
-
-  showNotification('連線已恢復', 'success');
-}
-```
-
----
-
-**4. 玩家操作**
-
-**打出手牌**
-
-```typescript
-// PlayerHand.vue
-async playCard(cardId: string) {
-  if (!this.gameStore.canPlayHandCard) {
-    showNotification('現在無法出牌', 'warning');
-    return;
-  }
-
-  try {
-    await api.post(`/api/v1/games/${this.gameId}/turns/play-card`, {
-      card_id_to_play: cardId
-    });
-
-    // 後續會收到 SSE 事件更新狀態
-  } catch (error) {
-    showNotification('出牌失敗', 'error');
-  }
-}
-```
-
-**選擇配對目標**
-
-```vue
-<!-- FieldCards.vue -->
-<template>
-  <div class="field-cards">
-    <Card
-      v-for="card in fieldCards"
-      :key="card.card_id"
-      :card="card"
-      :highlighted="isSelectable(card.card_id)"
-      @click="selectCard(card.card_id)"
-    />
-  </div>
-</template>
-
-<script setup lang="ts">
-const gameStore = useGameStore();
-
-const isSelectable = (cardId: string) => {
-  return gameStore.selectionContext?.possibleTargets.includes(cardId) ?? false;
-};
-
-const selectCard = async (cardId: string) => {
-  if (!gameStore.canSelectMatch) return;
-
-  const { sourceCardId } = gameStore.selectionContext!;
-  await gameService.selectMatchedCard(sourceCardId, cardId);
-};
-</script>
-```
-
-**Koi-Koi 決策**
-
-```vue
-<!-- DecisionModal.vue -->
-<template>
-  <Modal v-if="gameStore.canMakeDecision">
-    <h2>恭喜！你形成了役種</h2>
-    <YakuList :yaku="gameStore.currentYaku" />
-    <p>當前得分: {{ totalScore }} 點</p>
-
-    <div class="buttons">
-      <button @click="decide('KOI_KOI')">Koi-Koi（繼續）</button>
-      <button @click="decide('END_ROUND')">勝負（結束）</button>
-    </div>
-  </Modal>
-</template>
-
-<script setup lang="ts">
-const gameStore = useGameStore();
-
-const totalScore = computed(() => {
-  return gameStore.currentYaku.reduce((sum, yaku) => sum + yaku.base_points, 0);
-});
-
-const decide = async (type: 'KOI_KOI' | 'END_ROUND') => {
-  await gameService.makeDecision(type);
-};
-</script>
-```
-
----
-
-**5. 錯誤處理**
-
-**TurnError 事件**
-
-```typescript
-handleTurnError(event: MessageEvent) {
-  const data: TurnErrorEvent = JSON.parse(event.data);
-
-  showNotification(data.message, 'error');
-
-  // 根據錯誤碼進行特定處理
-  switch (data.error_code) {
-    case 'INVALID_CARD':
-      // 卡牌無效，可能是並發問題，重新載入狀態
-      this.refreshGameState();
-      break;
-    case 'WRONG_FLOW_STAGE':
-      // 流程狀態錯誤，同步狀態
-      this.refreshGameState();
-      break;
-    default:
-      console.error('Unknown error:', data);
-  }
-}
-```
-
-**網路錯誤處理**
-
-```typescript
-handleSSEError() {
-  console.warn('SSE 連線斷開，嘗試重連...');
-
-  this.reconnectAttempts++;
-
-  if (this.reconnectAttempts > 5) {
-    showNotification('連線失敗，請重新整理頁面', 'error');
-    return;
-  }
-
-  // 指數退避重連
-  const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
-  setTimeout(() => {
-    const gameId = this.gameStore.gameId;
-    const sessionToken = localStorage.getItem('session_token');
-
-    if (gameId && sessionToken) {
-      this.joinGame(this.gameStore.playerId, sessionToken);
-    }
-  }, delay);
-}
-```
-
----
-
-**完整流程請參考**：
-- API 端點與命令定義：[2.2 節](#rest-api-設計)
+前端應實作以下核心功能，遵循 [game-flow.md](./game-flow.md) 定義的命令-事件模式：
+
+**遊戲初始化**
+- 透過 REST API 發送加入遊戲命令
+- 建立 SSE 連接以接收伺服器事件
+- 保存 session token 用於斷線重連
+
+**遊戲狀態管理**
+- 維護遊戲狀態（FlowStage、卡牌位置、分數、當前玩家等）
+- 根據 FlowStage 控制 UI 可操作性
+- 同步處理 SSE 事件以更新狀態
+
+**玩家操作**
+- 打出手牌：發送命令到後端，等待 SSE 事件確認
+- 選擇配對目標：當多張牌可配對時，選擇特定目標
+- Koi-Koi 決策：形成役種後選擇繼續或結束
+
+**SSE 事件處理**
+- 監聽所有遊戲事件（TurnStarted、CardPlayedFromHand、TurnYakuFormed 等）
+- 更新 UI 狀態並播放對應動畫
+- 處理斷線重連的 GameSnapshotRestore 事件
+
+**錯誤處理**
+- 處理 TurnError 事件（無效操作、流程錯誤等）
+- 網路斷線時自動重連（指數退避策略）
+- 顯示友善的錯誤提示訊息
+
+**詳細規格請參考**：
+- API 端點與命令定義：[2.2 節](#22-後端功能)
 - SSE 事件定義：[2.2 節](#server-sent-events-sse-設計)
 - 通訊流程圖：[4.2 節](#42-通訊流程圖)
 - 斷線重連機制：[4.3 節](#43-sse-容錯與重連設計)
-- 詳細命令與事件規格：[game-flow.md](./game-flow.md)
+- 完整命令與事件規格：[game-flow.md](./game-flow.md)
 
 ---
 
@@ -777,13 +390,11 @@ MVP 實作簡易策略:
 
 遊戲流程由以下狀態驅動，每個 SSE 事件會包含 `required_stage` 欄位，指示客戶端下一步應等待的命令：
 
-```typescript
-enum FlowStage {
-  AWAITING_HAND_PLAY = "AWAITING_HAND_PLAY",     // 等待玩家打出手牌
-  AWAITING_SELECTION = "AWAITING_SELECTION",     // 等待玩家選擇配對目標
-  AWAITING_DECISION = "AWAITING_DECISION"        // 等待玩家做 Koi-Koi 決策
-}
-```
+| 狀態值 | 說明 |
+|--------|------|
+| `AWAITING_HAND_PLAY` | 等待玩家打出手牌 |
+| `AWAITING_SELECTION` | 等待玩家選擇配對目標 |
+| `AWAITING_DECISION` | 等待玩家做 Koi-Koi 決策 |
 
 ---
 
@@ -1180,84 +791,59 @@ data: {"player_id":"player-uuid","capture":{...}}
 
 **GameSnapshotRestore 事件結構**（遵循 game-flow.md）
 
-```typescript
-interface GameSnapshotRestore {
-  // Game Context
-  game_id: string;
-  ruleset: GameRuleset;
-  player_scores: { [playerId: string]: number };  // 總分
+```json
+{
+  "game_id": "uuid-string",
+  "ruleset": {
+    "variant": "KANTO",
+    "total_rounds": 12
+  },
+  "player_scores": {
+    "player-uuid": 50,
+    "opponent-uuid": 30
+  },
 
-  // Round Context
-  current_round: number;
-  dealer_id: string;
-  koi_koi_status: {
-    player_koi_koi_count: number;
-    opponent_koi_koi_count: number;
-  };
+  "current_round": 3,
+  "dealer_id": "player-uuid",
+  "koi_koi_status": {
+    "player_koi_koi_count": 1,
+    "opponent_koi_koi_count": 0
+  },
 
-  // Card State (當前局面)
-  field_cards: Card[];                             // 場上的牌
-  player_hand_cards: Card[];                       // 玩家手牌
-  opponent_hand_card_count: number;                // 對手手牌數量
-  player_depositories: {                           // 雙方得分牌堆
-    player: Card[];
-    opponent: Card[];
-  };
-  deck_remaining: number;                          // 剩餘牌堆數量
+  "field_cards": [
+    {"card_id": "card-1", "month": 1, "type": "BRIGHT", "display_name": "松鶴"},
+    {"card_id": "card-2", "month": 3, "type": "RIBBON", "display_name": "櫻短冊"}
+  ],
+  "player_hand_cards": [
+    {"card_id": "card-10", "month": 6, "type": "ANIMAL", "display_name": "牡丹蝶"}
+  ],
+  "opponent_hand_card_count": 5,
+  "player_depositories": {
+    "player-uuid": [
+      {"card_id": "card-20", "month": 2, "type": "ANIMAL", "display_name": "梅鶯"}
+    ],
+    "opponent-uuid": []
+  },
+  "deck_remaining": 15,
 
-  // Flow Control (流程狀態)
-  current_flow_stage: FlowStage;                   // AWAITING_HAND_PLAY / AWAITING_SELECTION / AWAITING_DECISION
-  active_player_id: string;                        // 當前行動玩家
-  required_selection_context?: {                   // 如果處於 AWAITING_SELECTION
-    source_card_id: string;
-    possible_targets: string[];
-  };
-  current_yaku?: YakuScore[];                      // 如果處於 AWAITING_DECISION，顯示已形成役種
+  "current_flow_stage": "AWAITING_HAND_PLAY",
+  "active_player_id": "player-uuid",
+  "required_selection_context": null,
+  "current_yaku": null
 }
 ```
 
-**前端恢復邏輯**:
+**前端恢復處理要點**:
 
-```typescript
-// 監聽 SSE 事件
-eventSource.addEventListener('GameSnapshotRestore', (event) => {
-  const snapshot: GameSnapshotRestore = JSON.parse(event.data);
-
-  // 1. 恢復遊戲上下文
-  gameState.gameId = snapshot.game_id;
-  gameState.playerScores = snapshot.player_scores;
-
-  // 2. 恢復牌面狀態
-  gameState.fieldCards = snapshot.field_cards;
-  gameState.playerHand = snapshot.player_hand_cards;
-  gameState.opponentHandCount = snapshot.opponent_hand_card_count;
-  gameState.playerDepository = snapshot.player_depositories.player;
-  gameState.opponentDepository = snapshot.player_depositories.opponent;
-
-  // 3. 恢復流程控制
-  gameState.currentFlowStage = snapshot.current_flow_stage;
-  gameState.activePlayerId = snapshot.active_player_id;
-
-  // 4. 根據 FlowStage 渲染對應 UI
-  switch (snapshot.current_flow_stage) {
-    case 'AWAITING_HAND_PLAY':
-      enableHandCardSelection();
-      break;
-    case 'AWAITING_SELECTION':
-      showMatchSelectionUI(
-        snapshot.required_selection_context.source_card_id,
-        snapshot.required_selection_context.possible_targets
-      );
-      break;
-    case 'AWAITING_DECISION':
-      showKoiKoiDecisionModal(snapshot.current_yaku);
-      break;
-  }
-
-  // 5. 顯示「已恢復連線」提示
-  showNotification('連線已恢復', 'success');
-});
-```
+客戶端接收到 `GameSnapshotRestore` 事件後，應執行以下步驟：
+1. 恢復遊戲上下文（game_id、player_scores、ruleset）
+2. 恢復牌面狀態（field_cards、hand_cards、depositories）
+3. 恢復流程控制（current_flow_stage、active_player_id）
+4. 根據 `current_flow_stage` 渲染對應 UI：
+   - `AWAITING_HAND_PLAY`: 啟用手牌選擇
+   - `AWAITING_SELECTION`: 顯示配對選擇 UI（使用 required_selection_context）
+   - `AWAITING_DECISION`: 顯示 Koi-Koi 決策 Modal（使用 current_yaku）
+5. 顯示「連線已恢復」提示訊息
 
 **後端處理要點**:
 - 維護 `session_token` → `game_id` 映射（使用 Redis 或記憶體 Map）
@@ -1273,34 +859,10 @@ eventSource.addEventListener('GameSnapshotRestore', (event) => {
 - 偵測到客戶端環境不支援 SSE（如某些企業防火牆）
 
 **實作方式**:
-```typescript
-// Fallback 到輪詢模式
-if (reconnectAttempts > 5) {
-  console.warn('SSE 連線失敗，切換到輪詢模式');
-
-  const pollingInterval = setInterval(async () => {
-    try {
-      // 請求狀態快照
-      const response = await fetch(`/api/v1/games/${gameId}/snapshot`, {
-        headers: { 'Authorization': `Bearer ${sessionToken}` }
-      });
-      const snapshot: GameSnapshotRestore = await response.json();
-
-      // 比較狀態變化
-      if (hasStateChanged(snapshot)) {
-        updateGameState(snapshot);
-      }
-
-      // 遊戲結束時停止輪詢
-      if (snapshot.current_flow_stage === 'GAME_FINISHED') {
-        clearInterval(pollingInterval);
-      }
-    } catch (error) {
-      console.error('輪詢失敗', error);
-    }
-  }, 2000);  // 每 2 秒輪詢一次
-}
-```
+1. 提示使用者「SSE 連線失敗，切換到輪詢模式」
+2. 使用定時器定期請求狀態快照（建議間隔 2 秒）
+3. 比較快照與當前狀態，僅在有變化時更新 UI
+4. 遊戲結束時停止輪詢
 
 **新增 API 端點** (用於 Fallback):
 ```
@@ -1308,6 +870,11 @@ GET /api/v1/games/{gameId}/snapshot
 Headers: Authorization: Bearer {session_token}
 Response: GameSnapshotRestore (JSON)
 ```
+
+**注意事項**:
+- 輪詢間隔不宜過短（建議 2-5 秒），避免伺服器負載過高
+- 應提示使用者當前處於降級模式（如顯示「連線品質較差」）
+- 若輪詢也持續失敗，建議提示使用者重新整理頁面
 
 #### 4.3.4 重連策略總結
 
@@ -1477,326 +1044,217 @@ adapter/
 
 ---
 
-### 5.3 DTO 與 Domain Model 轉換
+### 5.3 資料格式定義（Data Transfer Objects）
 
-**轉換原則**:
-- API 層永遠使用 DTO，不暴露 Domain Model
-- DTO 是扁平化的資料結構，便於序列化
-- Domain Model 包含業務邏輯與不變性約束
-- 轉換發生在 Adapter Layer（使用 Mapper/Presenter）
-- **遵循 game-flow.md 定義的核心結構**
-
----
-
-#### 核心 DTO 定義（遵循 game-flow.md）
-
-**Card (核心可重用結構)**
-
-```java
-public class CardDTO {
-    private String cardId;     // UUID
-    private int month;         // 1-12
-    private String type;       // "BRIGHT" / "ANIMAL" / "RIBBON" / "DREG"
-    private String displayName; // 可選，用於 UI 顯示（如「松鶴」、「櫻幕」）
-
-    // Getters & Setters
-}
-```
-
-**YakuScore (役種得分)**
-
-```java
-public class YakuScoreDTO {
-    private String yakuType;    // 役種類型（如 "GOKO", "AKATAN", "INOSHIKACHO"）
-    private int basePoints;     // 基礎得分
-
-    // Getters & Setters
-}
-```
-
-**CardCapture (卡牌捕獲操作)**
-
-```java
-public class CardCaptureDTO {
-    private CardDTO sourceCard;              // 來源牌（打出的手牌或翻出的牌堆牌）
-    private List<CardDTO> capturedCards;     // 捕獲的場牌列表（可能為空）
-    private String targetZone;               // "FIELD" 或 "DEPOSITORY"
-
-    // Getters & Setters
-}
-```
+**設計原則**:
+- 所有 API 與 SSE 通訊使用 JSON 格式
+- 遵循 game-flow.md 定義的核心結構
+- 使用基礎型別（string, number, boolean, array, object）便於跨語言實作
+- 資料結構扁平化，便於序列化與傳輸
 
 ---
 
-#### SSE 事件 Payload DTO
+#### 核心資料結構（遵循 game-flow.md）
 
-**GameStartedEventDTO**
+**Card（核心可重用結構）**
 
-```java
-public class GameStartedEventDTO {
-    private Map<String, String> playerDetails;  // {playerId: playerName}
-    private GameRulesetDTO gameRuleset;
-    private int totalRounds;
-
-    // Getters & Setters
+```json
+{
+  "card_id": "uuid-string",
+  "month": 1,
+  "type": "BRIGHT",
+  "display_name": "松鶴"
 }
 ```
 
-**RoundDealtEventDTO**
-
-```java
-public class RoundDealtEventDTO {
-    private String currentDealerId;
-    private List<CardDTO> initialFieldCards;  // 8 張場牌
-    private int handSize;                      // 雙方各 8 張
-
-    // Getters & Setters
-}
-```
-
-**TurnStartedEventDTO**
-
-```java
-public class TurnStartedEventDTO {
-    private String activePlayerId;
-    private String requiredStage;  // FlowStage: "AWAITING_HAND_PLAY" / "AWAITING_SELECTION" / "AWAITING_DECISION"
-    private String timestamp;       // ISO 8601 format
-
-    // Getters & Setters
-}
-```
-
-**CardPlayedFromHandEventDTO**
-
-```java
-public class CardPlayedFromHandEventDTO {
-    private String playerId;
-    private CardCaptureDTO capture;  // 使用核心結構
-
-    // Getters & Setters
-}
-```
-
-**CardFlippedFromDeckEventDTO**
-
-```java
-public class CardFlippedFromDeckEventDTO {
-    private String playerId;
-    private CardCaptureDTO capture;
-    private boolean isDeckEmpty;
-
-    // Getters & Setters
-}
-```
-
-**TurnSelectionRequiredEventDTO**
-
-```java
-public class TurnSelectionRequiredEventDTO {
-    private String playerId;
-    private String sourceCardId;
-    private List<String> possibleTargets;  // Card ID 列表
-
-    // Getters & Setters
-}
-```
-
-**TurnYakuFormedEventDTO**
-
-```java
-public class TurnYakuFormedEventDTO {
-    private String playerId;
-    private List<YakuScoreDTO> newlyFormedYaku;
-    private int currentBaseScore;
-    private String requiredStage;  // "AWAITING_DECISION"
-
-    // Getters & Setters
-}
-```
-
-**RoundDecisionMadeEventDTO**
-
-```java
-public class RoundDecisionMadeEventDTO {
-    private String playerId;
-    private String decisionType;       // "KOI_KOI" or "END_ROUND"
-    private int newKoiKoiMultiplier;   // 新的倍率
-
-    // Getters & Setters
-}
-```
-
-**RoundScoredEventDTO**
-
-```java
-public class RoundScoredEventDTO {
-    private String winningPlayerId;
-    private List<YakuScoreDTO> yakuList;
-    private int totalMultipliers;
-    private Map<String, Integer> finalScoreChange;  // {playerId: scoreChange}
-
-    // Getters & Setters
-}
-```
-
-**GameSnapshotRestoreDTO（重連快照）**
-
-```java
-public class GameSnapshotRestoreDTO {
-    // Game Context
-    private String gameId;
-    private GameRulesetDTO ruleset;
-    private Map<String, Integer> playerScores;
-
-    // Round Context
-    private int currentRound;
-    private String dealerId;
-    private KoiKoiStatusDTO koiKoiStatus;
-
-    // Card State
-    private List<CardDTO> fieldCards;
-    private List<CardDTO> playerHandCards;
-    private int opponentHandCardCount;
-    private Map<String, List<CardDTO>> playerDepositories;  // {playerId: cards}
-    private int deckRemaining;
-
-    // Flow Control
-    private String currentFlowStage;  // FlowStage enum
-    private String activePlayerId;
-    private SelectionContextDTO requiredSelectionContext;  // 可選
-    private List<YakuScoreDTO> currentYaku;                // 可選
-
-    // Getters & Setters
-}
-
-public class SelectionContextDTO {
-    private String sourceCardId;
-    private List<String> possibleTargets;
-}
-
-public class KoiKoiStatusDTO {
-    private int playerKoiKoiCount;
-    private int opponentKoiKoiCount;
-}
-```
+| 欄位 | 型別 | 說明 |
+|-----|------|------|
+| `card_id` | string | 卡牌唯一識別碼（UUID） |
+| `month` | number | 月份（1-12） |
+| `type` | string | 卡牌類型："BRIGHT" / "ANIMAL" / "RIBBON" / "DREG" |
+| `display_name` | string | 顯示名稱（如「松鶴」、「櫻幕」） |
 
 ---
 
-#### REST API Request DTO
+**YakuScore（役種得分）**
 
-**GameRequestJoinDTO**
-
-```java
-public class GameRequestJoinDTO {
-    private String playerId;
-    private String sessionToken;  // 可選，重連時提供
-
-    // Getters & Setters
+```json
+{
+  "yaku_type": "GOKO",
+  "base_points": 15
 }
 ```
 
-**TurnPlayHandCardDTO**
-
-```java
-public class TurnPlayHandCardDTO {
-    private String cardIdToPlay;
-
-    // Getters & Setters
-}
-```
-
-**TurnSelectMatchedCardDTO**
-
-```java
-public class TurnSelectMatchedCardDTO {
-    private String sourceCardId;
-    private String selectedTargetId;
-
-    // Getters & Setters
-}
-```
-
-**RoundMakeDecisionDTO**
-
-```java
-public class RoundMakeDecisionDTO {
-    private String decisionType;  // "KOI_KOI" or "END_ROUND"
-
-    // Getters & Setters
-}
-```
+| 欄位 | 型別 | 說明 |
+|-----|------|------|
+| `yaku_type` | string | 役種類型（如 "GOKO", "AKATAN", "INOSHIKACHO"） |
+| `base_points` | number | 基礎得分 |
 
 ---
 
-#### Domain Model 範例（對比）
+**CardCapture（卡牌捕獲操作）**
 
-**Card (Domain Model) - 包含業務邏輯**
-
-```java
-public class Card {
-    private final CardId id;
-    private final Month month;
-    private final CardType type;
-    private final String displayName;
-
-    // 業務邏輯方法
-    public boolean canMatchWith(Card other) {
-        return this.month.equals(other.month);
+```json
+{
+  "source_card": {
+    "card_id": "card-1",
+    "month": 1,
+    "type": "BRIGHT",
+    "display_name": "松鶴"
+  },
+  "captured_cards": [
+    {
+      "card_id": "card-2",
+      "month": 1,
+      "type": "ANIMAL",
+      "display_name": "松短冊"
     }
-
-    public boolean isBright() {
-        return this.type == CardType.BRIGHT;
-    }
-
-    public boolean isAnimal() {
-        return this.type == CardType.ANIMAL;
-    }
-
-    public int getPointValue() {
-        return switch (this.type) {
-            case BRIGHT -> 20;
-            case ANIMAL -> 10;
-            case RIBBON -> 5;
-            case DREG -> 1;
-        };
-    }
+  ],
+  "target_zone": "DEPOSITORY"
 }
 ```
 
-**Mapper 範例（DTO ↔ Domain Model）**
-
-```java
-@Component
-public class CardMapper {
-
-    public CardDTO toDTO(Card card) {
-        CardDTO dto = new CardDTO();
-        dto.setCardId(card.getId().toString());
-        dto.setMonth(card.getMonth().getValue());
-        dto.setType(card.getType().name());
-        dto.setDisplayName(card.getDisplayName());
-        return dto;
-    }
-
-    public Card toDomain(CardDTO dto) {
-        return new Card(
-            CardId.fromString(dto.getCardId()),
-            Month.of(dto.getMonth()),
-            CardType.valueOf(dto.getType()),
-            dto.getDisplayName()
-        );
-    }
-}
-```
+| 欄位 | 型別 | 說明 |
+|-----|------|------|
+| `source_card` | Card | 來源牌（打出的手牌或翻出的牌堆牌） |
+| `captured_cards` | Card[] | 捕獲的場牌列表（可能為空陣列） |
+| `target_zone` | string | 目標區域："FIELD" 或 "DEPOSITORY" |
 
 ---
 
-**DTO 設計原則總結**:
-1. ✅ 所有 DTO 遵循 game-flow.md 定義的核心結構
-2. ✅ 可重用結構（Card, YakuScore, CardCapture）保持一致性
-3. ✅ SSE 事件 DTO 命名對應事件名稱（如 `TurnStartedEventDTO`）
-4. ✅ 使用基礎型別（String, int）便於 JSON 序列化
-5. ✅ Domain Model 包含業務邏輯，DTO 僅為資料傳輸載體
+#### SSE 事件 Payload 格式
+
+所有 SSE 事件的 `data` 欄位均為 JSON 格式。以下為各事件的資料結構範例：
+
+**GameStarted**
+```json
+{
+  "player_details": {
+    "player-uuid-1": "Player 1",
+    "player-uuid-2": "Player 2"
+  },
+  "game_ruleset": {
+    "variant": "KANTO",
+    "total_rounds": 12
+  },
+  "total_rounds": 12
+}
+```
+
+**RoundDealt**
+```json
+{
+  "current_dealer_id": "player-uuid",
+  "initial_field_cards": [
+    {"card_id": "card-1", "month": 1, "type": "BRIGHT", "display_name": "松鶴"}
+  ],
+  "hand_size": 8
+}
+```
+
+**TurnStarted**
+```json
+{
+  "active_player_id": "player-uuid",
+  "required_stage": "AWAITING_HAND_PLAY",
+  "timestamp": "2025-10-20T10:30:00Z"
+}
+```
+
+**CardPlayedFromHand**
+```json
+{
+  "player_id": "player-uuid",
+  "capture": {
+    "source_card": {"card_id": "card-1", "month": 1, "type": "BRIGHT", "display_name": "松鶴"},
+    "captured_cards": [{"card_id": "card-2", "month": 1, "type": "ANIMAL", "display_name": "松短冊"}],
+    "target_zone": "DEPOSITORY"
+  }
+}
+```
+
+**TurnSelectionRequired**
+```json
+{
+  "player_id": "player-uuid",
+  "source_card_id": "card-1",
+  "possible_targets": ["card-2", "card-3"]
+}
+```
+
+**TurnYakuFormed**
+```json
+{
+  "player_id": "player-uuid",
+  "newly_formed_yaku": [
+    {"yaku_type": "GOKO", "base_points": 15}
+  ],
+  "current_base_score": 15,
+  "required_stage": "AWAITING_DECISION"
+}
+```
+
+**RoundScored**
+```json
+{
+  "winning_player_id": "player-uuid",
+  "yaku_list": [
+    {"yaku_type": "GOKO", "base_points": 15}
+  ],
+  "total_multipliers": 2,
+  "final_score_change": {
+    "player-uuid": 30,
+    "opponent-uuid": -30
+  }
+}
+```
+
+完整 SSE 事件列表請參考 [2.2 節](#server-sent-events-sse-設計) 與 [game-flow.md](./game-flow.md)。
+
+---
+
+#### REST API Request 格式
+
+**POST /api/v1/games/join**
+```json
+{
+  "player_id": "player-uuid",
+  "session_token": "optional-token-for-reconnect"
+}
+```
+
+**POST /api/v1/games/{gameId}/turns/play-card**
+```json
+{
+  "card_id_to_play": "card-uuid"
+}
+```
+
+**POST /api/v1/games/{gameId}/turns/select-match**
+```json
+{
+  "source_card_id": "card-uuid-1",
+  "selected_target_id": "card-uuid-2"
+}
+```
+
+**POST /api/v1/games/{gameId}/rounds/decision**
+```json
+{
+  "decision_type": "KOI_KOI"
+}
+```
+
+（`decision_type` 可為 `"KOI_KOI"` 或 `"END_ROUND"`）
+
+---
+
+**資料格式原則總結**:
+1. ✅ 所有資料結構遵循 game-flow.md 定義
+2. ✅ 使用 JSON 格式，便於跨語言實作
+3. ✅ 核心結構（Card, YakuScore, CardCapture）保持一致性
+4. ✅ 欄位命名使用 snake_case（JSON 慣例）
+5. ✅ 所有 ID 使用 string 型別（UUID）
 
 ---
 
