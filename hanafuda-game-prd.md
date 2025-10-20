@@ -224,7 +224,32 @@
 
 ---
 
-#### 2.2.3 核心業務邏輯
+#### 2.1.4 視覺回饋與互動
+
+**視覺 Feedback**
+- **可選狀態**:手牌 hover 時輕微放大、陰影效果
+- **選中狀態**:選中的手牌明顯 highlight(如邊框發光)
+- **配對提示**:場上同月份的牌自動 highlight(邊框顏色變化)
+- **配對動畫**:配對成功時,牌飛向獲得區(CSS transition 或 GSAP)
+- **役種特效**:成立役種時,相關牌閃光或粒子效果
+- **回合指示**:當前回合方有明顯的視覺標記(如發光邊框)
+
+**錯誤處理與提示**
+- **網路斷線**:顯示「連線中斷,正在嘗試重連...」
+- **無效操作**:提示「此操作無效」,並簡短說明原因
+- **後端錯誤**:友善的錯誤訊息,避免技術術語
+- **SSE 重連**:自動嘗試重連,顯示重連狀態(詳見 4.3 節)
+
+**輔助功能**
+- **規則提示**:點擊 [規則] 按鈕顯示 Modal,解釋當前可能的役種
+- **遊戲記錄**:顯示當前遊戲的出牌歷史(可選 MVP 功能)
+- **Tooltip**:Hover 牌時顯示牌名(如「松鶴」、「櫻幕」)
+
+---
+
+### 2.2 後端功能
+
+#### 核心業務邏輯
 
 **遊戲規則服務 (GameRuleService)**
 - 驗證行動合法性
@@ -241,7 +266,15 @@
 
 **役種檢測服務 (YakuDetectionService)**
 
-參考[役種列表](./rule.md#役種列表)
+MVP 實作 12 種常用役種:
+- 光牌系(4種): 五光、四光、雨四光、三光
+- 短冊系(3種): 赤短、青短、短冊
+- 種牌系(4種): 豬鹿蝶、花見酒、月見酒、種
+- かす系(1種): かす
+
+註: 特殊役種(手四、月見、親權)規劃在 Post-MVP 階段實作
+
+完整役種列表參考 [rule.md](./rule.md#役種列表)
 
 **對手策略 (OpponentStrategy)**
 
@@ -250,6 +283,10 @@ MVP 實作簡易策略:
 - 若有多張可配對場牌,隨機選擇一張
 - 牌堆翻牌的配對由系統自動處理
 - Koi-Koi 決策:簡單策略(如低分繼續,高分停止)
+
+####  REST API 設計,Server-Sent Events (SSE) 設計
+參考[前後端交互規格](./game-flow.md)
+
 
 ---
 
@@ -379,8 +416,8 @@ Phase 3 (分散式):
                                                                   ← 200 OK (可能需要選擇配對)
    
    [如果需要選擇配對]
-   Frontend → POST /api/v1/games/{gameId}/actions/select-hand-match → Backend
-                                                                     ← 200 OK
+   Frontend → POST /api/v1/games/{gameId}/actions/select-matched-card → Backend
+                                                                       ← 200 OK
    
    Backend → SSE: OPPONENT_TURN_START → Frontend
    Backend → SSE: OPPONENT_THINKING → Frontend
@@ -390,9 +427,9 @@ Phase 3 (分散式):
    Backend → SSE: TURN_CHANGED → Frontend
 
 4. Koi-Koi 決策(當玩家成立役種)
-   Frontend → POST /api/v1/games/{gameId}/koikoi → Backend
-                                                  ← 200 OK
-   
+   Frontend → POST /api/v1/games/{gameId}/actions/make-decision → Backend
+                                                                 ← 200 OK
+
    Backend → SSE: GAME_CONTINUES or GAME_OVER → Frontend
 
 5. 遊戲結束
@@ -778,37 +815,28 @@ public class Card {
 - [ ] 實作 Deck(牌堆)邏輯
 - [ ] 實作 GameState(遊戲狀態管理)
 - [ ] 實作配對規則(MatchingService)
-- [ ] 實作役種檢測服務(YakuDetector)
-  - [ ] 光札系役種
-  - [ ] 特殊役種(花見酒、月見酒、豬鹿蝶)
-  - [ ] 短冊系役種
-  - [ ] タネ/タン/カス 役種
+- [ ] 實作役種檢測服務(YakuDetector) - MVP 實作 12 種常用役種
+  - [ ] 光牌系(4種): 五光、四光、雨四光、三光
+  - [ ] 短冊系(3種): 赤短、青短、短冊
+  - [ ] 種牌系(4種): 豬鹿蝶、花見酒、月見酒、種
+  - [ ] かす系(1種): かす
+  - 註: 特殊役種(手四、月見、親權)在 Post-MVP 實作
 
 **單元測試**
 - [ ] Card 測試
 - [ ] Deck 測試
 - [ ] GameState 測試
-- [ ] YakuDetector 測試(所有 12 種役種)
+- [ ] YakuDetector 測試(12 種常用役種，詳見上方列表)
 
 ---
 
 ### Phase 3: Use Case 與 API 實作 (Week 3-4)
 
 **Application Layer**
-- [ ] CreateGameUseCase
-- [ ] PlayHandCardUseCase
-- [ ] SelectHandMatchUseCase
-- [ ] ExecuteOpponentActionUseCase
-- [ ] MakeKoikoiDecisionUseCase
-- [ ] SurrenderGameUseCase
+待定
 
 **Adapter Layer - REST API**
-- [ ] POST /api/v1/games
-- [ ] GET /api/v1/games/{gameId}
-- [ ] POST /api/v1/games/{gameId}/actions/play-hand-card
-- [ ] POST /api/v1/games/{gameId}/actions/select-hand-match
-- [ ] POST /api/v1/games/{gameId}/koikoi
-- [ ] POST /api/v1/games/{gameId}/surrender
+待定
 
 **Repository 實作**
 - [ ] JPA Entities
@@ -870,7 +898,7 @@ public class Card {
 
 **功能測試**
 - [ ] 完整遊戲流程測試
-- [ ] 所有役種檢測驗證
+- [ ] 12 種常用役種檢測驗證
 - [ ] Koi-Koi 決策測試
 - [ ] 斷線重連測試
 - [ ] 錯誤處理測試
@@ -958,7 +986,7 @@ public class Card {
 
 **功能完整度**
 - [ ] 100% 實作所有 MVP 功能需求
-- [ ] 所有 12 種役種正確檢測
+- [ ] 12 種常用役種正確檢測(光牌系4種、短冊系3種、種牌系4種、かす系1種)
 - [ ] 遊戲流程無阻塞性 Bug
 
 **技術指標**
@@ -1088,7 +1116,7 @@ public class Card {
 
 ---
 
-### 11.3 參考資源
+### 11.2 參考資源
 
 #### 規則參考
 - [Koi-Koi - Wikipedia (EN)](https://en.wikipedia.org/wiki/Koi-Koi)
@@ -1112,7 +1140,7 @@ public class Card {
 
 ---
 
-### 11.4 開發檢查清單
+### 11.3 開發檢查清單
 
 #### 開發前準備
 - [ ] 確認花牌圖檔資源與授權
