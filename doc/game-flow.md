@@ -60,11 +60,11 @@
 
 | 事件名稱 | 描述 | 核心 Payload (增量資訊) | 參考規則 |
 |---------|------|----------------------|---------|
-| `TurnStarted` | 通知當前回合開始,以及應等待的下一個命令類型 | `active_player_id`, `required_stage` (Enum: `AWAITING_HAND_PLAY`) | |
+| `TurnStarted` | 通知當前回合開始,以及應等待的下一個命令類型 | `active_player_id` | |
 | `CardPlayedFromHand` | 玩家打出卡牌並完成捕獲判定 | `player_id`, `CardCapture` (卡牌移動) | |
 | `CardFlippedFromDeck` | 伺服器從牌堆翻牌並完成捕獲判定 | `player_id`, `CardCapture` (卡牌移動), `is_deck_empty` | |
 | `TurnSelectionRequired` | 流程中斷:打出或翻出的牌與場上兩張牌匹配,要求玩家選擇目標 | `player_id`, `source_card_id`, `possible_targets` (Card ID List) | |
-| `TurnYakuFormed` | 玩家的得分牌堆組成了新的 Yaku | `player_id`, `newly_formed_yaku` (YakuScore List), `current_base_score`, `required_stage` (`AWAITING_DECISION`) | |
+| `TurnYakuFormed` | 玩家的得分牌堆組成了新的 Yaku | `player_id`, `newly_formed_yaku` (YakuScore List), `current_base_score` | |
 | `TurnEnded` | 回合結束,控制權轉移給下一玩家 | `next_player_id` | |
 | `TurnError` | 玩家發送了無效指令或操作 | `error_code`, `message` | N/A |
 
