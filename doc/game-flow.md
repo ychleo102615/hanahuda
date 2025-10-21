@@ -147,12 +147,20 @@ enum ErrorCode {
 ### I. 卡片移動目標 (Card Destination)
 
 ```typescript
-type CardDestination = "field" | `${string}_depository`;
+enum CardDestinationType {
+  FIELD = "field",
+  DEPOSITORY = "depository"
+}
+
+interface CardDestination {
+  type: CardDestinationType;
+  player_id?: string;  // 僅在 type === "depository" 時需要
+}
 
 // 範例:
-// - "field": 卡片移至場上
-// - "p1_depository": 卡片移至 p1 的捕獲區
-// - "p2_depository": 卡片移至 p2 的捕獲區
+// - { type: "field" }: 卡片移至場上
+// - { type: "depository", player_id: "p1" }: 卡片移至 p1 的捕獲區
+// - { type: "depository", player_id: "p2" }: 卡片移至 p2 的捕獲區
 ```
 
 ### J. 役型定義 (Yaku Types)
@@ -270,6 +278,7 @@ enum YakuType {
 {
   "event": "GameStarted",
   "event_id": "evt_001",
+  "my_player_id": "p1",
   "players": [
     {"id": "p1", "name": "Player1"},
     {"id": "p2", "name": "Player2"}
@@ -281,6 +290,7 @@ enum YakuType {
   }
 }
 ```
+**備註**: `my_player_id` 標識當前客戶端的玩家身份
 
 #### 2. RoundDealt
 **描述**: 新局發牌完成
@@ -291,10 +301,10 @@ enum YakuType {
   "event_id": "evt_002",
   "dealer": "p1",
   "field": ["0341", "0342", "0221", "0831", "1041", "0441", "0541", "0741"],
-  "hands": {
-    "p1": ["0111", "0331", "0431", "0531", "0631", "0931", "1031", "1131"],
-    "p2": 8
-  },
+  "hands": [
+    {"player_id": "p1", "cards": ["0111", "0331", "0431", "0531", "0631", "0931", "1031", "1131"]},
+    {"player_id": "p2", "count": 8}
+  ],
   "deck_remaining": 24,
   "first_player": "p1",
   "next_state": {
@@ -303,7 +313,8 @@ enum YakuType {
   }
 }
 ```
-**備註**: 對手手牌僅傳數量，不傳具體卡片
+**備註**:
+- 自己的手牌傳具體 `cards` 陣列，對手手牌僅傳 `count` 數量
 
 #### 3. RoundEndedInstantly
 **描述**: 局開始時因 Teshi 或場牌流局立即結束
@@ -314,8 +325,14 @@ enum YakuType {
   "event_id": "evt_003",
   "reason": "TESHI",
   "winner": "p1",
-  "score_change": {"p1": 6, "p2": 0},
-  "cumulative_scores": {"p1": 6, "p2": 0}
+  "score_changes": [
+    {"player_id": "p1", "change": 6},
+    {"player_id": "p2", "change": 0}
+  ],
+  "cumulative_scores": [
+    {"player_id": "p1", "score": 6},
+    {"player_id": "p2", "score": 0}
+  ]
 }
 ```
 **備註**:
@@ -341,8 +358,14 @@ enum YakuType {
     "opponent_koi": 2
   },
   "final_points": 40,
-  "score_change": {"p1": 40, "p2": 0},
-  "cumulative_scores": {"p1": 40, "p2": 15}
+  "score_changes": [
+    {"player_id": "p1", "change": 40},
+    {"player_id": "p2", "change": 0}
+  ],
+  "cumulative_scores": [
+    {"player_id": "p1", "score": 40},
+    {"player_id": "p2", "score": 15}
+  ]
 }
 ```
 
@@ -354,7 +377,10 @@ enum YakuType {
   "event": "RoundDrawn",
   "event_id": "evt_005",
   "reason": "NO_YAKU",
-  "score_change": {"p1": 0, "p2": 0}
+  "score_changes": [
+    {"player_id": "p1", "change": 0},
+    {"player_id": "p2", "change": 0}
+  ]
 }
 ```
 
@@ -365,7 +391,10 @@ enum YakuType {
 {
   "event": "GameFinished",
   "event_id": "evt_006",
-  "final_scores": {"p1": 156, "p2": 142},
+  "final_scores": [
+    {"player_id": "p1", "score": 156},
+    {"player_id": "p2", "score": 142}
+  ],
   "winner": "p1"
 }
 ```
@@ -386,12 +415,12 @@ enum YakuType {
   "hand_play": {
     "played": "0341",
     "captured": ["0342", "0343"],
-    "to": "p1_depository"
+    "to": {"type": "depository", "player_id": "p1"}
   },
   "deck_flip": {
     "flipped": "0221",
     "captured": ["0222"],
-    "to": "p1_depository",
+    "to": {"type": "depository", "player_id": "p1"},
     "deck_remaining": 23
   },
   "yaku_update": null,
@@ -403,7 +432,7 @@ enum YakuType {
 ```
 **備註**:
 - `captured` 為空陣列表示無捕獲，卡片送至場上
-- `to` 可為 `"field"` 或 `"{player_id}_depository"`
+- `to` 可為 `{"type": "field"}` 或 `{"type": "depository", "player_id": "..."}`
 - `yaku_update` 為 `null` 或 `{"new": [...], "total_base": 7}`
 
 #### 8. SelectionRequired
@@ -420,7 +449,7 @@ enum YakuType {
     "hand_play": {
       "played": "0341",
       "captured": ["0342"],
-      "to": "p1_depository"
+      "to": {"type": "depository", "player_id": "p1"}
     }
   },
   "selection": {
@@ -445,7 +474,7 @@ enum YakuType {
   "selected_capture": {
     "source": "0841",
     "captured": ["0842"],
-    "to": "p1_depository"
+    "to": {"type": "depository", "player_id": "p1"}
   },
   "deck_remaining": 22,
   "yaku_update": null,
@@ -521,6 +550,7 @@ enum YakuType {
 {
   "event": "GameSnapshotRestore",
   "event_id": "evt_snapshot",
+  "my_player_id": "p1",
   "game": {
     "id": "game_abc",
     "ruleset": {
@@ -528,15 +558,18 @@ enum YakuType {
       "koi_koi_multiplier": 2,
       "seven_point_double": true
     },
-    "cumulative_scores": {"p1": 28, "p2": 15},
+    "cumulative_scores": [
+      {"player_id": "p1", "score": 28},
+      {"player_id": "p2", "score": 15}
+    ],
     "rounds_played": 3
   },
   "round": {
     "dealer": "p2",
-    "koi_status": {
-      "p1": {"multiplier": 1, "called_count": 0},
-      "p2": {"multiplier": 2, "called_count": 1}
-    }
+    "koi_status": [
+      {"player_id": "p1", "multiplier": 1, "called_count": 0},
+      {"player_id": "p2", "multiplier": 2, "called_count": 1}
+    ]
   },
   "cards": {
     "field": ["0341", "0441"],
@@ -554,6 +587,7 @@ enum YakuType {
 }
 ```
 **備註**:
+- `my_player_id` 標識當前客戶端的玩家身份
 - `context` 在 `AWAITING_SELECTION` 時包含 `selection` 物件
 - 客戶端收到快照後可直接渲染並發送命令，無需等待新事件
 
@@ -568,8 +602,8 @@ C→S: TurnPlayHandCard {card: "0341", target: "0342"}
 
 S→C: TurnCompleted
      player: "p1"
-     hand_play: {played: "0341", captured: ["0342"], to: "p1_depository"}
-     deck_flip: {flipped: "0221", captured: [], to: "field", deck_remaining: 23}
+     hand_play: {played: "0341", captured: ["0342"], to: {type: "depository", player_id: "p1"}}
+     deck_flip: {flipped: "0221", captured: [], to: {type: "field"}, deck_remaining: 23}
      yaku_update: null
      next_state: {type: "AWAITING_HAND_PLAY", active_player: "p2"}
 ```
@@ -582,8 +616,8 @@ C→S: TurnPlayHandCard {card: "0341", target: "0342"}
 
 S→C: TurnCompleted
      player: "p1"
-     hand_play: {played: "0341", captured: ["0342"], to: "p1_depository"}
-     deck_flip: {flipped: "0221", captured: [], to: "field", deck_remaining: 23}
+     hand_play: {played: "0341", captured: ["0342"], to: {type: "depository", player_id: "p1"}}
+     deck_flip: {flipped: "0221", captured: [], to: {type: "field"}, deck_remaining: 23}
      yaku_update: null
      next_state: {type: "AWAITING_HAND_PLAY", active_player: "p2"}
 ```
@@ -596,7 +630,7 @@ C→S: TurnPlayHandCard {card: "0341", target: "0342"}
 S→C: SelectionRequired
      phase: "deck_flip"
      completed: {
-       hand_play: {played: "0341", captured: ["0342"], to: "p1_depository"}
+       hand_play: {played: "0341", captured: ["0342"], to: {type: "depository", player_id: "p1"}}
      }
      selection: {source: "0841", options: ["0842", "0843"]}
      next_state: {type: "AWAITING_SELECTION", active_player: "p1"}
@@ -604,7 +638,7 @@ S→C: SelectionRequired
 C→S: TurnSelectTarget {source: "0841", target: "0842"}
 
 S→C: TurnProgressAfterSelection
-     selected_capture: {source: "0841", captured: ["0842"], to: "p1_depository"}
+     selected_capture: {source: "0841", captured: ["0842"], to: {type: "depository", player_id: "p1"}}
      deck_remaining: 22
      yaku_update: null
      next_state: {type: "AWAITING_HAND_PLAY", active_player: "p2"}
@@ -661,8 +695,14 @@ S→C: RoundScored
      base_total: 10
      multipliers: {seven_plus: 2, opponent_koi: 1}
      final_points: 20
-     score_change: {"p1": 20, "p2": 0}
-     cumulative_scores: {"p1": 20, "p2": 0}
+     score_changes: [
+       {"player_id": "p1", "change": 20},
+       {"player_id": "p2", "change": 0}
+     ]
+     cumulative_scores: [
+       {"player_id": "p1", "score": 20},
+       {"player_id": "p2", "score": 0}
+     ]
 ```
 
 ---
