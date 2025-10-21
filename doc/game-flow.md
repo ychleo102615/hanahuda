@@ -40,7 +40,6 @@ enum CommandType {
   TURN_PLAY_HAND_CARD = "TurnPlayHandCard",
   TURN_SELECT_TARGET = "TurnSelectTarget",
   ROUND_MAKE_DECISION = "RoundMakeDecision",
-  CLIENT_ACKNOWLEDGE = "ClientAcknowledge"
 }
 ```
 
@@ -163,29 +162,6 @@ interface CardDestination {
 // - { type: "depository", player_id: "p2" }: 卡片移至 p2 的捕獲區
 ```
 
-### J. 役型定義 (Yaku Types)
-
-```typescript
-enum YakuType {
-  // 光札役
-  GOKOU = "GOKOU",           // 五光, 15點
-  SHIKOU = "SHIKOU",         // 四光, 10點
-  AMESHIKOU = "AMESHIKOU",   // 雨四光, 8點
-  SANKOU = "SANKOU",         // 三光, 6點
-
-  // 種札役
-  INOSHIKACHOU = "INOSHIKACHOU",  // 猪鹿蝶, 5點
-  TANE = "TANE",                  // 種, 1點
-
-  // 短札役
-  AKATAN = "AKATAN",         // 赤短, 5點
-  AOTAN = "AOTAN",           // 青短, 5點
-  TANZAKU = "TANZAKU",       // 短, 1點
-
-  // かす札役
-  KASU = "KASU"              // かす, 1點
-}
-```
 
 ---
 
@@ -244,17 +220,6 @@ enum YakuType {
 }
 ```
 **備註**: `decision` 可為 `"KOI_KOI"` 或 `"END_ROUND"`
-
-### 5. ClientAcknowledge
-**描述**: 確認已渲染事件，準備接收下一狀態
-**流程狀態**: 任意
-**Payload**:
-```json
-{
-  "command": "ClientAcknowledge",
-  "event_id": "evt_789"
-}
-```
 
 ---
 
