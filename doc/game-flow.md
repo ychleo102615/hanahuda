@@ -84,12 +84,6 @@
 }
 ```
 
-#### CardDestination（卡片移動目標）
-```typescript
-{type: "field"}                       // 移至場上
-{type: "depository", player_id: string}  // 移至玩家捕獲區
-```
-
 ---
 
 ### 卡片操作
@@ -98,8 +92,7 @@
 ```typescript
 {
   card: string,              // 打出/翻開的卡片 ID
-  captured: string[],        // 捕獲的卡片（空陣列表示移至場上）
-  to: CardDestination        // 目標位置
+  captured: string[]         // 捕獲的卡片
 }
 ```
 
@@ -406,8 +399,8 @@ Teshi 或場牌流局立即結束
 C→S: TurnPlayHandCard {card: "0341", target: "0342"}
 S→C: TurnCompleted {
        player_id: "p1",
-       hand_play: {card: "0341", captured: ["0342"], to: {type: "depository", player_id: "p1"}},
-       deck_flip: {card: "0843", captured: [], to: {type: "field"}},
+       hand_play: {card: "0341", captured: ["0342"]},
+       deck_flip: {card: "0843", captured: []},
        deck_remaining: 23,
        next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
      }
@@ -420,14 +413,14 @@ S→C: SelectionRequired {
        player_id: "p1",
        phase: "deck_flip",
        completed: {
-         hand_play: {card: "0341", captured: ["0342"], to: {type: "depository", player_id: "p1"}}
+         hand_play: {card: "0341", captured: ["0342"]}
        },
        selection: {source: "0841", options: ["0842", "0843"]},
        next_state: {state_type: "AWAITING_SELECTION", active_player_id: "p1"}
      }
 C→S: TurnSelectTarget {source: "0841", target: "0842"}
 S→C: TurnProgressAfterSelection {
-       selected_capture: {card: "0841", captured: ["0842"], to: {type: "depository", player_id: "p1"}},
+       selected_capture: {card: "0841", captured: ["0842"]},
        deck_remaining: 23,
        next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
      }
