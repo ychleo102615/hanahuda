@@ -61,8 +61,6 @@
 | | `2` ANIMAL | 種札 (10點) |
 | | `3` RIBBON | 短札 (5點) |
 | | `4` DREG | かす札 (1點) |
-| **TurnPhase** | `hand_play` | 打手牌階段 |
-| | `deck_flip` | 翻牌階段 |
 | **Decision** | `KOI_KOI` | 繼續遊戲 |
 | | `END_ROUND` | 結束本局 |
 | **RoundEndReason** | `TESHI` | 手四（手牌4張同月） |
@@ -309,29 +307,24 @@ Teshi 或場牌流局立即結束
 ### B. 回合級事件
 
 #### TurnCompleted
-打手牌、翻牌均完成（無中斷）
+打手牌、翻牌均完成（無中斷、無役型形成）
 ```json
 {
   player_id: string,
   hand_play: CardPlay,                 // 打手牌操作
   deck_flip: CardPlay,                 // 翻牌操作
   deck_remaining: number,
-  yaku_update?: YakuUpdate | null,     // 有新役型時才有值
   next_state: NextState
 }
 ```
 
 #### SelectionRequired
-翻牌雙重配對，需選擇目標（僅 `deck_flip` 階段）
+翻牌雙重配對，需選擇目標（隱含狀態：`AWAITING_SELECTION`，行動玩家為 `player_id`）
 ```json
 {
   player_id: string,
-  phase: "deck_flip",
-  completed: {
-    hand_play: CardPlay                // 已完成的打手牌操作
-  },
-  selection: CardSelection,            // 需要選擇的配對
-  next_state: NextState
+  hand_play: CardPlay,                 // 已完成的打手牌操作
+  selection: CardSelection             // 需要選擇的翻牌配對
 }
 ```
 
@@ -351,6 +344,9 @@ Teshi 或場牌流局立即結束
 ```json
 {
   player_id: string,
+  hand_play: CardPlay,                 // 本回合打手牌操作
+  deck_flip: CardPlay,                 // 本回合翻牌操作
+  deck_remaining: number,
   yaku_update: YakuUpdate
 }
 ```
@@ -411,12 +407,8 @@ S→C: TurnCompleted {
 C→S: TurnPlayHandCard {card: "0341", target: "0342"}
 S→C: SelectionRequired {
        player_id: "p1",
-       phase: "deck_flip",
-       completed: {
-         hand_play: {card: "0341", captured: ["0342"]}
-       },
-       selection: {source: "0841", options: ["0842", "0843"]},
-       next_state: {state_type: "AWAITING_SELECTION", active_player_id: "p1"}
+       hand_play: {card: "0341", captured: ["0342"]},
+       selection: {source: "0841", options: ["0842", "0843"]}
      }
 C→S: TurnSelectTarget {source: "0841", target: "0842"}
 S→C: TurnProgressAfterSelection {
@@ -431,6 +423,9 @@ S→C: TurnProgressAfterSelection {
 C→S: TurnPlayHandCard {card: "0331", target: null}
 S→C: DecisionRequired {
        player_id: "p1",
+       hand_play: {card: "0331", captured: ["0332"]},
+       deck_flip: {card: "0333", captured: ["0334"]},
+       deck_remaining: 23,
        yaku_update: {new: [{type: "AKATAN", base_points: 5}], total_base: 5}
      }
 C→S: RoundMakeDecision {decision: "KOI_KOI"}
@@ -447,6 +442,9 @@ S→C: DecisionMade {
 C→S: TurnPlayHandCard {card: "0131", target: "0132"}
 S→C: DecisionRequired {
        player_id: "p1",
+       hand_play: {card: "0131", captured: ["0132"]},
+       deck_flip: {card: "0133", captured: ["0134"]},
+       deck_remaining: 22,
        yaku_update: {new: [{type: "AOTAN", base_points: 5}], total_base: 10}
      }
 C→S: RoundMakeDecision {decision: "END_ROUND"}
