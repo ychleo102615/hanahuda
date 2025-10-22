@@ -87,7 +87,7 @@
 | **GameRequestJoin** | 任意 | `{player_id, session_token}` | 加入或重連 |
 | **TurnPlayHandCard** | `AWAITING_HAND_PLAY` | `{card, target?}` | 打手牌，`target` 為配對目標或 `null` |
 | **TurnSelectTarget** | `AWAITING_SELECTION` | `{source, target}` | 翻牌雙重配對時選擇目標 |
-| **RoundMakeDecision** | `AWAITING_DECISION` | `{decision}` | `"KOI_KOI"` 或 `"END_ROUND"` |
+| **RoundMakeDecision** | `AWAITING_DECISION` | `{decision}` | `"KOI_KOI"` → `DecisionMade`，`"END_ROUND"` → `RoundScored` |
 
 ---
 
@@ -118,7 +118,7 @@ Teshi 或場牌流局立即結束，`reason`: `TESHI` | `FIELD_KUTTSUKI`
 #### RoundScored
 局結束計分
 ```json
-{winner, yakus: [{type, base_points}], base_total, multipliers: {seven_plus?, opponent_koi?},
+{winner, yakus: [{type, base_points}], base_total, multipliers: {seven_plus?, winner_koi?, opponent_koi?},
  final_points, score_changes: [...], cumulative_scores: [...]}
 ```
 
@@ -165,9 +165,9 @@ Teshi 或場牌流局立即結束，`reason`: `TESHI` | `FIELD_KUTTSUKI`
 ```
 
 #### DecisionMade
-完成決策（若 `END_ROUND` 後續發送 `RoundScored`）
+完成決策（**僅在 `KOI_KOI` 時發送**，`END_ROUND` 直接發送 `RoundScored`）
 ```json
-{player, decision, koi_multiplier_update?, next_state}
+{player, decision: "KOI_KOI", koi_multiplier_update, next_state}
 ```
 
 #### TurnError
@@ -225,5 +225,6 @@ S→C: DecisionMade {koi_multiplier_update: 2, next: p2}
 C→S: TurnPlayHandCard {card: "0131", target: "0132"}
 S→C: DecisionRequired {yaku_update: {total_base: 10}}
 C→S: RoundMakeDecision {decision: "END_ROUND"}
-S→C: DecisionMade {decision: "END_ROUND"}
 S→C: RoundScored {yakus: [...], final_points: 20, cumulative_scores: [...]}
+     // END_ROUND 時直接發送 RoundScored，省略 DecisionMade
+```
