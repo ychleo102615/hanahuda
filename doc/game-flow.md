@@ -2,9 +2,14 @@
 
 ## 概述
 
-本規格遵循**最小增量原則**(Minimal Incremental Principle)和**命令-事件模式**(Command-Event Model)。客戶端僅發送命令(Command)，伺服器在狀態變更時推送最小化的原子事件(Event)。
+### 核心設計原則
 
-伺服器負責所有遊戲邏輯、狀態管理和驗證。客戶端在斷線重連後可透過 `GameRequestJoin` 命令獲取完整狀態快照(Snapshot)以恢復遊戲，無需重放歷史事件。
+1. **命令-事件模式**: 客戶端發送命令，伺服器推送事件
+2. **最小增量傳輸**: 僅傳遞變化數據，無冗余
+3. **伺服器權威**: 所有邏輯、狀態、驗證均在伺服器
+4. **快照恢復**: 斷線重連時一次性獲取完整狀態，無需重放歷史
+5. **明確狀態流轉**: 每個事件指明 `next_state`，客戶端無需推測
+6. **前置選擇**: 手牌雙重配對在命令中解決，翻牌雙重配對需中斷等待
 
 ---
 
@@ -30,653 +35,195 @@
 
 ---
 
-## II. 常數定義 (Constants & Enums)
+## II. 常數定義
 
-### A. 客戶端命令類型 (C2S Command Types)
+### 命令與事件類型
 
-```typescript
-enum CommandType {
-  GAME_REQUEST_JOIN = "GameRequestJoin",
-  TURN_PLAY_HAND_CARD = "TurnPlayHandCard",
-  TURN_SELECT_TARGET = "TurnSelectTarget",
-  ROUND_MAKE_DECISION = "RoundMakeDecision",
-}
-```
+**客戶端命令 (C2S)**:
+- `GameRequestJoin` - 加入遊戲/重連
+- `TurnPlayHandCard` - 打出手牌
+- `TurnSelectTarget` - 選擇翻牌配對目標
+- `RoundMakeDecision` - Koi-Koi 決策
 
-### B. 伺服器事件類型 (S2C Event Types)
+**伺服器事件 (S2C)**:
+- 遊戲級: `GameStarted` | `RoundDealt` | `RoundEndedInstantly` | `RoundScored` | `RoundDrawn` | `GameFinished`
+- 回合級: `TurnCompleted` | `SelectionRequired` | `TurnProgressAfterSelection` | `DecisionRequired` | `DecisionMade` | `TurnError`
+- 重連: `GameSnapshotRestore`
 
-```typescript
-// 遊戲/局級事件
-enum GameLevelEvent {
-  GAME_STARTED = "GameStarted",
-  ROUND_DEALT = "RoundDealt",
-  ROUND_ENDED_INSTANTLY = "RoundEndedInstantly",
-  ROUND_SCORED = "RoundScored",
-  ROUND_DRAWN = "RoundDrawn",
-  GAME_FINISHED = "GameFinished"
-}
+### 關鍵枚舉值
 
-// 回合級事件
-enum TurnLevelEvent {
-  TURN_COMPLETED = "TurnCompleted",
-  SELECTION_REQUIRED = "SelectionRequired",
-  TURN_PROGRESS_AFTER_SELECTION = "TurnProgressAfterSelection",
-  DECISION_REQUIRED = "DecisionRequired",
-  DECISION_MADE = "DecisionMade",
-  TURN_ERROR = "TurnError"
-}
+| 類型 | 值 | 說明 |
+|------|-----|------|
+| **FlowState** | `AWAITING_HAND_PLAY` | 等待打手牌 |
+| | `AWAITING_SELECTION` | 等待選擇翻牌配對 |
+| | `AWAITING_DECISION` | 等待 Koi-Koi 決策 |
+| **CardType** | `1` BRIGHT | 光札 (20點) |
+| | `2` ANIMAL | 種札 (10點) |
+| | `3` RIBBON | 短札 (5點) |
+| | `4` DREG | かす札 (1點) |
+| **TurnPhase** | `hand_play` | 打手牌階段 |
+| | `deck_flip` | 翻牌階段 |
+| **Decision** | `KOI_KOI` | 繼續遊戲 |
+| | `END_ROUND` | 結束本局 |
+| **RoundEndReason** | `TESHI` | 手四（手牌4張同月） |
+| | `FIELD_KUTTSUKI` | 場牌流局（4張同月） |
+| | `NO_YAKU` | 手牌用罄無役 |
+| **ErrorCode** | `INVALID_CARD` `INVALID_TARGET` `WRONG_PLAYER` `INVALID_STATE` `INVALID_SELECTION` | 錯誤類型 |
 
-// 重連事件
-enum ReconnectionEvent {
-  GAME_SNAPSHOT_RESTORE = "GameSnapshotRestore"
-}
-```
-
-### C. 流程狀態類型 (Flow State Types)
+### 卡片移動目標 (CardDestination)
 
 ```typescript
-enum FlowStateType {
-  AWAITING_HAND_PLAY = "AWAITING_HAND_PLAY",
-  AWAITING_SELECTION = "AWAITING_SELECTION",
-  AWAITING_DECISION = "AWAITING_DECISION"
-}
-```
-
-### D. 卡片類型 (Card Types)
-
-```typescript
-enum CardType {
-  BRIGHT = 1,  // 光札, 20點
-  ANIMAL = 2,  // 種札, 10點
-  RIBBON = 3,  // 短札, 5點
-  DREG = 4     // かす札, 1點
-}
-
-const CARD_TYPE_POINTS: Record<CardType, number> = {
-  [CardType.BRIGHT]: 20,
-  [CardType.ANIMAL]: 10,
-  [CardType.RIBBON]: 5,
-  [CardType.DREG]: 1
-};
-```
-
-### E. 決策類型 (Decision Types)
-
-```typescript
-enum DecisionType {
-  KOI_KOI = "KOI_KOI",
-  END_ROUND = "END_ROUND"
-}
-```
-
-### F. 回合階段 (Turn Phase)
-
-```typescript
-enum TurnPhase {
-  HAND_PLAY = "hand_play",
-  DECK_FLIP = "deck_flip"
-}
-```
-
-### G. 局結束原因 (Round End Reasons)
-
-```typescript
-enum RoundEndReason {
-  // 立即結束
-  TESHI = "TESHI",                    // 手四，手牌4張同月
-  FIELD_KUTTSUKI = "FIELD_KUTTSUKI",  // 場上4張同月
-
-  // 平局
-  NO_YAKU = "NO_YAKU"                 // 手牌用罄無役
-}
-```
-
-### H. 錯誤碼 (Error Codes)
-
-```typescript
-enum ErrorCode {
-  INVALID_CARD = "INVALID_CARD",
-  INVALID_TARGET = "INVALID_TARGET",
-  WRONG_PLAYER = "WRONG_PLAYER",
-  INVALID_STATE = "INVALID_STATE",
-  INVALID_SELECTION = "INVALID_SELECTION"
-}
-```
-
-### I. 卡片移動目標 (Card Destination)
-
-```typescript
-enum CardDestinationType {
-  FIELD = "field",
-  DEPOSITORY = "depository"
-}
-
-interface CardDestination {
-  type: CardDestinationType;
-  player_id?: string;  // 僅在 type === "depository" 時需要
-}
-
-// 範例:
-// - { type: "field" }: 卡片移至場上
-// - { type: "depository", player_id: "p1" }: 卡片移至 p1 的捕獲區
-// - { type: "depository", player_id: "p2" }: 卡片移至 p2 的捕獲區
+{type: "field"}                         // 移至場上
+{type: "depository", player_id: "p1"}  // 移至玩家捕獲區
 ```
 
 
 ---
 
-## III. 客戶端命令 (C2S Commands)
+## III. 客戶端命令 (C2S)
 
-客戶端僅在伺服器處於特定 `flow_state` 時發送命令。
-
-### 1. GameRequestJoin
-**描述**: 請求加入遊戲或重連
-**流程狀態**: 任意
-**Payload**:
-```json
-{
-  "command": "GameRequestJoin",
-  "player_id": "p1",
-  "session_token": "abc123"
-}
-```
-
-### 2. TurnPlayHandCard
-**描述**: 打出手牌並指定配對目標（如有）
-**流程狀態**: `AWAITING_HAND_PLAY`
-**Payload**:
-```json
-{
-  "command": "TurnPlayHandCard",
-  "card": "0341",
-  "target": "0342"
-}
-```
-**備註**:
-- `target` 為 `null` 表示無配對或送至場上
-- 雙重配對時，客戶端需在命令中明確選擇目標
-- 伺服器會驗證 `target` 是否與 `card` 月份相同
-
-### 3. TurnSelectTarget
-**描述**: 選擇翻牌時雙重配對的捕獲目標
-**流程狀態**: `AWAITING_SELECTION`
-**Payload**:
-```json
-{
-  "command": "TurnSelectTarget",
-  "source": "0841",
-  "target": "0842"
-}
-```
-
-### 4. RoundMakeDecision
-**描述**: 形成役後決策 Koi-Koi 或結束
-**流程狀態**: `AWAITING_DECISION`
-**Payload**:
-```json
-{
-  "command": "RoundMakeDecision",
-  "decision": "KOI_KOI"
-}
-```
-**備註**: `decision` 可為 `"KOI_KOI"` 或 `"END_ROUND"`
+| 命令 | 流程狀態 | Payload | 說明 |
+|------|---------|---------|------|
+| **GameRequestJoin** | 任意 | `{player_id, session_token}` | 加入或重連 |
+| **TurnPlayHandCard** | `AWAITING_HAND_PLAY` | `{card, target?}` | 打手牌，`target` 為配對目標或 `null` |
+| **TurnSelectTarget** | `AWAITING_SELECTION` | `{source, target}` | 翻牌雙重配對時選擇目標 |
+| **RoundMakeDecision** | `AWAITING_DECISION` | `{decision}` | `"KOI_KOI"` 或 `"END_ROUND"` |
 
 ---
 
-## IV. 伺服器事件 (S2C Events)
+## IV. 伺服器事件 (S2C)
 
-所有事件包含通用欄位：
+> 所有事件包含 `{event, event_id, timestamp}` 通用欄位
+
+### A. 遊戲/局級事件
+
+#### GameStarted
+遊戲會話開始
 ```json
-{
-  "event": "EventName",
-  "event_id": "evt_123",
-  "timestamp": 1678901234567
-}
+{my_player_id, players: [{id, name}], ruleset: {total_rounds, koi_koi_multiplier, seven_point_double}}
 ```
 
-### A. 遊戲局級事件 (Game/Round Level)
-
-#### 1. GameStarted
-**描述**: 遊戲會話開始
-**Payload**:
+#### RoundDealt
+新局發牌（自己手牌傳 `cards` 陣列，對手僅傳 `count`）
 ```json
-{
-  "event": "GameStarted",
-  "event_id": "evt_001",
-  "my_player_id": "p1",
-  "players": [
-    {"id": "p1", "name": "Player1"},
-    {"id": "p2", "name": "Player2"}
-  ],
-  "ruleset": {
-    "total_rounds": 12,
-    "koi_koi_multiplier": 2,
-    "seven_point_double": true
-  }
-}
-```
-**備註**: `my_player_id` 標識當前客戶端的玩家身份
-
-#### 2. RoundDealt
-**描述**: 新局發牌完成
-**Payload**:
-```json
-{
-  "event": "RoundDealt",
-  "event_id": "evt_002",
-  "dealer": "p1",
-  "field": ["0341", "0342", "0221", "0831", "1041", "0441", "0541", "0741"],
-  "hands": [
-    {"player_id": "p1", "cards": ["0111", "0331", "0431", "0531", "0631", "0931", "1031", "1131"]},
-    {"player_id": "p2", "count": 8}
-  ],
-  "deck_remaining": 24,
-  "first_player": "p1",
-  "next_state": {
-    "type": "AWAITING_HAND_PLAY",
-    "active_player": "p1"
-  }
-}
-```
-**備註**:
-- 自己的手牌傳具體 `cards` 陣列，對手手牌僅傳 `count` 數量
-
-#### 3. RoundEndedInstantly
-**描述**: 局開始時因 Teshi 或場牌流局立即結束
-**Payload**:
-```json
-{
-  "event": "RoundEndedInstantly",
-  "event_id": "evt_003",
-  "reason": "TESHI",
-  "winner": "p1",
-  "score_changes": [
-    {"player_id": "p1", "change": 6},
-    {"player_id": "p2", "change": 0}
-  ],
-  "cumulative_scores": [
-    {"player_id": "p1", "score": 6},
-    {"player_id": "p2", "score": 0}
-  ]
-}
-```
-**備註**:
-- `reason` 可為 `"TESHI"` 或 `"FIELD_KUTTSUKI"`
-- `winner` 為 `null` 表示平局
-- 後續會發送新的 `RoundDealt` 或 `GameFinished`
-
-#### 4. RoundScored
-**描述**: 局結束，分數結算
-**Payload**:
-```json
-{
-  "event": "RoundScored",
-  "event_id": "evt_004",
-  "winner": "p1",
-  "yakus": [
-    {"type": "AKATAN", "base_points": 5},
-    {"type": "TANZAKU", "base_points": 5}
-  ],
-  "base_total": 10,
-  "multipliers": {
-    "seven_plus": 2,
-    "opponent_koi": 2
-  },
-  "final_points": 40,
-  "score_changes": [
-    {"player_id": "p1", "change": 40},
-    {"player_id": "p2", "change": 0}
-  ],
-  "cumulative_scores": [
-    {"player_id": "p1", "score": 40},
-    {"player_id": "p2", "score": 15}
-  ]
-}
+{dealer, field: [...], hands: [{player_id, cards/count}], deck_remaining, first_player, next_state}
 ```
 
-#### 5. RoundDrawn
-**描述**: 雙方手牌用罄且無人形成役
-**Payload**:
+#### RoundEndedInstantly
+Teshi 或場牌流局立即結束，`reason`: `TESHI` | `FIELD_KUTTSUKI`
 ```json
-{
-  "event": "RoundDrawn",
-  "event_id": "evt_005",
-  "reason": "NO_YAKU",
-  "score_changes": [
-    {"player_id": "p1", "change": 0},
-    {"player_id": "p2", "change": 0}
-  ]
-}
+{reason, winner?, score_changes: [{player_id, change}], cumulative_scores: [{player_id, score}]}
 ```
 
-#### 6. GameFinished
-**描述**: 遊戲會話結束
-**Payload**:
+#### RoundScored
+局結束計分
 ```json
-{
-  "event": "GameFinished",
-  "event_id": "evt_006",
-  "final_scores": [
-    {"player_id": "p1", "score": 156},
-    {"player_id": "p2", "score": 142}
-  ],
-  "winner": "p1"
-}
+{winner, yakus: [{type, base_points}], base_total, multipliers: {seven_plus?, opponent_koi?},
+ final_points, score_changes: [...], cumulative_scores: [...]}
+```
+
+#### RoundDrawn
+手牌用罄無役平局
+```json
+{reason: "NO_YAKU", score_changes: [...]}
+```
+
+#### GameFinished
+遊戲結束
+```json
+{final_scores: [{player_id, score}], winner}
 ```
 
 ---
 
-### B. 回合級事件 (Turn Level)
+### B. 回合級事件
 
-#### 7. TurnCompleted
-**描述**: 完整回合執行完畢（無中斷）
-**使用時機**: 打手牌、翻牌均完成，且無役形成或不需決策
-**Payload**:
+#### TurnCompleted
+打手牌、翻牌均完成（無中斷），`captured: []` 表示移至場上，`yaku_update` 可為 `null` 或 `{new: [...], total_base}`
 ```json
-{
-  "event": "TurnCompleted",
-  "event_id": "evt_101",
-  "player": "p1",
-  "hand_play": {
-    "played": "0341",
-    "captured": ["0342", "0343"],
-    "to": {"type": "depository", "player_id": "p1"}
-  },
-  "deck_flip": {
-    "flipped": "0221",
-    "captured": ["0222"],
-    "to": {"type": "depository", "player_id": "p1"},
-    "deck_remaining": 23
-  },
-  "yaku_update": null,
-  "next_state": {
-    "type": "AWAITING_HAND_PLAY",
-    "active_player": "p2"
-  }
-}
-```
-**備註**:
-- `captured` 為空陣列表示無捕獲，卡片送至場上
-- `to` 可為 `{"type": "field"}` 或 `{"type": "depository", "player_id": "..."}`
-- `yaku_update` 為 `null` 或 `{"new": [...], "total_base": 7}`
-
-#### 8. SelectionRequired
-**描述**: 翻牌時雙重配對，需要客戶端選擇捕獲目標
-**使用時機**: 僅在 `deck_flip` 階段，翻出的牌與場上2張牌月份相同
-**Payload**:
-```json
-{
-  "event": "SelectionRequired",
-  "event_id": "evt_102",
-  "player": "p1",
-  "phase": "deck_flip",
-  "completed": {
-    "hand_play": {
-      "played": "0341",
-      "captured": ["0342"],
-      "to": {"type": "depository", "player_id": "p1"}
-    }
-  },
-  "selection": {
-    "source": "0841",
-    "options": ["0842", "0843"]
-  },
-  "next_state": {
-    "type": "AWAITING_SELECTION",
-    "active_player": "p1"
-  }
-}
+{player, hand_play: {played, captured, to}, deck_flip: {flipped, captured, to, deck_remaining},
+ yaku_update?, next_state}
 ```
 
-#### 9. TurnProgressAfterSelection
-**描述**: 翻牌選擇完成後，繼續執行剩餘流程
-**使用時機**: 收到 `TurnSelectTarget` 命令後
-**Payload**:
+#### SelectionRequired
+翻牌雙重配對，需選擇目標（僅 `deck_flip` 階段）
 ```json
-{
-  "event": "TurnProgressAfterSelection",
-  "event_id": "evt_103",
-  "selected_capture": {
-    "source": "0841",
-    "captured": ["0842"],
-    "to": {"type": "depository", "player_id": "p1"}
-  },
-  "deck_remaining": 22,
-  "yaku_update": null,
-  "next_state": {
-    "type": "AWAITING_HAND_PLAY",
-    "active_player": "p2"
-  }
-}
+{player, phase: "deck_flip", completed: {hand_play: {...}},
+ selection: {source, options: [...]}, next_state}
 ```
 
-#### 10. DecisionRequired
-**描述**: 玩家形成役型，需決策是否 Koi-Koi
-**使用時機**: 回合結束時檢測到新役型形成
-**Payload**:
+#### TurnProgressAfterSelection
+翻牌選擇完成，繼續流程
 ```json
-{
-  "event": "DecisionRequired",
-  "event_id": "evt_104",
-  "player": "p1",
-  "yaku_update": {
-    "new": [{"type": "AKATAN", "base_points": 5}],
-    "total_base": 5
-  },
-  "next_state": {
-    "type": "AWAITING_DECISION",
-    "active_player": "p1"
-  }
-}
+{selected_capture: {source, captured, to}, deck_remaining, yaku_update?, next_state}
 ```
 
-#### 11. DecisionMade
-**描述**: 玩家完成 Koi-Koi 決策
-**使用時機**: 收到 `RoundMakeDecision` 命令後
-**Payload**:
+#### DecisionRequired
+形成役型，需決策 Koi-Koi
 ```json
-{
-  "event": "DecisionMade",
-  "event_id": "evt_105",
-  "player": "p1",
-  "decision": "KOI_KOI",
-  "koi_multiplier_update": 2,
-  "next_state": {
-    "type": "AWAITING_HAND_PLAY",
-    "active_player": "p2"
-  }
-}
+{player, yaku_update: {new: [{type, base_points}], total_base}, next_state}
 ```
-**備註**: 若 `decision` 為 `"END_ROUND"`，後續會發送 `RoundScored` 事件
 
-#### 12. TurnError
-**描述**: 客戶端發送無效命令
-**Payload**:
+#### DecisionMade
+完成決策（若 `END_ROUND` 後續發送 `RoundScored`）
 ```json
-{
-  "event": "TurnError",
-  "event_id": "evt_199",
-  "error_code": "INVALID_CARD",
-  "message": "Card 0341 not in player's hand",
-  "retry_allowed": true
-}
+{player, decision, koi_multiplier_update?, next_state}
+```
+
+#### TurnError
+無效命令
+```json
+{error_code, message, retry_allowed}
 ```
 
 ---
 
-## V. 斷線重連：狀態快照 (Snapshot)
-
-當客戶端重連時（`GameRequestJoin` 且 `session_token` 有效），伺服器發送完整狀態快照。
+## V. 斷線重連
 
 ### GameSnapshotRestore
 
-**Payload**:
+重連時（`GameRequestJoin` + 有效 `session_token`）獲取完整狀態，`flow_state.context` 在 `AWAITING_SELECTION` 時包含 `selection` 物件
+
 ```json
 {
-  "event": "GameSnapshotRestore",
-  "event_id": "evt_snapshot",
-  "my_player_id": "p1",
-  "game": {
-    "id": "game_abc",
-    "ruleset": {
-      "total_rounds": 12,
-      "koi_koi_multiplier": 2,
-      "seven_point_double": true
-    },
-    "cumulative_scores": [
-      {"player_id": "p1", "score": 28},
-      {"player_id": "p2", "score": 15}
-    ],
-    "rounds_played": 3
-  },
-  "round": {
-    "dealer": "p2",
-    "koi_status": [
-      {"player_id": "p1", "multiplier": 1, "called_count": 0},
-      {"player_id": "p2", "multiplier": 2, "called_count": 1}
-    ]
-  },
-  "cards": {
-    "field": ["0341", "0441"],
-    "my_hand": ["0111", "0331", "0531"],
-    "opponent_hand_count": 5,
-    "my_depository": ["0342", "0343", "0344", "0221"],
-    "opponent_depository": ["0831", "0832", "0231"],
-    "deck_remaining": 18
-  },
-  "flow_state": {
-    "type": "AWAITING_HAND_PLAY",
-    "active_player": "p1",
-    "context": null
-  }
+  my_player_id,
+  game: {id, ruleset, cumulative_scores: [{player_id, score}], rounds_played},
+  round: {dealer, koi_status: [{player_id, multiplier, called_count}]},
+  cards: {field, my_hand, opponent_hand_count, my_depository, opponent_depository, deck_remaining},
+  flow_state: {type, active_player, context?}
 }
 ```
-**備註**:
-- `my_player_id` 標識當前客戶端的玩家身份
-- `context` 在 `AWAITING_SELECTION` 時包含 `selection` 物件
-- 客戶端收到快照後可直接渲染並發送命令，無需等待新事件
 
 ---
 
 ## VI. 事件流程範例
 
-### 範例 1: 無中斷的完整回合
-
+### 1. 無中斷完整回合
 ```
 C→S: TurnPlayHandCard {card: "0341", target: "0342"}
-
-S→C: TurnCompleted
-     player: "p1"
-     hand_play: {played: "0341", captured: ["0342"], to: {type: "depository", player_id: "p1"}}
-     deck_flip: {flipped: "0221", captured: [], to: {type: "field"}, deck_remaining: 23}
-     yaku_update: null
-     next_state: {type: "AWAITING_HAND_PLAY", active_player: "p2"}
+S→C: TurnCompleted {hand_play: {captured: ["0342"]}, deck_flip: {captured: []}, next: p2}
 ```
 
-### 範例 2: 打手牌時雙重配對（玩家已在命令中選擇）
-
+### 2. 翻牌雙重配對（中斷選擇）
 ```
 C→S: TurnPlayHandCard {card: "0341", target: "0342"}
-     // 場上有 0342 和 0343，玩家選擇 0342
-
-S→C: TurnCompleted
-     player: "p1"
-     hand_play: {played: "0341", captured: ["0342"], to: {type: "depository", player_id: "p1"}}
-     deck_flip: {flipped: "0221", captured: [], to: {type: "field"}, deck_remaining: 23}
-     yaku_update: null
-     next_state: {type: "AWAITING_HAND_PLAY", active_player: "p2"}
-```
-
-### 範例 3: 翻牌時雙重配對（需中斷選擇）
-
-```
-C→S: TurnPlayHandCard {card: "0341", target: "0342"}
-
-S→C: SelectionRequired
-     phase: "deck_flip"
-     completed: {
-       hand_play: {played: "0341", captured: ["0342"], to: {type: "depository", player_id: "p1"}}
-     }
-     selection: {source: "0841", options: ["0842", "0843"]}
-     next_state: {type: "AWAITING_SELECTION", active_player: "p1"}
-
+S→C: SelectionRequired {selection: {source: "0841", options: ["0842", "0843"]}}
 C→S: TurnSelectTarget {source: "0841", target: "0842"}
-
-S→C: TurnProgressAfterSelection
-     selected_capture: {source: "0841", captured: ["0842"], to: {type: "depository", player_id: "p1"}}
-     deck_remaining: 22
-     yaku_update: null
-     next_state: {type: "AWAITING_HAND_PLAY", active_player: "p2"}
+S→C: TurnProgressAfterSelection {selected_capture: {...}, next: p2}
 ```
 
-### 範例 4: 形成役型需決策
-
+### 3. 形成役型 → Koi-Koi
 ```
 C→S: TurnPlayHandCard {card: "0331", target: null}
-
-S→C: DecisionRequired
-     player: "p1"
-     yaku_update: {
-       new: [{"type": "AKATAN", "base_points": 5}],
-       total_base: 5
-     }
-     next_state: {type: "AWAITING_DECISION", active_player: "p1"}
-
+S→C: DecisionRequired {yaku_update: {new: ["AKATAN"], total_base: 5}}
 C→S: RoundMakeDecision {decision: "KOI_KOI"}
-
-S→C: DecisionMade
-     player: "p1"
-     decision: "KOI_KOI"
-     koi_multiplier_update: 2
-     next_state: {type: "AWAITING_HAND_PLAY", active_player: "p2"}
+S→C: DecisionMade {koi_multiplier_update: 2, next: p2}
 ```
 
-### 範例 5: 役型形成後選擇結束
-
+### 4. 形成役型 → 結束局
 ```
 C→S: TurnPlayHandCard {card: "0131", target: "0132"}
-
-S→C: DecisionRequired
-     player: "p1"
-     yaku_update: {
-       new: [{"type": "TANZAKU", "base_points": 5}],
-       total_base: 10
-     }
-     next_state: {type: "AWAITING_DECISION", active_player: "p1"}
-
+S→C: DecisionRequired {yaku_update: {total_base: 10}}
 C→S: RoundMakeDecision {decision: "END_ROUND"}
-
-S→C: DecisionMade
-     player: "p1"
-     decision: "END_ROUND"
-     next_state: null
-
-S→C: RoundScored
-     winner: "p1"
-     yakus: [
-       {"type": "AKATAN", "base_points": 5},
-       {"type": "TANZAKU", "base_points": 5}
-     ]
-     base_total: 10
-     multipliers: {seven_plus: 2, opponent_koi: 1}
-     final_points: 20
-     score_changes: [
-       {"player_id": "p1", "change": 20},
-       {"player_id": "p2", "change": 0}
-     ]
-     cumulative_scores: [
-       {"player_id": "p1", "score": 20},
-       {"player_id": "p2", "score": 0}
-     ]
-```
-
----
-
-## VII. 最小增量原則總結
-
-1. **僅傳遞變化**: 卡片移動僅傳 ID 陣列，無需完整 Card 物件
-2. **合併連續操作**: 無中斷時，手牌+翻牌+役檢查合併為單一事件
-3. **前置選擇**: 打手牌時的雙重配對由命令參數解決，無需額外事件
-4. **中斷點獨立**: 翻牌雙重配對、役型決策必須中斷等待命令
-5. **狀態明確**: 每個事件明確指出 `next_state`，客戶端無需推測
-6. **斷線恢復**: 重連時一次快照完整恢復，無需重放歷史事件
+S→C: DecisionMade {decision: "END_ROUND"}
+S→C: RoundScored {yakus: [...], final_points: 20, cumulative_scores: [...]}
