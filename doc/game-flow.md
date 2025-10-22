@@ -70,17 +70,35 @@
 | | `NO_YAKU` | 手牌用罄無役 |
 | **ErrorCode** | `INVALID_CARD` `INVALID_TARGET` `WRONG_PLAYER` `INVALID_STATE` `INVALID_SELECTION` | 錯誤類型 |
 
-### 卡片移動目標 (CardDestination)
+---
 
+## III. 核心數據結構
+
+### Player（玩家標識）
+僅在 `GameStarted` 事件中使用，其他場合直接使用 `player_id` 字串
 ```typescript
-{type: "field"}                         // 移至場上
-{type: "depository", player_id: "p1"}  // 移至玩家捕獲區
+{
+  uid: string    // 玩家唯一識別碼
+}
 ```
 
+### NextState（流程狀態）
+```typescript
+{
+  state_type: FlowState,      // 流程狀態類型
+  active_player_id: string    // 當前行動玩家 ID
+}
+```
+
+### CardDestination（卡片移動目標）
+```typescript
+{type: "field"}                       // 移至場上
+{type: "depository", player_id: string}  // 移至玩家捕獲區
+```
 
 ---
 
-## III. 客戶端命令 (C2S)
+## IV. 客戶端命令 (C2S)
 
 | 命令 | 流程狀態 | Payload | 說明 |
 |------|---------|---------|------|
@@ -91,7 +109,7 @@
 
 ---
 
-## IV. 伺服器事件 (S2C)
+## V. 伺服器事件 (S2C)
 
 > 所有事件包含 `{event, event_id, timestamp}` 通用欄位
 
@@ -100,38 +118,38 @@
 #### GameStarted
 遊戲會話開始
 ```json
-{my_player_id, players: [{id, name}], ruleset: {total_rounds, koi_koi_multiplier, seven_point_double}}
+{my_player_id, players: [{player: Player, name}], ruleset: {total_rounds, koi_koi_multiplier, seven_point_double}}
 ```
 
 #### RoundDealt
 新局發牌（自己手牌傳 `cards` 陣列，對手僅傳 `count`）
 ```json
-{dealer, field: [...], hands: [{player_id, cards/count}], deck_remaining, first_player, next_state}
+{dealer_id, field: [...], hands: [{player_id, cards/count}], deck_remaining, first_player_id, next_state: NextState}
 ```
 
 #### RoundEndedInstantly
 Teshi 或場牌流局立即結束，`reason`: `TESHI` | `FIELD_KUTTSUKI`
 ```json
-{reason, winner?, score_changes: [{player_id, change}], cumulative_scores: [{player_id, score}]}
+{reason, winner_id?, score_changes: [{player_id, change}], cumulative_scores: [{player_id, score}]}
 ```
 
 #### RoundScored
 局結束計分
 ```json
-{winner, yakus: [{type, base_points}], base_total, multipliers: {seven_plus?, winner_koi?, opponent_koi?},
- final_points, score_changes: [...], cumulative_scores: [...]}
+{winner_id, yakus: [{type, base_points}], base_total, multipliers: {seven_plus?, winner_koi?, opponent_koi?},
+ final_points, score_changes: [{player_id, change}], cumulative_scores: [{player_id, score}]}
 ```
 
 #### RoundDrawn
 手牌用罄無役平局
 ```json
-{reason: "NO_YAKU", score_changes: [...]}
+{reason: "NO_YAKU", score_changes: [{player_id, change}]}
 ```
 
 #### GameFinished
 遊戲結束
 ```json
-{final_scores: [{player_id, score}], winner}
+{final_scores: [{player_id, score}], winner_id}
 ```
 
 ---
@@ -141,33 +159,33 @@ Teshi 或場牌流局立即結束，`reason`: `TESHI` | `FIELD_KUTTSUKI`
 #### TurnCompleted
 打手牌、翻牌均完成（無中斷），`captured: []` 表示移至場上，`yaku_update` 可為 `null` 或 `{new: [...], total_base}`
 ```json
-{player, hand_play: {played, captured, to}, deck_flip: {flipped, captured, to, deck_remaining},
- yaku_update?, next_state}
+{player_id, hand_play: {played, captured, to: CardDestination}, deck_flip: {flipped, captured, to: CardDestination},
+ deck_remaining, yaku_update?, next_state: NextState}
 ```
 
 #### SelectionRequired
 翻牌雙重配對，需選擇目標（僅 `deck_flip` 階段）
 ```json
-{player, phase: "deck_flip", completed: {hand_play: {...}},
- selection: {source, options: [...]}, next_state}
+{player_id, phase: "deck_flip", completed: {hand_play: {...}},
+ selection: {source, options: [...]}, next_state: NextState}
 ```
 
 #### TurnProgressAfterSelection
 翻牌選擇完成，繼續流程
 ```json
-{selected_capture: {source, captured, to}, deck_remaining, yaku_update?, next_state}
+{selected_capture: {source, captured, to: CardDestination}, deck_remaining, yaku_update?, next_state: NextState}
 ```
 
 #### DecisionRequired
 形成役型，需決策 Koi-Koi
 ```json
-{player, yaku_update: {new: [{type, base_points}], total_base}, next_state}
+{player_id, yaku_update: {new: [{type, base_points}], total_base}, next_state: NextState}
 ```
 
 #### DecisionMade
-完成決策（**僅在 `KOI_KOI` 時發送**，`END_ROUND` 直接發送 `RoundScored`）
+完成決策（**僅在 `KOI_KOI` 時發送**，`END_ROUND` 直接發送 `RoundScored`），`koi_multiplier_update` 為數字，表示玩家更新後的 Koi-Koi 倍數
 ```json
-{player, decision: "KOI_KOI", koi_multiplier_update, next_state}
+{player_id, decision: "KOI_KOI", koi_multiplier_update: number, next_state: NextState}
 ```
 
 #### TurnError
@@ -178,7 +196,7 @@ Teshi 或場牌流局立即結束，`reason`: `TESHI` | `FIELD_KUTTSUKI`
 
 ---
 
-## V. 斷線重連
+## VI. 斷線重連
 
 ### GameSnapshotRestore
 
@@ -188,43 +206,51 @@ Teshi 或場牌流局立即結束，`reason`: `TESHI` | `FIELD_KUTTSUKI`
 {
   my_player_id,
   game: {id, ruleset, cumulative_scores: [{player_id, score}], rounds_played},
-  round: {dealer, koi_status: [{player_id, multiplier, called_count}]},
+  round: {dealer_id, koi_status: [{player_id, multiplier, called_count}]},
   cards: {field, my_hand, opponent_hand_count, my_depository, opponent_depository, deck_remaining},
-  flow_state: {type, active_player, context?}
+  flow_state: {state_type: FlowState, active_player_id, context?}
 }
 ```
 
 ---
 
-## VI. 事件流程範例
+## VII. 事件流程範例
 
 ### 1. 無中斷完整回合
 ```
 C→S: TurnPlayHandCard {card: "0341", target: "0342"}
-S→C: TurnCompleted {hand_play: {captured: ["0342"]}, deck_flip: {captured: []}, next: p2}
+S→C: TurnCompleted {player_id: "p1", hand_play: {captured: ["0342"]}, deck_flip: {captured: []},
+     next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}}
 ```
 
 ### 2. 翻牌雙重配對（中斷選擇）
 ```
 C→S: TurnPlayHandCard {card: "0341", target: "0342"}
-S→C: SelectionRequired {selection: {source: "0841", options: ["0842", "0843"]}}
+S→C: SelectionRequired {player_id: "p1", selection: {source: "0841", options: ["0842", "0843"]},
+     next_state: {state_type: "AWAITING_SELECTION", active_player_id: "p1"}}
 C→S: TurnSelectTarget {source: "0841", target: "0842"}
-S→C: TurnProgressAfterSelection {selected_capture: {...}, next: p2}
+S→C: TurnProgressAfterSelection {selected_capture: {...},
+     next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}}
 ```
 
 ### 3. 形成役型 → Koi-Koi
 ```
 C→S: TurnPlayHandCard {card: "0331", target: null}
-S→C: DecisionRequired {yaku_update: {new: ["AKATAN"], total_base: 5}}
+S→C: DecisionRequired {player_id: "p1", yaku_update: {new: [{type: "AKATAN", base_points: 5}], total_base: 5},
+     next_state: {state_type: "AWAITING_DECISION", active_player_id: "p1"}}
 C→S: RoundMakeDecision {decision: "KOI_KOI"}
-S→C: DecisionMade {koi_multiplier_update: 2, next: p2}
+S→C: DecisionMade {player_id: "p1", decision: "KOI_KOI", koi_multiplier_update: 2,
+     next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}}
 ```
 
 ### 4. 形成役型 → 結束局
 ```
 C→S: TurnPlayHandCard {card: "0131", target: "0132"}
-S→C: DecisionRequired {yaku_update: {total_base: 10}}
+S→C: DecisionRequired {player_id: "p1", yaku_update: {new: [{type: "AOTAN", base_points: 5}], total_base: 10},
+     next_state: {state_type: "AWAITING_DECISION", active_player_id: "p1"}}
 C→S: RoundMakeDecision {decision: "END_ROUND"}
-S→C: RoundScored {yakus: [...], final_points: 20, cumulative_scores: [...]}
+S→C: RoundScored {winner_id: "p1", yakus: [{type: "AOTAN", base_points: 5}, ...], base_total: 10,
+     multipliers: {seven_plus: 2}, final_points: 20,
+     score_changes: [...], cumulative_scores: [...]}
      // END_ROUND 時直接發送 RoundScored，省略 DecisionMade
 ```
