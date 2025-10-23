@@ -45,14 +45,14 @@
 
 **⚠️ CRITICAL**: 此階段完成前，無法開始任何使用者故事實作
 
-- [ ] T010 建立 Vue Router 配置，新增首頁路由 / → HomePage in front-end/src/router/index.ts
-- [ ] T011 建立常數檔案解析器，從 doc/rule.md 讀取規則內容 in front-end/src/data/rules.ts
-- [ ] T012 建立常數檔案解析器，從 doc/rule.md 讀取役種資料 in front-end/src/data/yaku.ts
-- [ ] T013 實作 useScrollTo composable，提供平滑滾動功能 in front-end/src/composables/useScrollTo.ts
-- [ ] T014 [P] 配置全域 Tailwind CSS 樣式 in front-end/src/assets/styles/
-- [ ] T015 [P] 建立 TypeScript 介面定義檔 front-end/src/types/index.ts（NavigationLink, HeroSectionProps 等）
+- [X] T010 建立 Vue Router 配置，新增首頁路由 / → HomePage in front-end/src/router/index.ts
+- [X] T011 建立常數檔案解析器，從 doc/rule.md 讀取規則內容 in front-end/src/data/rules.json
+- [X] T012 建立常數檔案解析器，從 doc/rule.md 讀取役種資料 in front-end/src/data/yaku.json
+- [X] T013 實作 useScrollTo composable，提供平滑滾動功能 in front-end/src/composables/useScrollTo.ts
+- [X] T014 [P] 配置全域 Tailwind CSS 樣式 in front-end/src/assets/styles/main.css
+- [X] T015 [P] 建立 TypeScript 介面定義檔 front-end/src/types/index.ts（NavigationLink, HeroSectionProps 等）
 
-**Checkpoint**: 基礎設施完成，使用者故事可開始並行實作
+**Checkpoint**: ✅ 基礎設施完成，使用者故事可開始並行實作
 
 ---
 

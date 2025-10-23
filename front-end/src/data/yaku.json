@@ -1,0 +1,112 @@
+{
+  "yakuList": [
+    {
+      "id": "goko",
+      "name": "Five Brights",
+      "nameJa": "五光",
+      "category": "hikari",
+      "points": 10,
+      "cardIds": ["0111", "0311", "0811", "1111", "1211"],
+      "description": "Collect all 5 bright cards"
+    },
+    {
+      "id": "shiko",
+      "name": "Four Brights",
+      "nameJa": "四光",
+      "category": "hikari",
+      "points": 8,
+      "cardIds": ["0111", "0311", "0811", "1211"],
+      "description": "Collect 4 bright cards (excluding Rain Man)"
+    },
+    {
+      "id": "ameshiko",
+      "name": "Rainy Four Brights",
+      "nameJa": "雨四光",
+      "category": "hikari",
+      "points": 7,
+      "cardIds": ["0111", "0311", "0811", "1111"],
+      "description": "Collect 4 bright cards (including Rain Man)"
+    },
+    {
+      "id": "sanko",
+      "name": "Three Brights",
+      "nameJa": "三光",
+      "category": "hikari",
+      "points": 5,
+      "cardIds": ["0111", "0311", "0811"],
+      "description": "Collect 3 bright cards (excluding Rain Man)"
+    },
+    {
+      "id": "akatan",
+      "name": "Red Ribbons",
+      "nameJa": "赤短",
+      "category": "tanzaku",
+      "points": 5,
+      "cardIds": ["0131", "0231", "0331"],
+      "description": "Collect all 3 red ribbons with poetry"
+    },
+    {
+      "id": "aotan",
+      "name": "Blue Ribbons",
+      "nameJa": "青短",
+      "category": "tanzaku",
+      "points": 5,
+      "cardIds": ["0631", "0931", "1031"],
+      "description": "Collect all 3 blue ribbons"
+    },
+    {
+      "id": "tanzaku",
+      "name": "Ribbons",
+      "nameJa": "短冊",
+      "category": "tanzaku",
+      "points": 1,
+      "minimumCards": 5,
+      "description": "Collect 5 or more ribbon cards (1 point per card over 5)"
+    },
+    {
+      "id": "inoshikacho",
+      "name": "Boar, Deer, Butterfly",
+      "nameJa": "猪鹿蝶",
+      "category": "tane",
+      "points": 5,
+      "cardIds": ["0721", "1021", "0621"],
+      "description": "Collect the Boar, Deer, and Butterfly cards"
+    },
+    {
+      "id": "hanamizake",
+      "name": "Cherry Blossom Viewing",
+      "nameJa": "花見酒",
+      "category": "tane",
+      "points": 3,
+      "cardIds": ["0311", "0921"],
+      "description": "Collect the Cherry Blossom curtain and Sake cup"
+    },
+    {
+      "id": "tsukimizake",
+      "name": "Moon Viewing",
+      "nameJa": "月見酒",
+      "category": "tane",
+      "points": 3,
+      "cardIds": ["0811", "0921"],
+      "description": "Collect the Moon and Sake cup"
+    },
+    {
+      "id": "tane",
+      "name": "Animals",
+      "nameJa": "種",
+      "category": "tane",
+      "points": 1,
+      "minimumCards": 5,
+      "description": "Collect 5 or more animal/object cards (1 point per card over 5)"
+    },
+    {
+      "id": "kasu",
+      "name": "Plain Cards",
+      "nameJa": "かす",
+      "category": "kasu",
+      "points": 1,
+      "minimumCards": 10,
+      "description": "Collect 10 or more plain cards (1 point per card over 10)"
+    }
+  ]
+}

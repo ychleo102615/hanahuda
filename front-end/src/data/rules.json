@@ -1,0 +1,138 @@
+{
+  "categories": [
+    {
+      "id": "game-objective",
+      "title": "Game Objective",
+      "defaultExpanded": true,
+      "sections": [
+        {
+          "type": "paragraph",
+          "text": "The goal of Koi-Koi (こいこい) is to form Yaku (役, scoring combinations) by capturing cards from the playing field."
+        },
+        {
+          "type": "paragraph",
+          "text": "When you form a Yaku, you can choose to:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Continue (Koi-Koi): Keep playing to form more Yaku and multiply your score.",
+            "Stop: End the round and claim your current points."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Be careful! If you choose to continue and your opponent forms a Yaku first, you lose all your points and they double their score."
+        }
+      ]
+    },
+    {
+      "id": "card-deck",
+      "title": "Card Deck",
+      "defaultExpanded": false,
+      "sections": [
+        {
+          "type": "paragraph",
+          "text": "The Hanafuda deck consists of 48 cards, with 4 cards per month (January to December)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Each month represents a specific flower or plant:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "January - Pine (松)",
+            "February - Plum Blossom (梅)",
+            "March - Cherry Blossom (櫻)",
+            "April - Wisteria (藤)",
+            "May - Iris (菖蒲)",
+            "June - Peony (牡丹)",
+            "July - Bush Clover (萩)",
+            "August - Susuki Grass (芒)",
+            "September - Chrysanthemum (菊)",
+            "October - Maple (紅葉)",
+            "November - Willow (柳)",
+            "December - Paulownia (桐)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "card-types",
+      "title": "Card Types",
+      "defaultExpanded": false,
+      "sections": [
+        {
+          "type": "paragraph",
+          "text": "Cards are classified into four types based on their value:"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Hikari (光札): Bright cards, worth 20 points. There are 5 bright cards in total.",
+            "Tane (タネ札): Animal/object cards, worth 10 points. There are 9 Tane cards.",
+            "Tanzaku (短札): Ribbon cards, worth 5 points. There are 10 Tanzaku cards.",
+            "Kasu (かす札): Plain cards, worth 1 point each. There are 24 Kasu cards."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "how-to-play",
+      "title": "How to Play",
+      "defaultExpanded": false,
+      "sections": [
+        {
+          "type": "ordered-list",
+          "items": [
+            {
+              "title": "Setup",
+              "text": "Deal 8 cards to each player, place 8 cards face-up on the field."
+            },
+            {
+              "title": "Turn",
+              "text": "On your turn:",
+              "subItems": [
+                "Play one card from your hand. If it matches the month of a card on the field, capture both cards.",
+                "Draw one card from the deck. If it matches a card on the field, capture both cards."
+              ]
+            },
+            {
+              "title": "Matching",
+              "text": "Cards match if they belong to the same month (same flower/plant)."
+            },
+            {
+              "title": "Decision",
+              "text": "After forming a Yaku, choose to continue (Koi-Koi) or stop."
+            },
+            {
+              "title": "Round End",
+              "text": "The round ends when a player stops or all cards are played."
+            },
+            {
+              "title": "Scoring",
+              "text": "Calculate points based on Yaku formed. If you called Koi-Koi and opponent scores first, you get 0 points and opponent doubles their score."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scoring-rules",
+      "title": "Scoring Rules",
+      "defaultExpanded": false,
+      "sections": [
+        {
+          "type": "list",
+          "items": [
+            "When you form a Yaku, you can choose to continue (Koi-Koi) or stop.",
+            "If you choose to continue and your opponent forms a Yaku first, your score becomes 0 and your opponent's score doubles.",
+            "If your total score is 7 or more points, your final score doubles.",
+            "After 12 rounds, the player with the highest total score wins."
+          ]
+        }
+      ]
+    }
+  ]
+}
