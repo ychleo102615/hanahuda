@@ -154,7 +154,7 @@ Follow-up TODOs: None
 ### Technology Stack (Fixed)
 
 - **Backend**: Java 17+, Spring Boot 3.x, PostgreSQL 14+, JPA/Hibernate
-- **Frontend**: Vue 3, TypeScript, Tailwind CSS, Pinia (state management)
+- **Frontend**: Vue 3, TypeScript, Tailwind CSS v4, Pinia (state management)
 - **Communication**: REST API (commands), Server-Sent Events (events)
 - **Testing**: JUnit 5 (backend), Vitest (frontend), Playwright (optional E2E)
 

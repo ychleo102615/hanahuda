@@ -59,7 +59,7 @@
 - **技術展示**:完整的前後端分離架構,展示可擴展的分散式系統設計
 
 ### 1.4 技術棧
-- **前端**:Vue 3 + TypeScript + Tailwind CSS
+- **前端**:Vue 3 + TypeScript + Tailwind CSS v4
 - **後端**:Java (Spring Boot) + PostgreSQL
 - **通訊**:REST API + Server-Sent Events (SSE)
 - **架構**: **CRITICAL** Clean Architecture + Domain Driven Development + Microservices-ready design

@@ -253,8 +253,8 @@ Domain (Game, Card, Yaku, GameRules)
 - **技術文檔**：Clean Architecture (Robert C. Martin)、DDD (Eric Evans)、Spring Boot、Vue 3、MDN SSE
 
 ## Active Technologies
-- TypeScript 5.x + Vue 3.x + Vue 3, TypeScript, Tailwind CSS, Vue Router (001-homepage-implementation)
+- TypeScript 5.x + Vue 3.x + Tailwind CSS v4.1.16 + Vue Router (001-homepage-implementation)
 - N/A (靜態首頁，無資料持久化需求) (001-homepage-implementation)
 
 ## Recent Changes
-- 001-homepage-implementation: Added TypeScript 5.x + Vue 3.x + Vue 3, TypeScript, Tailwind CSS, Vue Router
+- 001-homepage-implementation: Added TypeScript 5.x + Vue 3.x + Tailwind CSS v4.1.16 (@tailwindcss/postcss) + Vue Router

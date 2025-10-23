@@ -25,17 +25,17 @@
 
 **目的**: 建立專案基礎結構與開發環境
 
-- [ ] T001 驗證 Node.js 18+ 和 npm 已安裝
-- [ ] T002 檢查 front-end/ 目錄結構，確認 Vue 3 + TypeScript + Vite 專案已存在
-- [ ] T003 [P] 檢查並配置 tailwind.config.js 設計 token（色彩、字體、間距）
-- [ ] T004 [P] 配置 ESLint 和 Prettier 規則
-- [ ] T005 [P] 驗證 Vitest 和 Vue Test Utils 測試環境配置
-- [ ] T006 建立組件目錄結構 front-end/src/components/
-- [ ] T007 建立 composables 目錄 front-end/src/composables/
-- [ ] T008 建立資料目錄 front-end/src/data/
-- [ ] T009 建立靜態資源目錄 front-end/src/assets/icons/hanafuda/
+- [X] T001 驗證 Node.js 18+ 和 npm 已安裝
+- [X] T002 檢查 front-end/ 目錄結構，確認 Vue 3 + TypeScript + Vite 專案已存在
+- [X] T003 [P] 檢查並配置 tailwind.config.js 設計 token（色彩、字體、間距）
+- [X] T004 [P] 配置 ESLint 和 Prettier 規則
+- [X] T005 [P] 驗證 Vitest 和 Vue Test Utils 測試環境配置
+- [X] T006 建立組件目錄結構 front-end/src/components/
+- [X] T007 建立 composables 目錄 front-end/src/composables/
+- [X] T008 建立資料目錄 front-end/src/data/
+- [X] T009 建立靜態資源目錄 front-end/src/assets/icons/hanafuda/
 
-**Checkpoint**: 開發環境就緒，可開始組件實作
+**Checkpoint**: ✅ 開發環境就緒，可開始組件實作
 
 ---
 

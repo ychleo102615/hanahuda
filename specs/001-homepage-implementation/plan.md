@@ -12,7 +12,8 @@
 ## Technical Context
 
 **Language/Version**: TypeScript 5.x + Vue 3.x
-**Primary Dependencies**: Vue 3, TypeScript, Tailwind CSS, Vue Router
+**Primary Dependencies**: Vue 3, TypeScript, Tailwind CSS v4, Vue Router
+**CSS Framework**: Tailwind CSS v4.1.16 (使用 @tailwindcss/postcss plugin)
 **Storage**: N/A (靜態首頁，無資料持久化需求)
 **Testing**: Vitest (單元測試), Playwright (可選的 E2E 測試)
 **Target Platform**: 現代瀏覽器 (Chrome, Firefox, Safari, Edge)，支援桌面和移動端
