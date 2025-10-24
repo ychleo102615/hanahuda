@@ -51,7 +51,7 @@ describe('HeroSection.vue', () => {
     })
 
     expect(wrapper.exists()).toBe(true)
-    expect(wrapper.find('.hero-section').exists()).toBe(true)
+    expect(wrapper.find('section[role="banner"]').exists()).toBe(true)
   })
 
   it('應該正確顯示標題和副標題', () => {
@@ -62,8 +62,8 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const title = wrapper.find('.hero-title')
-    const subtitle = wrapper.find('.hero-subtitle')
+    const title = wrapper.find('h1')
+    const subtitle = wrapper.find('p')
 
     expect(title.text()).toBe(defaultProps.title)
     expect(subtitle.text()).toBe(defaultProps.subtitle)
@@ -77,7 +77,7 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const ctaButton = wrapper.find('.hero-cta')
+    const ctaButton = wrapper.find('button')
     expect(ctaButton.text()).toBe(defaultProps.ctaText)
   })
 
@@ -98,7 +98,7 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const section = wrapper.find('.hero-section')
+    const section = wrapper.find('section')
     expect(section.attributes('style')).toContain('background-image')
     expect(section.attributes('style')).toContain('/images/hero-bg.jpg')
   })
@@ -111,7 +111,7 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const section = wrapper.find('.hero-section')
+    const section = wrapper.find('section')
     const style = section.attributes('style')
     // style 可能為 undefined 或空字串
     if (style) {
@@ -134,7 +134,7 @@ describe('HeroSection.vue', () => {
     })
 
     // 點擊 CTA 按鈕
-    const ctaButton = wrapper.find('.hero-cta')
+    const ctaButton = wrapper.find('button')
     await ctaButton.trigger('click')
     await flushPromises()
 
@@ -154,7 +154,7 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const ctaButton = wrapper.find('.hero-cta')
+    const ctaButton = wrapper.find('button')
 
     // 第一次點擊
     await ctaButton.trigger('click')
@@ -185,7 +185,7 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const ctaButton = wrapper.find('.hero-cta')
+    const ctaButton = wrapper.find('button')
 
     // 觸發 Enter 鍵
     await ctaButton.trigger('keydown', { key: 'Enter' })
@@ -203,7 +203,7 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const ctaButton = wrapper.find('.hero-cta')
+    const ctaButton = wrapper.find('button')
 
     // 觸發空格鍵
     await ctaButton.trigger('keydown', { key: ' ' })
@@ -221,7 +221,7 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const ctaButton = wrapper.find('.hero-cta')
+    const ctaButton = wrapper.find('button')
     expect(ctaButton.attributes('tabindex')).toBe('0')
   })
 
@@ -237,11 +237,11 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const section = wrapper.find('.hero-section')
+    const section = wrapper.find('section')
     expect(section.attributes('role')).toBe('banner')
     expect(section.attributes('aria-label')).toBe('Hero Section')
 
-    const ctaButton = wrapper.find('.hero-cta')
+    const ctaButton = wrapper.find('button')
     expect(ctaButton.attributes('aria-label')).toBe(defaultProps.ctaText)
   })
 
@@ -253,7 +253,7 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const ctaButton = wrapper.find('.hero-cta')
+    const ctaButton = wrapper.find('button')
 
     // 點擊前
     expect(ctaButton.attributes('aria-busy')).toBe('false')
@@ -287,7 +287,7 @@ describe('HeroSection.vue', () => {
       }
     })
 
-    const ctaButton = wrapper.find('.hero-cta')
+    const ctaButton = wrapper.find('button')
     await ctaButton.trigger('click')
     await flushPromises()
 

@@ -10,9 +10,11 @@ import type { HeroSectionProps } from '@/types'
  * 功能:
  * - 顯示遊戲標題和副標題
  * - 提供「開始遊戲」CTA 按鈕
- * - 支援響應式設計（桌面/手機）
+ * - 支援響應式設計（桌面/手機）- 使用 Tailwind utility classes
  * - 防止重複點擊導航
  * - 支援鍵盤導航（Tab + Enter）
+ *
+ * 樣式方法：Tailwind CSS v4 (Utility-First)
  */
 
 // Props 定義
@@ -63,25 +65,28 @@ const handleKeyDown = (event: KeyboardEvent) => {
 <template>
   <section
     id="hero"
-    class="hero-section"
+    class="flex items-center justify-center min-h-screen bg-[#f5f1e8] px-8 py-16 text-center bg-cover bg-center bg-no-repeat"
     :style="backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}"
     role="banner"
     aria-label="Hero Section"
   >
-    <div class="hero-content">
+    <!-- 內容容器 -->
+    <div class="max-w-3xl w-full z-10">
       <!-- 主標題 -->
-      <h1 class="hero-title">
+      <h1
+        class="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-[--color-accent-red] mb-6 drop-shadow-sm"
+      >
         {{ title }}
       </h1>
 
       <!-- 副標題 -->
-      <p class="hero-subtitle">
+      <p class="text-xl md:text-2xl font-normal leading-relaxed text-gray-700 mb-10">
         {{ subtitle }}
       </p>
 
-      <!-- CTA 按鈕 -->
+      <!-- CTA 按鈕 - 使用 main.css 中定義的 .btn-primary -->
       <button
-        class="hero-cta"
+        class="btn-primary text-lg md:text-xl w-full md:w-auto disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
         :disabled="isNavigating"
         :aria-label="ctaText"
         :aria-busy="isNavigating"
@@ -96,170 +101,13 @@ const handleKeyDown = (event: KeyboardEvent) => {
 </template>
 
 <style scoped>
-/* ========================================
-   Hero Section 容器
-   ======================================== */
-
-.hero-section {
-  /* 佈局：Flexbox 置中 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  /* 尺寸：全視窗高度 */
-  min-height: 100vh;
-
-  /* 背景設計：傳統花牌意象融合現代風格 */
-  background-color: #f5f1e8; /* 米白色背景 */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-
-  /* 內距 */
-  padding: 2rem;
-
-  /* 文字置中 */
-  text-align: center;
-}
-
-/* ========================================
-   Hero Section 內容容器
-   ======================================== */
-
-.hero-content {
-  max-width: 800px;
-  width: 100%;
-  z-index: 1; /* 確保內容在背景之上 */
-}
-
-/* ========================================
-   主標題
-   ======================================== */
-
-.hero-title {
-  /* 字體樣式 */
-  font-size: 3.5rem; /* 桌面版大標題 */
-  font-weight: 700;
-  line-height: 1.2;
-
-  /* 色彩：深紅色（傳統日式色彩） */
-  color: #8b0000;
-
-  /* 間距 */
-  margin-bottom: 1.5rem;
-
-  /* 文字陰影（提升可讀性） */
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* ========================================
-   副標題
-   ======================================== */
-
-.hero-subtitle {
-  /* 字體樣式 */
-  font-size: 1.5rem;
-  font-weight: 400;
-  line-height: 1.6;
-
-  /* 色彩：深灰色 */
-  color: #333333;
-
-  /* 間距 */
-  margin-bottom: 2.5rem;
-}
-
-/* ========================================
-   CTA 按鈕
-   ======================================== */
-
-.hero-cta {
-  /* 字體樣式 */
-  font-size: 1.25rem;
-  font-weight: 600;
-
-  /* 色彩：深紅色背景 + 白色文字 */
-  background-color: #8b0000;
-  color: #ffffff;
-
-  /* 尺寸 */
-  padding: 1rem 2.5rem;
-
-  /* 圓角 */
-  border-radius: 0.5rem;
-
-  /* 邊框 */
-  border: none;
-
-  /* 游標 */
-  cursor: pointer;
-
-  /* 轉場動畫 */
-  transition: all 0.3s ease;
-
-  /* 陰影 */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* CTA 按鈕 Hover 狀態 */
-.hero-cta:hover:not(:disabled) {
-  background-color: #a52a2a; /* 淺一點的紅色 */
-  transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* CTA 按鈕 Focus 狀態（鍵盤導航） */
-.hero-cta:focus-visible {
-  outline: 3px solid #4a90e2; /* 藍色 focus 指示器 */
-  outline-offset: 4px;
-}
-
-/* CTA 按鈕 Active 狀態 */
-.hero-cta:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* CTA 按鈕 Disabled 狀態 */
-.hero-cta:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* ========================================
-   響應式設計：手機版
-   ======================================== */
-
-@media (max-width: 768px) {
-  .hero-section {
-    padding: 1.5rem;
-    min-height: 80vh; /* 手機版稍微降低高度 */
-  }
-
-  .hero-title {
-    font-size: 2.5rem; /* 手機版縮小標題 */
-  }
-
-  .hero-subtitle {
-    font-size: 1.125rem;
-    margin-bottom: 2rem;
-  }
-
-  .hero-cta {
-    font-size: 1.125rem;
-    padding: 0.875rem 2rem;
-    width: 100%; /* 手機版按鈕全寬 */
-  }
-}
-
-/* 超小螢幕 */
-@media (max-width: 480px) {
-  .hero-title {
-    font-size: 2rem;
-  }
-
-  .hero-subtitle {
-    font-size: 1rem;
-  }
-}
+/*
+ * Tailwind CSS Utility-First 方法
+ * 幾乎所有樣式都使用 Tailwind utility classes
+ * 僅在極特殊情況下使用 scoped CSS
+ *
+ * 按鈕樣式使用 main.css 中定義的 .btn-primary
+ * 色彩使用 CSS variables (--color-accent-red)
+ * 響應式使用 Tailwind breakpoints (md:, lg:)
+ */
 </style>
