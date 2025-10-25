@@ -64,20 +64,20 @@
 
 ### 實作 User Story 1
 
-- [ ] T016 [US1] 建立 HeroSection 組件骨架 in front-end/src/components/HeroSection.vue
-- [ ] T017 [US1] 實作 HeroSection Props 介面（title, subtitle, ctaText, ctaTarget）
-- [ ] T018 [US1] 實作 HeroSection 桌面版佈局（Flexbox 置中，大標題）
-- [ ] T019 [US1] 實作 HeroSection 手機版響應式佈局（單欄，標題縮小）
-- [ ] T020 [US1] 實作「開始遊戲」CTA 按鈕，使用 Vue Router 導航至 /game
-- [ ] T021 [US1] 新增 Hero Section 背景設計（傳統花牌意象融合現代風格）
-- [ ] T022 [US1] 實作防止重複點擊邏輯（使用 ref 追蹤導航狀態）
-- [ ] T023 [US1] 新增鍵盤導航支援（Tab + Enter）和 ARIA 標籤 in HeroSection.vue
-- [ ] T024 [US1] 建立 HomePage 頁面組件 in front-end/src/views/HomePage.vue
-- [ ] T025 [US1] 整合 HeroSection 到 HomePage
+- [X] T016 [US1] 建立 HeroSection 組件骨架 in front-end/src/components/HeroSection.vue
+- [X] T017 [US1] 實作 HeroSection Props 介面（title, subtitle, ctaText, ctaTarget）
+- [X] T018 [US1] 實作 HeroSection 桌面版佈局（Flexbox 置中，大標題）
+- [X] T019 [US1] 實作 HeroSection 手機版響應式佈局（單欄，標題縮小）
+- [X] T020 [US1] 實作「開始遊戲」CTA 按鈕，使用 Vue Router 導航至 /game
+- [X] T021 [US1] 新增 Hero Section 背景設計（傳統花牌意象融合現代風格）
+- [X] T022 [US1] 實作防止重複點擊邏輯（使用 ref 追蹤導航狀態）
+- [X] T023 [US1] 新增鍵盤導航支援（Tab + Enter）和 ARIA 標籤 in HeroSection.vue
+- [X] T024 [US1] 建立 HomePage 頁面組件 in front-end/src/views/HomePage.vue
+- [X] T025 [US1] 整合 HeroSection 到 HomePage
 
 **測試 User Story 1**:
-- [ ] T026 [P] [US1] 撰寫 HeroSection 單元測試（渲染、Props 驗證、CTA 點擊）in front-end/src/__tests__/components/HeroSection.spec.ts
-- [ ] T027 [P] [US1] 撰寫 HeroSection 鍵盤導航測試 in front-end/src/__tests__/components/HeroSection.spec.ts
+- [X] T026 [P] [US1] 撰寫 HeroSection 單元測試（渲染、Props 驗證、CTA 點擊）in front-end/src/__tests__/components/HeroSection.spec.ts
+- [X] T027 [P] [US1] 撰寫 HeroSection 鍵盤導航測試 in front-end/src/__tests__/components/HeroSection.spec.ts
 
 **Checkpoint**: User Story 1 完整功能可測試（Hero Section 顯示、CTA 導航）
 
