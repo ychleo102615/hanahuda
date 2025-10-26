@@ -91,26 +91,26 @@
 
 ### 實作 User Story 2
 
-- [ ] T028 [P] [US2] 建立 RulesSection 組件骨架 in front-end/src/components/RulesSection.vue
-- [ ] T029 [P] [US2] 建立 YakuCarousel 組件骨架（役種輪播圖）in front-end/src/components/YakuCarousel.vue
-- [ ] T030 [US2] 實作 RulesSection Props 介面（categories, yakuList）
-- [ ] T031 [US2] 實作規則分類折疊/展開狀態管理（ref + Set<string>）in RulesSection.vue
-- [ ] T032 [US2] 實作規則分類切換邏輯（toggleCategory）in RulesSection.vue
-- [ ] T033 [US2] 實作規則分類 UI（標題 + 展開按鈕 + 內容區）in RulesSection.vue
-- [ ] T034 [US2] 實作 CSS transition 動畫（max-height + transition-all）in RulesSection.vue
-- [ ] T035 [US2] 實作 ARIA 標籤（aria-expanded, aria-controls）in RulesSection.vue
-- [ ] T036 [US2] 實作 YakuCarousel 狀態管理（currentIndex）in YakuCarousel.vue
-- [ ] T037 [US2] 實作 YakuCarousel 上一張/下一張邏輯 in YakuCarousel.vue
-- [ ] T038 [US2] 實作 YakuCarousel UI（卡片顯示 + 導航按鈕）in YakuCarousel.vue
-- [ ] T039 [US2] 載入規則內容資料（從 front-end/src/data/rules.ts）
-- [ ] T040 [US2] 載入役種資料（從 front-end/src/data/yaku.ts）
-- [ ] T041 [US2] 整合 RulesSection 到 HomePage
-- [ ] T042 [US2] 整合 YakuCarousel 到 RulesSection
+- [X] T028 [P] [US2] 建立 RulesSection 組件骨架 in front-end/src/components/RulesSection.vue
+- [X] T029 [P] [US2] 建立 YakuCarousel 組件骨架（役種輪播圖）in front-end/src/components/YakuCarousel.vue
+- [X] T030 [US2] 實作 RulesSection Props 介面（categories, yakuList）
+- [X] T031 [US2] 實作規則分類折疊/展開狀態管理（ref + Set<string>）in RulesSection.vue
+- [X] T032 [US2] 實作規則分類切換邏輯（toggleCategory）in RulesSection.vue
+- [X] T033 [US2] 實作規則分類 UI（標題 + 展開按鈕 + 內容區）in RulesSection.vue
+- [X] T034 [US2] 實作 CSS transition 動畫（max-height + transition-all）in RulesSection.vue
+- [X] T035 [US2] 實作 ARIA 標籤（aria-expanded, aria-controls）in RulesSection.vue
+- [X] T036 [US2] 實作 YakuCarousel 狀態管理（currentIndex）in YakuCarousel.vue
+- [X] T037 [US2] 實作 YakuCarousel 上一張/下一張邏輯 in YakuCarousel.vue
+- [X] T038 [US2] 實作 YakuCarousel UI（卡片顯示 + 導航按鈕）in YakuCarousel.vue
+- [X] T039 [US2] 載入規則內容資料（從 front-end/src/data/rules.json）
+- [X] T040 [US2] 載入役種資料（從 front-end/src/data/yaku.json）
+- [X] T041 [US2] 整合 RulesSection 到 HomePage
+- [X] T042 [US2] 整合 YakuCarousel 到 RulesSection
 
 **測試 User Story 2**:
-- [ ] T043 [P] [US2] 撰寫 RulesSection 單元測試（展開/折疊邏輯）in front-end/src/__tests__/components/RulesSection.spec.ts
-- [ ] T044 [P] [US2] 撰寫 RulesSection ARIA 標籤測試 in front-end/src/__tests__/components/RulesSection.spec.ts
-- [ ] T045 [P] [US2] 撰寫 YakuCarousel 單元測試（上一張/下一張）in front-end/src/__tests__/components/YakuCarousel.spec.ts
+- [X] T043 [P] [US2] 撰寫 RulesSection 單元測試（展開/折疊邏輯）in front-end/src/__tests__/components/RulesSection.spec.ts
+- [X] T044 [P] [US2] 撰寫 RulesSection ARIA 標籤測試 in front-end/src/__tests__/components/RulesSection.spec.ts
+- [X] T045 [P] [US2] 撰寫 YakuCarousel 單元測試（上一張/下一張）in front-end/src/__tests__/components/YakuCarousel.spec.ts
 
 **Checkpoint**: User Story 2 完整功能可測試（規則區塊展開、役種輪播）
 

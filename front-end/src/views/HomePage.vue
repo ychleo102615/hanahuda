@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import HeroSection from '@/components/HeroSection.vue'
+import RulesSection from '@/components/RulesSection.vue'
+import type { RuleCategory, YakuCard } from '@/types/rules'
+
+// Import JSON data
+import rulesDataJson from '@/data/rules.json'
+import yakuDataJson from '@/data/yaku.json'
 
 // Hero Section 資料
 const heroData = {
@@ -8,6 +15,10 @@ const heroData = {
   ctaText: 'Start Playing',
   ctaTarget: '/game',
 }
+
+// Rules Section 資料 (with proper typing)
+const rulesCategories = ref<RuleCategory[]>(rulesDataJson.categories as RuleCategory[])
+const yakuList = ref<YakuCard[]>(yakuDataJson.yakuList as YakuCard[])
 </script>
 
 <template>
@@ -21,8 +32,14 @@ const heroData = {
         :cta-target="heroData.ctaTarget"
       />
 
+      <!-- Rules Section -->
+      <RulesSection
+        :categories="rulesCategories"
+        :yaku-list="yakuList"
+      />
+
       <!-- 其他區塊將在後續 Phase 整合 -->
-      <!-- NavigationBar, RulesSection, Footer -->
+      <!-- NavigationBar, Footer -->
     </main>
   </div>
 </template>
