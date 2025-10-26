@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git rev-parse:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(npm --prefix front-end run test:unit:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
