@@ -52,7 +52,7 @@ defineExpose({ expandAll });
 </script>
 
 <template>
-  <section id="rules" class="py-16 px-4 bg-gray-50">
+  <section id="rules" class="py-16 px-4  bg-primary-400">
     <div class="container mx-auto max-w-6xl">
       <!-- Section Header -->
       <h2 class="text-4xl font-bold text-center mb-12 text-primary-900">
@@ -60,7 +60,7 @@ defineExpose({ expandAll });
       </h2>
 
       <!-- Rules Categories Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+      <div class="flex flex-col gap-6 mb-12">
         <div
           v-for="category in categories"
           :key="category.id"

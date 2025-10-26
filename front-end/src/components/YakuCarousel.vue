@@ -54,9 +54,9 @@ const getCategoryColor = (category: string): string => {
 <template>
   <div class="relative w-full max-w-4xl mx-auto">
     <!-- Carousel Container -->
-    <div class="relative overflow-hidden rounded-lg shadow-lg bg-white p-8">
+    <div class="relative overflow-hidden rounded-lg shadow-lg bg-white p-8 min-h-[400px] flex items-center">
       <!-- Current Yaku Card Display -->
-      <div v-if="currentYaku" class="text-center space-y-6">
+      <div v-if="currentYaku" class="text-center space-y-6 w-full">
         <!-- Yaku Name -->
         <div class="space-y-2">
           <h4 class="text-3xl font-bold text-primary-900">
