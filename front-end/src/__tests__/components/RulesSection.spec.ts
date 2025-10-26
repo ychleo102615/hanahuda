@@ -63,7 +63,7 @@ describe('RulesSection', () => {
     })
 
     it('should render all category cards', () => {
-      const categoryCards = wrapper.findAll('.grid > .bg-white.rounded-lg.shadow-md')
+      const categoryCards = wrapper.findAll('.flex.flex-col.gap-6 > .bg-white.rounded-lg.shadow-md')
       expect(categoryCards.length).toBe(mockCategories.length)
     })
 
@@ -78,12 +78,12 @@ describe('RulesSection', () => {
   describe('Expand/Collapse Logic', () => {
     it('should expand default-expanded categories on mount', () => {
       const firstCategory = wrapper.find('#rules-content-test-category-1')
-      expect(firstCategory.classes()).toContain('max-h-screen')
+      expect(firstCategory.classes()).toContain('grid-rows-[1fr]')
     })
 
     it('should collapse non-default categories on mount', () => {
       const secondCategory = wrapper.find('#rules-content-test-category-2')
-      expect(secondCategory.classes()).toContain('max-h-0')
+      expect(secondCategory.classes()).toContain('grid-rows-[0fr]')
     })
 
     it('should toggle category expansion on button click', async () => {
@@ -92,27 +92,32 @@ describe('RulesSection', () => {
 
       // Initially collapsed
       const secondCategory = wrapper.find('#rules-content-test-category-2')
-      expect(secondCategory.classes()).toContain('max-h-0')
+      expect(secondCategory.classes()).toContain('grid-rows-[0fr]')
 
       // Click to expand
       await secondCategoryButton.trigger('click')
-      expect(secondCategory.classes()).toContain('max-h-screen')
+      expect(secondCategory.classes()).toContain('grid-rows-[1fr]')
 
       // Click to collapse
       await secondCategoryButton.trigger('click')
-      expect(secondCategory.classes()).toContain('max-h-0')
+      expect(secondCategory.classes()).toContain('grid-rows-[0fr]')
     })
 
     it('should update toggle icon on expansion', async () => {
       const buttons = wrapper.findAll('button')
       const secondCategoryButton = buttons[1]
 
-      // Initially shows '+' (collapsed)
+      // Always shows '+' symbol
       expect(secondCategoryButton.text()).toContain('+')
 
-      // After click shows '−' (expanded)
+      // Icon should have rotate class when expanded
       await secondCategoryButton.trigger('click')
-      expect(secondCategoryButton.text()).toContain('−')
+      const icon = secondCategoryButton.find('span')
+      expect(icon.classes()).toContain('rotate-45')
+
+      // Icon should not have rotate class when collapsed
+      await secondCategoryButton.trigger('click')
+      expect(icon.classes()).toContain('rotate-0')
     })
   })
 
@@ -201,7 +206,7 @@ describe('RulesSection', () => {
     it('expandAll should expand all categories', async () => {
       // Initially, second category is collapsed
       let secondCategory = wrapper.find('#rules-content-test-category-2')
-      expect(secondCategory.classes()).toContain('max-h-0')
+      expect(secondCategory.classes()).toContain('grid-rows-[0fr]')
 
       // Call expandAll
       wrapper.vm.expandAll()
@@ -209,7 +214,7 @@ describe('RulesSection', () => {
 
       // Now second category should be expanded
       secondCategory = wrapper.find('#rules-content-test-category-2')
-      expect(secondCategory.classes()).toContain('max-h-screen')
+      expect(secondCategory.classes()).toContain('grid-rows-[1fr]')
     })
   })
 })

@@ -76,44 +76,49 @@ defineExpose({ expandAll });
             <h3 class="text-xl font-semibold text-primary-900">
               {{ category.title }}
             </h3>
-            <span class="text-2xl text-primary-700 transition-transform" :class="{ 'rotate-45': isCategoryExpanded(category.id) }">
-              {{ isCategoryExpanded(category.id) ? '−' : '+' }}
+            <span
+              class="text-2xl text-primary-700 transition-transform duration-300 ease-in-out inline-block"
+              :class="isCategoryExpanded(category.id) ? 'rotate-45' : 'rotate-0'"
+            >
+              +
             </span>
           </button>
 
           <!-- Category Content (Collapsible) -->
           <div
             :id="`rules-content-${category.id}`"
-            class="overflow-hidden transition-all duration-300 ease-in-out"
-            :class="isCategoryExpanded(category.id) ? 'max-h-screen' : 'max-h-0'"
+            class="grid transition-[grid-template-rows] duration-300 ease-in-out"
+            :class="isCategoryExpanded(category.id) ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
           >
-            <div class="px-6 pb-6 text-gray-700 space-y-4">
-              <!-- Render sections dynamically -->
-              <div v-for="(section, idx) in category.sections" :key="idx">
-                <!-- Paragraph -->
-                <p v-if="section.type === 'paragraph'" class="leading-relaxed">
-                  {{ section.text }}
-                </p>
+            <div class="overflow-hidden">
+              <div class="px-6 pb-6 text-gray-700 space-y-4">
+                <!-- Render sections dynamically -->
+                <div v-for="(section, idx) in category.sections" :key="idx">
+                  <!-- Paragraph -->
+                  <p v-if="section.type === 'paragraph'" class="leading-relaxed">
+                    {{ section.text }}
+                  </p>
 
-                <!-- Unordered List -->
-                <ul v-else-if="section.type === 'list'" class="list-disc list-inside space-y-2">
-                  <li v-for="(item, i) in section.items as string[]" :key="i">
-                    {{ item }}
-                  </li>
-                </ul>
+                  <!-- Unordered List -->
+                  <ul v-else-if="section.type === 'list'" class="list-disc list-inside space-y-2">
+                    <li v-for="(item, i) in section.items as string[]" :key="i">
+                      {{ item }}
+                    </li>
+                  </ul>
 
-                <!-- Ordered List -->
-                <ol v-else-if="section.type === 'ordered-list'" class="list-decimal list-inside space-y-3">
-                  <li v-for="(item, i) in section.items as OrderedListItem[]" :key="i" class="font-semibold">
-                    {{ item.title }}
-                    <p class="font-normal mt-1">{{ item.text }}</p>
-                    <ul v-if="item.subItems" class="list-disc list-inside ml-6 mt-2 space-y-1 font-normal">
-                      <li v-for="(subItem, j) in item.subItems" :key="j">
-                        {{ subItem }}
-                      </li>
-                    </ul>
-                  </li>
-                </ol>
+                  <!-- Ordered List -->
+                  <ol v-else-if="section.type === 'ordered-list'" class="list-decimal list-inside space-y-3">
+                    <li v-for="(item, i) in section.items as OrderedListItem[]" :key="i" class="font-semibold">
+                      {{ item.title }}
+                      <p class="font-normal mt-1">{{ item.text }}</p>
+                      <ul v-if="item.subItems" class="list-disc list-inside ml-6 mt-2 space-y-1 font-normal">
+                        <li v-for="(subItem, j) in item.subItems" :key="j">
+                          {{ subItem }}
+                        </li>
+                      </ul>
+                    </li>
+                  </ol>
+                </div>
               </div>
             </div>
           </div>
@@ -132,12 +137,4 @@ defineExpose({ expandAll });
 </template>
 
 <style scoped>
-/* Smooth rotation transition for toggle icon */
-span {
-  transition: transform 0.3s ease-in-out;
-}
-
-.rotate-45 {
-  transform: rotate(45deg);
-}
 </style>
