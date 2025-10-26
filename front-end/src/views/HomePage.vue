@@ -11,7 +11,7 @@ const heroData = {
 </script>
 
 <template>
-  <div class="homepage">
+  <div class="min-h-screen">
     <main>
       <!-- Hero Section -->
       <HeroSection

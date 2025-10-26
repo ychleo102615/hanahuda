@@ -30,11 +30,16 @@ const handleCtaClick = async () => {
 // 鍵盤導航支援
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Enter' || event.key === ' ') {
+    /* 防止空格鍵導致頁面滾動, 防止Enter鍵觸發表單提交 */
     event.preventDefault()
     handleCtaClick()
   }
 }
 </script>
+<!--
+  relative: 讓內部元素的絕對定位基於此容器
+  overflow: hidden: 隱藏超出容器的內容
+ -->
 
 <template>
   <section
