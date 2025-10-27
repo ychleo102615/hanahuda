@@ -3,8 +3,10 @@ import { ref } from 'vue'
 import NavigationBar from '@/components/NavigationBar.vue'
 import HeroSection from '@/components/HeroSection.vue'
 import RulesSection from '@/components/RulesSection.vue'
+import Footer from '@/components/Footer.vue'
 import type { RuleCategory, YakuCard } from '@/types/rules'
 import type { NavigationLink } from '@/components/NavigationBar.vue'
+import type { AttributionLink } from '@/components/Footer.vue'
 
 // Import JSON data
 import rulesDataJson from '@/data/rules.json'
@@ -37,6 +39,26 @@ const handleRulesClick = () => {
   if (rulesSectionRef.value) {
     rulesSectionRef.value.expandAll()
   }
+}
+
+// Footer 資料
+const footerData = {
+  copyrightYear: 2025,
+  projectName: 'Hanafuda Koi-Koi',
+  attributions: [
+    {
+      name: 'Hanafuda Card Images',
+      source: 'Louie Mantia (dotty-dev/Hanafuda-Louie-Recolor)',
+      license: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+    },
+    {
+      name: 'Game Rules Reference',
+      source: 'Wikipedia',
+      license: 'CC BY-SA 3.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
+    },
+  ] as AttributionLink[],
 }
 </script>
 
@@ -75,14 +97,18 @@ const handleRulesClick = () => {
         <div class="text-center">
           <h2 class="text-3xl font-bold text-primary-900 mb-4">關於 Hanafuda Koi-Koi</h2>
           <p class="text-lg text-primary-700">
-            此區塊將在後續 Phase 實作 (Footer Section)
+            探索日本傳統花牌遊戲的魅力
           </p>
         </div>
       </section>
-
-      <!-- 其他區塊將在後續 Phase 整合 -->
-      <!-- Footer -->
     </main>
+
+    <!-- Footer -->
+    <Footer
+      :copyright-year="footerData.copyrightYear"
+      :project-name="footerData.projectName"
+      :attributions="footerData.attributions"
+    />
   </div>
 </template>
 

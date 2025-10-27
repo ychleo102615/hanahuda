@@ -20,7 +20,16 @@ export default defineConfigWithVueTs(
 
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
-  
+
+  {
+    name: 'app/vue-rules',
+    rules: {
+      'vue/multi-word-component-names': ['error', {
+        ignores: ['Footer']
+      }]
+    }
+  },
+
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],

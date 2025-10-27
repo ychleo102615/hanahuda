@@ -156,17 +156,17 @@
 
 ### 實作 User Story 4
 
-- [ ] T063 [US4] 建立 Footer 組件骨架 in front-end/src/components/Footer.vue
-- [ ] T064 [US4] 實作 Footer Props 介面（copyrightYear, projectName, attributions）
-- [ ] T065 [US4] 實作 Footer 桌面版佈局（左右排版）in Footer.vue
-- [ ] T066 [US4] 實作 Footer 手機版響應式佈局（堆疊內容）in Footer.vue
-- [ ] T067 [US4] 實作版權聲明文字顯示 in Footer.vue
-- [ ] T068 [US4] 實作資源 attribution 列表（名稱、來源、授權、連結）in Footer.vue
-- [ ] T069 [US4] 新增外部連結圖示和 target="_blank" in Footer.vue
-- [ ] T070 [US4] 整合 Footer 到 HomePage（底部位置）
+- [X] T063 [US4] 建立 Footer 組件骨架 in front-end/src/components/Footer.vue
+- [X] T064 [US4] 實作 Footer Props 介面（copyrightYear, projectName, attributions）
+- [X] T065 [US4] 實作 Footer 桌面版佈局（左右排版）in Footer.vue
+- [X] T066 [US4] 實作 Footer 手機版響應式佈局（堆疊內容）in Footer.vue
+- [X] T067 [US4] 實作版權聲明文字顯示 in Footer.vue
+- [X] T068 [US4] 實作資源 attribution 列表（名稱、來源、授權、連結）in Footer.vue
+- [X] T069 [US4] 新增外部連結圖示和 target="_blank" in Footer.vue
+- [X] T070 [US4] 整合 Footer 到 HomePage（底部位置）
 
 **測試 User Story 4**:
-- [ ] T071 [P] [US4] 撰寫 Footer 單元測試（渲染、連結驗證）in front-end/src/__tests__/components/Footer.spec.ts
+- [X] T071 [P] [US4] 撰寫 Footer 單元測試（渲染、連結驗證）in front-end/src/__tests__/components/Footer.spec.ts
 
 **Checkpoint**: User Story 4 完整功能可測試（Footer 顯示、連結正確）
 
