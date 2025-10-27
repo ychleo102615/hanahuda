@@ -124,25 +124,25 @@
 
 ### 實作 User Story 3
 
-- [ ] T046 [US3] 建立 NavigationBar 組件骨架 in front-end/src/components/NavigationBar.vue
-- [ ] T047 [US3] 實作 NavigationBar Props 介面（logo, links, transparent）
-- [ ] T048 [US3] 實作 NavigationBar 桌面版佈局（Logo + 導航連結）in NavigationBar.vue
-- [ ] T049 [US3] 實作 NavigationBar 手機版 hamburger menu in NavigationBar.vue
-- [ ] T050 [US3] 實作 mobile menu 狀態管理（isMobileMenuOpen）in NavigationBar.vue
-- [ ] T051 [US3] 實作 mobile menu 切換邏輯（toggleMobileMenu）in NavigationBar.vue
-- [ ] T052 [US3] 實作 sticky header 滾動偵測（isSticky）in NavigationBar.vue
-- [ ] T053 [US3] 實作導航連結點擊處理（使用 useScrollTo）in NavigationBar.vue
-- [ ] T054 [US3] 實作「規則」連結特殊邏輯（滾動 + 自動展開）in NavigationBar.vue
-- [ ] T055 [US3] 實作「開始遊戲」連結導航至 /game in NavigationBar.vue
-- [ ] T056 [US3] 新增鍵盤導航支援（Tab, Enter, Escape）in NavigationBar.vue
-- [ ] T057 [US3] 新增 ARIA 標籤（role="navigation", aria-label）in NavigationBar.vue
-- [ ] T058 [US3] 整合 NavigationBar 到 HomePage（頂部位置）
-- [ ] T059 [US3] 建立 HomePage 區塊 ID（#hero, #rules, #about）for 錨點導航
+- [X] T046 [US3] 建立 NavigationBar 組件骨架 in front-end/src/components/NavigationBar.vue
+- [X] T047 [US3] 實作 NavigationBar Props 介面（logo, links, transparent）
+- [X] T048 [US3] 實作 NavigationBar 桌面版佈局（Logo + 導航連結）in NavigationBar.vue
+- [X] T049 [US3] 實作 NavigationBar 手機版 hamburger menu in NavigationBar.vue
+- [X] T050 [US3] 實作 mobile menu 狀態管理（isMobileMenuOpen）in NavigationBar.vue
+- [X] T051 [US3] 實作 mobile menu 切換邏輯（toggleMobileMenu）in NavigationBar.vue
+- [X] T052 [US3] 實作 sticky header 滾動偵測（isSticky）in NavigationBar.vue
+- [X] T053 [US3] 實作導航連結點擊處理（使用 useScrollTo）in NavigationBar.vue
+- [X] T054 [US3] 實作「規則」連結特殊邏輯（滾動 + 自動展開）in NavigationBar.vue
+- [X] T055 [US3] 實作「開始遊戲」連結導航至 /game in NavigationBar.vue
+- [X] T056 [US3] 新增鍵盤導航支援（Tab, Enter, Escape）in NavigationBar.vue
+- [X] T057 [US3] 新增 ARIA 標籤（role="navigation", aria-label）in NavigationBar.vue
+- [X] T058 [US3] 整合 NavigationBar 到 HomePage（頂部位置）
+- [X] T059 [US3] 建立 HomePage 區塊 ID（#hero, #rules, #about）for 錨點導航
 
 **測試 User Story 3**:
-- [ ] T060 [P] [US3] 撰寫 NavigationBar 單元測試（渲染、mobile menu 切換）in front-end/src/__tests__/components/NavigationBar.spec.ts
-- [ ] T061 [P] [US3] 撰寫 NavigationBar 響應式測試（桌面/手機切換）in front-end/src/__tests__/components/NavigationBar.spec.ts
-- [ ] T062 [P] [US3] 撰寫 useScrollTo composable 單元測試 in front-end/src/__tests__/composables/useScrollTo.spec.ts
+- [X] T060 [P] [US3] 撰寫 NavigationBar 單元測試（渲染、mobile menu 切換）in front-end/src/__tests__/components/NavigationBar.spec.ts
+- [X] T061 [P] [US3] 撰寫 NavigationBar 響應式測試（桌面/手機切換）in front-end/src/__tests__/components/NavigationBar.spec.ts
+- [X] T062 [P] [US3] 撰寫 useScrollTo composable 單元測試 in front-end/src/__tests__/composables/useScrollTo.spec.ts
 
 **Checkpoint**: User Story 3 完整功能可測試（導航列、平滑滾動）
 

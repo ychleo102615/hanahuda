@@ -73,7 +73,7 @@ onUnmounted(() => {
 
 <template>
   <section
-    class="hero-section relative flex min-h-[60vh] items-center justify-center overflow-hidden bg-gradient-to-br from-primary-900 to-primary-700 px-6 py-20 text-white md:min-h-[70vh] md:py-32"
+    class="hero-section relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-primary-900 to-primary-700 px-6  text-white"
     :style="backgroundImage ? `background-image: url('${backgroundImage}')` : ''"
     aria-labelledby="hero-title"
   >

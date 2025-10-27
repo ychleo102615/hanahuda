@@ -288,7 +288,7 @@ describe('HeroSection', () => {
       })
 
       const section = wrapper.find('section')
-      expect(section.classes()).toContain('min-h-[60vh]')
+      expect(section.classes()).toContain('min-h-screen')
 
       const title = wrapper.find('h1')
       expect(title.classes()).toContain('text-4xl')
@@ -303,7 +303,7 @@ describe('HeroSection', () => {
       })
 
       const section = wrapper.find('section')
-      expect(section.classes()).toContain('md:min-h-[70vh]')
+      expect(section.classes()).toContain('min-h-screen')
 
       const title = wrapper.find('h1')
       expect(title.classes()).toContain('md:text-6xl')
