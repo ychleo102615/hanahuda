@@ -71,7 +71,7 @@ defineExpose({ expandAll });
             @click="toggleCategory(category.id)"
             :aria-expanded="isCategoryExpanded(category.id)"
             :aria-controls="`rules-content-${category.id}`"
-            class="w-full px-6 py-4 flex justify-between items-center text-left hover:bg-gray-50 transition-colors"
+            class="w-full px-6 py-4 flex justify-between items-center text-left hover:bg-gray-200 transition-colors"
           >
             <h3 class="text-xl font-semibold text-primary-900">
               {{ category.title }}
@@ -91,7 +91,7 @@ defineExpose({ expandAll });
             :class="isCategoryExpanded(category.id) ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
           >
             <div class="overflow-hidden">
-              <div class="px-6 pb-6 text-gray-700 space-y-4">
+              <div class="px-6 pb-6 pt-2 text-gray-700 space-y-4">
                 <!-- Render sections dynamically -->
                 <div v-for="(section, idx) in category.sections" :key="idx">
                   <!-- Paragraph -->

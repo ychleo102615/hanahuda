@@ -111,7 +111,7 @@ const getCategoryColor = (category: string): string => {
       @click="prev"
       :disabled="yakuList.length === 0"
       aria-label="Previous Yaku"
-      class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-4 shadow-lg transition-all"
+      class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 bg-white hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-4 shadow-lg transition-all"
     >
       <svg class="w-6 h-6 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -122,7 +122,7 @@ const getCategoryColor = (category: string): string => {
       @click="next"
       :disabled="yakuList.length === 0"
       aria-label="Next Yaku"
-      class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-4 shadow-lg transition-all"
+      class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 bg-white hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-4 shadow-lg transition-all"
     >
       <svg class="w-6 h-6 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
