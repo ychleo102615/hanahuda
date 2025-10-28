@@ -176,19 +176,19 @@
 
 **目的**: 跨使用者故事的整合、優化與測試
 
-- [ ] T072 [P] 建立 HomePage 整合測試（所有組件正確渲染）in front-end/src/__tests__/views/HomePage.spec.ts
-- [ ] T073 [P] 撰寫無障礙測試（鍵盤導航完整流程）in front-end/src/__tests__/a11y/keyboard-navigation.spec.ts
+- [X] T072 [P] 建立 HomePage 整合測試（所有組件正確渲染）in front-end/src/__tests__/views/HomePage.spec.ts
+- [X] T073 [P] 撰寫無障礙測試（鍵盤導航完整流程）in front-end/src/__tests__/a11y/keyboard-navigation.spec.ts
 - [ ] T074 實作圖像延遲載入優化（使用 import.meta.glob）in front-end/src/assets/images/index.ts
-- [ ] T075 [P] 配置字體預載入 in front-end/index.html
+- [X] T075 [P] 配置字體預載入 in front-end/index.html
 - [ ] T076 [P] 優化 Tailwind CSS（移除未使用樣式）
-- [ ] T077 執行 Lighthouse 測試，確認 FCP < 1.5s 和 Score > 90
+- [X] T077 執行 Lighthouse 測試，確認 FCP < 1.5s 和 Score > 90
 - [ ] T078 [P] 跨瀏覽器測試（Chrome、Firefox、Safari、Edge）
 - [ ] T079 [P] 手機裝置測試（iOS Safari、Android Chrome）
 - [ ] T080 [P] 建立 E2E 測試（可選）：完整使用者流程 in front-end/e2e/homepage.spec.ts
-- [ ] T081 程式碼清理與重構（移除 console.log、未使用變數）
-- [ ] T082 更新 quickstart.md 驗證步驟（確認所有指令正確）
+- [X] T081 程式碼清理與重構（移除 console.log、未使用變數）
+- [X] T082 更新 quickstart.md 驗證步驟（確認所有指令正確）
 - [ ] T083 建立 Pull Request 並填寫 PR 描述
-- [ ] T084 執行最終測試覆蓋率檢查（目標 > 60%）
+- [X] T084 執行最終測試覆蓋率檢查（目標 > 60%）
 
 **Checkpoint**: 所有使用者故事整合完成，產品就緒
 

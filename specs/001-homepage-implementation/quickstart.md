@@ -264,38 +264,54 @@ touch src/components/__tests__/NavigationBar.spec.ts
 
 ```typescript
 // src/components/__tests__/NavigationBar.spec.ts
-import { describe, it, expect } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { mount, VueWrapper } from '@vue/test-utils';
+import { createRouter, createMemoryHistory } from 'vue-router';
 import NavigationBar from '../NavigationBar.vue';
 
+// Mock router (NavigationBar 使用 Vue Router)
+const router = createRouter({
+  history: createMemoryHistory(),
+  routes: [
+    { path: '/', component: { template: '<div>Home</div>' } },
+    { path: '/game', component: { template: '<div>Game</div>' } },
+  ],
+});
+
 describe('NavigationBar', () => {
-  it('should render logo text', () => {
-    const wrapper = mount(NavigationBar, {
+  let wrapper: VueWrapper;
+
+  beforeEach(() => {
+    wrapper = mount(NavigationBar, {
       props: {
         logo: 'Hanafuda Koi-Koi',
-        links: [],
+        links: [
+          { label: 'Rules', target: '#rules', isCta: false },
+          { label: 'Start Game', target: '/game', isCta: true },
+        ],
+        transparent: false,
+      },
+      global: {
+        plugins: [router],
       },
     });
+  });
 
+  it('should render logo text', () => {
     expect(wrapper.text()).toContain('Hanafuda Koi-Koi');
   });
 
   it('should toggle mobile menu on button click', async () => {
-    const wrapper = mount(NavigationBar, {
-      props: {
-        logo: 'Test',
-        links: [{ label: 'Home', target: '/' }],
-      },
-    });
+    const menuButton = wrapper.find('[aria-label="Toggle navigation menu"]');
 
-    // 初始狀態：mobile menu 不可見
-    expect(wrapper.find('.md\\:hidden.mt-4').exists()).toBe(false);
+    // 初始狀態：menu 關閉
+    expect(menuButton.attributes('aria-expanded')).toBe('false');
 
     // 點擊按鈕
-    await wrapper.find('button').trigger('click');
+    await menuButton.trigger('click');
 
-    // 驗證 mobile menu 可見
-    expect(wrapper.find('.md\\:hidden.mt-4').isVisible()).toBe(true);
+    // 驗證 menu 打開
+    expect(menuButton.attributes('aria-expanded')).toBe('true');
   });
 });
 ```
