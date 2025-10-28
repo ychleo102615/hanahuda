@@ -3,6 +3,7 @@
  * Footer 組件
  * 顯示版權聲明和資源 attribution 資訊
  */
+import ExternalLinkIcon from './ExternalLinkIcon.vue'
 
 export interface AttributionLink {
   /** 資源名稱 (e.g., "Hanafuda Images") */
@@ -70,21 +71,7 @@ defineProps<FooterProps>();
                   :aria-label="`View ${attr.name} source: ${attr.source}`"
                 >
                   <span>{{ attr.source }}</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                    />
-                  </svg>
+                  <ExternalLinkIcon />
                 </a>
                 <span class="hidden sm:inline text-gray-500">•</span>
 
@@ -97,22 +84,7 @@ defineProps<FooterProps>();
                   :aria-label="`${attr.name} license: ${attr.license}`"
                 >
                   <span>{{ attr.license }}</span>
-                  <!-- 外部連結圖示 -->
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                    />
-                  </svg>
+                  <ExternalLinkIcon />
                 </a>
               </div>
             </li>
