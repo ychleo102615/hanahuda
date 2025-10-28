@@ -16,8 +16,8 @@ export default defineConfig({
       // 指定需要快取的圖示資料夾路徑
       iconDirs: [path.resolve(process.cwd(), 'src/assets/icons')],
 
-      // 指定 symbolId 格式 - 用於花牌專案的結構化命名
-      symbolId: 'icon-[dir]-[name]',
+      // 指定 symbolId 格式 - 直接使用檔名（所有 SVG 都在根目錄）
+      symbolId: 'icon-[name]',
 
       // SVG 優化選項
       svgoOptions: {

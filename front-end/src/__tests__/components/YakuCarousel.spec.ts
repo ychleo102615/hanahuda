@@ -1,7 +1,16 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, VueWrapper } from '@vue/test-utils'
 import YakuCarousel from '@/components/YakuCarousel.vue'
 import type { YakuCard } from '@/types/rules'
+
+// Mock SvgIcon component
+vi.mock('@/components/SvgIcon.vue', () => ({
+  default: {
+    name: 'SvgIcon',
+    props: ['name', 'className', 'prefix'],
+    template: '<div class="mocked-svg-icon" :data-name="name"></div>',
+  },
+}))
 
 describe('YakuCarousel', () => {
   let wrapper: VueWrapper
@@ -69,10 +78,49 @@ describe('YakuCarousel', () => {
       expect(badge.text()).toBe('hikari')
     })
 
-    it('should render card IDs when provided', () => {
-      const cardIds = wrapper.findAll('.px-3.py-1.bg-primary-100')
-      expect(cardIds.length).toBe(5) // Five Brights has 5 cards
-      expect(cardIds[0].text()).toBe('0111')
+    it('should render SvgIcon components for card IDs', () => {
+      const svgIcons = wrapper.findAll('.mocked-svg-icon')
+      expect(svgIcons.length).toBe(5) // Five Brights has 5 cards
+    })
+
+    it('should pass correct name prop to SvgIcon components', () => {
+      const svgIcons = wrapper.findAll('.mocked-svg-icon')
+      // First card (0111) should map to Hanafuda_January_Hikari
+      expect(svgIcons[0].attributes('data-name')).toBe('Hanafuda_January_Hikari')
+      // Second card (0311) should map to Hanafuda_March_Hikari
+      expect(svgIcons[1].attributes('data-name')).toBe('Hanafuda_March_Hikari')
+    })
+
+    it('should use default icon for invalid card IDs', () => {
+      const invalidWrapper = mount(YakuCarousel, {
+        props: {
+          yakuList: [
+            {
+              id: 'invalid-yaku',
+              name: 'Invalid Yaku',
+              nameJa: '無效役',
+              category: 'hikari',
+              points: 0,
+              cardIds: ['9999', 'invalid'],
+              description: 'Test invalid cards',
+            },
+          ],
+        },
+      })
+
+      const svgIcons = invalidWrapper.findAll('.mocked-svg-icon')
+      expect(svgIcons.length).toBe(2)
+      // Both invalid cards should use the default icon
+      expect(svgIcons[0].attributes('data-name')).toBe('Hanafuda_Default')
+      expect(svgIcons[1].attributes('data-name')).toBe('Hanafuda_Default')
+    })
+
+    it('should not render card icons when cardIds is undefined', async () => {
+      const dots = wrapper.findAll('.w-3.h-3.rounded-full')
+      await dots[2].trigger('click') // Navigate to "Plain Cards" (no cardIds)
+
+      const svgIcons = wrapper.findAll('.mocked-svg-icon')
+      expect(svgIcons.length).toBe(0)
     })
   })
 

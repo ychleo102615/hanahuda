@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import type { YakuCard } from '@/types/rules';
+import SvgIcon from './SvgIcon.vue';
+import { getCardIconName } from '@/utils/cardMapping';
 
 interface Props {
   yakuList: YakuCard[];
@@ -54,7 +56,7 @@ const getCategoryColor = (category: string): string => {
 <template>
   <div class="relative w-full max-w-4xl mx-auto">
     <!-- Carousel Container -->
-    <div class="relative overflow-hidden rounded-lg shadow-lg bg-white p-8 min-h-[400px] flex items-center">
+    <div class="relative overflow-hidden rounded-lg shadow-lg bg-white p-8 min-h-[560px] flex items-center">
       <!-- Current Yaku Card Display -->
       <div v-if="currentYaku" class="text-center space-y-6 w-full">
         <!-- Yaku Name -->
@@ -85,15 +87,15 @@ const getCategoryColor = (category: string): string => {
           {{ formatDescription(currentYaku) }}
         </p>
 
-        <!-- Card IDs (Optional visual representation) -->
-        <div v-if="currentYaku.cardIds" class="flex justify-center gap-2 flex-wrap">
-          <span
+        <!-- Card Icons -->
+        <div v-if="currentYaku.cardIds" class="flex justify-center gap-4 flex-wrap items-center">
+          <SvgIcon
             v-for="cardId in currentYaku.cardIds"
             :key="cardId"
-            class="px-3 py-1 bg-primary-100 text-primary-900 rounded font-mono text-sm"
-          >
-            {{ cardId }}
-          </span>
+            :name="getCardIconName(cardId)"
+            class-name="h-32 w-auto drop-shadow-lg transition-transform hover:scale-105"
+            :aria-label="`Card ${cardId}`"
+          />
         </div>
       </div>
 
