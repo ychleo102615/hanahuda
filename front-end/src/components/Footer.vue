@@ -9,6 +9,8 @@ export interface AttributionLink {
   name: string;
   /** 資源來源 (e.g., "Wikimedia Commons") */
   source: string;
+  /** 資源來源連結 (e.g., "https://commons.wikimedia.org/wiki/Category:Hanafuda") */
+  sourceUrl: string;
   /** 授權類型 (e.g., "Public Domain", "CC BY-SA 4.0") */
   license: string;
   /** 授權頁面連結 */
@@ -59,8 +61,31 @@ defineProps<FooterProps>();
                 <span class="font-medium text-white">{{ attr.name }}</span>
                 <span class="hidden sm:inline text-gray-500">•</span>
 
-                <!-- 資源來源 -->
-                <span class="text-gray-400">{{ attr.source }}</span>
+                <!-- 資源來源 (可點擊連結) -->
+                <a
+                  :href="attr.sourceUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1 text-gray-300 hover:text-white transition-colors"
+                  :aria-label="`View ${attr.name} source: ${attr.source}`"
+                >
+                  <span>{{ attr.source }}</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-3 w-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
+                  </svg>
+                </a>
                 <span class="hidden sm:inline text-gray-500">•</span>
 
                 <!-- 授權連結 -->

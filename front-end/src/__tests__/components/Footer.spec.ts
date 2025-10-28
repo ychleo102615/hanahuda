@@ -8,14 +8,16 @@ describe('Footer.vue', () => {
     {
       name: 'Hanafuda Card Images',
       source: 'Louie Mantia',
+      sourceUrl: 'https://github.com/dotty-dev/Hanafuda-Louie-Recolor',
       license: 'CC BY-SA 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
     },
     {
-      name: 'Game Rules',
-      source: 'Wikipedia',
-      license: 'CC BY-SA 3.0',
-      licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
+      name: 'Test Resource',
+      source: 'Test Source',
+      sourceUrl: 'https://example.com/test',
+      license: 'MIT',
+      licenseUrl: 'https://opensource.org/licenses/MIT',
     },
   ]
 
@@ -57,9 +59,9 @@ describe('Footer.vue', () => {
       expect(wrapper.text()).toContain('Hanafuda Card Images')
       expect(wrapper.text()).toContain('Louie Mantia')
       expect(wrapper.text()).toContain('CC BY-SA 4.0')
-      expect(wrapper.text()).toContain('Game Rules')
-      expect(wrapper.text()).toContain('Wikipedia')
-      expect(wrapper.text()).toContain('CC BY-SA 3.0')
+      expect(wrapper.text()).toContain('Test Resource')
+      expect(wrapper.text()).toContain('Test Source')
+      expect(wrapper.text()).toContain('MIT')
     })
 
     it('should render Attributions section header', () => {
@@ -76,7 +78,7 @@ describe('Footer.vue', () => {
   })
 
   describe('External Links', () => {
-    it('should render external links with correct href', () => {
+    it('should render source and license links with correct href', () => {
       const wrapper = mount(Footer, {
         props: {
           copyrightYear: 2025,
@@ -86,12 +88,19 @@ describe('Footer.vue', () => {
       })
 
       const links = wrapper.findAll('a')
-      expect(links.length).toBe(2)
-      expect(links[0].attributes('href')).toBe('https://creativecommons.org/licenses/by-sa/4.0/')
-      expect(links[1].attributes('href')).toBe('https://creativecommons.org/licenses/by-sa/3.0/')
+      // 每個 attribution 有 2 個連結 (source + license)，總共 4 個
+      expect(links.length).toBe(4)
+
+      // 第一個 attribution 的連結
+      expect(links[0].attributes('href')).toBe('https://github.com/dotty-dev/Hanafuda-Louie-Recolor') // source
+      expect(links[1].attributes('href')).toBe('https://creativecommons.org/licenses/by-sa/4.0/') // license
+
+      // 第二個 attribution 的連結
+      expect(links[2].attributes('href')).toBe('https://example.com/test') // source
+      expect(links[3].attributes('href')).toBe('https://opensource.org/licenses/MIT') // license
     })
 
-    it('should have target="_blank" for external links', () => {
+    it('should have target="_blank" for all external links', () => {
       const wrapper = mount(Footer, {
         props: {
           copyrightYear: 2025,
@@ -121,7 +130,7 @@ describe('Footer.vue', () => {
       })
     })
 
-    it('should render external link icon (SVG)', () => {
+    it('should render external link icon (SVG) for each link', () => {
       const wrapper = mount(Footer, {
         props: {
           copyrightYear: 2025,
@@ -131,7 +140,8 @@ describe('Footer.vue', () => {
       })
 
       const svgIcons = wrapper.findAll('svg')
-      expect(svgIcons.length).toBe(2) // 每個 attribution 一個圖示
+      // 每個 attribution 有 2 個圖示 (source link + license link)
+      expect(svgIcons.length).toBe(4)
       svgIcons.forEach((icon) => {
         expect(icon.attributes('aria-hidden')).toBe('true')
       })
@@ -151,7 +161,7 @@ describe('Footer.vue', () => {
       expect(wrapper.element.tagName).toBe('FOOTER')
     })
 
-    it('should have aria-label for license links', () => {
+    it('should have aria-label for source and license links', () => {
       const wrapper = mount(Footer, {
         props: {
           copyrightYear: 2025,
@@ -161,10 +171,22 @@ describe('Footer.vue', () => {
       })
 
       const links = wrapper.findAll('a')
+
+      // 第一個 attribution 的 source link
       expect(links[0].attributes('aria-label')).toContain('Hanafuda Card Images')
-      expect(links[0].attributes('aria-label')).toContain('CC BY-SA 4.0')
-      expect(links[1].attributes('aria-label')).toContain('Game Rules')
-      expect(links[1].attributes('aria-label')).toContain('CC BY-SA 3.0')
+      expect(links[0].attributes('aria-label')).toContain('source')
+
+      // 第一個 attribution 的 license link
+      expect(links[1].attributes('aria-label')).toContain('Hanafuda Card Images')
+      expect(links[1].attributes('aria-label')).toContain('CC BY-SA 4.0')
+
+      // 第二個 attribution 的 source link
+      expect(links[2].attributes('aria-label')).toContain('Test Resource')
+      expect(links[2].attributes('aria-label')).toContain('source')
+
+      // 第二個 attribution 的 license link
+      expect(links[3].attributes('aria-label')).toContain('Test Resource')
+      expect(links[3].attributes('aria-label')).toContain('MIT')
     })
   })
 
@@ -212,8 +234,10 @@ describe('Footer.vue', () => {
         },
       })
 
-      expect(wrapper.findAll('a').length).toBe(1)
+      // 單個 attribution 有 2 個連結 (source + license)
+      expect(wrapper.findAll('a').length).toBe(2)
       expect(wrapper.text()).toContain('Hanafuda Card Images')
+      expect(wrapper.text()).toContain('Louie Mantia')
     })
 
     it('should handle future copyright year', () => {

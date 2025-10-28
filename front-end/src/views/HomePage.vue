@@ -49,14 +49,9 @@ const footerData = {
     {
       name: 'Hanafuda Card Images',
       source: 'Louie Mantia (dotty-dev/Hanafuda-Louie-Recolor)',
+      sourceUrl: 'https://github.com/dotty-dev/Hanafuda-Louie-Recolor',
       license: 'CC BY-SA 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
-    },
-    {
-      name: 'Game Rules Reference',
-      source: 'Wikipedia',
-      license: 'CC BY-SA 3.0',
-      licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
     },
   ] as AttributionLink[],
 }
