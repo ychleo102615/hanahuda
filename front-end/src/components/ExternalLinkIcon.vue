@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * ExternalLinkIcon 組件
- * 用於顯示外部連結圖示
- * 支援自訂 className 來控制尺寸和顏色
+ * ExternalLinkIcon component
+ * Used to display external link icons
+ * Supports custom className to control size and color
  */
 interface Props {
-  /** 自訂 CSS class */
+  /** Custom CSS class */
   className?: string
 }
 
@@ -33,5 +33,5 @@ withDefaults(defineProps<Props>(), {
 </template>
 
 <style scoped>
-/* 使用 currentColor 讓圖示繼承父元素的文字顏色 */
+/* Use currentColor to inherit text color from parent element */
 </style>

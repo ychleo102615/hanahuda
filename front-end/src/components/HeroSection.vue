@@ -17,46 +17,46 @@ const showEntryAnimation = ref(true)
 
 // Methods
 const handleCtaClick = async () => {
-  if (isNavigating.value) return // 防止重複點擊
+  if (isNavigating.value) return // Prevent duplicate clicks
 
   isNavigating.value = true
   try {
     await router.push(props.ctaTarget)
   } finally {
-    // 重置導航狀態（延遲避免快速重複點擊）
+    // Reset navigation state (delay to prevent rapid repeated clicks)
     setTimeout(() => {
       isNavigating.value = false
     }, 500)
   }
 }
 
-// 鍵盤導航支援
+// Keyboard navigation support
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Enter' || event.key === ' ') {
-    /* 防止空格鍵導致頁面滾動, 防止Enter鍵觸發表單提交 */
+    /* Prevent spacebar from scrolling page, prevent Enter from submitting forms */
     event.preventDefault()
     handleCtaClick()
   }
 }
 
-// 視差滾動效果
+// Parallax scroll effect
 const handleScroll = () => {
   parallaxOffset.value = window.scrollY
 }
 
-// 進入動畫完成處理
+// Entry animation completion handler
 const handleEntryAnimationStop = (event: AnimationEvent) => {
   if (event.animationName.includes('fade-in')) {
     showEntryAnimation.value = false
   }
 }
 
-// 生命週期
+// Lifecycle
 onMounted(() => {
-  // 添加滾動監聽
+  // Add scroll listener
   window.addEventListener('scroll', handleScroll, { passive: true })
 
-  // 觸發進入動畫
+  // Trigger entry animation
   setTimeout(() => {
     isVisible.value = true
   }, 100)
@@ -67,8 +67,8 @@ onUnmounted(() => {
 })
 </script>
 <!--
-  relative: 讓內部元素的絕對定位基於此容器
-  overflow: hidden: 隱藏超出容器的內容
+  relative: Allows absolute positioning of inner elements based on this container
+  overflow: hidden: Hides content that overflows the container
  -->
 
 <template>
@@ -77,34 +77,34 @@ onUnmounted(() => {
     :style="backgroundImage ? `background-image: url('${backgroundImage}')` : ''"
     aria-labelledby="hero-title"
   >
-    <!-- 背景裝飾層 -->
+    <!-- Background decoration layer -->
     <div class="absolute inset-0 bg-black/30" aria-hidden="true"></div>
 
-    <!-- 日式幾何裝飾元素（視差效果） -->
+    <!-- Japanese geometric decoration elements (parallax effect) -->
     <div
       class="decorative-elements"
       :style="{ transform: `translateY(${parallaxOffset * 0.3}px)` }"
       aria-hidden="true"
     >
-      <!-- 大圓形裝飾 -->
+      <!-- Large circle decorations -->
       <div class="absolute -right-20 top-20 h-96 w-96 rounded-full border-2 border-white/10 md:-right-10 md:h-[500px] md:w-[500px]"></div>
       <div class="absolute -left-32 bottom-10 h-80 w-80 rounded-full border-2 border-white/5 md:-left-20 md:h-96 md:w-96"></div>
 
-      <!-- 小圓形裝飾 -->
+      <!-- Small circle decorations -->
       <div class="absolute right-1/4 top-32 h-32 w-32 rounded-full bg-accent-pink/10 md:h-40 md:w-40"></div>
       <div class="absolute bottom-32 left-1/3 h-24 w-24 rounded-full bg-accent-red/10 md:h-32 md:w-32"></div>
 
-      <!-- 線條裝飾 -->
+      <!-- Line decorations -->
       <div class="absolute left-1/4 top-40 h-1 w-32 rotate-45 bg-white/10 md:w-40"></div>
       <div class="absolute bottom-40 right-1/4 h-1 w-24 -rotate-45 bg-white/5 md:w-32"></div>
     </div>
 
-    <!-- 主要內容 -->
+    <!-- Main content -->
     <div
       class="relative z-10 mx-auto max-w-4xl text-center"
       :style="{ transform: `translateY(${parallaxOffset * 0.1}px)` }"
     >
-      <!-- 遊戲標題 -->
+      <!-- Game title -->
       <h1
         id="hero-title"
         :class="[
@@ -121,7 +121,7 @@ onUnmounted(() => {
         {{ title }}
       </h1>
 
-      <!-- 副標題 -->
+      <!-- Subtitle -->
       <p
         :class="[
           'mb-10 text-lg text-gray-200 md:text-xl lg:text-2xl',
@@ -135,7 +135,7 @@ onUnmounted(() => {
         {{ subtitle }}
       </p>
 
-      <!-- CTA 按鈕 -->
+      <!-- CTA Button -->
       <button
         @click="handleCtaClick"
         @keydown="handleKeyDown"
@@ -202,8 +202,8 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Hero Section 樣式已使用 Tailwind CSS Utility Classes */
-/* 背景圖片支援（若有提供） */
+/* Hero Section styles using Tailwind CSS Utility Classes */
+/* Background image support (if provided) */
 .hero-section[style*='background-image'] {
   background-size: cover;
   background-position: center;

@@ -5,23 +5,23 @@ import { useScrollTo } from '@/composables/useScrollTo';
 
 // Types
 export interface NavigationLink {
-  /** 連結顯示文字 */
+  /** Link display text */
   label: string;
-  /** 連結目標 (href 或錨點 ID) */
+  /** Link target (href or anchor ID) */
   target: string;
-  /** 是否為外部連結 (http/https) */
+  /** Whether this is an external link (http/https) */
   external?: boolean;
-  /** 是否為 CTA 按鈕樣式 */
+  /** Whether this uses CTA button styling */
   isCta?: boolean;
 }
 
 // Props
 defineProps<{
-  /** Logo 文字或圖片路徑 */
+  /** Logo text or image path */
   logo: string;
-  /** 導航連結列表 */
+  /** Navigation link list */
   links: NavigationLink[];
-  /** 是否為透明背景 (用於 sticky header) */
+  /** Whether to use transparent background (for sticky header) */
   transparent?: boolean;
 }>();
 
@@ -57,32 +57,32 @@ const handleScroll = () => {
 const handleLinkClick = (link: NavigationLink, event: Event) => {
   closeMobileMenu();
 
-  // 如果是外部連結，讓瀏覽器處理
+  // If external link, let browser handle it
   if (link.external) {
     return;
   }
 
-  // 如果是錨點連結（以 # 開頭）
+  // If anchor link (starts with #)
   if (link.target.startsWith('#')) {
     event.preventDefault();
     const targetId = link.target.slice(1);
 
-    // 如果是「規則」連結，發出事件通知父組件自動展開
+    // If "rules" link, emit event to notify parent component to auto-expand
     if (targetId === 'rules') {
       emit('rulesClick');
     }
 
-    // 使用 useScrollTo composable 進行平滑滾動
+    // Use useScrollTo composable for smooth scrolling
     scrollTo(targetId, NAV_HEIGHT);
   } else {
-    // 如果是路由連結，使用 Vue Router
+    // If route link, use Vue Router
     event.preventDefault();
     router.push(link.target);
   }
 };
 
 const handleKeyDown = (event: KeyboardEvent) => {
-  // Escape 鍵關閉 mobile menu
+  // Escape key closes mobile menu
   if (event.key === 'Escape' && isMobileMenuOpen.value) {
     closeMobileMenu();
   }
@@ -145,7 +145,7 @@ onUnmounted(() => {
             tabindex="0"
           >
             {{ link.label }}
-            <!-- Hover 底線特效 (非 CTA 按鈕) -->
+            <!-- Hover underline effect (non-CTA buttons) -->
             <span
               v-if="!link.isCta"
               class="absolute bottom-0 left-0 w-0 h-0.5 bg-accent-pink transition-all duration-300 group-hover:w-full"
@@ -219,5 +219,5 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* 確保導航列上方有足夠的頁面內邊距 */
+/* Ensure adequate page padding above navigation bar */
 </style>

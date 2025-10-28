@@ -62,9 +62,6 @@ const getCategoryColor = (category: string): string => {
           <h4 class="text-3xl font-bold text-primary-900">
             {{ currentYaku.name }}
           </h4>
-          <p class="text-xl text-gray-600">
-            {{ currentYaku.nameJa }}
-          </p>
         </div>
 
         <!-- Category Badge -->

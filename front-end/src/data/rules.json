@@ -42,18 +42,18 @@
         {
           "type": "list",
           "items": [
-            "January - Pine (松)",
-            "February - Plum Blossom (梅)",
-            "March - Cherry Blossom (櫻)",
-            "April - Wisteria (藤)",
-            "May - Iris (菖蒲)",
-            "June - Peony (牡丹)",
-            "July - Bush Clover (萩)",
-            "August - Susuki Grass (芒)",
-            "September - Chrysanthemum (菊)",
-            "October - Maple (紅葉)",
-            "November - Willow (柳)",
-            "December - Paulownia (桐)"
+            "January - Pine",
+            "February - Plum Blossom",
+            "March - Cherry Blossom",
+            "April - Wisteria",
+            "May - Iris",
+            "June - Peony",
+            "July - Bush Clover",
+            "August - Susuki Grass",
+            "September - Chrysanthemum",
+            "October - Maple",
+            "November - Willow",
+            "December - Paulownia"
           ]
         }
       ]

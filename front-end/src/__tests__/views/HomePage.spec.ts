@@ -60,7 +60,7 @@ describe('HomePage Integration Test', () => {
 
     it('should render NavigationBar with correct props', () => {
       const navBar = wrapper.findComponent(NavigationBar)
-      expect(navBar.props('logo')).toBe('花札 Koi-Koi')
+      expect(navBar.props('logo')).toBe('Hanafuda Koi-Koi')
       expect(navBar.props('links')).toHaveLength(3)
       expect(navBar.props('transparent')).toBe(false)
     })
@@ -102,7 +102,7 @@ describe('HomePage Integration Test', () => {
     it('should have about section placeholder', () => {
       const aboutSection = wrapper.find('#about')
       expect(aboutSection.exists()).toBe(true)
-      expect(aboutSection.text()).toContain('關於 Hanafuda Koi-Koi')
+      expect(aboutSection.text()).toContain('About Hanafuda Koi-Koi')
     })
   })
 
@@ -112,19 +112,19 @@ describe('HomePage Integration Test', () => {
       const links = navBar.props('links')
 
       expect(links[0]).toEqual({
-        label: '規則',
+        label: 'Rules',
         target: '#rules',
         isCta: false,
       })
 
       expect(links[1]).toEqual({
-        label: '關於',
+        label: 'About',
         target: '#about',
         isCta: false,
       })
 
       expect(links[2]).toEqual({
-        label: '開始遊戲',
+        label: 'Start Game',
         target: '/game',
         isCta: true,
       })

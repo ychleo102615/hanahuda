@@ -1,182 +1,182 @@
 /**
- * 全域 TypeScript 介面定義
- * 定義所有組件共用的資料結構
+ * Global TypeScript interface definitions
+ * Defines data structures shared across all components
  */
 
 // ========================================
-// Navigation 相關介面
+// Navigation related interfaces
 // ========================================
 
 /**
- * 導航連結介面
+ * Navigation link interface
  */
 export interface NavigationLink {
-  /** 連結顯示文字 */
+  /** Link display text */
   label: string
-  /** 連結目標 (href 或錨點 ID) */
+  /** Link target (href or anchor ID) */
   target: string
-  /** 是否為外部連結 */
+  /** Whether this is an external link */
   external?: boolean
-  /** 是否為 CTA 按鈕樣式 */
+  /** Whether this uses CTA button styling */
   isCta?: boolean
 }
 
 /**
- * NavigationBar 組件 Props
+ * NavigationBar component Props
  */
 export interface NavigationBarProps {
-  /** Logo 文字或圖片路徑 */
+  /** Logo text or image path */
   logo: string
-  /** 導航連結列表 */
+  /** Navigation link list */
   links: NavigationLink[]
-  /** 是否為透明背景 */
+  /** Whether to use transparent background */
   transparent?: boolean
 }
 
 // ========================================
-// Hero Section 相關介面
+// Hero Section related interfaces
 // ========================================
 
 /**
- * HeroSection 組件 Props
+ * HeroSection component Props
  */
 export interface HeroSectionProps {
-  /** 遊戲標題 */
+  /** Game title */
   title: string
-  /** 副標題 */
+  /** Subtitle */
   subtitle: string
-  /** 主要 CTA 按鈕文字 */
+  /** Primary CTA button text */
   ctaText: string
-  /** 主要 CTA 按鈕導航目標 */
+  /** Primary CTA button navigation target */
   ctaTarget: string
-  /** 背景圖片路徑 */
+  /** Background image path */
   backgroundImage?: string
 }
 
 // ========================================
-// Rules Section 相關介面
+// Rules Section related interfaces
 // ========================================
 
 /**
- * 規則內容段落類型
+ * Rule content section type
  */
 export type RuleSectionType = 'paragraph' | 'list' | 'ordered-list'
 
 /**
- * 有序列表項目（支援嵌套子項目）
+ * Ordered list item (supports nested sub-items)
  */
 export interface OrderedListItem {
-  /** 項目標題 */
+  /** Item title */
   title: string
-  /** 項目說明文字 */
+  /** Item description text */
   text: string
-  /** 子項目列表 */
+  /** Sub-item list */
   subItems?: string[]
 }
 
 /**
- * 規則內容段落
+ * Rule content section
  */
 export interface RuleSection {
-  /** 段落類型 */
+  /** Section type */
   type: RuleSectionType
-  /** 段落文字（用於 paragraph） */
+  /** Section text (for paragraph) */
   text?: string
-  /** 列表項目（用於 list） */
+  /** List items (for list) */
   items?: string[]
-  /** 有序列表項目（用於 ordered-list） */
+  /** Ordered list items (for ordered-list) */
   orderedItems?: OrderedListItem[]
 }
 
 /**
- * 規則分類
+ * Rule category
  */
 export interface RuleCategory {
-  /** 分類 ID */
+  /** Category ID */
   id: string
-  /** 分類標題 */
+  /** Category title */
   title: string
-  /** 是否預設展開 */
+  /** Whether expanded by default */
   defaultExpanded?: boolean
-  /** 分類內容段落 */
+  /** Category content sections */
   sections: RuleSection[]
 }
 
 /**
- * RulesSection 組件 Props
+ * RulesSection component Props
  */
 export interface RulesSectionProps {
-  /** 規則分類列表 */
+  /** Rule category list */
   categories: RuleCategory[]
-  /** 役種列表（用於輪播圖） */
+  /** Yaku list (for carousel) */
   yakuList: YakuCard[]
 }
 
 // ========================================
-// Yaku (役種) 相關介面
+// Yaku (役種) related interfaces
 // ========================================
 
 /**
- * 役種分類
+ * Yaku category
  */
 export type YakuCategory = 'hikari' | 'tanzaku' | 'tane' | 'kasu'
 
 /**
- * 役種卡片
+ * Yaku card
  */
 export interface YakuCard {
-  /** 役種唯一 ID */
+  /** Yaku unique ID */
   id: string
-  /** 役種名稱（英文） */
+  /** Yaku name (English) */
   name: string
-  /** 役種名稱（日文） */
+  /** Yaku name (Japanese) */
   nameJa: string
-  /** 役種分類 */
+  /** Yaku category */
   category: YakuCategory
-  /** 得分 */
+  /** Points */
   points: number
-  /** 組成牌面列表（MMTI 格式卡片 ID） */
+  /** Card composition list (MMTI format card IDs) */
   cardIds?: string[]
-  /** 最少需要的卡片數量（用於累積型役種） */
+  /** Minimum number of cards required (for cumulative yaku) */
   minimumCards?: number
-  /** 說明文字 */
+  /** Description text */
   description: string
 }
 
 /**
- * YakuCarousel 組件 Props
+ * YakuCarousel component Props
  */
 export interface YakuCarouselProps {
-  /** 役種列表 */
+  /** Yaku list */
   yakuList: YakuCard[]
 }
 
 // ========================================
-// Footer 相關介面
+// Footer related interfaces
 // ========================================
 
 /**
- * 第三方資源 Attribution
+ * Third-party resource Attribution
  */
 export interface AttributionLink {
-  /** 資源名稱 */
+  /** Resource name */
   name: string
-  /** 資源來源 */
+  /** Resource source */
   source: string
-  /** 授權類型 */
+  /** License type */
   license: string
-  /** 授權頁面連結 */
+  /** License page link */
   licenseUrl: string
 }
 
 /**
- * Footer 組件 Props
+ * Footer component Props
  */
 export interface FooterProps {
-  /** 版權年分 */
+  /** Copyright year */
   copyrightYear: number
-  /** 專案名稱 */
+  /** Project name */
   projectName: string
-  /** 第三方資源 attribution 列表 */
+  /** Third-party resource attribution list */
   attributions: AttributionLink[]
 }

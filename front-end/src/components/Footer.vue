@@ -1,29 +1,29 @@
 <script setup lang="ts">
 /**
- * Footer 組件
- * 顯示版權聲明和資源 attribution 資訊
+ * Footer component
+ * Displays copyright notice and resource attribution information
  */
 import ExternalLinkIcon from './ExternalLinkIcon.vue'
 
 export interface AttributionLink {
-  /** 資源名稱 (e.g., "Hanafuda Images") */
+  /** Resource name (e.g., "Hanafuda Images") */
   name: string;
-  /** 資源來源 (e.g., "Wikimedia Commons") */
+  /** Resource source (e.g., "Wikimedia Commons") */
   source: string;
-  /** 資源來源連結 (e.g., "https://commons.wikimedia.org/wiki/Category:Hanafuda") */
+  /** Resource source link (e.g., "https://commons.wikimedia.org/wiki/Category:Hanafuda") */
   sourceUrl: string;
-  /** 授權類型 (e.g., "Public Domain", "CC BY-SA 4.0") */
+  /** License type (e.g., "Public Domain", "CC BY-SA 4.0") */
   license: string;
-  /** 授權頁面連結 */
+  /** License page link */
   licenseUrl: string;
 }
 
 export interface FooterProps {
-  /** 版權年分 */
+  /** Copyright year */
   copyrightYear: number;
-  /** 專案名稱 */
+  /** Project name */
   projectName: string;
-  /** 第三方資源 attribution 列表 */
+  /** Third-party resource attribution list */
   attributions: AttributionLink[];
 }
 
@@ -34,9 +34,9 @@ defineProps<FooterProps>();
 <template>
   <footer class="bg-primary-900 text-white py-12">
     <div class="container mx-auto px-4">
-      <!-- 桌面版: 左右排版 | 手機版: 堆疊內容 -->
+      <!-- Desktop: horizontal layout | Mobile: stacked content -->
       <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-8">
-        <!-- 左側: 版權聲明 -->
+        <!-- Left: Copyright notice -->
         <div class="flex-shrink-0">
           <p class="text-sm text-gray-300">
             &copy; {{ copyrightYear }} {{ projectName }}
@@ -46,7 +46,7 @@ defineProps<FooterProps>();
           </p>
         </div>
 
-        <!-- 右側: 資源 Attribution 列表 -->
+        <!-- Right: Resource Attribution list -->
         <div class="flex-grow">
           <h3 class="text-sm font-semibold mb-3 text-gray-200">
             Attributions
@@ -58,11 +58,11 @@ defineProps<FooterProps>();
               class="text-sm text-gray-300"
             >
               <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                <!-- 資源名稱 -->
+                <!-- Resource name -->
                 <span class="font-medium text-white">{{ attr.name }}</span>
                 <span class="hidden sm:inline text-gray-500">•</span>
 
-                <!-- 資源來源 (可點擊連結) -->
+                <!-- Resource source (clickable link) -->
                 <a
                   :href="attr.sourceUrl"
                   target="_blank"
@@ -75,7 +75,7 @@ defineProps<FooterProps>();
                 </a>
                 <span class="hidden sm:inline text-gray-500">•</span>
 
-                <!-- 授權連結 -->
+                <!-- License link -->
                 <a
                   :href="attr.licenseUrl"
                   target="_blank"

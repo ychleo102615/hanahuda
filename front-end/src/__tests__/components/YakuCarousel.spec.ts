@@ -53,11 +53,6 @@ describe('YakuCarousel', () => {
       expect(title.text()).toBe('Five Brights')
     })
 
-    it('should render yaku name in Japanese', () => {
-      const nameJa = wrapper.findAll('p')[0]
-      expect(nameJa.text()).toBe('五光')
-    })
-
     it('should render yaku points', () => {
       const pointsText = wrapper.text()
       expect(pointsText).toContain('10')
@@ -65,7 +60,7 @@ describe('YakuCarousel', () => {
     })
 
     it('should render yaku description', () => {
-      const description = wrapper.findAll('p')[1]
+      const description = wrapper.findAll('p')[0]
       expect(description.text()).toBe('Collect all 5 bright cards')
     })
 
@@ -189,7 +184,7 @@ describe('YakuCarousel', () => {
       const dots = wrapper.findAll('.w-3.h-3.rounded-full')
       await dots[2].trigger('click') // Navigate to "Plain Cards" (has minimumCards)
 
-      const description = wrapper.findAll('p')[1]
+      const description = wrapper.findAll('p')[0]
       expect(description.text()).toContain('10+ cards needed')
     })
   })
