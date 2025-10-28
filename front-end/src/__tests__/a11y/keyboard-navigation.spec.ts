@@ -24,6 +24,7 @@ describe('Keyboard Navigation Accessibility Tests', () => {
 
     beforeEach(async () => {
       router = createMockRouter()
+      router.push('/')
       await router.isReady()
 
       wrapper = mount(NavigationBar, {
@@ -115,6 +116,7 @@ describe('Keyboard Navigation Accessibility Tests', () => {
 
     beforeEach(async () => {
       router = createMockRouter()
+      router.push('/')
       await router.isReady()
 
       wrapper = mount(HeroSection, {
