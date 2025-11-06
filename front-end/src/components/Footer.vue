@@ -1,34 +1,31 @@
 <script setup lang="ts">
 /**
  * Footer component
- * Displays copyright notice and resource attribution information
+ * Displays copyright notice, personal info, and resource attribution information
  */
 import ExternalLinkIcon from './ExternalLinkIcon.vue'
 
-export interface AttributionLink {
-  /** Resource name (e.g., "Hanafuda Images") */
-  name: string;
-  /** Resource source (e.g., "Wikimedia Commons") */
-  source: string;
-  /** Resource source link (e.g., "https://commons.wikimedia.org/wiki/Category:Hanafuda") */
-  sourceUrl: string;
-  /** License type (e.g., "Public Domain", "CC BY-SA 4.0") */
-  license: string;
-  /** License page link */
-  licenseUrl: string;
+// 版權資訊
+const copyrightYear = new Date().getFullYear()
+const projectName = 'Hanafuda Koi-Koi'
+
+// 個人資訊
+const personalInfo = {
+  name: 'Leo Huang',
+  email: 'leo102615@gmail.com',
+  projectUrl: 'https://github.com/ychleo102615/hanahuda'
 }
 
-export interface FooterProps {
-  /** Copyright year */
-  copyrightYear: number;
-  /** Project name */
-  projectName: string;
-  /** Third-party resource attribution list */
-  attributions: AttributionLink[];
-}
-
-// Props
-defineProps<FooterProps>();
+// 第三方資源授權列表
+const attributions = [
+  {
+    name: 'Card Designs',
+    source: 'dotty-dev/Hanafuda-Louie-Recolor',
+    sourceUrl: 'https://github.com/dotty-dev/Hanafuda-Louie-Recolor',
+    license: 'CC BY-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/'
+  }
+]
 </script>
 
 <template>
@@ -46,7 +43,7 @@ defineProps<FooterProps>();
           </p>
         </div>
 
-        <!-- Right: Resource Attribution list -->
+        <!-- Center: Resource Attribution list -->
         <div class="flex-grow">
           <h3 class="text-sm font-semibold mb-3 text-gray-200">
             Attributions
@@ -89,6 +86,35 @@ defineProps<FooterProps>();
               </div>
             </li>
           </ul>
+        </div>
+
+        <!-- Right: Personal Information -->
+        <div class="flex-shrink-0">
+          <h3 class="text-sm font-semibold mb-3 text-gray-200">
+            Contact
+          </h3>
+          <div class="space-y-2 text-sm text-gray-300">
+            <p class="font-medium text-white">{{ personalInfo.name }}</p>
+            <p>
+              <a
+                :href="`mailto:${personalInfo.email}`"
+                class="text-gray-300 hover:text-white transition-colors"
+              >
+                {{ personalInfo.email }}
+              </a>
+            </p>
+            <p>
+              <a
+                :href="personalInfo.projectUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-accent-pink hover:text-accent-red transition-colors"
+              >
+                <span>Project Repository</span>
+                <ExternalLinkIcon />
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

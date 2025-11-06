@@ -6,7 +6,6 @@ import RulesSection from '@/components/RulesSection.vue'
 import Footer from '@/components/Footer.vue'
 import type { RuleCategory, YakuCard } from '@/types/rules'
 import type { NavigationLink } from '@/components/NavigationBar.vue'
-import type { AttributionLink } from '@/components/Footer.vue'
 
 // Import JSON data
 import rulesDataJson from '@/data/rules.json'
@@ -39,21 +38,6 @@ const handleRulesClick = () => {
   if (rulesSectionRef.value) {
     rulesSectionRef.value.expandAll()
   }
-}
-
-// Footer data
-const footerData = {
-  copyrightYear: 2025,
-  projectName: 'Hanafuda Koi-Koi',
-  attributions: [
-    {
-      name: 'Hanafuda Card Images',
-      source: 'Louie Mantia (dotty-dev/Hanafuda-Louie-Recolor)',
-      sourceUrl: 'https://github.com/dotty-dev/Hanafuda-Louie-Recolor',
-      license: 'CC BY-SA 4.0',
-      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
-    },
-  ] as AttributionLink[],
 }
 </script>
 
@@ -92,18 +76,14 @@ const footerData = {
         <div class="text-center">
           <h2 class="text-3xl font-bold text-primary-900 mb-4">About Hanafuda Koi-Koi</h2>
           <p class="text-lg text-primary-700">
-            Explore the charm of traditional Japanese Hanafuda card game
+            This is a demonstration project developed by Leo Huang.
           </p>
         </div>
       </section>
     </main>
 
     <!-- Footer -->
-    <Footer
-      :copyright-year="footerData.copyrightYear"
-      :project-name="footerData.projectName"
-      :attributions="footerData.attributions"
-    />
+    <Footer />
   </div>
 </template>
 
