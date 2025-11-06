@@ -47,11 +47,11 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 3. Load and analyze the implementation context:
    - **REQUIRED**: Read tasks.md for the complete task list and execution plan
-   - **MUST**: Read plan.md for tech stack, architecture, and file structure
-   - **MUST**: Read data-model.md for entities and relationships
+   - **REQUIRED**: Read plan.md for tech stack, architecture, and file structure
+   - **IF EXISTS**: Read data-model.md for entities and relationships
    - **IF EXISTS**: Read contracts/ for API specifications and test requirements
-   - **MUST**: Read research.md for technical decisions and constraints
-   - **MUST**: Read quickstart.md for integration scenarios
+   - **IF EXISTS**: Read research.md for technical decisions and constraints
+   - **IF EXISTS**: Read quickstart.md for integration scenarios
 
 4. **Project Setup Verification**:
    - **REQUIRED**: Create/verify ignore files based on actual project setup:
