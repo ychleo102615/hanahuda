@@ -1,32 +1,5 @@
 # 日本花牌(Hanafuda Koi-Koi)遊戲企劃書 (PRD)
 
-**版本**: 1.4
-**最後更新**: 2025-10-20
-**通訊方案**: REST + SSE (Server-Sent Events) + 命令-事件模式
-**修訂說明**:
-- v1.4: **移除特定語言程式碼，改為語言無關的資料格式定義**
-  - 移除所有 TypeScript/Java/JavaScript/CSS 可執行程式碼
-  - 保留設計要點與架構說明（以文字描述呈現）
-  - 移除前端架構設計（Vue、Pinia 等特定技術選型）
-  - 將 FlowStage enum 改為表格形式定義
-  - 將所有 DTO 定義改為 JSON 格式範例
-  - 第 2.1.2 節：CSS 代碼改為響應式設計要點說明
-  - 第 2.1.3 節：從具體實作改為功能需求描述
-  - 第 4.3.2 節：GameSnapshotRestore 改為 JSON 範例
-  - 第 4.3.3 節：移除 TypeScript 程式碼，改為實作要點說明
-  - 第 5.3 節：所有 Java DTO 改為 JSON 格式，移除 Domain Model 和 Mapper 範例
-  - **符合 PRD 文件原則**：不包含可執行代碼，僅定義資料格式與功能需求
-- v1.3: **統一前後端交互規格**
-  - 完全對齊 game-flow.md 的命令-事件模式
-  - 重新定義所有 REST API 端點（映射至 game-flow.md 命令）
-  - 統一所有 SSE 事件命名（採用 `Turn*`, `Round*`, `Game*` 命名）
-  - 引入 `FlowStage` 狀態機機制（`AWAITING_HAND_PLAY`, `AWAITING_SELECTION`, `AWAITING_DECISION`）
-  - 採用核心資料結構（`Card`, `YakuScore`, `CardCapture`）
-  - 修改斷線重連為快照模式（`GameSnapshotRestore`）
-  - 更新第 4.2 節：完整通訊流程圖（涵蓋 6 個階段）
-- v1.2: 術語調整(opponent/YAKU/行動)、API 配對邏輯修正、簡化 SSE 事件說明、移除資料庫設計與範例程式碼
-- v1.1: 修正重大問題(架構矛盾、牌數錯誤、SSE 機制、事件順序、架構實踐)
-
 ---
 
 ## 目錄
