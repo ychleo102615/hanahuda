@@ -206,7 +206,7 @@ Phase 3 (分散式):
 - **快取整合預留**: 減少 DB 查詢，支援 SSE 多實例
 
 ### 3.3 可維護性
-- **Clean Architecture**: 嚴格分層（Domain、Application、Adapter、Framework）
+- **Clean Architecture**: 嚴格分層（Domain、Application、Adapter）
 - **單元測試覆蓋率**: 前端 > 70%、後端 > 80%（重點在核心業務邏輯）
 - **API 文檔自動生成**: Swagger / OpenAPI 3.0
 - **程式碼風格檢查**: ESLint / Checkstyle / SonarQube
@@ -241,42 +241,42 @@ Phase 3 (分散式):
 本專案嚴格遵循 Clean Architecture 原則，將系統分為四個同心圓層次：
 
 ```
-┌─────────────────────────────────────────┐
-│  Framework & Drivers (最外層)           │
-│  ├─ Web (Spring MVC/Vue Router)        │
-│  ├─ Database (JPA/IndexedDB)           │
-│  └─ External APIs                       │
-│                                          │
-│  ┌───────────────────────────────────┐ │
-│  │  Interface Adapters (適配層)      │ │
-│  │  ├─ Controllers (REST/SSE)        │ │
+┌───────────────────────────────────────┐
+│  Framework & Drivers (最外層)         │
+│  ├─ Web (Spring MVC/Vue Router)       │
+│  ├─ Database (JPA/IndexedDB)          │
+│  └─ External APIs                     │
+│                                       │
+│  ┌──────────────────────────────────┐ │
+│  │  Interface Adapters (適配層)     │ │
+│  │  ├─ Controllers (REST/SSE)       │ │
 │  │  ├─ Presenters (DTO Mappers)     │ │
 │  │  ├─ Gateways (Repository Impl)   │ │
-│  │  └─ View Models                   │ │
-│  │                                    │ │
+│  │  └─ View Models                  │ │
+│  │                                  │ │
 │  │  ┌─────────────────────────────┐ │ │
 │  │  │  Application Business Rules │ │ │
 │  │  │  (Use Cases 層)             │ │ │
 │  │  │  ├─ 遊戲操作 Use Cases      │ │ │
 │  │  │  ├─ 事件處理 Use Cases      │ │ │
 │  │  │  └─ Port 介面定義           │ │ │
-│  │  │                              │ │ │
-│  │  │  ┌───────────────────────┐ │ │ │
-│  │  │  │  Enterprise Business  │ │ │ │
-│  │  │  │  Rules (Domain 層)    │ │ │ │
-│  │  │  │  ├─ Aggregates        │ │ │ │
-│  │  │  │  ├─ Entities          │ │ │ │
-│  │  │  │  ├─ Value Objects     │ │ │ │
-│  │  │  │  └─ Domain Services   │ │ │ │
-│  │  │  └───────────────────────┘ │ │ │
+│  │  │                             │ │ │
+│  │  │  ┌───────────────────────┐  │ │ │
+│  │  │  │  Enterprise Business  │  │ │ │
+│  │  │  │  Rules (Domain 層)    │  │ │ │
+│  │  │  │  ├─ Aggregates        │  │ │ │
+│  │  │  │  ├─ Entities          │  │ │ │
+│  │  │  │  ├─ Value Objects     │  │ │ │
+│  │  │  │  └─ Domain Services   │  │ │ │
+│  │  │  └───────────────────────┘  │ │ │
 │  │  └─────────────────────────────┘ │ │
-│  └───────────────────────────────────┘ │
-└─────────────────────────────────────────┘
+│  └──────────────────────────────────┘ │
+└───────────────────────────────────────┘
 ```
 
 **依賴規則 (Dependency Rule)**:
 - ✅ 依賴箭頭只能由外層指向內層
-- ✅ 內層不依賴外層（Domain 不依賴 Framework）
+- ✅ 內層不依賴外層（Domain 不依賴 Adapter）
 - ✅ 內層定義介面（Port），外層實作（Adapter）
 
 ### 4.2 各層職責
@@ -302,10 +302,6 @@ Phase 3 (分散式):
 - 轉換資料格式（Domain ↔ DTO）
 
 **範例**：REST Controllers、SSE Client、Repository Adapters
-
-#### Framework & Drivers Layer（框架與驅動層）
-- 提供技術基礎設施（Spring Boot、Vue 3）
-- 不包含業務邏輯
 
 ### 4.3 Bounded Context 劃分
 

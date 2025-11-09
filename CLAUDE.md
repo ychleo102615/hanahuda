@@ -1,8 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-# **使用繁體中文**
+# **必須使用繁體中文**
 
 # 反幻覺指示
 
