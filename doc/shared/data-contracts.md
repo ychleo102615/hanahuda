@@ -15,7 +15,7 @@
 
 ```json
 {
-  "card_id": "uuid-string",
+  "card_id": "0111",
   "month": 1,
   "type": "BRIGHT",
   "display_name": "松鶴"
@@ -24,7 +24,7 @@
 
 | 欄位 | 型別 | 說明 |
 |-----|------|------|
-| `card_id` | string | 卡牌唯一識別碼（UUID） |
+| `card_id` | string | 卡牌唯一識別碼（MMTI 格式，4位字串，詳見 [protocol.md](./protocol.md#i-卡片-id-編碼規則)） |
 | `month` | number | 月份（1-12） |
 | `type` | string | 卡牌類型：`"BRIGHT"` / `"ANIMAL"` / `"RIBBON"` / `"DREG"` |
 | `display_name` | string | 顯示名稱（如「松鶴」、「櫻幕」） |
@@ -52,17 +52,17 @@
 ```json
 {
   "source_card": {
-    "card_id": "card-1",
+    "card_id": "0111",
     "month": 1,
     "type": "BRIGHT",
     "display_name": "松鶴"
   },
   "captured_cards": [
     {
-      "card_id": "card-2",
+      "card_id": "0131",
       "month": 1,
-      "type": "ANIMAL",
-      "display_name": "松短冊"
+      "type": "RIBBON",
+      "display_name": "松赤短"
     }
   ],
   "target_zone": "DEPOSITORY"
@@ -79,7 +79,9 @@
 
 ## SSE 事件 Payload 格式
 
-所有 SSE 事件的 `data` 欄位均為 JSON 格式。以下為各事件的資料結構範例：
+所有 SSE 事件的 `data` 欄位均為 JSON 格式。以下為部分事件的資料結構範例。
+
+**完整事件列表與定義請參考 [protocol.md](./protocol.md#v-伺服器事件-s2c)**
 
 ### GameStarted
 ```json
@@ -101,7 +103,7 @@
 {
   "current_dealer_id": "player-uuid",
   "initial_field_cards": [
-    {"card_id": "card-1", "month": 1, "type": "BRIGHT", "display_name": "松鶴"}
+    {"card_id": "0111", "month": 1, "type": "BRIGHT", "display_name": "松鶴"}
   ],
   "hand_size": 8
 }
@@ -121,31 +123,45 @@
 {
   "player_id": "player-uuid",
   "capture": {
-    "source_card": {"card_id": "card-1", "month": 1, "type": "BRIGHT", "display_name": "松鶴"},
-    "captured_cards": [{"card_id": "card-2", "month": 1, "type": "ANIMAL", "display_name": "松短冊"}],
+    "source_card": {"card_id": "0111", "month": 1, "type": "BRIGHT", "display_name": "松鶴"},
+    "captured_cards": [{"card_id": "0131", "month": 1, "type": "RIBBON", "display_name": "松赤短"}],
     "target_zone": "DEPOSITORY"
   }
 }
 ```
 
-### TurnSelectionRequired
+### SelectionRequired
 ```json
 {
   "player_id": "player-uuid",
-  "source_card_id": "card-1",
-  "possible_targets": ["card-2", "card-3"]
+  "hand_play": {
+    "card": "0341",
+    "captured": ["0342"]
+  },
+  "selection": {
+    "source": "0841",
+    "options": ["0842", "0843"]
+  }
 }
 ```
 
-### TurnYakuFormed
+### DecisionRequired
 ```json
 {
   "player_id": "player-uuid",
-  "newly_formed_yaku": [
-    {"yaku_type": "GOKO", "base_points": 15}
-  ],
-  "current_base_score": 15,
-  "required_stage": "AWAITING_DECISION"
+  "hand_play": {
+    "card": "0331",
+    "captured": []
+  },
+  "deck_flip": {
+    "card": "0332",
+    "captured": ["0333"]
+  },
+  "deck_remaining": 23,
+  "yaku_update": {
+    "new": [{"type": "GOKO", "base_points": 15}],
+    "total_base": 15
+  }
 }
 ```
 
@@ -164,7 +180,7 @@
 }
 ```
 
-完整 SSE 事件列表請參考 [protocol.md](./protocol.md)。
+**註**: 以上僅為部分範例，完整事件結構定義請參考 [protocol.md](./protocol.md#v-伺服器事件-s2c)。所有事件命名與結構必須與 protocol.md 保持一致。
 
 ---
 
@@ -181,15 +197,15 @@
 ### POST /api/v1/games/{gameId}/turns/play-card
 ```json
 {
-  "card_id_to_play": "card-uuid"
+  "card_id_to_play": "0341"
 }
 ```
 
 ### POST /api/v1/games/{gameId}/turns/select-match
 ```json
 {
-  "source_card_id": "card-uuid-1",
-  "selected_target_id": "card-uuid-2"
+  "source_card_id": "0341",
+  "selected_target_id": "0342"
 }
 ```
 
