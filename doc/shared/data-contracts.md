@@ -26,7 +26,7 @@
 |-----|------|------|
 | `card_id` | string | 卡牌唯一識別碼（MMTI 格式，4位字串，詳見 [protocol.md](./protocol.md#i-卡片-id-編碼規則)） |
 | `month` | number | 月份（1-12） |
-| `type` | string | 卡牌類型：`"BRIGHT"` / `"ANIMAL"` / `"RIBBON"` / `"DREG"` |
+| `type` | string | 卡牌類型：`"BRIGHT"` / `"ANIMAL"` / `"RIBBON"` / `"PLAIN"` |
 | `display_name` | string | 顯示名稱（如「松鶴」、「櫻幕」） |
 
 ---

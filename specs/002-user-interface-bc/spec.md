@@ -158,15 +158,11 @@
 ### Key Entities
 
 - **Card (Value Object)**: 代表一張花札卡片
-  - 屬性:卡片 ID(MMTI 格式)、月份(1-12)、類型(BRIGHT/ANIMAL/RIBBON/DREG)、點數(20/10/5/1)、顯示名稱
+  - 屬性:卡片 ID(MMTI 格式)、月份(1-12)、類型(BRIGHT/ANIMAL/RIBBON/PLAIN)、點數(20/10/5/1)、顯示名稱
   - 不可變物件,建立後不可修改
 
 - **YakuScore (Value Object)**: 代表一個役種與其分數
   - 屬性:役種類型(如 GOKO, AKATAN)、基礎分數
-  - 不可變物件
-
-- **MatchStatus (Value Object)**: 代表配對狀態
-  - 屬性:狀態類型(NO_MATCH/SINGLE_MATCH/MULTIPLE_MATCHES)、可配對目標列表
   - 不可變物件
 
 - **YakuProgress (Value Object)**: 代表役種進度

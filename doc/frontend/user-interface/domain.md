@@ -85,18 +85,16 @@ findMatchableCards(handCard: string, fieldCards: string[]): string[]
 
 #### 多目標判斷
 - 當手牌可與場上多張牌配對時，返回所有可選目標列表
-- 區分「無配對」、「單一配對」、「雙重配對」三種情況
+- 直接返回可配對目標陣列（空陣列 = 無配對、1個元素 = 單一配對、2+個元素 = 多重配對）
 
 **功能**:
 ```typescript
-// 配對狀態
-type MatchStatus = 'NO_MATCH' | 'SINGLE_MATCH' | 'MULTIPLE_MATCHES'
-
-// 分析配對狀態
-analyzeMatchStatus(handCard: string, fieldCards: string[]): {
-  status: MatchStatus,
-  targets: string[]
-}
+// 分析配對目標（直接返回目標陣列）
+findMatchableCards(handCard: string, fieldCards: string[]): string[]
+// 返回值：
+// [] - 無配對
+// ['0141'] - 單一配對
+// ['0841', '0842', '0843'] - 多重配對
 ```
 
 #### 客戶端預驗證
