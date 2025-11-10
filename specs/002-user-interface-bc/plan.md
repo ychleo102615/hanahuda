@@ -34,11 +34,17 @@
 - ✅ 框架無關：不依賴 Vue、Pinia、任何 UI 組件
 - ✅ 可獨立測試：無需 UI 環境或瀏覽器 API
 - ✅ 伺服器權威：前端驗證僅用於即時反饋，最終驗證由後端負責
+**Error Handling Strategy**:
+- 使用 TypeScript 的 `Result<T, ErrorMsg>` type pattern 進行明確錯誤處理
+- 定義標準錯誤訊息格式：`{ code: string, message: string }`
+- 所有驗證函數返回 `Result<Data, ValidationError>` 而非拋出異常
+- 錯誤訊息必須使用繁體中文，清晰描述問題與建議
+- 範例：`{ code: 'INVALID_CARD_ID', message: '無效的卡片 ID: 格式必須為 4 位數字' }`
 **Scale/Scope**:
 - 48 張標準花札卡片
 - 12 種常用役種（MVP 範圍）
 - 支援最多 24 張玩家已獲得牌（單局最大情境）
-- 單元測試覆蓋率目標：卡片邏輯與配對驗證 100%、役種檢測 90% 以上
+- 單元測試覆蓋率目標：卡片邏輯與配對驗證 100%、役種檢測 100%
 
 ## Constitution Check
 
@@ -56,7 +62,7 @@
 ### II. Domain-Driven Development ✅ PASS
 
 - **Bounded Context 明確**：✅ 本功能屬於 User Interface BC
-- **Value Objects 識別**：✅ Card、YakuScore、MatchStatus、YakuProgress、ThreatLevel
+- **Value Objects 識別**：✅ Card、YakuScore、YakuProgress、ThreatLevel
 - **通用語言**：✅ 使用問題領域術語（Card、Yaku、Koi-Koi、Match、Depository）
 - **業務規則在 Domain**：✅ 所有配對規則、役種檢測邏輯在 Domain Layer
 
@@ -81,7 +87,7 @@
 ### V. Test-First Development ✅ PASS
 
 - **TDD 承諾**：✅ 承諾遵循 TDD 流程（撰寫測試 → 測試失敗 → 實作 → 測試通過）
-- **測試覆蓋率目標**：✅ Domain Layer > 90%（卡片邏輯與配對驗證 100%）
+- **測試覆蓋率目標**：✅ Domain Layer 100%（卡片邏輯、配對驗證、役種檢測）
 - **測試類別**：✅ 純單元測試（無需 Mock、無需 UI 環境）
 
 ### VI. Bounded Context Isolation ✅ PASS

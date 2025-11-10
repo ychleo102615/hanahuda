@@ -66,8 +66,8 @@
 
 ### 卡片模組整合
 
-- [ ] T017 建立卡片模組匯出 front-end/src/user-interface/domain/card/index.ts
-- [ ] T018 執行卡片模組所有測試並驗證 100% 覆蓋率
+- [ ] T015 建立卡片模組匯出 front-end/src/user-interface/domain/card/index.ts
+- [ ] T016 執行卡片模組所有測試並驗證 100% 覆蓋率
 
 **Checkpoint**: 基礎卡片邏輯完成 - 所有 User Stories 現在可平行開始
 
@@ -84,23 +84,23 @@
 
 ### 配對檢測邏輯 (TDD: Tests First)
 
-- [ ] T017 [P] [US1] 編寫配對檢測測試 front-end/src/__tests__/user-interface/domain/matching/match-detector.test.ts
-- [ ] T018 [P] [US1] 實作配對檢測器 front-end/src/user-interface/domain/matching/match-detector.ts (canMatch, findMatchableCards)
+- [ ] T015 [P] [US1] 編寫配對檢測測試 front-end/src/__tests__/user-interface/domain/matching/match-detector.test.ts
+- [ ] T016 [P] [US1] 實作配對檢測器 front-end/src/user-interface/domain/matching/match-detector.ts (canMatch, findMatchableCards)
 
 ### 配對驗證邏輯 (TDD: Tests First)
 
-- [ ] T019 [P] [US1] 編寫配對驗證測試 front-end/src/__tests__/user-interface/domain/matching/match-validator.test.ts
-- [ ] T020 [P] [US1] 實作配對驗證器 front-end/src/user-interface/domain/matching/match-validator.ts (validateHandCard, validateMatchTarget, validateOperation)
+- [ ] T017 [P] [US1] 編寫配對驗證測試 front-end/src/__tests__/user-interface/domain/matching/match-validator.test.ts
+- [ ] T018 [P] [US1] 實作配對驗證器 front-end/src/user-interface/domain/matching/match-validator.ts (validateHandCard, validateMatchTarget, validateOperation)
 
 ### 配對模組整合
 
-- [ ] T021 [US1] 建立配對模組匯出 front-end/src/user-interface/domain/matching/index.ts
-- [ ] T022 [US1] 執行配對模組所有測試並驗證 100% 覆蓋率
+- [ ] T019 [US1] 建立配對模組匯出 front-end/src/user-interface/domain/matching/index.ts
+- [ ] T020 [US1] 執行配對模組所有測試並驗證 100% 覆蓋率
 
 ### User Story 1 整合測試
 
-- [ ] T023 [US1] 編寫 User Story 1 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us1-card-matching.test.ts
-- [ ] T024 [US1] 驗證所有 Acceptance Scenarios 通過 (5 個場景測試)
+- [ ] T021 [US1] 編寫 User Story 1 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us1-card-matching.test.ts
+- [ ] T022 [US1] 驗證所有 Acceptance Scenarios 通過 (5 個場景測試)
 
 **Checkpoint**: User Story 1 完成 - 卡片配對邏輯完全可用且獨立測試通過
 
@@ -117,37 +117,37 @@
 
 ### 役種檢測邏輯 (TDD: Tests First)
 
-- [ ] T025 [P] [US2] 編寫光牌系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-bright.test.ts
-- [ ] T026 [P] [US2] 編寫短冊系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-ribbon.test.ts
-- [ ] T027 [P] [US2] 編寫種牌系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-animal.test.ts
-- [ ] T028 [P] [US2] 編寫かす系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-kasu.test.ts
-- [ ] T029 [P] [US2] 編寫役種衝突解決測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-conflicts.test.ts
+- [ ] T023 [P] [US2] 編寫光牌系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-bright.test.ts
+- [ ] T024 [P] [US2] 編寫短冊系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-ribbon.test.ts
+- [ ] T025 [P] [US2] 編寫種牌系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-animal.test.ts
+- [ ] T026 [P] [US2] 編寫かす系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-kasu.test.ts
+- [ ] T027 [P] [US2] 編寫役種衝突解決測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-conflicts.test.ts
 
-- [ ] T030 [US2] 實作光牌系役種檢測 front-end/src/user-interface/domain/yaku/detectors/bright-yaku.ts (五光、四光、雨四光、三光)
-- [ ] T031 [US2] 實作短冊系役種檢測 front-end/src/user-interface/domain/yaku/detectors/ribbon-yaku.ts (赤短、青短、短冊)
-- [ ] T032 [US2] 實作種牌系役種檢測 front-end/src/user-interface/domain/yaku/detectors/animal-yaku.ts (豬鹿蝶、花見酒、月見酒、種)
-- [ ] T033 [US2] 實作かす系役種檢測 front-end/src/user-interface/domain/yaku/detectors/kasu-yaku.ts (かす)
-- [ ] T034 [US2] 實作役種檢測主控制器 front-end/src/user-interface/domain/yaku/yaku-detector.ts (detectAllYaku, checkYakuExists, resolveYakuConflicts)
+- [ ] T028 [US2] 實作光牌系役種檢測 front-end/src/user-interface/domain/yaku/detectors/bright-yaku.ts (五光、四光、雨四光、三光)
+- [ ] T029 [US2] 實作短冊系役種檢測 front-end/src/user-interface/domain/yaku/detectors/ribbon-yaku.ts (赤短、青短、短冊)
+- [ ] T030 [US2] 實作種牌系役種檢測 front-end/src/user-interface/domain/yaku/detectors/animal-yaku.ts (豬鹿蝶、花見酒、月見酒、種)
+- [ ] T031 [US2] 實作かす系役種檢測 front-end/src/user-interface/domain/yaku/detectors/kasu-yaku.ts (かす)
+- [ ] T032 [US2] 實作役種檢測主控制器 front-end/src/user-interface/domain/yaku/yaku-detector.ts (detectAllYaku, checkYakuExists, resolveYakuConflicts)
 
 ### 役種進度計算 (TDD: Tests First)
 
-- [ ] T035 [P] [US2] 編寫役種進度計算測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-progress.test.ts
-- [ ] T036 [P] [US2] 實作役種進度計算器 front-end/src/user-interface/domain/yaku/yaku-progress.ts (calculateYakuProgress, getMissingCards, getProgressPercentage)
+- [ ] T033 [P] [US2] 編寫役種進度計算測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-progress.test.ts
+- [ ] T034 [P] [US2] 實作役種進度計算器 front-end/src/user-interface/domain/yaku/yaku-progress.ts (calculateYakuProgress, getMissingCards, getProgressPercentage)
 
 ### 分數計算 (TDD: Tests First)
 
-- [ ] T037 [P] [US2] 編寫分數計算測試 front-end/src/__tests__/user-interface/domain/yaku/score-calculator.test.ts
-- [ ] T038 [P] [US2] 實作分數計算器 front-end/src/user-interface/domain/yaku/score-calculator.ts (calculateTotalScore, calculateYakuScore, applyKoiKoiMultiplier)
+- [ ] T035 [P] [US2] 編寫分數計算測試 front-end/src/__tests__/user-interface/domain/yaku/score-calculator.test.ts
+- [ ] T036 [P] [US2] 實作分數計算器 front-end/src/user-interface/domain/yaku/score-calculator.ts (calculateTotalScore, calculateYakuScore, applyKoiKoiMultiplier)
 
 ### 役種模組整合
 
-- [ ] T039 [US2] 建立役種模組匯出 front-end/src/user-interface/domain/yaku/index.ts
-- [ ] T040 [US2] 執行役種模組所有測試並驗證 100% 覆蓋率
+- [ ] T037 [US2] 建立役種模組匯出 front-end/src/user-interface/domain/yaku/index.ts
+- [ ] T038 [US2] 執行役種模組所有測試並驗證 100% 覆蓋率
 
 ### User Story 2 整合測試
 
-- [ ] T041 [US2] 編寫 User Story 2 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us2-yaku-detection.test.ts
-- [ ] T042 [US2] 驗證所有 Acceptance Scenarios 通過 (5 個場景測試)
+- [ ] T039 [US2] 編寫 User Story 2 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us2-yaku-detection.test.ts
+- [ ] T040 [US2] 驗證所有 Acceptance Scenarios 通過 (5 個場景測試)
 
 **Checkpoint**: User Story 2 完成 - 役種檢測邏輯完全可用且獨立測試通過
 
@@ -163,23 +163,23 @@
 
 ### 對手役種分析 (TDD: Tests First)
 
-- [ ] T043 [P] [US3] 編寫對手役種分析測試 front-end/src/__tests__/user-interface/domain/opponent/opponent-analyzer.test.ts
-- [ ] T044 [P] [US3] 實作對手役種分析器 front-end/src/user-interface/domain/opponent/opponent-analyzer.ts (analyzeOpponentYaku, detectOpponentThreats, getCardDistribution)
+- [ ] T041 [P] [US3] 編寫對手役種分析測試 front-end/src/__tests__/user-interface/domain/opponent/opponent-analyzer.test.ts
+- [ ] T042 [P] [US3] 實作對手役種分析器 front-end/src/user-interface/domain/opponent/opponent-analyzer.ts (analyzeOpponentYaku, detectOpponentThreats, getCardDistribution)
 
 ### 威脅評估邏輯 (TDD: Tests First)
 
-- [ ] T045 [P] [US3] 編寫威脅評估測試 front-end/src/__tests__/user-interface/domain/opponent/threat-evaluator.test.ts
-- [ ] T046 [P] [US3] 實作威脅評估器 front-end/src/user-interface/domain/opponent/threat-evaluator.ts (evaluateThreatLevel, getThreatReasons, calculateThreatScore)
+- [ ] T043 [P] [US3] 編寫威脅評估測試 front-end/src/__tests__/user-interface/domain/opponent/threat-evaluator.test.ts
+- [ ] T044 [P] [US3] 實作威脅評估器 front-end/src/user-interface/domain/opponent/threat-evaluator.ts (evaluateThreatLevel, getThreatReasons, calculateThreatScore)
 
 ### 對手分析模組整合
 
-- [ ] T047 [US3] 建立對手分析模組匯出 front-end/src/user-interface/domain/opponent/index.ts
-- [ ] T048 [US3] 執行對手分析模組所有測試並驗證 90%+ 覆蓋率
+- [ ] T045 [US3] 建立對手分析模組匯出 front-end/src/user-interface/domain/opponent/index.ts
+- [ ] T046 [US3] 執行對手分析模組所有測試並驗證 90%+ 覆蓋率
 
 ### User Story 3 整合測試
 
-- [ ] T049 [US3] 編寫 User Story 3 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us3-opponent-analysis.test.ts
-- [ ] T050 [US3] 驗證所有 Acceptance Scenarios 通過 (4 個場景測試)
+- [ ] T047 [US3] 編寫 User Story 3 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us3-opponent-analysis.test.ts
+- [ ] T048 [US3] 驗證所有 Acceptance Scenarios 通過 (4 個場景測試)
 
 **Checkpoint**: User Story 3 完成 - 對手分析邏輯完全可用且獨立測試通過
 
@@ -195,23 +195,23 @@
 
 ### 回合計算邏輯 (TDD: Tests First)
 
-- [ ] T051 [P] [US4] 編寫回合計算測試 front-end/src/__tests__/user-interface/domain/progress/turn-calculator.test.ts
-- [ ] T052 [P] [US4] 實作回合計算器 front-end/src/user-interface/domain/progress/turn-calculator.ts (calculateRemainingTurns, calculateGameProgress)
+- [ ] T049 [P] [US4] 編寫回合計算測試 front-end/src/__tests__/user-interface/domain/progress/turn-calculator.test.ts
+- [ ] T050 [P] [US4] 實作回合計算器 front-end/src/user-interface/domain/progress/turn-calculator.ts (calculateRemainingTurns, calculateGameProgress)
 
 ### 分數差距分析 (TDD: Tests First)
 
-- [ ] T053 [P] [US4] 編寫分數差距分析測試 front-end/src/__tests__/user-interface/domain/progress/score-gap-analyzer.test.ts
-- [ ] T054 [P] [US4] 實作分數差距分析器 front-end/src/user-interface/domain/progress/score-gap-analyzer.ts (analyzeScoreGap, getAdvantageStatus, suggestStrategy)
+- [ ] T051 [P] [US4] 編寫分數差距分析測試 front-end/src/__tests__/user-interface/domain/progress/score-gap-analyzer.test.ts
+- [ ] T052 [P] [US4] 實作分數差距分析器 front-end/src/user-interface/domain/progress/score-gap-analyzer.ts (analyzeScoreGap, getAdvantageStatus, suggestStrategy)
 
 ### 遊戲進度模組整合
 
-- [ ] T055 [US4] 建立遊戲進度模組匯出 front-end/src/user-interface/domain/progress/index.ts
-- [ ] T056 [US4] 執行遊戲進度模組所有測試並驗證 90%+ 覆蓋率
+- [ ] T053 [US4] 建立遊戲進度模組匯出 front-end/src/user-interface/domain/progress/index.ts
+- [ ] T054 [US4] 執行遊戲進度模組所有測試並驗證 90%+ 覆蓋率
 
 ### User Story 4 整合測試
 
-- [ ] T057 [US4] 編寫 User Story 4 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us4-game-progress.test.ts
-- [ ] T058 [US4] 驗證所有 Acceptance Scenarios 通過 (4 個場景測試)
+- [ ] T055 [US4] 編寫 User Story 4 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us4-game-progress.test.ts
+- [ ] T056 [US4] 驗證所有 Acceptance Scenarios 通過 (4 個場景測試)
 
 **Checkpoint**: User Story 4 完成 - 遊戲進度邏輯完全可用且獨立測試通過
 
@@ -221,15 +221,15 @@
 
 **目的**: 跨模組改進與文檔完善
 
-- [ ] T059 [P] 建立 Domain Layer 主匯出 front-end/src/user-interface/domain/index.ts
-- [ ] T060 [P] 執行所有 Domain Layer 測試並生成覆蓋率報告
-- [ ] T061 [P] 驗證測試覆蓋率達標 (卡片+配對 100%, 役種 100%, 對手+進度 90%+)
-- [ ] T062 [P] 編寫邊界情況測試 front-end/src/__tests__/user-interface/domain/edge-cases.test.ts (無效 ID、空陣列、極端值)
-- [ ] T063 [P] 效能測試 front-end/src/__tests__/user-interface/domain/performance.test.ts (役種檢測 < 10ms, 配對驗證 < 5ms)
-- [ ] T064 Code review 與重構 (提取重複邏輯、改善可讀性、統一錯誤處理)
-- [ ] T065 [P] 為所有公開函數添加 JSDoc 文檔註釋
-- [ ] T066 [P] 更新 quickstart.md 驗證所有範例程式碼正確執行
-- [ ] T067 執行 TypeScript 嚴格模式檢查並修正所有錯誤
+- [ ] T057 [P] 建立 Domain Layer 主匯出 front-end/src/user-interface/domain/index.ts
+- [ ] T058 [P] 執行所有 Domain Layer 測試並生成覆蓋率報告
+- [ ] T059 [P] 驗證測試覆蓋率達標 (卡片+配對 100%, 役種 100%, 對手+進度 90%+)
+- [ ] T060 [P] 編寫邊界情況測試 front-end/src/__tests__/user-interface/domain/edge-cases.test.ts (無效 ID、空陣列、極端值)
+- [ ] T061 [P] 效能測試 front-end/src/__tests__/user-interface/domain/performance.test.ts (役種檢測 < 10ms, 配對驗證 < 5ms)
+- [ ] T062 Code review 與重構 (提取重複邏輯、改善可讀性、統一錯誤處理)
+- [ ] T063 [P] 為所有公開函數添加 JSDoc 文檔註釋
+- [ ] T064 [P] 更新 quickstart.md 驗證所有範例程式碼正確執行
+- [ ] T065 執行 TypeScript 嚴格模式檢查並修正所有錯誤
 
 ---
 
@@ -273,21 +273,21 @@
 
 ```bash
 # 平行啟動所有役種檢測測試:
-Task: "編寫光牌系役種檢測測試 (T025)"
-Task: "編寫短冊系役種檢測測試 (T026)"
-Task: "編寫種牌系役種檢測測試 (T027)"
-Task: "編寫かす系役種檢測測試 (T028)"
-Task: "編寫役種衝突解決測試 (T029)"
+Task: "編寫光牌系役種檢測測試 (T023)"
+Task: "編寫短冊系役種檢測測試 (T024)"
+Task: "編寫種牌系役種檢測測試 (T025)"
+Task: "編寫かす系役種檢測測試 (T026)"
+Task: "編寫役種衝突解決測試 (T027)"
 
 # 測試失敗後,平行實作所有役種檢測器:
-Task: "實作光牌系役種檢測 (T030)"
-Task: "實作短冊系役種檢測 (T031)"
-Task: "實作種牌系役種檢測 (T032)"
-Task: "實作かす系役種檢測 (T033)"
+Task: "實作光牌系役種檢測 (T028)"
+Task: "實作短冊系役種檢測 (T029)"
+Task: "實作種牌系役種檢測 (T030)"
+Task: "實作かす系役種檢測 (T031)"
 
 # 平行啟動役種進度與分數計算:
-Task: "編寫役種進度計算測試 (T035)" + "編寫分數計算測試 (T037)"
-Task: "實作役種進度計算器 (T036)" + "實作分數計算器 (T038)"
+Task: "編寫役種進度計算測試 (T033)" + "編寫分數計算測試 (T035)"
+Task: "實作役種進度計算器 (T034)" + "實作分數計算器 (T036)"
 ```
 
 ---
@@ -340,11 +340,11 @@ Task: "實作役種進度計算器 (T036)" + "實作分數計算器 (T038)"
 
 ## Summary
 
-**總任務數**: 67 個任務
+**總任務數**: 65 個任務
 
 **任務分布**:
 - Phase 1 (Setup): 4 個任務
-- Phase 2 (Foundational): 12 個任務
+- Phase 2 (Foundational): 10 個任務
 - Phase 3 (US1 - 配對邏輯): 8 個任務
 - Phase 4 (US2 - 役種檢測): 18 個任務
 - Phase 5 (US3 - 對手分析): 8 個任務
@@ -353,12 +353,12 @@ Task: "實作役種進度計算器 (T036)" + "實作分數計算器 (T038)"
 
 **平行機會**:
 - Phase 1: 1 個任務可平行 (T004)
-- Phase 2: 10 個任務可平行 (T005-T014)
-- Phase 3: 6 個任務可平行 (T017-T020)
-- Phase 4: 14 個任務可平行 (T025-T038)
-- Phase 5: 4 個任務可平行 (T043-T046)
-- Phase 6: 4 個任務可平行 (T051-T054)
-- Phase 7: 8 個任務可平行 (T059-T067)
+- Phase 2: 8 個任務可平行 (T005-T012)
+- Phase 3: 6 個任務可平行 (T015-T018)
+- Phase 4: 14 個任務可平行 (T023-T036)
+- Phase 5: 4 個任務可平行 (T041-T044)
+- Phase 6: 4 個任務可平行 (T049-T052)
+- Phase 7: 8 個任務可平行 (T057-T065)
 
 **獨立測試標準**:
 - **US1**: 可透過建立測試介面(8 張場牌 + 8 張手牌)驗證配對邏輯

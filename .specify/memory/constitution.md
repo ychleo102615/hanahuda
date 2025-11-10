@@ -1,23 +1,25 @@
 <!--
 Sync Impact Report:
 ─────────────────────────────────────────────────────────────────────────────
-Version Change: 1.0.0 → 1.1.0
-Change Type: Minor amendment (expanded principles and added BC-specific guidance)
+Version Change: 1.1.0 → 1.2.0
+Change Type: Minor amendment (added exception clause to Server Authority principle)
 Modified Principles:
-  - Principle VI: Bounded Context Isolation - Added explicit BC definitions from architecture docs
-  - Technical Context - Updated to reflect actual technology stack and architecture
+  - Principle III: Server Authority - Added exception clause for "UI hint validation"
+    allowing client-side validation logic ONLY for immediate UI feedback (e.g., highlighting
+    matchable cards, showing yaku progress). Server remains final authority.
 
-Added Sections:
-  - Expanded Bounded Context definitions with frontend (User Interface BC + Local Game BC)
-    and backend (Core Game BC + Opponent BC) as per architecture documentation
-  - Added explicit reference to protocol.md for event-driven communication patterns
+Rationale:
+  - Resolved constitution conflict identified in /speckit.analyze for feature 002-user-interface-bc
+  - Balances UX requirements (instant feedback) with security principles (server authority)
+  - Client validation results MUST NOT affect game state
 
 Templates Status:
-  ✅ plan-template.md: Aligned with constitution principles (Clean Architecture, DDD, testing requirements)
-  ✅ spec-template.md: User story format supports independent BC validation
-  ✅ tasks-template.md: Task organization supports BC-based parallelization
+  ✅ plan-template.md: Aligned with updated Server Authority principle
+  ✅ spec-template.md: No changes needed
+  ✅ tasks-template.md: No changes needed
 
-Follow-up TODOs: None
+Follow-up TODOs:
+  - Update 002-user-interface-bc/plan.md Constitution Check to reference new exception clause
 ─────────────────────────────────────────────────────────────────────────────
 -->
 
@@ -71,7 +73,13 @@ Follow-up TODOs: None
 - 客戶端不得執行遊戲規則驗證或狀態計算
 - 前端僅根據 SSE 事件渲染狀態
 
-**理由**: 防止作弊、確保跨客戶端一致性、簡化客戶端邏輯、支援未來多人遊戲。
+**例外條款（UI 提示驗證）**:
+- 允許客戶端執行**僅用於即時 UI 反饋**的驗證邏輯（例如：高亮可配對卡片、顯示役種進度提示）
+- 此類驗證邏輯**不得**作為最終驗證權威，伺服器必須重新驗證所有操作
+- 客戶端驗證結果**不得**影響遊戲狀態，僅用於改善使用者體驗
+- 若前後端驗證邏輯不一致，以伺服器為準
+
+**理由**: 防止作弊、確保跨客戶端一致性、簡化客戶端邏輯、支援未來多人遊戲。即時 UI 反饋可改善使用者體驗但不影響遊戲公平性。
 
 ---
 
@@ -291,4 +299,4 @@ Follow-up TODOs: None
 
 ---
 
-**Version**: 1.1.0 | **Ratified**: 2025-10-22 | **Last Amended**: 2025-11-09
+**Version**: 1.2.0 | **Ratified**: 2025-10-22 | **Last Amended**: 2025-11-10
