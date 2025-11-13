@@ -17,53 +17,18 @@
 
 ### 1. 卡片核心邏輯（P1 - 必須實作）
 
-#### 卡片 ID 解析
-- 解析 MMTI 格式（詳見 [protocol.md](../../shared/protocol.md)）
-- 提取月份（01-12）、類型（1-4）、索引（1-4）
-- 驗證 ID 格式合法性
+#### 卡片識別與查詢
+- 使用語義化常數識別卡片（定義於 card-database.ts）
+- Card Value Object 僅包含業務屬性（month, type, index）
 
 **功能**:
 ```typescript
-// 解析卡片 ID
-parseCardId(cardId: string): { month: number, type: CardType, index: number }
+// 使用語義化常數
+import { MATSU_HIKARI, HAGI_INO, MATSU_AKATAN, ALL_CARDS } from './card-database'
 
-// 驗證卡片 ID
-isValidCardId(cardId: string): boolean
-```
-
-#### 卡片屬性查詢
-- 根據 ID 返回月份、類型名稱、點數、顯示名稱
-- 支援快速查詢卡片元數據
-
-**功能**:
-```typescript
-// 獲取卡片屬性
-getCardAttributes(cardId: string): {
-  month: number,
-  type: CardType,
-  typeName: string,
-  points: number,
-  displayName: string
-}
-
-// 獲取卡片點數
-getCardPoints(cardId: string): number
-```
-
-#### 卡片分組與排序
-- 按月份、類型、點數分類（用於 UI 顯示）
-- 支援自訂排序策略
-
-**功能**:
-```typescript
-// 按月份分組
-groupCardsByMonth(cards: string[]): Map<number, string[]>
-
-// 按類型分組
-groupCardsByType(cards: string[]): Map<CardType, string[]>
-
-// 排序卡片（月份 > 類型 > 索引）
-sortCards(cards: string[]): string[]
+// 驗證卡片是否在標準牌組中
+isValidCard(card: Card): boolean
+// 實作範例：return ALL_CARDS.some(c => cardsEqual(c, card))
 ```
 
 ---
@@ -76,11 +41,12 @@ sortCards(cards: string[]): string[]
 
 **功能**:
 ```typescript
-// 檢查兩張牌是否可配對
-canMatch(cardId1: string, cardId2: string): boolean
+// 檢查兩張牌是否可配對（相同月份）
+canMatch(card1: Card, card2: Card): boolean
+// 實作範例：return card1.month === card2.month
 
 // 從場牌中找出可配對的牌
-findMatchableCards(handCard: string, fieldCards: string[]): string[]
+findMatchableCards(handCard: Card, fieldCards: Card[]): Card[]
 ```
 
 #### 多目標判斷
@@ -90,202 +56,82 @@ findMatchableCards(handCard: string, fieldCards: string[]): string[]
 **功能**:
 ```typescript
 // 分析配對目標（直接返回目標陣列）
-findMatchableCards(handCard: string, fieldCards: string[]): string[]
+findMatchableCards(handCard: Card, fieldCards: Card[]): Card[]
 // 返回值：
 // [] - 無配對
-// ['0141'] - 單一配對
-// ['0841', '0842', '0843'] - 多重配對
+// [card1] - 單一配對
+// [card1, card2, card3] - 多重配對
 ```
 
 #### 客戶端預驗證
-- 在發送命令前檢查操作合法性（例如：月份不符、卡片不存在）
-- 提供即時 UI 反饋
+- 在發送命令前檢查操作合法性（例如：卡片不存在）
+- 提供即時 UI 反饋，避免發送明顯無效的命令
 
 **功能**:
 ```typescript
-// 驗證打出手牌的合法性
-validatePlayCard(cardId: string, handCards: string[]): {
-  valid: boolean,
-  reason?: string
-}
+// 基本驗證：檢查卡片是否在手牌中
+validateCardExists(card: Card, handCards: Card[]): boolean
 
-// 驗證選擇配對目標的合法性
-validateSelectTarget(source: string, target: string, possibleTargets: string[]): {
-  valid: boolean,
-  reason?: string
-}
+// 基本驗證：檢查目標是否在可配對列表中
+validateTargetInList(target: Card, possibleTargets: Card[]): boolean
 ```
 
 ---
 
-### 3. 役種檢測邏輯（P2 - 重要）
+### 3. 役種進度計算（P2 - 輔助功能）
 
-#### 實時役種檢測
-- 根據玩家已獲得牌，計算當前形成的役種
-- 支援光牌系、短冊系、種牌系、かす系（詳見 [game-rules.md](../../shared/game-rules.md)）
+#### 役種需求映射
+- 定義 12 種常用役種所需的卡片列表（詳見 [game-rules.md](../../shared/game-rules.md)）
+- 提供語義化常數
 
 **功能**:
 ```typescript
-// 檢測已形成的役種
-detectYaku(depositoryCards: string[]): YakuScore[]
+// 役種需求常數映射
+YAKU_REQUIREMENTS: Record<YakuType, Card[]>
 
-// 檢查特定役種是否形成
-hasYaku(depositoryCards: string[], yakuType: string): boolean
+// 範例：
+// YAKU_REQUIREMENTS['赤短'] = [MATSU_AKATAN, UME_AKATAN, SAKURA_AKATAN]
 ```
 
 #### 役種進度計算
 - 顯示「距離赤短還差 1 張」、「已收集豬鹿蝶中的豬和鹿」等資訊
-- 提供 UI 提示與策略建議
+- 使用簡單的集合運算（差集）
 
 **功能**:
 ```typescript
-// 計算役種進度
-calculateYakuProgress(depositoryCards: string[], yakuType: string): {
-  required: string[],      // 需要的卡片
-  obtained: string[],      // 已獲得的卡片
-  missing: string[]        // 缺少的卡片
+// 計算特定役種的進度（集合運算）
+calculateYakuProgress(yakuType: YakuType, depositoryCards: Card[]): {
+  required: Card[],      // 需要的卡片
+  obtained: Card[],      // 已獲得的卡片
+  missing: Card[],       // 缺少的卡片
+  progress: number       // 0-100%
 }
 
-// 獲取所有可能形成的役種
-getPossibleYaku(depositoryCards: string[]): {
-  yakuType: string,
-  progress: number,        // 0-100%
-  missingCount: number
-}[]
+// 計算缺少的卡片（差集運算）
+getMissingCards(required: Card[], obtained: Card[]): Card[]
 ```
 
-#### 分數預測
-- 根據當前役種、Koi-Koi 次數計算潛在得分與倍率
-- 支援決策建議
-
-**功能**:
-```typescript
-// 計算當前分數（含倍率）
-calculateScore(yakus: YakuScore[], koiKoiMultiplier: number): number
-
-// 預測繼續遊戲的潛在分數
-predictPotentialScore(currentYakus: YakuScore[], depositoryCards: string[]): {
-  minScore: number,
-  maxScore: number,
-  likelyYaku: string[]
-}
-```
-
-#### 役種衝突判斷
-- 識別互斥役種（例如四光與雨四光）
-- 自動選擇最高分役種組合
-
-**功能**:
-```typescript
-// 檢查役種衝突
-hasYakuConflict(yaku1: string, yaku2: string): boolean
-
-// 選擇最優役種組合
-selectOptimalYaku(allYakus: YakuScore[]): YakuScore[]
-```
-
----
-
-### 4. 對手分析邏輯（P2 - 重要）
-
-#### 對手役種預測
-- 根據對手已獲得牌，計算可能形成的役種
-- 提供威脅度評估
-
-**功能**:
-```typescript
-// 分析對手役種狀態
-analyzeOpponentYaku(opponentDepository: string[]): {
-  formedYaku: YakuScore[],
-  possibleYaku: {
-    yakuType: string,
-    progress: number,
-    threat: 'LOW' | 'MEDIUM' | 'HIGH'
-  }[]
-}
-```
-
-#### 威脅度評估
-- 標示對手「距離五光還差 2 張」等警示資訊
-- UI 顯示威脅指示器
-
-**功能**:
-```typescript
-// 計算威脅等級
-calculateThreatLevel(opponentDepository: string[]): {
-  level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
-  reasons: string[]
-}
-```
-
-#### 卡片分布統計
-- 分析對手收集的牌型（幾張光、幾張種、幾張短、幾張かす）
-- 提供策略提示
-
-**功能**:
-```typescript
-// 統計卡片類型分布
-analyzeCardDistribution(cards: string[]): {
-  bright: number,
-  animal: number,
-  ribbon: number,
-  dreg: number
-}
-```
-
----
-
-### 5. 遊戲進度計算（P3 - 輔助功能）
-
-#### 剩餘回合計算
-- 根據牌堆剩餘張數和手牌數，計算還能進行幾回合
-- 用於 UI 進度顯示
-
-**功能**:
-```typescript
-// 計算剩餘回合數
-calculateRemainingTurns(deckRemaining: number, handSize: number): number
-
-// 計算局進度百分比
-calculateRoundProgress(deckRemaining: number): number  // 0-100
-```
-
-#### 分數差距分析
-- 計算與對手的分數差，判斷策略傾向（激進/保守）
-- 提供決策建議
-
-**功能**:
-```typescript
-// 分析分數差距
-analyzeScoreGap(myScore: number, opponentScore: number): {
-  gap: number,
-  advantage: 'LEADING' | 'TIED' | 'BEHIND',
-  strategy: 'AGGRESSIVE' | 'BALANCED' | 'DEFENSIVE'
-}
-```
 
 ---
 
 ## 測試要求
 
-### 單元測試覆蓋率
+### 單元測試覆蓋率（MVP 簡化版）
 
 - ✅ **卡片邏輯**: 100% 覆蓋
   - 所有月份、類型、索引組合
-  - 邊界值測試（無效 ID、空字串）
+  - 基本屬性查詢功能
+  - 邊界值測試（無效資料、空值）
 
 - ✅ **配對驗證**: 100% 覆蓋
   - 無配對、單一配對、多重配對
+  - 基本驗證功能
   - 邊界情況（空場牌、空手牌）
 
-- ✅ **役種檢測**: 100% 覆蓋
-  - 所有 12 種常用役種
-  - 役種衝突情況
-  - 進度計算邊界值
-
-- ✅ **對手分析**: > 90% 覆蓋
-  - 各種威脅等級情況
-  - 卡片分布統計
+- ✅ **役種進度計算**: > 90% 覆蓋
+  - 役種需求映射正確性
+  - 進度計算（集合運算）
+  - 邊界值（空牌組、完整牌組）
 
 ### 測試框架
 

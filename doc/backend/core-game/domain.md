@@ -144,7 +144,6 @@ public class Card {
   private final String cardId;       // 卡片 ID (MMTI 格式)
   private final int month;           // 月份 (1-12)
   private final CardType type;       // 卡牌類型 (BRIGHT, ANIMAL, RIBBON, DREG)
-  private final int points;          // 點數 (20, 10, 5, 1)
   private final String displayName;  // 顯示名稱
 
   // 不可變，僅提供 getters

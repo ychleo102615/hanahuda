@@ -23,24 +23,24 @@
 ### 1. 遊戲規則引擎（P1 - 必須實作）
 
 #### 發牌邏輯
-- 初始化 48 張牌（12 個月份，每月 4 張）
+- 初始化 48 張牌（12 個月份，每月 4 張）- 使用 card-database 中的語義化常數
 - 洗牌演算法（Fisher-Yates Shuffle）
 - 發牌順序（玩家 8 張、對手 8 張、場中央 8 張、剩餘牌堆）
 
 **功能**:
 ```typescript
-// 初始化完整牌組
-initializeDeck(): string[]
+// 初始化完整牌組（使用 card-database）
+initializeDeck(): Card[]
 
 // 洗牌
-shuffleDeck(deck: string[]): string[]
+shuffleDeck(deck: Card[]): Card[]
 
 // 發牌
-dealCards(deck: string[]): {
-  playerHand: string[],
-  opponentHand: string[],
-  field: string[],
-  remaining: string[]
+dealCards(deck: Card[]): {
+  playerHand: Card[],
+  opponentHand: Card[],
+  field: Card[],
+  remaining: Card[]
 }
 ```
 
@@ -52,16 +52,16 @@ dealCards(deck: string[]): {
 **功能**:
 ```typescript
 // 檢查手牌與場牌配對
-findHandMatches(handCard: string, fieldCards: string[]): string[]
+findHandMatches(handCard: Card, fieldCards: Card[]): Card[]
 
 // 執行配對（移除場牌、加入已獲得牌區）
-executeMatch(handCard: string, fieldCard: string, fieldCards: string[]): {
-  newField: string[],
-  captured: string[]
+executeMatch(handCard: Card, fieldCard: Card, fieldCards: Card[]): {
+  newField: Card[],
+  captured: Card[]
 }
 
 // 處理無配對情況（手牌留在場上）
-handleNoMatch(handCard: string, fieldCards: string[]): string[]
+handleNoMatch(handCard: Card, fieldCards: Card[]): Card[]
 ```
 
 #### 回合流程控制
@@ -86,19 +86,19 @@ isRoundOver(gameState: GameState): boolean
 ### 2. 牌組管理（P1 - 必須實作）
 
 #### 牌組初始化
-- 根據 MMTI 編碼生成 48 張牌
+- 使用語義化常數定義生成 48 張牌（引用 card-database 中的卡片常數）
 - 驗證牌組完整性（確保每月 4 張、每類型正確數量）
 
 **功能**:
 ```typescript
-// 生成完整牌組
-generateFullDeck(): string[]
+// 生成完整牌組（使用 card-database 中的卡片常數）
+generateFullDeck(): Card[]
 
 // 驗證牌組完整性
-validateDeck(deck: string[]): {
+validateDeck(deck: Card[]): {
   valid: boolean,
-  missing?: string[],
-  duplicates?: string[]
+  missing?: Card[],
+  duplicates?: Card[]
 }
 ```
 
@@ -110,13 +110,13 @@ validateDeck(deck: string[]): {
 **功能**:
 ```typescript
 // Fisher-Yates 洗牌
-fisherYatesShuffle(deck: string[]): string[]
+fisherYatesShuffle(deck: Card[]): Card[]
 
 // 檢測 Teshi（手牌 4 張同月）
-detectTeshi(hand: string[]): boolean
+detectTeshi(hand: Card[]): boolean
 
 // 檢測場牌流局（場上 4 張同月）
-detectFieldKuttsuki(field: string[]): boolean
+detectFieldKuttsuki(field: Card[]): boolean
 ```
 
 ---
