@@ -3,233 +3,221 @@
 **Input**: Design documents from `/specs/002-user-interface-bc/`
 **Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/ ✅, quickstart.md ✅
 
-**Tests**: 本功能採用 TDD 方法,所有測試任務優先於實作任務
+**Tests**: 本功能遵循測試優先開發（TDD），所有實作前必須先編寫測試（spec.md - TR-004, TR-005 要求 100% 覆蓋率）
 
-**Organization**: 任務按 User Story 分組,確保每個故事可獨立實作與測試
+**Organization**: 任務按 User Story 組織，每個 Story 可獨立實作與測試
 
 ## Format: `[ID] [P?] [Story] Description`
 
-- **[P]**: 可平行執行(不同檔案、無依賴)
-- **[Story]**: 所屬 User Story(US1, US2, US3, US4)
-- 所有任務描述包含確切檔案路徑
+- **[P]**: 可平行執行（不同檔案，無相依性）
+- **[Story]**: 任務所屬 User Story（US1, US2, US3, US4）
+- 所有描述包含明確檔案路徑
 
-## 專案路徑約定
+## Path Conventions
 
-本專案為 Web 應用程式結構(前端 + 後端分離):
-- **前端**: `front-end/src/user-interface/domain/`
-- **測試**: `front-end/src/__tests__/user-interface/domain/`
-- **型別定義**: 從 `specs/002-user-interface-bc/contracts/` 複製到 `front-end/src/user-interface/domain/types/`
-
----
-
-## Phase 1: Setup (專案基礎設定)
-
-**目的**: 建立 User Interface BC - Domain Layer 的目錄結構與型別定義
-
-- [ ] T001 建立 Domain Layer 目錄結構 (card, matching, yaku, opponent, progress, types)
-- [ ] T002 複製型別定義從 specs/002-user-interface-bc/contracts/ 到 front-end/src/user-interface/domain/types/
-- [ ] T003 建立測試目錄結構 (完全鏡像 src/ 結構)
-- [ ] T004 [P] 驗證 Vitest 測試配置正確運行
+- **前端專案路徑**: `front-end/src/user-interface/domain/`
+- **測試路徑**: `front-end/src/__tests__/user-interface/domain/`
+- 遵循 plan.md 定義的目錄結構
 
 ---
 
-## Phase 2: Foundational (共用基礎模組)
+## Phase 1: Setup (專案初始化)
 
-**目的**: 實作所有 User Stories 都會使用的核心卡片邏輯
+**Purpose**: 建立 User Interface BC - Domain Layer 的基礎結構
 
-**⚠️ 關鍵**: 必須完成此階段才能開始任何 User Story 實作
+- [ ] T001 在 front-end/src/ 建立 user-interface/domain/ 完整目錄結構（card, matching, yaku, opponent, progress, types）
+- [ ] T002 在 front-end/src/__tests__/ 建立 user-interface/domain/ 測試目錄結構（鏡像 src 結構）
+- [ ] T003 [P] 複製 specs/002-user-interface-bc/contracts/*.ts 型別定義到 front-end/src/user-interface/domain/types/
+- [ ] T004 [P] 驗證 Vitest 測試環境設定（執行 npm run test:unit）
 
-### 錯誤處理型別定義
-
-- [ ] T005 [P] 定義 Result 與 ValidationError 型別 front-end/src/user-interface/domain/types/error.types.ts
-- [ ] T006 [P] 編寫錯誤處理型別測試 front-end/src/__tests__/user-interface/domain/types/error.types.test.ts
-
-### 卡片常數與資料定義 (TDD: Tests First)
-
-- [ ] T007 [P] 編寫卡片資料常數測試 front-end/src/__tests__/user-interface/domain/card/card-data.test.ts
-- [ ] T008 [P] 實作卡片資料常數 front-end/src/user-interface/domain/card/card-data.ts (48 張卡片的完整資料，參考 doc/shared/game-rules.md)
-
-### 卡片 ID 解析 (TDD: Tests First)
-
-- [ ] T009 [P] 編寫卡片 ID 解析測試 front-end/src/__tests__/user-interface/domain/card/card-parser.test.ts
-- [ ] T010 [P] 實作卡片 ID 解析器 front-end/src/user-interface/domain/card/card-parser.ts (parseCardId, validateCardId)
-
-### 卡片屬性查詢 (TDD: Tests First)
-
-- [ ] T011 [P] 編寫卡片屬性查詢測試 front-end/src/__tests__/user-interface/domain/card/card-attributes.test.ts
-- [ ] T012 [P] 實作卡片屬性查詢 front-end/src/user-interface/domain/card/card-attributes.ts (getCard, getCardPoints, getCardType, getDisplayName)
-
-### 卡片分組排序 (TDD: Tests First)
-
-- [ ] T013 [P] 編寫卡片分組排序測試 front-end/src/__tests__/user-interface/domain/card/card-grouping.test.ts
-- [ ] T014 [P] 實作卡片分組排序 front-end/src/user-interface/domain/card/card-grouping.ts (groupByMonth, groupByType, sortByMonth, sortByType)
-
-### 卡片模組整合
-
-- [ ] T017 建立卡片模組匯出 front-end/src/user-interface/domain/card/index.ts
-- [ ] T018 執行卡片模組所有測試並驗證 100% 覆蓋率
-
-**Checkpoint**: 基礎卡片邏輯完成 - 所有 User Stories 現在可平行開始
+**Checkpoint**: 目錄結構與型別定義就緒
 
 ---
 
-## Phase 3: User Story 1 - 卡片邏輯驗證與視覺回饋 (Priority: P1) 🎯 MVP
+## Phase 2: Foundational (基礎設施)
 
-**Goal**: 玩家選擇手牌時,系統即時顯示可配對的場牌,並提供視覺提示(高亮邊框)。配對成功後正確判斷結果,透過動畫顯示卡片移動到獲得區。
+**Purpose**: Domain Layer 的核心 Value Objects 與常數定義，所有 User Stories 依賴此階段
 
-**Independent Test**: 建立測試介面,顯示 8 張場牌和 8 張手牌,驗證:
-1. 選擇手牌後,同月份場牌被高亮
-2. 點擊高亮場牌後,兩張牌正確移動到獲得區
-3. 無同月份場牌時,顯示「無配對」提示
+**⚠️ CRITICAL**: 此階段完成前，無法開始任何 User Story 實作
 
-### 配對檢測邏輯 (TDD: Tests First)
+- [ ] T005 [P] 在 front-end/src/user-interface/domain/types/index.ts 建立統一型別匯出
+- [ ] T006 [P] 建立卡片資料庫（48 張標準花札）常數在 front-end/src/user-interface/domain/card/card-database.ts
+- [ ] T007 [P] 建立役種需求卡片映射（12 種役種）常數在 front-end/src/user-interface/domain/yaku/yaku-requirements.ts
 
-- [ ] T017 [P] [US1] 編寫配對檢測測試 front-end/src/__tests__/user-interface/domain/matching/match-detector.test.ts
-- [ ] T018 [P] [US1] 實作配對檢測器 front-end/src/user-interface/domain/matching/match-detector.ts (canMatch, findMatchableCards)
-
-### 配對驗證邏輯 (TDD: Tests First)
-
-- [ ] T019 [P] [US1] 編寫配對驗證測試 front-end/src/__tests__/user-interface/domain/matching/match-validator.test.ts
-- [ ] T020 [P] [US1] 實作配對驗證器 front-end/src/user-interface/domain/matching/match-validator.ts (validateHandCard, validateMatchTarget, validateOperation)
-
-### 配對模組整合
-
-- [ ] T021 [US1] 建立配對模組匯出 front-end/src/user-interface/domain/matching/index.ts
-- [ ] T022 [US1] 執行配對模組所有測試並驗證 100% 覆蓋率
-
-### User Story 1 整合測試
-
-- [ ] T023 [US1] 編寫 User Story 1 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us1-card-matching.test.ts
-- [ ] T024 [US1] 驗證所有 Acceptance Scenarios 通過 (5 個場景測試)
-
-**Checkpoint**: User Story 1 完成 - 卡片配對邏輯完全可用且獨立測試通過
+**Checkpoint**: 基礎設施完成，User Story 實作可開始
 
 ---
 
-## Phase 4: User Story 2 - 役種即時檢測與進度提示 (Priority: P1)
+## Phase 3: User Story 1A - 卡片邏輯驗證 (Priority: P1) 🎯 MVP
 
-**Goal**: 玩家每次獲得卡片後,系統即時檢測是否形成役種,並在 UI 顯示已形成的役種和分數。提供役種進度提示(如「距離赤短還差 1 張」)。
+**Goal**: 實作卡片 ID 解析、屬性查詢、分組排序邏輯，確保卡片核心運算正確
 
-**Independent Test**: 手動設定玩家已獲得牌區卡片,驗證:
-1. 設定 3 張赤短,系統顯示「赤短(5點)」
-2. 設定 2 張赤短,系統顯示「距離赤短還差 1 張」
-3. 設定 5 張光牌,系統顯示「五光(15點)」並正確計算總分
+**Independent Test**: 可透過單元測試驗證 48 張卡片 ID 解析 100% 正確、卡片屬性查詢無誤、分組排序符合預期
 
-### 役種檢測邏輯 (TDD: Tests First)
+**來源**: spec.md - User Story 1 (卡片邏輯部分)、FR-001 ~ FR-004
 
-- [ ] T025 [P] [US2] 編寫光牌系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-bright.test.ts
-- [ ] T026 [P] [US2] 編寫短冊系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-ribbon.test.ts
-- [ ] T027 [P] [US2] 編寫種牌系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-animal.test.ts
-- [ ] T028 [P] [US2] 編寫かす系役種檢測測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-kasu.test.ts
-- [ ] T029 [P] [US2] 編寫役種衝突解決測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector-conflicts.test.ts
+### Tests for User Story 1A (TDD - 先寫測試) ⚠️
 
-- [ ] T030 [US2] 實作光牌系役種檢測 front-end/src/user-interface/domain/yaku/detectors/bright-yaku.ts (五光、四光、雨四光、三光)
-- [ ] T031 [US2] 實作短冊系役種檢測 front-end/src/user-interface/domain/yaku/detectors/ribbon-yaku.ts (赤短、青短、短冊)
-- [ ] T032 [US2] 實作種牌系役種檢測 front-end/src/user-interface/domain/yaku/detectors/animal-yaku.ts (豬鹿蝶、花見酒、月見酒、種)
-- [ ] T033 [US2] 實作かす系役種檢測 front-end/src/user-interface/domain/yaku/detectors/kasu-yaku.ts (かす)
-- [ ] T034 [US2] 實作役種檢測主控制器 front-end/src/user-interface/domain/yaku/yaku-detector.ts (detectAllYaku, checkYakuExists, resolveYakuConflicts)
+> **NOTE: 先寫測試，確認測試 FAIL 後再實作**
 
-### 役種進度計算 (TDD: Tests First)
+- [ ] T008 [P] [US1] 建立 front-end/src/__tests__/user-interface/domain/card/card-parser.test.ts（包含有效 MMTI 解析、無效格式錯誤處理）
+- [ ] T009 [P] [US1] 建立 front-end/src/__tests__/user-interface/domain/card/card-attributes.test.ts（包含 48 張卡片屬性查詢測試）
+- [ ] T010 [P] [US1] 建立 front-end/src/__tests__/user-interface/domain/card/card-grouping.test.ts（包含按月份/類型/點數分組測試）
+- [ ] T011 [US1] 執行測試確認全部 FAIL（npm run test:unit -- card）
 
-- [ ] T035 [P] [US2] 編寫役種進度計算測試 front-end/src/__tests__/user-interface/domain/yaku/yaku-progress.test.ts
-- [ ] T036 [P] [US2] 實作役種進度計算器 front-end/src/user-interface/domain/yaku/yaku-progress.ts (calculateYakuProgress, getMissingCards, getProgressPercentage)
+### Implementation for User Story 1A
 
-### 分數計算 (TDD: Tests First)
+- [ ] T012 [P] [US1] 實作 front-end/src/user-interface/domain/card/card-parser.ts（parseCardId, validateCardId）
+- [ ] T013 [P] [US1] 實作 front-end/src/user-interface/domain/card/card-attributes.ts（getCardAttributes, getCardPoints）
+- [ ] T014 [P] [US1] 實作 front-end/src/user-interface/domain/card/card-grouping.ts（groupByMonth, groupByType, sortByPoints）
+- [ ] T015 [US1] 建立 front-end/src/user-interface/domain/card/index.ts 統一匯出
+- [ ] T016 [US1] 執行測試確認 100% 通過（npm run test:unit -- card）
+- [ ] T017 [US1] 檢查測試覆蓋率達到 100%（npm run test:coverage -- card）
 
-- [ ] T037 [P] [US2] 編寫分數計算測試 front-end/src/__tests__/user-interface/domain/yaku/score-calculator.test.ts
-- [ ] T038 [P] [US2] 實作分數計算器 front-end/src/user-interface/domain/yaku/score-calculator.ts (calculateTotalScore, calculateYakuScore, applyKoiKoiMultiplier)
-
-### 役種模組整合
-
-- [ ] T039 [US2] 建立役種模組匯出 front-end/src/user-interface/domain/yaku/index.ts
-- [ ] T040 [US2] 執行役種模組所有測試並驗證 100% 覆蓋率
-
-### User Story 2 整合測試
-
-- [ ] T041 [US2] 編寫 User Story 2 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us2-yaku-detection.test.ts
-- [ ] T042 [US2] 驗證所有 Acceptance Scenarios 通過 (5 個場景測試)
-
-**Checkpoint**: User Story 2 完成 - 役種檢測邏輯完全可用且獨立測試通過
+**Checkpoint**: 卡片邏輯測試 100% 通過，覆蓋率 100%
 
 ---
 
-## Phase 5: User Story 3 - 對手狀態分析與威脅評估 (Priority: P2)
+## Phase 4: User Story 1B - 配對驗證邏輯 (Priority: P1) 🎯 MVP
 
-**Goal**: 系統分析對手已獲得的牌,計算對手可能形成的役種,並提供威脅度評估(低、中、高、極高)。當對手距離高分役種僅差 1 張時,顯示警告。
+**Goal**: 實作配對檢測與驗證邏輯，確保玩家選牌後可正確識別可配對的場牌
 
-**Independent Test**: 設定對手已獲得牌區卡片,驗證威脅評估:
-1. 設定對手已獲得 4 張光牌(不含雨),驗證顯示「威脅度:極高」
-2. 設定對手已獲得 2 張赤短,驗證顯示「威脅度:中」
+**Independent Test**: 可透過單元測試驗證無配對/單一配對/多重配對情境 100% 正確，邊界情況（空陣列、無效卡片）處理正確
 
-### 對手役種分析 (TDD: Tests First)
+**來源**: spec.md - User Story 1 (配對邏輯部分)、FR-005 ~ FR-009
 
-- [ ] T043 [P] [US3] 編寫對手役種分析測試 front-end/src/__tests__/user-interface/domain/opponent/opponent-analyzer.test.ts
-- [ ] T044 [P] [US3] 實作對手役種分析器 front-end/src/user-interface/domain/opponent/opponent-analyzer.ts (analyzeOpponentYaku, detectOpponentThreats, getCardDistribution)
+### Tests for User Story 1B (TDD - 先寫測試) ⚠️
 
-### 威脅評估邏輯 (TDD: Tests First)
+- [ ] T018 [P] [US1] 建立 front-end/src/__tests__/user-interface/domain/matching/match-detector.test.ts（包含 canMatch, findMatchableCards 測試）
+- [ ] T019 [P] [US1] 建立 front-end/src/__tests__/user-interface/domain/matching/match-validator.test.ts（包含 validateMatchChoice, validateCardExists 測試）
+- [ ] T020 [US1] 執行測試確認全部 FAIL（npm run test:unit -- matching）
 
-- [ ] T045 [P] [US3] 編寫威脅評估測試 front-end/src/__tests__/user-interface/domain/opponent/threat-evaluator.test.ts
-- [ ] T046 [P] [US3] 實作威脅評估器 front-end/src/user-interface/domain/opponent/threat-evaluator.ts (evaluateThreatLevel, getThreatReasons, calculateThreatScore)
+### Implementation for User Story 1B
 
-### 對手分析模組整合
+- [ ] T021 [P] [US1] 實作 front-end/src/user-interface/domain/matching/match-detector.ts（canMatch, findMatchableCards）
+- [ ] T022 [P] [US1] 實作 front-end/src/user-interface/domain/matching/match-validator.ts（validateMatchChoice, validateCardExists）
+- [ ] T023 [US1] 建立 front-end/src/user-interface/domain/matching/index.ts 統一匯出
+- [ ] T024 [US1] 執行測試確認 100% 通過（npm run test:unit -- matching）
+- [ ] T025 [US1] 檢查測試覆蓋率達到 100%（npm run test:coverage -- matching）
 
-- [ ] T047 [US3] 建立對手分析模組匯出 front-end/src/user-interface/domain/opponent/index.ts
-- [ ] T048 [US3] 執行對手分析模組所有測試並驗證 90%+ 覆蓋率
-
-### User Story 3 整合測試
-
-- [ ] T049 [US3] 編寫 User Story 3 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us3-opponent-analysis.test.ts
-- [ ] T050 [US3] 驗證所有 Acceptance Scenarios 通過 (4 個場景測試)
-
-**Checkpoint**: User Story 3 完成 - 對手分析邏輯完全可用且獨立測試通過
+**Checkpoint**: User Story 1 (卡片邏輯 + 配對驗證) 完全實作，測試覆蓋率 100%
 
 ---
 
-## Phase 6: User Story 4 - 遊戲進度與分數差距提示 (Priority: P3)
+## Phase 5: User Story 2A - 役種檢測邏輯 (Priority: P1)
 
-**Goal**: 系統根據牌堆剩餘張數和手牌數,計算還能進行幾回合,並顯示進度條。分析與對手的分數差距,提供策略建議(激進/平衡/保守)。
+**Goal**: 實作 12 種常用役種的即時檢測邏輯，確保玩家獲得牌後正確顯示已形成的役種
 
-**Independent Test**: 設定牌堆剩餘張數和雙方分數,驗證:
-1. 牌堆剩餘 10 張,手牌 4 張,驗證顯示「剩餘 5 回合,進度 79%」
-2. 玩家分數 0,對手分數 15,驗證建議「策略:激進」
+**Independent Test**: 可透過單元測試驗證 12 種役種檢測 100% 正確，役種衝突（如四光 vs 雨四光）正確解決，邊界情況（空陣列、單張牌）處理正確
 
-### 回合計算邏輯 (TDD: Tests First)
+**來源**: spec.md - User Story 2 (役種檢測部分)、FR-010 ~ FR-011
 
-- [ ] T051 [P] [US4] 編寫回合計算測試 front-end/src/__tests__/user-interface/domain/progress/turn-calculator.test.ts
-- [ ] T052 [P] [US4] 實作回合計算器 front-end/src/user-interface/domain/progress/turn-calculator.ts (calculateRemainingTurns, calculateGameProgress)
+### Tests for User Story 2A (TDD - 先寫測試) ⚠️
 
-### 分數差距分析 (TDD: Tests First)
+- [ ] T026 [P] [US2] 建立 front-end/src/__tests__/user-interface/domain/yaku/yaku-detector.test.ts（包含 12 種役種檢測測試、衝突解決測試）
+- [ ] T027 [US2] 執行測試確認全部 FAIL（npm run test:unit -- yaku/yaku-detector）
 
-- [ ] T053 [P] [US4] 編寫分數差距分析測試 front-end/src/__tests__/user-interface/domain/progress/score-gap-analyzer.test.ts
-- [ ] T054 [P] [US4] 實作分數差距分析器 front-end/src/user-interface/domain/progress/score-gap-analyzer.ts (analyzeScoreGap, getAdvantageStatus, suggestStrategy)
+### Implementation for User Story 2A
 
-### 遊戲進度模組整合
+- [ ] T028 [US2] 實作 front-end/src/user-interface/domain/yaku/yaku-detector.ts（detectAllYaku, checkYaku, 12 種役種檢測函數）
+- [ ] T029 [US2] 執行測試確認 100% 通過（npm run test:unit -- yaku/yaku-detector）
+- [ ] T030 [US2] 檢查測試覆蓋率達到 100%（npm run test:coverage -- yaku/yaku-detector）
 
-- [ ] T055 [US4] 建立遊戲進度模組匯出 front-end/src/user-interface/domain/progress/index.ts
-- [ ] T056 [US4] 執行遊戲進度模組所有測試並驗證 90%+ 覆蓋率
-
-### User Story 4 整合測試
-
-- [ ] T057 [US4] 編寫 User Story 4 整合測試場景 front-end/src/__tests__/user-interface/domain/integration/us4-game-progress.test.ts
-- [ ] T058 [US4] 驗證所有 Acceptance Scenarios 通過 (4 個場景測試)
-
-**Checkpoint**: User Story 4 完成 - 遊戲進度邏輯完全可用且獨立測試通過
+**Checkpoint**: 役種檢測邏輯 100% 通過，覆蓋率 100%
 
 ---
 
-## Phase 7: Polish & Cross-Cutting Concerns
+## Phase 6: User Story 2B - 役種進度與分數計算 (Priority: P1)
 
-**目的**: 跨模組改進與文檔完善
+**Goal**: 實作役種進度計算（距離役種還差幾張）與總分計算邏輯
 
-- [ ] T059 [P] 建立 Domain Layer 主匯出 front-end/src/user-interface/domain/index.ts
-- [ ] T060 [P] 執行所有 Domain Layer 測試並生成覆蓋率報告
-- [ ] T061 [P] 驗證測試覆蓋率達標 (卡片+配對 100%, 役種 100%, 對手+進度 90%+)
-- [ ] T062 [P] 編寫邊界情況測試 front-end/src/__tests__/user-interface/domain/edge-cases.test.ts (無效 ID、空陣列、極端值)
-- [ ] T063 [P] 效能測試 front-end/src/__tests__/user-interface/domain/performance.test.ts (役種檢測 < 10ms, 配對驗證 < 5ms)
-- [ ] T064 Code review 與重構 (提取重複邏輯、改善可讀性、統一錯誤處理)
-- [ ] T065 [P] 為所有公開函數添加 JSDoc 文檔註釋
-- [ ] T066 [P] 更新 quickstart.md 驗證所有範例程式碼正確執行
-- [ ] T067 執行 TypeScript 嚴格模式檢查並修正所有錯誤
+**Independent Test**: 可透過單元測試驗證役種進度計算正確（已獲得/缺少卡片列表、完成百分比）、總分計算包含所有役種基礎分
+
+**來源**: spec.md - User Story 2 (役種進度部分)、FR-012 ~ FR-014
+
+### Tests for User Story 2B (TDD - 先寫測試) ⚠️
+
+- [ ] T031 [P] [US2] 建立 front-end/src/__tests__/user-interface/domain/yaku/yaku-progress.test.ts（包含 calculateYakuProgress 測試）
+- [ ] T032 [P] [US2] 建立 front-end/src/__tests__/user-interface/domain/yaku/score-calculator.test.ts（包含 calculateTotalScore 測試）
+- [ ] T033 [US2] 執行測試確認全部 FAIL（npm run test:unit -- yaku）
+
+### Implementation for User Story 2B
+
+- [ ] T034 [P] [US2] 實作 front-end/src/user-interface/domain/yaku/yaku-progress.ts（calculateYakuProgress, getMissingCards）
+- [ ] T035 [P] [US2] 實作 front-end/src/user-interface/domain/yaku/score-calculator.ts（calculateTotalScore, calculateYakuScore）
+- [ ] T036 [US2] 建立 front-end/src/user-interface/domain/yaku/index.ts 統一匯出
+- [ ] T037 [US2] 執行測試確認 100% 通過（npm run test:unit -- yaku）
+- [ ] T038 [US2] 檢查測試覆蓋率達到 100%（npm run test:coverage -- yaku）
+
+**Checkpoint**: User Story 2 (役種檢測 + 進度計算) 完全實作，測試覆蓋率 100%
+
+---
+
+## Phase 7: User Story 3 - 對手狀態分析與威脅評估 (Priority: P2)
+
+**Goal**: 實作對手役種分析與威脅等級評估，幫助玩家理解對手策略
+
+**Independent Test**: 可透過設定對手已獲得牌區的卡片，驗證威脅評估邏輯（極高/高/中/低）、對手可能形成的役種預測、卡片類型分布統計
+
+**來源**: spec.md - User Story 3、FR-015 ~ FR-017
+
+### Tests for User Story 3 (TDD - 先寫測試) ⚠️
+
+- [ ] T039 [P] [US3] 建立 front-end/src/__tests__/user-interface/domain/opponent/opponent-analyzer.test.ts（包含 analyzeOpponent, getCardDistribution 測試）
+- [ ] T040 [P] [US3] 建立 front-end/src/__tests__/user-interface/domain/opponent/threat-evaluator.test.ts（包含 evaluateThreat, getThreatReasons 測試）
+- [ ] T041 [US3] 執行測試確認全部 FAIL（npm run test:unit -- opponent）
+
+### Implementation for User Story 3
+
+- [ ] T042 [P] [US3] 實作 front-end/src/user-interface/domain/opponent/opponent-analyzer.ts（analyzeOpponent, getCardDistribution）
+- [ ] T043 [P] [US3] 實作 front-end/src/user-interface/domain/opponent/threat-evaluator.ts（evaluateThreat, calculateThreatLevel）
+- [ ] T044 [US3] 建立 front-end/src/user-interface/domain/opponent/index.ts 統一匯出
+- [ ] T045 [US3] 執行測試確認 100% 通過（npm run test:unit -- opponent）
+- [ ] T046 [US3] 檢查測試覆蓋率達到 100%（npm run test:coverage -- opponent）
+
+**Checkpoint**: User Story 3 (對手分析) 完全實作，測試覆蓋率 100%
+
+---
+
+## Phase 8: User Story 4 - 遊戲進度與分數差距提示 (Priority: P3)
+
+**Goal**: 實作剩餘回合計算與分數差距分析，提供策略建議
+
+**Independent Test**: 可透過設定牌堆剩餘張數與雙方分數，驗證回合計算正確、進度百分比正確、策略建議（激進/平衡/保守）符合分數差距
+
+**來源**: spec.md - User Story 4、FR-018 ~ FR-021
+
+### Tests for User Story 4 (TDD - 先寫測試) ⚠️
+
+- [ ] T047 [P] [US4] 建立 front-end/src/__tests__/user-interface/domain/progress/turn-calculator.test.ts（包含 calculateRemainingTurns, calculateProgress 測試）
+- [ ] T048 [P] [US4] 建立 front-end/src/__tests__/user-interface/domain/progress/score-gap-analyzer.test.ts（包含 analyzeScoreGap, suggestStrategy 測試）
+- [ ] T049 [US4] 執行測試確認全部 FAIL（npm run test:unit -- progress）
+
+### Implementation for User Story 4
+
+- [ ] T050 [P] [US4] 實作 front-end/src/user-interface/domain/progress/turn-calculator.ts（calculateRemainingTurns, calculateProgress）
+- [ ] T051 [P] [US4] 實作 front-end/src/user-interface/domain/progress/score-gap-analyzer.ts（analyzeScoreGap, determineAdvantage, suggestStrategy）
+- [ ] T052 [US4] 建立 front-end/src/user-interface/domain/progress/index.ts 統一匯出
+- [ ] T053 [US4] 執行測試確認 100% 通過（npm run test:unit -- progress）
+- [ ] T054 [US4] 檢查測試覆蓋率達到 100%（npm run test:coverage -- progress）
+
+**Checkpoint**: User Story 4 (遊戲進度計算) 完全實作，測試覆蓋率 100%
+
+---
+
+## Phase 9: Polish & Cross-Cutting Concerns (收尾與優化)
+
+**Purpose**: 整體驗證、文檔更新、效能檢查
+
+- [ ] T055 [P] 執行完整測試套件確認所有模組 100% 通過（npm run test:unit -- user-interface/domain）
+- [ ] T056 [P] 驗證整體測試覆蓋率達到目標（卡片邏輯 100%、配對驗證 100%、役種檢測 100%）
+- [ ] T057 [P] 效能測試：驗證役種檢測（24 張牌）< 10ms、卡片解析 < 5ms（參考 plan.md 效能目標）
+- [ ] T058 [P] 為所有公開函數新增 JSDoc 文檔（參數、返回值、範例）
+- [ ] T059 [P] TypeScript 型別檢查：確認無 any 使用、嚴格模式零錯誤
+- [ ] T060 執行 quickstart.md 驗證：按照 quickstart.md 步驟驗證開發流程可行
+- [ ] T061 建立 front-end/src/user-interface/domain/README.md（模組總覽、使用範例、設計原則）
+
+**Checkpoint**: User Interface BC - Domain Layer 完整實作完成，測試覆蓋率達標，文檔齊全
 
 ---
 
@@ -237,135 +225,132 @@
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: 無依賴 - 可立即開始
-- **Foundational (Phase 2)**: 依賴 Setup 完成 - **阻擋所有 User Stories**
-- **User Stories (Phase 3-6)**: 全部依賴 Foundational 完成
-  - User Stories 可平行進行(若有多人開發)
-  - 或按優先順序依序進行(P1 → P1 → P2 → P3)
-- **Polish (Phase 7)**: 依賴所有期望的 User Stories 完成
+- **Setup (Phase 1)**: 無依賴 - 立即開始
+- **Foundational (Phase 2)**: 依賴 Setup 完成 - **阻塞所有 User Stories**
+- **User Stories (Phase 3-8)**: 全部依賴 Foundational 完成
+  - 可按優先級順序執行：US1A → US1B → US2A → US2B → US3 → US4
+  - 或平行執行（需要多人協作）：US1, US2, US3, US4 同時進行
+- **Polish (Phase 9)**: 依賴所有 User Stories 完成
 
 ### User Story Dependencies
 
-- **User Story 1 (P1)**: 可在 Foundational (Phase 2) 完成後開始 - 無其他故事依賴
-- **User Story 2 (P1)**: 可在 Foundational (Phase 2) 完成後開始 - 依賴 US1 的配對邏輯,但可獨立測試役種檢測
-- **User Story 3 (P2)**: 可在 Foundational (Phase 2) 完成後開始 - 依賴 US2 的役種檢測,但可獨立測試對手分析
-- **User Story 4 (P3)**: 可在 Foundational (Phase 2) 完成後開始 - 無其他故事依賴,可完全獨立測試
+- **User Story 1A (P1 - 卡片邏輯)**: Foundational 完成後可立即開始 - 無其他 Story 依賴
+- **User Story 1B (P1 - 配對驗證)**: Foundational 完成後可立即開始 - 無其他 Story 依賴
+- **User Story 2A (P1 - 役種檢測)**: Foundational 完成後可立即開始 - 無其他 Story 依賴
+- **User Story 2B (P1 - 役種進度)**: 依賴 US2A 完成 - 需要 detectAllYaku 函數
+- **User Story 3 (P2 - 對手分析)**: 依賴 US2A 完成 - 需要役種檢測邏輯
+- **User Story 4 (P3 - 遊戲進度)**: Foundational 完成後可立即開始 - 無其他 Story 依賴
 
 ### Within Each User Story
 
-- 測試 MUST 先寫並 FAIL 才能開始實作
-- 卡片邏輯 → 配對驗證 → 役種檢測 → 對手分析 → 遊戲進度
-- 核心實作完成後再進行整合測試
-- 故事完成後才移至下一優先級
+- **TDD 流程**: Tests FIRST → 確認 FAIL → Implementation → 確認 PASS
+- **檔案順序**: 型別定義 → 測試 → 實作 → 匯出 → 覆蓋率檢查
+- **驗證順序**: 單元測試通過 → 覆蓋率達標 → Checkpoint 完成
 
 ### Parallel Opportunities
 
-- Setup 所有標記 [P] 的任務可平行執行
-- Foundational 所有標記 [P] 的任務可平行執行(Phase 2 內)
-- Foundational 完成後,所有 User Stories 可平行開始(若團隊容量允許)
-- 每個 User Story 內,所有標記 [P] 的測試可平行執行
-- 每個 User Story 內,所有標記 [P] 的實作可平行執行(完成測試後)
-- 不同 User Stories 可由不同團隊成員平行開發
+- **Phase 1**: T003, T004 可平行執行（不同操作）
+- **Phase 2**: T005, T006, T007 可平行執行（不同檔案）
+- **User Story 測試階段**: 同一 Story 內標記 [P] 的測試可平行撰寫
+- **User Story 實作階段**: 同一 Story 內標記 [P] 的實作可平行進行
+- **跨 Story 平行**: 若團隊有多人，US1, US2, US3, US4 可同時進行（需協調 Foundational 完成）
 
 ---
 
-## Parallel Example: User Story 2 (役種檢測)
+## Parallel Example: User Story 2A (役種檢測)
 
 ```bash
-# 平行啟動所有役種檢測測試:
-Task: "編寫光牌系役種檢測測試 (T025)"
-Task: "編寫短冊系役種檢測測試 (T026)"
-Task: "編寫種牌系役種檢測測試 (T027)"
-Task: "編寫かす系役種檢測測試 (T028)"
-Task: "編寫役種衝突解決測試 (T029)"
+# 測試階段（平行）
+Task T026: 建立 yaku-detector.test.ts
 
-# 測試失敗後,平行實作所有役種檢測器:
-Task: "實作光牌系役種檢測 (T030)"
-Task: "實作短冊系役種檢測 (T031)"
-Task: "實作種牌系役種檢測 (T032)"
-Task: "實作かす系役種檢測 (T033)"
+# 實作階段（單一檔案，順序執行）
+Task T028: 實作 yaku-detector.ts（包含 12 種役種檢測函數）
 
-# 平行啟動役種進度與分數計算:
-Task: "編寫役種進度計算測試 (T035)" + "編寫分數計算測試 (T037)"
-Task: "實作役種進度計算器 (T036)" + "實作分數計算器 (T038)"
+# 驗證階段（順序執行）
+Task T029: 執行測試
+Task T030: 檢查覆蓋率
+```
+
+---
+
+## Parallel Example: Multiple User Stories (多人團隊)
+
+```bash
+# Foundational 完成後，可平行啟動：
+Developer A: User Story 1 (Phase 3-4) - 卡片邏輯與配對驗證
+Developer B: User Story 2 (Phase 5-6) - 役種檢測與進度計算
+Developer C: User Story 4 (Phase 8) - 遊戲進度計算（US3 需等 US2A 完成）
+
+# US2A 完成後：
+Developer C: 切換至 User Story 3 (Phase 7) - 對手分析
 ```
 
 ---
 
 ## Implementation Strategy
 
-### MVP First (僅 User Story 1)
+### MVP First (僅 User Story 1 + User Story 2)
 
-1. 完成 Phase 1: Setup
-2. 完成 Phase 2: Foundational (關鍵 - 阻擋所有故事)
-3. 完成 Phase 3: User Story 1
-4. **STOP and VALIDATE**: 獨立測試 User Story 1
-5. 準備好後部署/展示
+1. Complete Phase 1: Setup
+2. Complete Phase 2: Foundational
+3. Complete Phase 3-4: User Story 1 (卡片邏輯 + 配對驗證)
+4. **STOP and VALIDATE**: 測試 US1 獨立功能
+5. Complete Phase 5-6: User Story 2 (役種檢測 + 進度計算)
+6. **STOP and VALIDATE**: 測試 US1 + US2 整合功能
+7. 部署/展示 MVP（P1 功能完整）
 
-### Incremental Delivery
+### Incremental Delivery (逐步交付)
 
-1. 完成 Setup + Foundational → 基礎就緒
-2. 加入 User Story 1 → 獨立測試 → 部署/展示 (MVP!)
-3. 加入 User Story 2 → 獨立測試 → 部署/展示
-4. 加入 User Story 3 → 獨立測試 → 部署/展示
-5. 加入 User Story 4 → 獨立測試 → 部署/展示
-6. 每個故事都增加價值而不破壞先前故事
+1. Setup + Foundational → 基礎就緒
+2. Add User Story 1 → 測試獨立功能 → 展示卡片邏輯與配對提示
+3. Add User Story 2 → 測試獨立功能 → 展示役種檢測與進度提示
+4. Add User Story 3 → 測試獨立功能 → 展示對手威脅評估
+5. Add User Story 4 → 測試獨立功能 → 展示遊戲進度計算
+6. Polish → 完整 Domain Layer 就緒
 
-### Parallel Team Strategy
+### Parallel Team Strategy (多人協作)
 
-多人開發:
+1. 團隊共同完成 Setup + Foundational
+2. Foundational 完成後分工：
+   - Developer A: US1 (Phase 3-4)
+   - Developer B: US2A (Phase 5) → US2B (Phase 6)
+   - Developer C: US4 (Phase 8) → 等 US2A 完成後做 US3 (Phase 7)
+3. 各 Story 獨立完成與整合
+4. 團隊共同完成 Polish (Phase 9)
 
-1. 團隊一起完成 Setup + Foundational
-2. Foundational 完成後:
-   - 開發者 A: User Story 1 + User Story 2
-   - 開發者 B: User Story 3 + User Story 4
-   - 開發者 C: Polish & Documentation
-3. 故事獨立完成並整合
+---
+
+## Success Criteria Summary
+
+### 測試覆蓋率（spec.md - TR-004, TR-005）
+- ✅ 卡片邏輯（card/）：100%
+- ✅ 配對驗證（matching/）：100%
+- ✅ 役種檢測（yaku/）：100%
+- ✅ 對手分析（opponent/）：100%
+- ✅ 遊戲進度（progress/）：100%
+
+### 效能指標（plan.md）
+- ✅ 役種檢測（24 張牌）：< 10ms
+- ✅ 卡片解析與配對驗證：< 5ms
+- ✅ 所有 Domain 函數：< 50ms
+
+### 功能正確性（spec.md - SC-001 ~ SC-007）
+- ✅ 48 張卡片 ID 解析 100% 正確
+- ✅ 配對驗證所有場景 100% 正確
+- ✅ 12 種役種檢測 100% 正確
+- ✅ 役種衝突解決 100% 正確
+- ✅ 邊界值測試 100% 通過
+- ✅ 純函數保證（相同輸入 100 次相同輸出）
 
 ---
 
 ## Notes
 
-- [P] 任務 = 不同檔案、無依賴
-- [Story] 標籤將任務映射到特定 User Story,便於追蹤
-- 每個 User Story 應可獨立完成與測試
-- 實作前驗證測試失敗
-- 每個任務或邏輯群組後提交
-- 在任何 checkpoint 停下來獨立驗證故事
-- 避免: 模糊任務、同檔案衝突、破壞獨立性的跨故事依賴
-- 所有錯誤訊息必須繁體中文
-- 所有函數必須有完整 JSDoc 註釋(繁體中文)
-
----
-
-## Summary
-
-**總任務數**: 67 個任務
-
-**任務分布**:
-- Phase 1 (Setup): 4 個任務
-- Phase 2 (Foundational): 12 個任務
-- Phase 3 (US1 - 配對邏輯): 8 個任務
-- Phase 4 (US2 - 役種檢測): 18 個任務
-- Phase 5 (US3 - 對手分析): 8 個任務
-- Phase 6 (US4 - 遊戲進度): 8 個任務
-- Phase 7 (Polish): 9 個任務
-
-**平行機會**:
-- Phase 1: 1 個任務可平行 (T004)
-- Phase 2: 10 個任務可平行 (T005-T014)
-- Phase 3: 6 個任務可平行 (T017-T020)
-- Phase 4: 14 個任務可平行 (T025-T038)
-- Phase 5: 4 個任務可平行 (T043-T046)
-- Phase 6: 4 個任務可平行 (T051-T054)
-- Phase 7: 8 個任務可平行 (T059-T067)
-
-**獨立測試標準**:
-- **US1**: 可透過建立測試介面(8 張場牌 + 8 張手牌)驗證配對邏輯
-- **US2**: 可透過手動設定玩家已獲得牌區驗證役種檢測
-- **US3**: 可透過手動設定對手已獲得牌區驗證威脅評估
-- **US4**: 可透過設定牌堆數與分數驗證進度計算
-
-**建議 MVP 範圍**: User Story 1 + User Story 2 (卡片配對 + 役種檢測)
-
-**格式驗證**: ✅ 所有任務遵循 checklist 格式 (checkbox, ID, labels, file paths)
+- **[P] 任務** = 不同檔案，無依賴，可平行執行
+- **[Story] 標籤** = 追溯任務所屬 User Story
+- **TDD 嚴格執行** = 先寫測試 → 測試 FAIL → 實作 → 測試 PASS
+- **每個 User Story 可獨立完成與測試** = 支援增量交付
+- **Checkpoint 驗證** = 每個 Phase 結束後停下來驗證功能正確性
+- **避免** = 模糊任務、同一檔案衝突、跨 Story 依賴破壞獨立性
+- **測試覆蓋率目標** = 100%（卡片、配對、役種），遵循專案憲法 TDD 原則
+- **效能驗證** = Phase 9 執行效能測試，確保符合 plan.md 目標
