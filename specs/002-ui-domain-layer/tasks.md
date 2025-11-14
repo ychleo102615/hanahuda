@@ -117,7 +117,7 @@
 
 > **NOTE: 先寫測試,確保測試 FAIL 後再實作**
 
-- [ ] T018 [US3] 客戶端驗證測試 front-end/src/__tests__/user-interface/domain/validation.test.ts
+- [X] T018 [US3] 客戶端驗證測試 front-end/src/__tests__/user-interface/domain/validation.test.ts
   - validateCardExists() 當卡片在手牌中返回 {valid: true}
   - validateCardExists() 當卡片不在手牌中返回 {valid: false, reason: "..."}
   - validateTargetInList() 當目標在列表中返回 {valid: true}
@@ -126,9 +126,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T019 [P] [US3] 實作 validateCardExists() 函數 (使用 areCardsEqual 檢查) in front-end/src/user-interface/domain/validation.ts
-- [ ] T020 [P] [US3] 實作 validateTargetInList() 函數 in front-end/src/user-interface/domain/validation.ts
-- [ ] T021 [US3] 執行測試驗證 User Story 3 完成 (npm run test:unit -- validation.test.ts)
+- [X] T019 [P] [US3] 實作 validateCardExists() 函數 (使用 areCardsEqual 檢查) in front-end/src/user-interface/domain/validation.ts
+- [X] T020 [P] [US3] 實作 validateTargetInList() 函數 in front-end/src/user-interface/domain/validation.ts
+- [X] T021 [US3] 執行測試驗證 User Story 3 完成 (npm run test:unit -- validation.test.ts)
 
 **Checkpoint**: User Story 3 完成 - 客戶端預驗證功能可獨立運作
 
