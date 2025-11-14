@@ -144,7 +144,7 @@
 
 > **NOTE: 先寫測試,確保測試 FAIL 後再實作**
 
-- [ ] T022 [US4] 役種進度計算測試 front-end/src/__tests__/user-interface/domain/yaku-progress.test.ts
+- [X] T022 [US4] 役種進度計算測試 front-end/src/__tests__/user-interface/domain/yaku-progress.test.ts
   - 固定役種 (赤短): 已有 2 張返回 progress=66.67, missing=[SAKURA_AKATAN]
   - 固定役種 (豬鹿蝶): 未獲得任何卡片返回 progress=0, missing=[全部 3 張]
   - 固定役種 (五光): 已完成返回 progress=100, missing=[]
@@ -155,19 +155,19 @@
 
 ### Implementation for User Story 4
 
-- [ ] T023 [US4] 實作 YAKU_REQUIREMENTS 常數映射 in front-end/src/user-interface/domain/yaku-progress.ts
+- [X] T023 [US4] 實作 YAKU_REQUIREMENTS 常數映射 in front-end/src/user-interface/domain/yaku-progress.ts
   - 短冊系: AKATAN, AOTAN
   - 光牌系: GOKO, SHIKO, AMESHIKO (包含雨光邏輯)
   - 種牌系: INOSHIKACHO, TSUKIMI, HANAMI
-- [ ] T024 [P] [US4] 實作 calculateYakuProgress() 函數 (固定役種) in front-end/src/user-interface/domain/yaku-progress.ts
+- [X] T024 [P] [US4] 實作 calculateYakuProgress() 函數 (固定役種) in front-end/src/user-interface/domain/yaku-progress.ts
   - 計算 obtained (集合交集)
   - 計算 missing (集合差集)
   - 計算 progress 百分比
-- [ ] T025 [P] [US4] 實作 calculateDynamicYakuProgress() 函數 (TAN, KASU, TANE) in front-end/src/user-interface/domain/yaku-progress.ts
-- [ ] T026 [P] [US4] 實作 calculateSankoProgress() 函數 (三光特殊處理) in front-end/src/user-interface/domain/yaku-progress.ts
+- [X] T025 [P] [US4] 實作 calculateDynamicYakuProgress() 函數 (TAN, KASU, TANE) in front-end/src/user-interface/domain/yaku-progress.ts
+- [X] T026 [P] [US4] 實作 calculateSankoProgress() 函數 (三光特殊處理) in front-end/src/user-interface/domain/yaku-progress.ts
   - 排除雨光 (YANAGI_HIKARI)
   - 從 4 張非雨光中任選 3 張
-- [ ] T027 [US4] 執行測試驗證 User Story 4 完成 (npm run test:unit -- yaku-progress.test.ts)
+- [X] T027 [US4] 執行測試驗證 User Story 4 完成 (npm run test:unit -- yaku-progress.test.ts)
 
 **Checkpoint**: User Story 4 完成 - 役種進度計算功能可獨立運作
 
@@ -177,17 +177,17 @@
 
 **Purpose**: 跨 User Story 的改進與文檔更新
 
-- [ ] T028 [P] 執行所有單元測試並驗證覆蓋率 (npm run test:unit)
+- [X] T028 [P] 執行所有單元測試並驗證覆蓋率 (npm run test:unit)
   - 卡片邏輯: 100%
   - 配對驗證: 100%
   - 役種進度: > 90%
-- [ ] T029 [P] 執行型別檢查 (npm run type-check)
-- [ ] T030 [P] 執行 ESLint 並修正問題 (npm run lint)
-- [ ] T031 導出所有公開 API from front-end/src/user-interface/domain/index.ts
+- [X] T029 [P] 執行型別檢查 (npm run type-check)
+- [X] T030 [P] 執行 ESLint 並修正問題 (npm run lint)
+- [X] T031 導出所有公開 API from front-end/src/user-interface/domain/index.ts
   - 導出型別: Card, CardType, YakuType, YakuProgress, ValidationResult
   - 導出常數: ALL_CARDS, 語義化常數 (MATSU_HIKARI 等), YAKU_REQUIREMENTS
   - 導出函數: isValidCard, canMatch, findMatchableCards, validateCardExists, calculateYakuProgress 等
-- [ ] T032 驗證 quickstart.md 所有使用場景可執行
+- [X] T032 驗證 quickstart.md 所有使用場景可執行
 
 ---
 

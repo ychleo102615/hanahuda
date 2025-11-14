@@ -142,6 +142,7 @@ describe('card-logic.ts', () => {
           isValidCard({
             card_id: '0111',
             month: 1,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             type: 'INVALID' as any,
             display_name: '測試',
           }),
@@ -211,6 +212,7 @@ describe('card-logic.ts', () => {
       const card2: Card = {
         card_id: '0111',
         month: 99, // 不同的 month
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         type: 'PLAIN' as any, // 不同的 type
         display_name: '不同名稱', // 不同的 display_name
       }
@@ -232,6 +234,7 @@ describe('card-logic.ts', () => {
 
   describe('邊界情況', () => {
     it('isValidCard() 應處理空物件', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(isValidCard({} as any)).toBe(false)
     })
 
