@@ -89,7 +89,7 @@
 
 > **NOTE: 先寫測試,確保測試 FAIL 後再實作**
 
-- [ ] T014 [US2] 配對邏輯測試 front-end/src/__tests__/user-interface/domain/matching.test.ts
+- [X] T014 [US2] 配對邏輯測試 front-end/src/__tests__/user-interface/domain/matching.test.ts
   - canMatch() 對相同月份返回 true (如 1月光牌 vs 1月短冊)
   - canMatch() 對不同月份返回 false (如 1月 vs 2月)
   - findMatchableCards() 返回空陣列 (無配對)
@@ -99,9 +99,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T015 [P] [US2] 實作 canMatch() 函數 (月份相等檢查) in front-end/src/user-interface/domain/matching.ts
-- [ ] T016 [P] [US2] 實作 findMatchableCards() 函數 (filter + canMatch) in front-end/src/user-interface/domain/matching.ts
-- [ ] T017 [US2] 執行測試驗證 User Story 2 完成 (npm run test:unit -- matching.test.ts)
+- [X] T015 [P] [US2] 實作 canMatch() 函數 (月份相等檢查) in front-end/src/user-interface/domain/matching.ts
+- [X] T016 [P] [US2] 實作 findMatchableCards() 函數 (filter + canMatch) in front-end/src/user-interface/domain/matching.ts
+- [X] T017 [US2] 執行測試驗證 User Story 2 完成 (npm run test:unit -- matching.test.ts)
 
 **Checkpoint**: User Story 2 完成 - 配對規則驗證功能可獨立運作
 
