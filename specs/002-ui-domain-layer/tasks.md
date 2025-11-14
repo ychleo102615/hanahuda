@@ -54,11 +54,11 @@
 
 > **NOTE: 先寫測試,確保測試 FAIL 後再實作**
 
-- [ ] T008 [P] [US1] 卡片資料庫測試 front-end/src/__tests__/user-interface/domain/card-database.test.ts
+- [X] T008 [P] [US1] 卡片資料庫測試 front-end/src/__tests__/user-interface/domain/card-database.test.ts
   - 語義化常數查詢正確性 (如 MATSU_HIKARI 返回 month=1, type=BRIGHT)
   - ALL_CARDS 包含 48 張牌
   - 每月卡片數量正確 (每月 4 張)
-- [ ] T009 [P] [US1] 卡片邏輯測試 front-end/src/__tests__/user-interface/domain/card-logic.test.ts
+- [X] T009 [P] [US1] 卡片邏輯測試 front-end/src/__tests__/user-interface/domain/card-logic.test.ts
   - isValidCard() 對有效卡片返回 true (如 {month:1, type:"BRIGHT", index:1})
   - isValidCard() 對無效卡片返回 false (如 {month:13, ...})
   - getCardById() 正確查詢卡片
@@ -66,14 +66,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] 實作 card-logic.ts 中的 isValidCard() in front-end/src/user-interface/domain/card-logic.ts
+- [X] T010 [US1] 實作 card-logic.ts 中的 isValidCard() in front-end/src/user-interface/domain/card-logic.ts
   - 驗證 card_id 格式 (MMTI 4 位數字)
   - 驗證 month 範圍 (1-12)
   - 驗證 type 枚舉合法性
   - 驗證卡片存在於 ALL_CARDS 中
-- [ ] T011 [P] [US1] 實作 getCardById() 查詢函數 in front-end/src/user-interface/domain/card-logic.ts
-- [ ] T012 [P] [US1] 實作 areCardsEqual() 卡片相等性判斷 (比較 card_id) in front-end/src/user-interface/domain/card-logic.ts
-- [ ] T013 [US1] 執行測試驗證 User Story 1 完成 (npm run test:unit -- card-database.test.ts card-logic.test.ts)
+- [X] T011 [P] [US1] 實作 getCardById() 查詢函數 in front-end/src/user-interface/domain/card-logic.ts
+- [X] T012 [P] [US1] 實作 areCardsEqual() 卡片相等性判斷 (比較 card_id) in front-end/src/user-interface/domain/card-logic.ts
+- [X] T013 [US1] 執行測試驗證 User Story 1 完成 (npm run test:unit -- card-database.test.ts card-logic.test.ts)
 
 **Checkpoint**: User Story 1 完成 - 卡片識別與驗證功能可獨立運作
 
