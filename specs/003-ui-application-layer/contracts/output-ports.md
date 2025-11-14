@@ -1,0 +1,571 @@
+# Output Ports Contract
+
+**Feature**: 003-ui-application-layer
+**Date**: 2025-11-14
+**Purpose**: 定義 Application Layer 依賴的 Output Ports 介面規範，由 Adapter Layer 實作
+
+## 概述
+
+Output Ports 由 Application Layer 定義，Adapter Layer 實作。Use Cases 通過這些 Ports 與外部世界互動（發送命令、更新 UI、觸發效果），實現依賴反轉。
+
+**總數**: 3 個介面
+
+---
+
+## 1. SendCommandPort
+
+### 職責
+
+發送命令到後端 API，用於玩家操作（打牌、選擇配對、Koi-Koi 決策）。
+
+### 介面定義
+
+```typescript
+export interface SendCommandPort {
+  playHandCard(cardId: string, target?: string): Promise<void>
+  selectTarget(source: string, target: string): Promise<void>
+  makeDecision(decision: 'KOI_KOI' | 'END_ROUND'): Promise<void>
+}
+```
+
+---
+
+### 方法規範
+
+#### 1.1 playHandCard
+
+**簽名**:
+```typescript
+playHandCard(cardId: string, target?: string): Promise<void>
+```
+
+**參數**:
+- `cardId: string` - 要打出的手牌 ID（必填，4 位數字字串，如 "0341"）
+- `target?: string` - 配對目標 ID（可選，4 位數字字串）
+  - 若省略，表示無配對或由伺服器自動選擇
+
+**行為規範**:
+1. 構建 `TurnPlayHandCard` 命令：
+   ```typescript
+   {
+     command_type: 'TurnPlayHandCard',
+     game_id: string,      // 從遊戲上下文獲取
+     player_id: string,    // 從遊戲上下文獲取
+     card_id: cardId,
+     target_card_id: target  // 可選
+   }
+   ```
+2. 發送 POST 請求到後端 API：`POST /api/games/{game_id}/commands/play-hand-card`
+3. 若請求成功（HTTP 2xx），Promise resolve
+4. 若請求失敗（HTTP 4xx/5xx、網路錯誤），Promise reject 並拋出錯誤
+
+**錯誤處理**:
+- 網路錯誤: `NetworkError`
+- 伺服器錯誤: `ServerError` (包含 HTTP status code)
+- 超時錯誤: `TimeoutError` (超過 5 秒)
+
+**實作要求**:
+- ✅ 必須使用 POST 方法
+- ✅ 必須包含 `Content-Type: application/json`
+- ✅ 必須處理超時（建議 5 秒）
+- ✅ 錯誤必須包含可讀訊息
+
+**範例實作**（Adapter Layer）:
+```typescript
+async playHandCard(cardId: string, target?: string): Promise<void> {
+  const gameContext = useGameStore().context // Pinia Store
+
+  const command: TurnPlayHandCard = {
+    command_type: 'TurnPlayHandCard',
+    game_id: gameContext.gameId,
+    player_id: gameContext.playerId,
+    card_id: cardId,
+    target_card_id: target
+  }
+
+  const response = await fetch(
+    `/api/games/${gameContext.gameId}/commands/play-hand-card`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(command),
+      signal: AbortSignal.timeout(5000)
+    }
+  )
+
+  if (!response.ok) {
+    throw new ServerError(`Failed to play card: ${response.status}`)
+  }
+}
+```
+
+---
+
+#### 1.2 selectTarget
+
+**簽名**:
+```typescript
+selectTarget(source: string, target: string): Promise<void>
+```
+
+**參數**:
+- `source: string` - 來源卡片 ID（必填）
+- `target: string` - 選擇的目標卡片 ID（必填）
+
+**行為規範**:
+1. 構建 `TurnSelectTarget` 命令
+2. 發送 POST 請求到 `/api/games/{game_id}/commands/select-target`
+3. 處理成功/失敗
+
+**錯誤處理**: 同 `playHandCard`
+
+---
+
+#### 1.3 makeDecision
+
+**簽名**:
+```typescript
+makeDecision(decision: 'KOI_KOI' | 'END_ROUND'): Promise<void>
+```
+
+**參數**:
+- `decision: 'KOI_KOI' | 'END_ROUND'` - Koi-Koi 決策（必填）
+
+**行為規範**:
+1. 構建 `RoundMakeDecision` 命令
+2. 發送 POST 請求到 `/api/games/{game_id}/commands/make-decision`
+3. 處理成功/失敗
+
+**錯誤處理**: 同 `playHandCard`
+
+---
+
+## 2. UpdateUIStatePort
+
+### 職責
+
+更新 UI 狀態（場牌、手牌、獲得區、分數、FlowStage 等），通常通過狀態管理工具（Pinia）實作。
+
+### 介面定義
+
+```typescript
+export interface UpdateUIStatePort {
+  setFlowStage(stage: FlowState): void
+  updateFieldCards(cards: string[]): void
+  updateHandCards(cards: string[]): void
+  updateDepositoryCards(playerCards: string[], opponentCards: string[]): void
+  updateScores(playerScore: number, opponentScore: number): void
+  updateDeckRemaining(count: number): void
+  updateKoiKoiMultiplier(playerId: string, multiplier: number): void
+}
+```
+
+---
+
+### 方法規範
+
+#### 2.1 setFlowStage
+
+**簽名**:
+```typescript
+setFlowStage(stage: FlowState): void
+```
+
+**參數**:
+- `stage: FlowState` - 當前流程階段（`'AWAITING_HAND_PLAY'` | `'AWAITING_SELECTION'` | `'AWAITING_DECISION'`）
+
+**行為規範**:
+1. 更新遊戲狀態的 `currentFlowStage` 屬性
+2. 觸發 UI 重新渲染（由響應式系統自動處理）
+
+**實作要求**:
+- ✅ 同步操作（立即更新）
+- ✅ 必須觸發響應式更新
+
+**範例實作**（Pinia Store）:
+```typescript
+setFlowStage(stage: FlowState): void {
+  this.currentFlowStage = stage
+}
+```
+
+---
+
+#### 2.2 updateFieldCards
+
+**簽名**:
+```typescript
+updateFieldCards(cards: string[]): void
+```
+
+**參數**:
+- `cards: string[]` - 場牌列表（卡片 ID 陣列）
+
+**行為規範**:
+1. 完全替換當前場牌列表（不是增量更新）
+2. 觸發 UI 重新渲染
+
+**實作要求**:
+- ✅ 深拷貝陣列（避免引用問題）
+- ✅ 驗證卡片 ID 格式（可選，生產環境建議）
+
+**範例實作**:
+```typescript
+updateFieldCards(cards: string[]): void {
+  this.fieldCards = [...cards]
+}
+```
+
+---
+
+#### 2.3 updateHandCards
+
+**簽名**:
+```typescript
+updateHandCards(cards: string[]): void
+```
+
+**參數**:
+- `cards: string[]` - 手牌列表
+
+**行為規範**:
+1. 完全替換當前手牌列表
+2. 觸發 UI 重新渲染
+
+**實作要求**: 同 `updateFieldCards`
+
+---
+
+#### 2.4 updateDepositoryCards
+
+**簽名**:
+```typescript
+updateDepositoryCards(playerCards: string[], opponentCards: string[]): void
+```
+
+**參數**:
+- `playerCards: string[]` - 玩家獲得區卡片
+- `opponentCards: string[]` - 對手獲得區卡片
+
+**行為規範**:
+1. 同時更新玩家和對手的獲得區
+2. 觸發 UI 重新渲染
+
+**實作要求**:
+- ✅ 深拷貝兩個陣列
+- ✅ 保持獲得區卡片順序（用於顯示）
+
+**範例實作**:
+```typescript
+updateDepositoryCards(playerCards: string[], opponentCards: string[]): void {
+  this.playerDepository = [...playerCards]
+  this.opponentDepository = [...opponentCards]
+}
+```
+
+---
+
+#### 2.5 updateScores
+
+**簽名**:
+```typescript
+updateScores(playerScore: number, opponentScore: number): void
+```
+
+**參數**:
+- `playerScore: number` - 玩家累計分數
+- `opponentScore: number` - 對手累計分數
+
+**行為規範**:
+1. 更新累計分數（不是增量，是絕對值）
+2. 觸發 UI 重新渲染
+
+**實作要求**:
+- ✅ 驗證分數為非負整數（可選）
+
+---
+
+#### 2.6 updateDeckRemaining
+
+**簽名**:
+```typescript
+updateDeckRemaining(count: number): void
+```
+
+**參數**:
+- `count: number` - 牌堆剩餘數量
+
+**行為規範**:
+1. 更新牌堆剩餘數量
+2. 觸發 UI 重新渲染（顯示剩餘牌數）
+
+**實作要求**:
+- ✅ 驗證 count 在 0-48 範圍內（可選）
+
+---
+
+#### 2.7 updateKoiKoiMultiplier
+
+**簽名**:
+```typescript
+updateKoiKoiMultiplier(playerId: string, multiplier: number): void
+```
+
+**參數**:
+- `playerId: string` - 玩家 ID
+- `multiplier: number` - Koi-Koi 倍率
+
+**行為規範**:
+1. 更新指定玩家的 Koi-Koi 倍率
+2. 觸發 UI 重新渲染（顯示倍率標記）
+
+**實作要求**:
+- ✅ 驗證 playerId 存在（可選）
+- ✅ 支援多玩家（未來擴展）
+
+**範例實作**:
+```typescript
+updateKoiKoiMultiplier(playerId: string, multiplier: number): void {
+  const player = this.players.find(p => p.id === playerId)
+  if (player) {
+    player.koiKoiMultiplier = multiplier
+  }
+}
+```
+
+---
+
+## 3. TriggerUIEffectPort
+
+### 職責
+
+觸發 UI 效果（動畫、Modal、訊息提示等），不修改狀態，僅觸發視覺回饋。
+
+### 介面定義
+
+```typescript
+export interface TriggerUIEffectPort {
+  showSelectionUI(possibleTargets: string[]): void
+  showDecisionModal(currentYaku: YakuScore[], currentScore: number, potentialScore?: number): void
+  showErrorMessage(message: string): void
+  showReconnectionMessage(): void
+  triggerAnimation<T extends AnimationType>(type: T, params: AnimationParams<T>): void
+}
+```
+
+---
+
+### 方法規範
+
+#### 3.1 showSelectionUI
+
+**簽名**:
+```typescript
+showSelectionUI(possibleTargets: string[]): void
+```
+
+**參數**:
+- `possibleTargets: string[]` - 可選目標卡片 ID 列表
+
+**行為規範**:
+1. 高亮顯示 `possibleTargets` 中的所有卡片（視覺效果：邊框發光、陰影等）
+2. 禁用其他卡片的點擊（防止誤操作）
+3. 顯示提示文字：「請選擇要配對的卡片」
+
+**實作要求**:
+- ✅ 同步操作（立即顯示）
+- ✅ 可取消選擇狀態（當玩家選擇後或事件取消時）
+
+**範例實作**:
+```typescript
+showSelectionUI(possibleTargets: string[]): void {
+  this.selectionMode = true
+  this.selectableCards = new Set(possibleTargets)
+  this.showToast('請選擇要配對的卡片', 'info')
+}
+```
+
+---
+
+#### 3.2 showDecisionModal
+
+**簽名**:
+```typescript
+showDecisionModal(
+  currentYaku: YakuScore[],
+  currentScore: number,
+  potentialScore?: number
+): void
+```
+
+**參數**:
+- `currentYaku: YakuScore[]` - 當前役種列表
+- `currentScore: number` - 當前得分
+- `potentialScore?: number` - 潛在得分（可選）
+
+**行為規範**:
+1. 顯示 Modal 對話框
+2. 顯示當前役種列表（名稱、分數）
+3. 顯示當前總分
+4. 顯示兩個按鈕：「繼續 (Koi-Koi)」和「結束本局」
+5. 若 `potentialScore` 存在，顯示潛在分數提示
+
+**實作要求**:
+- ✅ Modal 必須阻止背景操作
+- ✅ 按鈕點擊後關閉 Modal 並調用對應的 Use Case
+
+**範例實作**:
+```typescript
+showDecisionModal(
+  currentYaku: YakuScore[],
+  currentScore: number,
+  potentialScore?: number
+): void {
+  this.modalData = {
+    type: 'decision',
+    yaku: currentYaku,
+    currentScore,
+    potentialScore,
+    visible: true
+  }
+}
+```
+
+---
+
+#### 3.3 showErrorMessage
+
+**簽名**:
+```typescript
+showErrorMessage(message: string): void
+```
+
+**參數**:
+- `message: string` - 錯誤訊息（友善的使用者提示）
+
+**行為規範**:
+1. 顯示錯誤提示（Toast / Snackbar）
+2. 3 秒後自動消失
+3. 樣式：紅色背景、白色文字、錯誤圖示
+
+**實作要求**:
+- ✅ 非阻塞（使用者可以繼續操作）
+- ✅ 可堆疊（多個錯誤同時顯示）
+
+---
+
+#### 3.4 showReconnectionMessage
+
+**簽名**:
+```typescript
+showReconnectionMessage(): void
+```
+
+**參數**: 無
+
+**行為規範**:
+1. 顯示成功提示（Toast）：「連線已恢復」
+2. 2 秒後自動消失
+3. 樣式：綠色背景、白色文字、成功圖示
+
+**實作要求**: 同 `showErrorMessage`
+
+---
+
+#### 3.5 triggerAnimation
+
+**簽名**:
+```typescript
+triggerAnimation<T extends AnimationType>(
+  type: T,
+  params: AnimationParams<T>
+): void
+```
+
+**參數**:
+- `type: AnimationType` - 動畫類型
+- `params: AnimationParams<T>` - 動畫參數（根據類型不同）
+
+**動畫類型定義**:
+```typescript
+export type AnimationType =
+  | 'DEAL_CARDS'
+  | 'CARD_MOVE'
+  | 'YAKU_EFFECT'
+  | 'SCORE_UPDATE'
+
+export type AnimationParams<T extends AnimationType = AnimationType> =
+  T extends 'DEAL_CARDS' ? {
+    fieldCards: string[]
+    hands: Array<{ player_id: string; cards: string[] }>
+  } :
+  T extends 'CARD_MOVE' ? {
+    cardId: string
+    from: 'hand' | 'field' | 'deck'
+    to: 'field' | 'depository'
+  } :
+  T extends 'YAKU_EFFECT' ? {
+    yakuType: string
+    affectedCards: string[]
+  } :
+  T extends 'SCORE_UPDATE' ? {
+    playerId: string
+    oldScore: number
+    newScore: number
+  } :
+  never
+```
+
+**行為規範**:
+1. 根據 `type` 觸發對應的動畫效果
+2. 非阻塞（動畫進行時使用者可以看到，但不影響狀態更新）
+3. 動畫完成後自動清理
+
+**實作要求**:
+- ✅ 使用 CSS transitions / animations（推薦）
+- ✅ 或使用 Canvas / WebGL（進階）
+- ✅ 動畫時長：300-500ms（建議）
+
+**範例實作**（DEAL_CARDS）:
+```typescript
+triggerAnimation(type: 'DEAL_CARDS', params: { fieldCards, hands }): void {
+  // 觸發 CSS 動畫類別
+  this.animationQueue.push({
+    type: 'DEAL_CARDS',
+    duration: 500,
+    onComplete: () => {
+      // 動畫完成後的清理
+    }
+  })
+}
+```
+
+---
+
+## 實作檢查清單
+
+所有 Output Ports 的 Adapter Layer 實作必須滿足以下條件：
+
+### SendCommandPort
+- [ ] 實作 3 個命令方法
+- [ ] 正確構建命令 payload
+- [ ] 處理網路錯誤、超時、伺服器錯誤
+- [ ] 包含單元測試（Mock HTTP 請求）
+
+### UpdateUIStatePort
+- [ ] 實作 7 個狀態更新方法
+- [ ] 使用響應式狀態管理（Pinia / Vue ref）
+- [ ] 確保深拷貝陣列（避免引用問題）
+- [ ] 包含單元測試（驗證狀態更新）
+
+### TriggerUIEffectPort
+- [ ] 實作 5 個 UI 效果方法
+- [ ] 動畫流暢（60fps）
+- [ ] 非阻塞操作
+- [ ] 包含單元測試（驗證效果觸發）
+
+---
+
+## 版本歷史
+
+- **1.0.0** (2025-11-14): 初始版本，定義 3 個 Output Ports
