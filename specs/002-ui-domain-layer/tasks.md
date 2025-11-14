@@ -23,9 +23,9 @@
 
 **Purpose**: 建立 Domain Layer 目錄結構和測試環境
 
-- [ ] T001 建立 Domain Layer 目錄結構 front-end/src/user-interface/domain/
-- [ ] T002 驗證 Vitest 測試環境配置 (vitest.config.ts, tsconfig.json)
-- [ ] T003 [P] 建立測試目錄結構 front-end/src/__tests__/user-interface/domain/
+- [X] T001 建立 Domain Layer 目錄結構 front-end/src/user-interface/domain/
+- [X] T002 驗證 Vitest 測試環境配置 (vitest.config.ts, tsconfig.json)
+- [X] T003 [P] 建立測試目錄結構 front-end/src/__tests__/user-interface/domain/
 
 ---
 
@@ -35,10 +35,10 @@
 
 **⚠️ CRITICAL**: 所有 User Stories 都依賴此階段的型別定義和卡片資料庫
 
-- [ ] T004 建立型別定義檔 front-end/src/user-interface/domain/types.ts (從 contracts/domain-types.ts 複製並調整)
-- [ ] T005 [P] 建立卡片資料庫骨架 front-end/src/user-interface/domain/card-database.ts (48 張語義化常數佔位符)
-- [ ] T006 [US1] 完整實作 48 張卡片語義化常數定義 (MATSU_HIKARI, UME_AKATAN 等) in front-end/src/user-interface/domain/card-database.ts
-- [ ] T007 [US1] 實作 ALL_CARDS 陣列 (包含全部 48 張卡片) in front-end/src/user-interface/domain/card-database.ts
+- [X] T004 建立型別定義檔 front-end/src/user-interface/domain/types.ts (從 contracts/domain-types.ts 複製並調整)
+- [X] T005 [P] 建立卡片資料庫骨架 front-end/src/user-interface/domain/card-database.ts (48 張語義化常數佔位符)
+- [X] T006 [US1] 完整實作 48 張卡片語義化常數定義 (MATSU_HIKARI, UME_AKATAN 等) in front-end/src/user-interface/domain/card-database.ts
+- [X] T007 [US1] 實作 ALL_CARDS 陣列 (包含全部 48 張卡片) in front-end/src/user-interface/domain/card-database.ts
 
 **Checkpoint**: 基礎型別與卡片資料庫完成,User Story 實作可並行開始
 
