@@ -6,20 +6,20 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleReconnectionUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleReconnectionUseCase'
 import type { GameSnapshotRestore } from '@/user-interface/application/types'
 import {
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
   createMockTriggerUIEffectPort,
 } from '../../test-helpers/mock-factories'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
 
 describe('HandleReconnectionUseCase', () => {
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
   let useCase: HandleReconnectionUseCase
 
   beforeEach(() => {
-    mockUpdateUIState = createMockUpdateUIStatePort()
+    mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleReconnectionUseCase(mockUpdateUIState, mockTriggerUIEffect)
+    useCase = new HandleReconnectionUseCase(mockUIState, mockTriggerUIEffect)
   })
 
   it('應該恢復遊戲狀態', () => {
@@ -46,7 +46,7 @@ describe('HandleReconnectionUseCase', () => {
 
     useCase.execute(snapshot)
 
-    expect(mockUpdateUIState.restoreGameState).toHaveBeenCalledWith(snapshot)
+    expect(mockUIState.restoreGameState).toHaveBeenCalledWith(snapshot)
     expect(mockTriggerUIEffect.showReconnectionMessage).toHaveBeenCalled()
   })
 })

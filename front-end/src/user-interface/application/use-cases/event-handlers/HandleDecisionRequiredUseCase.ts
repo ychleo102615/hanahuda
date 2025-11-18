@@ -17,13 +17,13 @@
  */
 
 import type { DecisionRequiredEvent } from '../../types/events'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleDecisionRequiredPort } from '../../ports/input'
 
 export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort {
   constructor(
-    private readonly updateUIState: UpdateUIStatePort,
+    private readonly updateUIState: UIStatePort,
     private readonly triggerUIEffect: TriggerUIEffectPort,
     private readonly domainFacade: DomainFacade
   ) {}

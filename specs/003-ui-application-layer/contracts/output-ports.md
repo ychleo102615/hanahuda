@@ -140,7 +140,7 @@ makeDecision(decision: 'KOI_KOI' | 'END_ROUND'): Promise<void>
 
 ---
 
-## 2. UpdateUIStatePort
+## 2. UIStatePort
 
 ### 職責
 
@@ -149,7 +149,7 @@ makeDecision(decision: 'KOI_KOI' | 'END_ROUND'): Promise<void>
 ### 介面定義
 
 ```typescript
-export interface UpdateUIStatePort {
+export interface UIStatePort {
   initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void
   restoreGameState(snapshot: GameSnapshotRestore): void
   setFlowStage(stage: FlowState): void
@@ -159,7 +159,7 @@ export interface UpdateUIStatePort {
   updateScores(playerScore: number, opponentScore: number): void
   updateDeckRemaining(count: number): void
   updateKoiKoiMultiplier(playerId: string, multiplier: number): void
-  getCurrentPlayerId(): string
+  getLocalPlayerId(): string
 }
 ```
 
@@ -431,11 +431,11 @@ updateKoiKoiMultiplier(playerId: string, multiplier: number): void {
 
 ---
 
-#### 2.10 getCurrentPlayerId
+#### 2.10 getLocalPlayerId
 
 **簽名**:
 ```typescript
-getCurrentPlayerId(): string
+getLocalPlayerId(): string
 ```
 
 **參數**: 無
@@ -454,7 +454,7 @@ getCurrentPlayerId(): string
 
 **範例實作** (Pinia Store):
 ```typescript
-getCurrentPlayerId(): string {
+getLocalPlayerId(): string {
   return this.currentPlayerId
 }
 ```
@@ -786,12 +786,12 @@ triggerAnimation(type: 'DEAL_CARDS', params: { fieldCards, hands }): void {
 - [ ] 處理網路錯誤、超時、伺服器錯誤
 - [ ] 包含單元測試（Mock HTTP 請求）
 
-### UpdateUIStatePort
+### UIStatePort
 - [ ] 實作 10 個方法（9 個狀態更新 + 1 個查詢方法）
 - [ ] 使用響應式狀態管理（Pinia / Vue ref）
 - [ ] 確保深拷貝陣列（避免引用問題）
 - [ ] `initializeGameContext` 和 `restoreGameState` 必須靜默設置，不觸發動畫
-- [ ] `getCurrentPlayerId` 必須同步返回有效的 player_id
+- [ ] `getLocalPlayerId` 必須同步返回有效的 player_id
 - [ ] 包含單元測試（驗證狀態更新與查詢）
 
 ### TriggerUIEffectPort

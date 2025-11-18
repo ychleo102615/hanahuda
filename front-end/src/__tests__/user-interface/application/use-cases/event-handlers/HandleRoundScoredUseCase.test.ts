@@ -6,23 +6,23 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleRoundScoredUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleRoundScoredUseCase'
 import type { RoundScoredEvent } from '@/user-interface/application/types'
 import {
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
   createMockTriggerUIEffectPort,
   createMockDomainFacade,
 } from '../../test-helpers/mock-factories'
-import type { UpdateUIStatePort, TriggerUIEffectPort, DomainFacade } from '@/user-interface/application'
+import type { UIStatePort, TriggerUIEffectPort, DomainFacade } from '@/user-interface/application'
 
 describe('HandleRoundScoredUseCase', () => {
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
   let mockDomainFacade: DomainFacade
   let useCase: HandleRoundScoredUseCase
 
   beforeEach(() => {
-    mockUpdateUIState = createMockUpdateUIStatePort()
+    mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
     mockDomainFacade = createMockDomainFacade()
-    useCase = new HandleRoundScoredUseCase(mockUpdateUIState, mockTriggerUIEffect, mockDomainFacade)
+    useCase = new HandleRoundScoredUseCase(mockUIState, mockTriggerUIEffect, mockDomainFacade)
   })
 
   it('應該觸發分數更新動畫', () => {
@@ -67,6 +67,6 @@ describe('HandleRoundScoredUseCase', () => {
 
     useCase.execute(event)
 
-    expect(mockUpdateUIState.updateScores).toHaveBeenCalledWith(2, 0)
+    expect(mockUIState.updateScores).toHaveBeenCalledWith(2, 0)
   })
 })

@@ -9,7 +9,7 @@
  * ```typescript
  * import type {
  *   SendCommandPort,
- *   UpdateUIStatePort,
+ *   UIStatePort,
  *   TriggerUIEffectPort,
  *   AnimationType,
  *   AnimationParams
@@ -18,7 +18,7 @@
  */
 
 export type { SendCommandPort } from './send-command.port'
-export type { UpdateUIStatePort } from './update-ui-state.port'
+export type { UIStatePort } from './ui-state.port'
 export type {
   TriggerUIEffectPort,
   AnimationType,

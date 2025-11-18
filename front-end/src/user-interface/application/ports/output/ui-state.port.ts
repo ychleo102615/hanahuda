@@ -1,9 +1,13 @@
 /**
- * UpdateUIStatePort - Output Port
+ * UIStatePort - Output Port
  *
  * @description
  * 由 Application Layer 定義，Adapter Layer 實作。
- * 負責更新 UI 狀態（通常是 Pinia Store）。
+ * 負責管理 UI 狀態與遊戲上下文（通常是 Pinia Store）。
+ *
+ * 包含：
+ * - UI 狀態更新方法（場牌、手牌、分數等）
+ * - 遊戲上下文查詢方法（當前玩家 ID 等）
  *
  * 使用於：
  * - All Handle*UseCase（事件處理器）
@@ -11,7 +15,7 @@
  * @example
  * ```typescript
  * // Adapter Layer 實作範例（使用 Pinia）
- * class PiniaUpdateUIStateAdapter implements UpdateUIStatePort {
+ * class PiniaUIStateAdapter implements UIStatePort {
  *   constructor(private gameStore: GameStore) {}
  *
  *   setFlowStage(stage: FlowState): void {
@@ -21,13 +25,17 @@
  *   updateFieldCards(cards: string[]): void {
  *     this.gameStore.fieldCards = cards
  *   }
+ *
+ *   getLocalPlayerId(): string {
+ *     return this.gameStore.currentPlayerId
+ *   }
  * }
  * ```
  */
 
 import type { FlowState, PlayerInfo, Ruleset, GameSnapshotRestore } from '../../types'
 
-export interface UpdateUIStatePort {
+export interface UIStatePort {
   /**
    * 初始化遊戲上下文（GameStarted 使用）
    *
@@ -149,24 +157,24 @@ export interface UpdateUIStatePort {
   updateKoiKoiMultiplier(playerId: string, multiplier: number): void
 
   /**
-   * 取得當前玩家 ID
+   * 取得本地玩家 ID
    *
-   * @returns 當前玩家的 player_id
+   * @returns 本地玩家的 player_id
    *
    * @description
-   * 返回代表「本地玩家」的 player_id。
+   * 返回代表「本地玩家」（非 AI、非遠端玩家）的 player_id。
    * 通常在 GameStarted 事件時，由 initializeGameContext() 設定。
    *
-   * ⚠️ 注意：currentPlayerId 具有領域意義，但目前存儲在 UI State 中。
+   * ⚠️ 注意：localPlayerId 具有領域意義，但目前存儲在 UI State 中。
    * 這是 MVP 階段的妥協方案。未來若玩家邏輯變複雜，應考慮：
    * 1. 在 Domain Layer 引入 Player Entity
    * 2. 重構為獨立的 GameContextPort
    *
    * @example
    * ```typescript
-   * const currentPlayerId = updateUIState.getCurrentPlayerId()
-   * const isPlayerWinner = winnerId === currentPlayerId
+   * const localPlayerId = uiState.getLocalPlayerId()
+   * const isPlayerWinner = winnerId === localPlayerId
    * ```
    */
-  getCurrentPlayerId(): string
+  getLocalPlayerId(): string
 }

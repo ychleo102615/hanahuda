@@ -42,7 +42,7 @@
 import { vi } from 'vitest'
 import type {
   SendCommandPort,
-  UpdateUIStatePort,
+  UIStatePort,
   TriggerUIEffectPort,
 } from '@/user-interface/application/ports'
 import type { DomainFacade } from '@/user-interface/application/types'
@@ -75,30 +75,30 @@ export function createMockSendCommandPort(): SendCommandPort {
 }
 
 /**
- * 建立 Mock UpdateUIStatePort
+ * 建立 Mock UIStatePort
  *
  * @description
  * 所有方法預設為空操作（no-op）。
- * `getCurrentPlayerId` 預設返回 'player-1'。
+ * `getLocalPlayerId` 預設返回 'player-1'。
  * 可以在測試中驗證方法調用或覆寫行為。
  *
  * @example
  * ```typescript
- * const mockUpdateUIState = createMockUpdateUIStatePort()
+ * const mockUIState = createMockUIStatePort()
  *
  * // 調用方法
- * mockUpdateUIState.setFlowStage('AWAITING_HAND_PLAY')
- * mockUpdateUIState.updateFieldCards(['0341', '0342'])
+ * mockUIState.setFlowStage('AWAITING_HAND_PLAY')
+ * mockUIState.updateFieldCards(['0341', '0342'])
  *
  * // 驗證方法調用
- * expect(mockUpdateUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
- * expect(mockUpdateUIState.updateFieldCards).toHaveBeenCalledWith(['0341', '0342'])
+ * expect(mockUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
+ * expect(mockUIState.updateFieldCards).toHaveBeenCalledWith(['0341', '0342'])
  *
- * // 覆寫 getCurrentPlayerId
- * mockUpdateUIState.getCurrentPlayerId = vi.fn().mockReturnValue('player-2')
+ * // 覆寫 getLocalPlayerId
+ * mockUIState.getLocalPlayerId = vi.fn().mockReturnValue('player-2')
  * ```
  */
-export function createMockUpdateUIStatePort(): UpdateUIStatePort {
+export function createMockUIStatePort(): UIStatePort {
   return {
     initializeGameContext: vi.fn(),
     restoreGameState: vi.fn(),
@@ -109,7 +109,7 @@ export function createMockUpdateUIStatePort(): UpdateUIStatePort {
     updateScores: vi.fn(),
     updateDeckRemaining: vi.fn(),
     updateKoiKoiMultiplier: vi.fn(),
-    getCurrentPlayerId: vi.fn().mockReturnValue('player-1'),
+    getLocalPlayerId: vi.fn().mockReturnValue('player-1'),
   }
 }
 

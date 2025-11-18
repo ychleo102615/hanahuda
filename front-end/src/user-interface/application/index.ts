@@ -22,7 +22,7 @@
  * // 導入 Ports
  * import type {
  *   SendCommandPort,
- *   UpdateUIStatePort,
+ *   UIStatePort,
  *   PlayHandCardPort,
  *   HandleGameStartedPort
  * } from '@/user-interface/application'
@@ -92,7 +92,7 @@ export { ERROR_MESSAGES, RECONNECTION_RETRY, FlowStateEnum } from './types'
 export type {
   // Output Ports (3)
   SendCommandPort,
-  UpdateUIStatePort,
+  UIStatePort,
   TriggerUIEffectPort,
   AnimationType,
   AnimationParams,

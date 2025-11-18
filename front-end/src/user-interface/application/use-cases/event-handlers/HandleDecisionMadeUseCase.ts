@@ -14,12 +14,12 @@
  */
 
 import type { DecisionMadeEvent } from '../../types/events'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
 import type { HandleDecisionMadePort } from '../../ports/input'
 
 export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
   constructor(
-    private readonly updateUIState: UpdateUIStatePort,
+    private readonly updateUIState: UIStatePort,
     private readonly triggerUIEffect: TriggerUIEffectPort
   ) {}
 

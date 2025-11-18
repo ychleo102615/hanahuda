@@ -15,20 +15,20 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleTurnCompletedUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnCompletedUseCase'
 import type { TurnCompletedEvent } from '@/user-interface/application/types'
 import {
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
   createMockTriggerUIEffectPort,
 } from '../../test-helpers/mock-factories'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
 
 describe('HandleTurnCompletedUseCase', () => {
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
   let useCase: HandleTurnCompletedUseCase
 
   beforeEach(() => {
-    mockUpdateUIState = createMockUpdateUIStatePort()
+    mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleTurnCompletedUseCase(mockUpdateUIState, mockTriggerUIEffect)
+    useCase = new HandleTurnCompletedUseCase(mockUIState, mockTriggerUIEffect)
   })
 
   describe('觸發卡片移動動畫', () => {
@@ -182,7 +182,7 @@ describe('HandleTurnCompletedUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.updateDeckRemaining).toHaveBeenCalledWith(22)
+      expect(mockUIState.updateDeckRemaining).toHaveBeenCalledWith(22)
     })
   })
 
@@ -211,7 +211,7 @@ describe('HandleTurnCompletedUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
+      expect(mockUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
     })
   })
 
@@ -245,8 +245,8 @@ describe('HandleTurnCompletedUseCase', () => {
 
       // Assert: 驗證所有方法都被調用
       expect(mockTriggerUIEffect.triggerAnimation).toHaveBeenCalled()
-      expect(mockUpdateUIState.updateDeckRemaining).toHaveBeenCalled()
-      expect(mockUpdateUIState.setFlowStage).toHaveBeenCalled()
+      expect(mockUIState.updateDeckRemaining).toHaveBeenCalled()
+      expect(mockUIState.setFlowStage).toHaveBeenCalled()
     })
 
     it('應該處理無配對的情況（matched_card 為 null）', () => {

@@ -14,20 +14,20 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleRoundDealtUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleRoundDealtUseCase'
 import type { RoundDealtEvent } from '@/user-interface/application/types'
 import {
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
   createMockTriggerUIEffectPort,
 } from '../../test-helpers/mock-factories'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
 
 describe('HandleRoundDealtUseCase', () => {
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
   let useCase: HandleRoundDealtUseCase
 
   beforeEach(() => {
-    mockUpdateUIState = createMockUpdateUIStatePort()
+    mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleRoundDealtUseCase(mockUpdateUIState, mockTriggerUIEffect)
+    useCase = new HandleRoundDealtUseCase(mockUIState, mockTriggerUIEffect)
   })
 
   describe('觸發發牌動畫', () => {
@@ -88,7 +88,7 @@ describe('HandleRoundDealtUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.updateFieldCards).toHaveBeenCalledWith([
+      expect(mockUIState.updateFieldCards).toHaveBeenCalledWith([
         '0101',
         '0102',
         '0103',
@@ -125,7 +125,7 @@ describe('HandleRoundDealtUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.updateHandCards).toHaveBeenCalledWith([
+      expect(mockUIState.updateHandCards).toHaveBeenCalledWith([
         '0301',
         '0302',
         '0303',
@@ -184,7 +184,7 @@ describe('HandleRoundDealtUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.updateDeckRemaining).toHaveBeenCalledWith(24)
+      expect(mockUIState.updateDeckRemaining).toHaveBeenCalledWith(24)
     })
   })
 
@@ -212,7 +212,7 @@ describe('HandleRoundDealtUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
+      expect(mockUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
     })
   })
 
@@ -241,10 +241,10 @@ describe('HandleRoundDealtUseCase', () => {
 
       // Assert: 驗證所有方法都被調用
       expect(mockTriggerUIEffect.triggerAnimation).toHaveBeenCalled()
-      expect(mockUpdateUIState.updateFieldCards).toHaveBeenCalled()
-      expect(mockUpdateUIState.updateHandCards).toHaveBeenCalled()
-      expect(mockUpdateUIState.updateDeckRemaining).toHaveBeenCalled()
-      expect(mockUpdateUIState.setFlowStage).toHaveBeenCalled()
+      expect(mockUIState.updateFieldCards).toHaveBeenCalled()
+      expect(mockUIState.updateHandCards).toHaveBeenCalled()
+      expect(mockUIState.updateDeckRemaining).toHaveBeenCalled()
+      expect(mockUIState.setFlowStage).toHaveBeenCalled()
     })
   })
 })

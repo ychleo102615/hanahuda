@@ -6,7 +6,7 @@
  *
  * 業務流程：
  * 1. 解析玩家資訊與規則集
- * 2. 調用 UpdateUIStatePort.initializeGameContext() 初始化遊戲上下文
+ * 2. 調用 UIStatePort.initializeGameContext() 初始化遊戲上下文
  * 3. 調用 TriggerUIEffectPort 顯示「遊戲開始」訊息
  *
  * @see specs/003-ui-application-layer/contracts/events.md#GameStartedEvent
@@ -14,12 +14,12 @@
  */
 
 import type { GameStartedEvent } from '../../types/events'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
 import type { HandleGameStartedPort } from '../../ports/input'
 
 export class HandleGameStartedUseCase implements HandleGameStartedPort {
   constructor(
-    private readonly updateUIState: UpdateUIStatePort,
+    private readonly updateUIState: UIStatePort,
     private readonly triggerUIEffect: TriggerUIEffectPort
   ) {}
 

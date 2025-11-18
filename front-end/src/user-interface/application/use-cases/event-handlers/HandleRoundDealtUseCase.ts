@@ -16,12 +16,12 @@
  */
 
 import type { RoundDealtEvent } from '../../types/events'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
 import type { HandleRoundDealtPort } from '../../ports/input'
 
 export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
   constructor(
-    private readonly updateUIState: UpdateUIStatePort,
+    private readonly updateUIState: UIStatePort,
     private readonly triggerUIEffect: TriggerUIEffectPort
   ) {}
 

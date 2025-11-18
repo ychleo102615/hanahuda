@@ -15,20 +15,20 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleSelectionRequiredUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase'
 import type { SelectionRequiredEvent } from '@/user-interface/application/types'
 import {
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
   createMockTriggerUIEffectPort,
 } from '../../test-helpers/mock-factories'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
 
 describe('HandleSelectionRequiredUseCase', () => {
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
   let useCase: HandleSelectionRequiredUseCase
 
   beforeEach(() => {
-    mockUpdateUIState = createMockUpdateUIStatePort()
+    mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleSelectionRequiredUseCase(mockUpdateUIState, mockTriggerUIEffect)
+    useCase = new HandleSelectionRequiredUseCase(mockUIState, mockTriggerUIEffect)
   })
 
   describe('觸發手牌移動動畫', () => {
@@ -134,7 +134,7 @@ describe('HandleSelectionRequiredUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_SELECTION')
+      expect(mockUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_SELECTION')
     })
   })
 
@@ -162,7 +162,7 @@ describe('HandleSelectionRequiredUseCase', () => {
       // Assert: 驗證所有方法都被調用
       expect(mockTriggerUIEffect.triggerAnimation).toHaveBeenCalled()
       expect(mockTriggerUIEffect.showSelectionUI).toHaveBeenCalled()
-      expect(mockUpdateUIState.setFlowStage).toHaveBeenCalled()
+      expect(mockUIState.setFlowStage).toHaveBeenCalled()
     })
   })
 })

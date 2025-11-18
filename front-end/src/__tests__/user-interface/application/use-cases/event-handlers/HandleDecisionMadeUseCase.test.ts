@@ -14,20 +14,20 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleDecisionMadeUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleDecisionMadeUseCase'
 import type { DecisionMadeEvent } from '@/user-interface/application/types'
 import {
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
   createMockTriggerUIEffectPort,
 } from '../../test-helpers/mock-factories'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
 
 describe('HandleDecisionMadeUseCase', () => {
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
   let useCase: HandleDecisionMadeUseCase
 
   beforeEach(() => {
-    mockUpdateUIState = createMockUpdateUIStatePort()
+    mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleDecisionMadeUseCase(mockUpdateUIState, mockTriggerUIEffect)
+    useCase = new HandleDecisionMadeUseCase(mockUIState, mockTriggerUIEffect)
   })
 
   describe('更新 Koi-Koi 倍率', () => {
@@ -55,7 +55,7 @@ describe('HandleDecisionMadeUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.updateKoiKoiMultiplier).toHaveBeenCalledWith('player-1', 2)
+      expect(mockUIState.updateKoiKoiMultiplier).toHaveBeenCalledWith('player-1', 2)
     })
 
     it('應該處理多個玩家的倍率更新', () => {
@@ -82,7 +82,7 @@ describe('HandleDecisionMadeUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.updateKoiKoiMultiplier).toHaveBeenCalledWith('player-1', 3)
+      expect(mockUIState.updateKoiKoiMultiplier).toHaveBeenCalledWith('player-1', 3)
     })
   })
 
@@ -111,7 +111,7 @@ describe('HandleDecisionMadeUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
+      expect(mockUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
     })
   })
 
@@ -140,8 +140,8 @@ describe('HandleDecisionMadeUseCase', () => {
       useCase.execute(event)
 
       // Assert: 驗證所有方法都被調用
-      expect(mockUpdateUIState.updateKoiKoiMultiplier).toHaveBeenCalled()
-      expect(mockUpdateUIState.setFlowStage).toHaveBeenCalled()
+      expect(mockUIState.updateKoiKoiMultiplier).toHaveBeenCalled()
+      expect(mockUIState.setFlowStage).toHaveBeenCalled()
     })
   })
 })

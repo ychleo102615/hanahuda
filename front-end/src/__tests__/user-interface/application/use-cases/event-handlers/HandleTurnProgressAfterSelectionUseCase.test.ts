@@ -15,24 +15,24 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleTurnProgressAfterSelectionUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
 import type { TurnProgressAfterSelectionEvent } from '@/user-interface/application/types'
 import {
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
   createMockTriggerUIEffectPort,
   createMockDomainFacade,
 } from '../../test-helpers/mock-factories'
-import type { UpdateUIStatePort, TriggerUIEffectPort, DomainFacade } from '@/user-interface/application'
+import type { UIStatePort, TriggerUIEffectPort, DomainFacade } from '@/user-interface/application'
 
 describe('HandleTurnProgressAfterSelectionUseCase', () => {
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
   let mockDomainFacade: DomainFacade
   let useCase: HandleTurnProgressAfterSelectionUseCase
 
   beforeEach(() => {
-    mockUpdateUIState = createMockUpdateUIStatePort()
+    mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
     mockDomainFacade = createMockDomainFacade()
     useCase = new HandleTurnProgressAfterSelectionUseCase(
-      mockUpdateUIState,
+      mockUIState,
       mockTriggerUIEffect,
       mockDomainFacade
     )
@@ -197,7 +197,7 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
+      expect(mockUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
     })
   })
 })

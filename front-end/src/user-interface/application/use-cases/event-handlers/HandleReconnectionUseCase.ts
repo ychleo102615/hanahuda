@@ -3,12 +3,12 @@
  */
 
 import type { GameSnapshotRestore } from '../../types/events'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
 import type { HandleReconnectionPort } from '../../ports/input'
 
 export class HandleReconnectionUseCase implements HandleReconnectionPort {
   constructor(
-    private readonly updateUIState: UpdateUIStatePort,
+    private readonly updateUIState: UIStatePort,
     private readonly triggerUIEffect: TriggerUIEffectPort
   ) {}
 

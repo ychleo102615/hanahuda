@@ -16,7 +16,7 @@
  * // 導入 Output Ports
  * import type {
  *   SendCommandPort,
- *   UpdateUIStatePort,
+ *   UIStatePort,
  *   TriggerUIEffectPort
  * } from '@/user-interface/application/ports'
  * ```
@@ -51,4 +51,4 @@ export type {
 } from './input'
 
 // Output Ports (3 個)
-export type { SendCommandPort, UpdateUIStatePort, TriggerUIEffectPort, AnimationType, AnimationParams } from './output'
+export type { SendCommandPort, UIStatePort, TriggerUIEffectPort, AnimationType, AnimationParams } from './output'

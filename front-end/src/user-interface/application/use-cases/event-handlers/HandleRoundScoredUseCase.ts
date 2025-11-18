@@ -3,13 +3,13 @@
  */
 
 import type { RoundScoredEvent } from '../../types/events'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleRoundScoredPort } from '../../ports/input'
 
 export class HandleRoundScoredUseCase implements HandleRoundScoredPort {
   constructor(
-    private readonly updateUIState: UpdateUIStatePort,
+    private readonly updateUIState: UIStatePort,
     private readonly triggerUIEffect: TriggerUIEffectPort,
     private readonly domainFacade: DomainFacade
   ) {}

@@ -3,12 +3,12 @@
  */
 
 import type { RoundEndedInstantlyEvent } from '../../types/events'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
 import type { HandleRoundEndedInstantlyPort } from '../../ports/input'
 
 export class HandleRoundEndedInstantlyUseCase implements HandleRoundEndedInstantlyPort {
   constructor(
-    private readonly updateUIState: UpdateUIStatePort,
+    private readonly updateUIState: UIStatePort,
     private readonly triggerUIEffect: TriggerUIEffectPort
   ) {}
 

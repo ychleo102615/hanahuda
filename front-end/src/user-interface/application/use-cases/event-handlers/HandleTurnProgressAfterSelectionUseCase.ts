@@ -16,7 +16,7 @@
  */
 
 import type { TurnProgressAfterSelectionEvent } from '../../types/events'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleTurnProgressAfterSelectionPort } from '../../ports/input'
 
@@ -24,7 +24,7 @@ export class HandleTurnProgressAfterSelectionUseCase
   implements HandleTurnProgressAfterSelectionPort
 {
   constructor(
-    private readonly updateUIState: UpdateUIStatePort,
+    private readonly updateUIState: UIStatePort,
     private readonly triggerUIEffect: TriggerUIEffectPort,
     private readonly domainFacade: DomainFacade
   ) {}

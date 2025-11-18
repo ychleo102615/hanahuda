@@ -16,12 +16,12 @@
  */
 
 import type { SelectionRequiredEvent } from '../../types/events'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
 import type { HandleSelectionRequiredPort } from '../../ports/input'
 
 export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPort {
   constructor(
-    private readonly updateUIState: UpdateUIStatePort,
+    private readonly updateUIState: UIStatePort,
     private readonly triggerUIEffect: TriggerUIEffectPort
   ) {}
 

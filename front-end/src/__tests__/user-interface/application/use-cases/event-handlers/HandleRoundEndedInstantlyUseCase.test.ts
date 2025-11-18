@@ -6,20 +6,20 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleRoundEndedInstantlyUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase'
 import type { RoundEndedInstantlyEvent } from '@/user-interface/application/types'
 import {
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
   createMockTriggerUIEffectPort,
 } from '../../test-helpers/mock-factories'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
 
 describe('HandleRoundEndedInstantlyUseCase', () => {
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
   let useCase: HandleRoundEndedInstantlyUseCase
 
   beforeEach(() => {
-    mockUpdateUIState = createMockUpdateUIStatePort()
+    mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleRoundEndedInstantlyUseCase(mockUpdateUIState, mockTriggerUIEffect)
+    useCase = new HandleRoundEndedInstantlyUseCase(mockUIState, mockTriggerUIEffect)
   })
 
   it('應該處理 TESHI 情況並更新分數', () => {
@@ -38,7 +38,7 @@ describe('HandleRoundEndedInstantlyUseCase', () => {
 
     useCase.execute(event)
 
-    expect(mockUpdateUIState.updateScores).toHaveBeenCalledWith(6, 0)
+    expect(mockUIState.updateScores).toHaveBeenCalledWith(6, 0)
   })
 
   it('應該處理 FIELD_KUTTSUKI 情況', () => {

@@ -7,24 +7,24 @@ import { HandleGameFinishedUseCase } from '@/user-interface/application/use-case
 import type { GameFinishedEvent } from '@/user-interface/application/types'
 import {
   createMockTriggerUIEffectPort,
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
 } from '../../test-helpers/mock-factories'
-import type { TriggerUIEffectPort, UpdateUIStatePort } from '@/user-interface/application/ports'
+import type { TriggerUIEffectPort, UIStatePort } from '@/user-interface/application/ports'
 
 describe('HandleGameFinishedUseCase', () => {
   let mockTriggerUIEffect: TriggerUIEffectPort
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let useCase: HandleGameFinishedUseCase
 
   beforeEach(() => {
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    mockUpdateUIState = createMockUpdateUIStatePort()
-    useCase = new HandleGameFinishedUseCase(mockTriggerUIEffect, mockUpdateUIState)
+    mockUIState = createMockUIStatePort()
+    useCase = new HandleGameFinishedUseCase(mockTriggerUIEffect, mockUIState)
   })
 
   it('當玩家獲勝時，isPlayerWinner 應為 true', () => {
     // Mock getCurrentPlayerId 返回 'player-1'
-    mockUpdateUIState.getCurrentPlayerId = vi.fn().mockReturnValue('player-1')
+    mockUIState.getLocalPlayerId = vi.fn().mockReturnValue('player-1')
 
     const event: GameFinishedEvent = {
       event_type: 'GameFinished',
@@ -40,7 +40,7 @@ describe('HandleGameFinishedUseCase', () => {
     useCase.execute(event)
 
     // 驗證 getCurrentPlayerId 被調用
-    expect(mockUpdateUIState.getCurrentPlayerId).toHaveBeenCalledTimes(1)
+    expect(mockUIState.getLocalPlayerId).toHaveBeenCalledTimes(1)
 
     // 驗證 showGameFinishedUI 被正確調用，isPlayerWinner 為 true
     expect(mockTriggerUIEffect.showGameFinishedUI).toHaveBeenCalledTimes(1)
@@ -56,7 +56,7 @@ describe('HandleGameFinishedUseCase', () => {
 
   it('當對手獲勝時，isPlayerWinner 應為 false', () => {
     // Mock getCurrentPlayerId 返回 'player-1'
-    mockUpdateUIState.getCurrentPlayerId = vi.fn().mockReturnValue('player-1')
+    mockUIState.getLocalPlayerId = vi.fn().mockReturnValue('player-1')
 
     const event: GameFinishedEvent = {
       event_type: 'GameFinished',
@@ -72,7 +72,7 @@ describe('HandleGameFinishedUseCase', () => {
     useCase.execute(event)
 
     // 驗證 getCurrentPlayerId 被調用
-    expect(mockUpdateUIState.getCurrentPlayerId).toHaveBeenCalledTimes(1)
+    expect(mockUIState.getLocalPlayerId).toHaveBeenCalledTimes(1)
 
     // 驗證 showGameFinishedUI 被正確調用，isPlayerWinner 為 false
     expect(mockTriggerUIEffect.showGameFinishedUI).toHaveBeenCalledWith(
@@ -84,7 +84,7 @@ describe('HandleGameFinishedUseCase', () => {
 
   it('應該正確判斷不同 player_id 的勝負情況', () => {
     // Mock getCurrentPlayerId 返回 'player-2'（模擬玩家是 player-2）
-    mockUpdateUIState.getCurrentPlayerId = vi.fn().mockReturnValue('player-2')
+    mockUIState.getLocalPlayerId = vi.fn().mockReturnValue('player-2')
 
     const event: GameFinishedEvent = {
       event_type: 'GameFinished',

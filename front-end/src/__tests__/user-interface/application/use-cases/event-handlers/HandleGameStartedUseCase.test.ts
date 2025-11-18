@@ -13,20 +13,20 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleGameStartedUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleGameStartedUseCase'
 import type { GameStartedEvent } from '@/user-interface/application/types'
 import {
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
   createMockTriggerUIEffectPort,
 } from '../../test-helpers/mock-factories'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
 
 describe('HandleGameStartedUseCase', () => {
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
   let useCase: HandleGameStartedUseCase
 
   beforeEach(() => {
-    mockUpdateUIState = createMockUpdateUIStatePort()
+    mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleGameStartedUseCase(mockUpdateUIState, mockTriggerUIEffect)
+    useCase = new HandleGameStartedUseCase(mockUIState, mockTriggerUIEffect)
   })
 
   describe('初始化遊戲上下文', () => {
@@ -59,7 +59,7 @@ describe('HandleGameStartedUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.initializeGameContext).toHaveBeenCalledWith(
+      expect(mockUIState.initializeGameContext).toHaveBeenCalledWith(
         'game-123',
         [
           { player_id: 'player-1', player_name: 'Alice', is_ai: false },
@@ -105,7 +105,7 @@ describe('HandleGameStartedUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.initializeGameContext).toHaveBeenCalledWith(
+      expect(mockUIState.initializeGameContext).toHaveBeenCalledWith(
         'game-456',
         [
           { player_id: 'p1', player_name: 'Player 1', is_ai: false },
@@ -202,7 +202,7 @@ describe('HandleGameStartedUseCase', () => {
       useCase.execute(event)
 
       // Assert: 應該正常處理空的 yaku_settings
-      expect(mockUpdateUIState.initializeGameContext).toHaveBeenCalledWith(
+      expect(mockUIState.initializeGameContext).toHaveBeenCalledWith(
         'game-no-yaku',
         expect.any(Array),
         expect.objectContaining({

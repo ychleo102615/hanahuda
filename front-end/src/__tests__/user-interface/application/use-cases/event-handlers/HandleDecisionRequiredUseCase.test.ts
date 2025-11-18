@@ -16,24 +16,24 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleDecisionRequiredUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleDecisionRequiredUseCase'
 import type { DecisionRequiredEvent } from '@/user-interface/application/types'
 import {
-  createMockUpdateUIStatePort,
+  createMockUIStatePort,
   createMockTriggerUIEffectPort,
   createMockDomainFacade,
 } from '../../test-helpers/mock-factories'
-import type { UpdateUIStatePort, TriggerUIEffectPort, DomainFacade } from '@/user-interface/application'
+import type { UIStatePort, TriggerUIEffectPort, DomainFacade } from '@/user-interface/application'
 
 describe('HandleDecisionRequiredUseCase', () => {
-  let mockUpdateUIState: UpdateUIStatePort
+  let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
   let mockDomainFacade: DomainFacade
   let useCase: HandleDecisionRequiredUseCase
 
   beforeEach(() => {
-    mockUpdateUIState = createMockUpdateUIStatePort()
+    mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
     mockDomainFacade = createMockDomainFacade()
     useCase = new HandleDecisionRequiredUseCase(
-      mockUpdateUIState,
+      mockUIState,
       mockTriggerUIEffect,
       mockDomainFacade
     )
@@ -181,7 +181,7 @@ describe('HandleDecisionRequiredUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockUpdateUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_DECISION')
+      expect(mockUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_DECISION')
     })
   })
 })

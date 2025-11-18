@@ -15,12 +15,12 @@
  */
 
 import type { TurnCompletedEvent } from '../../types/events'
-import type { UpdateUIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
 import type { HandleTurnCompletedPort } from '../../ports/input'
 
 export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
   constructor(
-    private readonly updateUIState: UpdateUIStatePort,
+    private readonly updateUIState: UIStatePort,
     private readonly triggerUIEffect: TriggerUIEffectPort
   ) {}
 

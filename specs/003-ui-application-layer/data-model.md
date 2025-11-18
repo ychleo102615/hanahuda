@@ -126,7 +126,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **職責**: 處理 `GameStarted` 事件
 
 **依賴**:
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
 
 **輸入**: `GameStartedEvent`
@@ -135,7 +135,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 
 **業務流程**:
 1. 解析玩家資訊與規則集
-2. 調用 `UpdateUIStatePort.initializeGameContext(game_id, players, ruleset)` 初始化遊戲上下文
+2. 調用 `UIStatePort.initializeGameContext(game_id, players, ruleset)` 初始化遊戲上下文
 3. 調用 `TriggerUIEffectPort` 顯示「遊戲開始」訊息
 
 ---
@@ -145,7 +145,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **職責**: 處理 `RoundDealt` 事件
 
 **依賴**:
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
 
 **輸入**: `RoundDealtEvent`
@@ -154,10 +154,10 @@ type MakeKoiKoiDecisionOutput = Result<{
 
 **業務流程**:
 1. 調用 `TriggerUIEffectPort.triggerAnimation('DEAL_CARDS', ...)` 觸發發牌動畫
-2. 調用 `UpdateUIStatePort.updateFieldCards()` 更新場牌狀態
-3. 調用 `UpdateUIStatePort.updateHandCards()` 更新手牌狀態
-4. 調用 `UpdateUIStatePort.updateDeckRemaining()` 更新牌堆剩餘數量
-5. 調用 `UpdateUIStatePort.setFlowStage()` 更新 FlowStage
+2. 調用 `UIStatePort.updateFieldCards()` 更新場牌狀態
+3. 調用 `UIStatePort.updateHandCards()` 更新手牌狀態
+4. 調用 `UIStatePort.updateDeckRemaining()` 更新牌堆剩餘數量
+5. 調用 `UIStatePort.setFlowStage()` 更新 FlowStage
 
 ---
 
@@ -166,7 +166,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **職責**: 處理 `TurnCompleted` 事件（無中斷、無役種形成）
 
 **依賴**:
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
 
 **輸入**: `TurnCompletedEvent`
@@ -176,8 +176,8 @@ type MakeKoiKoiDecisionOutput = Result<{
 **業務流程**:
 1. 解析手牌操作與翻牌操作
 2. 調用 `TriggerUIEffectPort.triggerAnimation('CARD_MOVE', ...)` 觸發卡片移動動畫
-3. 調用 `UpdateUIStatePort` 更新場牌、手牌、獲得區狀態
-4. 調用 `UpdateUIStatePort.setFlowStage()` 更新 FlowStage
+3. 調用 `UIStatePort` 更新場牌、手牌、獲得區狀態
+4. 調用 `UIStatePort.setFlowStage()` 更新 FlowStage
 
 ---
 
@@ -186,7 +186,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **職責**: 處理 `SelectionRequired` 事件（翻牌雙重配對）
 
 **依賴**:
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
 
 **輸入**: `SelectionRequiredEvent`
@@ -196,9 +196,9 @@ type MakeKoiKoiDecisionOutput = Result<{
 **業務流程**:
 1. 解析已完成的手牌操作
 2. 調用 `TriggerUIEffectPort.triggerAnimation()` 觸發手牌移動動畫
-3. 調用 `UpdateUIStatePort.updateHandCards()` 更新手牌狀態
+3. 調用 `UIStatePort.updateHandCards()` 更新手牌狀態
 4. 調用 `TriggerUIEffectPort.showSelectionUI()` 顯示選擇配對 UI 並高亮可選目標
-5. 調用 `UpdateUIStatePort.setFlowStage('AWAITING_SELECTION')` 更新 FlowStage
+5. 調用 `UIStatePort.setFlowStage('AWAITING_SELECTION')` 更新 FlowStage
 
 ---
 
@@ -207,7 +207,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **職責**: 處理 `TurnProgressAfterSelection` 事件
 
 **依賴**:
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
 - `DomainFacade` (Domain Layer)
 
@@ -218,11 +218,11 @@ type MakeKoiKoiDecisionOutput = Result<{
 **業務流程**:
 1. 解析選擇後的翻牌操作
 2. 調用 `TriggerUIEffectPort.triggerAnimation('CARD_MOVE', ...)` 觸發卡片移動動畫
-3. 調用 `UpdateUIStatePort` 更新場牌、獲得區狀態
+3. 調用 `UIStatePort` 更新場牌、獲得區狀態
 4. 若有新役種形成（`yaku_update` 非 null）：
    - 調用 `DomainFacade` 驗證役種
    - 調用 `TriggerUIEffectPort.triggerAnimation('YAKU_EFFECT', ...)` 觸發役種特效
-5. 調用 `UpdateUIStatePort.setFlowStage()` 更新 FlowStage
+5. 調用 `UIStatePort.setFlowStage()` 更新 FlowStage
 
 ---
 
@@ -231,7 +231,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **職責**: 處理 `DecisionRequired` 事件（形成役種，需決策）
 
 **依賴**:
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
 - `DomainFacade` (Domain Layer)
 
@@ -242,11 +242,11 @@ type MakeKoiKoiDecisionOutput = Result<{
 **業務流程**:
 1. 解析本回合的手牌操作與翻牌操作
 2. 調用 `TriggerUIEffectPort.triggerAnimation()` 觸發卡片移動動畫
-3. 調用 `UpdateUIStatePort` 更新場牌、手牌、獲得區狀態
+3. 調用 `UIStatePort` 更新場牌、手牌、獲得區狀態
 4. 調用 `DomainFacade.calculateYakuProgress()` 計算當前役種與得分
 5. 計算潛在分數（用於決策建議，可選）
 6. 調用 `TriggerUIEffectPort.showDecisionModal()` 顯示 Koi-Koi 決策 Modal
-7. 調用 `UpdateUIStatePort.setFlowStage('AWAITING_DECISION')` 更新 FlowStage
+7. 調用 `UIStatePort.setFlowStage('AWAITING_DECISION')` 更新 FlowStage
 
 ---
 
@@ -255,7 +255,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **職責**: 處理 `DecisionMade` 事件（僅在選擇 `KOI_KOI` 時）
 
 **依賴**:
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
 
 **輸入**: `DecisionMadeEvent`
@@ -263,9 +263,9 @@ type MakeKoiKoiDecisionOutput = Result<{
 **輸出**: `void`
 
 **業務流程**:
-1. 調用 `UpdateUIStatePort.updateKoiKoiMultiplier()` 更新玩家 Koi-Koi 倍率
+1. 調用 `UIStatePort.updateKoiKoiMultiplier()` 更新玩家 Koi-Koi 倍率
 2. 調用 `TriggerUIEffectPort` 顯示「繼續遊戲」訊息
-3. 調用 `UpdateUIStatePort.setFlowStage()` 更新 FlowStage（返回 `AWAITING_HAND_PLAY`）
+3. 調用 `UIStatePort.setFlowStage()` 更新 FlowStage（返回 `AWAITING_HAND_PLAY`）
 
 ---
 
@@ -274,7 +274,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **職責**: 處理 `RoundScored` 事件（局結束計分）
 
 **依賴**:
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
 - `DomainFacade` (Domain Layer)
 
@@ -286,7 +286,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 1. 解析勝者、役種列表、倍率、最終得分
 2. 調用 `DomainFacade` 驗證分數計算（可選）
 3. 調用 `TriggerUIEffectPort.triggerAnimation('SCORE_UPDATE', ...)` 觸發分數變化動畫
-4. 調用 `UpdateUIStatePort.updateScores()` 更新累計分數
+4. 調用 `UIStatePort.updateScores()` 更新累計分數
 5. 調用 `TriggerUIEffectPort` 顯示局結算畫面
 
 ---
@@ -313,7 +313,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **職責**: 處理 `RoundEndedInstantly` 事件（Teshi 或場牌流局）
 
 **依賴**:
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
 
 **輸入**: `RoundEndedInstantlyEvent`
@@ -323,7 +323,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **業務流程**:
 1. 解析結束原因（`TESHI` / `FIELD_KUTTSUKI`）
 2. 若為 Teshi，顯示勝者與獲得分數
-3. 調用 `UpdateUIStatePort.updateScores()` 更新累計分數
+3. 調用 `UIStatePort.updateScores()` 更新累計分數
 4. 調用 `TriggerUIEffectPort` 顯示特殊結束訊息
 
 ---
@@ -334,14 +334,14 @@ type MakeKoiKoiDecisionOutput = Result<{
 
 **依賴**:
 - `TriggerUIEffectPort` (Output)
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 
 **輸入**: `GameFinishedEvent`
 
 **輸出**: `void`
 
 **業務流程**:
-1. 調用 `UpdateUIStatePort.getCurrentPlayerId()` 取得當前玩家 ID
+1. 調用 `UIStatePort.getLocalPlayerId()` 取得當前玩家 ID
 2. 判斷 `isPlayerWinner = event.winner_id === currentPlayerId`
 3. 調用 `TriggerUIEffectPort.showGameFinishedUI()` 顯示遊戲結束畫面（含勝負資訊）
 
@@ -372,7 +372,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **職責**: 處理斷線重連的快照恢復
 
 **依賴**:
-- `UpdateUIStatePort` (Output)
+- `UIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
 
 **輸入**: `GameSnapshotRestore`
@@ -381,7 +381,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 
 **業務流程**:
 1. 解析快照數據
-2. 調用 `UpdateUIStatePort.restoreGameState(snapshot)` 靜默恢復完整遊戲狀態（無動畫）
+2. 調用 `UIStatePort.restoreGameState(snapshot)` 靜默恢復完整遊戲狀態（無動畫）
 3. 根據 `current_flow_stage` 渲染對應 UI
 4. 調用 `TriggerUIEffectPort.showReconnectionMessage()` 顯示「Connection is restored」提示訊息
 
@@ -507,14 +507,14 @@ export interface SendCommandPort {
 
 ---
 
-#### UpdateUIStatePort
+#### UIStatePort
 
 **職責**: 更新 UI 狀態
 
 ```typescript
 // ports/output/update-ui-state.port.ts
 
-export interface UpdateUIStatePort {
+export interface UIStatePort {
   /**
    * 初始化遊戲上下文（GameStarted 使用）
    * @param gameId 遊戲 ID
@@ -1071,7 +1071,7 @@ export interface DomainFacade {
         ┌──────────────────────┐   ┌──────────────────────┐
         │   Input Ports (18)   │   │  Output Ports (3)    │
         │  - PlayHandCardPort  │   │  - SendCommandPort   │
-        │  - Handle*Port       │   │  - UpdateUIStatePort │
+        │  - Handle*Port       │   │  - UIStatePort │
         │  ...                 │   │  - TriggerUIEffectPort│
         └──────────┬───────────┘   └──────────┬───────────┘
                    │ 實作                      │ 呼叫
@@ -1120,7 +1120,7 @@ export interface DomainFacade {
    ↓
 8. SSE Listener 調用對應的 Handle*UseCase.execute()
    ↓
-9. Use Case 調用 UpdateUIStatePort 和 TriggerUIEffectPort 更新 UI
+9. Use Case 調用 UIStatePort 和 TriggerUIEffectPort 更新 UI
 ```
 
 ### 範例 2: SSE 事件處理流程
@@ -1134,13 +1134,13 @@ export interface DomainFacade {
    ↓
 4. Use Case 調用 TriggerUIEffectPort.triggerAnimation() 觸發動畫
    ↓
-5. Use Case 調用 UpdateUIStatePort 更新場牌、手牌、獲得區
+5. Use Case 調用 UIStatePort 更新場牌、手牌、獲得區
    ↓
 6. Use Case 調用 DomainFacade.calculateYakuProgress() 計算分數
    ↓
 7. Use Case 調用 TriggerUIEffectPort.showDecisionModal() 顯示 Modal
    ↓
-8. Use Case 調用 UpdateUIStatePort.setFlowStage('AWAITING_DECISION')
+8. Use Case 調用 UIStatePort.setFlowStage('AWAITING_DECISION')
 ```
 
 ---
