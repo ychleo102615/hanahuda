@@ -6,7 +6,12 @@
       "Bash(npm --prefix front-end run test:unit:*)",
       "Bash(npm run type-check:*)",
       "Bash(npm run lint:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(.specify/scripts/bash/setup-plan.sh:*)",
+      "Bash(git fetch:*)",
+      "Bash(.specify/scripts/bash/create-new-feature.sh:*)",
+      "Bash(sed:*)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)"
     ],
     "deny": [],
     "ask": []
