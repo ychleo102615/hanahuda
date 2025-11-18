@@ -171,7 +171,7 @@
 
 3. **Server Authority**:
    - ✅ Output Ports 契約明確所有命令通過 SendCommandPort 發送到伺服器
-   - ✅ 客戶端驗證僅用於即時 UI 反饋（DomainServices.validateCardExists）
+   - ✅ 客戶端驗證僅用於即時 UI 反饋（DomainFacade.validateCardExists）
 
 4. **Test-First Development**:
    - ✅ quickstart.md 包含完整的測試指南和 Mock 工廠函數範例

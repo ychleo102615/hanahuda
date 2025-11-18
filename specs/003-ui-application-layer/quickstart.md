@@ -54,24 +54,24 @@ import type {
   SendCommandPort,
   TriggerUIEffectPort
 } from '../../ports'
-import type { DomainServices } from '../../types'
+import type { DomainFacade } from '../../types'
 import type { Result } from '../../types/result'
 
 export class PlayHandCardUseCase implements PlayHandCardPort {
   constructor(
     private readonly sendCommand: SendCommandPort,
     private readonly triggerUIEffect: TriggerUIEffectPort,
-    private readonly domain: DomainServices
+    private readonly domainFacade: DomainFacade
   ) {}
 
   execute(input: PlayHandCardInput): Result<PlayHandCardOutput> {
     // 1. 預驗證
-    if (!this.domain.validateCardExists(input.cardId, input.handCards)) {
+    if (!this.domainFacade.validateCardExists(input.cardId, input.handCards)) {
       return { success: false, error: 'CARD_NOT_IN_HAND' }
     }
 
     // 2. 檢查配對
-    const matchable = this.domain.findMatchableCards(
+    const matchable = this.domainFacade.findMatchableCards(
       input.cardId,
       input.fieldCards
     )
@@ -117,7 +117,7 @@ front-end/src/user-interface/application/
 │   ├── commands.ts            # 命令型別
 │   ├── flow-state.ts          # FlowState 枚舉
 │   ├── result.ts              # Result 型別
-│   ├── domain-services.ts     # Domain Services 介面
+│   ├── domain-facade.ts     # Domain Services 介面
 │   └── index.ts
 ├── ports/                      # Port 介面定義
 │   ├── input/                 # Input Ports
@@ -210,13 +210,13 @@ export type NewFeatureOutput = Result<{
 
 import type { NewFeaturePort } from '../../ports'
 import type { SendCommandPort, UpdateUIStatePort } from '../../ports/output'
-import type { DomainServices } from '../../types'
+import type { DomainFacade } from '../../types'
 
 export class NewFeatureUseCase implements NewFeaturePort {
   constructor(
     private readonly sendCommand: SendCommandPort,
     private readonly updateUIState: UpdateUIStatePort,
-    private readonly domain: DomainServices
+    private readonly domainFacade: DomainFacade
   ) {}
 
   execute(input: NewFeatureInput): NewFeatureOutput {
@@ -270,7 +270,7 @@ import type {
   SendCommandPort,
   UpdateUIStatePort,
   TriggerUIEffectPort,
-  DomainServices
+  DomainFacade
 } from '@/user-interface/application'
 
 export function createMockSendCommandPort(): SendCommandPort {
@@ -303,9 +303,9 @@ export function createMockTriggerUIEffectPort(): TriggerUIEffectPort {
   }
 }
 
-export function createMockDomainServices(
-  overrides?: Partial<DomainServices>
-): DomainServices {
+export function createMockDomainFacade(
+  overrides?: Partial<DomainFacade>
+): DomainFacade {
   return {
     canMatch: vi.fn().mockReturnValue(true),
     findMatchableCards: vi.fn().mockReturnValue([]),
@@ -332,7 +332,7 @@ import { PlayHandCardUseCase } from '@/user-interface/application'
 import {
   createMockSendCommandPort,
   createMockTriggerUIEffectPort,
-  createMockDomainServices
+  createMockDomainFacade
 } from '../../../test-helpers/mock-factories'
 
 describe('PlayHandCardUseCase', () => {
@@ -341,14 +341,14 @@ describe('PlayHandCardUseCase', () => {
       // Arrange
       const mockSendCommand = createMockSendCommandPort()
       const mockTriggerUIEffect = createMockTriggerUIEffectPort()
-      const mockDomain = createMockDomainServices({
+      const mockDomainFacade = createMockDomainFacade({
         findMatchableCards: vi.fn().mockReturnValue(['0343', '0344'])
       })
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommand,
         mockTriggerUIEffect,
-        mockDomain
+        mockDomainFacade
       )
 
       // Act
@@ -374,14 +374,14 @@ describe('PlayHandCardUseCase', () => {
       // Arrange
       const mockSendCommand = createMockSendCommandPort()
       const mockTriggerUIEffect = createMockTriggerUIEffectPort()
-      const mockDomain = createMockDomainServices({
+      const mockDomainFacade = createMockDomainFacade({
         findMatchableCards: vi.fn().mockReturnValue(['0343'])
       })
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommand,
         mockTriggerUIEffect,
-        mockDomain
+        mockDomainFacade
       )
 
       // Act
@@ -405,14 +405,14 @@ describe('PlayHandCardUseCase', () => {
   describe('預驗證失敗', () => {
     it('應該返回錯誤當卡片不在手牌中', () => {
       // Arrange
-      const mockDomain = createMockDomainServices({
+      const mockDomainFacade = createMockDomainFacade({
         validateCardExists: vi.fn().mockReturnValue(false)
       })
 
       const useCase = new PlayHandCardUseCase(
         createMockSendCommandPort(),
         createMockTriggerUIEffectPort(),
-        mockDomain
+        mockDomainFacade
       )
 
       // Act
@@ -459,12 +459,12 @@ pnpm test --watch
 ```typescript
 execute(input: SomeInput): Result<SomeOutput> {
   // 驗證
-  if (!this.domain.validate(input)) {
+  if (!this.domainFacade.validate(input)) {
     return { success: false, error: 'VALIDATION_ERROR' }
   }
 
   // 業務邏輯
-  const result = this.domain.processLogic(input)
+  const result = this.domainFacade.processLogic(input)
 
   // 成功返回
   return { success: true, value: result }
@@ -510,7 +510,7 @@ execute(event: SomeEvent): void {
 
 ```typescript
 execute(input: SomeInput): Result<SomeOutput> {
-  const matchable = this.domain.findMatchableCards(...)
+  const matchable = this.domainFacade.findMatchableCards(...)
 
   if (matchable.length === 0) {
     // 處理無配對情況
@@ -601,9 +601,9 @@ expect(mockUpdateUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_SELECTION'
 ```typescript
 execute(input: SomeInput): SomeOutput {
   // ✅ 正確：調用多個 Domain 函數進行編排
-  const isValid = this.domain.validateCard(input.cardId)
-  const matchable = this.domain.findMatchableCards(input)
-  const progress = this.domain.calculateProgress(input)
+  const isValid = this.domainFacade.validateCard(input.cardId)
+  const matchable = this.domainFacade.findMatchableCards(input)
+  const progress = this.domainFacade.calculateProgress(input)
 
   // ❌ 錯誤：在 Use Case 中實作業務邏輯
   const isValid = input.cardId.length === 4 && ...
@@ -653,7 +653,7 @@ it('應該成功發送命令', async () => {
 const eventCards: string[] = event.field_cards
 
 // 轉換為 Domain 型別
-const domainCards: Card[] = eventCards.map(id => this.domain.getCardById(id))
+const domainCards: Card[] = eventCards.map(id => this.domainFacade.getCardById(id))
 ```
 
 ---

@@ -25,7 +25,7 @@ Application Layer 包含以下實體分類：
 **依賴**:
 - `SendCommandPort` (Output)
 - `TriggerUIEffectPort` (Output)
-- `DomainServices` (Domain Layer)
+- `DomainFacade` (Domain Layer)
 
 **輸入**:
 ```typescript
@@ -46,8 +46,8 @@ type PlayHandCardOutput = Result<{
 ```
 
 **業務流程**:
-1. 調用 `DomainServices.validateCardExists()` 驗證卡片在手牌中
-2. 調用 `DomainServices.findMatchableCards()` 檢查配對邏輯
+1. 調用 `DomainFacade.validateCardExists()` 驗證卡片在手牌中
+2. 調用 `DomainFacade.findMatchableCards()` 檢查配對邏輯
 3. 若有多張可配對場牌，調用 `TriggerUIEffectPort.showSelectionUI()` 觸發選擇 UI
 4. 若單一配對或無配對，調用 `SendCommandPort.playHandCard()` 發送命令
 
@@ -59,7 +59,7 @@ type PlayHandCardOutput = Result<{
 
 **依賴**:
 - `SendCommandPort` (Output)
-- `DomainServices` (Domain Layer)
+- `DomainFacade` (Domain Layer)
 
 **輸入**:
 ```typescript
@@ -78,7 +78,7 @@ type SelectMatchTargetOutput = Result<{
 ```
 
 **業務流程**:
-1. 調用 `DomainServices.validateTargetInList()` 驗證選擇的目標是否合法
+1. 調用 `DomainFacade.validateTargetInList()` 驗證選擇的目標是否合法
 2. 調用 `SendCommandPort.selectTarget()` 發送 `TurnSelectTarget` 命令
 
 ---
@@ -90,7 +90,7 @@ type SelectMatchTargetOutput = Result<{
 **依賴**:
 - `SendCommandPort` (Output)
 - `TriggerUIEffectPort` (Output)
-- `DomainServices` (Domain Layer)
+- `DomainFacade` (Domain Layer)
 
 **輸入**:
 ```typescript
@@ -112,7 +112,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 ```
 
 **業務流程**:
-1. 調用 `DomainServices.calculateYakuProgress()` 計算當前役種與得分
+1. 調用 `DomainFacade.calculateYakuProgress()` 計算當前役種與得分
 2. 若選擇繼續，計算潛在分數（可選功能）
 3. 調用 `SendCommandPort.makeDecision()` 發送 `RoundMakeDecision` 命令
 4. 調用 `TriggerUIEffectPort` 更新 UI 狀態
@@ -209,7 +209,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **依賴**:
 - `UpdateUIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
-- `DomainServices` (Domain Layer)
+- `DomainFacade` (Domain Layer)
 
 **輸入**: `TurnProgressAfterSelectionEvent`
 
@@ -220,7 +220,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 2. 調用 `TriggerUIEffectPort.triggerAnimation('CARD_MOVE', ...)` 觸發卡片移動動畫
 3. 調用 `UpdateUIStatePort` 更新場牌、獲得區狀態
 4. 若有新役種形成（`yaku_update` 非 null）：
-   - 調用 `DomainServices` 驗證役種
+   - 調用 `DomainFacade` 驗證役種
    - 調用 `TriggerUIEffectPort.triggerAnimation('YAKU_EFFECT', ...)` 觸發役種特效
 5. 調用 `UpdateUIStatePort.setFlowStage()` 更新 FlowStage
 
@@ -233,7 +233,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **依賴**:
 - `UpdateUIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
-- `DomainServices` (Domain Layer)
+- `DomainFacade` (Domain Layer)
 
 **輸入**: `DecisionRequiredEvent`
 
@@ -243,7 +243,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 1. 解析本回合的手牌操作與翻牌操作
 2. 調用 `TriggerUIEffectPort.triggerAnimation()` 觸發卡片移動動畫
 3. 調用 `UpdateUIStatePort` 更新場牌、手牌、獲得區狀態
-4. 調用 `DomainServices.calculateYakuProgress()` 計算當前役種與得分
+4. 調用 `DomainFacade.calculateYakuProgress()` 計算當前役種與得分
 5. 計算潛在分數（用於決策建議，可選）
 6. 調用 `TriggerUIEffectPort.showDecisionModal()` 顯示 Koi-Koi 決策 Modal
 7. 調用 `UpdateUIStatePort.setFlowStage('AWAITING_DECISION')` 更新 FlowStage
@@ -276,7 +276,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 **依賴**:
 - `UpdateUIStatePort` (Output)
 - `TriggerUIEffectPort` (Output)
-- `DomainServices` (Domain Layer)
+- `DomainFacade` (Domain Layer)
 
 **輸入**: `RoundScoredEvent`
 
@@ -284,7 +284,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 
 **業務流程**:
 1. 解析勝者、役種列表、倍率、最終得分
-2. 調用 `DomainServices` 驗證分數計算（可選）
+2. 調用 `DomainFacade` 驗證分數計算（可選）
 3. 調用 `TriggerUIEffectPort.triggerAnimation('SCORE_UPDATE', ...)` 觸發分數變化動畫
 4. 調用 `UpdateUIStatePort.updateScores()` 更新累計分數
 5. 調用 `TriggerUIEffectPort` 顯示局結算畫面
@@ -352,7 +352,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 
 **依賴**:
 - `TriggerUIEffectPort` (Output)
-- `DomainServices` (可選，用於錯誤訊息映射)
+- `DomainFacade` (可選，用於錯誤訊息映射)
 
 **輸入**: `TurnErrorEvent`
 
@@ -1028,14 +1028,14 @@ export type Result<T, E = string> =
 ```
 
 ```typescript
-// types/domain-services.ts
+// types/domain-facade.ts
 
 import type { Card, YakuType, YakuProgress } from '@/user-interface/domain'
 
 /**
  * Domain Services 介面（包裝 Domain Layer 純函數）
  */
-export interface DomainServices {
+export interface DomainFacade {
   canMatch(card1: Card, card2: Card): boolean
   findMatchableCards(handCard: Card, fieldCards: Card[]): Card[]
   validateCardExists(card: Card, handCards: Card[]): boolean
@@ -1094,9 +1094,9 @@ export interface DomainServices {
    ↓
 2. Vue Component 呼叫 PlayHandCardUseCase.execute()
    ↓
-3. Use Case 調用 DomainServices.validateCardExists()
+3. Use Case 調用 DomainFacade.validateCardExists()
    ↓
-4. Use Case 調用 DomainServices.findMatchableCards()
+4. Use Case 調用 DomainFacade.findMatchableCards()
    ↓
 5a. 多重配對 → 調用 TriggerUIEffectPort.showSelectionUI()
 5b. 單一配對 → 調用 SendCommandPort.playHandCard()
@@ -1123,7 +1123,7 @@ export interface DomainServices {
    ↓
 5. Use Case 調用 UpdateUIStatePort 更新場牌、手牌、獲得區
    ↓
-6. Use Case 調用 DomainServices.calculateYakuProgress() 計算分數
+6. Use Case 調用 DomainFacade.calculateYakuProgress() 計算分數
    ↓
 7. Use Case 調用 TriggerUIEffectPort.showDecisionModal() 顯示 Modal
    ↓
@@ -1143,7 +1143,7 @@ export interface DomainServices {
 | 命令型別 | 3 | TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision |
 | 共用資料結構 | 20+ | PlayerInfo, Yaku, Ruleset 等 |
 | 枚舉型別 | 3 | FlowState, ErrorCode, RoundEndReason |
-| 輔助型別 | 5 | Result, AnimationType, DomainServices 等 |
+| 輔助型別 | 5 | Result, AnimationType, DomainFacade 等 |
 | **總計** | **80+** | |
 
 ---

@@ -36,7 +36,7 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
   constructor(
     private readonly sendCommand: SendCommandPort,
     private readonly triggerUIEffect: TriggerUIEffectPort,
-    private readonly domain: DomainServices // Domain Layer 函數集合
+    private readonly domainFacade: DomainFacade // Domain Layer 函數集合
   ) {}
 
   execute(input: PlayHandCardInput): PlayHandCardOutput {
@@ -47,7 +47,7 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
 
 **理由**:
 1. **依賴反轉原則**: Application Layer 定義 Output Ports，Adapter Layer 實作，符合 Clean Architecture
-2. **可測試性**: 建構子注入使得 Mock 依賴非常簡單（`new PlayHandCardUseCase(mockSendCommand, mockTriggerUIEffect, mockDomain)`）
+2. **可測試性**: 建構子注入使得 Mock 依賴非常簡單（`new PlayHandCardUseCase(mockSendCommand, mockTriggerUIEffect, mockDomainFacade)`）
 3. **型別安全**: TypeScript 介面提供編譯時檢查，防止介面不一致
 
 **替代方案（已拒絕）**:
@@ -59,7 +59,7 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
 **決策**: 將 Domain Layer 的純函數包裝為介面
 
 ```typescript
-// domain-services.ts（Application Layer）
+// domain-facade.ts（Application Layer）
 import {
   canMatch,
   findMatchableCards,
@@ -67,7 +67,7 @@ import {
   calculateYakuProgress
 } from '@/user-interface/domain'
 
-export interface DomainServices {
+export interface DomainFacade {
   canMatch(card1: Card, card2: Card): boolean
   findMatchableCards(handCard: Card, fieldCards: Card[]): Card[]
   validateCardExists(card: Card, handCards: Card[]): boolean
@@ -75,7 +75,7 @@ export interface DomainServices {
 }
 
 // 實作（可用於生產環境）
-export const domainServices: DomainServices = {
+export const domainFacade: DomainFacade = {
   canMatch,
   findMatchableCards,
   validateCardExists,
@@ -266,7 +266,7 @@ export type Result<T, E = string> =
 export class PlayHandCardUseCase implements PlayHandCardPort {
   execute(input: PlayHandCardInput): Result<PlayHandCardOutput> {
     // 預驗證（同步）
-    const cardExists = this.domain.validateCardExists(
+    const cardExists = this.domainFacade.validateCardExists(
       input.cardId,
       input.handCards
     )
@@ -279,7 +279,7 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
     }
 
     // 業務邏輯
-    const matchable = this.domain.findMatchableCards(...)
+    const matchable = this.domainFacade.findMatchableCards(...)
 
     if (matchable.length > 1) {
       // 觸發選擇 UI（異步，但不等待）
@@ -377,7 +377,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
 // __tests__/user-interface/application/test-helpers/mock-factories.ts
 
 import { vi } from 'vitest'
-import type { SendCommandPort, UpdateUIStatePort, TriggerUIEffectPort, DomainServices } from '@/user-interface/application'
+import type { SendCommandPort, UpdateUIStatePort, TriggerUIEffectPort, DomainFacade } from '@/user-interface/application'
 
 /**
  * 建立 Mock SendCommandPort
@@ -419,9 +419,9 @@ export function createMockTriggerUIEffectPort(): TriggerUIEffectPort {
 }
 
 /**
- * 建立 Mock DomainServices
+ * 建立 Mock DomainFacade
  */
-export function createMockDomainServices(overrides?: Partial<DomainServices>): DomainServices {
+export function createMockDomainFacade(overrides?: Partial<DomainFacade>): DomainFacade {
   return {
     canMatch: vi.fn().mockReturnValue(true),
     findMatchableCards: vi.fn().mockReturnValue([]),
@@ -447,7 +447,7 @@ import { PlayHandCardUseCase } from '@/user-interface/application'
 import {
   createMockSendCommandPort,
   createMockTriggerUIEffectPort,
-  createMockDomainServices
+  createMockDomainFacade
 } from '../../test-helpers/mock-factories'
 
 describe('PlayHandCardUseCase', () => {
@@ -456,14 +456,14 @@ describe('PlayHandCardUseCase', () => {
       // Arrange
       const mockSendCommand = createMockSendCommandPort()
       const mockTriggerUIEffect = createMockTriggerUIEffectPort()
-      const mockDomain = createMockDomainServices({
+      const mockDomainFacade = createMockDomainFacade({
         findMatchableCards: vi.fn().mockReturnValue(['0343', '0344'])
       })
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommand,
         mockTriggerUIEffect,
-        mockDomain
+        mockDomainFacade
       )
 
       // Act
@@ -489,14 +489,14 @@ describe('PlayHandCardUseCase', () => {
       // Arrange
       const mockSendCommand = createMockSendCommandPort()
       const mockTriggerUIEffect = createMockTriggerUIEffectPort()
-      const mockDomain = createMockDomainServices({
+      const mockDomainFacade = createMockDomainFacade({
         findMatchableCards: vi.fn().mockReturnValue(['0343'])
       })
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommand,
         mockTriggerUIEffect,
-        mockDomain
+        mockDomainFacade
       )
 
       // Act
@@ -520,14 +520,14 @@ describe('PlayHandCardUseCase', () => {
   describe('預驗證失敗', () => {
     it('應該返回錯誤當卡片不在手牌中', () => {
       // Arrange
-      const mockDomain = createMockDomainServices({
+      const mockDomainFacade = createMockDomainFacade({
         validateCardExists: vi.fn().mockReturnValue(false)
       })
 
       const useCase = new PlayHandCardUseCase(
         createMockSendCommandPort(),
         createMockTriggerUIEffectPort(),
-        mockDomain
+        mockDomainFacade
       )
 
       // Act
