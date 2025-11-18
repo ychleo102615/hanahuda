@@ -150,6 +150,8 @@ makeDecision(decision: 'KOI_KOI' | 'END_ROUND'): Promise<void>
 
 ```typescript
 export interface UpdateUIStatePort {
+  initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void
+  restoreGameState(snapshot: GameSnapshotRestore): void
   setFlowStage(stage: FlowState): void
   updateFieldCards(cards: string[]): void
   updateHandCards(cards: string[]): void
@@ -164,7 +166,100 @@ export interface UpdateUIStatePort {
 
 ### 方法規範
 
-#### 2.1 setFlowStage
+#### 2.1 initializeGameContext
+
+**簽名**:
+```typescript
+initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void
+```
+
+**參數**:
+- `gameId: string` - 遊戲 ID
+- `players: PlayerInfo[]` - 玩家資訊列表
+- `ruleset: Ruleset` - 遊戲規則集
+
+**使用場景**: `GameStarted` 事件 - 遊戲初始化
+
+**行為規範**:
+1. 設定遊戲基本上下文（game_id、players、ruleset）
+2. 識別當前玩家 ID（從 players 中找非 AI 玩家）
+3. 初始化空的遊戲狀態（場牌、手牌、獲得區為空陣列）
+4. 重置分數與倍率為初始值
+5. **不觸發任何動畫**
+
+**實作要求**:
+- ✅ 同步操作（立即更新）
+- ✅ 深拷貝 players 和 ruleset
+- ✅ 靜默設置，無動畫
+
+**範例實作**:
+```typescript
+initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void {
+  this.gameId = gameId
+  this.players = [...players]
+  this.ruleset = { ...ruleset }
+  this.currentPlayerId = players.find(p => !p.is_ai)?.player_id || players[0].player_id
+
+  // 初始化空狀態
+  this.fieldCards = []
+  this.handCards = []
+  this.playerDepository = []
+  this.opponentDepository = []
+  this.playerScore = 0
+  this.opponentScore = 0
+}
+```
+
+---
+
+#### 2.2 restoreGameState
+
+**簽名**:
+```typescript
+restoreGameState(snapshot: GameSnapshotRestore): void
+```
+
+**參數**:
+- `snapshot: GameSnapshotRestore` - 完整的遊戲快照數據
+
+**使用場景**: `GameSnapshotRestore` - 斷線重連恢復
+
+**行為規範**:
+1. 恢復遊戲基本上下文（game_id、players、ruleset）
+2. 恢復所有遊戲狀態（場牌、手牌、獲得區、分數、倍率、FlowStage）
+3. **不觸發任何動畫**（靜默恢復）
+
+**實作要求**:
+- ✅ 同步操作（立即更新）
+- ✅ 深拷貝所有陣列和物件
+- ✅ **絕對不可觸發動畫**（區別於正常的 update 方法）
+- ✅ 必須恢復所有狀態，確保與伺服器完全同步
+
+**範例實作**:
+```typescript
+restoreGameState(snapshot: GameSnapshotRestore): void {
+  // 恢復基本上下文
+  this.gameId = snapshot.game_id
+  this.players = [...snapshot.players]
+  this.ruleset = { ...snapshot.ruleset }
+
+  // 恢復牌面狀態
+  this.fieldCards = [...snapshot.field_cards]
+  this.handCards = snapshot.player_hands.find(h => h.player_id === this.currentPlayerId)?.cards || []
+
+  // 恢復分數、倍率、流程狀態等（根據 snapshot 內容）
+  this.currentFlowStage = snapshot.current_flow_stage
+  // ... 其他狀態恢復
+}
+```
+
+**注意事項**:
+- ⚠️ **關鍵區別**：此方法與 `updateFieldCards()` 等方法不同，**不觸發動畫**
+- ⚠️ 恢復後的 UI 應該立即呈現完整狀態，無過渡效果
+
+---
+
+#### 2.3 setFlowStage
 
 **簽名**:
 ```typescript
@@ -191,7 +286,7 @@ setFlowStage(stage: FlowState): void {
 
 ---
 
-#### 2.2 updateFieldCards
+#### 2.4 updateFieldCards
 
 **簽名**:
 ```typescript
@@ -218,7 +313,7 @@ updateFieldCards(cards: string[]): void {
 
 ---
 
-#### 2.3 updateHandCards
+#### 2.5 updateHandCards
 
 **簽名**:
 ```typescript
@@ -236,7 +331,7 @@ updateHandCards(cards: string[]): void
 
 ---
 
-#### 2.4 updateDepositoryCards
+#### 2.6 updateDepositoryCards
 
 **簽名**:
 ```typescript
@@ -265,7 +360,7 @@ updateDepositoryCards(playerCards: string[], opponentCards: string[]): void {
 
 ---
 
-#### 2.5 updateScores
+#### 2.7 updateScores
 
 **簽名**:
 ```typescript
@@ -285,7 +380,7 @@ updateScores(playerScore: number, opponentScore: number): void
 
 ---
 
-#### 2.6 updateDeckRemaining
+#### 2.8 updateDeckRemaining
 
 **簽名**:
 ```typescript
@@ -304,7 +399,7 @@ updateDeckRemaining(count: number): void
 
 ---
 
-#### 2.7 updateKoiKoiMultiplier
+#### 2.9 updateKoiKoiMultiplier
 
 **簽名**:
 ```typescript
@@ -464,7 +559,7 @@ showReconnectionMessage(): void
 **參數**: 無
 
 **行為規範**:
-1. 顯示成功提示（Toast）：「連線已恢復」
+1. 顯示成功提示（Toast）：「Connection is restored」
 2. 2 秒後自動消失
 3. 樣式：綠色背景、白色文字、成功圖示
 
@@ -553,9 +648,10 @@ triggerAnimation(type: 'DEAL_CARDS', params: { fieldCards, hands }): void {
 - [ ] 包含單元測試（Mock HTTP 請求）
 
 ### UpdateUIStatePort
-- [ ] 實作 7 個狀態更新方法
+- [ ] 實作 9 個狀態更新方法（含 initializeGameContext 和 restoreGameState）
 - [ ] 使用響應式狀態管理（Pinia / Vue ref）
 - [ ] 確保深拷貝陣列（避免引用問題）
+- [ ] `initializeGameContext` 和 `restoreGameState` 必須靜默設置，不觸發動畫
 - [ ] 包含單元測試（驗證狀態更新）
 
 ### TriggerUIEffectPort

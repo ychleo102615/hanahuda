@@ -135,7 +135,7 @@ type MakeKoiKoiDecisionOutput = Result<{
 
 **業務流程**:
 1. 解析玩家資訊與規則集
-2. 調用 `UpdateUIStatePort` 初始化遊戲上下文
+2. 調用 `UpdateUIStatePort.initializeGameContext(game_id, players, ruleset)` 初始化遊戲上下文
 3. 調用 `TriggerUIEffectPort` 顯示「遊戲開始」訊息
 
 ---
@@ -380,11 +380,9 @@ type MakeKoiKoiDecisionOutput = Result<{
 
 **業務流程**:
 1. 解析快照數據
-2. 調用 `UpdateUIStatePort` 恢復遊戲上下文（game_id、player_scores、ruleset）
-3. 調用 `UpdateUIStatePort` 恢復牌面狀態（field_cards、hand_cards、depositories）
-4. 調用 `UpdateUIStatePort` 恢復流程控制（current_flow_stage、active_player_id）
-5. 根據 `current_flow_stage` 渲染對應 UI
-6. 調用 `TriggerUIEffectPort.showReconnectionMessage()` 顯示「連線已恢復」提示訊息
+2. 調用 `UpdateUIStatePort.restoreGameState(snapshot)` 靜默恢復完整遊戲狀態（無動畫）
+3. 根據 `current_flow_stage` 渲染對應 UI
+4. 調用 `TriggerUIEffectPort.showReconnectionMessage()` 顯示「Connection is restored」提示訊息
 
 ---
 
@@ -516,6 +514,20 @@ export interface SendCommandPort {
 // ports/output/update-ui-state.port.ts
 
 export interface UpdateUIStatePort {
+  /**
+   * 初始化遊戲上下文（GameStarted 使用）
+   * @param gameId 遊戲 ID
+   * @param players 玩家資訊列表
+   * @param ruleset 遊戲規則集
+   */
+  initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void
+
+  /**
+   * 恢復完整遊戲狀態（GameSnapshotRestore 使用，靜默恢復無動畫）
+   * @param snapshot 完整的遊戲快照數據
+   */
+  restoreGameState(snapshot: GameSnapshotRestore): void
+
   /**
    * 設定當前流程階段
    */

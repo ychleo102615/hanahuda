@@ -293,7 +293,7 @@
 3. 恢復牌面狀態（field_cards、hand_cards、depositories）
 4. 恢復流程控制（current_flow_stage、active_player_id）
 5. 根據 `current_flow_stage` 渲染對應 UI（通過 `UpdateUIStatePort`）
-6. 顯示「連線已恢復」提示訊息（通過 `TriggerUIEffectPort.showReconnectionMessage`）
+6. 顯示「Connection is restored」提示訊息（通過 `TriggerUIEffectPort.showReconnectionMessage`）
 
 ---
 

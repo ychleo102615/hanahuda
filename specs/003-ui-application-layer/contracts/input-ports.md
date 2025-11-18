@@ -183,7 +183,7 @@ export interface Handle{Event}Port {
 
 **行為**:
 1. 解析 `players`、`ruleset`、`starting_player_id`
-2. 調用 UpdateUIStatePort 初始化遊戲上下文
+2. 調用 UpdateUIStatePort.initializeGameContext(game_id, players, ruleset) 初始化遊戲上下文
 3. 調用 TriggerUIEffectPort 顯示「遊戲開始」訊息
 
 **測試**: 驗證 UI 狀態初始化正確
@@ -366,12 +366,9 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
 
 **行為**:
 1. 解析完整快照數據
-2. 調用 UpdateUIStatePort 恢復遊戲上下文（`game_id`、`players`、`ruleset`）
-3. 調用 UpdateUIStatePort 恢復牌面狀態（`field_cards`、`player_hands`、`player_depositories`）
-4. 調用 UpdateUIStatePort 恢復流程控制（`current_flow_stage`、`active_player_id`）
-5. 調用 UpdateUIStatePort 恢復分數與倍率（`player_scores`、`koi_statuses`）
-6. 根據 `current_flow_stage` 渲染對應 UI
-7. 調用 TriggerUIEffectPort 顯示「連線已恢復」訊息
+2. 調用 UpdateUIStatePort.restoreGameState(snapshot) 靜默恢復完整遊戲狀態（無動畫）
+3. 根據 `current_flow_stage` 渲染對應 UI
+4. 調用 TriggerUIEffectPort 顯示「Connection is restored」訊息
 
 **測試**: 驗證快照恢復後狀態完整
 

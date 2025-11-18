@@ -71,7 +71,7 @@ User Interface BC 的 Application Layer 負責編排 Domain Layer 與 Adapter La
 
 1. **Given** 收到 `TurnError` 事件（INVALID_CARD 錯誤），**When** 調用 HandleTurnErrorUseCase，**Then** 顯示友善錯誤訊息「該卡片不在您的手牌中」
 2. **Given** SSE 連線中斷，**When** 偵測到連線錯誤，**Then** 顯示「連線中斷，正在重連」訊息並使用指數退避策略重連（1s → 2s → 4s → 8s）
-3. **Given** 重連成功後收到 `GameSnapshotRestore` 事件，**When** 調用 HandleReconnectionUseCase，**Then** 恢復完整遊戲狀態並顯示「連線已恢復」訊息
+3. **Given** 重連成功後收到 `GameSnapshotRestore` 事件，**When** 調用 HandleReconnectionUseCase，**Then** 恢復完整遊戲狀態並顯示「Connection is restored」訊息
 4. **Given** 偵測到客戶端與伺服器狀態不一致，**When** 驗證 FlowStage 不匹配，**Then** 觸發快照恢復流程並記錄錯誤日誌
 
 ---
