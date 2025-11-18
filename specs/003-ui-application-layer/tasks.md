@@ -27,9 +27,9 @@
 
 **Purpose**: 專案初始化與基礎目錄結構
 
-- [ ] T001 Create Application Layer directory structure: `front-end/src/user-interface/application/{types,ports,use-cases}` and test structure: `front-end/src/__tests__/user-interface/application/{test-helpers,use-cases}`
-- [ ] T002 [P] Configure TypeScript for Application Layer in `front-end/tsconfig.json` (strict mode, no framework dependencies)
-- [ ] T003 [P] Verify Vitest configuration for Application Layer tests in `front-end/vitest.config.ts`
+- [X] T001 Create Application Layer directory structure: `front-end/src/user-interface/application/{types,ports,use-cases}` and test structure: `front-end/src/__tests__/user-interface/application/{test-helpers,use-cases}`
+- [X] T002 [P] Configure TypeScript for Application Layer in `front-end/tsconfig.json` (strict mode, no framework dependencies)
+- [X] T003 [P] Verify Vitest configuration for Application Layer tests in `front-end/vitest.config.ts`
 
 ---
 
@@ -41,31 +41,31 @@
 
 ### Protocol Type Definitions
 
-- [ ] T004 [P] Define FlowState enum and type in `front-end/src/user-interface/application/types/flow-state.ts`
-- [ ] T005 [P] Define Result type for synchronous operations in `front-end/src/user-interface/application/types/result.ts`
-- [ ] T006 [P] Define ErrorCode type and ERROR_MESSAGES mapping in `front-end/src/user-interface/application/types/errors.ts`
-- [ ] T007 Define shared data structures (PlayerInfo, PlayerHand, PlayerDepository, PlayerScore, etc.) in `front-end/src/user-interface/application/types/shared.ts`
-- [ ] T008 Define command types (TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision) in `front-end/src/user-interface/application/types/commands.ts`
-- [ ] T009 Define 13 SSE event types (GameStartedEvent through GameSnapshotRestore) in `front-end/src/user-interface/application/types/events.ts`
-- [ ] T010 [P] Define DomainFacade interface wrapping Domain Layer functions in `front-end/src/user-interface/application/types/domain-facade.ts`
-- [ ] T011 Export all types via barrel file in `front-end/src/user-interface/application/types/index.ts`
+- [X] T004 [P] Define FlowState enum and type in `front-end/src/user-interface/application/types/flow-state.ts`
+- [X] T005 [P] Define Result type for synchronous operations in `front-end/src/user-interface/application/types/result.ts`
+- [X] T006 [P] Define ErrorCode type and ERROR_MESSAGES mapping in `front-end/src/user-interface/application/types/errors.ts`
+- [X] T007 Define shared data structures (PlayerInfo, PlayerHand, PlayerDepository, PlayerScore, etc.) in `front-end/src/user-interface/application/types/shared.ts`
+- [X] T008 Define command types (TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision) in `front-end/src/user-interface/application/types/commands.ts`
+- [X] T009 Define 13 SSE event types (GameStartedEvent through GameSnapshotRestore) in `front-end/src/user-interface/application/types/events.ts`
+- [X] T010 [P] Define DomainFacade interface wrapping Domain Layer functions in `front-end/src/user-interface/application/types/domain-facade.ts`
+- [X] T011 Export all types via barrel file in `front-end/src/user-interface/application/types/index.ts`
 
 ### Port Interface Definitions
 
-- [ ] T012 [P] Define SendCommandPort interface (3 methods) in `front-end/src/user-interface/application/ports/output/send-command.port.ts`
-- [ ] T013 [P] Define UpdateUIStatePort interface (7 methods) in `front-end/src/user-interface/application/ports/output/update-ui-state.port.ts`
-- [ ] T014 [P] Define TriggerUIEffectPort interface with AnimationType and AnimationParams in `front-end/src/user-interface/application/ports/output/trigger-ui-effect.port.ts`
-- [ ] T015 Export all Output Ports in `front-end/src/user-interface/application/ports/output/index.ts`
-- [ ] T016 [P] Define 3 player operation Input Ports (PlayHandCardPort, SelectMatchTargetPort, MakeKoiKoiDecisionPort) in `front-end/src/user-interface/application/ports/input/player-operations.port.ts`
-- [ ] T017 Define 15 event handler Input Ports in `front-end/src/user-interface/application/ports/input/event-handlers.port.ts`
-- [ ] T018 Export all Input Ports in `front-end/src/user-interface/application/ports/input/index.ts`
-- [ ] T019 Export all Ports via barrel file in `front-end/src/user-interface/application/ports/index.ts`
+- [X] T012 [P] Define SendCommandPort interface (3 methods) in `front-end/src/user-interface/application/ports/output/send-command.port.ts`
+- [X] T013 [P] Define UpdateUIStatePort interface (7 methods) in `front-end/src/user-interface/application/ports/output/update-ui-state.port.ts`
+- [X] T014 [P] Define TriggerUIEffectPort interface with AnimationType and AnimationParams in `front-end/src/user-interface/application/ports/output/trigger-ui-effect.port.ts`
+- [X] T015 Export all Output Ports in `front-end/src/user-interface/application/ports/output/index.ts`
+- [X] T016 [P] Define 3 player operation Input Ports (PlayHandCardPort, SelectMatchTargetPort, MakeKoiKoiDecisionPort) in `front-end/src/user-interface/application/ports/input/player-operations.port.ts`
+- [X] T017 Define 15 event handler Input Ports in `front-end/src/user-interface/application/ports/input/event-handlers.port.ts`
+- [X] T018 Export all Input Ports in `front-end/src/user-interface/application/ports/input/index.ts`
+- [X] T019 Export all Ports via barrel file in `front-end/src/user-interface/application/ports/index.ts`
 
 ### Test Infrastructure
 
-- [ ] T020 [P] Create Mock factory functions (createMockSendCommandPort, createMockUpdateUIStatePort, createMockTriggerUIEffectPort, createMockDomainFacade) in `front-end/src/__tests__/user-interface/application/test-helpers/mock-factories.ts`
+- [X] T020 [P] Create Mock factory functions (createMockSendCommandPort, createMockUpdateUIStatePort, createMockTriggerUIEffectPort, createMockDomainFacade) in `front-end/src/__tests__/user-interface/application/test-helpers/mock-factories.ts`
 
-**Checkpoint**: Foundation ready - User Story implementation can now begin in parallel
+**Checkpoint**: ✅ Foundation ready - User Story implementation can now begin in parallel
 
 ---
 
