@@ -3,16 +3,27 @@
  */
 
 import type { GameFinishedEvent } from '../../types/events'
-import type { TriggerUIEffectPort } from '../../ports/output'
+import type { TriggerUIEffectPort, UpdateUIStatePort } from '../../ports/output'
 import type { HandleGameFinishedPort } from '../../ports/input'
 
 export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
-  constructor(private readonly triggerUIEffect: TriggerUIEffectPort) {}
+  constructor(
+    private readonly triggerUIEffect: TriggerUIEffectPort,
+    private readonly updateUIState: UpdateUIStatePort,
+  ) {}
 
   execute(event: GameFinishedEvent): void {
-    // 顯示遊戲結束畫面
-    // TODO: 實作遊戲結束 UI（顯示最終分數）
-    // event.final_scores 是 PlayerScore[] 陣列
-    console.log('Game finished:', event.final_scores)
+    // 1. 取得當前玩家 ID
+    const currentPlayerId = this.updateUIState.getCurrentPlayerId()
+
+    // 2. 判斷是否為當前玩家獲勝
+    const isPlayerWinner = event.winner_id === currentPlayerId
+
+    // 3. 顯示遊戲結束畫面
+    this.triggerUIEffect.showGameFinishedUI(
+      event.winner_id,
+      [...event.final_scores],
+      isPlayerWinner,
+    )
   }
 }

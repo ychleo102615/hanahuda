@@ -147,4 +147,26 @@ export interface UpdateUIStatePort {
    * ```
    */
   updateKoiKoiMultiplier(playerId: string, multiplier: number): void
+
+  /**
+   * 取得當前玩家 ID
+   *
+   * @returns 當前玩家的 player_id
+   *
+   * @description
+   * 返回代表「本地玩家」的 player_id。
+   * 通常在 GameStarted 事件時，由 initializeGameContext() 設定。
+   *
+   * ⚠️ 注意：currentPlayerId 具有領域意義，但目前存儲在 UI State 中。
+   * 這是 MVP 階段的妥協方案。未來若玩家邏輯變複雜，應考慮：
+   * 1. 在 Domain Layer 引入 Player Entity
+   * 2. 重構為獨立的 GameContextPort
+   *
+   * @example
+   * ```typescript
+   * const currentPlayerId = updateUIState.getCurrentPlayerId()
+   * const isPlayerWinner = winnerId === currentPlayerId
+   * ```
+   */
+  getCurrentPlayerId(): string
 }

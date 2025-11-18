@@ -159,6 +159,7 @@ export interface UpdateUIStatePort {
   updateScores(playerScore: number, opponentScore: number): void
   updateDeckRemaining(count: number): void
   updateKoiKoiMultiplier(playerId: string, multiplier: number): void
+  getCurrentPlayerId(): string
 }
 ```
 
@@ -430,6 +431,46 @@ updateKoiKoiMultiplier(playerId: string, multiplier: number): void {
 
 ---
 
+#### 2.10 getCurrentPlayerId
+
+**簽名**:
+```typescript
+getCurrentPlayerId(): string
+```
+
+**參數**: 無
+
+**回傳值**: `string` - 當前玩家的 player_id
+
+**行為規範**:
+1. 返回代表「本地玩家」的 player_id
+2. 該值通常在 `initializeGameContext()` 時設定（從 players 列表中找出非 AI 玩家）
+3. 如果無法確定，返回 players 列表的第一個玩家 ID
+
+**實作要求**:
+- ✅ 必須同步返回（不可為 Promise）
+- ✅ 必須返回有效的 player_id（不可為空字串）
+- ✅ 該值在遊戲過程中不應變更
+
+**範例實作** (Pinia Store):
+```typescript
+getCurrentPlayerId(): string {
+  return this.currentPlayerId
+}
+```
+
+**使用場景**:
+- `HandleGameFinishedUseCase` - 判斷贏家是否為當前玩家
+- 未來可能用於其他需要當前玩家資訊的 Use Cases
+
+**⚠️ 架構注意事項**:
+此方法是 MVP 階段的妥協方案。`currentPlayerId` 具有領域意義，但目前存儲在 UI State 中。
+未來若玩家邏輯變複雜（如技能系統、狀態機），應考慮：
+1. 在 Domain Layer 引入 Player Entity
+2. 重構為獨立的 GameContextPort
+
+---
+
 ## 3. TriggerUIEffectPort
 
 ### 職責
@@ -444,6 +485,8 @@ export interface TriggerUIEffectPort {
   showDecisionModal(currentYaku: YakuScore[], currentScore: number, potentialScore?: number): void
   showErrorMessage(message: string): void
   showReconnectionMessage(): void
+  showGameFinishedUI(winnerId: string, finalScores: PlayerScore[]): void
+  showRoundDrawnUI(currentTotalScores: PlayerScore[]): void
   triggerAnimation<T extends AnimationType>(type: T, params: AnimationParams<T>): void
 }
 ```
@@ -567,7 +610,103 @@ showReconnectionMessage(): void
 
 ---
 
-#### 3.5 triggerAnimation
+#### 3.5 showGameFinishedUI
+
+**簽名**:
+```typescript
+showGameFinishedUI(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void
+```
+
+**參數**:
+- `winnerId: string` - 贏家玩家 ID
+- `finalScores: PlayerScore[]` - 最終分數列表
+- `isPlayerWinner: boolean` - 是否為當前玩家獲勝
+
+**行為規範**:
+1. 顯示遊戲結束畫面（Modal 或全螢幕覆蓋層）
+2. 根據 `isPlayerWinner` 顯示不同訊息：
+   - `true`: 「恭喜！你獲勝了！」（Victory / Congratulations）
+   - `false`: 「你輸了」（Defeat / Better luck next time）
+3. 顯示所有玩家的最終分數（排序：由高到低）
+4. 提供操作按鈕：「回到首頁」、「再玩一次」（可選）
+5. 包含視覺特效：
+   - 勝利時：金色邊框、煙火動畫、勝利音效
+   - 失敗時：灰色邊框、失落音效
+
+**實作要求**:
+- ✅ Modal 必須阻止背景操作
+- ✅ 必須根據 `isPlayerWinner` 顯示不同的視覺風格和訊息
+- ✅ 分數列表必須清晰易讀
+- ✅ 支援響應式設計（手機、平板、桌面）
+
+**範例實作**:
+```typescript
+showGameFinishedUI(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void {
+  const winner = this.players.find(p => p.player_id === winnerId)
+  const sortedScores = [...finalScores].sort((a, b) => b.score - a.score)
+
+  this.modalData = {
+    type: 'game-finished',
+    winner: winner,
+    scores: sortedScores,
+    isPlayerWinner: isPlayerWinner,
+    message: isPlayerWinner ? 'Congratulations! You Win!' : 'Defeat',
+    visible: true
+  }
+
+  // 觸發對應動畫
+  if (isPlayerWinner) {
+    this.triggerAnimation('GAME_VICTORY', { winnerId })
+  }
+}
+```
+
+**使用場景**: `HandleGameFinishedUseCase` - 遊戲結束，顯示最終結果
+
+---
+
+#### 3.6 showRoundDrawnUI
+
+**簽名**:
+```typescript
+showRoundDrawnUI(currentTotalScores: PlayerScore[]): void
+```
+
+**參數**:
+- `currentTotalScores: PlayerScore[]` - 當前總分列表
+
+**行為規範**:
+1. 顯示平局通知（Toast 或 Modal）
+2. 顯示平局訊息（如「本局平局，無人得分」）
+3. 顯示當前累計總分（所有玩家）
+4. 自動在 3-5 秒後關閉或提供「繼續」按鈕
+5. 包含適當的視覺提示（如灰色背景、平衡圖示）
+
+**實作要求**:
+- ✅ 可使用 Modal 或 Toast（建議 Modal，更醒目）
+- ✅ 分數資訊必須清晰
+- ✅ 自動關閉或手動關閉都可接受
+- ✅ 支援響應式設計
+
+**範例實作**:
+```typescript
+showRoundDrawnUI(currentTotalScores: PlayerScore[]): void {
+  this.modalData = {
+    type: 'round-drawn',
+    message: '本局平局，無人得分',
+    scores: currentTotalScores,
+    visible: true,
+    autoClose: true,
+    autoCloseDelay: 3000  // 3 秒後自動關閉
+  }
+}
+```
+
+**使用場景**: `HandleRoundDrawnUseCase` - 局平局，牌堆耗盡但無人形成役種
+
+---
+
+#### 3.7 triggerAnimation
 
 **簽名**:
 ```typescript
@@ -648,14 +787,15 @@ triggerAnimation(type: 'DEAL_CARDS', params: { fieldCards, hands }): void {
 - [ ] 包含單元測試（Mock HTTP 請求）
 
 ### UpdateUIStatePort
-- [ ] 實作 9 個狀態更新方法（含 initializeGameContext 和 restoreGameState）
+- [ ] 實作 10 個方法（9 個狀態更新 + 1 個查詢方法）
 - [ ] 使用響應式狀態管理（Pinia / Vue ref）
 - [ ] 確保深拷貝陣列（避免引用問題）
 - [ ] `initializeGameContext` 和 `restoreGameState` 必須靜默設置，不觸發動畫
-- [ ] 包含單元測試（驗證狀態更新）
+- [ ] `getCurrentPlayerId` 必須同步返回有效的 player_id
+- [ ] 包含單元測試（驗證狀態更新與查詢）
 
 ### TriggerUIEffectPort
-- [ ] 實作 5 個 UI 效果方法
+- [ ] 實作 7 個 UI 效果方法
 - [ ] 動畫流暢（60fps）
 - [ ] 非阻塞操作
 - [ ] 包含單元測試（驗證效果觸發）

@@ -334,15 +334,16 @@ type MakeKoiKoiDecisionOutput = Result<{
 
 **依賴**:
 - `TriggerUIEffectPort` (Output)
+- `UpdateUIStatePort` (Output)
 
 **輸入**: `GameFinishedEvent`
 
 **輸出**: `void`
 
 **業務流程**:
-1. 解析最終分數與勝者
-2. 調用 `TriggerUIEffectPort` 顯示遊戲結束畫面
-3. 提供「重新開始」與「返回首頁」選項
+1. 調用 `UpdateUIStatePort.getCurrentPlayerId()` 取得當前玩家 ID
+2. 判斷 `isPlayerWinner = event.winner_id === currentPlayerId`
+3. 調用 `TriggerUIEffectPort.showGameFinishedUI()` 顯示遊戲結束畫面（含勝負資訊）
 
 ---
 

@@ -25,7 +25,7 @@
  * ```
  */
 
-import type { YakuScore } from '../../types'
+import type { YakuScore, PlayerScore } from '../../types'
 
 /**
  * 動畫類型
@@ -122,6 +122,42 @@ export interface TriggerUIEffectPort {
    * ```
    */
   showReconnectionMessage(): void
+
+  /**
+   * 顯示遊戲結束 UI
+   *
+   * @param winnerId - 贏家玩家 ID
+   * @param finalScores - 最終分數列表
+   * @param isPlayerWinner - 是否為當前玩家獲勝
+   *
+   * @example
+   * ```typescript
+   * triggerUIEffect.showGameFinishedUI(
+   *   'player-1',
+   *   [
+   *     { player_id: 'player-1', score: 50 },
+   *     { player_id: 'player-2', score: 30 }
+   *   ],
+   *   true  // 當前玩家獲勝
+   * )
+   * ```
+   */
+  showGameFinishedUI(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void
+
+  /**
+   * 顯示平局 UI
+   *
+   * @param currentTotalScores - 當前總分列表
+   *
+   * @example
+   * ```typescript
+   * triggerUIEffect.showRoundDrawnUI([
+   *   { player_id: 'player-1', score: 20 },
+   *   { player_id: 'player-2', score: 20 }
+   * ])
+   * ```
+   */
+  showRoundDrawnUI(currentTotalScores: PlayerScore[]): void
 
   /**
    * 觸發動畫

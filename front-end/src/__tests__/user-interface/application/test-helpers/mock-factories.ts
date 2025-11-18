@@ -79,7 +79,8 @@ export function createMockSendCommandPort(): SendCommandPort {
  *
  * @description
  * 所有方法預設為空操作（no-op）。
- * 可以在測試中驗證方法調用。
+ * `getCurrentPlayerId` 預設返回 'player-1'。
+ * 可以在測試中驗證方法調用或覆寫行為。
  *
  * @example
  * ```typescript
@@ -92,6 +93,9 @@ export function createMockSendCommandPort(): SendCommandPort {
  * // 驗證方法調用
  * expect(mockUpdateUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
  * expect(mockUpdateUIState.updateFieldCards).toHaveBeenCalledWith(['0341', '0342'])
+ *
+ * // 覆寫 getCurrentPlayerId
+ * mockUpdateUIState.getCurrentPlayerId = vi.fn().mockReturnValue('player-2')
  * ```
  */
 export function createMockUpdateUIStatePort(): UpdateUIStatePort {
@@ -105,6 +109,7 @@ export function createMockUpdateUIStatePort(): UpdateUIStatePort {
     updateScores: vi.fn(),
     updateDeckRemaining: vi.fn(),
     updateKoiKoiMultiplier: vi.fn(),
+    getCurrentPlayerId: vi.fn().mockReturnValue('player-1'),
   }
 }
 
@@ -140,6 +145,8 @@ export function createMockTriggerUIEffectPort(): TriggerUIEffectPort {
     showDecisionModal: vi.fn(),
     showErrorMessage: vi.fn(),
     showReconnectionMessage: vi.fn(),
+    showGameFinishedUI: vi.fn(),
+    showRoundDrawnUI: vi.fn(),
     triggerAnimation: vi.fn(),
   }
 }
