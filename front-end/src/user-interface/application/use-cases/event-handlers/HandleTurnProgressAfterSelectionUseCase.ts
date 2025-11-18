@@ -40,10 +40,12 @@ export class HandleTurnProgressAfterSelectionUseCase
     // 2. 若有新役種形成，觸發役種特效
     if (event.yaku_update && event.yaku_update.newly_formed_yaku.length > 0) {
       const firstYaku = event.yaku_update.newly_formed_yaku[0]
-      this.triggerUIEffect.triggerAnimation('YAKU_EFFECT', {
-        yakuType: firstYaku.yaku_type,
-        affectedCards: firstYaku.contributing_cards,
-      })
+      if (firstYaku) {
+        this.triggerUIEffect.triggerAnimation('YAKU_EFFECT', {
+          yakuType: firstYaku.yaku_type,
+          affectedCards: [...firstYaku.contributing_cards],
+        })
+      }
     }
 
     // 3. 更新 FlowStage

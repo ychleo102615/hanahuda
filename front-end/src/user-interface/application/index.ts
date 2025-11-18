@@ -123,18 +123,25 @@ export type {
 } from './ports'
 
 // ============================================================================
-// Use Cases (將在 Phase 3-5 實作)
+// Use Cases
 // ============================================================================
 
-// TODO: Phase 3 - User Story 1 (玩家操作流程)
-// export { PlayHandCardUseCase } from './use-cases/player-operations'
-// export { SelectMatchTargetUseCase } from './use-cases/player-operations'
-// export { MakeKoiKoiDecisionUseCase } from './use-cases/player-operations'
+// Player Operations (User Story 1)
+export { PlayHandCardUseCase } from './use-cases/player-operations'
+export { SelectMatchTargetUseCase } from './use-cases/player-operations'
+export { MakeKoiKoiDecisionUseCase } from './use-cases/player-operations'
 
-// TODO: Phase 4 - User Story 2 (SSE 遊戲事件處理)
-// export { HandleGameStartedUseCase } from './use-cases/event-handlers'
-// export { HandleRoundDealtUseCase } from './use-cases/event-handlers'
-// ... (13 more event handlers)
-
-// TODO: Phase 5 - User Story 3 (錯誤處理與重連機制)
-// Integration & Edge Case Testing
+// Event Handlers (User Story 2)
+export { HandleGameStartedUseCase } from './use-cases/event-handlers'
+export { HandleRoundDealtUseCase } from './use-cases/event-handlers'
+export { HandleTurnCompletedUseCase } from './use-cases/event-handlers'
+export { HandleSelectionRequiredUseCase } from './use-cases/event-handlers'
+export { HandleTurnProgressAfterSelectionUseCase } from './use-cases/event-handlers'
+export { HandleDecisionRequiredUseCase } from './use-cases/event-handlers'
+export { HandleDecisionMadeUseCase } from './use-cases/event-handlers'
+export { HandleRoundScoredUseCase } from './use-cases/event-handlers'
+export { HandleRoundDrawnUseCase } from './use-cases/event-handlers'
+export { HandleRoundEndedInstantlyUseCase } from './use-cases/event-handlers'
+export { HandleGameFinishedUseCase } from './use-cases/event-handlers'
+export { HandleTurnErrorUseCase } from './use-cases/event-handlers'
+export { HandleReconnectionUseCase } from './use-cases/event-handlers'

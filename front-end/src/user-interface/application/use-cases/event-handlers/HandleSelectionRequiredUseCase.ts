@@ -34,7 +34,7 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     })
 
     // 2. 顯示選擇配對 UI 並高亮可選目標
-    this.triggerUIEffect.showSelectionUI(event.possible_targets)
+    this.triggerUIEffect.showSelectionUI([...event.possible_targets])
 
     // 3. 更新 FlowStage 為 AWAITING_SELECTION
     this.updateUIState.setFlowStage('AWAITING_SELECTION')

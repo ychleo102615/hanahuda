@@ -27,7 +27,7 @@ export class HandleGameStartedUseCase implements HandleGameStartedPort {
     // 1. 初始化遊戲上下文（game_id, players, ruleset）
     this.updateUIState.initializeGameContext(
       event.game_id,
-      event.players,
+      [...event.players], // Convert readonly array to mutable
       event.ruleset
     )
 

@@ -17,32 +17,8 @@ import {
   createMockSendCommandPort,
   createMockDomainFacade,
 } from '../../test-helpers/mock-factories'
-import type { Card } from '@/user-interface/domain'
 
 describe('SelectMatchTargetUseCase', () => {
-  // Test fixtures
-  const mockTargetCard: Card = {
-    card_id: '0142',
-    month: 1,
-    type: 'PLAIN',
-    display_name: '松かす2',
-  }
-
-  const mockPossibleTargets: Card[] = [
-    {
-      card_id: '0142',
-      month: 1,
-      type: 'PLAIN',
-      display_name: '松かす2',
-    },
-    {
-      card_id: '0143',
-      month: 1,
-      type: 'PLAIN',
-      display_name: '松かす3',
-    },
-  ]
-
   // Test helpers
   let mockSendCommandPort: ReturnType<typeof createMockSendCommandPort>
   let mockDomainFacade: ReturnType<typeof createMockDomainFacade>

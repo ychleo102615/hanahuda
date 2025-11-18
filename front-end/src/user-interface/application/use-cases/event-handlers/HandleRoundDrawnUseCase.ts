@@ -10,7 +10,8 @@ export class HandleRoundDrawnUseCase implements HandleRoundDrawnPort {
   constructor(private readonly triggerUIEffect: TriggerUIEffectPort) {}
 
   execute(event: RoundDrawnEvent): void {
-    // 顯示平局訊息（通過 animation 或 message）
-    // 暫時省略，視 UI 需求而定
+    // 顯示平局訊息
+    // TODO: 實作平局 UI（顯示當前總分）
+    console.log('Round drawn:', event.current_total_scores)
   }
 }

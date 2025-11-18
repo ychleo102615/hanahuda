@@ -23,13 +23,6 @@ import type { Card } from '@/user-interface/domain'
 
 describe('PlayHandCardUseCase', () => {
   // Test fixtures
-  const mockCard: Card = {
-    card_id: '0141',
-    month: 1,
-    type: 'PLAIN',
-    display_name: '松かす1',
-  }
-
   const mockFieldCard1: Card = {
     card_id: '0142',
     month: 1,
@@ -42,13 +35,6 @@ describe('PlayHandCardUseCase', () => {
     month: 1,
     type: 'PLAIN',
     display_name: '松かす3',
-  }
-
-  const mockNonMatchingCard: Card = {
-    card_id: '0241',
-    month: 2,
-    type: 'PLAIN',
-    display_name: '梅かす1',
   }
 
   // Test helpers

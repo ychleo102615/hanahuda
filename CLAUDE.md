@@ -51,4 +51,5 @@
 - N/A（Application Layer 不處理持久化，由 Adapter Layer 通過 Output Ports 處理） (003-ui-application-layer)
 
 ## Recent Changes
+- 003-ui-application-layer: Added TypeScript 5.9 + 無（Pure functions, 零框架依賴）
 - 002-ui-domain-layer: Added TypeScript 5.9 + 無（Pure functions, 零框架依賴）

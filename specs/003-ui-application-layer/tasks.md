@@ -176,13 +176,13 @@
 
 **Purpose**: 最終整合、文檔更新、品質保證
 
-- [ ] T061 [P] Export all Use Cases via barrel file in `front-end/src/user-interface/application/use-cases/index.ts`
-- [ ] T062 [P] Export all public APIs (types, ports, use-cases) in `front-end/src/user-interface/application/index.ts`
-- [ ] T063 [P] Run ESLint and fix any linting issues in `front-end/src/user-interface/application/`
-- [ ] T064 Run TypeScript type-check: `pnpm type-check` (ensure zero errors)
-- [ ] T065 Run test coverage report: `pnpm test --coverage` (verify > 80% coverage for Application Layer)
-- [ ] T066 [P] Update CLAUDE.md with new tech stack entry: "TypeScript 5.9 + 無（Pure functions, 零框架依賴） (003-ui-application-layer)"
-- [ ] T067 Validate quickstart.md examples against actual implementation
+- [X] T061 [P] Export all Use Cases via barrel file in `front-end/src/user-interface/application/use-cases/index.ts`
+- [X] T062 [P] Export all public APIs (types, ports, use-cases) in `front-end/src/user-interface/application/index.ts`
+- [X] T063 [P] Run ESLint and fix any linting issues in `front-end/src/user-interface/application/`
+- [X] T064 Run TypeScript type-check: `pnpm type-check` (ensure zero errors)
+- [X] T065 Run test coverage report: `pnpm test --coverage` (verify > 80% coverage for Application Layer)
+- [X] T066 [P] Update CLAUDE.md with new tech stack entry: "TypeScript 5.9 + 無（Pure functions, 零框架依賴） (003-ui-application-layer)"
+- [X] T067 Validate quickstart.md examples against actual implementation
 
 ---
 

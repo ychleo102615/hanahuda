@@ -57,7 +57,7 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
 
     // 4. 顯示 Koi-Koi 決策 Modal
     this.triggerUIEffect.showDecisionModal(
-      event.yaku_update.all_active_yaku,
+      [...event.yaku_update.all_active_yaku],
       finalScore,
       undefined // 潛在分數（可選功能，暫不實作）
     )

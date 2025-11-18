@@ -10,7 +10,9 @@ export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
   constructor(private readonly triggerUIEffect: TriggerUIEffectPort) {}
 
   execute(event: GameFinishedEvent): void {
-    // 顯示遊戲結束畫面（通過 animation 或 message）
-    // 暫時省略，視 UI 需求而定
+    // 顯示遊戲結束畫面
+    // TODO: 實作遊戲結束 UI（顯示最終分數）
+    // event.final_scores 是 PlayerScore[] 陣列
+    console.log('Game finished:', event.final_scores)
   }
 }
