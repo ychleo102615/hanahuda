@@ -77,17 +77,17 @@
 
 ### Tests for User Story 1 (TDD - Write FIRST, ensure they FAIL)
 
-- [ ] T021 [P] [US1] Write test for PlayHandCardUseCase multi-match scenario in `front-end/src/__tests__/user-interface/application/use-cases/player-operations/PlayHandCardUseCase.test.ts`
-- [ ] T022 [P] [US1] Write test for SelectMatchTargetUseCase validation in `front-end/src/__tests__/user-interface/application/use-cases/player-operations/SelectMatchTargetUseCase.test.ts`
-- [ ] T023 [P] [US1] Write test for MakeKoiKoiDecisionUseCase score calculation in `front-end/src/__tests__/user-interface/application/use-cases/player-operations/MakeKoiKoiDecisionUseCase.test.ts`
+- [X] T021 [P] [US1] Write test for PlayHandCardUseCase multi-match scenario in `front-end/src/__tests__/user-interface/application/use-cases/player-operations/PlayHandCardUseCase.test.ts`
+- [X] T022 [P] [US1] Write test for SelectMatchTargetUseCase validation in `front-end/src/__tests__/user-interface/application/use-cases/player-operations/SelectMatchTargetUseCase.test.ts`
+- [X] T023 [P] [US1] Write test for MakeKoiKoiDecisionUseCase score calculation in `front-end/src/__tests__/user-interface/application/use-cases/player-operations/MakeKoiKoiDecisionUseCase.test.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T024 [P] [US1] Implement PlayHandCardUseCase (pre-validation, match checking, trigger selection UI or send command) in `front-end/src/user-interface/application/use-cases/player-operations/PlayHandCardUseCase.ts`
-- [ ] T025 [P] [US1] Implement SelectMatchTargetUseCase (validate target, send TurnSelectTarget command) in `front-end/src/user-interface/application/use-cases/player-operations/SelectMatchTargetUseCase.ts`
-- [ ] T026 [P] [US1] Implement MakeKoiKoiDecisionUseCase (calculate score, send RoundMakeDecision command) in `front-end/src/user-interface/application/use-cases/player-operations/MakeKoiKoiDecisionUseCase.ts`
-- [ ] T027 [US1] Export all player operation Use Cases in `front-end/src/user-interface/application/use-cases/player-operations/index.ts`
-- [ ] T028 [US1] Verify all US1 tests pass (coverage > 90% for business logic)
+- [X] T024 [P] [US1] Implement PlayHandCardUseCase (pre-validation, match checking, trigger selection UI or send command) in `front-end/src/user-interface/application/use-cases/player-operations/PlayHandCardUseCase.ts`
+- [X] T025 [P] [US1] Implement SelectMatchTargetUseCase (validate target, send TurnSelectTarget command) in `front-end/src/user-interface/application/use-cases/player-operations/SelectMatchTargetUseCase.ts`
+- [X] T026 [P] [US1] Implement MakeKoiKoiDecisionUseCase (calculate score, send RoundMakeDecision command) in `front-end/src/user-interface/application/use-cases/player-operations/MakeKoiKoiDecisionUseCase.ts`
+- [X] T027 [US1] Export all player operation Use Cases in `front-end/src/user-interface/application/use-cases/player-operations/index.ts`
+- [X] T028 [US1] Verify all US1 tests pass (coverage > 90% for business logic)
 
 **Checkpoint**: User Story 1 完成 - 玩家操作流程可獨立測試
 
