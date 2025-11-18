@@ -101,52 +101,52 @@
 
 ### Core Game Flow Events (Tests - Write FIRST)
 
-- [ ] T029 [P] [US2] Write test for HandleGameStartedUseCase in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleGameStartedUseCase.test.ts`
-- [ ] T030 [P] [US2] Write test for HandleRoundDealtUseCase animation trigger in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleRoundDealtUseCase.test.ts`
-- [ ] T031 [P] [US2] Write test for HandleTurnCompletedUseCase card move logic in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleTurnCompletedUseCase.test.ts`
-- [ ] T032 [P] [US2] Write test for HandleSelectionRequiredUseCase selection UI display in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase.test.ts`
-- [ ] T033 [P] [US2] Write test for HandleTurnProgressAfterSelectionUseCase yaku effect trigger in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase.test.ts`
-- [ ] T034 [P] [US2] Write test for HandleDecisionRequiredUseCase modal display in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleDecisionRequiredUseCase.test.ts`
-- [ ] T035 [P] [US2] Write test for HandleDecisionMadeUseCase multiplier update in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleDecisionMadeUseCase.test.ts`
+- [X] T029 [P] [US2] Write test for HandleGameStartedUseCase in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleGameStartedUseCase.test.ts`
+- [X] T030 [P] [US2] Write test for HandleRoundDealtUseCase animation trigger in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleRoundDealtUseCase.test.ts`
+- [X] T031 [P] [US2] Write test for HandleTurnCompletedUseCase card move logic in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleTurnCompletedUseCase.test.ts`
+- [X] T032 [P] [US2] Write test for HandleSelectionRequiredUseCase selection UI display in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase.test.ts`
+- [X] T033 [P] [US2] Write test for HandleTurnProgressAfterSelectionUseCase yaku effect trigger in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase.test.ts`
+- [X] T034 [P] [US2] Write test for HandleDecisionRequiredUseCase modal display in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleDecisionRequiredUseCase.test.ts`
+- [X] T035 [P] [US2] Write test for HandleDecisionMadeUseCase multiplier update in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleDecisionMadeUseCase.test.ts`
 
 ### Round Ending Events (Tests - Write FIRST)
 
-- [ ] T036 [P] [US2] Write test for HandleRoundScoredUseCase score calculation validation in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleRoundScoredUseCase.test.ts`
-- [ ] T037 [P] [US2] Write test for HandleRoundDrawnUseCase draw message display in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleRoundDrawnUseCase.test.ts`
-- [ ] T038 [P] [US2] Write test for HandleRoundEndedInstantlyUseCase (Teshi/流局) reason handling in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase.test.ts`
-- [ ] T039 [P] [US2] Write test for HandleGameFinishedUseCase final screen display in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleGameFinishedUseCase.test.ts`
+- [X] T036 [P] [US2] Write test for HandleRoundScoredUseCase score calculation validation in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleRoundScoredUseCase.test.ts`
+- [X] T037 [P] [US2] Write test for HandleRoundDrawnUseCase draw message display in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleRoundDrawnUseCase.test.ts`
+- [X] T038 [P] [US2] Write test for HandleRoundEndedInstantlyUseCase (Teshi/流局) reason handling in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase.test.ts`
+- [X] T039 [P] [US2] Write test for HandleGameFinishedUseCase final screen display in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleGameFinishedUseCase.test.ts`
 
 ### Error & Reconnection Events (Tests - Write FIRST, part of US3 but implemented here)
 
-- [ ] T040 [P] [US2] Write test for HandleTurnErrorUseCase error message mapping in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleTurnErrorUseCase.test.ts`
-- [ ] T041 [P] [US2] Write test for HandleReconnectionUseCase snapshot restore in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleReconnectionUseCase.test.ts`
+- [X] T040 [P] [US2] Write test for HandleTurnErrorUseCase error message mapping in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleTurnErrorUseCase.test.ts`
+- [X] T041 [P] [US2] Write test for HandleReconnectionUseCase snapshot restore in `front-end/src/__tests__/user-interface/application/use-cases/event-handlers/HandleReconnectionUseCase.test.ts`
 
 ### Core Game Flow Events (Implementation)
 
-- [ ] T042 [P] [US2] Implement HandleGameStartedUseCase (initialize game context) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleGameStartedUseCase.ts`
-- [ ] T043 [P] [US2] Implement HandleRoundDealtUseCase (trigger DEAL_CARDS animation, update field/hand/deck) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundDealtUseCase.ts`
-- [ ] T044 [P] [US2] Implement HandleTurnCompletedUseCase (trigger CARD_MOVE animation, update state) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleTurnCompletedUseCase.ts`
-- [ ] T045 [P] [US2] Implement HandleSelectionRequiredUseCase (show selection UI, highlight targets) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase.ts`
-- [ ] T046 [P] [US2] Implement HandleTurnProgressAfterSelectionUseCase (trigger YAKU_EFFECT if yaku_update exists) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase.ts`
-- [ ] T047 [P] [US2] Implement HandleDecisionRequiredUseCase (calculate yaku score, show decision modal) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleDecisionRequiredUseCase.ts`
-- [ ] T048 [P] [US2] Implement HandleDecisionMadeUseCase (update Koi-Koi multiplier, show continue message) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleDecisionMadeUseCase.ts`
+- [X] T042 [P] [US2] Implement HandleGameStartedUseCase (initialize game context) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleGameStartedUseCase.ts`
+- [X] T043 [P] [US2] Implement HandleRoundDealtUseCase (trigger DEAL_CARDS animation, update field/hand/deck) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundDealtUseCase.ts`
+- [X] T044 [P] [US2] Implement HandleTurnCompletedUseCase (trigger CARD_MOVE animation, update state) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleTurnCompletedUseCase.ts`
+- [X] T045 [P] [US2] Implement HandleSelectionRequiredUseCase (show selection UI, highlight targets) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase.ts`
+- [X] T046 [P] [US2] Implement HandleTurnProgressAfterSelectionUseCase (trigger YAKU_EFFECT if yaku_update exists) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase.ts`
+- [X] T047 [P] [US2] Implement HandleDecisionRequiredUseCase (calculate yaku score, show decision modal) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleDecisionRequiredUseCase.ts`
+- [X] T048 [P] [US2] Implement HandleDecisionMadeUseCase (update Koi-Koi multiplier, show continue message) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleDecisionMadeUseCase.ts`
 
 ### Round Ending Events (Implementation)
 
-- [ ] T049 [P] [US2] Implement HandleRoundScoredUseCase (validate score, trigger SCORE_UPDATE animation, show round result) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundScoredUseCase.ts`
-- [ ] T050 [P] [US2] Implement HandleRoundDrawnUseCase (show draw message) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundDrawnUseCase.ts`
-- [ ] T051 [P] [US2] Implement HandleRoundEndedInstantlyUseCase (handle TESHI/FIELD_KUTTSUKI/NO_YAKU) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase.ts`
-- [ ] T052 [P] [US2] Implement HandleGameFinishedUseCase (show game over screen) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleGameFinishedUseCase.ts`
+- [X] T049 [P] [US2] Implement HandleRoundScoredUseCase (validate score, trigger SCORE_UPDATE animation, show round result) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundScoredUseCase.ts`
+- [X] T050 [P] [US2] Implement HandleRoundDrawnUseCase (show draw message) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundDrawnUseCase.ts`
+- [X] T051 [P] [US2] Implement HandleRoundEndedInstantlyUseCase (handle TESHI/FIELD_KUTTSUKI/NO_YAKU) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase.ts`
+- [X] T052 [P] [US2] Implement HandleGameFinishedUseCase (show game over screen) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleGameFinishedUseCase.ts`
 
 ### Error & Reconnection Events (Implementation)
 
-- [ ] T053 [P] [US2] Implement HandleTurnErrorUseCase (map error code to friendly message, show error toast) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleTurnErrorUseCase.ts`
-- [ ] T054 [P] [US2] Implement HandleReconnectionUseCase (restore full game state from snapshot, render UI based on flow_stage) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleReconnectionUseCase.ts`
+- [X] T053 [P] [US2] Implement HandleTurnErrorUseCase (map error code to friendly message, show error toast) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleTurnErrorUseCase.ts`
+- [X] T054 [P] [US2] Implement HandleReconnectionUseCase (restore full game state from snapshot, render UI based on flow_stage) in `front-end/src/user-interface/application/use-cases/event-handlers/HandleReconnectionUseCase.ts`
 
 ### Finalization
 
-- [ ] T055 [US2] Export all event handler Use Cases in `front-end/src/user-interface/application/use-cases/event-handlers/index.ts`
-- [ ] T056 [US2] Verify all US2 tests pass (coverage > 85% for event handlers)
+- [X] T055 [US2] Export all event handler Use Cases in `front-end/src/user-interface/application/use-cases/event-handlers/index.ts`
+- [X] T056 [US2] Verify all US2 tests pass (coverage > 85% for event handlers)
 
 **Checkpoint**: User Story 2 完成 - 所有 SSE 事件處理器可獨立測試
 
