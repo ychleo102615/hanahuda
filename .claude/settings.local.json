@@ -11,7 +11,13 @@
       "Bash(git fetch:*)",
       "Bash(.specify/scripts/bash/create-new-feature.sh:*)",
       "Bash(sed:*)",
-      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)"
+      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
+      "Bash(if [ -d \"/Users/leo101317/Projects/vue/hanahuda/specs/003-ui-application-layer/checklists\" ])",
+      "Bash(then find \"/Users/leo101317/Projects/vue/hanahuda/specs/003-ui-application-layer/checklists\" -name \"*.md\" -type f)",
+      "Bash(else echo \"NO_CHECKLISTS\")",
+      "Bash(fi)",
+      "Bash(mv:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
