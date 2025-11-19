@@ -20,10 +20,10 @@
 
 **Purpose**: Project initialization and foundational structure
 
-- [ ] T001 Create adapter directory structure in front-end/src/user-interface/adapter/
-- [ ] T002 [P] Create DI container tokens file in front-end/src/user-interface/adapter/di/tokens.ts
-- [ ] T003 [P] Create error type definitions in front-end/src/user-interface/adapter/api/errors.ts
-- [ ] T004 [P] Create animation types in front-end/src/user-interface/adapter/animation/types.ts
+- [X] T001 Create adapter directory structure in front-end/src/user-interface/adapter/
+- [X] T002 [P] Create DI container tokens file in front-end/src/user-interface/adapter/di/tokens.ts
+- [X] T003 [P] Create error type definitions in front-end/src/user-interface/adapter/api/errors.ts
+- [X] T004 [P] Create animation types in front-end/src/user-interface/adapter/animation/types.ts
 
 ---
 
@@ -35,8 +35,8 @@
 
 ### DI Container (Foundational)
 
-- [ ] T005 Implement DIContainer class in front-end/src/user-interface/adapter/di/container.ts
-- [ ] T006 [P] Write unit tests for DIContainer in front-end/tests/adapter/di/container.spec.ts
+- [X] T005 Implement DIContainer class in front-end/src/user-interface/adapter/di/container.ts
+- [X] T006 [P] Write unit tests for DIContainer in front-end/tests/adapter/di/container.spec.ts
 - [ ] T007 Create DependencyRegistry in front-end/src/user-interface/adapter/di/registry.ts
 
 ### Pinia Stores (Foundational)
