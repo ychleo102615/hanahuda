@@ -16,7 +16,8 @@
 /**
  * 依賴工廠函數
  */
-export type DependencyFactory<T = any> = () => T;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DependencyFactory<T = any> = () => T
 
 /**
  * 依賴註冊選項
@@ -29,7 +30,7 @@ export interface DependencyOptions {
  * 依賴注入錯誤
  */
 export class DependencyNotFoundError extends Error {
-  constructor(token: Symbol | string) {
+  constructor(token: symbol | string) {
     super(`Dependency not found: ${token.toString()}`);
     this.name = 'DependencyNotFoundError';
   }
@@ -39,8 +40,9 @@ export class DependencyNotFoundError extends Error {
  * DIContainer 類別
  */
 export class DIContainer {
-  private dependencies: Map<Symbol | string, DependencyFactory>;
-  private singletons: Map<Symbol | string, any>;
+  private dependencies: Map<symbol | string, DependencyFactory>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private singletons: Map<symbol | string, any>
 
   constructor() {
     this.dependencies = new Map();
@@ -64,7 +66,7 @@ export class DIContainer {
    * ```
    */
   register<T>(
-    token: Symbol | string,
+    token: symbol | string,
     factory: DependencyFactory<T>,
     options?: DependencyOptions
   ): void {
@@ -88,7 +90,7 @@ export class DIContainer {
    * const apiClient = container.resolve<GameApiClient>(TOKENS.GameApiClient);
    * ```
    */
-  resolve<T>(token: Symbol | string): T {
+  resolve<T>(token: symbol | string): T {
     // 檢查是否為單例
     if (this.singletons.has(token)) {
       return this.singletons.get(token) as T;
@@ -110,7 +112,7 @@ export class DIContainer {
    * @param token - 依賴 Token
    * @returns 是否已註冊
    */
-  has(token: Symbol | string): boolean {
+  has(token: symbol | string): boolean {
     return this.dependencies.has(token) || this.singletons.has(token);
   }
 
@@ -127,7 +129,7 @@ export class DIContainer {
    * 取得所有已註冊的 Token
    * (用於偵錯)
    */
-  getRegisteredTokens(): Array<Symbol | string> {
+  getRegisteredTokens(): Array<symbol | string> {
     return Array.from(this.dependencies.keys());
   }
 }

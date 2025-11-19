@@ -37,19 +37,19 @@
 
 - [X] T005 Implement DIContainer class in front-end/src/user-interface/adapter/di/container.ts
 - [X] T006 [P] Write unit tests for DIContainer in front-end/tests/adapter/di/container.spec.ts
-- [ ] T007 Create DependencyRegistry in front-end/src/user-interface/adapter/di/registry.ts
+- [X] T007 Create DependencyRegistry in front-end/src/user-interface/adapter/di/registry.ts
 
 ### Pinia Stores (Foundational)
 
-- [ ] T008 [P] Implement GameStateStore in front-end/src/user-interface/adapter/stores/gameState.ts
-- [ ] T009 [P] Implement UIStateStore in front-end/src/user-interface/adapter/stores/uiState.ts
-- [ ] T010 [P] Write unit tests for GameStateStore in front-end/tests/adapter/stores/gameState.spec.ts
-- [ ] T011 [P] Write unit tests for UIStateStore in front-end/tests/adapter/stores/uiState.spec.ts
+- [X] T008 [P] Implement GameStateStore in front-end/src/user-interface/adapter/stores/gameState.ts
+- [X] T009 [P] Implement UIStateStore in front-end/src/user-interface/adapter/stores/uiState.ts
+- [X] T010 [P] Write unit tests for GameStateStore in front-end/tests/adapter/stores/gameState.spec.ts
+- [X] T011 [P] Write unit tests for UIStateStore in front-end/tests/adapter/stores/uiState.spec.ts
 
 ### Output Port Adapters (Foundational)
 
-- [ ] T012 [P] Create UIStatePortAdapter in front-end/src/user-interface/adapter/stores/gameState.ts
-- [ ] T013 [P] Create TriggerUIEffectPortAdapter in front-end/src/user-interface/adapter/stores/uiState.ts
+- [X] T012 [P] Create UIStatePortAdapter in front-end/src/user-interface/adapter/stores/gameState.ts
+- [X] T013 [P] Create TriggerUIEffectPortAdapter in front-end/src/user-interface/adapter/stores/uiState.ts
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

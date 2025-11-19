@@ -1,0 +1,363 @@
+/**
+ * GameStateStore - Pinia Store
+ *
+ * @description
+ * 管理遊戲核心狀態（與後端同步的狀態），實作 UIStatePort 介面。
+ *
+ * 職責:
+ * - 儲存遊戲上下文 (gameId, players, ruleset)
+ * - 管理流程狀態 (flowStage, activePlayerId)
+ * - 管理牌面狀態 (fieldCards, handCards, depositories, deckRemaining)
+ * - 管理分數與役種 (scores, yaku, koiKoiMultipliers)
+ *
+ * 特性:
+ * - 參與快照恢復 (restoreGameState 完全覆蓋狀態)
+ * - 不持久化 (所有狀態從 SSE 事件恢復)
+ * - 單例模式 (整個應用程式生命週期只有一個實例)
+ */
+
+import { defineStore } from 'pinia'
+import type { UIStatePort } from '../../application/ports/output/ui-state.port'
+import type {
+  FlowState,
+  PlayerInfo,
+  Ruleset,
+  GameSnapshotRestore,
+  YakuScore,
+} from '../../application/types'
+
+/**
+ * GameStateStore State 介面
+ */
+export interface GameStateStoreState {
+  // 遊戲上下文
+  gameId: string | null
+  localPlayerId: string | null
+  opponentPlayerId: string | null
+  ruleset: Ruleset | null
+
+  // 流程狀態
+  flowStage: FlowState | null
+  activePlayerId: string | null
+
+  // 牌面狀態
+  fieldCards: string[] // 場上卡片 ID 列表
+  myHandCards: string[] // 玩家手牌 ID 列表
+  opponentHandCount: number // 對手手牌數量
+  myDepository: string[] // 玩家已獲得牌列表
+  opponentDepository: string[] // 對手已獲得牌列表
+  deckRemaining: number // 牌堆剩餘數量
+
+  // 分數與役種
+  myScore: number
+  opponentScore: number
+  myYaku: YakuScore[]
+  opponentYaku: YakuScore[]
+  koiKoiMultipliers: Record<string, number>
+}
+
+/**
+ * GameStateStore Getters 介面
+ */
+export interface GameStateStoreGetters {
+  isMyTurn: boolean // 是否為玩家回合
+  currentFlowStage: FlowState | null // 當前流程階段
+  myKoiKoiMultiplier: number // 玩家 Koi-Koi 倍率
+  opponentKoiKoiMultiplier: number // 對手 Koi-Koi 倍率
+}
+
+/**
+ * GameStateStore Actions 介面
+ */
+export interface GameStateStoreActions extends UIStatePort {
+  reset(): void // 重置所有狀態（用於離開遊戲）
+}
+
+/**
+ * GameStateStore 定義
+ */
+export const useGameStateStore = defineStore('gameState', {
+  state: (): GameStateStoreState => ({
+    // 遊戲上下文
+    gameId: null,
+    localPlayerId: null,
+    opponentPlayerId: null,
+    ruleset: null,
+
+    // 流程狀態
+    flowStage: null,
+    activePlayerId: null,
+
+    // 牌面狀態
+    fieldCards: [],
+    myHandCards: [],
+    opponentHandCount: 0,
+    myDepository: [],
+    opponentDepository: [],
+    deckRemaining: 24,
+
+    // 分數與役種
+    myScore: 0,
+    opponentScore: 0,
+    myYaku: [],
+    opponentYaku: [],
+    koiKoiMultipliers: {},
+  }),
+
+  getters: {
+    /**
+     * 是否為玩家回合
+     */
+    isMyTurn(): boolean {
+      return this.activePlayerId === this.localPlayerId
+    },
+
+    /**
+     * 當前流程階段
+     */
+    currentFlowStage(): FlowState | null {
+      return this.flowStage
+    },
+
+    /**
+     * 玩家 Koi-Koi 倍率
+     */
+    myKoiKoiMultiplier(): number {
+      if (!this.localPlayerId) return 1
+      return this.koiKoiMultipliers[this.localPlayerId] || 1
+    },
+
+    /**
+     * 對手 Koi-Koi 倍率
+     */
+    opponentKoiKoiMultiplier(): number {
+      if (!this.opponentPlayerId) return 1
+      return this.koiKoiMultipliers[this.opponentPlayerId] || 1
+    },
+  },
+
+  actions: {
+    /**
+     * 初始化遊戲上下文（GameStarted 使用）
+     *
+     * @param gameId - 遊戲 ID
+     * @param players - 玩家資訊列表
+     * @param ruleset - 遊戲規則集
+     */
+    initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void {
+      this.gameId = gameId
+      this.ruleset = ruleset
+
+      // 辨識本地玩家（非 AI 玩家）
+      const localPlayer = players.find((p) => !p.is_ai)
+      if (!localPlayer) {
+        console.error('[GameStateStore] 找不到本地玩家')
+        return
+      }
+
+      this.localPlayerId = localPlayer.player_id
+
+      // 辨識對手
+      const opponent = players.find((p) => p.player_id !== this.localPlayerId)
+      if (opponent) {
+        this.opponentPlayerId = opponent.player_id
+      }
+    },
+
+    /**
+     * 恢復完整遊戲狀態（GameSnapshotRestore 使用）
+     *
+     * @param snapshot - 完整的遊戲快照數據
+     */
+    restoreGameState(snapshot: GameSnapshotRestore): void {
+      // 快照恢復：完全覆蓋所有狀態
+      this.gameId = snapshot.game_id
+      this.flowStage = snapshot.current_flow_stage
+      this.activePlayerId = snapshot.active_player_id
+
+      // 更新場牌
+      this.fieldCards = [...snapshot.field_cards]
+
+      // 更新手牌（找到本地玩家的手牌）
+      const myHand = snapshot.player_hands.find((h) => h.player_id === this.localPlayerId)
+      if (myHand) {
+        this.myHandCards = [...myHand.cards]
+      }
+
+      // 更新對手手牌數量
+      const opponentHand = snapshot.player_hands.find((h) => h.player_id === this.opponentPlayerId)
+      if (opponentHand) {
+        this.opponentHandCount = opponentHand.cards.length
+      }
+
+      // 更新獲得區
+      const myDepos = snapshot.player_depositories.find((d) => d.player_id === this.localPlayerId)
+      const opponentDepos = snapshot.player_depositories.find((d) => d.player_id === this.opponentPlayerId)
+
+      this.myDepository = myDepos ? [...myDepos.cards] : []
+      this.opponentDepository = opponentDepos ? [...opponentDepos.cards] : []
+
+      // 更新牌堆剩餘
+      this.deckRemaining = snapshot.deck_remaining
+
+      // 更新分數
+      const myScoreData = snapshot.player_scores.find((s) => s.player_id === this.localPlayerId)
+      const opponentScoreData = snapshot.player_scores.find((s) => s.player_id === this.opponentPlayerId)
+
+      this.myScore = myScoreData ? myScoreData.score : 0
+      this.opponentScore = opponentScoreData ? opponentScoreData.score : 0
+
+      // 更新役種 (如果快照包含役種資訊)
+      // 注意: 目前 GameSnapshotRestore 不包含役種,僅包含分數
+      // 若未來需要恢復役種,需擴充 protocol.md 的快照定義
+
+      // 更新 Koi-Koi 倍率
+      this.koiKoiMultipliers = {}
+      snapshot.koi_statuses.forEach((status) => {
+        this.koiKoiMultipliers[status.player_id] = status.koi_multiplier
+      })
+
+      console.info('[GameStateStore] 快照恢復完成', {
+        gameId: this.gameId,
+        flowStage: this.flowStage,
+        fieldCards: this.fieldCards.length,
+        myHandCards: this.myHandCards.length,
+      })
+    },
+
+    /**
+     * 設定當前流程階段
+     *
+     * @param stage - 流程階段
+     */
+    setFlowStage(stage: FlowState): void {
+      this.flowStage = stage
+      this.activePlayerId = this.localPlayerId // 假設設定流程階段時即為本地玩家回合
+    },
+
+    /**
+     * 更新場牌列表
+     *
+     * @param cards - 場牌 ID 列表
+     */
+    updateFieldCards(cards: string[]): void {
+      this.fieldCards = [...cards]
+    },
+
+    /**
+     * 更新手牌列表
+     *
+     * @param cards - 手牌 ID 列表
+     */
+    updateHandCards(cards: string[]): void {
+      this.myHandCards = [...cards]
+    },
+
+    /**
+     * 更新獲得區卡片
+     *
+     * @param playerCards - 玩家獲得區
+     * @param opponentCards - 對手獲得區
+     */
+    updateDepositoryCards(playerCards: string[], opponentCards: string[]): void {
+      this.myDepository = [...playerCards]
+      this.opponentDepository = [...opponentCards]
+    },
+
+    /**
+     * 更新分數
+     *
+     * @param playerScore - 玩家分數
+     * @param opponentScore - 對手分數
+     */
+    updateScores(playerScore: number, opponentScore: number): void {
+      this.myScore = playerScore
+      this.opponentScore = opponentScore
+    },
+
+    /**
+     * 更新牌堆剩餘數量
+     *
+     * @param count - 剩餘卡片數量
+     */
+    updateDeckRemaining(count: number): void {
+      this.deckRemaining = count
+    },
+
+    /**
+     * 更新玩家 Koi-Koi 倍率
+     *
+     * @param playerId - 玩家 ID
+     * @param multiplier - 倍率
+     */
+    updateKoiKoiMultiplier(playerId: string, multiplier: number): void {
+      this.koiKoiMultipliers[playerId] = multiplier
+    },
+
+    /**
+     * 取得本地玩家 ID
+     *
+     * @returns 本地玩家的 player_id
+     * @throws {Error} 若 localPlayerId 未初始化
+     */
+    getLocalPlayerId(): string {
+      if (!this.localPlayerId) {
+        throw new Error('[GameStateStore] LocalPlayerId not initialized')
+      }
+      return this.localPlayerId
+    },
+
+    /**
+     * 重置所有狀態（用於離開遊戲）
+     */
+    reset(): void {
+      this.gameId = null
+      this.localPlayerId = null
+      this.opponentPlayerId = null
+      this.ruleset = null
+
+      this.flowStage = null
+      this.activePlayerId = null
+
+      this.fieldCards = []
+      this.myHandCards = []
+      this.opponentHandCount = 0
+      this.myDepository = []
+      this.opponentDepository = []
+      this.deckRemaining = 24
+
+      this.myScore = 0
+      this.opponentScore = 0
+      this.myYaku = []
+      this.opponentYaku = []
+      this.koiKoiMultipliers = {}
+
+      console.info('[GameStateStore] 狀態已重置')
+    },
+  },
+})
+
+/**
+ * 建立 UIStatePort Adapter
+ *
+ * @description
+ * 將 GameStateStore 適配為 UIStatePort 介面。
+ * 由 DI Container 使用。
+ *
+ * @returns UIStatePort 實作
+ */
+export function createUIStatePortAdapter(): UIStatePort {
+  const store = useGameStateStore()
+  return {
+    initializeGameContext: store.initializeGameContext.bind(store),
+    restoreGameState: store.restoreGameState.bind(store),
+    setFlowStage: store.setFlowStage.bind(store),
+    updateFieldCards: store.updateFieldCards.bind(store),
+    updateHandCards: store.updateHandCards.bind(store),
+    updateDepositoryCards: store.updateDepositoryCards.bind(store),
+    updateScores: store.updateScores.bind(store),
+    updateDeckRemaining: store.updateDeckRemaining.bind(store),
+    updateKoiKoiMultiplier: store.updateKoiKoiMultiplier.bind(store),
+    getLocalPlayerId: store.getLocalPlayerId.bind(store),
+  }
+}
