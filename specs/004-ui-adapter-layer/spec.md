@@ -200,7 +200,7 @@
 - **FR-004**: 系統必須提供 SSE 客戶端，建立 EventSource 連線並接收後端推送的 13 種遊戲事件
 - **FR-005**: SSE 客戶端必須將接收到的事件路由到對應的 Use Case Input Port（例如 GameStarted 事件觸發 HandleGameStartedUseCase）
 - **FR-006**: SSE 客戶端必須實作自動重連機制，連線中斷時使用指數退避策略（1s → 2s → 4s → 8s → 16s，最大 30s）
-- **FR-007**: SSE 客戶端必須在連續重連失敗 5 次後，自動切換到 Fallback 短輪詢模式（每 2 秒請求快照）
+- **FR-007**: 【Post-MVP】SSE 客戶端必須在連續重連失敗 5 次後，自動切換到 Fallback 短輪詢模式（每 2 秒請求快照）
 - **FR-008**: 系統必須在 SSE 重連成功後，自動發送 joinGame 請求獲取快照，恢復遊戲狀態
 - **FR-009**: 系統必須在網路錯誤時區分錯誤類型（4xx 客戶端錯誤、5xx 伺服器錯誤、Network 網路錯誤），並顯示對應的友善錯誤訊息
 
@@ -242,7 +242,9 @@
 - **FR-034**: 系統必須在 DI Container 初始化時，根據遊戲模式設定載入對應的 Adapter 實作（Backend / Local / Mock）
 - **FR-035**: 系統必須提供遊戲模式切換機制，支援三種模式：
   - **Backend 模式**（線上）: 使用 GameApiClient + GameEventClient，與後端 REST API 與 SSE 通訊
-  - **Local 模式**（離線）: 使用 LocalGameAdapter + LocalGameEventEmitter，完全在前端執行遊戲邏輯（**架構預留**：DI Container 完整實作三模式切換架構，但 Local 模式實際實作等待 Local Game BC 完成後整合，暫時使用空實作或簡單 Mock 佔位）
+  - **Local 模式**（離線）: 使用 LocalGameAdapter + LocalGameEventEmitter，完全在前端執行遊戲邏輯
+    - **架構預留但實作延後**: DI Container 完整實作三模式切換架構，但 Local 模式的實際 Adapter 實作等待 Local Game BC（spec 005）完成後整合。MVP 階段暫時使用空實作或拋出 "Not Implemented" 錯誤
+    - Local Game BC 屬於獨立 Bounded Context（符合 Constitution VI），不違反 Server Authority 原則
   - **Mock 模式**（開發測試）: 使用 MockApiClient + MockEventEmitter，模擬後端回應與事件，無需後端伺服器
 
 #### 遊戲模式配置
@@ -268,7 +270,7 @@
 #### 錯誤處理
 
 - **FR-044**: 系統必須提供統一的錯誤處理服務（ErrorHandler），將後端錯誤代碼轉換為友善訊息
-- **FR-045**: 錯誤訊息必須支援多語言（預設英文，未來可擴展繁中/簡中/日文）
+- **FR-045**: 【Post-MVP】錯誤訊息必須支援多語言（預設英文，未來可擴展繁中/簡中/日文）。MVP 階段所有錯誤訊息使用硬編碼英文字串
 - **FR-046**: 系統必須區分錯誤嚴重性（Critical、Warning、Info），Critical 錯誤顯示 Modal 阻斷操作，Warning 顯示 Toast 提示
 
 #### 快照恢復
