@@ -65,38 +65,38 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T014 [P] [US1] Contract test for joinGame API in front-end/tests/adapter/api/GameApiClient.spec.ts
-- [ ] T015 [P] [US1] Contract test for GameStarted SSE event in front-end/tests/adapter/sse/EventRouter.spec.ts
-- [ ] T016 [P] [US1] Contract test for RoundDealt SSE event in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T014 [P] [US1] Contract test for joinGame API in front-end/tests/adapter/api/GameApiClient.spec.ts
+- [X] T015 [P] [US1] Contract test for GameStarted SSE event in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T016 [P] [US1] Contract test for RoundDealt SSE event in front-end/tests/adapter/sse/EventRouter.spec.ts
 
 ### Implementation for User Story 1
 
 #### REST API Client
 
-- [ ] T017 [P] [US1] Implement GameApiClient class in front-end/src/user-interface/adapter/api/GameApiClient.ts
-- [ ] T018 [P] [US1] Implement joinGame method with retry logic in front-end/src/user-interface/adapter/api/GameApiClient.ts
-- [ ] T019 [P] [US1] Implement error handling and timeout in front-end/src/user-interface/adapter/api/GameApiClient.ts
-- [ ] T020 [US1] Write unit tests for GameApiClient in front-end/tests/adapter/api/GameApiClient.spec.ts
+- [X] T017 [P] [US1] Implement GameApiClient class in front-end/src/user-interface/adapter/api/GameApiClient.ts
+- [X] T018 [P] [US1] Implement joinGame method with retry logic in front-end/src/user-interface/adapter/api/GameApiClient.ts
+- [X] T019 [P] [US1] Implement error handling and timeout in front-end/src/user-interface/adapter/api/GameApiClient.ts
+- [X] T020 [US1] Write unit tests for GameApiClient in front-end/tests/adapter/api/GameApiClient.spec.ts
 
 #### SSE Client
 
-- [ ] T021 [P] [US1] Implement GameEventClient class in front-end/src/user-interface/adapter/sse/GameEventClient.ts
-- [ ] T022 [P] [US1] Implement EventRouter class in front-end/src/user-interface/adapter/sse/EventRouter.ts
-- [ ] T023 [US1] Implement SSE connection management and event listeners in GameEventClient
-- [ ] T024 [US1] Write unit tests for GameEventClient in front-end/tests/adapter/sse/GameEventClient.spec.ts
-- [ ] T025 [US1] Write unit tests for EventRouter in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T021 [P] [US1] Implement GameEventClient class in front-end/src/user-interface/adapter/sse/GameEventClient.ts
+- [X] T022 [P] [US1] Implement EventRouter class in front-end/src/user-interface/adapter/sse/EventRouter.ts
+- [X] T023 [US1] Implement SSE connection management and event listeners in GameEventClient
+- [X] T024 [US1] Write unit tests for GameEventClient in front-end/tests/adapter/sse/GameEventClient.spec.ts
+- [X] T025 [US1] Write unit tests for EventRouter in front-end/tests/adapter/sse/EventRouter.spec.ts
 
 #### Router Integration
 
-- [ ] T026 [US1] Implement gamePageGuard in front-end/src/user-interface/adapter/router/guards.ts
-- [ ] T027 [US1] Integrate gamePageGuard with Vue Router in front-end/src/router/index.ts
+- [X] T026 [US1] Implement gamePageGuard in front-end/src/user-interface/adapter/router/guards.ts
+- [X] T027 [US1] Integrate gamePageGuard with Vue Router in front-end/src/router/index.ts
 
 #### DI Container Registration
 
-- [ ] T028 [US1] Register GameApiClient in DI Container in front-end/src/user-interface/adapter/di/registry.ts
-- [ ] T029 [US1] Register GameEventClient in DI Container in front-end/src/user-interface/adapter/di/registry.ts
-- [ ] T030 [US1] Register event handlers for GameStarted and RoundDealt in EventRouter
-- [ ] T031 [US1] Initialize DI Container in front-end/src/main.ts
+- [X] T028 [US1] Register GameApiClient in DI Container in front-end/src/user-interface/adapter/di/registry.ts
+- [X] T029 [US1] Register GameEventClient in DI Container in front-end/src/user-interface/adapter/di/registry.ts
+- [X] T030 [US1] Register event handlers for GameStarted and RoundDealt in EventRouter
+- [X] T031 [US1] Initialize DI Container in front-end/src/main.ts
 
 #### Vue Components - Basic Structure
 
@@ -288,15 +288,15 @@
 
 ---
 
-## Phase 8: Mock 模式實作 (Priority: P3)
+## Phase 8: Mock 模式實作 (Priority: P3) ✅ **提前完成**
 
 **Purpose**: Development and testing infrastructure for frontend-only work
 
-- [ ] T113 [P] Implement MockApiClient in front-end/src/user-interface/adapter/mock/MockApiClient.ts
-- [ ] T114 [P] Implement MockEventEmitter in front-end/src/user-interface/adapter/mock/MockEventEmitter.ts
-- [ ] T115 Create mockEventScript with full game scenario in front-end/src/user-interface/adapter/mock/mockEventScript.ts
-- [ ] T116 Register Mock adapters in DI registry for 'mock' mode
-- [ ] T117 Update gamePageGuard to support mock mode initialization
+- [X] T113 [P] Implement MockApiClient in front-end/src/user-interface/adapter/mock/MockApiClient.ts
+- [X] T114 [P] Implement MockEventEmitter in front-end/src/user-interface/adapter/mock/MockEventEmitter.ts
+- [X] T115 Create mockEventScript with full game scenario in front-end/src/user-interface/adapter/mock/mockEventScript.ts
+- [X] T116 Register Mock adapters in DI registry for 'mock' mode
+- [X] T117 Update gamePageGuard to support mock mode initialization
 - [ ] T118 [P] Write unit tests for MockApiClient in front-end/tests/adapter/mock/MockApiClient.spec.ts
 - [ ] T119 [P] Write unit tests for MockEventEmitter in front-end/tests/adapter/mock/MockEventEmitter.spec.ts
 

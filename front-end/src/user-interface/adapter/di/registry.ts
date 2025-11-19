@@ -166,13 +166,37 @@ function registerSSEClient(_container: DIContainer): void {
  *
  * @description
  * 註冊 MockApiClient 與 MockEventEmitter，用於開發測試。
- *
- * TODO: Phase 8 - 等待 Mock Adapters 實作後啟用
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function registerMockAdapters(_container: DIContainer): void {
-  // Phase 2 暫時跳過 Mock Adapters 註冊
-  console.info('[DI] Phase 2: Skipping Mock Adapters registration (will be enabled in Phase 8)')
+function registerMockAdapters(container: DIContainer): void {
+  const { MockApiClient } = require('../mock/MockApiClient')
+  const { MockEventEmitter } = require('../mock/MockEventEmitter')
+  const { EventRouter } = require('../sse/EventRouter')
+
+  console.info('[DI] 註冊 Mock 模式 Adapters')
+
+  // SendCommandPort: MockApiClient
+  container.register(
+    TOKENS.SendCommandPort,
+    () => new MockApiClient(),
+    { singleton: true },
+  )
+
+  // EventRouter (共用)
+  container.register(
+    TOKENS.EventRouter,
+    () => new EventRouter(),
+    { singleton: true },
+  )
+
+  // MockEventEmitter
+  container.register(
+    TOKENS.MockEventEmitter,
+    () => {
+      const router = container.resolve(TOKENS.EventRouter)
+      return new MockEventEmitter(router)
+    },
+    { singleton: true },
+  )
 }
 
 /**
