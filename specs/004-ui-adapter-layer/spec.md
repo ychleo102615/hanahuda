@@ -224,14 +224,14 @@
 - **FR-022**: 系統必須提供 ErrorToast.vue，顯示錯誤訊息（自動消失或手動關閉）
 - **FR-023**: 系統必須提供 ReconnectionBanner.vue，在斷線時顯示「連線中斷，正在嘗試重連...」，重連成功後顯示「連線已恢復」（3 秒後自動消失）
 
-#### 動畫系統
+#### 動畫系統（分階段實作）
 
 - **FR-024**: 系統必須提供 AnimationService，實作 TriggerUIEffectPort.triggerAnimation 方法
 - **FR-025**: AnimationService 必須支援 5 種動畫類型（DEAL_CARDS、CARD_MOVE、MATCH_HIGHLIGHT、YAKU_FORMED、SCORE_UPDATE）
 - **FR-026**: AnimationService 必須管理動畫隊列，按照 FIFO 順序執行，前一個完成後才執行下一個
 - **FR-027**: AnimationService 必須提供回調機制，動畫完成後通知上層（例如更新 isAnimating 狀態）
-- **FR-028**: 動畫實作必須使用 Vue 的 Transition 組件或 CSS animations，確保效能（目標 60 FPS）
-- **FR-029**: 系統可選使用第三方動畫庫（如 GSAP），用於複雜動畫（如粒子效果），但需確保打包體積不超過 50KB（gzipped）
+- **FR-028**: **P1 階段（MVP）**：優先實作基礎卡片移動動畫（CARD_MOVE、DEAL_CARDS），使用 Vue Transition 或 CSS transition，確保核心互動流程有視覺回饋
+- **FR-029**: **P3 階段（後續優化）**：實作複雜動畫特效（MATCH_HIGHLIGHT 閃爍、YAKU_FORMED 發光、SCORE_UPDATE 滾動、粒子效果），可選使用 GSAP 等第三方庫（打包體積 < 50KB gzipped）
 
 #### 依賴注入（DI Container）
 
@@ -242,19 +242,18 @@
 - **FR-034**: 系統必須在 DI Container 初始化時，根據遊戲模式設定載入對應的 Adapter 實作（Backend / Local / Mock）
 - **FR-035**: 系統必須提供遊戲模式切換機制，支援三種模式：
   - **Backend 模式**（線上）: 使用 GameApiClient + GameEventClient，與後端 REST API 與 SSE 通訊
-  - **Local 模式**（離線）: 使用 LocalGameAdapter + LocalGameEventEmitter，完全在前端執行遊戲邏輯
+  - **Local 模式**（離線）: 使用 LocalGameAdapter + LocalGameEventEmitter，完全在前端執行遊戲邏輯（**架構預留**：DI Container 完整實作三模式切換架構，但 Local 模式實際實作等待 Local Game BC 完成後整合，暫時使用空實作或簡單 Mock 佔位）
   - **Mock 模式**（開發測試）: 使用 MockApiClient + MockEventEmitter，模擬後端回應與事件，無需後端伺服器
 
 #### 遊戲模式配置
 
-- **FR-036**: 系統必須提供遊戲模式配置機制，可透過以下方式設定：
+- **FR-036**: 系統必須提供遊戲模式配置機制，**僅支援環境變數與 URL 參數**（不實作 UI 選擇器）：
   - **環境變數**: `VITE_GAME_MODE=backend|local|mock`（預設：backend）
-  - **localStorage**: `gameMode=backend|local|mock`（開發階段可手動切換）
-  - **URL 參數**: `/game?mode=mock`（方便快速測試）
+  - **URL 參數**: `/game?mode=mock`（方便快速測試，優先級高於環境變數）
 - **FR-037**: 系統必須在 DI Container 初始化時，根據模式載入對應的 Adapter 實作
 - **FR-038**: Mock 模式必須提供 Mock API Client，模擬所有 REST API 端點（joinGame、playHandCard、selectTarget、makeDecision）
 - **FR-039**: Mock 模式必須提供 Mock Event Emitter，可程式化觸發 13 種 SSE 事件，用於 UI 測試
-- **FR-040**: 系統可選提供開發者模式選擇器 UI（僅在 `import.meta.env.DEV === true` 時顯示），允許即時切換模式
+- **FR-040**: 【已刪除】不實作開發者模式選擇器 UI，使用環境變數與 URL 參數即可滿足開發需求
 
 #### 路由配置
 
@@ -277,6 +276,11 @@
 - **FR-047**: 系統必須實作 HandleReconnectionUseCase，處理快照恢復邏輯
 - **FR-048**: 快照恢復必須覆蓋所有遊戲狀態（gameId、playerScores、ruleset、fieldCards、handCards、depositories、currentFlowStage、activePlayerId、koiKoiMultipliers）
 - **FR-049**: 快照恢復完成後，系統必須根據 currentFlowStage 渲染對應 UI（例如 AWAITING_SELECTION 顯示選擇介面）
+- **FR-050**: **資料同步策略（強制同步模式）**：當接收快照時，若本地狀態與快照不一致，系統必須：
+  1. 立即中斷所有進行中的動畫（清空 animationQueue，設定 isAnimating = false）
+  2. 強制以快照資料覆蓋所有 GameStateStore 狀態（確保資料一致性優先）
+  3. 重新渲染 UI 到快照對應的狀態（可能造成視覺跳躍，但保證正確性）
+  4. 顯示「連線已恢復」提示，告知使用者狀態已同步
 
 ### Key Entities *(include if feature involves data)*
 
