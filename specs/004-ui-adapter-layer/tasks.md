@@ -100,20 +100,20 @@
 
 #### Vue Components - Basic Structure
 
-- [ ] T032 [P] [US1] Create GamePage.vue container in front-end/src/views/GamePage.vue
-- [ ] T033 [P] [US1] Create TopInfoBar component in front-end/src/views/GamePage/components/TopInfoBar.vue
-- [ ] T034 [P] [US1] Create FieldZone component in front-end/src/views/GamePage/components/FieldZone.vue
-- [ ] T035 [P] [US1] Create PlayerHandZone component in front-end/src/views/GamePage/components/PlayerHandZone.vue
-- [ ] T036 [P] [US1] Create CardComponent in front-end/src/views/GamePage/components/CardComponent.vue
-- [ ] T037 [US1] Integrate components in GamePage.vue layout
+- [X] T032 [P] [US1] Create GamePage.vue container in front-end/src/views/GamePage.vue
+- [X] T033 [P] [US1] Create TopInfoBar component in front-end/src/views/GamePage/components/TopInfoBar.vue
+- [X] T034 [P] [US1] Create FieldZone component in front-end/src/views/GamePage/components/FieldZone.vue
+- [X] T035 [P] [US1] Create PlayerHandZone component in front-end/src/views/GamePage/components/PlayerHandZone.vue
+- [X] T036 [P] [US1] Create CardComponent in front-end/src/views/GamePage/components/CardComponent.vue
+- [X] T037 [US1] Integrate components in GamePage.vue layout
 
 #### Basic Animation (P1 MVP)
 
-- [ ] T038 [P] [US1] Implement AnimationQueue class in front-end/src/user-interface/adapter/animation/AnimationQueue.ts
-- [ ] T039 [P] [US1] Implement AnimationService class in front-end/src/user-interface/adapter/animation/AnimationService.ts
-- [ ] T040 [US1] Implement DEAL_CARDS animation using Vue Transition in AnimationService
-- [ ] T041 [US1] Write unit tests for AnimationQueue in front-end/tests/adapter/animation/AnimationQueue.spec.ts
-- [ ] T042 [US1] Write unit tests for AnimationService in front-end/tests/adapter/animation/AnimationService.spec.ts
+- [X] T038 [P] [US1] Implement AnimationQueue class in front-end/src/user-interface/adapter/animation/AnimationQueue.ts
+- [X] T039 [P] [US1] Implement AnimationService class in front-end/src/user-interface/adapter/animation/AnimationService.ts
+- [X] T040 [US1] Implement DEAL_CARDS animation using Vue Transition in AnimationService
+- [X] T041 [US1] Write unit tests for AnimationQueue in front-end/tests/adapter/animation/AnimationQueue.spec.ts
+- [X] T042 [US1] Write unit tests for AnimationService in front-end/tests/adapter/animation/AnimationService.spec.ts
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - player can join game and see initial deal
 
