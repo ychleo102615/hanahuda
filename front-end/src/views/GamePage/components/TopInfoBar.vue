@@ -21,11 +21,11 @@ const { connectionStatus } = storeToRefs(uiState)
 const connectionStatusText = computed(() => {
   switch (connectionStatus.value) {
     case 'connected':
-      return '已連線'
+      return 'Connected'
     case 'connecting':
-      return '連線中...'
+      return 'Connecting...'
     case 'disconnected':
-      return '未連線'
+      return 'Disconnected'
     default:
       return ''
   }
@@ -46,34 +46,34 @@ const connectionStatusClass = computed(() => {
 
 // 回合提示
 const turnText = computed(() => {
-  return isMyTurn.value ? '你的回合' : '對手回合'
+  return isMyTurn.value ? 'Your Turn' : "Opponent's Turn"
 })
 </script>
 
 <template>
   <div class="h-full bg-gray-800 text-white px-4 py-2 flex items-center justify-between">
-    <!-- 左側: 對手分數 -->
+    <!-- Left: Opponent score -->
     <div class="flex items-center gap-4">
       <div class="text-center">
-        <div class="text-xs text-gray-400">對手</div>
+        <div class="text-xs text-gray-400">Opponent</div>
         <div class="text-xl font-bold">{{ opponentScore }}</div>
       </div>
     </div>
 
-    <!-- 中間: 遊戲狀態 -->
+    <!-- Center: Game status -->
     <div class="flex flex-col items-center">
       <div class="text-sm font-medium" :class="{ 'text-yellow-400': isMyTurn }">
         {{ turnText }}
       </div>
       <div class="text-xs text-gray-400">
-        剩餘: {{ deckRemaining }} 張
+        Deck: {{ deckRemaining }}
       </div>
     </div>
 
-    <!-- 右側: 玩家分數與狀態 -->
+    <!-- Right: Player score and status -->
     <div class="flex items-center gap-4">
       <div class="text-center">
-        <div class="text-xs text-gray-400">你</div>
+        <div class="text-xs text-gray-400">You</div>
         <div class="text-xl font-bold">{{ myScore }}</div>
       </div>
       <div class="text-xs" :class="connectionStatusClass">

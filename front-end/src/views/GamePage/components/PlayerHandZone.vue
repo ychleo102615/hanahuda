@@ -59,7 +59,7 @@ defineExpose({
         v-if="myHandCards.length === 0"
         class="text-gray-500 text-sm"
       >
-        無手牌
+        No cards
       </div>
     </div>
   </div>

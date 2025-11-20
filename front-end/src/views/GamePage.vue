@@ -55,7 +55,7 @@ function handleFieldCardClick(cardId: string) {
           size="sm"
         />
         <div v-if="opponentDepository.length === 0" class="text-gray-400 text-sm">
-          對手獲得區
+          Opponent's Capture
         </div>
       </div>
     </section>
@@ -75,7 +75,7 @@ function handleFieldCardClick(cardId: string) {
           size="sm"
         />
         <div v-if="myDepository.length === 0" class="text-gray-400 text-sm">
-          你的獲得區
+          Your Capture
         </div>
       </div>
     </section>
@@ -85,9 +85,9 @@ function handleFieldCardClick(cardId: string) {
       <PlayerHandZone ref="playerHandZoneRef" @card-select="handleHandCardSelect" />
     </section>
 
-    <!-- 對手手牌數量指示（浮動顯示） -->
+    <!-- Opponent hand count indicator -->
     <div class="fixed top-20 left-4 bg-black/70 text-white px-3 py-1 rounded text-sm">
-      對手手牌: {{ opponentHandCount }}
+      Opponent Hand: {{ opponentHandCount }}
     </div>
 
     <!-- 錯誤訊息 Toast -->
@@ -110,7 +110,7 @@ function handleFieldCardClick(cardId: string) {
       </div>
     </Transition>
 
-    <!-- 重連遮罩 -->
+    <!-- Reconnection overlay -->
     <Transition name="fade">
       <div
         v-if="reconnecting"
@@ -118,7 +118,7 @@ function handleFieldCardClick(cardId: string) {
       >
         <div class="bg-white rounded-lg p-6 text-center">
           <div class="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
-          <p class="text-gray-700">連線中斷，正在嘗試重連...</p>
+          <p class="text-gray-700">Connection lost, reconnecting...</p>
         </div>
       </div>
     </Transition>
