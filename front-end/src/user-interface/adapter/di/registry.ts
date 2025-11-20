@@ -25,6 +25,15 @@ import type { DIContainer } from './container'
 import { TOKENS } from './tokens'
 import { useGameStateStore, createUIStatePortAdapter } from '../stores/gameState'
 import { useUIStateStore, createTriggerUIEffectPortAdapter } from '../stores/uiState'
+import { HandleTurnCompletedUseCase } from '../../application/use-cases/event-handlers/HandleTurnCompletedUseCase'
+import { HandleSelectionRequiredUseCase } from '../../application/use-cases/event-handlers/HandleSelectionRequiredUseCase'
+import { HandleTurnProgressAfterSelectionUseCase } from '../../application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
+import type { UIStatePort, TriggerUIEffectPort } from '../../application/ports/output'
+import type { DomainFacade } from '../../application/types/domain-facade'
+import * as domain from '../../domain'
+import { MockApiClient } from '../mock/MockApiClient'
+import { MockEventEmitter } from '../mock/MockEventEmitter'
+import { EventRouter } from '../sse/EventRouter'
 
 /**
  * 遊戲模式
@@ -103,12 +112,25 @@ function registerOutputPorts(container: DIContainer): void {
   container.register(
     TOKENS.TriggerUIEffectPort,
     () => {
-       
+
       const animationService = container.resolve(TOKENS.AnimationService) as {
         trigger: (type: unknown, params: unknown) => void
       }
       return createTriggerUIEffectPortAdapter(animationService)
     },
+    { singleton: true },
+  )
+
+  // DomainFacade: 包裝 Domain Layer 函數
+  container.register(
+    TOKENS.DomainFacade,
+    (): DomainFacade => ({
+      canMatch: domain.canMatch,
+      findMatchableCards: domain.findMatchableCards,
+      validateCardExists: domain.validateCardExists,
+      validateTargetInList: domain.validateTargetInList,
+      calculateYakuProgress: domain.calculateYakuProgress,
+    }),
     { singleton: true },
   )
 
@@ -122,15 +144,40 @@ function registerOutputPorts(container: DIContainer): void {
  * @description
  * 註冊所有 Use Cases 為 Input Ports 的實作。
  * 包含 3 個玩家操作 Use Cases 與 15 個事件處理 Use Cases。
- *
- * TODO: Phase 3+ - 等待 API Client / SSE Client / Use Cases 模塊實作後啟用
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function registerInputPorts(_container: DIContainer): void {
-  // Phase 2 暫時跳過 Use Cases 註冊
-  // 將在 Phase 3+ 實作 API Client、SSE Client 和 Vue 組件時一併啟用
+function registerInputPorts(container: DIContainer): void {
+  // 取得 Output Ports
+  const uiStatePort = container.resolve(TOKENS.UIStatePort) as UIStatePort
+  const triggerUIEffectPort = container.resolve(TOKENS.TriggerUIEffectPort) as TriggerUIEffectPort
 
-  console.info('[DI] Phase 2: Skipping Use Cases registration (will be enabled in Phase 3+)')
+  // T050 [US2]: 註冊 TurnCompleted 事件處理器
+  container.register(
+    TOKENS.HandleTurnCompletedPort,
+    () => new HandleTurnCompletedUseCase(uiStatePort, triggerUIEffectPort),
+    { singleton: true }
+  )
+
+  // T051 [US2]: 註冊 SelectionRequired 事件處理器
+  container.register(
+    TOKENS.HandleSelectionRequiredPort,
+    () => new HandleSelectionRequiredUseCase(uiStatePort, triggerUIEffectPort),
+    { singleton: true }
+  )
+
+  // T052 [US2]: 註冊 TurnProgressAfterSelection 事件處理器
+  const domainFacade = container.resolve(TOKENS.DomainFacade) as DomainFacade
+
+  container.register(
+    TOKENS.HandleTurnProgressAfterSelectionPort,
+    () => new HandleTurnProgressAfterSelectionUseCase(
+      uiStatePort,
+      triggerUIEffectPort,
+      domainFacade
+    ),
+    { singleton: true }
+  )
+
+  console.info('[DI] Phase 4: Registered US2 event handlers (TurnCompleted, SelectionRequired, TurnProgressAfterSelection)')
 }
 
 /**
@@ -168,10 +215,6 @@ function registerSSEClient(_container: DIContainer): void {
  * 註冊 MockApiClient 與 MockEventEmitter，用於開發測試。
  */
 function registerMockAdapters(container: DIContainer): void {
-  const { MockApiClient } = require('../mock/MockApiClient')
-  const { MockEventEmitter } = require('../mock/MockEventEmitter')
-  const { EventRouter } = require('../sse/EventRouter')
-
   console.info('[DI] 註冊 Mock 模式 Adapters')
 
   // SendCommandPort: MockApiClient
@@ -188,15 +231,41 @@ function registerMockAdapters(container: DIContainer): void {
     { singleton: true },
   )
 
+  // T053 [US2]: 註冊事件路由
+  registerEventRoutes(container)
+
   // MockEventEmitter
   container.register(
     TOKENS.MockEventEmitter,
     () => {
-      const router = container.resolve(TOKENS.EventRouter)
+      const router = container.resolve(TOKENS.EventRouter) as EventRouter
       return new MockEventEmitter(router)
     },
     { singleton: true },
   )
+}
+
+/**
+ * 註冊事件路由
+ *
+ * @description
+ * 將 SSE 事件類型綁定到對應的 Input Ports。
+ */
+function registerEventRoutes(container: DIContainer): void {
+  const router = container.resolve(TOKENS.EventRouter) as {
+    register: (eventType: string, port: { execute: (payload: unknown) => void }) => void
+  }
+
+  // T053 [US2]: 綁定 TurnCompleted、SelectionRequired、TurnProgressAfterSelection 事件
+  const turnCompletedPort = container.resolve(TOKENS.HandleTurnCompletedPort) as { execute: (payload: unknown) => void }
+  const selectionRequiredPort = container.resolve(TOKENS.HandleSelectionRequiredPort) as { execute: (payload: unknown) => void }
+  const turnProgressPort = container.resolve(TOKENS.HandleTurnProgressAfterSelectionPort) as { execute: (payload: unknown) => void }
+
+  router.register('TurnCompleted', turnCompletedPort)
+  router.register('SelectionRequired', selectionRequiredPort)
+  router.register('TurnProgressAfterSelection', turnProgressPort)
+
+  console.info('[DI] Phase 4: Registered US2 event routes (TurnCompleted, SelectionRequired, TurnProgressAfterSelection)')
 }
 
 /**

@@ -16,6 +16,8 @@ import type { InputPort } from '@/user-interface/application/ports/input'
 import type {
   GameStartedEvent,
   RoundDealtEvent,
+  TurnCompletedEvent,
+  SelectionRequiredEvent,
 } from '@/user-interface/application/types/events'
 
 describe('EventRouter - User Story 1 Contract Tests', () => {
@@ -262,6 +264,156 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
       expect(() => {
         router.route('GameStarted', {} as GameStartedEvent)
       }).toThrow('Use Case execution failed')
+    })
+  })
+})
+
+describe('EventRouter - User Story 2 Contract Tests', () => {
+  let router: EventRouter
+
+  beforeEach(() => {
+    router = new EventRouter()
+  })
+
+  describe('T045 [US2]: TurnCompleted Event Routing', () => {
+    it('should route TurnCompleted event to registered Input Port', () => {
+      const mockPort: InputPort<TurnCompletedEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: TurnCompletedEvent = {
+        event_type: 'TurnCompleted',
+        event_id: 'evt-003',
+        timestamp: '2025-01-19T10:00:10Z',
+        player_id: 'player-1',
+        hand_card_play: {
+          played_card: '0111',
+          matched_cards: ['0112'],
+          acquired_cards: ['0111', '0112'],
+        },
+        draw_card_play: {
+          played_card: '0211',
+          matched_cards: ['0212'],
+          acquired_cards: ['0211', '0212'],
+        },
+        deck_remaining: 22,
+        next_state: {
+          flow_stage: 'PLAYING_HAND_CARD',
+          current_player_id: 'player-2',
+          round_number: 1,
+          turn_number: 2,
+        },
+      }
+
+      router.register('TurnCompleted', mockPort)
+      router.route('TurnCompleted', mockPayload)
+
+      expect(mockPort.execute).toHaveBeenCalledTimes(1)
+      expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
+    })
+
+    it('should handle TurnCompleted with no matches', () => {
+      const mockPort: InputPort<TurnCompletedEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: TurnCompletedEvent = {
+        event_type: 'TurnCompleted',
+        event_id: 'evt-004',
+        timestamp: '2025-01-19T10:00:15Z',
+        player_id: 'player-1',
+        hand_card_play: {
+          played_card: '0111',
+          matched_cards: [],
+          acquired_cards: [],
+        },
+        draw_card_play: {
+          played_card: '0211',
+          matched_cards: [],
+          acquired_cards: [],
+        },
+        deck_remaining: 22,
+        next_state: {
+          flow_stage: 'PLAYING_HAND_CARD',
+          current_player_id: 'player-2',
+          round_number: 1,
+          turn_number: 2,
+        },
+      }
+
+      router.register('TurnCompleted', mockPort)
+      router.route('TurnCompleted', mockPayload)
+
+      expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
+    })
+  })
+
+  describe('T046 [US2]: SelectionRequired Event Routing', () => {
+    it('should route SelectionRequired event to registered Input Port', () => {
+      const mockPort: InputPort<SelectionRequiredEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: SelectionRequiredEvent = {
+        event_type: 'SelectionRequired',
+        event_id: 'evt-005',
+        timestamp: '2025-01-19T10:00:20Z',
+        player_id: 'player-1',
+        hand_card_play: {
+          played_card: '0111',
+          matched_cards: ['0112'],
+          acquired_cards: ['0111', '0112'],
+        },
+        drawn_card: '0311',
+        possible_targets: ['0312', '0313'],
+        deck_remaining: 21,
+      }
+
+      router.register('SelectionRequired', mockPort)
+      router.route('SelectionRequired', mockPayload)
+
+      expect(mockPort.execute).toHaveBeenCalledTimes(1)
+      expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
+    })
+
+    it('should pass possible_targets array correctly', () => {
+      const mockPort: InputPort<SelectionRequiredEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: SelectionRequiredEvent = {
+        event_type: 'SelectionRequired',
+        event_id: 'evt-006',
+        timestamp: '2025-01-19T10:00:25Z',
+        player_id: 'player-1',
+        hand_card_play: {
+          played_card: '0111',
+          matched_cards: [],
+          acquired_cards: [],
+        },
+        drawn_card: '0311',
+        possible_targets: ['0312', '0313', '0314'],
+        deck_remaining: 20,
+      }
+
+      router.register('SelectionRequired', mockPort)
+      router.route('SelectionRequired', mockPayload)
+
+      const receivedPayload = mockPort.execute.mock.calls[0][0]
+      expect(receivedPayload.possible_targets).toEqual(['0312', '0313', '0314'])
+      expect(receivedPayload.possible_targets.length).toBe(3)
+    })
+
+    it('should handle unregistered SelectionRequired event gracefully', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      router.route('SelectionRequired', {} as SelectionRequiredEvent)
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '未註冊的事件類型: SelectionRequired'
+      )
+
+      consoleSpy.mockRestore()
     })
   })
 })

@@ -127,39 +127,39 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T043 [P] [US2] Contract test for playHandCard API in front-end/tests/adapter/api/GameApiClient.spec.ts
-- [ ] T044 [P] [US2] Contract test for selectTarget API in front-end/tests/adapter/api/GameApiClient.spec.ts
-- [ ] T045 [P] [US2] Contract test for TurnCompleted event in front-end/tests/adapter/sse/EventRouter.spec.ts
-- [ ] T046 [P] [US2] Contract test for SelectionRequired event in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T043 [P] [US2] Contract test for playHandCard API in front-end/tests/adapter/api/GameApiClient.spec.ts
+- [X] T044 [P] [US2] Contract test for selectTarget API in front-end/tests/adapter/api/GameApiClient.spec.ts
+- [X] T045 [P] [US2] Contract test for TurnCompleted event in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T046 [P] [US2] Contract test for SelectionRequired event in front-end/tests/adapter/sse/EventRouter.spec.ts
 
 ### Implementation for User Story 2
 
 #### API Commands
 
-- [ ] T047 [P] [US2] Implement playHandCard method in front-end/src/user-interface/adapter/api/GameApiClient.ts
-- [ ] T048 [P] [US2] Implement selectTarget method in front-end/src/user-interface/adapter/api/GameApiClient.ts
-- [ ] T049 [US2] Add unit tests for playHandCard and selectTarget in front-end/tests/adapter/api/GameApiClient.spec.ts
+- [X] T047 [P] [US2] Implement playHandCard method in front-end/src/user-interface/adapter/api/GameApiClient.ts
+- [X] T048 [P] [US2] Implement selectTarget method in front-end/src/user-interface/adapter/api/GameApiClient.ts
+- [X] T049 [US2] Add unit tests for playHandCard and selectTarget in front-end/tests/adapter/api/GameApiClient.spec.ts
 
 #### SSE Event Handlers
 
-- [ ] T050 [US2] Register TurnCompleted event handler in EventRouter
-- [ ] T051 [US2] Register SelectionRequired event handler in EventRouter
-- [ ] T052 [US2] Register TurnProgressAfterSelection event handler in EventRouter
-- [ ] T053 [US2] Write tests for event routing in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T050 [US2] Register TurnCompleted event handler in EventRouter
+- [X] T051 [US2] Register SelectionRequired event handler in EventRouter
+- [X] T052 [US2] Register TurnProgressAfterSelection event handler in EventRouter
+- [X] T053 [US2] Write tests for event routing in front-end/tests/adapter/sse/EventRouter.spec.ts
 
 #### Vue Components - Interaction
 
-- [ ] T054 [P] [US2] Add click handlers to PlayerHandZone for card selection
-- [ ] T055 [P] [US2] Create SelectionOverlay component in front-end/src/views/GamePage/components/SelectionOverlay.vue
-- [ ] T056 [P] [US2] Implement card highlighting in FieldZone component
-- [ ] T057 [US2] Integrate SelectionOverlay with UIStateStore
-- [ ] T058 [US2] Inject PlayHandCardPort into PlayerHandZone component
-- [ ] T059 [US2] Inject SelectMatchTargetPort into SelectionOverlay component
+- [X] T054 [P] [US2] Add click handlers to PlayerHandZone for card selection
+- [X] T055 [P] [US2] Create SelectionOverlay component in front-end/src/views/GamePage/components/SelectionOverlay.vue
+- [X] T056 [P] [US2] Implement card highlighting in FieldZone component
+- [X] T057 [US2] Integrate SelectionOverlay with UIStateStore
+- [X] T058 [US2] Inject PlayHandCardPort into PlayerHandZone component
+- [X] T059 [US2] Inject SelectMatchTargetPort into SelectionOverlay component
 
 #### Animation - Card Movement
 
-- [ ] T060 [US2] Implement CARD_MOVE animation in AnimationService
-- [ ] T061 [US2] Add CSS transitions for card movement in CardComponent
+- [X] T060 [US2] Implement CARD_MOVE animation in AnimationService
+- [X] T061 [US2] Add CSS transitions for card movement in CardComponent
 - [ ] T062 [US2] Write tests for CARD_MOVE animation in front-end/tests/adapter/animation/AnimationService.spec.ts
 
 **Checkpoint**: At this point, User Story 2 should work independently - player can play cards and see matching

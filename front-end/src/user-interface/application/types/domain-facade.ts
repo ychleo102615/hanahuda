@@ -32,7 +32,7 @@
 
 // Import Domain Layer types (這些型別定義在 Domain Layer)
 // 注意：這裡使用 type import，不會引入執行時依賴
-import type { Card, YakuType, YakuProgress } from '@/user-interface/domain'
+import type { Card, YakuType, YakuProgress, ValidationResult } from '@/user-interface/domain'
 
 /**
  * Domain Facade 介面
@@ -48,7 +48,7 @@ export interface DomainFacade {
    * @param card2 - 第二張卡片
    * @returns 是否可以配對
    */
-  canMatch(card1: Card, card2: Card): boolean
+  canMatch(card1: Readonly<Card>, card2: Readonly<Card>): boolean
 
   /**
    * 尋找場上所有可與手牌配對的卡片
@@ -57,25 +57,25 @@ export interface DomainFacade {
    * @param fieldCards - 場牌列表
    * @returns 可配對的場牌列表
    */
-  findMatchableCards(handCard: Card, fieldCards: Card[]): Card[]
+  findMatchableCards(handCard: Readonly<Card>, fieldCards: readonly Card[]): readonly Card[]
 
   /**
    * 驗證卡片是否存在於手牌中
    *
    * @param card - 要驗證的卡片
    * @param handCards - 手牌列表
-   * @returns 卡片是否存在
+   * @returns 驗證結果
    */
-  validateCardExists(card: Card, handCards: Card[]): boolean
+  validateCardExists(card: Readonly<Card>, handCards: readonly Card[]): ValidationResult
 
   /**
    * 驗證目標卡片是否在可選目標列表中
    *
    * @param target - 目標卡片
    * @param possibleTargets - 可選目標列表
-   * @returns 目標是否合法
+   * @returns 驗證結果
    */
-  validateTargetInList(target: Card, possibleTargets: Card[]): boolean
+  validateTargetInList(target: Readonly<Card>, possibleTargets: readonly Card[]): ValidationResult
 
   /**
    * 計算役種進度
@@ -84,5 +84,5 @@ export interface DomainFacade {
    * @param depositoryCards - 獲得區卡片
    * @returns 役種進度（所需卡片、已獲得卡片、缺少卡片、完成度）
    */
-  calculateYakuProgress(yakuType: YakuType, depositoryCards: Card[]): YakuProgress
+  calculateYakuProgress(yakuType: YakuType, depositoryCards: readonly Card[]): YakuProgress
 }

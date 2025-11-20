@@ -11,6 +11,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
 import { GameApiClient } from '@/user-interface/adapter/api/GameApiClient'
 import {
   NetworkError,
@@ -18,6 +19,7 @@ import {
   TimeoutError,
   ValidationError,
 } from '@/user-interface/adapter/api/errors'
+import { useGameStateStore } from '@/user-interface/adapter/stores/gameState'
 
 describe('GameApiClient - User Story 1 Contract Tests', () => {
   let apiClient: GameApiClient
@@ -188,6 +190,241 @@ describe('GameApiClient - User Story 1 Contract Tests', () => {
 
         // joinGame 失敗時不重試
         expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
+})
+
+describe('GameApiClient - User Story 2 Contract Tests', () => {
+  let apiClient: GameApiClient
+  const baseURL = 'http://localhost:8080'
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    apiClient = new GameApiClient(baseURL)
+    vi.clearAllMocks()
+
+    // 設定遊戲上下文
+    const store = useGameStateStore()
+    store.gameId = 'game-123'
+    store.localPlayerId = 'player-1'
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  describe('T043 [US2]: playHandCard API Contract', () => {
+    describe('成功場景', () => {
+      it('should send playHandCard command without match target', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 204,
+        })
+
+        await apiClient.playHandCard('0111')
+
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+        expect(global.fetch).toHaveBeenCalledWith(
+          `${baseURL}/api/v1/games/game-123/commands/play-hand-card`,
+          expect.objectContaining({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ card_id: '0111' }),
+          })
+        )
+      })
+
+      it('should send playHandCard command with match target', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 204,
+        })
+
+        await apiClient.playHandCard('0111', '0112')
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          `${baseURL}/api/v1/games/game-123/commands/play-hand-card`,
+          expect.objectContaining({
+            body: JSON.stringify({ card_id: '0111', match_target_id: '0112' }),
+          })
+        )
+      })
+    })
+
+    describe('錯誤場景', () => {
+      it('should throw ValidationError for invalid cardId format', async () => {
+        await expect(apiClient.playHandCard('invalid')).rejects.toThrow(
+          ValidationError
+        )
+        await expect(apiClient.playHandCard('invalid')).rejects.toThrow(
+          '無效的卡片 ID: invalid'
+        )
+      })
+
+      it('should throw ValidationError for invalid matchTargetId format', async () => {
+        await expect(apiClient.playHandCard('0111', 'bad')).rejects.toThrow(
+          ValidationError
+        )
+      })
+
+      it('should throw ValidationError when gameId is not set', async () => {
+        const store = useGameStateStore()
+        store.gameId = null
+
+        await expect(apiClient.playHandCard('0111')).rejects.toThrow(
+          ValidationError
+        )
+        await expect(apiClient.playHandCard('0111')).rejects.toThrow(
+          '遊戲尚未初始化'
+        )
+      })
+
+      it('should throw ValidationError on 422 Unprocessable Entity', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 422,
+          text: async () => 'Not your turn',
+        })
+
+        await expect(apiClient.playHandCard('0111')).rejects.toThrow(
+          ValidationError
+        )
+        await expect(apiClient.playHandCard('0111')).rejects.toThrow(
+          '此操作不合法,請檢查遊戲狀態'
+        )
+      })
+    })
+
+    describe('重試機制', () => {
+      it('should retry 3 times on ServerError', async () => {
+        vi.useFakeTimers()
+
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 500,
+          text: async () => 'Internal Server Error',
+        })
+
+        const promise = apiClient.playHandCard('0111')
+
+        // 執行所有延遲的計時器
+        await vi.runAllTimersAsync()
+
+        await expect(promise).rejects.toThrow(ServerError)
+        expect(global.fetch).toHaveBeenCalledTimes(4) // 1 + 3 retries
+
+        vi.useRealTimers()
+      })
+
+      it('should retry 3 times on NetworkError', async () => {
+        vi.useFakeTimers()
+
+        global.fetch = vi.fn().mockRejectedValue(new TypeError('Network error'))
+
+        const promise = apiClient.playHandCard('0111')
+
+        await vi.runAllTimersAsync()
+
+        await expect(promise).rejects.toThrow(NetworkError)
+        expect(global.fetch).toHaveBeenCalledTimes(4) // 1 + 3 retries
+
+        vi.useRealTimers()
+      })
+
+      it('should NOT retry on ValidationError', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 400,
+          text: async () => 'Bad Request',
+        })
+
+        await expect(apiClient.playHandCard('0111')).rejects.toThrow(
+          ValidationError
+        )
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
+
+  describe('T044 [US2]: selectTarget API Contract', () => {
+    describe('成功場景', () => {
+      it('should send selectTarget command', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 204,
+        })
+
+        await apiClient.selectTarget('0111', '0112')
+
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+        expect(global.fetch).toHaveBeenCalledWith(
+          `${baseURL}/api/v1/games/game-123/commands/select-target`,
+          expect.objectContaining({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              source_card_id: '0111',
+              target_card_id: '0112',
+            }),
+          })
+        )
+      })
+    })
+
+    describe('錯誤場景', () => {
+      it('should throw ValidationError for invalid sourceCardId', async () => {
+        await expect(apiClient.selectTarget('bad', '0112')).rejects.toThrow(
+          ValidationError
+        )
+      })
+
+      it('should throw ValidationError for invalid targetCardId', async () => {
+        await expect(apiClient.selectTarget('0111', 'bad')).rejects.toThrow(
+          ValidationError
+        )
+      })
+
+      it('should throw ValidationError when gameId is not set', async () => {
+        const store = useGameStateStore()
+        store.gameId = null
+
+        await expect(apiClient.selectTarget('0111', '0112')).rejects.toThrow(
+          '遊戲尚未初始化'
+        )
+      })
+
+      it('should throw ValidationError on 422 Unprocessable Entity', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 422,
+          text: async () => 'Invalid match',
+        })
+
+        await expect(apiClient.selectTarget('0111', '0112')).rejects.toThrow(
+          ValidationError
+        )
+      })
+    })
+
+    describe('重試機制', () => {
+      it('should retry 3 times on ServerError', async () => {
+        vi.useFakeTimers()
+
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 500,
+          text: async () => 'Internal Server Error',
+        })
+
+        const promise = apiClient.selectTarget('0111', '0112')
+
+        await vi.runAllTimersAsync()
+
+        await expect(promise).rejects.toThrow(ServerError)
+        expect(global.fetch).toHaveBeenCalledTimes(4)
+
+        vi.useRealTimers()
       })
     })
   })

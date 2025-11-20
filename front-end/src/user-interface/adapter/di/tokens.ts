@@ -44,6 +44,9 @@ export const TOKENS = {
   GameStateStore: Symbol('GameStateStore'),
   UIStateStore: Symbol('UIStateStore'),
 
+  // ===== Domain Facade =====
+  DomainFacade: Symbol('DomainFacade'),
+
   // ===== Mock Adapters =====
   MockApiClient: Symbol('MockApiClient'),
   MockEventEmitter: Symbol('MockEventEmitter'),

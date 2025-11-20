@@ -15,6 +15,7 @@ import TopInfoBar from './GamePage/components/TopInfoBar.vue'
 import FieldZone from './GamePage/components/FieldZone.vue'
 import PlayerHandZone from './GamePage/components/PlayerHandZone.vue'
 import CardComponent from './GamePage/components/CardComponent.vue'
+import SelectionOverlay from './GamePage/components/SelectionOverlay.vue'
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
@@ -122,6 +123,9 @@ function handleFieldCardClick(cardId: string) {
         </div>
       </div>
     </Transition>
+
+    <!-- T057 [US2]: Selection Overlay for multiple match targets -->
+    <SelectionOverlay @target-selected="handleFieldCardClick" />
   </div>
 </template>
 
