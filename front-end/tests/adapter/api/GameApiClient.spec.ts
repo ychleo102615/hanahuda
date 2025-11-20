@@ -306,12 +306,14 @@ describe('GameApiClient - User Story 2 Contract Tests', () => {
           text: async () => 'Internal Server Error',
         })
 
-        const promise = apiClient.playHandCard('0111')
+        // 捕獲 promise 並附加 error handler 防止 unhandled rejection
+        const promise = apiClient.playHandCard('0111').catch((error) => error)
 
         // 執行所有延遲的計時器
         await vi.runAllTimersAsync()
 
-        await expect(promise).rejects.toThrow(ServerError)
+        const error = await promise
+        expect(error).toBeInstanceOf(ServerError)
         expect(global.fetch).toHaveBeenCalledTimes(4) // 1 + 3 retries
 
         vi.useRealTimers()
@@ -322,11 +324,12 @@ describe('GameApiClient - User Story 2 Contract Tests', () => {
 
         global.fetch = vi.fn().mockRejectedValue(new TypeError('Network error'))
 
-        const promise = apiClient.playHandCard('0111')
+        const promise = apiClient.playHandCard('0111').catch((error) => error)
 
         await vi.runAllTimersAsync()
 
-        await expect(promise).rejects.toThrow(NetworkError)
+        const error = await promise
+        expect(error).toBeInstanceOf(NetworkError)
         expect(global.fetch).toHaveBeenCalledTimes(4) // 1 + 3 retries
 
         vi.useRealTimers()
@@ -417,11 +420,12 @@ describe('GameApiClient - User Story 2 Contract Tests', () => {
           text: async () => 'Internal Server Error',
         })
 
-        const promise = apiClient.selectTarget('0111', '0112')
+        const promise = apiClient.selectTarget('0111', '0112').catch((error) => error)
 
         await vi.runAllTimersAsync()
 
-        await expect(promise).rejects.toThrow(ServerError)
+        const error = await promise
+        expect(error).toBeInstanceOf(ServerError)
         expect(global.fetch).toHaveBeenCalledTimes(4)
 
         vi.useRealTimers()
