@@ -20,6 +20,9 @@ import type {
   SelectionRequiredEvent,
   DecisionRequiredEvent,
   DecisionMadeEvent,
+  RoundScoredEvent,
+  GameFinishedEvent,
+  TurnErrorEvent,
 } from '@/user-interface/application/types/events'
 
 describe('EventRouter - User Story 1 Contract Tests', () => {
@@ -686,6 +689,282 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
       expect(consoleSpy).toHaveBeenCalledWith(
         '未註冊的事件類型: DecisionMade'
       )
+
+      consoleSpy.mockRestore()
+    })
+  })
+})
+
+describe('EventRouter - User Story 4 Contract Tests', () => {
+  let router: EventRouter
+
+  beforeEach(() => {
+    router = new EventRouter()
+  })
+
+  describe('T077 [US4]: RoundScored Event Routing', () => {
+    it('should route RoundScored event to registered Input Port', () => {
+      const mockPort: InputPort<RoundScoredEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: RoundScoredEvent = {
+        event_type: 'RoundScored',
+        event_id: 'evt-013',
+        timestamp: '2025-01-19T10:01:00Z',
+        winner_id: 'player-1',
+        yaku_list: [
+          {
+            yaku_type: 'INO_SHIKA_CHO',
+            base_score: 5,
+            cards: ['0111', '0112', '0211', '0212'],
+          },
+          {
+            yaku_type: 'TANE',
+            base_score: 1,
+            cards: ['0311', '0411', '0511', '0611', '0711'],
+          },
+        ],
+        base_score: 6,
+        final_score: 12,
+        multipliers: {
+          base_multiplier: 1,
+          koi_koi_count: 1,
+          bonus_multiplier: 2,
+        },
+        updated_total_scores: [
+          { player_id: 'player-1', total_score: 12 },
+          { player_id: 'player-2', total_score: 0 },
+        ],
+      }
+
+      router.register('RoundScored', mockPort)
+      router.route('RoundScored', mockPayload)
+
+      expect(mockPort.execute).toHaveBeenCalledTimes(1)
+      expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
+    })
+
+    it('should correctly pass yaku_list array', () => {
+      const mockPort: InputPort<RoundScoredEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: RoundScoredEvent = {
+        event_type: 'RoundScored',
+        event_id: 'evt-014',
+        timestamp: '2025-01-19T10:01:05Z',
+        winner_id: 'player-2',
+        yaku_list: [
+          {
+            yaku_type: 'GOKO',
+            base_score: 15,
+            cards: ['0111', '0211', '0311', '0411', '0811'],
+          },
+        ],
+        base_score: 15,
+        final_score: 15,
+        multipliers: {
+          base_multiplier: 1,
+          koi_koi_count: 0,
+          bonus_multiplier: 1,
+        },
+        updated_total_scores: [
+          { player_id: 'player-1', total_score: 0 },
+          { player_id: 'player-2', total_score: 15 },
+        ],
+      }
+
+      router.register('RoundScored', mockPort)
+      router.route('RoundScored', mockPayload)
+
+      const receivedPayload = mockPort.execute.mock.calls[0][0]
+      expect(receivedPayload.yaku_list.length).toBe(1)
+      expect(receivedPayload.yaku_list[0].yaku_type).toBe('GOKO')
+      expect(receivedPayload.base_score).toBe(15)
+      expect(receivedPayload.final_score).toBe(15)
+    })
+
+    it('should correctly pass updated_total_scores', () => {
+      const mockPort: InputPort<RoundScoredEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: RoundScoredEvent = {
+        event_type: 'RoundScored',
+        event_id: 'evt-015',
+        timestamp: '2025-01-19T10:01:10Z',
+        winner_id: 'player-1',
+        yaku_list: [],
+        base_score: 1,
+        final_score: 8,
+        multipliers: {
+          base_multiplier: 1,
+          koi_koi_count: 3,
+          bonus_multiplier: 8,
+        },
+        updated_total_scores: [
+          { player_id: 'player-1', total_score: 20 },
+          { player_id: 'player-2', total_score: 5 },
+        ],
+      }
+
+      router.register('RoundScored', mockPort)
+      router.route('RoundScored', mockPayload)
+
+      const receivedPayload = mockPort.execute.mock.calls[0][0]
+      expect(receivedPayload.updated_total_scores.length).toBe(2)
+      expect(receivedPayload.updated_total_scores[0].total_score).toBe(20)
+      expect(receivedPayload.updated_total_scores[1].total_score).toBe(5)
+    })
+
+    it('should handle unregistered RoundScored event gracefully', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      router.route('RoundScored', {} as RoundScoredEvent)
+
+      expect(consoleSpy).toHaveBeenCalledWith('未註冊的事件類型: RoundScored')
+
+      consoleSpy.mockRestore()
+    })
+  })
+
+  describe('T078 [US4]: GameFinished Event Routing', () => {
+    it('should route GameFinished event to registered Input Port', () => {
+      const mockPort: InputPort<GameFinishedEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: GameFinishedEvent = {
+        event_type: 'GameFinished',
+        event_id: 'evt-016',
+        timestamp: '2025-01-19T10:01:15Z',
+        winner_id: 'player-1',
+        final_scores: [
+          { player_id: 'player-1', total_score: 12 },
+          { player_id: 'player-2', total_score: 5 },
+        ],
+      }
+
+      router.register('GameFinished', mockPort)
+      router.route('GameFinished', mockPayload)
+
+      expect(mockPort.execute).toHaveBeenCalledTimes(1)
+      expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
+    })
+
+    it('should correctly pass final_scores array', () => {
+      const mockPort: InputPort<GameFinishedEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: GameFinishedEvent = {
+        event_type: 'GameFinished',
+        event_id: 'evt-017',
+        timestamp: '2025-01-19T10:01:20Z',
+        winner_id: 'player-2',
+        final_scores: [
+          { player_id: 'player-1', total_score: 3 },
+          { player_id: 'player-2', total_score: 7 },
+        ],
+      }
+
+      router.register('GameFinished', mockPort)
+      router.route('GameFinished', mockPayload)
+
+      const receivedPayload = mockPort.execute.mock.calls[0][0]
+      expect(receivedPayload.final_scores.length).toBe(2)
+      expect(receivedPayload.winner_id).toBe('player-2')
+      expect(receivedPayload.final_scores[1].total_score).toBe(7)
+    })
+
+    it('should handle unregistered GameFinished event gracefully', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      router.route('GameFinished', {} as GameFinishedEvent)
+
+      expect(consoleSpy).toHaveBeenCalledWith('未註冊的事件類型: GameFinished')
+
+      consoleSpy.mockRestore()
+    })
+  })
+
+  describe('T079 [US4]: TurnError Event Routing', () => {
+    it('should route TurnError event to registered Input Port', () => {
+      const mockPort: InputPort<TurnErrorEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: TurnErrorEvent = {
+        event_type: 'TurnError',
+        event_id: 'evt-018',
+        timestamp: '2025-01-19T10:01:25Z',
+        player_id: 'player-1',
+        error_code: 'INVALID_CARD',
+        error_message: 'Card not found in player hand',
+        retry_allowed: true,
+      }
+
+      router.register('TurnError', mockPort)
+      router.route('TurnError', mockPayload)
+
+      expect(mockPort.execute).toHaveBeenCalledTimes(1)
+      expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
+    })
+
+    it('should correctly pass error information', () => {
+      const mockPort: InputPort<TurnErrorEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: TurnErrorEvent = {
+        event_type: 'TurnError',
+        event_id: 'evt-019',
+        timestamp: '2025-01-19T10:01:30Z',
+        player_id: 'player-2',
+        error_code: 'NOT_YOUR_TURN',
+        error_message: 'It is not your turn',
+        retry_allowed: false,
+      }
+
+      router.register('TurnError', mockPort)
+      router.route('TurnError', mockPayload)
+
+      const receivedPayload = mockPort.execute.mock.calls[0][0]
+      expect(receivedPayload.error_code).toBe('NOT_YOUR_TURN')
+      expect(receivedPayload.error_message).toBe('It is not your turn')
+      expect(receivedPayload.retry_allowed).toBe(false)
+    })
+
+    it('should handle different error codes', () => {
+      const mockPort: InputPort<TurnErrorEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: TurnErrorEvent = {
+        event_type: 'TurnError',
+        event_id: 'evt-020',
+        timestamp: '2025-01-19T10:01:35Z',
+        player_id: 'player-1',
+        error_code: 'INVALID_STATE',
+        error_message: 'Cannot play card in current state',
+        retry_allowed: true,
+      }
+
+      router.register('TurnError', mockPort)
+      router.route('TurnError', mockPayload)
+
+      const receivedPayload = mockPort.execute.mock.calls[0][0]
+      expect(receivedPayload.error_code).toBe('INVALID_STATE')
+      expect(receivedPayload.retry_allowed).toBe(true)
+    })
+
+    it('should handle unregistered TurnError event gracefully', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      router.route('TurnError', {} as TurnErrorEvent)
+
+      expect(consoleSpy).toHaveBeenCalledWith('未註冊的事件類型: TurnError')
 
       consoleSpy.mockRestore()
     })

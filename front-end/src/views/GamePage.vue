@@ -14,9 +14,13 @@ import { useUIStateStore } from '../user-interface/adapter/stores/uiState'
 import TopInfoBar from './GamePage/components/TopInfoBar.vue'
 import FieldZone from './GamePage/components/FieldZone.vue'
 import PlayerHandZone from './GamePage/components/PlayerHandZone.vue'
+import OpponentDepositoryZone from './GamePage/components/OpponentDepositoryZone.vue'
+import PlayerDepositoryZone from './GamePage/components/PlayerDepositoryZone.vue'
 import CardComponent from './GamePage/components/CardComponent.vue'
 import SelectionOverlay from './GamePage/components/SelectionOverlay.vue'
 import DecisionModal from './GamePage/components/DecisionModal.vue'
+import ErrorToast from './GamePage/components/ErrorToast.vue'
+import GameFinishedModal from './GamePage/components/GameFinishedModal.vue'
 import { TOKENS } from '../user-interface/adapter/di/tokens'
 
 const gameState = useGameStateStore()
@@ -73,17 +77,7 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- 對手已獲得牌區 (~15% viewport) -->
     <section class="h-[15%] bg-gray-700/50 overflow-x-auto">
-      <div class="h-full flex items-center justify-center p-2 gap-1">
-        <CardComponent
-          v-for="cardId in opponentDepository"
-          :key="cardId"
-          :card-id="cardId"
-          size="sm"
-        />
-        <div v-if="opponentDepository.length === 0" class="text-gray-400 text-sm">
-          Opponent's Capture
-        </div>
-      </div>
+      <OpponentDepositoryZone />
     </section>
 
     <!-- 場中央牌區 (~30% viewport) -->
@@ -93,17 +87,7 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- 玩家已獲得牌區 (~15% viewport) -->
     <section class="h-[15%] bg-gray-700/50 overflow-x-auto">
-      <div class="h-full flex items-center justify-center p-2 gap-1">
-        <CardComponent
-          v-for="cardId in myDepository"
-          :key="cardId"
-          :card-id="cardId"
-          size="sm"
-        />
-        <div v-if="myDepository.length === 0" class="text-gray-400 text-sm">
-          Your Capture
-        </div>
-      </div>
+      <PlayerDepositoryZone />
     </section>
 
     <!-- 玩家手牌區 (~30% viewport) -->
@@ -116,15 +100,8 @@ function handleFieldCardClick(cardId: string) {
       Opponent Hand: {{ opponentHandCount }}
     </div>
 
-    <!-- 錯誤訊息 Toast -->
-    <Transition name="fade">
-      <div
-        v-if="errorMessage"
-        class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg"
-      >
-        {{ errorMessage }}
-      </div>
-    </Transition>
+    <!-- T088-T090 [US4]: Error Toast -->
+    <ErrorToast />
 
     <!-- 資訊訊息 Toast -->
     <Transition name="fade">
@@ -154,6 +131,9 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- T072-T076 [US3]: Koi-Koi Decision Modal -->
     <DecisionModal />
+
+    <!-- T089-T091 [US4]: Game Finished Modal -->
+    <GameFinishedModal />
   </div>
 </template>
 

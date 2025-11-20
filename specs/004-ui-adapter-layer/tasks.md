@@ -212,35 +212,35 @@
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T077 [P] [US4] Contract test for RoundScored event in front-end/tests/adapter/sse/EventRouter.spec.ts
-- [ ] T078 [P] [US4] Contract test for GameFinished event in front-end/tests/adapter/sse/EventRouter.spec.ts
-- [ ] T079 [P] [US4] Contract test for TurnError event in front-end/tests/adapter/sse/EventRouter.spec.ts
-- [ ] T080 [P] [US4] Integration test for complete event flow in front-end/tests/adapter/sse/integration.spec.ts
+- [X] T077 [P] [US4] Contract test for RoundScored event in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T078 [P] [US4] Contract test for GameFinished event in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T079 [P] [US4] Contract test for TurnError event in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T080 [P] [US4] Integration test for complete event flow in front-end/tests/adapter/sse/integration.spec.ts
 
 ### Implementation for User Story 4
 
 #### Remaining SSE Event Handlers
 
-- [ ] T081 [P] [US4] Register RoundScored event handler in EventRouter
-- [ ] T082 [P] [US4] Register RoundEndedInstantly event handler in EventRouter
-- [ ] T083 [P] [US4] Register RoundDrawn event handler in EventRouter
-- [ ] T084 [P] [US4] Register GameFinished event handler in EventRouter
-- [ ] T085 [P] [US4] Register TurnError event handler in EventRouter
-- [ ] T086 [P] [US4] Register GameSnapshotRestore event handler in EventRouter
-- [ ] T087 [US4] Write comprehensive event routing tests in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T081 [P] [US4] Register RoundScored event handler in EventRouter
+- [X] T082 [P] [US4] Register RoundEndedInstantly event handler in EventRouter
+- [X] T083 [P] [US4] Register RoundDrawn event handler in EventRouter
+- [X] T084 [P] [US4] Register GameFinished event handler in EventRouter
+- [X] T085 [P] [US4] Register TurnError event handler in EventRouter
+- [X] T086 [P] [US4] Register GameSnapshotRestore event handler in EventRouter
+- [X] T087 [US4] Write comprehensive event routing tests in front-end/tests/adapter/sse/EventRouter.spec.ts
 
 #### Error Handling UI
 
-- [ ] T088 [P] [US4] Create ErrorToast component in front-end/src/views/GamePage/components/ErrorToast.vue
-- [ ] T089 [P] [US4] Create GameFinishedModal component in front-end/src/views/GamePage/components/GameFinishedModal.vue
-- [ ] T090 [US4] Integrate ErrorToast with UIStateStore.errorMessage
-- [ ] T091 [US4] Integrate GameFinishedModal with UIStateStore.gameFinishedData
+- [X] T088 [P] [US4] Create ErrorToast component in front-end/src/views/GamePage/components/ErrorToast.vue
+- [X] T089 [P] [US4] Create GameFinishedModal component in front-end/src/views/GamePage/components/GameFinishedModal.vue
+- [X] T090 [US4] Integrate ErrorToast with UIStateStore.errorMessage
+- [X] T091 [US4] Integrate GameFinishedModal with UIStateStore.gameFinishedData
 
 #### Additional Components
 
-- [ ] T092 [P] [US4] Create OpponentDepositoryZone component in front-end/src/views/GamePage/components/OpponentDepositoryZone.vue
-- [ ] T093 [P] [US4] Create PlayerDepositoryZone component in front-end/src/views/GamePage/components/PlayerDepositoryZone.vue
-- [ ] T094 [US4] Update TopInfoBar to show scores and current player
+- [X] T092 [P] [US4] Create OpponentDepositoryZone component in front-end/src/views/GamePage/components/OpponentDepositoryZone.vue
+- [X] T093 [P] [US4] Create PlayerDepositoryZone component in front-end/src/views/GamePage/components/PlayerDepositoryZone.vue
+- [X] T094 [US4] Update TopInfoBar to show scores and current player
 - [ ] T095 [US4] Add component tests for error handling in front-end/tests/adapter/components/
 
 **Checkpoint**: At this point, all 13 SSE events should be handled correctly with UI updates

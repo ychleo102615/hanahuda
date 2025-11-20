@@ -30,6 +30,12 @@ import { HandleSelectionRequiredUseCase } from '../../application/use-cases/even
 import { HandleTurnProgressAfterSelectionUseCase } from '../../application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
 import { HandleDecisionRequiredUseCase } from '../../application/use-cases/event-handlers/HandleDecisionRequiredUseCase'
 import { HandleDecisionMadeUseCase } from '../../application/use-cases/event-handlers/HandleDecisionMadeUseCase'
+import { HandleRoundScoredUseCase } from '../../application/use-cases/event-handlers/HandleRoundScoredUseCase'
+import { HandleRoundEndedInstantlyUseCase } from '../../application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase'
+import { HandleRoundDrawnUseCase } from '../../application/use-cases/event-handlers/HandleRoundDrawnUseCase'
+import { HandleGameFinishedUseCase } from '../../application/use-cases/event-handlers/HandleGameFinishedUseCase'
+import { HandleTurnErrorUseCase } from '../../application/use-cases/event-handlers/HandleTurnErrorUseCase'
+import { HandleReconnectionUseCase } from '../../application/use-cases/event-handlers/HandleReconnectionUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
@@ -230,7 +236,49 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  console.info('[DI] Registered Player Operations, US2, and US3 event handlers')
+  // T081 [US4]: 註冊 RoundScored 事件處理器
+  container.register(
+    TOKENS.HandleRoundScoredPort,
+    () => new HandleRoundScoredUseCase(uiStatePort, triggerUIEffectPort, domainFacade),
+    { singleton: true }
+  )
+
+  // T082 [US4]: 註冊 RoundEndedInstantly 事件處理器
+  container.register(
+    TOKENS.HandleRoundEndedInstantlyPort,
+    () => new HandleRoundEndedInstantlyUseCase(uiStatePort, triggerUIEffectPort),
+    { singleton: true }
+  )
+
+  // T083 [US4]: 註冊 RoundDrawn 事件處理器
+  container.register(
+    TOKENS.HandleRoundDrawnPort,
+    () => new HandleRoundDrawnUseCase(triggerUIEffectPort),
+    { singleton: true }
+  )
+
+  // T084 [US4]: 註冊 GameFinished 事件處理器
+  container.register(
+    TOKENS.HandleGameFinishedPort,
+    () => new HandleGameFinishedUseCase(triggerUIEffectPort, uiStatePort),
+    { singleton: true }
+  )
+
+  // T085 [US4]: 註冊 TurnError 事件處理器
+  container.register(
+    TOKENS.HandleTurnErrorPort,
+    () => new HandleTurnErrorUseCase(triggerUIEffectPort),
+    { singleton: true }
+  )
+
+  // T086 [US4]: 註冊 GameSnapshotRestore (Reconnection) 事件處理器
+  container.register(
+    TOKENS.HandleGameSnapshotRestorePort,
+    () => new HandleReconnectionUseCase(uiStatePort, triggerUIEffectPort),
+    { singleton: true }
+  )
+
+  console.info('[DI] Registered Player Operations, US2, US3, and US4 event handlers')
 }
 
 /**
@@ -332,7 +380,22 @@ function registerEventRoutes(container: DIContainer): void {
   router.register('DecisionRequired', decisionRequiredPort)
   router.register('DecisionMade', decisionMadePort)
 
-  console.info('[DI] Phase 5: Registered US2 and US3 event routes')
+  // T081-T086 [US4]: 綁定 RoundScored、RoundEndedInstantly、RoundDrawn、GameFinished、TurnError、GameSnapshotRestore 事件
+  const roundScoredPort = container.resolve(TOKENS.HandleRoundScoredPort) as { execute: (payload: unknown) => void }
+  const roundEndedInstantlyPort = container.resolve(TOKENS.HandleRoundEndedInstantlyPort) as { execute: (payload: unknown) => void }
+  const roundDrawnPort = container.resolve(TOKENS.HandleRoundDrawnPort) as { execute: (payload: unknown) => void }
+  const gameFinishedPort = container.resolve(TOKENS.HandleGameFinishedPort) as { execute: (payload: unknown) => void }
+  const turnErrorPort = container.resolve(TOKENS.HandleTurnErrorPort) as { execute: (payload: unknown) => void }
+  const gameSnapshotRestorePort = container.resolve(TOKENS.HandleGameSnapshotRestorePort) as { execute: (payload: unknown) => void }
+
+  router.register('RoundScored', roundScoredPort)
+  router.register('RoundEndedInstantly', roundEndedInstantlyPort)
+  router.register('RoundDrawn', roundDrawnPort)
+  router.register('GameFinished', gameFinishedPort)
+  router.register('TurnError', turnErrorPort)
+  router.register('GameSnapshotRestore', gameSnapshotRestorePort)
+
+  console.info('[DI] Phase 6: Registered US2, US3, and US4 event routes')
 }
 
 /**
