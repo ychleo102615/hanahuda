@@ -79,11 +79,264 @@ export const mockEventScript: MockEventItem[] = [
     delay: 1000,
   },
 
-  // 3. (TODO) 後續事件將在 User Story 2-5 實作時新增
-  // - TurnCompleted
-  // - SelectionRequired
-  // - DecisionRequired
-  // - YakuFormed
-  // - RoundScored
-  // - GameFinished
+  // 3. 玩家出牌完成 (手牌配對場牌)
+  {
+    eventType: 'TurnCompleted',
+    payload: {
+      event_type: 'TurnCompleted',
+      event_id: 'evt-003',
+      timestamp: new Date().toISOString(),
+      player_id: 'player-1',
+      hand_card: '0112',
+      deck_card: '0113',
+      hand_match: { source: '0112', target: '0111' },
+      deck_match: null,
+      captured: ['0112', '0111'],
+      discarded: ['0113'],
+      next_state: {
+        flow_stage: 'PLAYING_HAND_CARD',
+        current_player_id: 'player-2',
+        round_number: 1,
+        turn_number: 2,
+      },
+    },
+    delay: 2000,
+  },
+
+  // 4. 對手出牌完成
+  {
+    eventType: 'TurnCompleted',
+    payload: {
+      event_type: 'TurnCompleted',
+      event_id: 'evt-004',
+      timestamp: new Date().toISOString(),
+      player_id: 'player-2',
+      hand_card: '0121',
+      deck_card: '0122',
+      hand_match: null,
+      deck_match: null,
+      captured: [],
+      discarded: ['0121', '0122'],
+      next_state: {
+        flow_stage: 'PLAYING_HAND_CARD',
+        current_player_id: 'player-1',
+        round_number: 1,
+        turn_number: 3,
+      },
+    },
+    delay: 1500,
+  },
+
+  // 5. 玩家出牌需要選擇配對 (多張同月牌)
+  {
+    eventType: 'SelectionRequired',
+    payload: {
+      event_type: 'SelectionRequired',
+      event_id: 'evt-005',
+      timestamp: new Date().toISOString(),
+      player_id: 'player-1',
+      source_card: '0212',
+      selection_type: 'HAND_MATCH',
+      options: ['0211', '0113'],
+    },
+    delay: 1000,
+  },
+
+  // 6. 選擇後的回合進度
+  {
+    eventType: 'TurnProgressAfterSelection',
+    payload: {
+      event_type: 'TurnProgressAfterSelection',
+      event_id: 'evt-006',
+      timestamp: new Date().toISOString(),
+      player_id: 'player-1',
+      selected_target: '0211',
+      captured: ['0212', '0211'],
+      deck_card: '0214',
+      deck_match: null,
+      discarded: ['0214'],
+      next_state: {
+        flow_stage: 'PLAYING_HAND_CARD',
+        current_player_id: 'player-2',
+        round_number: 1,
+        turn_number: 4,
+      },
+    },
+    delay: 1500,
+  },
+
+  // 7. 繼續遊戲...對手回合
+  {
+    eventType: 'TurnCompleted',
+    payload: {
+      event_type: 'TurnCompleted',
+      event_id: 'evt-007',
+      timestamp: new Date().toISOString(),
+      player_id: 'player-2',
+      hand_card: '0221',
+      deck_card: '0223',
+      hand_match: null,
+      deck_match: null,
+      captured: [],
+      discarded: ['0221', '0223'],
+      next_state: {
+        flow_stage: 'PLAYING_HAND_CARD',
+        current_player_id: 'player-1',
+        round_number: 1,
+        turn_number: 5,
+      },
+    },
+    delay: 1500,
+  },
+
+  // 8. 需要 Koi-Koi 決策 (役種形成時)
+  {
+    eventType: 'DecisionRequired',
+    payload: {
+      event_type: 'DecisionRequired',
+      event_id: 'evt-008',
+      timestamp: new Date().toISOString(),
+      player_id: 'player-1',
+      current_yaku: [
+        {
+          yaku_id: 'TANZAKU',
+          name: '短冊',
+          points: 1,
+          cards: ['0112', '0212', '0312'],
+        },
+      ],
+      current_points: 1,
+      potential_yaku: ['AKA_TAN', 'AO_TAN'],
+    },
+    delay: 2000,
+  },
+
+  // 9. 玩家選擇繼續 (Koi-Koi)
+  {
+    eventType: 'DecisionMade',
+    payload: {
+      event_type: 'DecisionMade',
+      event_id: 'evt-009',
+      timestamp: new Date().toISOString(),
+      player_id: 'player-1',
+      decision: 'KOI_KOI',
+      accumulated_points: 1,
+      next_state: {
+        flow_stage: 'PLAYING_HAND_CARD',
+        current_player_id: 'player-2',
+        round_number: 1,
+        turn_number: 6,
+      },
+    },
+    delay: 1000,
+  },
+
+  // 10. 對手回合
+  {
+    eventType: 'TurnCompleted',
+    payload: {
+      event_type: 'TurnCompleted',
+      event_id: 'evt-010',
+      timestamp: new Date().toISOString(),
+      player_id: 'player-2',
+      hand_card: '0321',
+      deck_card: '0322',
+      hand_match: { source: '0321', target: '0311' },
+      deck_match: null,
+      captured: ['0321', '0311'],
+      discarded: ['0322'],
+      next_state: {
+        flow_stage: 'PLAYING_HAND_CARD',
+        current_player_id: 'player-1',
+        round_number: 1,
+        turn_number: 7,
+      },
+    },
+    delay: 1500,
+  },
+
+  // 11. 再次需要決策 (形成更高分役種)
+  {
+    eventType: 'DecisionRequired',
+    payload: {
+      event_type: 'DecisionRequired',
+      event_id: 'evt-011',
+      timestamp: new Date().toISOString(),
+      player_id: 'player-1',
+      current_yaku: [
+        {
+          yaku_id: 'TANZAKU',
+          name: '短冊',
+          points: 1,
+          cards: ['0112', '0212', '0312'],
+        },
+        {
+          yaku_id: 'AKA_TAN',
+          name: '赤短',
+          points: 6,
+          cards: ['0112', '0212', '0312'],
+        },
+      ],
+      current_points: 7,
+      potential_yaku: [],
+    },
+    delay: 2000,
+  },
+
+  // 12. 玩家選擇結束
+  {
+    eventType: 'DecisionMade',
+    payload: {
+      event_type: 'DecisionMade',
+      event_id: 'evt-012',
+      timestamp: new Date().toISOString(),
+      player_id: 'player-1',
+      decision: 'END_ROUND',
+      accumulated_points: 7,
+      next_state: {
+        flow_stage: 'ROUND_ENDED',
+        current_player_id: null,
+        round_number: 1,
+        turn_number: 7,
+      },
+    },
+    delay: 1000,
+  },
+
+  // 13. 回合計分
+  {
+    eventType: 'RoundScored',
+    payload: {
+      event_type: 'RoundScored',
+      event_id: 'evt-013',
+      timestamp: new Date().toISOString(),
+      winner_id: 'player-1',
+      loser_id: 'player-2',
+      points_awarded: 7,
+      end_reason: 'PLAYER_ENDED',
+      scores: [
+        { player_id: 'player-1', round_score: 7, total_score: 7 },
+        { player_id: 'player-2', round_score: 0, total_score: 0 },
+      ],
+    },
+    delay: 2000,
+  },
+
+  // 14. 遊戲結束
+  {
+    eventType: 'GameFinished',
+    payload: {
+      event_type: 'GameFinished',
+      event_id: 'evt-014',
+      timestamp: new Date().toISOString(),
+      winner_id: 'player-1',
+      final_scores: [
+        { player_id: 'player-1', total_score: 7 },
+        { player_id: 'player-2', total_score: 0 },
+      ],
+      total_rounds: 1,
+      end_reason: 'TARGET_SCORE_REACHED',
+    },
+    delay: 1000,
+  },
 ]

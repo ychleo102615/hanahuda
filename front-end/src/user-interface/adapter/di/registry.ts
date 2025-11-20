@@ -25,6 +25,8 @@ import type { DIContainer } from './container'
 import { TOKENS } from './tokens'
 import { useGameStateStore, createUIStatePortAdapter } from '../stores/gameState'
 import { useUIStateStore, createTriggerUIEffectPortAdapter } from '../stores/uiState'
+import { HandleGameStartedUseCase } from '../../application/use-cases/event-handlers/HandleGameStartedUseCase'
+import { HandleRoundDealtUseCase } from '../../application/use-cases/event-handlers/HandleRoundDealtUseCase'
 import { HandleTurnCompletedUseCase } from '../../application/use-cases/event-handlers/HandleTurnCompletedUseCase'
 import { HandleSelectionRequiredUseCase } from '../../application/use-cases/event-handlers/HandleSelectionRequiredUseCase'
 import { HandleTurnProgressAfterSelectionUseCase } from '../../application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
@@ -197,6 +199,20 @@ function registerInputPorts(container: DIContainer): void {
 
   // Event Handlers
 
+  // T030 [US1]: 註冊 GameStarted 事件處理器
+  container.register(
+    TOKENS.HandleGameStartedPort,
+    () => new HandleGameStartedUseCase(uiStatePort, triggerUIEffectPort),
+    { singleton: true }
+  )
+
+  // T030 [US1]: 註冊 RoundDealt 事件處理器
+  container.register(
+    TOKENS.HandleRoundDealtPort,
+    () => new HandleRoundDealtUseCase(uiStatePort, triggerUIEffectPort),
+    { singleton: true }
+  )
+
   // T050 [US2]: 註冊 TurnCompleted 事件處理器
   container.register(
     TOKENS.HandleTurnCompletedPort,
@@ -363,6 +379,13 @@ function registerEventRoutes(container: DIContainer): void {
   const router = container.resolve(TOKENS.EventRouter) as {
     register: (eventType: string, port: { execute: (payload: unknown) => void }) => void
   }
+
+  // T030 [US1]: 綁定 GameStarted 和 RoundDealt 事件
+  const gameStartedPort = container.resolve(TOKENS.HandleGameStartedPort) as { execute: (payload: unknown) => void }
+  const roundDealtPort = container.resolve(TOKENS.HandleRoundDealtPort) as { execute: (payload: unknown) => void }
+
+  router.register('GameStarted', gameStartedPort)
+  router.register('RoundDealt', roundDealtPort)
 
   // T053 [US2]: 綁定 TurnCompleted、SelectionRequired、TurnProgressAfterSelection 事件
   const turnCompletedPort = container.resolve(TOKENS.HandleTurnCompletedPort) as { execute: (payload: unknown) => void }

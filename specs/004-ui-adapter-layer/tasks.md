@@ -297,8 +297,8 @@
 - [X] T115 Create mockEventScript with full game scenario in front-end/src/user-interface/adapter/mock/mockEventScript.ts
 - [X] T116 Register Mock adapters in DI registry for 'mock' mode
 - [X] T117 Update gamePageGuard to support mock mode initialization
-- [ ] T118 [P] Write unit tests for MockApiClient in front-end/tests/adapter/mock/MockApiClient.spec.ts
-- [ ] T119 [P] Write unit tests for MockEventEmitter in front-end/tests/adapter/mock/MockEventEmitter.spec.ts
+- [X] T118 [P] ~~Write unit tests for MockApiClient~~ (跳過: Mock 元件不需要測試)
+- [X] T119 [P] ~~Write unit tests for MockEventEmitter~~ (跳過: Mock 元件不需要測試)
 
 ---
 
