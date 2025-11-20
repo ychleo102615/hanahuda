@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mmtiToSvgName, getCardIconName, DEFAULT_CARD_ICON_NAME } from '../cardMapping'
+import { mmtiToSvgName, getCardIconName, DEFAULT_CARD_ICON_NAME } from '@/utils/cardMapping'
 
 describe('cardMapping', () => {
   // Mock console.warn to avoid cluttering test output
