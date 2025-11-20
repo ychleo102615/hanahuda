@@ -158,9 +158,9 @@
 
 #### Animation - Card Movement
 
-- [X] T060 [US2] Implement CARD_MOVE animation in AnimationService
-- [X] T061 [US2] Add CSS transitions for card movement in CardComponent
-- [ ] T062 [US2] Write tests for CARD_MOVE animation in front-end/tests/adapter/animation/AnimationService.spec.ts
+- [X] T060 [US2] Implement CARD_MOVE animation in AnimationService (使用 @vueuse/motion)
+- [X] T061 [US2] Add CSS transitions for card movement in CardComponent (使用 @vueuse/motion)
+- [X] T062 [US2] Write tests for CARD_MOVE animation in front-end/tests/adapter/animation/AnimationService.spec.ts
 
 **Checkpoint**: At this point, User Story 2 should work independently - player can play cards and see matching
 

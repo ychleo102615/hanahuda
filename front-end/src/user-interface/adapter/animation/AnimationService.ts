@@ -4,10 +4,12 @@
  * @description
  * 實作 TriggerUIEffectPort.triggerAnimation 方法，
  * 管理動畫佇列，支援動畫中斷。
+ * 使用 @vueuse/motion 實現流暢的卡片移動動畫。
  */
 
 import type { Animation, AnimationParams, AnimationType, DealCardsParams, CardMoveParams } from './types'
 import { AnimationQueue, InterruptedError } from './AnimationQueue'
+import { useMotion } from '@vueuse/motion'
 
 /**
  * 輔助函數：等待指定時間
@@ -130,15 +132,31 @@ export class AnimationService {
     const deltaX = to.x - from.x
     const deltaY = to.y - from.y
 
-    // 設定 CSS transition
-    cardElement.style.transition = `transform ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)`
-    cardElement.style.transform = `translate(${deltaX}px, ${deltaY}px)`
+    // 使用 @vueuse/motion 實現動畫
+    const { apply } = useMotion(cardElement, {
+      initial: {
+        x: 0,
+        y: 0,
+      },
+      enter: {
+        x: deltaX,
+        y: deltaY,
+        transition: {
+          type: 'spring',
+          stiffness: 200,
+          damping: 20,
+          mass: 1,
+        },
+      },
+    })
 
-    // 等待動畫完成
+    // 應用動畫
+    await apply('enter')
+
+    // 等待動畫穩定
     await sleep(duration)
 
     // 清理樣式（讓組件自己管理最終位置）
-    cardElement.style.transition = ''
     cardElement.style.transform = ''
   }
 }

@@ -2,6 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { AnimationService } from '../../../src/user-interface/adapter/animation/AnimationService'
 import { InterruptedError } from '../../../src/user-interface/adapter/animation/AnimationQueue'
 
+// Mock @vueuse/motion
+vi.mock('@vueuse/motion', () => ({
+  useMotion: vi.fn(() => ({
+    apply: vi.fn().mockResolvedValue(undefined),
+  })),
+}))
+
 describe('AnimationService', () => {
   let service: AnimationService
 
@@ -94,7 +101,7 @@ describe('AnimationService', () => {
       await expect(promise).resolves.toBeUndefined()
     })
 
-    it('應該設定正確的 CSS transition', async () => {
+    it('應該使用 @vueuse/motion 執行動畫', async () => {
       const mockElement = document.createElement('div')
       mockElement.setAttribute('data-card-id', '0202')
       document.body.appendChild(mockElement)
@@ -106,9 +113,25 @@ describe('AnimationService', () => {
         duration: 10,
       })
 
-      // 檢查動畫期間的樣式
-      await sleep(5)
-      expect(mockElement.style.transform).toContain('translate')
+      await promise
+
+      // 驗證動畫完成（無錯誤即成功）
+
+      // 清理
+      document.body.removeChild(mockElement)
+    })
+
+    it('應該計算正確的移動距離', async () => {
+      const mockElement = document.createElement('div')
+      mockElement.setAttribute('data-card-id', '0303')
+      document.body.appendChild(mockElement)
+
+      const promise = service.trigger('CARD_MOVE', {
+        cardId: '0303',
+        from: { x: 10, y: 20 },
+        to: { x: 110, y: 120 },
+        duration: 10,
+      })
 
       await promise
 

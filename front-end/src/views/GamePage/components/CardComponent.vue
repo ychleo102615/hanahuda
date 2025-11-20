@@ -5,11 +5,13 @@
  * @description
  * 顯示單張花札卡片，支援 hover、選中、高亮等狀態。
  * 使用 SvgIcon 組件顯示卡片圖案。
+ * 使用 @vueuse/motion 實現流暢的動畫效果。
  */
 
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { getCardIconName } from '@/utils/cardMapping'
+import { useMotion } from '@vueuse/motion'
 
 interface Props {
   cardId: string
@@ -44,16 +46,16 @@ const sizeClasses = computed(() => {
   }
 })
 
-// 容器樣式
+// 容器樣式 - 移除 hover:scale 因為改用 @vueuse/motion
 const containerClasses = computed(() => {
   return [
-    'inline-flex items-center justify-center p-1 rounded-md transition-all duration-200',
+    'inline-flex items-center justify-center p-1 rounded-md transition-shadow duration-200',
     {
-      // 可選狀態
-      'cursor-pointer hover:scale-105 hover:drop-shadow-lg': props.isSelectable,
+      // 可選狀態 - 只保留 cursor 和 shadow，scale 由 motion 處理
+      'cursor-pointer hover:drop-shadow-lg': props.isSelectable,
       'cursor-default': !props.isSelectable,
-      // 選中狀態
-      'ring-2 ring-yellow-400 ring-offset-2 scale-105 drop-shadow-lg': props.isSelected,
+      // 選中狀態 - 只保留 ring 效果，scale 由 motion 處理
+      'ring-2 ring-yellow-400 ring-offset-2 drop-shadow-lg': props.isSelected,
       // 高亮狀態（可配對）
       'ring-2 ring-green-400 ring-offset-1 drop-shadow-md': props.isHighlighted && !props.isSelected,
     },
@@ -74,10 +76,79 @@ const cardIconName = computed(() => {
   }
   return getCardIconName(props.cardId)
 })
+
+// 卡片容器 ref 用於 motion
+const cardRef = ref<HTMLElement | null>(null)
+
+// 使用 @vueuse/motion 設定動畫
+const { apply } = useMotion(cardRef, {
+  initial: {
+    scale: 1,
+    y: 0,
+  },
+  hovered: {
+    scale: 1.05,
+    y: -4,
+    transition: {
+      type: 'spring',
+      stiffness: 400,
+      damping: 25,
+    },
+  },
+  selected: {
+    scale: 1.08,
+    y: -6,
+    transition: {
+      type: 'spring',
+      stiffness: 500,
+      damping: 20,
+    },
+  },
+  rest: {
+    scale: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 300,
+      damping: 30,
+    },
+  },
+})
+
+// 處理滑鼠進入
+function handleMouseEnter() {
+  if (props.isSelectable && !props.isSelected) {
+    apply('hovered')
+  }
+}
+
+// 處理滑鼠離開
+function handleMouseLeave() {
+  if (!props.isSelected) {
+    apply('rest')
+  }
+}
+
+// 監聽選中狀態變化
+import { watch } from 'vue'
+watch(() => props.isSelected, (selected) => {
+  if (selected) {
+    apply('selected')
+  } else {
+    apply('rest')
+  }
+})
 </script>
 
 <template>
-  <div :class="containerClasses" @click="handleClick" :data-card-id="cardId">
+  <div
+    ref="cardRef"
+    :class="containerClasses"
+    :data-card-id="cardId"
+    @click="handleClick"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
+  >
     <SvgIcon
       :name="cardIconName"
       :class-name="sizeClasses"
