@@ -110,7 +110,7 @@ describe('GameApiClient - User Story 1 Contract Tests', () => {
           ValidationError
         )
         await expect(apiClient.joinGame('invalid-token')).rejects.toThrow(
-          '請求格式錯誤，請稍後再試'
+          '請求格式錯誤,請稍後再試'
         )
       })
 
@@ -138,7 +138,7 @@ describe('GameApiClient - User Story 1 Contract Tests', () => {
 
         await expect(apiClient.joinGame()).rejects.toThrow(ServerError)
         await expect(apiClient.joinGame()).rejects.toThrow(
-          '伺服器暫時無法使用，請稍後再試'
+          '伺服器暫時無法使用,請稍後再試'
         )
       })
 
