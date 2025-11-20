@@ -9,7 +9,7 @@
 /**
  * Mock 事件項目
  */
-interface MockEventItem {
+export interface MockEventItem {
   /** 事件類型 */
   eventType: string
   /** 事件 payload */

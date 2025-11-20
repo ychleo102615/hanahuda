@@ -13,7 +13,12 @@
  * ```
  */
 
-import type { InputPort } from '@/user-interface/application/ports/input'
+/**
+ * 通用 Input Port 介面
+ */
+interface InputPort<T = any> {
+  execute(payload: T): void
+}
 
 /**
  * EventRouter 類別

@@ -200,7 +200,7 @@ export class GameEventClient {
       return
     }
 
-    const delay = this.reconnectDelays[this.reconnectAttempts]
+    const delay = this.reconnectDelays[this.reconnectAttempts] ?? 16000
     this.reconnectAttempts++
 
     console.warn(

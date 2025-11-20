@@ -28,6 +28,8 @@ import { useUIStateStore, createTriggerUIEffectPortAdapter } from '../stores/uiS
 import { HandleTurnCompletedUseCase } from '../../application/use-cases/event-handlers/HandleTurnCompletedUseCase'
 import { HandleSelectionRequiredUseCase } from '../../application/use-cases/event-handlers/HandleSelectionRequiredUseCase'
 import { HandleTurnProgressAfterSelectionUseCase } from '../../application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
+import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
+import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import type { UIStatePort, TriggerUIEffectPort } from '../../application/ports/output'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import * as domain from '../../domain'
@@ -50,24 +52,33 @@ export function registerDependencies(container: DIContainer, mode: GameMode): vo
   // 1. 註冊 Stores
   registerStores(container)
 
-  // 2. 註冊 Output Ports
+  // 2. 註冊動畫系統 (必須在 Output Ports 之前)
+  registerAnimationSystem(container)
+
+  // 3. 註冊 Output Ports
   registerOutputPorts(container)
 
-  // 3. 註冊 Use Cases (作為 Input Ports)
-  registerInputPorts(container)
-
-  // 4. 根據模式註冊 Adapters
+  // 4. 根據模式註冊 Adapters (必須在 Input Ports 之前，提供 SendCommandPort)
   if (mode === 'backend') {
     registerBackendAdapters(container)
-    registerSSEClient(container)
   } else if (mode === 'mock') {
     registerMockAdapters(container)
   } else if (mode === 'local') {
     registerLocalAdapters(container)
   }
 
-  // 5. 註冊動畫系統
-  registerAnimationSystem(container)
+  // 5. 註冊 Use Cases (作為 Input Ports)
+  registerInputPorts(container)
+
+  // 6. 註冊事件路由 (必須在 Input Ports 之後)
+  registerEventRoutes(container)
+
+  // 7. 根據模式初始化事件發射器 (必須在事件路由之後)
+  if (mode === 'backend') {
+    registerSSEClient(container)
+  } else if (mode === 'mock') {
+    initializeMockEventEmitter(container)
+  }
 }
 
 /**
@@ -149,6 +160,26 @@ function registerInputPorts(container: DIContainer): void {
   // 取得 Output Ports
   const uiStatePort = container.resolve(TOKENS.UIStatePort) as UIStatePort
   const triggerUIEffectPort = container.resolve(TOKENS.TriggerUIEffectPort) as TriggerUIEffectPort
+  const domainFacade = container.resolve(TOKENS.DomainFacade) as DomainFacade
+
+  // Player Operations Use Cases
+  const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
+
+  // 註冊 PlayHandCardPort
+  container.register(
+    TOKENS.PlayHandCardPort,
+    () => new PlayHandCardUseCase(sendCommandPort, triggerUIEffectPort, domainFacade),
+    { singleton: true }
+  )
+
+  // 註冊 SelectMatchTargetPort
+  container.register(
+    TOKENS.SelectMatchTargetPort,
+    () => new SelectMatchTargetUseCase(sendCommandPort, domainFacade),
+    { singleton: true }
+  )
+
+  // Event Handlers
 
   // T050 [US2]: 註冊 TurnCompleted 事件處理器
   container.register(
@@ -165,8 +196,6 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T052 [US2]: 註冊 TurnProgressAfterSelection 事件處理器
-  const domainFacade = container.resolve(TOKENS.DomainFacade) as DomainFacade
-
   container.register(
     TOKENS.HandleTurnProgressAfterSelectionPort,
     () => new HandleTurnProgressAfterSelectionUseCase(
@@ -177,7 +206,7 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  console.info('[DI] Phase 4: Registered US2 event handlers (TurnCompleted, SelectionRequired, TurnProgressAfterSelection)')
+  console.info('[DI] Registered Player Operations and US2 event handlers')
 }
 
 /**
@@ -212,7 +241,7 @@ function registerSSEClient(_container: DIContainer): void {
  * 註冊 Mock 模式的 Adapters
  *
  * @description
- * 註冊 MockApiClient 與 MockEventEmitter，用於開發測試。
+ * 註冊 MockApiClient 與 EventRouter，用於開發測試。
  */
 function registerMockAdapters(container: DIContainer): void {
   console.info('[DI] 註冊 Mock 模式 Adapters')
@@ -230,9 +259,16 @@ function registerMockAdapters(container: DIContainer): void {
     () => new EventRouter(),
     { singleton: true },
   )
+}
 
-  // T053 [US2]: 註冊事件路由
-  registerEventRoutes(container)
+/**
+ * 初始化 Mock 事件發射器
+ *
+ * @description
+ * 註冊 MockEventEmitter，必須在事件路由註冊後呼叫。
+ */
+function initializeMockEventEmitter(container: DIContainer): void {
+  console.info('[DI] 初始化 Mock 事件發射器')
 
   // MockEventEmitter
   container.register(

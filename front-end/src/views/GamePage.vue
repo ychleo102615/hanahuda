@@ -7,7 +7,7 @@
  * 整合所有遊戲區域組件。
  */
 
-import { ref } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '../user-interface/adapter/stores/uiState'
@@ -16,6 +16,7 @@ import FieldZone from './GamePage/components/FieldZone.vue'
 import PlayerHandZone from './GamePage/components/PlayerHandZone.vue'
 import CardComponent from './GamePage/components/CardComponent.vue'
 import SelectionOverlay from './GamePage/components/SelectionOverlay.vue'
+import { TOKENS } from '../user-interface/adapter/di/tokens'
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
@@ -24,6 +25,29 @@ const { opponentDepository, myDepository, opponentHandCount } = storeToRefs(game
 const { errorMessage, infoMessage, reconnecting } = storeToRefs(uiState)
 
 const playerHandZoneRef = ref<InstanceType<typeof PlayerHandZone> | null>(null)
+
+// 初始化遊戲
+onMounted(async () => {
+  const gameMode = sessionStorage.getItem('gameMode') || 'mock'
+
+  if (gameMode === 'mock') {
+    console.info('[GamePage] 初始化 Mock 模式')
+
+    // 解析 MockApiClient 和 MockEventEmitter
+    const mockApiClient = inject<any>(TOKENS.SendCommandPort.toString())
+    const mockEventEmitter = inject<any>(TOKENS.MockEventEmitter.toString())
+
+    if (mockApiClient && mockEventEmitter) {
+      // 調用 joinGame 初始化遊戲
+      await mockApiClient.joinGame()
+
+      // 啟動 Mock 事件腳本
+      mockEventEmitter.start()
+    } else {
+      console.error('[GamePage] Mock 模式依賴注入失敗')
+    }
+  }
+})
 
 // 處理手牌選擇
 function handleHandCardSelect(cardId: string) {

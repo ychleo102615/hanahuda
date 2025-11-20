@@ -80,7 +80,10 @@ export class MockEventEmitter {
       return
     }
 
-    const { eventType, payload, delay } = mockEventScript[this.currentIndex]
+    const event = mockEventScript[this.currentIndex]
+    if (!event) return
+
+    const { eventType, payload, delay } = event
     console.info(`[Mock SSE] 發送事件 [${this.currentIndex + 1}/${mockEventScript.length}]: ${eventType}`, payload)
 
     this.eventRouter.route(eventType, payload)
@@ -98,7 +101,10 @@ export class MockEventEmitter {
       return
     }
 
-    const { eventType, payload, delay } = mockEventScript[this.currentIndex]
+    const event = mockEventScript[this.currentIndex]
+    if (!event) return
+
+    const { eventType, payload, delay } = event
     console.info(`[Mock SSE] 發送事件 [${this.currentIndex + 1}/${mockEventScript.length}]: ${eventType}`, payload)
 
     this.eventRouter.route(eventType, payload)
