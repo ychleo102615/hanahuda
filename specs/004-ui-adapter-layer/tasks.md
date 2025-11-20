@@ -255,34 +255,34 @@
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T096 [P] [US5] Unit test for reconnection logic in front-end/tests/adapter/sse/GameEventClient.spec.ts
-- [ ] T097 [P] [US5] Unit test for exponential backoff in front-end/tests/adapter/sse/GameEventClient.spec.ts
-- [ ] T098 [P] [US5] Contract test for snapshot restoration in front-end/tests/adapter/stores/gameState.spec.ts
+- [X] T096 [P] [US5] Unit test for reconnection logic in front-end/tests/adapter/sse/GameEventClient.spec.ts
+- [X] T097 [P] [US5] Unit test for exponential backoff in front-end/tests/adapter/sse/GameEventClient.spec.ts
+- [X] T098 [P] [US5] Contract test for snapshot restoration in front-end/tests/adapter/stores/gameState.spec.ts
 
 ### Implementation for User Story 5
 
 #### Reconnection Logic
 
-- [ ] T099 [US5] Implement reconnection mechanism in GameEventClient
-- [ ] T100 [US5] Implement exponential backoff strategy in GameEventClient
-- [ ] T101 [US5] Implement onConnectionLost callback in GameEventClient
-- [ ] T102 [US5] Implement onConnectionEstablished callback in GameEventClient
-- [ ] T103 [US5] Implement onConnectionFailed callback in GameEventClient
-- [ ] T104 [US5] Write comprehensive reconnection tests in front-end/tests/adapter/sse/GameEventClient.spec.ts
+- [X] T099 [US5] Implement reconnection mechanism in GameEventClient
+- [X] T100 [US5] Implement exponential backoff strategy in GameEventClient
+- [X] T101 [US5] Implement onConnectionLost callback in GameEventClient
+- [X] T102 [US5] Implement onConnectionEstablished callback in GameEventClient
+- [X] T103 [US5] Implement onConnectionFailed callback in GameEventClient
+- [X] T104 [US5] Write comprehensive reconnection tests in front-end/tests/adapter/sse/GameEventClient.spec.ts
 
 #### Snapshot Restoration
 
-- [ ] T105 [US5] Implement restoreGameState in GameStateStore
-- [ ] T106 [US5] Implement interrupt() method in AnimationQueue
-- [ ] T107 [US5] Integrate snapshot restoration with joinGame API
-- [ ] T108 [US5] Write tests for snapshot restoration in front-end/tests/adapter/stores/gameState.spec.ts
+- [X] T105 [US5] Implement restoreGameState in GameStateStore
+- [X] T106 [US5] Implement interrupt() method in AnimationQueue
+- [X] T107 [US5] Integrate snapshot restoration with joinGame API
+- [X] T108 [US5] Write tests for snapshot restoration in front-end/tests/adapter/stores/gameState.spec.ts
 
 #### Connection Status UI
 
-- [ ] T109 [P] [US5] Create ReconnectionBanner component in front-end/src/views/GamePage/components/ReconnectionBanner.vue
-- [ ] T110 [US5] Integrate ReconnectionBanner with UIStateStore.reconnecting
-- [ ] T111 [US5] Update connectionStatus in UIStateStore during reconnection
-- [ ] T112 [US5] Add component tests for ReconnectionBanner in front-end/tests/adapter/components/
+- [X] T109 [P] [US5] Create ReconnectionBanner component in front-end/src/views/GamePage/components/ReconnectionBanner.vue
+- [X] T110 [US5] Integrate ReconnectionBanner with UIStateStore.reconnecting
+- [X] T111 [US5] Update connectionStatus in UIStateStore during reconnection
+- [X] T112 [US5] Add component tests for ReconnectionBanner in front-end/tests/adapter/components/
 
 **Checkpoint**: At this point, reconnection should work reliably with proper UI feedback
 

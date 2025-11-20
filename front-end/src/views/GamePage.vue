@@ -21,6 +21,7 @@ import SelectionOverlay from './GamePage/components/SelectionOverlay.vue'
 import DecisionModal from './GamePage/components/DecisionModal.vue'
 import ErrorToast from './GamePage/components/ErrorToast.vue'
 import GameFinishedModal from './GamePage/components/GameFinishedModal.vue'
+import ReconnectionBanner from './GamePage/components/ReconnectionBanner.vue'
 import { TOKENS } from '../user-interface/adapter/di/tokens'
 
 const gameState = useGameStateStore()
@@ -113,18 +114,8 @@ function handleFieldCardClick(cardId: string) {
       </div>
     </Transition>
 
-    <!-- Reconnection overlay -->
-    <Transition name="fade">
-      <div
-        v-if="reconnecting"
-        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      >
-        <div class="bg-white rounded-lg p-6 text-center">
-          <div class="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
-          <p class="text-gray-700">Connection lost, reconnecting...</p>
-        </div>
-      </div>
-    </Transition>
+    <!-- T109-T111 [US5]: Reconnection Banner -->
+    <ReconnectionBanner />
 
     <!-- T057 [US2]: Selection Overlay for multiple match targets -->
     <SelectionOverlay @target-selected="handleFieldCardClick" />
