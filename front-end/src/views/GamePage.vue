@@ -16,6 +16,7 @@ import FieldZone from './GamePage/components/FieldZone.vue'
 import PlayerHandZone from './GamePage/components/PlayerHandZone.vue'
 import CardComponent from './GamePage/components/CardComponent.vue'
 import SelectionOverlay from './GamePage/components/SelectionOverlay.vue'
+import DecisionModal from './GamePage/components/DecisionModal.vue'
 import { TOKENS } from '../user-interface/adapter/di/tokens'
 
 const gameState = useGameStateStore()
@@ -150,6 +151,9 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- T057 [US2]: Selection Overlay for multiple match targets -->
     <SelectionOverlay @target-selected="handleFieldCardClick" />
+
+    <!-- T072-T076 [US3]: Koi-Koi Decision Modal -->
+    <DecisionModal />
   </div>
 </template>
 

@@ -433,3 +433,190 @@ describe('GameApiClient - User Story 2 Contract Tests', () => {
     })
   })
 })
+
+describe('GameApiClient - User Story 3 Contract Tests', () => {
+  let apiClient: GameApiClient
+  const baseURL = 'http://localhost:8080'
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    apiClient = new GameApiClient(baseURL)
+    vi.clearAllMocks()
+
+    // 設定遊戲上下文
+    const store = useGameStateStore()
+    store.gameId = 'game-123'
+    store.localPlayerId = 'player-1'
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  describe('T063 [US3]: makeDecision API Contract', () => {
+    describe('成功場景', () => {
+      it('should send makeDecision command with KOI_KOI decision', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 204,
+        })
+
+        await apiClient.makeDecision('KOI_KOI')
+
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+        expect(global.fetch).toHaveBeenCalledWith(
+          `${baseURL}/api/v1/games/game-123/commands/make-decision`,
+          expect.objectContaining({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ decision: 'KOI_KOI' }),
+          })
+        )
+      })
+
+      it('should send makeDecision command with END_ROUND decision', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 204,
+        })
+
+        await apiClient.makeDecision('END_ROUND')
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          `${baseURL}/api/v1/games/game-123/commands/make-decision`,
+          expect.objectContaining({
+            body: JSON.stringify({ decision: 'END_ROUND' }),
+          })
+        )
+      })
+    })
+
+    describe('錯誤場景', () => {
+      it('should throw ValidationError for invalid decision value', async () => {
+        // @ts-expect-error 測試無效值
+        await expect(apiClient.makeDecision('INVALID')).rejects.toThrow(
+          ValidationError
+        )
+        // @ts-expect-error 測試無效值
+        await expect(apiClient.makeDecision('INVALID')).rejects.toThrow(
+          '無效的決策值: INVALID'
+        )
+      })
+
+      it('should throw ValidationError when gameId is not set', async () => {
+        const store = useGameStateStore()
+        store.gameId = null
+
+        await expect(apiClient.makeDecision('KOI_KOI')).rejects.toThrow(
+          ValidationError
+        )
+        await expect(apiClient.makeDecision('KOI_KOI')).rejects.toThrow(
+          '遊戲尚未初始化'
+        )
+      })
+
+      it('should throw ValidationError on 400 Bad Request', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 400,
+          text: async () => 'Invalid decision',
+        })
+
+        await expect(apiClient.makeDecision('KOI_KOI')).rejects.toThrow(
+          ValidationError
+        )
+        await expect(apiClient.makeDecision('KOI_KOI')).rejects.toThrow(
+          '請求格式錯誤,請稍後再試'
+        )
+      })
+
+      it('should throw ValidationError on 422 Unprocessable Entity', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 422,
+          text: async () => 'Decision not required',
+        })
+
+        await expect(apiClient.makeDecision('KOI_KOI')).rejects.toThrow(
+          ValidationError
+        )
+        await expect(apiClient.makeDecision('KOI_KOI')).rejects.toThrow(
+          '此操作不合法,請檢查遊戲狀態'
+        )
+      })
+    })
+
+    describe('重試機制', () => {
+      it('should retry 3 times on ServerError', async () => {
+        vi.useFakeTimers()
+
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 500,
+          text: async () => 'Internal Server Error',
+        })
+
+        const promise = apiClient.makeDecision('KOI_KOI').catch((error) => error)
+
+        await vi.runAllTimersAsync()
+
+        const error = await promise
+        expect(error).toBeInstanceOf(ServerError)
+        expect(global.fetch).toHaveBeenCalledTimes(4) // 1 + 3 retries
+
+        vi.useRealTimers()
+      })
+
+      it('should retry 3 times on NetworkError', async () => {
+        vi.useFakeTimers()
+
+        global.fetch = vi.fn().mockRejectedValue(new TypeError('Network error'))
+
+        const promise = apiClient.makeDecision('END_ROUND').catch((error) => error)
+
+        await vi.runAllTimersAsync()
+
+        const error = await promise
+        expect(error).toBeInstanceOf(NetworkError)
+        expect(global.fetch).toHaveBeenCalledTimes(4) // 1 + 3 retries
+
+        vi.useRealTimers()
+      })
+
+      it('should NOT retry on ValidationError', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 400,
+          text: async () => 'Bad Request',
+        })
+
+        await expect(apiClient.makeDecision('KOI_KOI')).rejects.toThrow(
+          ValidationError
+        )
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+
+      it('should NOT retry on TimeoutError', async () => {
+        global.fetch = vi.fn().mockImplementation(() => {
+          return new Promise((_, reject) => {
+            setTimeout(() => {
+              const abortError = new Error('The operation was aborted')
+              abortError.name = 'AbortError'
+              reject(abortError)
+            }, 100)
+          })
+        })
+
+        const fastClient = new GameApiClient(baseURL, { timeout: 50 })
+        const store = useGameStateStore()
+        store.gameId = 'game-123'
+        store.localPlayerId = 'player-1'
+
+        await expect(fastClient.makeDecision('KOI_KOI')).rejects.toThrow(
+          TimeoutError
+        )
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
+})

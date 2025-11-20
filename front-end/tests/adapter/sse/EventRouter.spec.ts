@@ -18,6 +18,8 @@ import type {
   RoundDealtEvent,
   TurnCompletedEvent,
   SelectionRequiredEvent,
+  DecisionRequiredEvent,
+  DecisionMadeEvent,
 } from '@/user-interface/application/types/events'
 
 describe('EventRouter - User Story 1 Contract Tests', () => {
@@ -411,6 +413,278 @@ describe('EventRouter - User Story 2 Contract Tests', () => {
 
       expect(consoleSpy).toHaveBeenCalledWith(
         '未註冊的事件類型: SelectionRequired'
+      )
+
+      consoleSpy.mockRestore()
+    })
+  })
+})
+
+describe('EventRouter - User Story 3 Contract Tests', () => {
+  let router: EventRouter
+
+  beforeEach(() => {
+    router = new EventRouter()
+  })
+
+  describe('T064 [US3]: DecisionRequired Event Routing', () => {
+    it('should route DecisionRequired event to registered Input Port', () => {
+      const mockPort: InputPort<DecisionRequiredEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: DecisionRequiredEvent = {
+        event_type: 'DecisionRequired',
+        event_id: 'evt-007',
+        timestamp: '2025-01-19T10:00:30Z',
+        player_id: 'player-1',
+        hand_card_play: {
+          played_card: '0111',
+          matched_cards: ['0112'],
+          acquired_cards: ['0111', '0112'],
+        },
+        draw_card_play: {
+          played_card: '0211',
+          matched_cards: ['0212'],
+          acquired_cards: ['0211', '0212'],
+        },
+        yaku_update: {
+          new_yaku: [
+            {
+              yaku_type: 'INO_SHIKA_CHO',
+              base_score: 5,
+              cards: ['0111', '0112', '0211', '0212'],
+            },
+          ],
+          all_yaku: [
+            {
+              yaku_type: 'INO_SHIKA_CHO',
+              base_score: 5,
+              cards: ['0111', '0112', '0211', '0212'],
+            },
+          ],
+        },
+        current_multipliers: {
+          base_multiplier: 1,
+          koi_koi_count: 0,
+          bonus_multiplier: 1,
+        },
+        deck_remaining: 20,
+      }
+
+      router.register('DecisionRequired', mockPort)
+      router.route('DecisionRequired', mockPayload)
+
+      expect(mockPort.execute).toHaveBeenCalledTimes(1)
+      expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
+    })
+
+    it('should handle DecisionRequired with multiple new yaku', () => {
+      const mockPort: InputPort<DecisionRequiredEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: DecisionRequiredEvent = {
+        event_type: 'DecisionRequired',
+        event_id: 'evt-008',
+        timestamp: '2025-01-19T10:00:35Z',
+        player_id: 'player-1',
+        hand_card_play: null,
+        draw_card_play: {
+          played_card: '0311',
+          matched_cards: ['0312'],
+          acquired_cards: ['0311', '0312'],
+        },
+        yaku_update: {
+          new_yaku: [
+            {
+              yaku_type: 'TANE',
+              base_score: 1,
+              cards: ['0111', '0211', '0311', '0411', '0511'],
+            },
+            {
+              yaku_type: 'TAN',
+              base_score: 1,
+              cards: ['0112', '0212', '0312', '0412', '0512'],
+            },
+          ],
+          all_yaku: [
+            {
+              yaku_type: 'TANE',
+              base_score: 1,
+              cards: ['0111', '0211', '0311', '0411', '0511'],
+            },
+            {
+              yaku_type: 'TAN',
+              base_score: 1,
+              cards: ['0112', '0212', '0312', '0412', '0512'],
+            },
+          ],
+        },
+        current_multipliers: {
+          base_multiplier: 1,
+          koi_koi_count: 0,
+          bonus_multiplier: 1,
+        },
+        deck_remaining: 18,
+      }
+
+      router.register('DecisionRequired', mockPort)
+      router.route('DecisionRequired', mockPayload)
+
+      const receivedPayload = mockPort.execute.mock.calls[0][0]
+      expect(receivedPayload.yaku_update.new_yaku.length).toBe(2)
+      expect(receivedPayload.yaku_update.new_yaku[0].yaku_type).toBe('TANE')
+      expect(receivedPayload.yaku_update.new_yaku[1].yaku_type).toBe('TAN')
+    })
+
+    it('should handle DecisionRequired with null card plays', () => {
+      const mockPort: InputPort<DecisionRequiredEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: DecisionRequiredEvent = {
+        event_type: 'DecisionRequired',
+        event_id: 'evt-009',
+        timestamp: '2025-01-19T10:00:40Z',
+        player_id: 'player-1',
+        hand_card_play: null,
+        draw_card_play: null,
+        yaku_update: {
+          new_yaku: [],
+          all_yaku: [],
+        },
+        current_multipliers: {
+          base_multiplier: 1,
+          koi_koi_count: 0,
+          bonus_multiplier: 1,
+        },
+        deck_remaining: 15,
+      }
+
+      router.register('DecisionRequired', mockPort)
+      router.route('DecisionRequired', mockPayload)
+
+      const receivedPayload = mockPort.execute.mock.calls[0][0]
+      expect(receivedPayload.hand_card_play).toBeNull()
+      expect(receivedPayload.draw_card_play).toBeNull()
+    })
+
+    it('should handle unregistered DecisionRequired event gracefully', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      router.route('DecisionRequired', {} as DecisionRequiredEvent)
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '未註冊的事件類型: DecisionRequired'
+      )
+
+      consoleSpy.mockRestore()
+    })
+  })
+
+  describe('T065 [US3]: DecisionMade Event Routing', () => {
+    it('should route DecisionMade event with KOI_KOI decision', () => {
+      const mockPort: InputPort<DecisionMadeEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: DecisionMadeEvent = {
+        event_type: 'DecisionMade',
+        event_id: 'evt-010',
+        timestamp: '2025-01-19T10:00:45Z',
+        player_id: 'player-1',
+        decision: 'KOI_KOI',
+        updated_multipliers: {
+          base_multiplier: 1,
+          koi_koi_count: 1,
+          bonus_multiplier: 2,
+        },
+        next_state: {
+          flow_stage: 'PLAYING_HAND_CARD',
+          current_player_id: 'player-2',
+          round_number: 1,
+          turn_number: 3,
+        },
+      }
+
+      router.register('DecisionMade', mockPort)
+      router.route('DecisionMade', mockPayload)
+
+      expect(mockPort.execute).toHaveBeenCalledTimes(1)
+      expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
+    })
+
+    it('should route DecisionMade event with END_ROUND decision', () => {
+      const mockPort: InputPort<DecisionMadeEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: DecisionMadeEvent = {
+        event_type: 'DecisionMade',
+        event_id: 'evt-011',
+        timestamp: '2025-01-19T10:00:50Z',
+        player_id: 'player-1',
+        decision: 'END_ROUND',
+        updated_multipliers: {
+          base_multiplier: 1,
+          koi_koi_count: 0,
+          bonus_multiplier: 1,
+        },
+        next_state: {
+          flow_stage: 'ROUND_ENDED',
+          current_player_id: null,
+          round_number: 1,
+          turn_number: 3,
+        },
+      }
+
+      router.register('DecisionMade', mockPort)
+      router.route('DecisionMade', mockPayload)
+
+      expect(mockPort.execute).toHaveBeenCalledTimes(1)
+      expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
+    })
+
+    it('should correctly pass updated multipliers', () => {
+      const mockPort: InputPort<DecisionMadeEvent> = {
+        execute: vi.fn(),
+      }
+
+      const mockPayload: DecisionMadeEvent = {
+        event_type: 'DecisionMade',
+        event_id: 'evt-012',
+        timestamp: '2025-01-19T10:00:55Z',
+        player_id: 'player-1',
+        decision: 'KOI_KOI',
+        updated_multipliers: {
+          base_multiplier: 1,
+          koi_koi_count: 2,
+          bonus_multiplier: 4,
+        },
+        next_state: {
+          flow_stage: 'PLAYING_HAND_CARD',
+          current_player_id: 'player-2',
+          round_number: 1,
+          turn_number: 4,
+        },
+      }
+
+      router.register('DecisionMade', mockPort)
+      router.route('DecisionMade', mockPayload)
+
+      const receivedPayload = mockPort.execute.mock.calls[0][0]
+      expect(receivedPayload.updated_multipliers.koi_koi_count).toBe(2)
+      expect(receivedPayload.updated_multipliers.bonus_multiplier).toBe(4)
+    })
+
+    it('should handle unregistered DecisionMade event gracefully', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      router.route('DecisionMade', {} as DecisionMadeEvent)
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '未註冊的事件類型: DecisionMade'
       )
 
       consoleSpy.mockRestore()

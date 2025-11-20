@@ -28,8 +28,11 @@ import { useUIStateStore, createTriggerUIEffectPortAdapter } from '../stores/uiS
 import { HandleTurnCompletedUseCase } from '../../application/use-cases/event-handlers/HandleTurnCompletedUseCase'
 import { HandleSelectionRequiredUseCase } from '../../application/use-cases/event-handlers/HandleSelectionRequiredUseCase'
 import { HandleTurnProgressAfterSelectionUseCase } from '../../application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
+import { HandleDecisionRequiredUseCase } from '../../application/use-cases/event-handlers/HandleDecisionRequiredUseCase'
+import { HandleDecisionMadeUseCase } from '../../application/use-cases/event-handlers/HandleDecisionMadeUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
+import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
 import type { UIStatePort, TriggerUIEffectPort } from '../../application/ports/output'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import * as domain from '../../domain'
@@ -179,6 +182,13 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
+  // 註冊 MakeKoiKoiDecisionPort (T068-T070)
+  container.register(
+    TOKENS.MakeKoiKoiDecisionPort,
+    () => new MakeKoiKoiDecisionUseCase(sendCommandPort, triggerUIEffectPort, domainFacade),
+    { singleton: true }
+  )
+
   // Event Handlers
 
   // T050 [US2]: 註冊 TurnCompleted 事件處理器
@@ -206,7 +216,21 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  console.info('[DI] Registered Player Operations and US2 event handlers')
+  // T068 [US3]: 註冊 DecisionRequired 事件處理器
+  container.register(
+    TOKENS.HandleDecisionRequiredPort,
+    () => new HandleDecisionRequiredUseCase(uiStatePort, triggerUIEffectPort, domainFacade),
+    { singleton: true }
+  )
+
+  // T069 [US3]: 註冊 DecisionMade 事件處理器
+  container.register(
+    TOKENS.HandleDecisionMadePort,
+    () => new HandleDecisionMadeUseCase(uiStatePort, triggerUIEffectPort),
+    { singleton: true }
+  )
+
+  console.info('[DI] Registered Player Operations, US2, and US3 event handlers')
 }
 
 /**
@@ -301,7 +325,14 @@ function registerEventRoutes(container: DIContainer): void {
   router.register('SelectionRequired', selectionRequiredPort)
   router.register('TurnProgressAfterSelection', turnProgressPort)
 
-  console.info('[DI] Phase 4: Registered US2 event routes (TurnCompleted, SelectionRequired, TurnProgressAfterSelection)')
+  // T070-T071 [US3]: 綁定 DecisionRequired、DecisionMade 事件
+  const decisionRequiredPort = container.resolve(TOKENS.HandleDecisionRequiredPort) as { execute: (payload: unknown) => void }
+  const decisionMadePort = container.resolve(TOKENS.HandleDecisionMadePort) as { execute: (payload: unknown) => void }
+
+  router.register('DecisionRequired', decisionRequiredPort)
+  router.register('DecisionMade', decisionMadePort)
+
+  console.info('[DI] Phase 5: Registered US2 and US3 event routes')
 }
 
 /**

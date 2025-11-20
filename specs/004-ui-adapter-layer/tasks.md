@@ -174,31 +174,31 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T063 [P] [US3] Contract test for makeDecision API in front-end/tests/adapter/api/GameApiClient.spec.ts
-- [ ] T064 [P] [US3] Contract test for DecisionRequired event in front-end/tests/adapter/sse/EventRouter.spec.ts
-- [ ] T065 [P] [US3] Contract test for DecisionMade event in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T063 [P] [US3] Contract test for makeDecision API in front-end/tests/adapter/api/GameApiClient.spec.ts
+- [X] T064 [P] [US3] Contract test for DecisionRequired event in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T065 [P] [US3] Contract test for DecisionMade event in front-end/tests/adapter/sse/EventRouter.spec.ts
 
 ### Implementation for User Story 3
 
 #### API Command
 
-- [ ] T066 [US3] Implement makeDecision method in front-end/src/user-interface/adapter/api/GameApiClient.ts
-- [ ] T067 [US3] Add unit tests for makeDecision in front-end/tests/adapter/api/GameApiClient.spec.ts
+- [X] T066 [US3] Implement makeDecision method in front-end/src/user-interface/adapter/api/GameApiClient.ts
+- [X] T067 [US3] Add unit tests for makeDecision in front-end/tests/adapter/api/GameApiClient.spec.ts
 
 #### SSE Event Handlers
 
-- [ ] T068 [US3] Register DecisionRequired event handler in EventRouter
-- [ ] T069 [US3] Register DecisionMade event handler in EventRouter
-- [ ] T070 [US3] Register YakuFormed event handler in EventRouter
-- [ ] T071 [US3] Write tests for decision event routing in front-end/tests/adapter/sse/EventRouter.spec.ts
+- [X] T068 [US3] Register DecisionRequired event handler in EventRouter
+- [X] T069 [US3] Register DecisionMade event handler in EventRouter
+- [X] T070 [US3] Register YakuFormed event handler in EventRouter
+- [X] T071 [US3] Write tests for decision event routing in front-end/tests/adapter/sse/EventRouter.spec.ts
 
 #### Vue Components - Decision UI
 
-- [ ] T072 [US3] Create DecisionModal component in front-end/src/views/GamePage/components/DecisionModal.vue
-- [ ] T073 [US3] Integrate DecisionModal with UIStateStore.decisionModalVisible
-- [ ] T074 [US3] Inject MakeKoiKoiDecisionPort into DecisionModal component
-- [ ] T075 [US3] Display current yaku information in DecisionModal
-- [ ] T076 [US3] Add decision buttons (KOI_KOI / END_ROUND) in DecisionModal
+- [X] T072 [US3] Create DecisionModal component in front-end/src/views/GamePage/components/DecisionModal.vue
+- [X] T073 [US3] Integrate DecisionModal with UIStateStore.decisionModalVisible
+- [X] T074 [US3] Inject MakeKoiKoiDecisionPort into DecisionModal component
+- [X] T075 [US3] Display current yaku information in DecisionModal
+- [X] T076 [US3] Add decision buttons (KOI_KOI / END_ROUND) in DecisionModal
 
 **Checkpoint**: At this point, User Story 3 should work independently - player can make koi-koi decisions
 
