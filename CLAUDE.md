@@ -50,6 +50,8 @@
 - N/A（Domain Layer 不處理持久化） (002-ui-domain-layer)
 - N/A（Application Layer 不處理持久化，由 Adapter Layer 通過 Output Ports 處理） (003-ui-application-layer)
 - TypeScript 5.9 + Vue 3.5 (004-ui-adapter-layer)
+- TypeScript 5.9 + Vue 3.5, @vueuse/motion, Pinia (005-ui-animation-refactor)
+- N/A（UI Layer 不處理持久化） (005-ui-animation-refactor)
 
 ## Recent Changes
 - 003-ui-application-layer: Added TypeScript 5.9 + 無（Pure functions, 零框架依賴）

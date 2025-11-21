@@ -33,7 +33,25 @@
 
 ---
 
-### User Story 2 - 牌堆視圖 (Priority: P2)
+### User Story 2 - Output Ports 重構 (Priority: P2)
+
+系統需要重構 Application Layer 的 Output Ports，將 TriggerUIEffectPort 拆分為 AnimationPort 和 NotificationPort，實現更清晰的職責分離。
+
+**Why this priority**: 這是所有動畫功能的架構基礎。AnimationPort 提供可 await 的動畫 API，讓 Use Case 能正確協調「先動畫後狀態更新」的流程。若不先重構 Ports，後續動畫實作會與現有架構衝突。
+
+**Independent Test**: 可透過單元測試驗證新 Port 介面定義和 DI 註冊是否正確。
+
+**Acceptance Scenarios**:
+
+1. **Given** 新的 Port 介面定義完成, **When** 編譯專案, **Then** 所有 Port 介面應無型別錯誤
+2. **Given** AnimationPort 實作完成, **When** Use Case 調用動畫方法, **Then** 應返回 Promise 並可被 await
+3. **Given** NotificationPort 實作完成, **When** Use Case 調用通知方法, **Then** 應正確顯示 Modal/Toast
+4. **Given** 原有 TriggerUIEffectPort 標記為 deprecated, **When** 編譯專案, **Then** 應顯示棄用警告但不影響功能
+5. **Given** DI Container 更新完成, **When** 注入新 Ports, **Then** 所有 Use Case 應能正確獲取依賴
+
+---
+
+### User Story 3 - 牌堆視圖 (Priority: P3)
 
 玩家希望看到牌堆的視覺呈現，了解剩餘牌數，並作為發牌動畫的視覺起點。
 
@@ -49,11 +67,11 @@
 
 ---
 
-### User Story 3 - 動畫系統重構 (Priority: P3)
+### User Story 4 - 動畫系統重構 (Priority: P4)
 
-系統需要重構現有的 AnimationService 和 AnimationQueue，以支援實際的卡片位置追蹤和視覺動畫效果。
+系統需要重構現有的 AnimationService 和 AnimationQueue，實作 AnimationPort 介面，支援實際的卡片位置追蹤和視覺動畫效果。
 
-**Why this priority**: 現有動畫系統只有時序控制，缺乏位置追蹤和實際視覺效果。這是 P4、P5 動畫功能的基礎設施。
+**Why this priority**: 現有動畫系統只有時序控制，缺乏位置追蹤和實際視覺效果。這是 P5、P6 動畫功能的基礎設施。
 
 **Independent Test**: 可透過單元測試驗證位置追蹤和動畫參數計算是否正確。
 
@@ -63,14 +81,15 @@
 2. **Given** 需要播放卡片移動動畫, **When** 呼叫動畫服務, **Then** 系統應能計算卡片從起點到終點的正確螢幕座標
 3. **Given** 視窗大小改變, **When** 重新計算佈局, **Then** 各區域位置應自動更新
 4. **Given** 卡片移動動畫執行, **When** 動畫播放, **Then** 卡片應在螢幕上實際移動（而非只有 console.log）
+5. **Given** 需要中斷動畫（如重連）, **When** 調用 interrupt(), **Then** 所有進行中動畫應立即停止，pending Promise 應 reject
 
 ---
 
-### User Story 4 - 配對成功卡片移動動畫 (Priority: P4)
+### User Story 5 - 配對成功卡片移動動畫 (Priority: P5)
 
 玩家希望看到配對成功的卡片從場牌/手牌區飛向獲得區的動畫，提供視覺回饋確認操作成功。
 
-**Why this priority**: 動畫提升遊戲體驗和操作確認感，依賴 P3 動畫系統重構。
+**Why this priority**: 動畫提升遊戲體驗和操作確認感，依賴 P4 動畫系統重構。
 
 **Independent Test**: 可透過執行配對操作並觀察卡片移動動畫來測試。
 
@@ -83,11 +102,11 @@
 
 ---
 
-### User Story 5 - 發牌動畫 (Priority: P5)
+### User Story 6 - 發牌動畫 (Priority: P6)
 
 玩家希望看到從牌堆發牌至場牌和手牌的動畫，增強遊戲沉浸感。
 
-**Why this priority**: 發牌動畫提升視覺體驗，依賴牌堆視圖（P2）和動畫系統重構（P3）。
+**Why this priority**: 發牌動畫提升視覺體驗，依賴牌堆視圖（P3）和動畫系統重構（P4）。
 
 **Independent Test**: 可透過開始新回合並觀察發牌過程來測試。
 
@@ -99,11 +118,11 @@
 
 ---
 
-### User Story 6 - 拖曳手牌配對功能 (Priority: P6)
+### User Story 7 - 拖曳手牌配對功能 (Priority: P7)
 
 玩家希望能夠拖曳手牌到場牌上進行配對，提供更直覺的操作方式，同時保留點擊配對選項。
 
-**Why this priority**: 拖曳是進階交互功能，提升體驗但非必要。現有點擊配對功能已足夠完成遊戲。
+**Why this priority**: 拖曳是進階交互功能，提升體驗但非必要。現有點擊配對功能已足夠完成遊戲。依賴 P4 動畫系統重構。
 
 **Independent Test**: 可透過拖曳手牌至場牌並觀察配對結果來測試。
 
@@ -127,6 +146,15 @@
 ## Requirements
 
 ### Functional Requirements
+
+**Output Ports 重構**
+- **FR-000**: 系統 MUST 將 TriggerUIEffectPort 拆分為 AnimationPort 和 NotificationPort
+- **FR-000a**: AnimationPort MUST 提供返回 Promise 的動畫方法（playDealAnimation、playMatchAnimation、playToDepositoryAnimation）
+- **FR-000b**: AnimationPort MUST 提供 interrupt() 方法立即停止所有動畫
+- **FR-000c**: AnimationPort MUST 提供 registerZone/unregisterZone 方法供組件註冊位置
+- **FR-000d**: NotificationPort MUST 提供 showSelectionUI、showDecisionModal、showErrorMessage 等方法
+- **FR-000e**: 原有 TriggerUIEffectPort MUST 標記為 @deprecated 並保持向後相容
+- **FR-000f**: 所有 Use Case MUST 更新為注入新的 Ports
 
 **牌堆視圖**
 - **FR-001**: 系統 MUST 在場牌區旁邊（中央區域左側或右側）顯示牌堆組件
@@ -169,6 +197,12 @@
 
 ### Key Entities
 
+**Output Ports（重構）**
+- **AnimationPort**: 動畫系統介面，提供可 await 的動畫 API（playDealAnimation、playMatchAnimation 等）
+- **NotificationPort**: 通知系統介面，管理 Modal、Toast、選擇 UI 等
+- **GameStatePort**: 遊戲狀態介面（原 UIStatePort 重新命名，職責不變）
+
+**動畫系統**
 - **DeckZone**: 牌堆顯示區域，包含剩餘牌數狀態
 - **DepositoryGroup**: 獲得區內的卡片分組，包含類型(CardType)和卡片列表
 - **ZoneRegistry**: 區域位置註冊表，管理各區域的螢幕座標，支援註冊、查詢、更新
@@ -200,7 +234,8 @@
 - 依賴 Domain Layer 的 CardType 定義和 getCardType 函數
 - 依賴現有 CardComponent 組件
 - 依賴 Vue 3 的 ref/reactive 響應式系統進行位置追蹤
-- 依賴瀏覽器 ResizeObserver API 進行視窗大小監聽
+- 依賴瀏覽器 ResizeObserver API 進行視窗大小監聯
+- 需重構 Output Ports（TriggerUIEffectPort → AnimationPort + NotificationPort）
 
 ## Out of Scope
 
