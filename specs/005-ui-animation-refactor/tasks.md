@@ -26,8 +26,8 @@
 
 **Purpose**: Project initialization and environment verification
 
-- [ ] T001 確認 @vueuse/motion 已安裝，執行 `npm list @vueuse/motion` 驗證
-- [ ] T002 [P] 確認專案可編譯，執行 `npm run type-check` 驗證無錯誤
+- [x] T001 確認 @vueuse/motion 已安裝，執行 `npm list @vueuse/motion` 驗證
+- [x] T002 [P] 確認專案可編譯，執行 `npm run type-check` 驗證無錯誤
 
 ---
 
@@ -37,11 +37,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 [P] 定義 ZoneName 類型在 front-end/src/user-interface/adapter/animation/types.ts
-- [ ] T004 [P] 定義 Position、ZonePosition 類型在 front-end/src/user-interface/adapter/animation/types.ts
-- [ ] T005 [P] 定義 AnimationType 擴展類型在 front-end/src/user-interface/adapter/animation/types.ts
-- [ ] T006 [P] 定義 CardMoveParams、CardMergeParams、CardsToDepositoryParams 在 front-end/src/user-interface/adapter/animation/types.ts
-- [ ] T007 定義 DealAnimationParams 類型在 front-end/src/user-interface/adapter/animation/types.ts
+- [x] T003 [P] 定義 ZoneName 類型在 front-end/src/user-interface/adapter/animation/types.ts
+- [x] T004 [P] 定義 Position、ZonePosition 類型在 front-end/src/user-interface/adapter/animation/types.ts
+- [x] T005 [P] 定義 AnimationType 擴展類型在 front-end/src/user-interface/adapter/animation/types.ts
+- [x] T006 [P] 定義 CardMoveParams、CardMergeParams、CardsToDepositoryParams 在 front-end/src/user-interface/adapter/animation/types.ts
+- [x] T007 定義 DealAnimationParams 類型在 front-end/src/user-interface/adapter/animation/types.ts
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 

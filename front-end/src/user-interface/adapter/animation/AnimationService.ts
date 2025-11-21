@@ -7,7 +7,7 @@
  * 使用 @vueuse/motion 實現流暢的卡片移動動畫。
  */
 
-import type { Animation, AnimationParams, DealCardsParams, CardMoveParams, Zone } from './types'
+import type { Animation, AnimationParams, DealCardsParams, CardMoveParams, ZoneName } from './types'
 import type { AnimationType } from './types'
 import type { AnimationParams as AppAnimationParams, AnimationType as AppAnimationType } from '../../application/ports/output/trigger-ui-effect.port'
 import { AnimationQueue, InterruptedError } from './AnimationQueue'
@@ -77,24 +77,28 @@ export class AnimationService {
   ): AnimationParams {
     if (type === 'DEAL_CARDS') {
       const appParams = params as AppAnimationParams<'DEAL_CARDS'>
-      // 將 fieldCards 和 hands 轉換為 targetZones
-      const targetZones: Zone[] = []
+      // 將 fieldCards 和 hands 轉換為 cards 數組
+      const cards: Array<{ cardId: string; targetZone: ZoneName; targetIndex: number }> = []
 
       // 場牌
       if (appParams.fieldCards) {
-        appParams.fieldCards.forEach(() => targetZones.push('field'))
+        appParams.fieldCards.forEach((cardId, index) => {
+          cards.push({ cardId, targetZone: 'field', targetIndex: index })
+        })
       }
 
       // 手牌
       if (appParams.hands) {
         appParams.hands.forEach(hand => {
-          const zone: Zone = hand.player_id === 'player-1' ? 'player-hand' : 'opponent-hand'
-          hand.cards.forEach(() => targetZones.push(zone))
+          const zone: ZoneName = hand.player_id === 'player-1' ? 'player-hand' : 'opponent-hand'
+          hand.cards.forEach((cardId, index) => {
+            cards.push({ cardId, targetZone: zone, targetIndex: index })
+          })
         })
       }
 
       return {
-        targetZones,
+        cards,
         delay: 100,
         duration: 300,
       } as DealCardsParams
@@ -148,16 +152,16 @@ export class AnimationService {
    * @param params - 發牌動畫參數
    */
   private async executeDealCards(params: DealCardsParams): Promise<void> {
-    const { targetZones, delay = 100, duration = 300 } = params
+    const { cards, delay = 100, duration = 300 } = params
 
-    // 防禦性檢查：如果沒有 targetZones，跳過動畫
-    if (!targetZones || targetZones.length === 0) {
-      console.info('[AnimationService] DEAL_CARDS: No target zones, skipping animation')
+    // 防禦性檢查：如果沒有 cards，跳過動畫
+    if (!cards || cards.length === 0) {
+      console.info('[AnimationService] DEAL_CARDS: No cards, skipping animation')
       return
     }
 
     // 依序發牌到各區域
-    for (let i = 0; i < targetZones.length; i++) {
+    for (const [i, card] of cards.entries()) {
       // 延遲
       if (i > 0) {
         await sleep(delay)
@@ -166,7 +170,7 @@ export class AnimationService {
       // 觸發單張牌的發牌動畫
       // 實際的視覺效果由組件的 Vue Transition 處理
       // 這裡只處理時序
-      console.info('[AnimationService] Deal card to', targetZones[i])
+      console.info('[AnimationService] Deal card', card.cardId, 'to', card.targetZone, 'at index', card.targetIndex)
     }
 
     // 等待最後一張牌的動畫完成
