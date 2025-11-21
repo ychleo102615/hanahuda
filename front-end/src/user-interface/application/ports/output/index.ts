@@ -9,15 +9,21 @@
  * ```typescript
  * import type {
  *   SendCommandPort,
- *   UIStatePort,
- *   TriggerUIEffectPort,
- *   AnimationType,
- *   AnimationParams
+ *   GameStatePort,
+ *   AnimationPort,
+ *   NotificationPort,
  * } from '@/user-interface/application/ports/output'
  * ```
  */
 
 export type { SendCommandPort } from './send-command.port'
+
+// New Output Ports (Phase 4 refactor)
+export type { GameStatePort } from './game-state.port'
+export type { AnimationPort, DealAnimationParams } from './animation.port'
+export type { NotificationPort } from './notification.port'
+
+// Legacy Output Ports (deprecated, will be removed)
 export type { UIStatePort } from './ui-state.port'
 export type {
   TriggerUIEffectPort,

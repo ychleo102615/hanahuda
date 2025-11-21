@@ -6,8 +6,13 @@
  */
 
 export const TOKENS = {
-  // ===== Output Ports =====
+  // ===== Output Ports (New) =====
+  GameStatePort: Symbol('GameStatePort'),
+  AnimationPort: Symbol('AnimationPort'),
+  NotificationPort: Symbol('NotificationPort'),
   SendCommandPort: Symbol('SendCommandPort'),
+
+  // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
   TriggerUIEffectPort: Symbol('TriggerUIEffectPort'),
 
