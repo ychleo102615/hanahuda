@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { AnimationQueue, InterruptedError } from '../../../src/user-interface/adapter/animation/AnimationQueue'
+import { AnimationQueue } from '../../../src/user-interface/adapter/animation/AnimationQueue'
 import type { Animation } from '../../../src/user-interface/adapter/animation/types'
 
 describe('AnimationQueue', () => {

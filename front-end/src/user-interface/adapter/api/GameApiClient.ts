@@ -33,6 +33,7 @@ export interface JoinGameResponse {
   game_id: string
   session_token: string
   player_id: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   snapshot: any | null
 }
 
@@ -186,7 +187,8 @@ export class GameApiClient implements SendCommandPort {
    * @throws {TimeoutError} 請求超時
    * @throws {ValidationError} 4xx 錯誤
    */
-  private async post(url: string, body: any): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async post(url: string, body: unknown): Promise<any> {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this.timeout)
 
@@ -228,11 +230,11 @@ export class GameApiClient implements SendCommandPort {
 
       // 解析 JSON
       return await response.json()
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId)
 
       // AbortError -> TimeoutError
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         throw new TimeoutError()
       }
 
@@ -255,7 +257,8 @@ export class GameApiClient implements SendCommandPort {
    * @returns 回應 JSON
    * @throws 最後一次嘗試的錯誤
    */
-  private async postWithRetry(url: string, body: any, retries = 3): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async postWithRetry(url: string, body: unknown, retries = 3): Promise<any> {
     try {
       return await this.post(url, body)
     } catch (error) {
@@ -284,7 +287,7 @@ export class GameApiClient implements SendCommandPort {
    * @param error - 錯誤物件
    * @returns 是否可重試
    */
-  private isRetryableError(error: any): boolean {
+  private isRetryableError(error: unknown): boolean {
     // NetworkError 可重試
     if (error instanceof NetworkError) {
       return true

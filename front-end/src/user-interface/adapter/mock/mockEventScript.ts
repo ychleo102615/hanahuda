@@ -13,6 +13,7 @@ export interface MockEventItem {
   /** 事件類型 */
   eventType: string
   /** 事件 payload */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any
   /** 延遲時間 (毫秒),預設 1000ms */
   delay?: number

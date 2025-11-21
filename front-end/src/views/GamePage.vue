@@ -16,7 +16,6 @@ import FieldZone from './GamePage/components/FieldZone.vue'
 import PlayerHandZone from './GamePage/components/PlayerHandZone.vue'
 import OpponentDepositoryZone from './GamePage/components/OpponentDepositoryZone.vue'
 import PlayerDepositoryZone from './GamePage/components/PlayerDepositoryZone.vue'
-import CardComponent from './GamePage/components/CardComponent.vue'
 import SelectionOverlay from './GamePage/components/SelectionOverlay.vue'
 import DecisionModal from './GamePage/components/DecisionModal.vue'
 import ErrorToast from './GamePage/components/ErrorToast.vue'
@@ -27,8 +26,8 @@ import { TOKENS } from '../user-interface/adapter/di/tokens'
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
 
-const { opponentDepository, myDepository, opponentHandCount } = storeToRefs(gameState)
-const { errorMessage, infoMessage, reconnecting } = storeToRefs(uiState)
+const { opponentHandCount } = storeToRefs(gameState)
+const { infoMessage } = storeToRefs(uiState)
 
 const playerHandZoneRef = ref<InstanceType<typeof PlayerHandZone> | null>(null)
 
@@ -40,8 +39,10 @@ onMounted(async () => {
     console.info('[GamePage] 初始化 Mock 模式')
 
     // 解析 MockApiClient 和 MockEventEmitter
-    const mockApiClient = inject<any>(TOKENS.SendCommandPort.toString())
-    const mockEventEmitter = inject<any>(TOKENS.MockEventEmitter.toString())
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockApiClient = inject<{ joinGame: () => Promise<void> }>(TOKENS.SendCommandPort.toString()) as any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockEventEmitter = inject<{ start: () => void }>(TOKENS.MockEventEmitter.toString()) as any
 
     if (mockApiClient && mockEventEmitter) {
       // 調用 joinGame 初始化遊戲

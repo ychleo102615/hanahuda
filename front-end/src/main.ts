@@ -27,7 +27,7 @@ Object.entries(TOKENS).forEach(([key, token]) => {
   try {
     const dependency = container.resolve(token)
     app.provide(token.toString(), dependency)
-  } catch (error) {
+  } catch {
     // 某些 token 可能還未註冊，忽略
     console.debug(`[DI] Token ${key} not yet registered`)
   }

@@ -5,7 +5,7 @@
  * FIFO 佇列管理，同時只執行一個動畫，支援中斷機制。
  */
 
-import type { Animation, AnimationParams, AnimationType } from './types'
+import type { Animation } from './types'
 
 /**
  * 中斷錯誤

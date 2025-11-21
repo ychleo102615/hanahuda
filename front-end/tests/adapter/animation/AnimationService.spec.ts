@@ -13,7 +13,12 @@ describe('AnimationService', () => {
   let service: AnimationService
 
   beforeEach(() => {
+    vi.useFakeTimers()
     service = new AnimationService()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   describe('trigger', () => {
@@ -23,6 +28,9 @@ describe('AnimationService', () => {
         delay: 10,
         duration: 10,
       })
+
+      // 推進時間讓動畫完成
+      await vi.runAllTimersAsync()
 
       await expect(promise).resolves.toBeUndefined()
     })
@@ -40,6 +48,7 @@ describe('AnimationService', () => {
         duration: 10,
       })
 
+      await vi.runAllTimersAsync()
       await expect(promise).resolves.toBeUndefined()
 
       // 清理
@@ -61,6 +70,7 @@ describe('AnimationService', () => {
         duration: 10,
       }).then(() => results.push(2))
 
+      await vi.runAllTimersAsync()
       await Promise.all([p1, p2])
 
       expect(results).toEqual([1, 2])
@@ -76,8 +86,9 @@ describe('AnimationService', () => {
         duration: 50,
       })
 
-      // 立即中斷
-      setTimeout(() => service.interrupt(), 10)
+      // 推進 10ms 後中斷
+      vi.advanceTimersByTime(10)
+      service.interrupt()
 
       await expect(promise).rejects.toThrow(InterruptedError)
     })
@@ -97,6 +108,7 @@ describe('AnimationService', () => {
         duration: 10,
       })
 
+      await vi.runAllTimersAsync()
       // 應該正常完成（跳過動畫）
       await expect(promise).resolves.toBeUndefined()
     })
@@ -113,6 +125,7 @@ describe('AnimationService', () => {
         duration: 10,
       })
 
+      await vi.runAllTimersAsync()
       await promise
 
       // 驗證動畫完成（無錯誤即成功）
@@ -133,6 +146,7 @@ describe('AnimationService', () => {
         duration: 10,
       })
 
+      await vi.runAllTimersAsync()
       await promise
 
       // 清理
@@ -141,7 +155,3 @@ describe('AnimationService', () => {
   })
 })
 
-// 輔助函數
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}

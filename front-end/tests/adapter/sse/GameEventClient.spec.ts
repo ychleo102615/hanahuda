@@ -300,6 +300,7 @@ describe('GameEventClient', () => {
       mockEventSourceInstance!.simulateOpen()
 
       // Manually trigger with invalid JSON
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const listeners = (mockEventSourceInstance as any).listeners.get('GameStarted')
       if (listeners) {
         const event = new MessageEvent('GameStarted', { data: 'invalid json' })

@@ -16,7 +16,8 @@
 /**
  * 通用 Input Port 介面
  */
-interface InputPort<T = any> {
+ 
+interface InputPort<T = unknown> {
   execute(payload: T): void
 }
 
@@ -28,6 +29,7 @@ interface InputPort<T = any> {
  * 支援註冊、路由、取消註冊、清除等操作。
  */
 export class EventRouter {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private handlers: Map<string, InputPort<any>>
 
   constructor() {
@@ -45,6 +47,7 @@ export class EventRouter {
    * router.register('GameStarted', handleGameStartedPort)
    * ```
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   register(eventType: string, port: InputPort<any>): void {
     this.handlers.set(eventType, port)
   }
@@ -64,6 +67,7 @@ export class EventRouter {
    * router.route('GameStarted', { game_id: '123', ... })
    * ```
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   route(eventType: string, payload: any): void {
     const port = this.handlers.get(eventType)
 

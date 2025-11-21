@@ -176,6 +176,7 @@ function registerInputPorts(container: DIContainer): void {
   const domainFacade = container.resolve(TOKENS.DomainFacade) as DomainFacade
 
   // Player Operations Use Cases
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
 
   // 註冊 PlayHandCardPort

@@ -83,7 +83,7 @@ export class MockEventEmitter {
     const event = mockEventScript[this.currentIndex]
     if (!event) return
 
-    const { eventType, payload, delay } = event
+    const { eventType, payload } = event
     console.info(`[Mock SSE] 發送事件 [${this.currentIndex + 1}/${mockEventScript.length}]: ${eventType}`, payload)
 
     this.eventRouter.route(eventType, payload)

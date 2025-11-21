@@ -374,6 +374,7 @@ describe('SSE Client Integration Tests - User Story 4', () => {
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       // 錯誤的事件類型 (小寫)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       router.route('gamestarted' as any, {} as GameStartedEvent)
 
       // 應該被視為未註冊的事件

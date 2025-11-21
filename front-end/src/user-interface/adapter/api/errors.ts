@@ -136,10 +136,7 @@ function getErrorMessage(status: number): string {
  *
  * @internal
  */
-export function createErrorFromStatus(
-  status: number,
-  responseText?: string
-): ServerError | ValidationError {
+export function createErrorFromStatus(status: number): ServerError | ValidationError {
   const message = getErrorMessage(status)
 
   if (status >= 500) {

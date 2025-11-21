@@ -52,15 +52,6 @@ function handleEndRound() {
   }
   uiState.hideDecisionModal()
 }
-
-// Calculate total yaku score
-function calculateTotalScore(): number {
-  if (!decisionModalData.value) return 0
-  return decisionModalData.value.currentYaku.reduce(
-    (sum, yaku) => sum + yaku.base_points,
-    0
-  )
-}
 </script>
 
 <template>
