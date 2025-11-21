@@ -33,7 +33,7 @@
 | II. Domain-Driven Development | ✅ PASS | 使用既有 Domain 概念（CardType, Card）。新增 ZoneRegistry、ZonePosition 為 Adapter 層概念 |
 | III. Server Authority | ✅ PASS | 動畫系統僅處理 UI 呈現，不影響遊戲狀態。符合例外條款（UI 提示驗證） |
 | IV. Command-Event Architecture | ✅ PASS | 動畫由 SSE 事件觸發（RoundDealt、CardPlayedFromHand 等），遵循事件驅動 |
-| V. Test-First Development | ⚠️ REQUIRES | 需為 ZoneRegistry、AnimationService 重構撰寫單元測試，覆蓋率 > 70% |
+| V. Test-First Development | ✅ PASS | 需為 ZoneRegistry、AnimationService 重構撰寫單元測試，覆蓋率 > 70% |
 | VI. Bounded Context Isolation | ✅ PASS | 全部在 User Interface BC 內實作，不跨 BC 邊界 |
 | VII. Microservice-Ready Design | ✅ PASS | 無狀態設計，動畫狀態不影響遊戲邏輯 |
 | VIII. API Contract Adherence | ✅ PASS | 不修改 SSE 事件結構，僅擴展前端 UI 處理 |
