@@ -151,7 +151,7 @@
 - **FR-000**: 系統 MUST 將 TriggerUIEffectPort 拆分為 AnimationPort 和 NotificationPort
 - **FR-000a**: AnimationPort MUST 提供返回 Promise 的動畫方法（playDealAnimation、playMatchAnimation、playToDepositoryAnimation）
 - **FR-000b**: AnimationPort MUST 提供 interrupt() 方法立即停止所有動畫
-- **FR-000c**: AnimationPort MUST 提供 registerZone/unregisterZone 方法供組件註冊位置
+- **FR-000c**: 系統 MUST 提供 Adapter 層的 ZoneRegistry 機制供組件註冊位置（不經過 AnimationPort，由組件直接調用）
 - **FR-000d**: NotificationPort MUST 提供 showSelectionUI、showDecisionModal、showErrorMessage 等方法
 - **FR-000e**: 原有 TriggerUIEffectPort MUST 標記為 @deprecated 並保持向後相容
 - **FR-000f**: 所有 Use Case MUST 更新為注入新的 Ports
@@ -205,10 +205,10 @@
 **動畫系統**
 - **DeckZone**: 牌堆顯示區域，包含剩餘牌數狀態
 - **DepositoryGroup**: 獲得區內的卡片分組，包含類型(CardType)和卡片列表
-- **ZoneRegistry**: 區域位置註冊表，管理各區域的螢幕座標，支援註冊、查詢、更新
-- **ZonePosition**: 區域位置資訊，包含區域名稱和螢幕矩形座標（x, y, width, height）
+- **ZoneRegistry**（Adapter 層專用）: 區域位置註冊表，管理各區域的螢幕座標，由 Vue 組件直接調用，不暴露到 Application Port
+- **ZonePosition**（Adapter 層專用）: 區域位置資訊，包含區域名稱和螢幕矩形座標（x, y, width, height）
 - **CardAnimation**: 卡片移動動畫實例，包含卡片ID、起點區域、終點區域、動畫參數
-- **DragState**: 拖曳狀態，包含拖曳中的卡片、當前位置、可放置目標
+- **DragState**（Adapter 層專用）: 拖曳狀態，包含拖曳中的卡片、當前位置、可放置目標
 
 ## Success Criteria
 

@@ -68,8 +68,9 @@ const groupedMyDepository = computed(() => ({
 1. 定義新 Port 介面
    ```typescript
    // animation.port.ts
+   // ⚠️ 注意：Port 介面不包含 Zone 註冊（那是 Adapter 層職責）
    export interface AnimationPort {
-     // 動畫方法（可 await）
+     // 動畫方法（可 await，純語意化）
      playDealAnimation(params: DealAnimationParams): Promise<void>  // 回合開始批量發牌
      playCardToFieldAnimation(cardId: string, fromHand: boolean): Promise<void>  // 手牌打到場上
      playMatchAnimation(handCardId: string, fieldCardId: string): Promise<void>  // 配對合併
@@ -80,9 +81,7 @@ const groupedMyDepository = computed(() => ({
      interrupt(): void
      isAnimating(): boolean
 
-     // 區域註冊
-     registerZone(zoneName: ZoneName, element: HTMLElement): void
-     unregisterZone(zoneName: ZoneName): void
+     // Zone 註冊不在此 Port 中，由 Adapter 層內部 ZoneRegistry 處理
    }
 
    // notification.port.ts
@@ -257,15 +256,28 @@ class SomeUseCase {
 }
 ```
 
-### 3. 組件區域註冊
+### 3. 組件區域註冊（Adapter 層專用）
+
+> ⚠️ **注意**：Zone 註冊是 Adapter 層的內部機制，不經過 AnimationPort。
+> 使用 Adapter 層提供的 composable 或直接注入 ZoneRegistry。
+
 ```typescript
-// 任何區域組件
+// 方式 1：使用 composable（推薦）
+import { useZoneRegistration } from '@/user-interface/adapter/composables/useZoneRegistration'
+
+// 在區域組件中
+const fieldRef = ref<HTMLElement | null>(null)
+useZoneRegistration('field', fieldRef)  // 自動處理 register/unregister
+
+// 方式 2：直接使用 ZoneRegistry（進階）
+import { zoneRegistry } from '@/user-interface/adapter/animation/ZoneRegistry'
+
 onMounted(() => {
-  animationPort.registerZone('field', fieldRef.value)
+  zoneRegistry.register('field', fieldRef.value!)
 })
 
 onUnmounted(() => {
-  animationPort.unregisterZone('field')
+  zoneRegistry.unregister('field')
 })
 ```
 

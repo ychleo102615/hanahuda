@@ -16,7 +16,7 @@
 
 ```typescript
 export interface AnimationPort {
-  // 高階動畫 API
+  // 高階動畫 API（純語意化，Use Case 只表達意圖，不關心位置）
   playDealAnimation(params: DealAnimationParams): Promise<void>        // 回合開始批量發牌
   playCardToFieldAnimation(cardId: string, fromHand: boolean): Promise<void>  // 手牌打到場上
   playMatchAnimation(handCardId: string, fieldCardId: string): Promise<void>  // 配對合併效果
@@ -27,9 +27,8 @@ export interface AnimationPort {
   interrupt(): void
   isAnimating(): boolean
 
-  // 區域註冊
-  registerZone(zoneName: ZoneName, element: HTMLElement): void
-  unregisterZone(zoneName: ZoneName): void
+  // 注意：Zone 註冊不屬於 Application Layer Port
+  // 由 Adapter 層內部處理，Use Case 不需要知道
 }
 ```
 
@@ -100,16 +99,20 @@ interface DealAnimationParams {
 
 ---
 
-## 2. Zone Registry Models
+## 2. Zone Registry Models (Adapter Layer Only)
 
-### 1.1 ZonePosition
+> ⚠️ **Clean Architecture 注意**：本節定義的類型僅供 **Adapter 層內部使用**，不屬於 Application Layer Port 介面。
+> Use Case 不需要知道這些類型的存在，動畫位置計算完全由 Adapter 層負責。
 
-區域位置資訊，記錄各區域的螢幕座標。
+### 2.1 ZonePosition
+
+區域位置資訊，記錄各區域的螢幕座標。**僅 Adapter 層使用**。
 
 ```typescript
+// Adapter Layer Only - 不暴露到 Application Port
 interface ZonePosition {
   readonly zoneName: ZoneName
-  readonly rect: DOMRect  // x, y, width, height, top, left, right, bottom
+  readonly rect: DOMRect  // 使用瀏覽器原生類型（Adapter 層可以依賴 DOM API）
 }
 
 type ZoneName =
@@ -127,28 +130,30 @@ type ZoneName =
 - rect.width > 0
 - rect.height > 0
 
-### 1.2 Position
+### 2.2 Position
 
-簡化的螢幕座標。
+簡化的螢幕座標。**僅 Adapter 層使用**。
 
 ```typescript
+// Adapter Layer Only - 用於動畫計算
 interface Position {
   readonly x: number  // 螢幕 X 座標 (px)
   readonly y: number  // 螢幕 Y 座標 (px)
 }
 ```
 
-### 1.3 ZoneRegistry
+### 2.3 ZoneRegistry
 
-區域位置註冊表，管理所有區域的位置追蹤。
+區域位置註冊表，管理所有區域的位置追蹤。**這是 Adapter 層的內部實現類別，不是 Port 介面**。
 
 ```typescript
+// Adapter Layer Only - 內部實現，不暴露到 Application Port
 interface ZoneRegistry {
-  // Core operations
+  // Core operations（由 Vue 組件直接調用，不經過 Port）
   register(zoneName: ZoneName, element: HTMLElement): void
   unregister(zoneName: ZoneName): void
 
-  // Queries
+  // Queries（供 AnimationService 內部使用）
   getPosition(zoneName: ZoneName): ZonePosition | null
   getCardPosition(zoneName: ZoneName, cardIndex: number): Position
   getAllZones(): ZoneName[]
@@ -160,24 +165,29 @@ interface ZoneRegistry {
 
 **Internal State**:
 ```typescript
+// Adapter 層實現細節
 class ZoneRegistryImpl implements ZoneRegistry {
   private zones: Map<ZoneName, {
-    element: HTMLElement
+    element: HTMLElement      // DOM API（Adapter 層允許）
     position: ZonePosition
-    observer: ResizeObserver
+    observer: ResizeObserver  // DOM API（Adapter 層允許）
   }>
 }
 ```
 
 ---
 
-## 2. Animation Models (Extended)
+## 3. Animation Models (Adapter Layer Internal)
 
-### 2.1 AnimationType (Extended)
+> ⚠️ **Clean Architecture 注意**：本節定義的參數類型是 **Adapter 層的動畫服務內部使用**。
+> Application Layer 的 AnimationPort 只使用語意化參數（如 `DealAnimationParams`），不包含螢幕座標。
 
-擴展現有動畫類型以支援新功能。
+### 3.1 AnimationType (Extended)
+
+擴展現有動畫類型以支援新功能。**Adapter 層內部使用**。
 
 ```typescript
+// Adapter Layer Only
 type AnimationType =
   // 現有 (P1)
   | 'DEAL_CARDS'      // 發牌動畫
@@ -187,25 +197,27 @@ type AnimationType =
   | 'CARDS_TO_DEPOSITORY'  // 配對牌移動至獲得區
 ```
 
-### 2.2 CardMoveParams (Refactored)
+### 3.2 CardMoveParams (Adapter Layer)
 
-重構卡片移動參數以使用實際螢幕座標。
+卡片移動參數，包含實際螢幕座標。**Adapter 層內部使用，由 AnimationService 計算**。
 
 ```typescript
+// Adapter Layer Only - 由 AnimationService 內部計算，不暴露到 Port
 interface CardMoveParams {
   cardId: string
-  from: Position          // 起點螢幕座標
-  to: Position            // 終點螢幕座標
+  from: Position          // 起點螢幕座標（由 ZoneRegistry 查詢）
+  to: Position            // 終點螢幕座標（由 ZoneRegistry 查詢）
   duration: number        // 動畫時長 (ms)
   easing?: 'spring' | 'ease-out'  // 默認 spring
 }
 ```
 
-### 2.3 DealCardsParams (Refactored)
+### 3.3 DealCardsParams (Adapter Layer)
 
-重構發牌參數以包含完整的卡片和位置資訊。
+發牌參數，包含完整的卡片和位置資訊。**Adapter 層內部使用**。
 
 ```typescript
+// Adapter Layer Only - 由 AnimationService 內部計算
 interface DealCardsParams {
   cards: {
     cardId: string
@@ -217,57 +229,60 @@ interface DealCardsParams {
 }
 ```
 
-### 2.4 CardMergeParams (New)
+### 3.4 CardMergeParams (Adapter Layer)
 
-配對合併效果參數。
+配對合併效果參數。**Adapter 層內部使用**。
 
 ```typescript
+// Adapter Layer Only
 interface CardMergeParams {
   handCardId: string      // 手牌 ID
   fieldCardId: string     // 場牌 ID
-  mergePosition: Position // 合併位置（場牌位置）
+  mergePosition: Position // 合併位置（由 ZoneRegistry 查詢場牌位置）
   duration: number        // 合併效果時長 (ms)
 }
 ```
 
-### 2.5 CardsToDepositoryParams (New)
+### 3.5 CardsToDepositoryParams (Adapter Layer)
 
-配對牌移動至獲得區參數。
+配對牌移動至獲得區參數。**Adapter 層內部使用**。
 
 ```typescript
+// Adapter Layer Only
 interface CardsToDepositoryParams {
   cardIds: [string, string]  // 配對的兩張牌
-  from: Position             // 起點（合併位置）
-  to: Position               // 終點（獲得區分組位置）
+  from: Position             // 起點（由 ZoneRegistry 查詢合併位置）
+  to: Position               // 終點（由 ZoneRegistry 查詢獲得區分組位置）
   duration: number           // 動畫時長 (ms)
 }
 ```
 
 ---
 
-## 3. Drag State Models
+## 4. Drag State Models
 
-### 3.1 DragState
+### 4.1 DragState
 
-拖曳狀態管理。
+拖曳狀態管理。**Adapter 層使用**（拖曳是 UI 交互，不屬於 Application Layer）。
 
 ```typescript
+// Adapter Layer Only
 interface DragState {
   isDragging: boolean
   draggedCardId: string | null
-  currentPosition: Position | null
+  currentPosition: Position | null  // 螢幕座標
   dropTargets: DropTarget[]
 }
 
 interface DropTarget {
   zoneName: ZoneName
   cardId: string        // 可配對的場牌 ID
-  position: Position
+  position: Position    // 螢幕座標
   isValid: boolean      // 是否為有效放置目標
 }
 ```
 
-### 3.2 DragEvent Payloads
+### 4.2 DragEvent Payloads
 
 拖曳事件資料。
 
@@ -292,9 +307,9 @@ interface DragEndPayload {
 
 ---
 
-## 4. Depository Grouping Models
+## 5. Depository Grouping Models
 
-### 4.1 GroupedDepository
+### 5.1 GroupedDepository
 
 獲得區分組資料結構。
 
@@ -318,7 +333,7 @@ function groupByCardType(cardIds: string[]): GroupedDepository {
 }
 ```
 
-### 4.2 DepositoryGroupDisplay
+### 5.2 DepositoryGroupDisplay
 
 分組顯示資訊。
 
@@ -333,9 +348,9 @@ interface DepositoryGroupDisplay {
 
 ---
 
-## 5. Deck Zone Models
+## 6. Deck Zone Models
 
-### 5.1 DeckState
+### 6.1 DeckState
 
 牌堆狀態。
 
@@ -356,9 +371,9 @@ function calculateVisualLayers(remaining: number): number {
 
 ---
 
-## 6. Animation State Models
+## 7. Animation State Models (Adapter Layer)
 
-### 6.1 AnimationUIState
+### 7.1 AnimationUIState
 
 UI 層動畫狀態（擴展 UIStateStore）。
 
@@ -373,9 +388,9 @@ interface AnimationUIState {
 
 ---
 
-## 7. Existing Model Integration
+## 8. Existing Model Integration
 
-### 7.1 Card (Domain Layer - 已存在)
+### 8.1 Card (Domain Layer - 已存在)
 
 ```typescript
 // 來自 src/user-interface/domain/types.ts
@@ -389,7 +404,7 @@ interface Card {
 type CardType = 'BRIGHT' | 'ANIMAL' | 'RIBBON' | 'PLAIN'
 ```
 
-### 7.2 GameState Store Integration
+### 8.2 GameState Store Integration
 
 新增到 GameStateStore 的 computed properties：
 
@@ -406,16 +421,16 @@ const groupedOpponentDepository = computed<GroupedDepository>(() =>
 
 ---
 
-## 8. State Transitions
+## 9. State Transitions
 
-### 8.1 Animation Lifecycle
+### 9.1 Animation Lifecycle
 
 ```
 pending → running → completed
                  ↘ interrupted
 ```
 
-### 8.2 Drag Lifecycle
+### 9.2 Drag Lifecycle
 
 ```
 idle → dragging → dropped (success)
@@ -424,7 +439,7 @@ idle → dragging → dropped (success)
 
 ---
 
-## 9. Relationships
+## 10. Relationships
 
 ```
 ZoneRegistry
@@ -457,7 +472,7 @@ GameStateStore
 
 ---
 
-## 10. Validation Summary
+## 11. Validation Summary
 
 | Model | Validation Rules |
 |-------|-----------------|

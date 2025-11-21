@@ -67,13 +67,16 @@ export interface GameStatePort {
 
 ### 職責
 
-管理所有動畫效果，支援異步等待。內部管理 ZoneRegistry 和位置計算。
+管理所有動畫效果，支援異步等待。**純語意化 API**，Use Case 只表達「意圖」，不關心位置計算。
+
+> ⚠️ **Clean Architecture 注意**：AnimationPort 是 Application Layer 的 Output Port，不應包含任何 DOM API（如 HTMLElement）。
+> Zone 註冊由 Adapter 層內部處理，不暴露到 Port 介面。
 
 ### 介面定義
 
 ```typescript
 export interface AnimationPort {
-  // 高階動畫 API（Use Case 調用）
+  // 高階動畫 API（Use Case 調用，純語意化）
   playDealAnimation(params: DealAnimationParams): Promise<void>        // 回合開始批量發牌 (16張)
   playCardToFieldAnimation(cardId: string, fromHand: boolean): Promise<void>  // 手牌打到場上
   playMatchAnimation(handCardId: string, fieldCardId: string): Promise<void>  // 配對合併效果
@@ -84,9 +87,8 @@ export interface AnimationPort {
   interrupt(): void
   isAnimating(): boolean
 
-  // 區域註冊（供組件調用）
-  registerZone(zoneName: ZoneName, element: HTMLElement): void
-  unregisterZone(zoneName: ZoneName): void
+  // 注意：Zone 註冊不在此 Port 中
+  // 由 Adapter 層內部的 ZoneRegistry 處理，Use Case 不需要知道
 }
 
 // 參數類型
@@ -224,20 +226,27 @@ interrupt(): void
 
 ---
 
-#### 3.7 registerZone / unregisterZone
+#### 3.7 Zone Registry（Adapter Layer Internal）
 
-**簽名**:
+> ⚠️ **注意**：Zone 註冊**不屬於 AnimationPort 介面**，是 Adapter 層的內部實現。
+> 此處僅作文檔說明，實際由 Vue 組件直接調用 Adapter 層的 ZoneRegistry。
+
+**Adapter 層實現**:
 ```typescript
-registerZone(zoneName: ZoneName, element: HTMLElement): void
-unregisterZone(zoneName: ZoneName): void
+// Adapter Layer Only - 不是 Port 介面
+interface ZoneRegistry {
+  register(zoneName: ZoneName, element: HTMLElement): void
+  unregister(zoneName: ZoneName): void
+  getPosition(zoneName: ZoneName): ZonePosition | null
+}
 ```
 
-**行為規範**:
-1. 組件 onMounted 時調用 registerZone
-2. 組件 onUnmounted 時調用 unregisterZone
-3. 內部使用 ResizeObserver 追蹤位置變化
+**使用方式**（Adapter 層組件）:
+- 組件 onMounted 時調用 `zoneRegistry.register()`
+- 組件 onUnmounted 時調用 `zoneRegistry.unregister()`
+- AnimationService 內部使用 ZoneRegistry 查詢位置
 
-**ZoneName 定義**:
+**ZoneName 定義**（Adapter 層類型）:
 ```typescript
 type ZoneName =
   | 'deck'
@@ -466,7 +475,10 @@ class HandleReconnectionUseCase {
 - [ ] playDealAnimation 正確時序
 - [ ] playMatchAnimation 完成 Promise resolve
 - [ ] interrupt 清空佇列並 reject pending Promises
-- [ ] registerZone/unregisterZone 正確追蹤
+
+### ZoneRegistry 測試（Adapter 層）
+- [ ] register/unregister 正確追蹤區域
+- [ ] getPosition 返回正確座標
 
 ### NotificationPort 測試
 - [ ] showSelectionUI 設置正確狀態

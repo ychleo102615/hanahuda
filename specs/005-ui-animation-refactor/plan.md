@@ -100,14 +100,14 @@ front-end/
 
 **新設計**（3 個 Port）：
 - `GameStatePort` - 純遊戲數據狀態更新
-- `AnimationPort` - 動畫系統（支援 await、位置追蹤）
+- `AnimationPort` - 動畫系統（純語意化 API，支援 await）
 - `NotificationPort` - 通知/Modal/提示
 
 ### 變更理由
 
 1. **職責分離**：動畫邏輯複雜度高，需獨立管理
 2. **可等待動畫**：Use Case 可 await 動畫完成後再更新狀態
-3. **更好封裝**：AnimationPort 內部處理 ZoneRegistry 和位置計算
+3. **更好封裝**：AnimationPortAdapter（Adapter 層實現）內部使用 ZoneRegistry 處理位置計算，Use Case 不需知道
 
 ### 影響範圍
 

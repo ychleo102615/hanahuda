@@ -94,7 +94,7 @@
 - [ ] T023 [US2] 更新 output ports barrel export 在 front-end/src/user-interface/application/ports/output/index.ts
 - [ ] T024 [US2] 新增 AnimationPort、NotificationPort tokens 在 front-end/src/user-interface/adapter/di/tokens.ts
 - [ ] T025 [US2] 實作 NotificationPortAdapter 在 front-end/src/user-interface/adapter/notification/NotificationPortAdapter.ts
-- [ ] T026 [US2] 實作 AnimationPortAdapter 骨架（暫時 stub）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [ ] T026 [US2] 實作 AnimationPortAdapter 骨架（不含 registerZone，僅 stub 動畫方法和 interrupt/isAnimating）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
 - [ ] T027 [US2] 更新 DI Container 註冊新 Ports 在 front-end/src/user-interface/adapter/di/registry.ts
 - [ ] T028 [US2] 標記 TriggerUIEffectPort 為 @deprecated 在 front-end/src/user-interface/application/ports/output/trigger-ui-effect.port.ts
 - [ ] T029 [US2] 更新所有 Use Cases 注入新 Ports（AnimationPort、NotificationPort、GameStatePort）
@@ -146,11 +146,10 @@
 - [ ] T043 [US4] 實作 ZoneRegistry.getPosition 和 getCardPosition 在 front-end/src/user-interface/adapter/animation/ZoneRegistry.ts
 - [ ] T044 [US4] 實作 ZoneRegistry.dispose 清理所有 observers 在 front-end/src/user-interface/adapter/animation/ZoneRegistry.ts
 - [ ] T045 [US4] 重構 AnimationService 使用 ZoneRegistry 在 front-end/src/user-interface/adapter/animation/AnimationService.ts
-- [ ] T046 [US4] 完善 AnimationPortAdapter 實作 registerZone/unregisterZone 在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [ ] T046 [US4] 實作 useZoneRegistration composable（自動 register/unregister）在 front-end/src/user-interface/adapter/composables/useZoneRegistration.ts
 - [ ] T047 [US4] 實作 AnimationPortAdapter.interrupt 方法在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
 - [ ] T048 [US4] 實作 AnimationPortAdapter.isAnimating 方法在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T049 [US4] 更新各區域組件 onMounted 註冊區域位置（FieldZone、HandZone、DepositoryZone、DeckZone）
-- [ ] T050 [US4] 更新各區域組件 onUnmounted 取消註冊區域位置
+- [ ] T049 [US4] 更新各區域組件使用 useZoneRegistration composable 註冊區域位置（FieldZone、HandZone、DepositoryZone、DeckZone）
 
 **Checkpoint**: User Story 4 fully functional - 區域位置可追蹤，AnimationPort 基礎實作完成
 
@@ -164,16 +163,16 @@
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T051 [P] [US5] 單元測試 playMatchAnimation Promise resolve 在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
-- [ ] T052 [P] [US5] 單元測試 playToDepositoryAnimation 在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
+- [ ] T050 [P] [US5] 單元測試 playMatchAnimation Promise resolve 在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
+- [ ] T051 [P] [US5] 單元測試 playToDepositoryAnimation 在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
 
 ### Implementation for User Story 5
 
-- [ ] T053 [US5] 實作 AnimationPortAdapter.playMatchAnimation（手牌→場牌合併）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T054 [US5] 實作 AnimationPortAdapter.playToDepositoryAnimation（合併後→獲得區）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T055 [US5] 實作合併效果動畫（縮放+發光）使用 @vueuse/motion 在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T056 [US5] 整合配對動畫到 HandleCardsMatchedUseCase 或相關 Use Case
-- [ ] T057 [US5] 確保動畫進行中阻止玩家操作（isAnimating 狀態）
+- [ ] T052 [US5] 實作 AnimationPortAdapter.playMatchAnimation（手牌→場牌合併）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [ ] T053 [US5] 實作 AnimationPortAdapter.playToDepositoryAnimation（合併後→獲得區）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [ ] T054 [US5] 實作合併效果動畫（縮放+發光）使用 @vueuse/motion 在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [ ] T055 [US5] 整合配對動畫到 HandleCardsMatchedUseCase 或相關 Use Case
+- [ ] T056 [US5] 確保動畫進行中阻止玩家操作（isAnimating 狀態）
 
 **Checkpoint**: User Story 5 fully functional - 配對動畫流暢，完成後狀態正確更新
 
@@ -187,16 +186,16 @@
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T058 [P] [US6] 單元測試 playDealAnimation 時序（16 張牌 < 2 秒）在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
-- [ ] T059 [P] [US6] 單元測試 playDealAnimation 中斷機制在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
+- [ ] T057 [P] [US6] 單元測試 playDealAnimation 時序（16 張牌 < 2 秒）在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
+- [ ] T058 [P] [US6] 單元測試 playDealAnimation 中斷機制在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
 
 ### Implementation for User Story 6
 
-- [ ] T060 [US6] 實作 AnimationPortAdapter.playDealAnimation（牌堆→場牌→手牌）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T061 [US6] 實作 playFlipFromDeckAnimation（翻牌階段單張翻牌）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T062 [US6] 實作發牌 staggered 時序控制（每張 100ms 延遲）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T063 [US6] 整合發牌動畫到 HandleRoundDealtUseCase
-- [ ] T064 [US6] 確保發牌動畫支援中斷（重連時直接顯示最終狀態）
+- [ ] T059 [US6] 實作 AnimationPortAdapter.playDealAnimation（牌堆→場牌→手牌）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [ ] T060 [US6] 實作 playFlipFromDeckAnimation（翻牌階段單張翻牌）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [ ] T061 [US6] 實作發牌 staggered 時序控制（每張 100ms 延遲）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [ ] T062 [US6] 整合發牌動畫到 HandleRoundDealtUseCase
+- [ ] T063 [US6] 確保發牌動畫支援中斷（重連時直接顯示最終狀態）
 
 **Checkpoint**: User Story 6 fully functional - 發牌動畫依序播放，總時長 < 2 秒
 
@@ -210,19 +209,19 @@
 
 ### Tests for User Story 7 ⚠️
 
-- [ ] T065 [P] [US7] 組件測試 CardComponent 拖曳啟動在 front-end/tests/views/CardComponent.spec.ts
-- [ ] T066 [P] [US7] 組件測試 FieldZone drop target 高亮在 front-end/tests/views/FieldZone.spec.ts
+- [ ] T064 [P] [US7] 組件測試 CardComponent 拖曳啟動在 front-end/tests/views/CardComponent.spec.ts
+- [ ] T065 [P] [US7] 組件測試 FieldZone drop target 高亮在 front-end/tests/views/FieldZone.spec.ts
 
 ### Implementation for User Story 7
 
-- [ ] T067 [P] [US7] 定義 DragState、DropTarget、DragEventPayload 類型在 front-end/src/user-interface/adapter/animation/types.ts
-- [ ] T068 [US7] 擴展 CardComponent.vue 支援 draggable 屬性在 front-end/src/views/GamePage/components/CardComponent.vue
-- [ ] T069 [US7] 實作拖曳中視覺效果（opacity 0.8, scale 1.1）在 front-end/src/views/GamePage/components/CardComponent.vue
-- [ ] T070 [US7] 擴展 FieldZone.vue 作為 drop target 在 front-end/src/views/GamePage/components/FieldZone.vue
-- [ ] T071 [US7] 實作可配對場牌高亮效果在 front-end/src/views/GamePage/components/FieldZone.vue
-- [ ] T072 [US7] 實作拖曳放置邏輯（有效→配對，無效→返回原位）
-- [ ] T073 [US7] 整合拖曳配對到 PlayHandCardUseCase
-- [ ] T074 [US7] 確保點擊配對功能仍正常運作
+- [ ] T066 [P] [US7] 定義 DragState、DropTarget、DragEventPayload 類型在 front-end/src/user-interface/adapter/animation/types.ts
+- [ ] T067 [US7] 擴展 CardComponent.vue 支援 draggable 屬性在 front-end/src/views/GamePage/components/CardComponent.vue
+- [ ] T068 [US7] 實作拖曳中視覺效果（opacity 0.8, scale 1.1）在 front-end/src/views/GamePage/components/CardComponent.vue
+- [ ] T069 [US7] 擴展 FieldZone.vue 作為 drop target 在 front-end/src/views/GamePage/components/FieldZone.vue
+- [ ] T070 [US7] 實作可配對場牌高亮效果在 front-end/src/views/GamePage/components/FieldZone.vue
+- [ ] T071 [US7] 實作拖曳放置邏輯（有效→配對，無效→返回原位）
+- [ ] T072 [US7] 整合拖曳配對到 PlayHandCardUseCase
+- [ ] T073 [US7] 確保點擊配對功能仍正常運作
 
 **Checkpoint**: User Story 7 fully functional - 可拖曳手牌配對，高亮可配對目標，點擊配對仍可用
 
@@ -232,10 +231,10 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T075 [P] 驗證所有動畫 60fps 效能（Chrome DevTools Performance）
-- [ ] T076 [P] 驗證動畫中斷後 100ms 內恢復狀態
-- [ ] T077 [P] 移除 TriggerUIEffectPort deprecated 程式碼（若所有 Use Case 已遷移）
-- [ ] T078 執行 quickstart.md 驗證清單
+- [ ] T074 [P] 驗證所有動畫 60fps 效能（Chrome DevTools Performance）
+- [ ] T075 [P] 驗證動畫中斷後 100ms 內恢復狀態
+- [ ] T076 [P] 移除 TriggerUIEffectPort deprecated 程式碼（若所有 Use Case 已遷移）
+- [ ] T077 執行 quickstart.md 驗證清單
 
 ---
 

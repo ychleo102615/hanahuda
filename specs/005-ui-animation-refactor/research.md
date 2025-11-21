@@ -64,7 +64,7 @@ async execute(event) {
 
 **Implementation Pattern**:
 ```typescript
-// ZoneRegistry 核心 API
+// ZoneRegistry 核心 API（Adapter 層專用）
 interface ZoneRegistry {
   register(zoneName: string, element: HTMLElement): void
   unregister(zoneName: string): void
@@ -75,7 +75,47 @@ interface ZoneRegistry {
 
 ---
 
-### 2. @vueuse/motion 動畫最佳實踐
+### 2.1 Clean Architecture 符合性設計
+
+**Research Question**: 如何設計 AnimationPort 以符合 Clean Architecture 原則？
+
+**Decision**: AnimationPort 使用純語意化 API，Zone 管理移至 Adapter 層內部
+
+**Rationale**:
+- **Application Layer Port 應框架無關**：Output Port 介面不應依賴 DOM API（HTMLElement、DOMRect）
+- **Use Case 只表達意圖**：`playMatchAnimation(handCardId, fieldCardId)` 只說「這兩張牌配對」，不關心位置
+- **Adapter 層負責實現細節**：位置計算、動畫執行都在 Adapter 層完成
+
+**設計原則**:
+```
+Application Layer (Port)          Adapter Layer (Implementation)
+─────────────────────────         ─────────────────────────────
+AnimationPort                     AnimationPortAdapter
+  playMatchAnimation(             │
+    handCardId,                   ├─ 查詢 ZoneRegistry 取得位置
+    fieldCardId                   ├─ 計算動畫參數
+  )                               ├─ 執行 @vueuse/motion 動畫
+                                  └─ resolve Promise
+
+Use Case 不知道：                  Adapter 負責：
+  - 螢幕座標                        - HTMLElement 操作
+  - DOM 元素                        - ResizeObserver
+  - 動畫庫                          - 位置追蹤
+```
+
+**Alternatives Considered**:
+1. **Port 包含 registerZone**: 違反 CA，Port 依賴 HTMLElement
+2. **Use Case 傳遞位置**: 違反 CA，Application 層計算螢幕座標
+3. **組件直接調用 AnimationService**: 可行但繞過 Port 抽象
+
+**最終架構**:
+- `AnimationPort`（Application Layer）：純語意化介面
+- `ZoneRegistry`（Adapter Layer）：DOM 位置追蹤，不暴露到 Port
+- `AnimationService`（Adapter Layer）：實現動畫，內部使用 ZoneRegistry
+
+---
+
+### 3. @vueuse/motion 動畫最佳實踐
 
 **Research Question**: 如何使用 @vueuse/motion 實現流暢的卡片移動動畫？
 
@@ -104,7 +144,7 @@ interface ZoneRegistry {
 
 ---
 
-### 3. 拖曳互動實作方案
+### 4. 拖曳互動實作方案
 
 **Research Question**: 如何實作手牌拖曳配對功能？
 
@@ -143,7 +183,7 @@ interface DropTarget {
 
 ---
 
-### 4. 獲得區分組排列
+### 5. 獲得區分組排列
 
 **Research Question**: 如何實作獲得區按卡片類型分組？
 
@@ -179,7 +219,7 @@ groupedDepository: {
 
 ---
 
-### 5. 動畫與狀態同步
+### 6. 動畫與狀態同步
 
 **Research Question**: 如何處理動畫進行中的狀態變更？
 
@@ -207,7 +247,7 @@ interface AnimationState {
 
 ---
 
-### 6. 牌堆視圖設計
+### 7. 牌堆視圖設計
 
 **Research Question**: 牌堆應如何視覺呈現？
 
@@ -237,7 +277,7 @@ interface AnimationState {
 
 ---
 
-### 7. 配對動畫流程
+### 8. 配對動畫流程
 
 **Research Question**: 配對成功時的動畫順序為何？
 
@@ -270,7 +310,7 @@ Total: ~650ms (含 delay)
 
 ---
 
-### 8. 發牌動畫實作
+### 9. 發牌動畫實作
 
 **Research Question**: 如何實現發牌動畫的時序控制？
 
