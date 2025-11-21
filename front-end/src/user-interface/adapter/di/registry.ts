@@ -154,6 +154,7 @@ function registerOutputPorts(container: DIContainer): void {
       validateCardExists: domain.validateCardExists,
       validateTargetInList: domain.validateTargetInList,
       calculateYakuProgress: domain.calculateYakuProgress,
+      groupByCardType: domain.groupByCardType,
     }),
     { singleton: true },
   )

@@ -57,18 +57,18 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T008 [P] [US1] 單元測試 groupByCardType 函數在 front-end/tests/adapter/stores/gameState.spec.ts
+- [x] T008 [P] [US1] 單元測試 getCardTypeFromId + groupByCardType 在 front-end/tests/domain/card-logic.test.ts
 - [ ] T009 [P] [US1] 組件測試 DepositoryZone 分組顯示在 front-end/tests/views/DepositoryZone.spec.ts
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] 定義 GroupedDepository、DepositoryGroupDisplay 類型在 front-end/src/user-interface/adapter/stores/types.ts
-- [ ] T011 [US1] 實作 groupByCardType 函數在 front-end/src/user-interface/adapter/stores/gameState.ts
-- [ ] T012 [US1] 新增 groupedMyDepository computed 在 front-end/src/user-interface/adapter/stores/gameState.ts
-- [ ] T013 [US1] 新增 groupedOpponentDepository computed 在 front-end/src/user-interface/adapter/stores/gameState.ts
-- [ ] T014 [US1] 重構 DepositoryZone.vue 組件使用分組資料在 front-end/src/views/GamePage/components/DepositoryZone.vue
-- [ ] T015 [US1] 實作四個分組區塊樣式（光牌→種牌→短冊→かす）在 front-end/src/views/GamePage/components/DepositoryZone.vue
-- [ ] T016 [US1] 實作空分組佔位顯示在 front-end/src/views/GamePage/components/DepositoryZone.vue
+- [x] T010 [P] [US1] 定義 GroupedDepository 類型在 front-end/src/user-interface/domain/types.ts
+- [x] T011 [US1] 實作 getCardTypeFromId + groupByCardType 在 front-end/src/user-interface/domain/card-logic.ts
+- [x] T012 [US1] 新增 groupedMyDepository computed 在 front-end/src/user-interface/adapter/stores/gameState.ts
+- [x] T013 [US1] 新增 groupedOpponentDepository computed 在 front-end/src/user-interface/adapter/stores/gameState.ts
+- [x] T014 [US1] 重構 PlayerDepositoryZone.vue 使用分組資料
+- [x] T015 [US1] 重構 OpponentDepositoryZone.vue 使用分組資料
+- [x] T016 [US1] 實作空分組佔位顯示
 
 **Checkpoint**: User Story 1 fully functional - 獲得區按四種類型分組顯示，空分組保持佔位
 

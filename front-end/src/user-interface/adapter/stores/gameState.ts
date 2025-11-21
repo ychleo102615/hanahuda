@@ -25,6 +25,10 @@ import type {
   GameSnapshotRestore,
   YakuScore,
 } from '../../application/types'
+import type { GroupedDepository } from '../../domain/types'
+import type { DomainFacade } from '../../application/types/domain-facade'
+import { container } from '../di/container'
+import { TOKENS } from '../di/tokens'
 
 /**
  * GameStateStore State 介面
@@ -64,6 +68,8 @@ export interface GameStateStoreGetters {
   currentFlowStage: FlowState | null // 當前流程階段
   myKoiKoiMultiplier: number // 玩家 Koi-Koi 倍率
   opponentKoiKoiMultiplier: number // 對手 Koi-Koi 倍率
+  groupedMyDepository: GroupedDepository // 玩家獲得區分組
+  groupedOpponentDepository: GroupedDepository // 對手獲得區分組
 }
 
 /**
@@ -133,6 +139,28 @@ export const useGameStateStore = defineStore('gameState', {
     opponentKoiKoiMultiplier(): number {
       if (!this.opponentPlayerId) return 1
       return this.koiKoiMultipliers[this.opponentPlayerId] || 1
+    },
+
+    /**
+     * 玩家獲得區分組
+     *
+     * 按卡片類型分組：BRIGHT → ANIMAL → RIBBON → PLAIN
+     * 透過 DI Container 取得 DomainFacade
+     */
+    groupedMyDepository(): GroupedDepository {
+      const domainFacade = container.resolve(TOKENS.DomainFacade) as DomainFacade
+      return domainFacade.groupByCardType(this.myDepository)
+    },
+
+    /**
+     * 對手獲得區分組
+     *
+     * 按卡片類型分組：BRIGHT → ANIMAL → RIBBON → PLAIN
+     * 透過 DI Container 取得 DomainFacade
+     */
+    groupedOpponentDepository(): GroupedDepository {
+      const domainFacade = container.resolve(TOKENS.DomainFacade) as DomainFacade
+      return domainFacade.groupByCardType(this.opponentDepository)
     },
   },
 

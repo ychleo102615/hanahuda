@@ -1,23 +1,38 @@
 <template>
   <div class="player-depository-zone w-full h-full overflow-x-auto">
-    <div
-      v-if="playerCards.length === 0"
-      class="flex items-center justify-center h-full text-gray-400 text-sm"
-    >
-      No cards captured yet
-    </div>
+    <div class="flex gap-4 p-2 min-w-min h-full">
+      <!-- 四個分組區塊：光牌 → 種牌 → 短冊 → かす -->
+      <div
+        v-for="group in cardGroups"
+        :key="group.type"
+        class="depository-group flex flex-col min-w-[60px]"
+      >
+        <!-- 分組標題 -->
+        <div class="text-xs text-gray-400 mb-1 text-center">
+          {{ group.label }}
+          <span v-if="group.cards.length > 0" class="text-gray-500">({{ group.cards.length }})</span>
+        </div>
 
-    <div v-else class="flex gap-2 p-2 min-w-min">
-      <CardComponent
-        v-for="cardId in playerCards"
-        :key="cardId"
-        :card-id="cardId"
-        :is-selectable="false"
-        :is-selected="false"
-        :is-highlighted="false"
-        size="sm"
-        class="flex-shrink-0"
-      />
+        <!-- 卡片列表 -->
+        <div class="flex gap-1 flex-wrap justify-center flex-1">
+          <CardComponent
+            v-for="cardId in group.cards"
+            :key="cardId"
+            :card-id="cardId"
+            :is-selectable="false"
+            :is-selected="false"
+            :is-highlighted="false"
+            size="sm"
+            class="flex-shrink-0"
+          />
+
+          <!-- 空分組佔位 -->
+          <div
+            v-if="group.cards.length === 0"
+            class="empty-placeholder w-10 h-14 border border-dashed border-gray-600 rounded opacity-30"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -27,28 +42,41 @@
  * PlayerDepositoryZone Component
  *
  * @description
- * 顯示玩家已獲得的牌。
- * 從 GameStateStore 讀取玩家的 depository 狀態。
+ * 顯示玩家已獲得的牌，按卡片類型分組。
+ * 分組順序：光牌 → 種牌 → 短冊 → かす
  *
  * Features:
- * - 顯示玩家所有已獲得的牌
+ * - 按卡片類型分組顯示（BRIGHT, ANIMAL, RIBBON, PLAIN）
  * - 支援橫向滾動
  * - 使用小尺寸卡片（節省空間）
  * - 卡片不可選擇
- * - 可視覺化顯示已形成的役種（optional，Phase 7+）
+ * - 空分組保持佔位
  */
 
 import { computed } from 'vue'
 import { useGameStateStore } from '@/user-interface/adapter/stores/gameState'
 import CardComponent from './CardComponent.vue'
+import type { CardType } from '@/user-interface/domain/types'
 
 const gameStateStore = useGameStateStore()
 
+interface CardGroup {
+  type: CardType
+  label: string
+  cards: readonly string[]
+}
+
 /**
- * 取得玩家已獲得的牌
+ * 分組顯示資料
  */
-const playerCards = computed<string[]>(() => {
-  return gameStateStore.myDepository
+const cardGroups = computed<CardGroup[]>(() => {
+  const grouped = gameStateStore.groupedMyDepository
+  return [
+    { type: 'BRIGHT', label: '光', cards: grouped.BRIGHT },
+    { type: 'ANIMAL', label: '種', cards: grouped.ANIMAL },
+    { type: 'RIBBON', label: '短冊', cards: grouped.RIBBON },
+    { type: 'PLAIN', label: 'かす', cards: grouped.PLAIN },
+  ]
 })
 </script>
 

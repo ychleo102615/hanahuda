@@ -23,7 +23,7 @@
 // 型別定義
 // ============================================================================
 
-export type { Card, CardType, YakuType, YakuProgress, ValidationResult } from './types'
+export type { Card, CardType, YakuType, YakuProgress, ValidationResult, GroupedDepository } from './types'
 
 // ============================================================================
 // 卡片資料庫 - 語義化常數
@@ -98,7 +98,7 @@ export {
 // 卡片邏輯函數
 // ============================================================================
 
-export { isValidCard, getCardById, areCardsEqual } from './card-logic'
+export { isValidCard, getCardById, areCardsEqual, getCardTypeFromId, groupByCardType } from './card-logic'
 
 // ============================================================================
 // 配對驗證函數

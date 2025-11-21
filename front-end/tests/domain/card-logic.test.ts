@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { isValidCard, getCardById, areCardsEqual } from '@/user-interface/domain/card-logic'
+import { isValidCard, getCardById, areCardsEqual, getCardTypeFromId, groupByCardType } from '@/user-interface/domain/card-logic'
 import { MATSU_HIKARI, UME_AKATAN, SAKURA_HIKARI } from '@/user-interface/domain/card-database'
 import type { Card } from '@/user-interface/domain/types'
 
@@ -259,6 +259,143 @@ describe('card-logic.ts', () => {
 
       // 空字串也應該能比較
       expect(areCardsEqual(card1, card2)).toBe(true)
+    })
+  })
+
+  describe('getCardTypeFromId()', () => {
+    describe('BRIGHT 牌 (type code = 1)', () => {
+      it('應正確識別 1 月光牌', () => {
+        expect(getCardTypeFromId('0111')).toBe('BRIGHT')
+      })
+
+      it('應正確識別 3 月光牌', () => {
+        expect(getCardTypeFromId('0311')).toBe('BRIGHT')
+      })
+
+      it('應正確識別 8 月光牌', () => {
+        expect(getCardTypeFromId('0811')).toBe('BRIGHT')
+      })
+
+      it('應正確識別 11 月光牌', () => {
+        expect(getCardTypeFromId('1111')).toBe('BRIGHT')
+      })
+
+      it('應正確識別 12 月光牌', () => {
+        expect(getCardTypeFromId('1211')).toBe('BRIGHT')
+      })
+    })
+
+    describe('ANIMAL 牌 (type code = 2)', () => {
+      it('應正確識別種牌', () => {
+        expect(getCardTypeFromId('0221')).toBe('ANIMAL') // 2月
+        expect(getCardTypeFromId('0421')).toBe('ANIMAL') // 4月
+        expect(getCardTypeFromId('0721')).toBe('ANIMAL') // 7月
+        expect(getCardTypeFromId('0921')).toBe('ANIMAL') // 9月
+      })
+    })
+
+    describe('RIBBON 牌 (type code = 3)', () => {
+      it('應正確識別短冊', () => {
+        expect(getCardTypeFromId('0131')).toBe('RIBBON') // 1月
+        expect(getCardTypeFromId('0231')).toBe('RIBBON') // 2月
+        expect(getCardTypeFromId('0331')).toBe('RIBBON') // 3月
+        expect(getCardTypeFromId('0631')).toBe('RIBBON') // 6月
+      })
+    })
+
+    describe('PLAIN 牌 (type code = 4)', () => {
+      it('應正確識別かす', () => {
+        expect(getCardTypeFromId('0141')).toBe('PLAIN') // 1月かす1
+        expect(getCardTypeFromId('0142')).toBe('PLAIN') // 1月かす2
+        expect(getCardTypeFromId('0541')).toBe('PLAIN') // 5月かす
+        expect(getCardTypeFromId('1241')).toBe('PLAIN') // 12月かす
+      })
+    })
+
+    describe('無效格式 fallback', () => {
+      it('應對空字串返回 PLAIN', () => {
+        expect(getCardTypeFromId('')).toBe('PLAIN')
+      })
+
+      it('應對過短字串返回 PLAIN', () => {
+        expect(getCardTypeFromId('01')).toBe('PLAIN')
+      })
+
+      it('應對無效字串返回 PLAIN', () => {
+        expect(getCardTypeFromId('invalid')).toBe('PLAIN')
+      })
+
+      it('應對未知 type code 返回 PLAIN', () => {
+        expect(getCardTypeFromId('0191')).toBe('PLAIN') // type code = 9
+        expect(getCardTypeFromId('0101')).toBe('PLAIN') // type code = 0
+      })
+    })
+  })
+
+  describe('groupByCardType()', () => {
+    it('應正確分組空陣列', () => {
+      const result = groupByCardType([])
+
+      expect(result.BRIGHT).toEqual([])
+      expect(result.ANIMAL).toEqual([])
+      expect(result.RIBBON).toEqual([])
+      expect(result.PLAIN).toEqual([])
+    })
+
+    it('應正確分組單一類型的卡片', () => {
+      const brightCards = ['0111', '0311', '0811'] // 3 張光牌
+      const result = groupByCardType(brightCards)
+
+      expect(result.BRIGHT).toEqual(['0111', '0311', '0811'])
+      expect(result.ANIMAL).toEqual([])
+      expect(result.RIBBON).toEqual([])
+      expect(result.PLAIN).toEqual([])
+    })
+
+    it('應正確分組混合類型的卡片', () => {
+      const mixedCards = [
+        '0111', // BRIGHT - 1月光牌
+        '0221', // ANIMAL - 2月種牌
+        '0331', // RIBBON - 3月短冊
+        '0441', // PLAIN - 4月かす
+        '0811', // BRIGHT - 8月光牌
+        '0921', // ANIMAL - 9月種牌
+      ]
+
+      const result = groupByCardType(mixedCards)
+
+      expect(result.BRIGHT).toEqual(['0111', '0811'])
+      expect(result.ANIMAL).toEqual(['0221', '0921'])
+      expect(result.RIBBON).toEqual(['0331'])
+      expect(result.PLAIN).toEqual(['0441'])
+    })
+
+    it('應保持每個分組內卡片的原始順序', () => {
+      const cards = ['0811', '0111', '0311'] // 8月、1月、3月光牌（非排序順序）
+      const result = groupByCardType(cards)
+
+      // 應該保持原始順序，不重新排序
+      expect(result.BRIGHT).toEqual(['0811', '0111', '0311'])
+    })
+
+    it('應正確處理完整獲得區（多種類型混合）', () => {
+      // 模擬實際遊戲中可能的獲得區狀態
+      const depository = [
+        '0111', // BRIGHT - 松上鶴
+        '0221', // ANIMAL - 梅鶯
+        '0231', // RIBBON - 梅短冊
+        '0141', // PLAIN - 松かす1
+        '0142', // PLAIN - 松かす2
+        '0311', // BRIGHT - 櫻幕
+        '0921', // ANIMAL - 菊盃
+      ]
+
+      const result = groupByCardType(depository)
+
+      expect(result.BRIGHT).toHaveLength(2)
+      expect(result.ANIMAL).toHaveLength(2)
+      expect(result.RIBBON).toHaveLength(1)
+      expect(result.PLAIN).toHaveLength(2)
     })
   })
 })

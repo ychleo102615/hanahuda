@@ -32,7 +32,7 @@
 
 // Import Domain Layer types (這些型別定義在 Domain Layer)
 // 注意：這裡使用 type import，不會引入執行時依賴
-import type { Card, YakuType, YakuProgress, ValidationResult } from '@/user-interface/domain'
+import type { Card, YakuType, YakuProgress, ValidationResult, GroupedDepository } from '@/user-interface/domain'
 
 /**
  * Domain Facade 介面
@@ -85,4 +85,12 @@ export interface DomainFacade {
    * @returns 役種進度（所需卡片、已獲得卡片、缺少卡片、完成度）
    */
   calculateYakuProgress(yakuType: YakuType, depositoryCards: readonly Card[]): YakuProgress
+
+  /**
+   * 將卡片 ID 列表按類型分組
+   *
+   * @param cardIds - 卡片 ID 列表
+   * @returns 分組後的卡片 ID（BRIGHT, ANIMAL, RIBBON, PLAIN）
+   */
+  groupByCardType(cardIds: readonly string[]): GroupedDepository
 }

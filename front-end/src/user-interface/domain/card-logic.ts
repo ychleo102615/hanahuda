@@ -10,7 +10,7 @@
  * @since 2025-11-13
  */
 
-import type { Card } from './types'
+import type { Card, CardType, GroupedDepository } from './types'
 import { ALL_CARDS } from './card-database'
 import { isCardType } from './types'
 
@@ -87,4 +87,78 @@ export function getCardById(cardId: string): Readonly<Card> | undefined {
  */
 export function areCardsEqual(card1: Readonly<Card>, card2: Readonly<Card>): boolean {
   return card1.card_id === card2.card_id
+}
+
+/**
+ * 從 card_id 解析卡片類型
+ *
+ * 根據 MMTI 格式的第三位（type code）判斷卡片類型：
+ * - 1: BRIGHT（光牌）
+ * - 2: ANIMAL（種牌）
+ * - 3: RIBBON（短冊）
+ * - 4: PLAIN（かす）
+ *
+ * @param cardId - 卡片 ID（MMTI 格式）
+ * @returns 卡片類型，無效格式時返回 PLAIN 作為 fallback
+ *
+ * @example
+ * ```typescript
+ * getCardTypeFromId("0111") // "BRIGHT"
+ * getCardTypeFromId("0221") // "ANIMAL"
+ * getCardTypeFromId("0331") // "RIBBON"
+ * getCardTypeFromId("0141") // "PLAIN"
+ * ```
+ */
+export function getCardTypeFromId(cardId: string): CardType {
+  if (cardId.length < 3) {
+    return 'PLAIN'
+  }
+
+  const typeCode = cardId[2]
+
+  switch (typeCode) {
+    case '1':
+      return 'BRIGHT'
+    case '2':
+      return 'ANIMAL'
+    case '3':
+      return 'RIBBON'
+    case '4':
+    default:
+      return 'PLAIN'
+  }
+}
+
+/**
+ * 將卡片 ID 列表按類型分組
+ *
+ * 用於獲得區顯示，將卡片按四種類型分組：
+ * - BRIGHT: 光牌
+ * - ANIMAL: 種牌
+ * - RIBBON: 短冊
+ * - PLAIN: かす
+ *
+ * @param cardIds - 卡片 ID 列表
+ * @returns 分組後的卡片 ID 列表
+ *
+ * @example
+ * ```typescript
+ * groupByCardType(['0111', '0221', '0331', '0441'])
+ * // { BRIGHT: ['0111'], ANIMAL: ['0221'], RIBBON: ['0331'], PLAIN: ['0441'] }
+ * ```
+ */
+export function groupByCardType(cardIds: readonly string[]): GroupedDepository {
+  const result: { BRIGHT: string[]; ANIMAL: string[]; RIBBON: string[]; PLAIN: string[] } = {
+    BRIGHT: [],
+    ANIMAL: [],
+    RIBBON: [],
+    PLAIN: [],
+  }
+
+  for (const cardId of cardIds) {
+    const type = getCardTypeFromId(cardId)
+    result[type].push(cardId)
+  }
+
+  return result
 }
