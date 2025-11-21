@@ -7,7 +7,9 @@
  * 使用 @vueuse/motion 實現流暢的卡片移動動畫。
  */
 
-import type { Animation, AnimationParams, AnimationType, DealCardsParams, CardMoveParams } from './types'
+import type { Animation, AnimationParams, DealCardsParams, CardMoveParams, Zone } from './types'
+import type { AnimationType } from './types'
+import type { AnimationParams as AppAnimationParams, AnimationType as AppAnimationType } from '../../application/ports/output/trigger-ui-effect.port'
 import { AnimationQueue, InterruptedError } from './AnimationQueue'
 import { useMotion } from '@vueuse/motion'
 
@@ -33,17 +35,23 @@ export class AnimationService {
    * 觸發動畫
    *
    * @param type - 動畫類型
-   * @param params - 動畫參數
+   * @param params - 動畫參數 (Application Layer 格式)
    * @returns Promise 在動畫完成後 resolve
    */
-  trigger<T extends AnimationType>(
+  trigger<T extends AppAnimationType>(
     type: T,
-    params: T extends 'DEAL_CARDS' ? DealCardsParams : CardMoveParams
+    params: AppAnimationParams<T>
   ): Promise<void> {
+    // 將 Application Layer 參數轉換為 Adapter Layer 參數
+    const adapterParams = this.convertParams(type, params)
+
+    // 只處理 Adapter Layer 支援的動畫類型
+    const adapterType = type as AnimationType
+
     const animation: Animation = {
       id: crypto.randomUUID(),
-      type,
-      params,
+      type: adapterType,
+      params: adapterParams,
       status: 'pending',
     }
 
@@ -58,6 +66,53 @@ export class AnimationService {
 
       this.queue.enqueue(animation)
     })
+  }
+
+  /**
+   * 將 Application Layer 參數轉換為 Adapter Layer 參數
+   */
+  private convertParams<T extends AppAnimationType>(
+    type: T,
+    params: AppAnimationParams<T>
+  ): AnimationParams {
+    if (type === 'DEAL_CARDS') {
+      const appParams = params as AppAnimationParams<'DEAL_CARDS'>
+      // 將 fieldCards 和 hands 轉換為 targetZones
+      const targetZones: Zone[] = []
+
+      // 場牌
+      if (appParams.fieldCards) {
+        appParams.fieldCards.forEach(() => targetZones.push('field'))
+      }
+
+      // 手牌
+      if (appParams.hands) {
+        appParams.hands.forEach(hand => {
+          const zone: Zone = hand.player_id === 'player-1' ? 'player-hand' : 'opponent-hand'
+          hand.cards.forEach(() => targetZones.push(zone))
+        })
+      }
+
+      return {
+        targetZones,
+        delay: 100,
+        duration: 300,
+      } as DealCardsParams
+    }
+
+    if (type === 'CARD_MOVE') {
+      const appParams = params as AppAnimationParams<'CARD_MOVE'>
+      // CARD_MOVE 需要位置資訊，暫時使用預設值
+      return {
+        cardId: appParams.cardId,
+        from: { x: 0, y: 0 },
+        to: { x: 0, y: 0 },
+        duration: 300,
+      } as CardMoveParams
+    }
+
+    // 其他類型暫時直接返回（YAKU_EFFECT, SCORE_UPDATE 尚未實作）
+    return params as unknown as AnimationParams
   }
 
   /**
@@ -93,7 +148,13 @@ export class AnimationService {
    * @param params - 發牌動畫參數
    */
   private async executeDealCards(params: DealCardsParams): Promise<void> {
-    const { targetZones, delay, duration } = params
+    const { targetZones, delay = 100, duration = 300 } = params
+
+    // 防禦性檢查：如果沒有 targetZones，跳過動畫
+    if (!targetZones || targetZones.length === 0) {
+      console.info('[AnimationService] DEAL_CARDS: No target zones, skipping animation')
+      return
+    }
 
     // 依序發牌到各區域
     for (let i = 0; i < targetZones.length; i++) {

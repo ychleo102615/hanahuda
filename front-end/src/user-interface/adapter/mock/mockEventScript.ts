@@ -76,10 +76,8 @@ export const mockEventScript: MockEventItem[] = [
       ],
       deck_remaining: 24,
       next_state: {
-        flow_stage: 'PLAYING_HAND_CARD',
-        current_player_id: 'player-1',
-        round_number: 1,
-        turn_number: 1,
+        state_type: 'PLAYING_HAND_CARD',
+        active_player_id: 'player-1',
       },
     },
     delay: 1000,
@@ -100,10 +98,8 @@ export const mockEventScript: MockEventItem[] = [
       captured: ['0131', '0141'],
       discarded: ['0142'],
       next_state: {
-        flow_stage: 'PLAYING_HAND_CARD',
-        current_player_id: 'player-2',
-        round_number: 1,
-        turn_number: 2,
+        state_type: 'PLAYING_HAND_CARD',
+        active_player_id: 'player-2',
       },
     },
     delay: 2000,
@@ -124,10 +120,8 @@ export const mockEventScript: MockEventItem[] = [
       captured: ['0111', '0142'],
       discarded: ['0931'],
       next_state: {
-        flow_stage: 'PLAYING_HAND_CARD',
-        current_player_id: 'player-1',
-        round_number: 1,
-        turn_number: 3,
+        state_type: 'PLAYING_HAND_CARD',
+        active_player_id: 'player-1',
       },
     },
     delay: 1500,
@@ -148,10 +142,8 @@ export const mockEventScript: MockEventItem[] = [
       captured: ['0231', '0241'],
       discarded: ['0242'],
       next_state: {
-        flow_stage: 'PLAYING_HAND_CARD',
-        current_player_id: 'player-2',
-        round_number: 1,
-        turn_number: 4,
+        state_type: 'PLAYING_HAND_CARD',
+        active_player_id: 'player-2',
       },
     },
     delay: 1500,
@@ -172,10 +164,8 @@ export const mockEventScript: MockEventItem[] = [
       captured: ['0221', '0242'],
       discarded: ['0941'],
       next_state: {
-        flow_stage: 'PLAYING_HAND_CARD',
-        current_player_id: 'player-1',
-        round_number: 1,
-        turn_number: 5,
+        state_type: 'PLAYING_HAND_CARD',
+        active_player_id: 'player-1',
       },
     },
     delay: 1500,
@@ -196,10 +186,8 @@ export const mockEventScript: MockEventItem[] = [
       captured: ['0331', '0341'],
       discarded: ['0342'],
       next_state: {
-        flow_stage: 'PLAYING_HAND_CARD',
-        current_player_id: 'player-1', // 繼續玩家回合因為形成役
-        round_number: 1,
-        turn_number: 5,
+        state_type: 'PLAYING_HAND_CARD',
+        active_player_id: 'player-1', // 繼續玩家回合因為形成役
       },
     },
     delay: 1500,
@@ -213,16 +201,31 @@ export const mockEventScript: MockEventItem[] = [
       event_id: 'evt-008',
       timestamp: new Date().toISOString(),
       player_id: 'player-1',
-      current_yaku: [
-        {
-          yaku_id: 'AKA_TAN',
-          name: '赤短',
-          points: 6,
-          cards: ['0131', '0231', '0331'], // 松梅櫻赤短
+      hand_card_play: null,
+      draw_card_play: null,
+      yaku_update: {
+        newly_formed_yaku: [
+          {
+            yaku_type: 'AKA_TAN',
+            base_points: 6,
+            contributing_cards: ['0131', '0231', '0331'], // 松梅櫻赤短
+          },
+        ],
+        all_active_yaku: [
+          {
+            yaku_type: 'AKA_TAN',
+            base_points: 6,
+            contributing_cards: ['0131', '0231', '0331'],
+          },
+        ],
+      },
+      current_multipliers: {
+        player_multipliers: {
+          'player-1': 1,
+          'player-2': 1,
         },
-      ],
-      current_points: 6,
-      potential_yaku: [],
+      },
+      deck_remaining: 16,
     },
     delay: 2000,
   },
@@ -236,12 +239,15 @@ export const mockEventScript: MockEventItem[] = [
       timestamp: new Date().toISOString(),
       player_id: 'player-1',
       decision: 'END_ROUND',
-      accumulated_points: 6,
+      updated_multipliers: {
+        player_multipliers: {
+          'player-1': 1,
+          'player-2': 1,
+        },
+      },
       next_state: {
-        flow_stage: 'ROUND_ENDED',
-        current_player_id: null,
-        round_number: 1,
-        turn_number: 5,
+        state_type: 'ROUND_ENDED',
+        active_player_id: null,
       },
     },
     delay: 1000,
@@ -255,18 +261,30 @@ export const mockEventScript: MockEventItem[] = [
       event_id: 'evt-010',
       timestamp: new Date().toISOString(),
       winner_id: 'player-1',
-      loser_id: 'player-2',
-      points_awarded: 6,
-      end_reason: 'PLAYER_ENDED',
-      scores: [
-        { player_id: 'player-1', round_score: 6, total_score: 6 },
-        { player_id: 'player-2', round_score: 0, total_score: 0 },
+      yaku_list: [
+        {
+          yaku_type: 'AKA_TAN',
+          base_points: 6,
+          contributing_cards: ['0131', '0231', '0331'],
+        },
+      ],
+      base_score: 6,
+      final_score: 6,
+      multipliers: {
+        player_multipliers: {
+          'player-1': 1,
+          'player-2': 1,
+        },
+      },
+      updated_total_scores: [
+        { player_id: 'player-1', score: 6 },
+        { player_id: 'player-2', score: 0 },
       ],
     },
     delay: 2000,
   },
 
-  // 11. 遊戲結束 (6 分未達 7 分目標,但示範用直接結束)
+  // 11. 遊戲結束
   {
     eventType: 'GameFinished',
     payload: {
@@ -275,11 +293,9 @@ export const mockEventScript: MockEventItem[] = [
       timestamp: new Date().toISOString(),
       winner_id: 'player-1',
       final_scores: [
-        { player_id: 'player-1', total_score: 6 },
-        { player_id: 'player-2', total_score: 0 },
+        { player_id: 'player-1', score: 6 },
+        { player_id: 'player-2', score: 0 },
       ],
-      total_rounds: 1,
-      end_reason: 'TARGET_SCORE_REACHED',
     },
     delay: 1000,
   },

@@ -47,6 +47,8 @@ import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
 import { MockEventEmitter } from '../mock/MockEventEmitter'
 import { EventRouter } from '../sse/EventRouter'
+import { AnimationService } from '../animation/AnimationService'
+import { AnimationQueue } from '../animation/AnimationQueue'
 
 /**
  * 遊戲模式
@@ -440,23 +442,21 @@ function registerLocalAdapters(container: DIContainer): void {
  *
  * @description
  * 註冊 AnimationQueue 與 AnimationService。
- *
- * TODO: Phase 3+ - 等待 Animation System 實作後啟用
  */
 function registerAnimationSystem(container: DIContainer): void {
-  // Phase 2 暫時跳過 Animation System 註冊
-  // 暫時提供一個 Mock AnimationService 避免 TriggerUIEffectPort 註冊失敗
+  // 註冊 AnimationQueue
   container.register(
-    TOKENS.AnimationService,
-    () => ({
-      trigger: (type: unknown, params: unknown) => {
-        console.warn('[AnimationService] Phase 2 stub: Animation not yet implemented', {
-          type,
-          params,
-        })
-      },
-    }),
+    TOKENS.AnimationQueue,
+    () => new AnimationQueue(),
     { singleton: true },
   )
-  console.info('[DI] Phase 2: Using stub AnimationService (full implementation in Phase 3+)')
+
+  // 註冊 AnimationService
+  container.register(
+    TOKENS.AnimationService,
+    () => new AnimationService(),
+    { singleton: true },
+  )
+
+  console.info('[DI] Registered AnimationQueue and AnimationService')
 }
