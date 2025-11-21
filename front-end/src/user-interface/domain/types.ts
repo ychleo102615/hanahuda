@@ -312,19 +312,3 @@ export function createCardId(id: string): CardId {
   return id as CardId
 }
 
-// ============================================================================
-// Depository Types (獲得區相關型別)
-// ============================================================================
-
-/**
- * 獲得區分組資料結構
- *
- * 將獲得區卡片按類型分組，用於 UI 顯示。
- * 順序固定為：光牌 → 種牌 → 短冊 → かす
- */
-export interface GroupedDepository {
-  readonly BRIGHT: readonly string[]  // 光牌
-  readonly ANIMAL: readonly string[]  // 種牌
-  readonly RIBBON: readonly string[]  // 短冊
-  readonly PLAIN: readonly string[]   // かす
-}

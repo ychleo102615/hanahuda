@@ -10,7 +10,7 @@
  * @since 2025-11-13
  */
 
-import type { Card, CardType, GroupedDepository } from './types'
+import type { Card, CardType } from './types'
 import { ALL_CARDS } from './card-database'
 import { isCardType } from './types'
 
@@ -129,36 +129,3 @@ export function getCardTypeFromId(cardId: string): CardType {
   }
 }
 
-/**
- * 將卡片 ID 列表按類型分組
- *
- * 用於獲得區顯示，將卡片按四種類型分組：
- * - BRIGHT: 光牌
- * - ANIMAL: 種牌
- * - RIBBON: 短冊
- * - PLAIN: かす
- *
- * @param cardIds - 卡片 ID 列表
- * @returns 分組後的卡片 ID 列表
- *
- * @example
- * ```typescript
- * groupByCardType(['0111', '0221', '0331', '0441'])
- * // { BRIGHT: ['0111'], ANIMAL: ['0221'], RIBBON: ['0331'], PLAIN: ['0441'] }
- * ```
- */
-export function groupByCardType(cardIds: readonly string[]): GroupedDepository {
-  const result: { BRIGHT: string[]; ANIMAL: string[]; RIBBON: string[]; PLAIN: string[] } = {
-    BRIGHT: [],
-    ANIMAL: [],
-    RIBBON: [],
-    PLAIN: [],
-  }
-
-  for (const cardId of cardIds) {
-    const type = getCardTypeFromId(cardId)
-    result[type].push(cardId)
-  }
-
-  return result
-}

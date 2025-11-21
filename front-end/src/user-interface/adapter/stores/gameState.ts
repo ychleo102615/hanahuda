@@ -25,10 +25,25 @@ import type {
   GameSnapshotRestore,
   YakuScore,
 } from '../../application/types'
-import type { GroupedDepository } from '../../domain/types'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import { container } from '../di/container'
 import { TOKENS } from '../di/tokens'
+
+/**
+ * 獲得區分組資料結構
+ *
+ * 將獲得區卡片按類型分組，用於 UI 顯示。
+ * 順序固定為：光牌 → 種牌 → 短冊 → かす
+ *
+ * @description
+ * 此類型定義在 Adapter Layer，因為它是純粹用於 UI 資料準備的 View Model。
+ */
+export interface GroupedDepository {
+  readonly BRIGHT: readonly string[]  // 光牌
+  readonly ANIMAL: readonly string[]  // 種牌
+  readonly RIBBON: readonly string[]  // 短冊
+  readonly PLAIN: readonly string[]   // かす
+}
 
 /**
  * GameStateStore State 介面
@@ -145,22 +160,34 @@ export const useGameStateStore = defineStore('gameState', {
      * 玩家獲得區分組
      *
      * 按卡片類型分組：BRIGHT → ANIMAL → RIBBON → PLAIN
-     * 透過 DI Container 取得 DomainFacade
+     * 透過 DomainFacade.getCardTypeFromId 取得卡片類型
      */
     groupedMyDepository(): GroupedDepository {
       const domainFacade = container.resolve(TOKENS.DomainFacade) as DomainFacade
-      return domainFacade.groupByCardType(this.myDepository)
+      const getType = (id: string) => domainFacade.getCardTypeFromId(id)
+      return {
+        BRIGHT: this.myDepository.filter(id => getType(id) === 'BRIGHT'),
+        ANIMAL: this.myDepository.filter(id => getType(id) === 'ANIMAL'),
+        RIBBON: this.myDepository.filter(id => getType(id) === 'RIBBON'),
+        PLAIN: this.myDepository.filter(id => getType(id) === 'PLAIN'),
+      }
     },
 
     /**
      * 對手獲得區分組
      *
      * 按卡片類型分組：BRIGHT → ANIMAL → RIBBON → PLAIN
-     * 透過 DI Container 取得 DomainFacade
+     * 透過 DomainFacade.getCardTypeFromId 取得卡片類型
      */
     groupedOpponentDepository(): GroupedDepository {
       const domainFacade = container.resolve(TOKENS.DomainFacade) as DomainFacade
-      return domainFacade.groupByCardType(this.opponentDepository)
+      const getType = (id: string) => domainFacade.getCardTypeFromId(id)
+      return {
+        BRIGHT: this.opponentDepository.filter(id => getType(id) === 'BRIGHT'),
+        ANIMAL: this.opponentDepository.filter(id => getType(id) === 'ANIMAL'),
+        RIBBON: this.opponentDepository.filter(id => getType(id) === 'RIBBON'),
+        PLAIN: this.opponentDepository.filter(id => getType(id) === 'PLAIN'),
+      }
     },
   },
 

@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { isValidCard, getCardById, areCardsEqual, getCardTypeFromId, groupByCardType } from '@/user-interface/domain/card-logic'
+import { isValidCard, getCardById, areCardsEqual, getCardTypeFromId } from '@/user-interface/domain/card-logic'
 import { MATSU_HIKARI, UME_AKATAN, SAKURA_HIKARI } from '@/user-interface/domain/card-database'
 import type { Card } from '@/user-interface/domain/types'
 
@@ -332,70 +332,4 @@ describe('card-logic.ts', () => {
     })
   })
 
-  describe('groupByCardType()', () => {
-    it('應正確分組空陣列', () => {
-      const result = groupByCardType([])
-
-      expect(result.BRIGHT).toEqual([])
-      expect(result.ANIMAL).toEqual([])
-      expect(result.RIBBON).toEqual([])
-      expect(result.PLAIN).toEqual([])
-    })
-
-    it('應正確分組單一類型的卡片', () => {
-      const brightCards = ['0111', '0311', '0811'] // 3 張光牌
-      const result = groupByCardType(brightCards)
-
-      expect(result.BRIGHT).toEqual(['0111', '0311', '0811'])
-      expect(result.ANIMAL).toEqual([])
-      expect(result.RIBBON).toEqual([])
-      expect(result.PLAIN).toEqual([])
-    })
-
-    it('應正確分組混合類型的卡片', () => {
-      const mixedCards = [
-        '0111', // BRIGHT - 1月光牌
-        '0221', // ANIMAL - 2月種牌
-        '0331', // RIBBON - 3月短冊
-        '0441', // PLAIN - 4月かす
-        '0811', // BRIGHT - 8月光牌
-        '0921', // ANIMAL - 9月種牌
-      ]
-
-      const result = groupByCardType(mixedCards)
-
-      expect(result.BRIGHT).toEqual(['0111', '0811'])
-      expect(result.ANIMAL).toEqual(['0221', '0921'])
-      expect(result.RIBBON).toEqual(['0331'])
-      expect(result.PLAIN).toEqual(['0441'])
-    })
-
-    it('應保持每個分組內卡片的原始順序', () => {
-      const cards = ['0811', '0111', '0311'] // 8月、1月、3月光牌（非排序順序）
-      const result = groupByCardType(cards)
-
-      // 應該保持原始順序，不重新排序
-      expect(result.BRIGHT).toEqual(['0811', '0111', '0311'])
-    })
-
-    it('應正確處理完整獲得區（多種類型混合）', () => {
-      // 模擬實際遊戲中可能的獲得區狀態
-      const depository = [
-        '0111', // BRIGHT - 松上鶴
-        '0221', // ANIMAL - 梅鶯
-        '0231', // RIBBON - 梅短冊
-        '0141', // PLAIN - 松かす1
-        '0142', // PLAIN - 松かす2
-        '0311', // BRIGHT - 櫻幕
-        '0921', // ANIMAL - 菊盃
-      ]
-
-      const result = groupByCardType(depository)
-
-      expect(result.BRIGHT).toHaveLength(2)
-      expect(result.ANIMAL).toHaveLength(2)
-      expect(result.RIBBON).toHaveLength(1)
-      expect(result.PLAIN).toHaveLength(2)
-    })
-  })
 })
