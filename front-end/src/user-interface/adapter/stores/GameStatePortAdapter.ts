@@ -88,5 +88,9 @@ export function createGameStatePortAdapter(): GameStatePort {
         return [...store.opponentDepository]
       }
     },
+
+    getDeckRemaining(): number {
+      return store.deckRemaining
+    },
   }
 }

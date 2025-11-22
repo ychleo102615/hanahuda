@@ -61,14 +61,16 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
       this.gameState.updateOpponentHandCount(opponentHand.cards.length)
     }
 
-    // 更新牌堆剩餘數量
-    this.gameState.updateDeckRemaining(event.deck_remaining)
-
     // 2. 播放發牌動畫（T059/T061/T062）
+    // 每張牌發完後更新牌堆數量，配合視覺效果
     await this.animation.playDealAnimation({
       fieldCards: [...event.field],
       playerHandCards: playerHand ? [...playerHand.cards] : [],
       opponentHandCount: opponentHand ? opponentHand.cards.length : 0,
+      onCardDealt: () => {
+        const current = this.gameState.getDeckRemaining()
+        this.gameState.updateDeckRemaining(current - 1)
+      },
     })
 
     // 3. 動畫完成後更新 FlowStage

@@ -7,8 +7,10 @@
 
 export { useGameStateStore, createUIStatePortAdapter } from './gameState'
 export { useUIStateStore, createTriggerUIEffectPortAdapter } from './uiState'
+export { useAnimationLayerStore } from './animationLayerStore'
 
 export type { GameStateStoreState, GameStateStoreGetters, GameStateStoreActions } from './gameState'
+export type { AnimatingCard, AnimationLayerStore } from './animationLayerStore'
 export type {
   UIStateStoreState,
   UIStateStoreActions,

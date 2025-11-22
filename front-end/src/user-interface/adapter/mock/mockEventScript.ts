@@ -105,6 +105,7 @@ export const mockEventScript: MockEventItem[] = [
     delay: 1000,
   },
 
+  /*
   // 3. 玩家出牌完成 (松赤短配對松かす)
   {
     eventType: 'TurnCompleted',
@@ -240,7 +241,6 @@ export const mockEventScript: MockEventItem[] = [
     delay: 1500,
   },
 
-  /*
   // 8. 需要 Koi-Koi 決策 (赤短役形成)
   {
     eventType: 'DecisionRequired',

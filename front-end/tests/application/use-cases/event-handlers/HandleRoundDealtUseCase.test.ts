@@ -170,7 +170,7 @@ describe('HandleRoundDealtUseCase', () => {
   })
 
   describe('更新牌堆剩餘數量', () => {
-    it('應該更新牌堆剩餘數量', async () => {
+    it('應該傳遞 onCardDealt 回調給 playDealAnimation', async () => {
       // Arrange
       const event: RoundDealtEvent = {
         event_type: 'RoundDealt',
@@ -194,11 +194,18 @@ describe('HandleRoundDealtUseCase', () => {
 
       // 等待 async 操作完成
       await vi.waitFor(() => {
-        expect(mockGameState.updateDeckRemaining).toHaveBeenCalled()
+        expect(mockAnimation.playDealAnimation).toHaveBeenCalled()
       })
 
-      // Assert
-      expect(mockGameState.updateDeckRemaining).toHaveBeenCalledWith(24)
+      // Assert: 驗證 onCardDealt 回調被傳遞
+      const callArgs = (mockAnimation.playDealAnimation as ReturnType<typeof vi.fn>).mock.calls[0][0]
+      expect(callArgs.onCardDealt).toBeDefined()
+      expect(typeof callArgs.onCardDealt).toBe('function')
+
+      // 模擬調用回調，驗證 updateDeckRemaining 被調用
+      ;(mockGameState.getDeckRemaining as ReturnType<typeof vi.fn>).mockReturnValue(48)
+      callArgs.onCardDealt()
+      expect(mockGameState.updateDeckRemaining).toHaveBeenCalledWith(47)
     })
   })
 
@@ -231,11 +238,13 @@ describe('HandleRoundDealtUseCase', () => {
       })
 
       // Assert
-      expect(mockAnimation.playDealAnimation).toHaveBeenCalledWith({
-        fieldCards: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
-        playerHandCards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'],
-        opponentHandCount: 8,
-      })
+      expect(mockAnimation.playDealAnimation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fieldCards: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
+          playerHandCards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'],
+          opponentHandCount: 8,
+        })
+      )
     })
   })
 
@@ -304,7 +313,7 @@ describe('HandleRoundDealtUseCase', () => {
       expect(mockGameState.updateFieldCards).toHaveBeenCalled()
       expect(mockGameState.updateHandCards).toHaveBeenCalled()
       expect(mockGameState.updateOpponentHandCount).toHaveBeenCalled()
-      expect(mockGameState.updateDeckRemaining).toHaveBeenCalled()
+      // 注意：updateDeckRemaining 現在由 onCardDealt 回調調用，在實際動畫中執行
       expect(mockAnimation.playDealAnimation).toHaveBeenCalled()
       expect(mockGameState.setFlowStage).toHaveBeenCalled()
     })

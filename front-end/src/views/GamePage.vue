@@ -22,6 +22,7 @@ import DecisionModal from './GamePage/components/DecisionModal.vue'
 import ErrorToast from './GamePage/components/ErrorToast.vue'
 import GameFinishedModal from './GamePage/components/GameFinishedModal.vue'
 import ReconnectionBanner from './GamePage/components/ReconnectionBanner.vue'
+import AnimationLayer from './GamePage/components/AnimationLayer.vue'
 import { TOKENS } from '../user-interface/adapter/di/tokens'
 
 const gameState = useGameStateStore()
@@ -128,6 +129,9 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- T089-T091 [US4]: Game Finished Modal -->
     <GameFinishedModal />
+
+    <!-- 動畫層：跨容器動畫支援 -->
+    <AnimationLayer />
   </div>
 </template>
 

@@ -14,13 +14,14 @@
  */
 
 import type { GameStartedEvent } from '../../types/events'
-import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, TriggerUIEffectPort, GameStatePort } from '../../ports/output'
 import type { HandleGameStartedPort } from '../../ports/input'
 
 export class HandleGameStartedUseCase implements HandleGameStartedPort {
   constructor(
     private readonly updateUIState: UIStatePort,
-    private readonly triggerUIEffect: TriggerUIEffectPort
+    private readonly triggerUIEffect: TriggerUIEffectPort,
+    private readonly gameState: GameStatePort
   ) {}
 
   execute(event: GameStartedEvent): void {
@@ -31,11 +32,7 @@ export class HandleGameStartedUseCase implements HandleGameStartedPort {
       event.ruleset
     )
 
-    // // 2. 觸發遊戲開始動畫/訊息
-    // // 使用 triggerAnimation 顯示遊戲開始的視覺效果
-    // this.triggerUIEffect.triggerAnimation('DEAL_CARDS', {
-    //   fieldCards: [],
-    //   hands: [],
-    // })
+    // 2. 設置初始牌堆數量（48 張）
+    this.gameState.updateDeckRemaining(48)
   }
 }

@@ -25,6 +25,7 @@ import type { DIContainer } from './container'
 import { TOKENS } from './tokens'
 import { useGameStateStore, createUIStatePortAdapter } from '../stores/gameState'
 import { useUIStateStore, createTriggerUIEffectPortAdapter } from '../stores/uiState'
+import { useAnimationLayerStore } from '../stores/animationLayerStore'
 import { HandleGameStartedUseCase } from '../../application/use-cases/event-handlers/HandleGameStartedUseCase'
 import { HandleRoundDealtUseCase } from '../../application/use-cases/event-handlers/HandleRoundDealtUseCase'
 import { HandleTurnCompletedUseCase } from '../../application/use-cases/event-handlers/HandleTurnCompletedUseCase'
@@ -116,6 +117,12 @@ function registerStores(container: DIContainer): void {
     () => useUIStateStore(),
     { singleton: true },
   )
+
+  container.register(
+    TOKENS.AnimationLayerStore,
+    () => useAnimationLayerStore(),
+    { singleton: true },
+  )
 }
 
 /**
@@ -158,9 +165,11 @@ function registerOutputPorts(container: DIContainer): void {
   )
 
   // AnimationPort: 由 AnimationPortAdapter 實作
+  // 注入 AnimationLayerStore 支援跨容器動畫
+  const animationLayerStore = container.resolve(TOKENS.AnimationLayerStore) as ReturnType<typeof useAnimationLayerStore>
   container.register(
     TOKENS.AnimationPort,
-    () => createAnimationPortAdapter(),
+    () => createAnimationPortAdapter(animationLayerStore),
     { singleton: true },
   )
 
@@ -239,7 +248,7 @@ function registerInputPorts(container: DIContainer): void {
   // T030 [US1]: 註冊 GameStarted 事件處理器
   container.register(
     TOKENS.HandleGameStartedPort,
-    () => new HandleGameStartedUseCase(uiStatePort, triggerUIEffectPort),
+    () => new HandleGameStartedUseCase(uiStatePort, triggerUIEffectPort, gameStatePort),
     { singleton: true }
   )
 

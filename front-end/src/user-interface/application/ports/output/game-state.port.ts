@@ -255,4 +255,16 @@ export interface GameStatePort {
    * ```
    */
   getDepositoryCards(playerId: string): string[]
+
+  /**
+   * 取得牌堆剩餘數量
+   *
+   * @returns 牌堆剩餘卡片數量
+   *
+   * @example
+   * ```typescript
+   * const remaining = gameState.getDeckRemaining()
+   * ```
+   */
+  getDeckRemaining(): number
 }

@@ -12,6 +12,7 @@ import { computed, ref } from 'vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { getCardIconName } from '@/utils/cardMapping'
 import { useMotion } from '@vueuse/motion'
+import { useAnimationLayerStore } from '@/user-interface/adapter/stores'
 
 interface Props {
   cardId: string
@@ -20,6 +21,7 @@ interface Props {
   isHighlighted?: boolean
   isFaceDown?: boolean
   size?: 'sm' | 'md' | 'lg'
+  isAnimationClone?: boolean  // 是否為動畫演出用的複製品
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -28,14 +30,29 @@ const props = withDefaults(defineProps<Props>(), {
   isHighlighted: false,
   isFaceDown: false,
   size: 'md',
+  isAnimationClone: false,
 })
 
 const emit = defineEmits<{
   click: [cardId: string]
 }>()
 
+// 動畫層 store - 用於檢查卡片是否應該隱藏
+const animationStore = useAnimationLayerStore()
+
+// 檢查卡片是否應該隱藏（動畫期間）
+// 動畫複製品不檢查隱藏狀態
+const isHidden = computed(() =>
+  !props.isAnimationClone && animationStore.isCardHidden(props.cardId)
+)
+
 // 卡片尺寸樣式
 const sizeClasses = computed(() => {
+  // 動畫複製品自動填滿容器
+  if (props.isAnimationClone) {
+    return 'h-full w-full'
+  }
+
   switch (props.size) {
     case 'sm':
       return 'h-18 w-auto'
@@ -143,7 +160,7 @@ watch(() => props.isSelected, (selected) => {
 <template>
   <div
     ref="cardRef"
-    :class="containerClasses"
+    :class="[containerClasses, { 'invisible': isHidden }]"
     :data-card-id="cardId"
     @click="handleClick"
     @mouseenter="handleMouseEnter"

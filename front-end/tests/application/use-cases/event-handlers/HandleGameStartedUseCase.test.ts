@@ -15,18 +15,21 @@ import type { GameStartedEvent } from '@/user-interface/application/types'
 import {
   createMockUIStatePort,
   createMockTriggerUIEffectPort,
+  createMockGameStatePort,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { UIStatePort, TriggerUIEffectPort, GameStatePort } from '@/user-interface/application/ports'
 
 describe('HandleGameStartedUseCase', () => {
   let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
+  let mockGameState: GameStatePort
   let useCase: HandleGameStartedUseCase
 
   beforeEach(() => {
     mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleGameStartedUseCase(mockUIState, mockTriggerUIEffect)
+    mockGameState = createMockGameStatePort()
+    useCase = new HandleGameStartedUseCase(mockUIState, mockTriggerUIEffect, mockGameState)
   })
 
   describe('初始化遊戲上下文', () => {

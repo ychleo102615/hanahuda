@@ -17,6 +17,7 @@ import type { CardType } from '../../domain/types'
 import { zoneRegistry, type ZoneRegistry } from './ZoneRegistry'
 import type { ZoneName } from './types'
 import { useMotion } from '@vueuse/motion'
+import type { AnimationLayerStore } from '../stores'
 
 /**
  * 輔助函數：等待指定時間
@@ -54,9 +55,14 @@ export class AnimationPortAdapter implements AnimationPort {
   private _isAnimating = false
   private _interrupted = false
   private registry: ZoneRegistry
+  private animationLayerStore: AnimationLayerStore | null
 
-  constructor(registry: ZoneRegistry = zoneRegistry) {
+  constructor(
+    registry: ZoneRegistry = zoneRegistry,
+    animationLayerStore: AnimationLayerStore | null = null
+  ) {
     this.registry = registry
+    this.animationLayerStore = animationLayerStore
   }
 
   // ===== 動畫方法 =====
@@ -85,6 +91,14 @@ export class AnimationPortAdapter implements AnimationPort {
       return
     }
 
+    // 預先隱藏所有將要動畫的卡片
+    const allCardIds = [...params.fieldCards, ...params.playerHandCards]
+    this.animationLayerStore?.hideCards(allCardIds)
+
+    // 等待 DOM 渲染完成（兩個 frame 確保布局穩定）
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    await new Promise(resolve => requestAnimationFrame(resolve))
+
     // T059/T061: 實作 staggered 發牌動畫
     // 發牌順序：先發場牌，再發玩家手牌
     // 每張牌間隔 DEAL_STAGGER ms
@@ -104,6 +118,8 @@ export class AnimationPortAdapter implements AnimationPort {
         // 執行單張發牌動畫
         if (cardElement && deckPosition && !this._interrupted) {
           await this.animateSingleDealCard(cardElement, deckPosition.rect)
+          // 每張牌發完後調用回調（更新牌堆數量）
+          params.onCardDealt?.()
         }
 
         // 再次檢查中斷
@@ -132,6 +148,8 @@ export class AnimationPortAdapter implements AnimationPort {
         // 執行單張發牌動畫
         if (cardElement && deckPosition && !this._interrupted) {
           await this.animateSingleDealCard(cardElement, deckPosition.rect)
+          // 每張牌發完後調用回調（更新牌堆數量）
+          params.onCardDealt?.()
         }
 
         // 再次檢查中斷
@@ -162,11 +180,38 @@ export class AnimationPortAdapter implements AnimationPort {
     cardElement: HTMLElement,
     fromRect: DOMRect
   ): Promise<void> {
-    // 計算卡片當前位置
+    // 等待 DOM 布局完成
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    await new Promise(resolve => requestAnimationFrame(resolve))
+
+    const cardId = cardElement.getAttribute('data-card-id')
     const cardRect = cardElement.getBoundingClientRect()
 
+    // 如果有動畫層 store，使用 Vue 組件方式
+    if (this.animationLayerStore && cardId) {
+      // 通過 store 添加動畫卡片，等待動畫完成
+      await new Promise<void>(resolve => {
+        this.animationLayerStore!.addCard({
+          cardId,
+          fromRect,
+          toRect: cardRect,
+          onComplete: resolve,
+        })
+      })
+
+      // 動畫完成後顯示原始卡片
+      this.animationLayerStore.showCard(cardId)
+      return
+    }
+
+    // Fallback: 無動畫層時使用原有邏輯
+    const originalZIndex = cardElement.style.zIndex
+    const originalPosition = cardElement.style.position
+    cardElement.style.zIndex = '9999'
+    cardElement.style.position = 'relative'
+
     // 計算從牌堆到目標位置的位移
-    // 初始位置：從牌堆中心
     const initialX = fromRect.x + fromRect.width / 2 - cardRect.x - cardRect.width / 2
     const initialY = fromRect.y + fromRect.height / 2 - cardRect.y - cardRect.height / 2
 
@@ -193,9 +238,11 @@ export class AnimationPortAdapter implements AnimationPort {
     await apply('enter')
     await sleep(ANIMATION_DURATION.DEAL_CARD)
 
-    // 清理樣式
+    // 清理：恢復原始樣式
     cardElement.style.transform = ''
     cardElement.style.opacity = ''
+    cardElement.style.zIndex = originalZIndex
+    cardElement.style.position = originalPosition
   }
 
   async playCardToFieldAnimation(cardId: string, isOpponent: boolean): Promise<void> {
@@ -393,7 +440,16 @@ export class AnimationPortAdapter implements AnimationPort {
     try {
       // 執行翻牌動畫
       if (cardElement && deckPosition && fieldPosition && !this._interrupted) {
-        // 計算卡片當前位置
+        // A. 等待 DOM 布局完成
+        await new Promise(resolve => requestAnimationFrame(resolve))
+
+        // B. 保存原始樣式並設置動畫樣式
+        const originalZIndex = cardElement.style.zIndex
+        const originalPosition = cardElement.style.position
+        cardElement.style.zIndex = '9999'
+        cardElement.style.position = 'relative'
+
+        // C. 計算卡片當前位置（DOM 已布局完成）
         const cardRect = cardElement.getBoundingClientRect()
 
         // 計算從牌堆到場牌的位移
@@ -425,9 +481,11 @@ export class AnimationPortAdapter implements AnimationPort {
         await apply('enter')
         await sleep(ANIMATION_DURATION.FLIP_FROM_DECK)
 
-        // 清理樣式
+        // D. 清理：恢復原始樣式
         cardElement.style.transform = ''
         cardElement.style.opacity = ''
+        cardElement.style.zIndex = originalZIndex
+        cardElement.style.position = originalPosition
       } else {
         // 無元素時等待時長
         if (!this._interrupted) {
@@ -455,8 +513,11 @@ export class AnimationPortAdapter implements AnimationPort {
 /**
  * 建立 AnimationPort Adapter
  *
+ * @param animationLayerStore - 動畫層 store（可選，用於跨容器動畫）
  * @returns AnimationPort 實作
  */
-export function createAnimationPortAdapter(): AnimationPort {
-  return new AnimationPortAdapter()
+export function createAnimationPortAdapter(
+  animationLayerStore?: AnimationLayerStore
+): AnimationPort {
+  return new AnimationPortAdapter(zoneRegistry, animationLayerStore || null)
 }
