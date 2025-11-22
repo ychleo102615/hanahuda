@@ -4,6 +4,8 @@
  * @description
  * 定義完整的遊戲事件序列,用於 Mock 模式開發測試。
  * 包含從遊戲開始到結束的所有事件。
+ *
+ * 資料結構參考: front-end/src/user-interface/application/types/shared.ts
  */
 
 /**
@@ -28,6 +30,10 @@ export interface MockEventItem {
  *
  * 卡片 ID 格式: {月份2位}{類型1位}{序號1位}
  * 類型: 1=光牌, 2=種牌, 3=短冊, 4=かす
+ *
+ * CardPlay.captured_cards 說明:
+ * - 配對成功: 包含 played_card + matched_card（兩張牌都進入獲得區）
+ * - 無配對: 空陣列（played_card 留在場上）
  */
 export const mockEventScript: MockEventItem[] = [
   // 1. 遊戲開始
@@ -39,14 +45,29 @@ export const mockEventScript: MockEventItem[] = [
       timestamp: new Date().toISOString(),
       game_id: 'mock-game-123',
       players: [
-        { player_id: 'player-1', name: 'Player 1', is_local: true },
-        { player_id: 'player-2', name: 'AI Opponent', is_local: false },
+        { player_id: 'player-1', player_name: 'Player 1', is_ai: false },
+        { player_id: 'player-2', player_name: 'AI Opponent', is_ai: true },
       ],
       ruleset: {
-        min_players: 2,
-        max_players: 2,
         target_score: 7,
-        deck_composition: 'HANAFUDA_48',
+        yaku_settings: [
+          { yaku_type: 'GOKO', base_points: 10, enabled: true },
+          { yaku_type: 'SHIKO', base_points: 8, enabled: true },
+          { yaku_type: 'AME_SHIKO', base_points: 7, enabled: true },
+          { yaku_type: 'SANKO', base_points: 5, enabled: true },
+          { yaku_type: 'INOSHIKACHO', base_points: 5, enabled: true },
+          { yaku_type: 'AKA_TAN', base_points: 6, enabled: true },
+          { yaku_type: 'AO_TAN', base_points: 6, enabled: true },
+          { yaku_type: 'TAN_ZAKU', base_points: 1, enabled: true },
+          { yaku_type: 'TANE', base_points: 1, enabled: true },
+          { yaku_type: 'KASU', base_points: 1, enabled: true },
+          { yaku_type: 'TSUKIMI_ZAKE', base_points: 5, enabled: true },
+          { yaku_type: 'HANAMI_ZAKE', base_points: 5, enabled: true },
+        ],
+        special_rules: {
+          teshi_enabled: true,
+          field_kuttsuki_enabled: true,
+        },
       },
       starting_player_id: 'player-1',
     },
@@ -77,7 +98,7 @@ export const mockEventScript: MockEventItem[] = [
       ],
       deck_remaining: 24,
       next_state: {
-        state_type: 'PLAYING_HAND_CARD',
+        state_type: 'AWAITING_HAND_PLAY',
         active_player_id: 'player-1',
       },
     },
@@ -92,14 +113,19 @@ export const mockEventScript: MockEventItem[] = [
       event_id: 'evt-003',
       timestamp: new Date().toISOString(),
       player_id: 'player-1',
-      hand_card: '0131', // 松赤短
-      deck_card: '0142', // 松かす2
-      hand_match: { source: '0131', target: '0141' }, // 配對松かす1
-      deck_match: null,
-      captured: ['0131', '0141'],
-      discarded: ['0142'],
+      hand_card_play: {
+        played_card: '0131', // 松赤短
+        matched_card: '0141', // 配對松かす1
+        captured_cards: ['0131', '0141'], // 兩張都進入獲得區
+      },
+      draw_card_play: {
+        played_card: '0142', // 松かす2
+        matched_card: null, // 無配對
+        captured_cards: [], // 空陣列，牌留在場上
+      },
+      deck_remaining: 23,
       next_state: {
-        state_type: 'PLAYING_HAND_CARD',
+        state_type: 'AWAITING_HAND_PLAY',
         active_player_id: 'player-2',
       },
     },
@@ -114,14 +140,19 @@ export const mockEventScript: MockEventItem[] = [
       event_id: 'evt-004',
       timestamp: new Date().toISOString(),
       player_id: 'player-2',
-      hand_card: '0111', // 松光
-      deck_card: '0931', // 菊青短
-      hand_match: { source: '0111', target: '0142' },
-      deck_match: null,
-      captured: ['0111', '0142'],
-      discarded: ['0931'],
+      hand_card_play: {
+        played_card: '0111', // 松光
+        matched_card: '0142', // 配對松かす2
+        captured_cards: ['0111', '0142'],
+      },
+      draw_card_play: {
+        played_card: '0931', // 菊青短
+        matched_card: null,
+        captured_cards: [],
+      },
+      deck_remaining: 22,
       next_state: {
-        state_type: 'PLAYING_HAND_CARD',
+        state_type: 'AWAITING_HAND_PLAY',
         active_player_id: 'player-1',
       },
     },
@@ -136,14 +167,19 @@ export const mockEventScript: MockEventItem[] = [
       event_id: 'evt-005',
       timestamp: new Date().toISOString(),
       player_id: 'player-1',
-      hand_card: '0231', // 梅赤短
-      deck_card: '0242', // 梅かす2
-      hand_match: { source: '0231', target: '0241' }, // 配對梅かす1
-      deck_match: null,
-      captured: ['0231', '0241'],
-      discarded: ['0242'],
+      hand_card_play: {
+        played_card: '0231', // 梅赤短
+        matched_card: '0241', // 配對梅かす1
+        captured_cards: ['0231', '0241'],
+      },
+      draw_card_play: {
+        played_card: '0242', // 梅かす2
+        matched_card: null,
+        captured_cards: [],
+      },
+      deck_remaining: 21,
       next_state: {
-        state_type: 'PLAYING_HAND_CARD',
+        state_type: 'AWAITING_HAND_PLAY',
         active_player_id: 'player-2',
       },
     },
@@ -158,14 +194,19 @@ export const mockEventScript: MockEventItem[] = [
       event_id: 'evt-006',
       timestamp: new Date().toISOString(),
       player_id: 'player-2',
-      hand_card: '0221', // 梅鶯
-      deck_card: '0941', // 菊かす1
-      hand_match: { source: '0221', target: '0242' },
-      deck_match: null,
-      captured: ['0221', '0242'],
-      discarded: ['0941'],
+      hand_card_play: {
+        played_card: '0221', // 梅鶯
+        matched_card: '0242', // 配對梅かす2
+        captured_cards: ['0221', '0242'],
+      },
+      draw_card_play: {
+        played_card: '0941', // 菊かす1
+        matched_card: null,
+        captured_cards: [],
+      },
+      deck_remaining: 20,
       next_state: {
-        state_type: 'PLAYING_HAND_CARD',
+        state_type: 'AWAITING_HAND_PLAY',
         active_player_id: 'player-1',
       },
     },
@@ -180,20 +221,26 @@ export const mockEventScript: MockEventItem[] = [
       event_id: 'evt-007',
       timestamp: new Date().toISOString(),
       player_id: 'player-1',
-      hand_card: '0331', // 櫻赤短
-      deck_card: '0342', // 櫻かす2
-      hand_match: { source: '0331', target: '0341' }, // 配對櫻かす1
-      deck_match: null,
-      captured: ['0331', '0341'],
-      discarded: ['0342'],
+      hand_card_play: {
+        played_card: '0331', // 櫻赤短
+        matched_card: '0341', // 配對櫻かす1
+        captured_cards: ['0331', '0341'],
+      },
+      draw_card_play: {
+        played_card: '0342', // 櫻かす2
+        matched_card: null,
+        captured_cards: [],
+      },
+      deck_remaining: 19,
       next_state: {
-        state_type: 'PLAYING_HAND_CARD',
+        state_type: 'AWAITING_HAND_PLAY',
         active_player_id: 'player-1', // 繼續玩家回合因為形成役
       },
     },
     delay: 1500,
   },
 
+  /*
   // 8. 需要 Koi-Koi 決策 (赤短役形成)
   {
     eventType: 'DecisionRequired',
@@ -202,8 +249,16 @@ export const mockEventScript: MockEventItem[] = [
       event_id: 'evt-008',
       timestamp: new Date().toISOString(),
       player_id: 'player-1',
-      hand_card_play: null,
-      draw_card_play: null,
+      hand_card_play: {
+        played_card: '0331',
+        matched_card: '0341',
+        captured_cards: ['0331', '0341'],
+      },
+      draw_card_play: {
+        played_card: '0342',
+        matched_card: null,
+        captured_cards: [],
+      },
       yaku_update: {
         newly_formed_yaku: [
           {
@@ -226,7 +281,7 @@ export const mockEventScript: MockEventItem[] = [
           'player-2': 1,
         },
       },
-      deck_remaining: 16,
+      deck_remaining: 19,
     },
     delay: 2000,
   },
@@ -247,8 +302,8 @@ export const mockEventScript: MockEventItem[] = [
         },
       },
       next_state: {
-        state_type: 'ROUND_ENDED',
-        active_player_id: null,
+        state_type: 'AWAITING_HAND_PLAY',
+        active_player_id: 'player-2',
       },
     },
     delay: 1000,
@@ -300,4 +355,5 @@ export const mockEventScript: MockEventItem[] = [
     },
     delay: 1000,
   },
+  */
 ]
