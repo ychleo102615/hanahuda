@@ -3,69 +3,37 @@
  *
  * @description
  * 測試 HandleRoundDealtUseCase 的事件處理邏輯：
- * - 觸發發牌動畫
  * - 更新場牌、手牌、牌堆狀態
+ * - 播放發牌動畫
  * - 更新 FlowStage
+ *
+ * Phase 8 重構：使用 GameStatePort + AnimationPort
  *
  * 參考: specs/003-ui-application-layer/contracts/events.md#RoundDealtEvent
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { HandleRoundDealtUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleRoundDealtUseCase'
 import type { RoundDealtEvent } from '@/user-interface/application/types'
 import {
-  createMockUIStatePort,
-  createMockTriggerUIEffectPort,
+  createMockGameStatePort,
+  createMockAnimationPort,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { GameStatePort, AnimationPort } from '@/user-interface/application/ports'
 
 describe('HandleRoundDealtUseCase', () => {
-  let mockUIState: UIStatePort
-  let mockTriggerUIEffect: TriggerUIEffectPort
+  let mockGameState: GameStatePort
+  let mockAnimation: AnimationPort
   let useCase: HandleRoundDealtUseCase
 
   beforeEach(() => {
-    mockUIState = createMockUIStatePort()
-    mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleRoundDealtUseCase(mockUIState, mockTriggerUIEffect)
-  })
-
-  describe('觸發發牌動畫', () => {
-    it('應該觸發 DEAL_CARDS 動畫並傳遞場牌和手牌資訊', () => {
-      // Arrange
-      const event: RoundDealtEvent = {
-        event_type: 'RoundDealt',
-        event_id: 'evt-101',
-        timestamp: '2025-01-15T10:01:00Z',
-        dealer_id: 'player-1',
-        field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
-        hands: [
-          { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
-          { player_id: 'player-2', cards: ['0501', '0502', '0503', '0504', '0601', '0602', '0603', '0604'] },
-        ],
-        deck_remaining: 24,
-        next_state: {
-          state_type: 'AWAITING_HAND_PLAY',
-          active_player_id: 'player-1',
-        },
-      }
-
-      // Act
-      useCase.execute(event)
-
-      // Assert
-      expect(mockTriggerUIEffect.triggerAnimation).toHaveBeenCalledWith('DEAL_CARDS', {
-        fieldCards: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
-        hands: [
-          { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
-          { player_id: 'player-2', cards: ['0501', '0502', '0503', '0504', '0601', '0602', '0603', '0604'] },
-        ],
-      })
-    })
+    mockGameState = createMockGameStatePort()
+    mockAnimation = createMockAnimationPort()
+    useCase = new HandleRoundDealtUseCase(mockGameState, mockAnimation)
   })
 
   describe('更新場牌狀態', () => {
-    it('應該更新場牌列表', () => {
+    it('應該更新場牌列表', async () => {
       // Arrange
       const event: RoundDealtEvent = {
         event_type: 'RoundDealt',
@@ -87,8 +55,13 @@ describe('HandleRoundDealtUseCase', () => {
       // Act
       useCase.execute(event)
 
+      // 等待 async 操作完成
+      await vi.waitFor(() => {
+        expect(mockGameState.updateFieldCards).toHaveBeenCalled()
+      })
+
       // Assert
-      expect(mockUIState.updateFieldCards).toHaveBeenCalledWith([
+      expect(mockGameState.updateFieldCards).toHaveBeenCalledWith([
         '0101',
         '0102',
         '0103',
@@ -102,7 +75,7 @@ describe('HandleRoundDealtUseCase', () => {
   })
 
   describe('更新手牌狀態', () => {
-    it('應該更新玩家手牌（假設 player-1 是當前玩家）', () => {
+    it('應該更新玩家手牌（根據 localPlayerId）', async () => {
       // Arrange
       const event: RoundDealtEvent = {
         event_type: 'RoundDealt',
@@ -124,8 +97,13 @@ describe('HandleRoundDealtUseCase', () => {
       // Act
       useCase.execute(event)
 
+      // 等待 async 操作完成
+      await vi.waitFor(() => {
+        expect(mockGameState.updateHandCards).toHaveBeenCalled()
+      })
+
       // Assert
-      expect(mockUIState.updateHandCards).toHaveBeenCalledWith([
+      expect(mockGameState.updateHandCards).toHaveBeenCalledWith([
         '0301',
         '0302',
         '0303',
@@ -135,6 +113,37 @@ describe('HandleRoundDealtUseCase', () => {
         '0403',
         '0404',
       ])
+    })
+
+    it('應該更新對手手牌數量', async () => {
+      // Arrange
+      const event: RoundDealtEvent = {
+        event_type: 'RoundDealt',
+        event_id: 'evt-103',
+        timestamp: '2025-01-15T10:01:00Z',
+        dealer_id: 'player-1',
+        field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
+        hands: [
+          { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
+          { player_id: 'player-2', cards: ['0501', '0502', '0503', '0504', '0601', '0602', '0603', '0604'] },
+        ],
+        deck_remaining: 24,
+        next_state: {
+          state_type: 'AWAITING_HAND_PLAY',
+          active_player_id: 'player-1',
+        },
+      }
+
+      // Act
+      useCase.execute(event)
+
+      // 等待 async 操作完成
+      await vi.waitFor(() => {
+        expect(mockGameState.updateOpponentHandCount).toHaveBeenCalled()
+      })
+
+      // Assert
+      expect(mockGameState.updateOpponentHandCount).toHaveBeenCalledWith(8)
     })
 
     it('應該處理玩家手牌不存在的情況（不應拋出錯誤）', () => {
@@ -161,7 +170,7 @@ describe('HandleRoundDealtUseCase', () => {
   })
 
   describe('更新牌堆剩餘數量', () => {
-    it('應該更新牌堆剩餘數量', () => {
+    it('應該更新牌堆剩餘數量', async () => {
       // Arrange
       const event: RoundDealtEvent = {
         event_type: 'RoundDealt',
@@ -183,13 +192,55 @@ describe('HandleRoundDealtUseCase', () => {
       // Act
       useCase.execute(event)
 
+      // 等待 async 操作完成
+      await vi.waitFor(() => {
+        expect(mockGameState.updateDeckRemaining).toHaveBeenCalled()
+      })
+
       // Assert
-      expect(mockUIState.updateDeckRemaining).toHaveBeenCalledWith(24)
+      expect(mockGameState.updateDeckRemaining).toHaveBeenCalledWith(24)
+    })
+  })
+
+  describe('播放發牌動畫 (Phase 8)', () => {
+    it('應該調用 playDealAnimation 並傳遞正確參數', async () => {
+      // Arrange
+      const event: RoundDealtEvent = {
+        event_type: 'RoundDealt',
+        event_id: 'evt-101',
+        timestamp: '2025-01-15T10:01:00Z',
+        dealer_id: 'player-1',
+        field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
+        hands: [
+          { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
+          { player_id: 'player-2', cards: ['0501', '0502', '0503', '0504', '0601', '0602', '0603', '0604'] },
+        ],
+        deck_remaining: 24,
+        next_state: {
+          state_type: 'AWAITING_HAND_PLAY',
+          active_player_id: 'player-1',
+        },
+      }
+
+      // Act
+      useCase.execute(event)
+
+      // 等待 async 操作完成
+      await vi.waitFor(() => {
+        expect(mockAnimation.playDealAnimation).toHaveBeenCalled()
+      })
+
+      // Assert
+      expect(mockAnimation.playDealAnimation).toHaveBeenCalledWith({
+        fieldCards: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
+        playerHandCards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'],
+        opponentHandCount: 8,
+      })
     })
   })
 
   describe('更新 FlowStage', () => {
-    it('應該更新 FlowStage 為 AWAITING_HAND_PLAY', () => {
+    it('應該在動畫完成後更新 FlowStage 為 AWAITING_HAND_PLAY', async () => {
       // Arrange
       const event: RoundDealtEvent = {
         event_type: 'RoundDealt',
@@ -211,13 +262,18 @@ describe('HandleRoundDealtUseCase', () => {
       // Act
       useCase.execute(event)
 
+      // 等待 async 操作完成
+      await vi.waitFor(() => {
+        expect(mockGameState.setFlowStage).toHaveBeenCalled()
+      })
+
       // Assert
-      expect(mockUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
+      expect(mockGameState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
     })
   })
 
   describe('完整流程', () => {
-    it('應該按照正確順序執行所有步驟', () => {
+    it('應該按照正確順序執行所有步驟', async () => {
       // Arrange
       const event: RoundDealtEvent = {
         event_type: 'RoundDealt',
@@ -239,12 +295,18 @@ describe('HandleRoundDealtUseCase', () => {
       // Act
       useCase.execute(event)
 
+      // 等待 async 操作完成
+      await vi.waitFor(() => {
+        expect(mockGameState.setFlowStage).toHaveBeenCalled()
+      })
+
       // Assert: 驗證所有方法都被調用
-      expect(mockTriggerUIEffect.triggerAnimation).toHaveBeenCalled()
-      expect(mockUIState.updateFieldCards).toHaveBeenCalled()
-      expect(mockUIState.updateHandCards).toHaveBeenCalled()
-      expect(mockUIState.updateDeckRemaining).toHaveBeenCalled()
-      expect(mockUIState.setFlowStage).toHaveBeenCalled()
+      expect(mockGameState.updateFieldCards).toHaveBeenCalled()
+      expect(mockGameState.updateHandCards).toHaveBeenCalled()
+      expect(mockGameState.updateOpponentHandCount).toHaveBeenCalled()
+      expect(mockGameState.updateDeckRemaining).toHaveBeenCalled()
+      expect(mockAnimation.playDealAnimation).toHaveBeenCalled()
+      expect(mockGameState.setFlowStage).toHaveBeenCalled()
     })
   })
 })

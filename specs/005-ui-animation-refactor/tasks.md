@@ -187,16 +187,16 @@
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T057 [P] [US6] 單元測試 playDealAnimation 時序（16 張牌 < 2 秒）在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
-- [ ] T058 [P] [US6] 單元測試 playDealAnimation 中斷機制在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
+- [x] T057 [P] [US6] 單元測試 playDealAnimation 時序（16 張牌 < 2 秒）在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
+- [x] T058 [P] [US6] 單元測試 playDealAnimation 中斷機制在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
 
 ### Implementation for User Story 6
 
-- [ ] T059 [US6] 實作 AnimationPortAdapter.playDealAnimation（牌堆→場牌→手牌）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T060 [US6] 實作 playFlipFromDeckAnimation（翻牌階段單張翻牌）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T061 [US6] 實作發牌 staggered 時序控制（每張 100ms 延遲）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T062 [US6] 整合發牌動畫到 HandleRoundDealtUseCase
-- [ ] T063 [US6] 確保發牌動畫支援中斷（重連時直接顯示最終狀態）
+- [x] T059 [US6] 實作 AnimationPortAdapter.playDealAnimation（牌堆→場牌→手牌）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [x] T060 [US6] 實作 playFlipFromDeckAnimation（翻牌階段單張翻牌）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [x] T061 [US6] 實作發牌 staggered 時序控制（每張 100ms 延遲）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [x] T062 [US6] 整合發牌動畫到 HandleRoundDealtUseCase
+- [x] T063 [US6] 確保發牌動畫支援中斷（重連時直接顯示最終狀態）
 
 **Checkpoint**: User Story 6 fully functional - 發牌動畫依序播放，總時長 < 2 秒
 

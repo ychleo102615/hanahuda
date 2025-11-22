@@ -105,12 +105,10 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
    * 1. playFlipFromDeckAnimation（Phase 8 實作）
    * 2. 如果有配對：playMatchAnimation → playToDepositoryAnimation
    * 3. 如果無配對：牌已經在場上，不需要額外動畫
-   *
-   * Phase 7 只處理步驟 2（配對動畫），步驟 1 待 Phase 8 整合。
    */
   private async playDrawCardAnimation(cardPlay: CardPlay, isOpponent: boolean): Promise<void> {
-    // TODO: Phase 8 將在這裡加入 playFlipFromDeckAnimation
-    // await this.animation.playFlipFromDeckAnimation(cardPlay.played_card)
+    // Phase 8: 播放翻牌動畫（從牌堆翻到場牌）
+    await this.animation.playFlipFromDeckAnimation(cardPlay.played_card)
 
     if (cardPlay.matched_card) {
       // 有配對：播放合併特效，然後移至獲得區

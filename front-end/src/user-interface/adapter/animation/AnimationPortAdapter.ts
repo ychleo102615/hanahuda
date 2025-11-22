@@ -32,8 +32,9 @@ const ANIMATION_DURATION = {
   CARD_TO_FIELD: 200,
   MATCH_EFFECT: 150,
   TO_DEPOSITORY: 300,
-  DEAL_CARD: 100,
-  FLIP_FROM_DECK: 300,
+  DEAL_CARD: 80,        // 單張發牌動畫時長
+  DEAL_STAGGER: 100,    // 每張卡片延遲（T061）
+  FLIP_FROM_DECK: 200,  // 翻牌動畫時長
 }
 
 /**
@@ -61,6 +62,7 @@ export class AnimationPortAdapter implements AnimationPort {
   // ===== 動畫方法 =====
 
   async playDealAnimation(params: DealAnimationParams): Promise<void> {
+    // 檢查是否已中斷
     if (this._interrupted) {
       this._interrupted = false
       return
@@ -69,6 +71,7 @@ export class AnimationPortAdapter implements AnimationPort {
     this._isAnimating = true
 
     const deckPosition = this.registry.getPosition('deck')
+
     console.info('[AnimationPort] playDealAnimation', {
       fieldCards: params.fieldCards.length,
       playerHandCards: params.playerHandCards.length,
@@ -76,9 +79,123 @@ export class AnimationPortAdapter implements AnimationPort {
       deckPosition: deckPosition ? 'found' : 'not registered',
     })
 
-    // TODO: Phase 8 實作實際發牌動畫
-    // 暫時立即完成
-    this._isAnimating = false
+    // 若無牌可發，直接返回
+    if (params.fieldCards.length === 0 && params.playerHandCards.length === 0) {
+      this._isAnimating = false
+      return
+    }
+
+    // T059/T061: 實作 staggered 發牌動畫
+    // 發牌順序：先發場牌，再發玩家手牌
+    // 每張牌間隔 DEAL_STAGGER ms
+
+    try {
+      // Phase 1: 發場牌 (8 張)
+      for (let i = 0; i < params.fieldCards.length; i++) {
+        // 檢查中斷
+        if (this._interrupted) {
+          this._interrupted = false
+          return
+        }
+
+        const cardId = params.fieldCards[i]!
+        const cardElement = findCardElement(cardId)
+
+        // 執行單張發牌動畫
+        if (cardElement && deckPosition && !this._interrupted) {
+          await this.animateSingleDealCard(cardElement, deckPosition.rect)
+        }
+
+        // 再次檢查中斷
+        if (this._interrupted) {
+          this._interrupted = false
+          return
+        }
+
+        // T061: 每張牌延遲（但最後一張不需要）
+        if (i < params.fieldCards.length - 1 || params.playerHandCards.length > 0) {
+          await sleep(ANIMATION_DURATION.DEAL_STAGGER)
+        }
+      }
+
+      // Phase 2: 發玩家手牌 (8 張)
+      for (let i = 0; i < params.playerHandCards.length; i++) {
+        // 檢查中斷
+        if (this._interrupted) {
+          this._interrupted = false
+          return
+        }
+
+        const cardId = params.playerHandCards[i]!
+        const cardElement = findCardElement(cardId)
+
+        // 執行單張發牌動畫
+        if (cardElement && deckPosition && !this._interrupted) {
+          await this.animateSingleDealCard(cardElement, deckPosition.rect)
+        }
+
+        // 再次檢查中斷
+        if (this._interrupted) {
+          this._interrupted = false
+          return
+        }
+
+        // T061: 每張牌延遲（但最後一張不需要）
+        if (i < params.playerHandCards.length - 1) {
+          await sleep(ANIMATION_DURATION.DEAL_STAGGER)
+        }
+      }
+
+      // 對手手牌不播放動畫（牌面朝下，直接出現）- 這裡不需要處理
+    } finally {
+      this._isAnimating = false
+    }
+  }
+
+  /**
+   * 單張發牌動畫輔助方法
+   * @private
+   * @param cardElement - 卡片 DOM 元素
+   * @param fromRect - 牌堆位置（動畫起點）
+   */
+  private async animateSingleDealCard(
+    cardElement: HTMLElement,
+    fromRect: DOMRect
+  ): Promise<void> {
+    // 計算卡片當前位置
+    const cardRect = cardElement.getBoundingClientRect()
+
+    // 計算從牌堆到目標位置的位移
+    // 初始位置：從牌堆中心
+    const initialX = fromRect.x + fromRect.width / 2 - cardRect.x - cardRect.width / 2
+    const initialY = fromRect.y + fromRect.height / 2 - cardRect.y - cardRect.height / 2
+
+    const { apply } = useMotion(cardElement, {
+      initial: {
+        x: initialX,
+        y: initialY,
+        scale: 0.8,
+        opacity: 0,
+      },
+      enter: {
+        x: 0,
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        transition: {
+          type: 'spring',
+          stiffness: 300,
+          damping: 25,
+        },
+      },
+    })
+
+    await apply('enter')
+    await sleep(ANIMATION_DURATION.DEAL_CARD)
+
+    // 清理樣式
+    cardElement.style.transform = ''
+    cardElement.style.opacity = ''
   }
 
   async playCardToFieldAnimation(cardId: string, isOpponent: boolean): Promise<void> {
@@ -194,7 +311,7 @@ export class AnimationPortAdapter implements AnimationPort {
     this._isAnimating = true
 
     const depositoryZone: ZoneName = isOpponent ? 'opponent-depository' : 'player-depository'
-    const targetZone: ZoneName = `${isOpponent ? 'opponent' : 'player'}-depository-${targetType}` as ZoneName
+    // TODO: 未來可改用分組區域 `${isOpponent ? 'opponent' : 'player'}-depository-${targetType}`
     const depositoryPosition = this.registry.getPosition(depositoryZone)
     const fieldPosition = this.registry.getPosition('field')
 
@@ -252,6 +369,9 @@ export class AnimationPortAdapter implements AnimationPort {
   }
 
   async playFlipFromDeckAnimation(cardId: string): Promise<void> {
+    // T060: 翻牌階段單張翻牌動畫
+    // 從牌堆翻一張牌到場牌區
+
     if (this._interrupted) {
       this._interrupted = false
       return
@@ -261,19 +381,62 @@ export class AnimationPortAdapter implements AnimationPort {
 
     const deckPosition = this.registry.getPosition('deck')
     const fieldPosition = this.registry.getPosition('field')
+    const cardElement = findCardElement(cardId)
 
     console.info('[AnimationPort] playFlipFromDeckAnimation', {
       cardId,
       deck: deckPosition ? 'found' : 'not registered',
       field: fieldPosition ? 'found' : 'not registered',
+      hasElement: !!cardElement,
     })
 
-    // 等待翻牌動畫時長
-    if (!this._interrupted) {
-      await sleep(ANIMATION_DURATION.FLIP_FROM_DECK)
-    }
+    try {
+      // 執行翻牌動畫
+      if (cardElement && deckPosition && fieldPosition && !this._interrupted) {
+        // 計算卡片當前位置
+        const cardRect = cardElement.getBoundingClientRect()
 
-    this._isAnimating = false
+        // 計算從牌堆到場牌的位移
+        const initialX = deckPosition.rect.x + deckPosition.rect.width / 2 - cardRect.x - cardRect.width / 2
+        const initialY = deckPosition.rect.y + deckPosition.rect.height / 2 - cardRect.y - cardRect.height / 2
+
+        const { apply } = useMotion(cardElement, {
+          initial: {
+            x: initialX,
+            y: initialY,
+            scale: 0.8,
+            opacity: 0,
+            rotateY: 180,  // 牌面朝下
+          },
+          enter: {
+            x: 0,
+            y: 0,
+            scale: 1,
+            opacity: 1,
+            rotateY: 0,    // 翻轉到牌面朝上
+            transition: {
+              type: 'spring',
+              stiffness: 250,
+              damping: 20,
+            },
+          },
+        })
+
+        await apply('enter')
+        await sleep(ANIMATION_DURATION.FLIP_FROM_DECK)
+
+        // 清理樣式
+        cardElement.style.transform = ''
+        cardElement.style.opacity = ''
+      } else {
+        // 無元素時等待時長
+        if (!this._interrupted) {
+          await sleep(ANIMATION_DURATION.FLIP_FROM_DECK)
+        }
+      }
+    } finally {
+      this._isAnimating = false
+    }
   }
 
   // ===== 控制方法 =====

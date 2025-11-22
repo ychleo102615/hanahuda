@@ -244,9 +244,10 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T030 [US1]: 註冊 RoundDealt 事件處理器
+  // Phase 8: 使用 GameStatePort + AnimationPort（發牌動畫整合）
   container.register(
     TOKENS.HandleRoundDealtPort,
-    () => new HandleRoundDealtUseCase(uiStatePort, triggerUIEffectPort),
+    () => new HandleRoundDealtUseCase(gameStatePort, animationPort),
     { singleton: true }
   )
 
