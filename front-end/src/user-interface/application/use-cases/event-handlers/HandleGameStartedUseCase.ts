@@ -31,11 +31,11 @@ export class HandleGameStartedUseCase implements HandleGameStartedPort {
       event.ruleset
     )
 
-    // 2. 觸發遊戲開始動畫/訊息
-    // 使用 triggerAnimation 顯示遊戲開始的視覺效果
-    this.triggerUIEffect.triggerAnimation('DEAL_CARDS', {
-      fieldCards: [],
-      hands: [],
-    })
+    // // 2. 觸發遊戲開始動畫/訊息
+    // // 使用 triggerAnimation 顯示遊戲開始的視覺效果
+    // this.triggerUIEffect.triggerAnimation('DEAL_CARDS', {
+    //   fieldCards: [],
+    //   hands: [],
+    // })
   }
 }
