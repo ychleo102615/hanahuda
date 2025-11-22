@@ -5,6 +5,7 @@
  * 處理玩家選擇配對目標的業務流程編排 Use Case。
  *
  * 業務流程：
+ * 0. 檢查動畫狀態：若動畫進行中則阻止操作
  * 1. 驗證：調用 Domain Facade 驗證目標卡片是否在可選目標列表中
  * 2. 發送命令：調用 SendCommandPort 發送 TurnSelectTarget 命令到後端
  *
@@ -21,7 +22,7 @@ import type {
   SelectMatchTargetInput,
   SelectMatchTargetOutput,
 } from '../../ports/input/player-operations.port'
-import type { SendCommandPort } from '../../ports/output'
+import type { SendCommandPort, AnimationPort } from '../../ports/output'
 import type { DomainFacade, Result } from '../../types'
 import { getCardById, type Card } from '@/user-interface/domain'
 
@@ -34,10 +35,12 @@ export class SelectMatchTargetUseCase implements SelectMatchTargetPort {
    *
    * @param sendCommandPort - 發送命令到後端的 Output Port
    * @param domainFacade - Domain Layer 業務邏輯門面
+   * @param animationPort - 動畫系統 Output Port（用於檢查動畫狀態）
    */
   constructor(
     private readonly sendCommandPort: SendCommandPort,
-    private readonly domainFacade: DomainFacade
+    private readonly domainFacade: DomainFacade,
+    private readonly animationPort: AnimationPort
   ) {}
 
   /**
@@ -47,6 +50,14 @@ export class SelectMatchTargetUseCase implements SelectMatchTargetPort {
    * @returns 操作結果（成功/失敗）
    */
   execute(input: SelectMatchTargetInput): Result<SelectMatchTargetOutput> {
+    // Step 0: 檢查動畫狀態 - 若動畫進行中則阻止操作
+    if (this.animationPort.isAnimating()) {
+      return {
+        success: false,
+        error: 'ANIMATION_IN_PROGRESS',
+      }
+    }
+
     // Step 1: Convert card IDs to Card objects
     const targetCard = getCardById(input.targetCardId)
     if (!targetCard) {

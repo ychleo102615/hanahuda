@@ -197,33 +197,40 @@ function registerOutputPorts(container: DIContainer): void {
  * 包含 3 個玩家操作 Use Cases 與 15 個事件處理 Use Cases。
  */
 function registerInputPorts(container: DIContainer): void {
-  // 取得 Output Ports
+  // 取得 Output Ports (Legacy)
   const uiStatePort = container.resolve(TOKENS.UIStatePort) as UIStatePort
   const triggerUIEffectPort = container.resolve(TOKENS.TriggerUIEffectPort) as TriggerUIEffectPort
   const domainFacade = container.resolve(TOKENS.DomainFacade) as DomainFacade
+
+  // 取得 Output Ports (New - Phase 4+)
+  const gameStatePort = container.resolve(TOKENS.GameStatePort) as GameStatePort
+  const animationPort = container.resolve(TOKENS.AnimationPort) as AnimationPort
 
   // Player Operations Use Cases
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
 
   // 註冊 PlayHandCardPort
+  // Phase 7: 加入 animationPort 用於檢查動畫狀態
   container.register(
     TOKENS.PlayHandCardPort,
-    () => new PlayHandCardUseCase(sendCommandPort, triggerUIEffectPort, domainFacade),
+    () => new PlayHandCardUseCase(sendCommandPort, triggerUIEffectPort, domainFacade, animationPort),
     { singleton: true }
   )
 
   // 註冊 SelectMatchTargetPort
+  // Phase 7: 加入 animationPort 用於檢查動畫狀態
   container.register(
     TOKENS.SelectMatchTargetPort,
-    () => new SelectMatchTargetUseCase(sendCommandPort, domainFacade),
+    () => new SelectMatchTargetUseCase(sendCommandPort, domainFacade, animationPort),
     { singleton: true }
   )
 
   // 註冊 MakeKoiKoiDecisionPort (T068-T070)
+  // Phase 7: 加入 animationPort 用於檢查動畫狀態
   container.register(
     TOKENS.MakeKoiKoiDecisionPort,
-    () => new MakeKoiKoiDecisionUseCase(sendCommandPort, triggerUIEffectPort, domainFacade),
+    () => new MakeKoiKoiDecisionUseCase(sendCommandPort, triggerUIEffectPort, domainFacade, animationPort),
     { singleton: true }
   )
 
@@ -244,9 +251,10 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T050 [US2]: 註冊 TurnCompleted 事件處理器
+  // Phase 7: 使用 GameStatePort + AnimationPort（配對動畫整合）
   container.register(
     TOKENS.HandleTurnCompletedPort,
-    () => new HandleTurnCompletedUseCase(uiStatePort, triggerUIEffectPort),
+    () => new HandleTurnCompletedUseCase(gameStatePort, animationPort, domainFacade),
     { singleton: true }
   )
 
@@ -258,11 +266,12 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T052 [US2]: 註冊 TurnProgressAfterSelection 事件處理器
+  // Phase 7: 使用 GameStatePort + AnimationPort（配對動畫整合）
   container.register(
     TOKENS.HandleTurnProgressAfterSelectionPort,
     () => new HandleTurnProgressAfterSelectionUseCase(
-      uiStatePort,
-      triggerUIEffectPort,
+      gameStatePort,
+      animationPort,
       domainFacade
     ),
     { singleton: true }

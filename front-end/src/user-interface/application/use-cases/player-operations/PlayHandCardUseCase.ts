@@ -5,6 +5,7 @@
  * 處理玩家打出手牌的完整流程編排 Use Case。
  *
  * 業務流程：
+ * 0. 檢查動畫狀態：若動畫進行中則阻止操作
  * 1. 預驗證：調用 Domain Facade 驗證卡片是否在手牌中
  * 2. 配對檢查：調用 Domain Facade 尋找可配對的場牌
  * 3. 根據配對結果：
@@ -24,7 +25,7 @@ import type {
   PlayHandCardInput,
   PlayHandCardOutput,
 } from '../../ports/input/player-operations.port'
-import type { SendCommandPort, TriggerUIEffectPort } from '../../ports/output'
+import type { SendCommandPort, TriggerUIEffectPort, AnimationPort } from '../../ports/output'
 import type { DomainFacade, Result } from '../../types'
 import { getCardById, type Card } from '@/user-interface/domain'
 
@@ -38,11 +39,13 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
    * @param sendCommandPort - 發送命令到後端的 Output Port
    * @param triggerUIEffectPort - 觸發 UI 效果的 Output Port
    * @param domainFacade - Domain Layer 業務邏輯門面
+   * @param animationPort - 動畫系統 Output Port（用於檢查動畫狀態）
    */
   constructor(
     private readonly sendCommandPort: SendCommandPort,
     private readonly triggerUIEffectPort: TriggerUIEffectPort,
-    private readonly domainFacade: DomainFacade
+    private readonly domainFacade: DomainFacade,
+    private readonly animationPort: AnimationPort
   ) {}
 
   /**
@@ -52,6 +55,14 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
    * @returns 操作結果（成功/失敗）
    */
   execute(input: PlayHandCardInput): Result<PlayHandCardOutput> {
+    // Step 0: 檢查動畫狀態 - 若動畫進行中則阻止操作
+    if (this.animationPort.isAnimating()) {
+      return {
+        success: false,
+        error: 'ANIMATION_IN_PROGRESS',
+      }
+    }
+
     // Step 1: Convert card IDs to Card objects
     const handCard = getCardById(input.cardId)
     if (!handCard) {

@@ -12,12 +12,13 @@
  * 覆蓋率目標：> 90%（業務編排邏輯）
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { MakeKoiKoiDecisionUseCase } from '@/user-interface/application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
 import {
   createMockSendCommandPort,
   createMockTriggerUIEffectPort,
   createMockDomainFacade,
+  createMockAnimationPort,
 } from '../../test-helpers/mock-factories'
 import type { YakuScore } from '@/user-interface/application/types'
 
@@ -32,11 +33,13 @@ describe('MakeKoiKoiDecisionUseCase', () => {
   let mockSendCommandPort: ReturnType<typeof createMockSendCommandPort>
   let mockTriggerUIEffectPort: ReturnType<typeof createMockTriggerUIEffectPort>
   let mockDomainFacade: ReturnType<typeof createMockDomainFacade>
+  let mockAnimationPort: ReturnType<typeof createMockAnimationPort>
 
   beforeEach(() => {
     mockSendCommandPort = createMockSendCommandPort()
     mockTriggerUIEffectPort = createMockTriggerUIEffectPort()
     mockDomainFacade = createMockDomainFacade()
+    mockAnimationPort = createMockAnimationPort()
   })
 
   describe('Score calculation (分數計算)', () => {
@@ -45,7 +48,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -70,7 +74,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -94,7 +99,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -117,7 +123,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       const multipleYaku: YakuScore[] = [
@@ -147,7 +154,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -173,7 +181,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -195,7 +204,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -220,7 +230,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -242,7 +253,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -270,7 +282,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -301,7 +314,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -324,7 +338,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -347,7 +362,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       const largeYakuList: YakuScore[] = [
@@ -382,7 +398,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -408,7 +425,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -441,7 +459,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act - END_ROUND
@@ -470,7 +489,8 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       const useCase = new MakeKoiKoiDecisionUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -486,6 +506,57 @@ describe('MakeKoiKoiDecisionUseCase', () => {
       // (it's just summing yaku_base_points from the list)
       // Domain facade would be used for yaku detection, not score calculation
       expect(mockDomainFacade.calculateYakuProgress).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Animation blocking (動畫阻止)', () => {
+    it('should block operation when animation is in progress', () => {
+      // Arrange
+      mockAnimationPort.isAnimating = vi.fn().mockReturnValue(true)
+      const useCase = new MakeKoiKoiDecisionUseCase(
+        mockSendCommandPort,
+        mockTriggerUIEffectPort,
+        mockDomainFacade,
+        mockAnimationPort
+      )
+
+      // Act
+      const result = useCase.execute({
+        currentYaku: mockYakuScores,
+        depositoryCards: [],
+        koiKoiMultiplier: 1,
+        decision: 'END_ROUND',
+      })
+
+      // Assert
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toBe('ANIMATION_IN_PROGRESS')
+      }
+      expect(mockSendCommandPort.makeDecision).not.toHaveBeenCalled()
+    })
+
+    it('should allow operation when animation is not in progress', () => {
+      // Arrange
+      mockAnimationPort.isAnimating = vi.fn().mockReturnValue(false)
+      const useCase = new MakeKoiKoiDecisionUseCase(
+        mockSendCommandPort,
+        mockTriggerUIEffectPort,
+        mockDomainFacade,
+        mockAnimationPort
+      )
+
+      // Act
+      const result = useCase.execute({
+        currentYaku: mockYakuScores,
+        depositoryCards: [],
+        koiKoiMultiplier: 1,
+        decision: 'END_ROUND',
+      })
+
+      // Assert
+      expect(result.success).toBe(true)
+      expect(mockSendCommandPort.makeDecision).toHaveBeenCalledWith('END_ROUND')
     })
   })
 })

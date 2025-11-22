@@ -5,6 +5,7 @@
  * 處理 Koi-Koi 決策的業務流程編排 Use Case。
  *
  * 業務流程：
+ * 0. 檢查動畫狀態：若動畫進行中則阻止操作
  * 1. 計算當前分數：加總所有役種的基礎分數並套用 Koi-Koi 倍率
  * 2. 可選功能：若選擇繼續（KOI_KOI），計算下一倍率的潛在分數
  * 3. 發送決策命令：調用 SendCommandPort 發送 RoundMakeDecision 命令到後端
@@ -22,7 +23,7 @@ import type {
   MakeKoiKoiDecisionInput,
   MakeKoiKoiDecisionOutput,
 } from '../../ports/input/player-operations.port'
-import type { SendCommandPort, TriggerUIEffectPort } from '../../ports/output'
+import type { SendCommandPort, TriggerUIEffectPort, AnimationPort } from '../../ports/output'
 import type { DomainFacade, Result, YakuScore } from '../../types'
 
 /**
@@ -35,11 +36,13 @@ export class MakeKoiKoiDecisionUseCase implements MakeKoiKoiDecisionPort {
    * @param sendCommandPort - 發送命令到後端的 Output Port
    * @param triggerUIEffectPort - 觸發 UI 效果的 Output Port（預留，可用於更新 UI 狀態）
    * @param domainFacade - Domain Layer 業務邏輯門面（預留，可用於役種驗證）
+   * @param animationPort - 動畫系統 Output Port（用於檢查動畫狀態）
    */
   constructor(
     private readonly sendCommandPort: SendCommandPort,
     private readonly triggerUIEffectPort: TriggerUIEffectPort,
-    private readonly domainFacade: DomainFacade
+    private readonly domainFacade: DomainFacade,
+    private readonly animationPort: AnimationPort
   ) {}
 
   /**
@@ -49,6 +52,14 @@ export class MakeKoiKoiDecisionUseCase implements MakeKoiKoiDecisionPort {
    * @returns 操作結果（成功/失敗）
    */
   execute(input: MakeKoiKoiDecisionInput): Result<MakeKoiKoiDecisionOutput> {
+    // Step 0: 檢查動畫狀態 - 若動畫進行中則阻止操作
+    if (this.animationPort.isAnimating()) {
+      return {
+        success: false,
+        error: 'ANIMATION_IN_PROGRESS',
+      }
+    }
+
     // Step 1: Calculate current score
     // 加總所有役種的基礎分數
     const baseScore = this.calculateBaseScore(input.currentYaku)

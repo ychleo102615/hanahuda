@@ -18,6 +18,7 @@ import {
   createMockSendCommandPort,
   createMockTriggerUIEffectPort,
   createMockDomainFacade,
+  createMockAnimationPort,
 } from '../../test-helpers/mock-factories'
 import type { Card } from '@/user-interface/domain'
 
@@ -41,11 +42,13 @@ describe('PlayHandCardUseCase', () => {
   let mockSendCommandPort: ReturnType<typeof createMockSendCommandPort>
   let mockTriggerUIEffectPort: ReturnType<typeof createMockTriggerUIEffectPort>
   let mockDomainFacade: ReturnType<typeof createMockDomainFacade>
+  let mockAnimationPort: ReturnType<typeof createMockAnimationPort>
 
   beforeEach(() => {
     mockSendCommandPort = createMockSendCommandPort()
     mockTriggerUIEffectPort = createMockTriggerUIEffectPort()
     mockDomainFacade = createMockDomainFacade()
+    mockAnimationPort = createMockAnimationPort()
   })
 
   describe('Pre-validation (卡片存在性驗證)', () => {
@@ -56,7 +59,8 @@ describe('PlayHandCardUseCase', () => {
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -83,7 +87,8 @@ describe('PlayHandCardUseCase', () => {
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -108,7 +113,8 @@ describe('PlayHandCardUseCase', () => {
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -141,7 +147,8 @@ describe('PlayHandCardUseCase', () => {
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -176,7 +183,8 @@ describe('PlayHandCardUseCase', () => {
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -216,7 +224,8 @@ describe('PlayHandCardUseCase', () => {
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -245,7 +254,8 @@ describe('PlayHandCardUseCase', () => {
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -270,7 +280,8 @@ describe('PlayHandCardUseCase', () => {
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act
@@ -303,7 +314,8 @@ describe('PlayHandCardUseCase', () => {
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
         mockTriggerUIEffectPort,
-        mockDomainFacade
+        mockDomainFacade,
+        mockAnimationPort
       )
 
       // Act

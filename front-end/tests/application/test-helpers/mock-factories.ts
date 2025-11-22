@@ -44,6 +44,8 @@ import type {
   SendCommandPort,
   UIStatePort,
   TriggerUIEffectPort,
+  GameStatePort,
+  AnimationPort,
 } from '@/user-interface/application/ports'
 import type { DomainFacade } from '@/user-interface/application/types'
 
@@ -188,6 +190,74 @@ export function createMockDomainFacade(overrides?: Partial<DomainFacade>): Domai
       missing: [],
       progress: 0,
     }),
+    getCardTypeFromId: vi.fn().mockReturnValue('PLAIN'),
     ...overrides,
+  }
+}
+
+/**
+ * 建立 Mock GameStatePort
+ *
+ * @description
+ * GameStatePort 是原 UIStatePort 的重新命名與調整版本。
+ * 所有方法預設為空操作（no-op）。
+ * `getLocalPlayerId` 預設返回 'player-1'。
+ *
+ * @example
+ * ```typescript
+ * const mockGameState = createMockGameStatePort()
+ *
+ * // 驗證方法調用
+ * mockGameState.setFlowStage('AWAITING_HAND_PLAY')
+ * expect(mockGameState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
+ * ```
+ */
+export function createMockGameStatePort(): GameStatePort {
+  return {
+    initializeGameContext: vi.fn(),
+    restoreGameState: vi.fn(),
+    setFlowStage: vi.fn(),
+    setActivePlayer: vi.fn(),
+    updateFieldCards: vi.fn(),
+    updateHandCards: vi.fn(),
+    updateOpponentHandCount: vi.fn(),
+    updateDepositoryCards: vi.fn(),
+    updateScores: vi.fn(),
+    updateDeckRemaining: vi.fn(),
+    updateYaku: vi.fn(),
+    getLocalPlayerId: vi.fn().mockReturnValue('player-1'),
+    getFieldCards: vi.fn().mockReturnValue([]),
+    getDepositoryCards: vi.fn().mockReturnValue([]),
+  }
+}
+
+/**
+ * 建立 Mock AnimationPort
+ *
+ * @description
+ * 所有動畫方法預設返回 resolved Promise。
+ * `isAnimating` 預設返回 false。
+ *
+ * @example
+ * ```typescript
+ * const mockAnimation = createMockAnimationPort()
+ *
+ * // 驗證方法調用
+ * await mockAnimation.playMatchAnimation('0301', '0101')
+ * expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0301', '0101')
+ *
+ * // 模擬動畫進行中
+ * mockAnimation.isAnimating = vi.fn().mockReturnValue(true)
+ * ```
+ */
+export function createMockAnimationPort(): AnimationPort {
+  return {
+    playDealAnimation: vi.fn().mockResolvedValue(undefined),
+    playCardToFieldAnimation: vi.fn().mockResolvedValue(undefined),
+    playMatchAnimation: vi.fn().mockResolvedValue(undefined),
+    playToDepositoryAnimation: vi.fn().mockResolvedValue(undefined),
+    playFlipFromDeckAnimation: vi.fn().mockResolvedValue(undefined),
+    interrupt: vi.fn(),
+    isAnimating: vi.fn().mockReturnValue(false),
   }
 }

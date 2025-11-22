@@ -16,16 +16,19 @@ import { SelectMatchTargetUseCase } from '@/user-interface/application/use-cases
 import {
   createMockSendCommandPort,
   createMockDomainFacade,
+  createMockAnimationPort,
 } from '../../test-helpers/mock-factories'
 
 describe('SelectMatchTargetUseCase', () => {
   // Test helpers
   let mockSendCommandPort: ReturnType<typeof createMockSendCommandPort>
   let mockDomainFacade: ReturnType<typeof createMockDomainFacade>
+  let mockAnimationPort: ReturnType<typeof createMockAnimationPort>
 
   beforeEach(() => {
     mockSendCommandPort = createMockSendCommandPort()
     mockDomainFacade = createMockDomainFacade()
+    mockAnimationPort = createMockAnimationPort()
   })
 
   describe('Target validation (目標驗證)', () => {
@@ -33,7 +36,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(false)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -56,7 +59,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(true)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -81,7 +84,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(true)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -100,7 +103,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(true)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -118,7 +121,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(true)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -136,7 +139,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(true)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -156,7 +159,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(true)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -174,7 +177,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(false)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -196,7 +199,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(false)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -218,7 +221,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(true)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       useCase.execute({
@@ -239,7 +242,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange: Simulate domain facade rejecting the target
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(false)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -259,7 +262,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(true)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -277,7 +280,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(true)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
@@ -295,7 +298,7 @@ describe('SelectMatchTargetUseCase', () => {
       // Arrange
       mockDomainFacade.validateTargetInList = vi.fn().mockReturnValue(true)
 
-      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade)
+      const useCase = new SelectMatchTargetUseCase(mockSendCommandPort, mockDomainFacade, mockAnimationPort)
 
       // Act
       const result = useCase.execute({
