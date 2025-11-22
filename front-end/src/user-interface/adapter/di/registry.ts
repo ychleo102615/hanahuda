@@ -41,7 +41,7 @@ import { HandleReconnectionUseCase } from '../../application/use-cases/event-han
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, TriggerUIEffectPort } from '../../application/ports/output'
+import type { UIStatePort, TriggerUIEffectPort, GameStatePort, AnimationPort, NotificationPort } from '../../application/ports/output'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
@@ -49,6 +49,9 @@ import { MockEventEmitter } from '../mock/MockEventEmitter'
 import { EventRouter } from '../sse/EventRouter'
 import { AnimationService } from '../animation/AnimationService'
 import { AnimationQueue } from '../animation/AnimationQueue'
+import { createAnimationPortAdapter } from '../animation/AnimationPortAdapter'
+import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
+import { createGameStatePortAdapter } from '../stores/GameStatePortAdapter'
 
 /**
  * 遊戲模式
@@ -130,7 +133,7 @@ function registerOutputPorts(container: DIContainer): void {
     { singleton: true },
   )
 
-  // TriggerUIEffectPort: 由 UIStateStore + AnimationService 組合實作
+  // TriggerUIEffectPort: 由 UIStateStore + AnimationService 組合實作 (Legacy)
   // 注意: AnimationService 需要先註冊 (在 registerAnimationSystem 中)
   // Phase 2 使用 stub AnimationService，Phase 3+ 將替換為真實實作
   container.register(
@@ -142,6 +145,29 @@ function registerOutputPorts(container: DIContainer): void {
       }
       return createTriggerUIEffectPortAdapter(animationService)
     },
+    { singleton: true },
+  )
+
+  // ===== New Output Ports (Phase 4) =====
+
+  // GameStatePort: 由 GameStateStore 實作
+  container.register(
+    TOKENS.GameStatePort,
+    () => createGameStatePortAdapter(),
+    { singleton: true },
+  )
+
+  // AnimationPort: 由 AnimationPortAdapter 實作
+  container.register(
+    TOKENS.AnimationPort,
+    () => createAnimationPortAdapter(),
+    { singleton: true },
+  )
+
+  // NotificationPort: 由 NotificationPortAdapter 實作
+  container.register(
+    TOKENS.NotificationPort,
+    () => createNotificationPortAdapter(),
     { singleton: true },
   )
 

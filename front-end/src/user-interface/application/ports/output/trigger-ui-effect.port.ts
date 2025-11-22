@@ -1,9 +1,17 @@
 /**
  * TriggerUIEffectPort - Output Port
  *
+ * @deprecated 請改用 AnimationPort + NotificationPort + GameStatePort
+ * 此 Port 將在未來版本移除。
+ *
  * @description
  * 由 Application Layer 定義，Adapter Layer 實作。
  * 負責觸發 UI 效果（動畫、Modal、訊息提示等）。
+ *
+ * 遷移指南：
+ * - 動畫方法 → AnimationPort（可 await）
+ * - Modal/Toast 方法 → NotificationPort
+ * - 狀態更新 → GameStatePort
  *
  * 使用於：
  * - PlayHandCardUseCase

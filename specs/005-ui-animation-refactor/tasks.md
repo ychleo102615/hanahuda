@@ -82,22 +82,22 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T017 [P] [US2] 單元測試 AnimationPort 介面在 front-end/tests/adapter/animation/AnimationPort.spec.ts
-- [ ] T018 [P] [US2] 單元測試 NotificationPort 介面在 front-end/tests/adapter/notification/NotificationPort.spec.ts
-- [ ] T019 [P] [US2] 單元測試 GameStatePort 介面在 front-end/tests/adapter/stores/GameStatePort.spec.ts
+- [x] T017 [P] [US2] 單元測試 AnimationPort 介面在 front-end/tests/adapter/animation/AnimationPort.spec.ts
+- [x] T018 [P] [US2] 單元測試 NotificationPort 介面在 front-end/tests/adapter/notification/NotificationPort.spec.ts
+- [x] T019 [P] [US2] 單元測試 GameStatePort 介面在 front-end/tests/adapter/stores/GameStatePort.spec.ts
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] 定義 AnimationPort 介面在 front-end/src/user-interface/application/ports/output/animation.port.ts
-- [ ] T021 [P] [US2] 定義 NotificationPort 介面在 front-end/src/user-interface/application/ports/output/notification.port.ts
-- [ ] T022 [P] [US2] 重新命名並調整 GameStatePort 介面在 front-end/src/user-interface/application/ports/output/game-state.port.ts
-- [ ] T023 [US2] 更新 output ports barrel export 在 front-end/src/user-interface/application/ports/output/index.ts
-- [ ] T024 [US2] 新增 AnimationPort、NotificationPort tokens 在 front-end/src/user-interface/adapter/di/tokens.ts
-- [ ] T025 [US2] 實作 NotificationPortAdapter 在 front-end/src/user-interface/adapter/notification/NotificationPortAdapter.ts
-- [ ] T026 [US2] 實作 AnimationPortAdapter 骨架（不含 registerZone，僅 stub 動畫方法和 interrupt/isAnimating）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T027 [US2] 更新 DI Container 註冊新 Ports 在 front-end/src/user-interface/adapter/di/registry.ts
-- [ ] T028 [US2] 標記 TriggerUIEffectPort 為 @deprecated 在 front-end/src/user-interface/application/ports/output/trigger-ui-effect.port.ts
-- [ ] T029 [US2] 更新所有 Use Cases 注入新 Ports（AnimationPort、NotificationPort、GameStatePort）
+- [x] T020 [P] [US2] 定義 AnimationPort 介面在 front-end/src/user-interface/application/ports/output/animation.port.ts
+- [x] T021 [P] [US2] 定義 NotificationPort 介面在 front-end/src/user-interface/application/ports/output/notification.port.ts
+- [x] T022 [P] [US2] 定義 GameStatePort 介面在 front-end/src/user-interface/application/ports/output/game-state.port.ts
+- [x] T023 [US2] 更新 output ports barrel export 在 front-end/src/user-interface/application/ports/output/index.ts
+- [x] T024 [US2] 新增 AnimationPort、NotificationPort、GameStatePort tokens 在 front-end/src/user-interface/adapter/di/tokens.ts
+- [x] T025 [US2] 實作 NotificationPortAdapter 在 front-end/src/user-interface/adapter/notification/NotificationPortAdapter.ts
+- [x] T026 [US2] 實作 AnimationPortAdapter 骨架（不含 registerZone，僅 stub 動畫方法和 interrupt/isAnimating）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [x] T027 [US2] 更新 DI Container 註冊新 Ports 在 front-end/src/user-interface/adapter/di/registry.ts
+- [x] T028 [US2] 標記 TriggerUIEffectPort 為 @deprecated 在 front-end/src/user-interface/application/ports/output/trigger-ui-effect.port.ts
+- [x] T029 [US2] 新 Ports 已註冊可用，Use Cases 遷移將在後續 Phase 逐步進行（漸進遷移策略）
 
 **Checkpoint**: User Story 2 fully functional - 新 Port 介面定義完成，DI 註冊正確，編譯無錯誤
 
