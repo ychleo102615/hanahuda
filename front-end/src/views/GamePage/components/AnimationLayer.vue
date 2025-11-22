@@ -45,24 +45,28 @@ function startAnimationIfNeeded(cardId: string) {
   // 標記為已開始動畫
   animatedCardIds.value.add(cardId)
 
-  // 計算位移：從初始位置（fromRect 中心）到目標位置（toRect）
-  const initialX = card.fromRect.x + card.fromRect.width / 2 - card.toRect.width / 2
-  const initialY = card.fromRect.y + card.fromRect.height / 2 - card.toRect.height / 2
-  const deltaX = card.toRect.x - initialX
-  const deltaY = card.toRect.y - initialY
+  // 計算 scale 比例：從牌堆大小到目標大小
+  const scaleRatio = card.toRect.width / card.fromRect.width
+
+  // 計算位移：從 fromRect 到 toRect（左上角基準）
+  const deltaX = card.toRect.x - card.fromRect.x
+  const deltaY = card.toRect.y - card.fromRect.y
+
+  // 設置 transform-origin 為左上角
+  el.style.transformOrigin = '0 0'
 
   // 執行動畫
   const { apply } = useMotion(el, {
     initial: {
       x: 0,
       y: 0,
-      scale: 0.8,
+      scale: 1,
       opacity: 0,
     },
     enter: {
       x: deltaX,
       y: deltaY,
-      scale: 1,
+      scale: scaleRatio,
       opacity: 1,
       transition: {
         type: 'spring',
@@ -109,10 +113,10 @@ watch(
         :ref="(el) => setCardRef(card.cardId, el as HTMLElement)"
         class="absolute"
         :style="{
-          left: `${card.fromRect.x + card.fromRect.width / 2 - card.toRect.width / 2}px`,
-          top: `${card.fromRect.y + card.fromRect.height / 2 - card.toRect.height / 2}px`,
-          width: `${card.toRect.width}px`,
-          height: `${card.toRect.height}px`,
+          left: `${card.fromRect.x}px`,
+          top: `${card.fromRect.y}px`,
+          width: `${card.fromRect.width}px`,
+          height: `${card.fromRect.height}px`,
         }"
       >
         <CardComponent
