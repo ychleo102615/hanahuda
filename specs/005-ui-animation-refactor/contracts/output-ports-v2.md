@@ -78,9 +78,9 @@ export interface GameStatePort {
 export interface AnimationPort {
   // 高階動畫 API（Use Case 調用，純語意化）
   playDealAnimation(params: DealAnimationParams): Promise<void>        // 回合開始批量發牌 (16張)
-  playCardToFieldAnimation(cardId: string, fromHand: boolean): Promise<void>  // 手牌打到場上
+  playCardToFieldAnimation(cardId: string, isOpponent: boolean): Promise<void>  // 手牌打到場上
   playMatchAnimation(handCardId: string, fieldCardId: string): Promise<void>  // 配對合併效果
-  playToDepositoryAnimation(cardIds: string[], targetType: CardType): Promise<void>  // 移至獲得區
+  playToDepositoryAnimation(cardIds: string[], targetType: CardType, isOpponent: boolean): Promise<void>  // 移至獲得區
   playFlipFromDeckAnimation(cardId: string): Promise<void>             // 翻牌階段單張翻牌
 
   // 控制
@@ -133,20 +133,20 @@ playDealAnimation(params: DealAnimationParams): Promise<void>
 
 **簽名**:
 ```typescript
-playCardToFieldAnimation(cardId: string, fromHand: boolean): Promise<void>
+playCardToFieldAnimation(cardId: string, isOpponent: boolean): Promise<void>
 ```
 
 **參數**:
 - `cardId: string` - 要移動的卡片 ID
-- `fromHand: boolean` - true 表示從手牌區，false 表示從其他位置（如拖曳放開點）
+- `isOpponent: boolean` - false 表示玩家出牌，true 表示對手出牌
 
 **行為規範**:
-1. 卡片從起點移動至場牌區
-2. 若 `fromHand` 為 true，起點為手牌區該卡片位置
-3. 若 `fromHand` 為 false，起點為當前拖曳位置
+1. 卡片從手牌區移動至場牌區
+2. 若 `isOpponent` 為 false，起點為玩家手牌區
+3. 若 `isOpponent` 為 true，起點為對手手牌區
 4. 總時長約 200ms
 
-**使用場景**: 玩家打出手牌到場上（無配對時）
+**使用場景**: 玩家或對手打出手牌到場上（無配對時）
 
 ---
 
@@ -158,17 +158,26 @@ playMatchAnimation(handCardId: string, fieldCardId: string): Promise<void>
 ```
 
 **行為規範**:
-1. 手牌移動至場牌位置（合併點）
-2. 兩張牌疊放並顯示合併效果
-3. 總時長約 350ms
+1. 在場牌位置顯示合併特效（縮放 + 發光）
+2. **不包含卡片移動**，移動由 `playCardToFieldAnimation` 處理
+3. 總時長約 150ms
 
 **動畫流程**:
 ```
-Stage 1 (200ms): 手牌 → 場牌位置
-Stage 2 (150ms): 合併效果（縮放 + 發光）
+Stage 1 (150ms): 合併效果（縮放 + 發光）
 ```
 
-**使用場景**: 手牌與場牌配對成功時
+**使用場景**: 手牌已移動至場牌位置後，播放配對成功特效
+
+**完整配對動畫流程**:
+```typescript
+// 1. 手牌移動到場牌位置
+await animation.playCardToFieldAnimation(handCardId, false)
+// 2. 播放合併特效
+await animation.playMatchAnimation(handCardId, fieldCardId)
+// 3. 移至獲得區
+await animation.playToDepositoryAnimation([handCardId, fieldCardId], cardType, false)
+```
 
 ---
 
@@ -176,15 +185,20 @@ Stage 2 (150ms): 合併效果（縮放 + 發光）
 
 **簽名**:
 ```typescript
-playToDepositoryAnimation(cardIds: string[], targetType: CardType): Promise<void>
+playToDepositoryAnimation(cardIds: string[], targetType: CardType, isOpponent: boolean): Promise<void>
 ```
+
+**參數**:
+- `cardIds: string[]` - 配對的牌 ID 列表（通常 2 張）
+- `targetType: CardType` - 牌的類型，決定進入哪個分組
+- `isOpponent: boolean` - false 表示玩家獲得區，true 表示對手獲得區
 
 **行為規範**:
 1. 卡片從當前位置移動至獲得區對應分組
 2. 支援 1-2 張卡片同時移動
 3. 總時長約 300ms
 
-**使用場景**: 配對成功後，兩張牌移至獲得區
+**使用場景**: 配對成功後，兩張牌移至玩家或對手獲得區
 
 ---
 

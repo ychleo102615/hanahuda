@@ -18,9 +18,9 @@
 export interface AnimationPort {
   // 高階動畫 API（純語意化，Use Case 只表達意圖，不關心位置）
   playDealAnimation(params: DealAnimationParams): Promise<void>        // 回合開始批量發牌
-  playCardToFieldAnimation(cardId: string, fromHand: boolean): Promise<void>  // 手牌打到場上
-  playMatchAnimation(handCardId: string, fieldCardId: string): Promise<void>  // 配對合併效果
-  playToDepositoryAnimation(cardIds: string[], targetType: CardType): Promise<void>  // 移至獲得區
+  playCardToFieldAnimation(cardId: string, isOpponent: boolean): Promise<void>  // 手牌打到場上
+  playMatchAnimation(handCardId: string, fieldCardId: string): Promise<void>  // 配對合併特效（無移動）
+  playToDepositoryAnimation(cardIds: string[], targetType: CardType, isOpponent: boolean): Promise<void>  // 移至獲得區
   playFlipFromDeckAnimation(cardId: string): Promise<void>             // 翻牌階段單張翻牌
 
   // 控制

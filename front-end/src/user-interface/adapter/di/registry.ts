@@ -47,7 +47,6 @@ import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
 import { MockEventEmitter } from '../mock/MockEventEmitter'
 import { EventRouter } from '../sse/EventRouter'
-import { AnimationService } from '../animation/AnimationService'
 import { AnimationQueue } from '../animation/AnimationQueue'
 import { createAnimationPortAdapter } from '../animation/AnimationPortAdapter'
 import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
@@ -133,17 +132,18 @@ function registerOutputPorts(container: DIContainer): void {
     { singleton: true },
   )
 
-  // TriggerUIEffectPort: 由 UIStateStore + AnimationService 組合實作 (Legacy)
-  // 注意: AnimationService 需要先註冊 (在 registerAnimationSystem 中)
-  // Phase 2 使用 stub AnimationService，Phase 3+ 將替換為真實實作
+  // TriggerUIEffectPort: @deprecated - 使用 AnimationPort + NotificationPort 代替
+  // 提供 stub 實作以保持向後相容，但會記錄警告
   container.register(
     TOKENS.TriggerUIEffectPort,
     () => {
-
-      const animationService = container.resolve(TOKENS.AnimationService) as {
-        trigger: (type: unknown, params: unknown) => void
+      const stubAnimationService = {
+        trigger: (type: unknown, params: unknown) => {
+          console.warn('[DEPRECATED] TriggerUIEffectPort.triggerAnimation called. Use AnimationPort instead.', { type, params })
+          return Promise.resolve()
+        }
       }
-      return createTriggerUIEffectPortAdapter(animationService)
+      return createTriggerUIEffectPortAdapter(stubAnimationService)
     },
     { singleton: true },
   )
@@ -469,7 +469,8 @@ function registerLocalAdapters(container: DIContainer): void {
  * 註冊動畫系統
  *
  * @description
- * 註冊 AnimationQueue 與 AnimationService。
+ * 註冊 AnimationQueue。
+ * AnimationPortAdapter 由 registerOutputPorts 註冊。
  */
 function registerAnimationSystem(container: DIContainer): void {
   // 註冊 AnimationQueue
@@ -479,12 +480,5 @@ function registerAnimationSystem(container: DIContainer): void {
     { singleton: true },
   )
 
-  // 註冊 AnimationService
-  container.register(
-    TOKENS.AnimationService,
-    () => new AnimationService(),
-    { singleton: true },
-  )
-
-  console.info('[DI] Registered AnimationQueue and AnimationService')
+  console.info('[DI] Registered AnimationQueue')
 }

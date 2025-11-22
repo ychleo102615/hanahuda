@@ -163,14 +163,15 @@
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T050 [P] [US5] 單元測試 playMatchAnimation Promise resolve 在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
-- [ ] T051 [P] [US5] 單元測試 playToDepositoryAnimation 在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
+- [x] T050 [P] [US5] 單元測試 playCardToFieldAnimation 在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
+- [x] T050b [P] [US5] 單元測試 playMatchAnimation Promise resolve 在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
+- [x] T051 [P] [US5] 單元測試 playToDepositoryAnimation 在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
 
 ### Implementation for User Story 5
 
-- [ ] T052 [US5] 實作 AnimationPortAdapter.playMatchAnimation（手牌→場牌合併）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T053 [US5] 實作 AnimationPortAdapter.playToDepositoryAnimation（合併後→獲得區）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T054 [US5] 實作合併效果動畫（縮放+發光）使用 @vueuse/motion 在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [x] T052 [US5] 實作 AnimationPortAdapter.playCardToFieldAnimation（手牌→場牌位置）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [x] T053 [US5] 實作 AnimationPortAdapter.playMatchAnimation（合併特效：縮放+發光，無移動）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [x] T054 [US5] 實作 AnimationPortAdapter.playToDepositoryAnimation（合併後→獲得區）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
 - [ ] T055 [US5] 整合配對動畫到 HandleCardsMatchedUseCase 或相關 Use Case
 - [ ] T056 [US5] 確保動畫進行中阻止玩家操作（isAnimating 狀態）
 

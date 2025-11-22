@@ -42,7 +42,6 @@ export const TOKENS = {
   GameApiClient: Symbol('GameApiClient'),
   GameEventClient: Symbol('GameEventClient'),
   EventRouter: Symbol('EventRouter'),
-  AnimationService: Symbol('AnimationService'),
   AnimationQueue: Symbol('AnimationQueue'),
 
   // ===== Stores =====
