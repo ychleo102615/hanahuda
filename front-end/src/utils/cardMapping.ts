@@ -39,6 +39,9 @@ const TYPE_MAP: Record<string, string> = {
 // 預設 fallback 圖示名稱
 export const DEFAULT_CARD_ICON_NAME = 'Hanafuda_Default'
 
+// 牌背圖示名稱
+export const CARD_BACK_ICON_NAME = 'Hanafuda_Back'
+
 /**
  * 將 MMTI 格式的卡片 ID 轉換為 SVG 檔名（不含 .svg 副檔名）
  *

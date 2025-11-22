@@ -111,16 +111,16 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T030 [P] [US3] 組件測試 DeckZone 剩餘牌數顯示在 front-end/tests/views/DeckZone.spec.ts
-- [ ] T031 [P] [US3] 組件測試 DeckZone 視覺堆疊效果在 front-end/tests/views/DeckZone.spec.ts
+- [x] T030 [P] [US3] 組件測試 DeckZone 剩餘牌數顯示在 front-end/tests/views/DeckZone.spec.ts
+- [x] T031 [P] [US3] 組件測試 DeckZone 視覺堆疊效果在 front-end/tests/views/DeckZone.spec.ts
 
 ### Implementation for User Story 3
 
-- [ ] T032 [P] [US3] 定義 DeckState 類型和 calculateVisualLayers 函數在 front-end/src/user-interface/adapter/stores/types.ts
-- [ ] T033 [US3] 建立 DeckZone.vue 組件在 front-end/src/views/GamePage/components/DeckZone.vue
-- [ ] T034 [US3] 實作牌堆視覺堆疊效果（3-4 層偏移）在 front-end/src/views/GamePage/components/DeckZone.vue
-- [ ] T035 [US3] 實作剩餘牌數顯示在 front-end/src/views/GamePage/components/DeckZone.vue
-- [ ] T036 [US3] 整合 DeckZone 到 GamePage.vue（場牌區左側或右側）在 front-end/src/views/GamePage/GamePage.vue
+- [x] T032 [P] [US3] 新增 visualLayers getter 在 front-end/src/user-interface/adapter/stores/gameState.ts（整合於 GameStateStore）
+- [x] T033 [US3] 建立 DeckZone.vue 組件在 front-end/src/views/GamePage/components/DeckZone.vue
+- [x] T034 [US3] 實作牌堆視覺堆疊效果（3-4 層偏移）在 front-end/src/views/GamePage/components/DeckZone.vue
+- [x] T035 [US3] 實作剩餘牌數顯示在 front-end/src/views/GamePage/components/DeckZone.vue
+- [x] T036 [US3] 整合 DeckZone 到 GamePage.vue（場牌區右側）在 front-end/src/views/GamePage/GamePage.vue
 
 **Checkpoint**: User Story 3 fully functional - 牌堆組件顯示，剩餘牌數即時更新
 

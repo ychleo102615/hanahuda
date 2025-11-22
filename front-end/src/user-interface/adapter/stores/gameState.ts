@@ -85,6 +85,7 @@ export interface GameStateStoreGetters {
   opponentKoiKoiMultiplier: number // 對手 Koi-Koi 倍率
   groupedMyDepository: GroupedDepository // 玩家獲得區分組
   groupedOpponentDepository: GroupedDepository // 對手獲得區分組
+  visualLayers: number // 牌堆視覺堆疊層數 (1-4)
 }
 
 /**
@@ -188,6 +189,22 @@ export const useGameStateStore = defineStore('gameState', {
         RIBBON: this.opponentDepository.filter(id => getType(id) === 'RIBBON'),
         PLAIN: this.opponentDepository.filter(id => getType(id) === 'PLAIN'),
       }
+    },
+
+    /**
+     * 牌堆視覺堆疊層數
+     *
+     * 根據牌堆剩餘數量計算應該顯示的堆疊層數：
+     * - >= 16 張: 4 層（完整堆疊）
+     * - >= 8 張: 3 層
+     * - >= 1 張: 2 層
+     * - 0 張: 1 層（空牌堆）
+     */
+    visualLayers(): number {
+      if (this.deckRemaining >= 16) return 4
+      if (this.deckRemaining >= 8) return 3
+      if (this.deckRemaining >= 1) return 2
+      return 1
     },
   },
 

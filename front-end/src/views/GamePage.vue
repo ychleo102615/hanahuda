@@ -16,6 +16,7 @@ import FieldZone from './GamePage/components/FieldZone.vue'
 import PlayerHandZone from './GamePage/components/PlayerHandZone.vue'
 import OpponentDepositoryZone from './GamePage/components/OpponentDepositoryZone.vue'
 import PlayerDepositoryZone from './GamePage/components/PlayerDepositoryZone.vue'
+import DeckZone from './GamePage/components/DeckZone.vue'
 import SelectionOverlay from './GamePage/components/SelectionOverlay.vue'
 import DecisionModal from './GamePage/components/DecisionModal.vue'
 import ErrorToast from './GamePage/components/ErrorToast.vue'
@@ -83,8 +84,9 @@ function handleFieldCardClick(cardId: string) {
     </section>
 
     <!-- 場中央牌區 (~30% viewport) -->
-    <section class="h-[30%] bg-green-800/50">
-      <FieldZone @card-click="handleFieldCardClick" />
+    <section class="h-[30%] bg-green-800/50 flex">
+      <FieldZone class="flex-1" @card-click="handleFieldCardClick" />
+      <DeckZone class="w-24 shrink-0" />
     </section>
 
     <!-- 玩家已獲得牌區 (~15% viewport) -->

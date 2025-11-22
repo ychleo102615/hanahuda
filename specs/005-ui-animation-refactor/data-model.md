@@ -352,22 +352,22 @@ interface DepositoryGroupDisplay {
 
 ### 6.1 DeckState
 
-牌堆狀態。
+牌堆狀態。**整合於 GameStateStore 作為 getter**。
 
 ```typescript
-interface DeckState {
-  remaining: number       // 剩餘張數 (0-24)
-  visualLayers: number    // 視覺堆疊層數 (1-4)
-}
+// GameStateStore state
+deckRemaining: number  // 剩餘張數 (0-24)
 
-// 視覺層數計算
-function calculateVisualLayers(remaining: number): number {
-  if (remaining >= 16) return 4
-  if (remaining >= 8) return 3
-  if (remaining >= 1) return 2
+// GameStateStore getter
+visualLayers(): number {
+  if (this.deckRemaining >= 16) return 4
+  if (this.deckRemaining >= 8) return 3
+  if (this.deckRemaining >= 1) return 2
   return 1
 }
 ```
+
+**設計決策**：`visualLayers` 作為 computed getter 而非獨立類型，與 `groupedMyDepository` 模式一致。
 
 ---
 
