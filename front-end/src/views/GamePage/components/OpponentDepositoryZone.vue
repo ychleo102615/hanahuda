@@ -1,5 +1,5 @@
 <template>
-  <div class="opponent-depository-zone w-full h-full overflow-x-auto">
+  <div ref="depositoryRef" class="opponent-depository-zone w-full h-full overflow-x-auto">
     <div class="flex gap-4 p-2 min-w-min h-full">
       <!-- 四個分組區塊：光牌 → 種牌 → 短冊 → かす -->
       <div
@@ -55,10 +55,14 @@
 
 import { computed } from 'vue'
 import { useGameStateStore } from '@/user-interface/adapter/stores/gameState'
+import { useZoneRegistration } from '@/user-interface/adapter/composables/useZoneRegistration'
 import CardComponent from './CardComponent.vue'
 import type { CardType } from '@/user-interface/domain/types'
 
 const gameStateStore = useGameStateStore()
+
+// 註冊區域位置
+const { elementRef: depositoryRef } = useZoneRegistration('opponent-depository')
 
 interface CardGroup {
   type: CardType

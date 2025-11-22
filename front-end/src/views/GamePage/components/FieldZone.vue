@@ -10,10 +10,14 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
+import { useZoneRegistration } from '../../../user-interface/adapter/composables/useZoneRegistration'
 import CardComponent from './CardComponent.vue'
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
+
+// 註冊區域位置
+const { elementRef: fieldRef } = useZoneRegistration('field')
 
 const { fieldCards } = storeToRefs(gameState)
 const { selectionMode, selectionPossibleTargets } = storeToRefs(uiState)
@@ -50,7 +54,7 @@ const displayCards = computed(() => {
 </script>
 
 <template>
-  <div class="h-full flex items-center justify-center p-4">
+  <div ref="fieldRef" class="h-full flex items-center justify-center p-4">
     <div class="grid grid-cols-4 grid-rows-2 gap-2">
       <template v-for="(cardId, index) in displayCards" :key="index">
         <CardComponent

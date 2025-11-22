@@ -10,11 +10,15 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
+import { useZoneRegistration } from '../../../user-interface/adapter/composables/useZoneRegistration'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { CARD_BACK_ICON_NAME } from '@/utils/cardMapping'
 
 const gameState = useGameStateStore()
 const { deckRemaining, visualLayers } = storeToRefs(gameState)
+
+// 註冊區域位置
+const { elementRef: deckRef } = useZoneRegistration('deck')
 
 // 產生堆疊層的偏移樣式
 const layerStyles = computed(() => {
@@ -30,7 +34,7 @@ const layerStyles = computed(() => {
 </script>
 
 <template>
-  <div class="relative flex flex-col items-center justify-center h-full p-2">
+  <div ref="deckRef" class="relative flex flex-col items-center justify-center h-full p-2">
     <!-- 牌堆視覺堆疊 -->
     <div class="relative w-16 h-24">
       <div

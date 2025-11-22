@@ -11,6 +11,7 @@ import type { Animation, AnimationParams, DealCardsParams, CardMoveParams, ZoneN
 import type { AnimationType } from './types'
 import type { AnimationParams as AppAnimationParams, AnimationType as AppAnimationType } from '../../application/ports/output/trigger-ui-effect.port'
 import { AnimationQueue, InterruptedError } from './AnimationQueue'
+import { ZoneRegistry, zoneRegistry } from './ZoneRegistry'
 import { useMotion } from '@vueuse/motion'
 
 /**
@@ -25,10 +26,19 @@ function sleep(ms: number): Promise<void> {
  */
 export class AnimationService {
   private queue: AnimationQueue
+  private registry: ZoneRegistry
 
-  constructor() {
+  constructor(registry: ZoneRegistry = zoneRegistry) {
     this.queue = new AnimationQueue()
     this.queue.setExecutor(this.executeAnimation.bind(this))
+    this.registry = registry
+  }
+
+  /**
+   * 取得 ZoneRegistry 實例
+   */
+  getRegistry(): ZoneRegistry {
+    return this.registry
   }
 
   /**
@@ -106,11 +116,33 @@ export class AnimationService {
 
     if (type === 'CARD_MOVE') {
       const appParams = params as AppAnimationParams<'CARD_MOVE'>
-      // CARD_MOVE 需要位置資訊，暫時使用預設值
+
+      // 將 Application Layer 的抽象位置轉換為 ZoneName
+      const fromZoneMap: Record<string, ZoneName> = {
+        hand: 'player-hand',
+        field: 'field',
+        deck: 'deck',
+      }
+      const toZoneMap: Record<string, ZoneName> = {
+        field: 'field',
+        depository: 'player-depository',
+      }
+
+      const fromZone = fromZoneMap[appParams.from]
+      const toZone = toZoneMap[appParams.to]
+
+      // 使用 ZoneRegistry 計算位置
+      const from = fromZone
+        ? this.registry.getCardPosition(fromZone, 0)
+        : { x: 0, y: 0 }
+      const to = toZone
+        ? this.registry.getCardPosition(toZone, 0)
+        : { x: 0, y: 0 }
+
       return {
         cardId: appParams.cardId,
-        from: { x: 0, y: 0 },
-        to: { x: 0, y: 0 },
+        from,
+        to,
         duration: 300,
       } as CardMoveParams
     }

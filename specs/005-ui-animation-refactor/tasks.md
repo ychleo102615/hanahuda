@@ -134,22 +134,22 @@
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T037 [P] [US4] 單元測試 ZoneRegistry register/unregister 在 front-end/tests/adapter/animation/ZoneRegistry.spec.ts
-- [ ] T038 [P] [US4] 單元測試 ZoneRegistry getPosition/getCardPosition 在 front-end/tests/adapter/animation/ZoneRegistry.spec.ts
-- [ ] T039 [P] [US4] 單元測試 AnimationService interrupt 機制在 front-end/tests/adapter/animation/AnimationService.spec.ts
-- [ ] T040 [P] [US4] 單元測試 AnimationPortAdapter isAnimating 狀態在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
+- [x] T037 [P] [US4] 單元測試 ZoneRegistry register/unregister 在 front-end/tests/adapter/animation/ZoneRegistry.spec.ts
+- [x] T038 [P] [US4] 單元測試 ZoneRegistry getPosition/getCardPosition 在 front-end/tests/adapter/animation/ZoneRegistry.spec.ts
+- [x] T039 [P] [US4] 單元測試 AnimationService interrupt 機制在 front-end/tests/adapter/animation/AnimationService.spec.ts
+- [x] T040 [P] [US4] 單元測試 AnimationPortAdapter isAnimating 狀態在 front-end/tests/adapter/animation/AnimationPortAdapter.spec.ts
 
 ### Implementation for User Story 4
 
-- [ ] T041 [US4] 實作 ZoneRegistry 類別在 front-end/src/user-interface/adapter/animation/ZoneRegistry.ts
-- [ ] T042 [US4] 實作 ZoneRegistry.register 使用 ResizeObserver 在 front-end/src/user-interface/adapter/animation/ZoneRegistry.ts
-- [ ] T043 [US4] 實作 ZoneRegistry.getPosition 和 getCardPosition 在 front-end/src/user-interface/adapter/animation/ZoneRegistry.ts
-- [ ] T044 [US4] 實作 ZoneRegistry.dispose 清理所有 observers 在 front-end/src/user-interface/adapter/animation/ZoneRegistry.ts
-- [ ] T045 [US4] 重構 AnimationService 使用 ZoneRegistry 在 front-end/src/user-interface/adapter/animation/AnimationService.ts
-- [ ] T046 [US4] 實作 useZoneRegistration composable（自動 register/unregister）在 front-end/src/user-interface/adapter/composables/useZoneRegistration.ts
-- [ ] T047 [US4] 實作 AnimationPortAdapter.interrupt 方法在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T048 [US4] 實作 AnimationPortAdapter.isAnimating 方法在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [ ] T049 [US4] 更新各區域組件使用 useZoneRegistration composable 註冊區域位置（FieldZone、HandZone、DepositoryZone、DeckZone）
+- [x] T041 [US4] 實作 ZoneRegistry 類別在 front-end/src/user-interface/adapter/animation/ZoneRegistry.ts
+- [x] T042 [US4] 實作 ZoneRegistry.register 使用 ResizeObserver 在 front-end/src/user-interface/adapter/animation/ZoneRegistry.ts
+- [x] T043 [US4] 實作 ZoneRegistry.getPosition 和 getCardPosition 在 front-end/src/user-interface/adapter/animation/ZoneRegistry.ts
+- [x] T044 [US4] 實作 ZoneRegistry.dispose 清理所有 observers 在 front-end/src/user-interface/adapter/animation/ZoneRegistry.ts
+- [x] T045 [US4] 重構 AnimationService 使用 ZoneRegistry 在 front-end/src/user-interface/adapter/animation/AnimationService.ts
+- [x] T046 [US4] 實作 useZoneRegistration composable（自動 register/unregister）在 front-end/src/user-interface/adapter/composables/useZoneRegistration.ts
+- [x] T047 [US4] 實作 AnimationPortAdapter.interrupt 方法在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [x] T048 [US4] 實作 AnimationPortAdapter.isAnimating 方法在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
+- [x] T049 [US4] 更新各區域組件使用 useZoneRegistration composable 註冊區域位置（FieldZone、HandZone、DepositoryZone、DeckZone）
 
 **Checkpoint**: User Story 4 fully functional - 區域位置可追蹤，AnimationPort 基礎實作完成
 

@@ -1,0 +1,178 @@
+/**
+ * ZoneRegistry - 區域位置註冊表
+ *
+ * @description
+ * 管理所有遊戲區域（場牌、手牌、獲得區等）的螢幕位置追蹤。
+ * 使用 ResizeObserver 監聽元素大小變化，自動更新位置資訊。
+ * 供 AnimationService 計算卡片移動動畫的起點/終點座標。
+ *
+ * @since Phase 6 - User Story 4
+ */
+
+import type { ZoneName, ZonePosition, Position } from './types'
+
+/**
+ * 區域註冊資料
+ */
+interface ZoneEntry {
+  element: HTMLElement
+  position: ZonePosition
+  observer: ResizeObserver
+}
+
+/**
+ * 卡片佈局常數
+ */
+const CARD_WIDTH = 60  // px
+const CARD_GAP = 8     // px
+
+/**
+ * ZoneRegistry 類別
+ *
+ * @description
+ * Adapter 層內部實現，不暴露到 Application Port。
+ * 使用 ResizeObserver 追蹤區域位置變化。
+ */
+export class ZoneRegistry {
+  private zones: Map<ZoneName, ZoneEntry> = new Map()
+
+  /**
+   * 註冊區域
+   *
+   * @param zoneName - 區域名稱
+   * @param element - 區域 DOM 元素
+   */
+  register(zoneName: ZoneName, element: HTMLElement): void {
+    // 若已存在，先取消註冊
+    if (this.zones.has(zoneName)) {
+      this.unregister(zoneName)
+    }
+
+    // 建立初始位置
+    const rect = element.getBoundingClientRect()
+    const position: ZonePosition = {
+      zoneName,
+      rect,
+    }
+
+    // 建立 ResizeObserver
+    const observer = new ResizeObserver(() => {
+      this.updatePosition(zoneName, element)
+    })
+
+    observer.observe(element)
+
+    // 儲存註冊資料
+    this.zones.set(zoneName, {
+      element,
+      position,
+      observer,
+    })
+  }
+
+  /**
+   * 取消註冊區域
+   *
+   * @param zoneName - 區域名稱
+   */
+  unregister(zoneName: ZoneName): void {
+    const entry = this.zones.get(zoneName)
+    if (!entry) {
+      return
+    }
+
+    entry.observer.disconnect()
+    this.zones.delete(zoneName)
+  }
+
+  /**
+   * 取得區域位置
+   *
+   * @param zoneName - 區域名稱
+   * @returns 區域位置資訊，若未註冊則返回 null
+   */
+  getPosition(zoneName: ZoneName): ZonePosition | null {
+    const entry = this.zones.get(zoneName)
+    if (!entry) {
+      return null
+    }
+
+    // 返回最新位置
+    return entry.position
+  }
+
+  /**
+   * 計算卡片在區域中的位置
+   *
+   * @param zoneName - 區域名稱
+   * @param cardIndex - 卡片索引（從 0 開始）
+   * @returns 卡片的螢幕座標
+   */
+  getCardPosition(zoneName: ZoneName, cardIndex: number): Position {
+    const entry = this.zones.get(zoneName)
+    if (!entry) {
+      return { x: 0, y: 0 }
+    }
+
+    const { rect } = entry.position
+    const index = Math.max(0, cardIndex) // 處理負數索引
+
+    // 計算卡片在區域中的水平偏移
+    const xOffset = index * (CARD_WIDTH + CARD_GAP)
+
+    return {
+      x: rect.left + xOffset,
+      y: rect.top,
+    }
+  }
+
+  /**
+   * 取得所有已註冊的區域名稱
+   *
+   * @returns 區域名稱陣列
+   */
+  getAllZones(): ZoneName[] {
+    return Array.from(this.zones.keys())
+  }
+
+  /**
+   * 清理所有註冊和 observers
+   */
+  dispose(): void {
+    for (const entry of this.zones.values()) {
+      entry.observer.disconnect()
+    }
+    this.zones.clear()
+  }
+
+  /**
+   * 更新區域位置
+   *
+   * @param zoneName - 區域名稱
+   * @param element - 區域 DOM 元素
+   */
+  private updatePosition(zoneName: ZoneName, element: HTMLElement): void {
+    const entry = this.zones.get(zoneName)
+    if (!entry) {
+      return
+    }
+
+    const rect = element.getBoundingClientRect()
+    entry.position = {
+      zoneName,
+      rect,
+    }
+  }
+}
+
+/**
+ * 建立 ZoneRegistry 實例
+ *
+ * @returns ZoneRegistry 實例
+ */
+export function createZoneRegistry(): ZoneRegistry {
+  return new ZoneRegistry()
+}
+
+// 導出單例（供 DI Container 使用）
+export const zoneRegistry = new ZoneRegistry()

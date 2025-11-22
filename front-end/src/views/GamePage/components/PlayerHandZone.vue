@@ -12,6 +12,7 @@ import { ref, inject } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
+import { useZoneRegistration } from '../../../user-interface/adapter/composables/useZoneRegistration'
 import CardComponent from './CardComponent.vue'
 import { TOKENS } from '../../../user-interface/adapter/di/tokens'
 import type { PlayHandCardPort } from '../../../user-interface/application/ports/input'
@@ -20,6 +21,9 @@ import { getCardById } from '../../../user-interface/domain'
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
+
+// 註冊區域位置
+const { elementRef: handRef } = useZoneRegistration('player-hand')
 const { myHandCards, isMyTurn, fieldCards } = storeToRefs(gameState)
 
 const selectedCardId = ref<string | null>(null)
@@ -106,7 +110,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="h-full flex items-center justify-center p-4 overflow-x-auto">
+  <div ref="handRef" class="h-full flex items-center justify-center p-4 overflow-x-auto">
     <div class="flex gap-2">
       <CardComponent
         v-for="cardId in myHandCards"
