@@ -82,11 +82,12 @@ export class AnimationPortAdapter implements AnimationPort {
       fieldCards: params.fieldCards.length,
       playerHandCards: params.playerHandCards.length,
       opponentHandCount: params.opponentHandCount,
+      isPlayerDealer: params.isPlayerDealer,
       deckPosition: deckPosition ? 'found' : 'not registered',
     })
 
     // 若無牌可發，直接返回
-    if (params.fieldCards.length === 0 && params.playerHandCards.length === 0) {
+    if (params.fieldCards.length === 0 && params.playerHandCards.length === 0 && params.opponentHandCount === 0) {
       this._isAnimating = false
       return
     }
@@ -99,14 +100,67 @@ export class AnimationPortAdapter implements AnimationPort {
     await new Promise(resolve => requestAnimationFrame(resolve))
     await new Promise(resolve => requestAnimationFrame(resolve))
 
-    // T059/T061: 實作 staggered 發牌動畫
-    // 發牌順序：先發場牌，再發玩家手牌
-    // 每張牌間隔 DEAL_STAGGER ms
-
     try {
-      // Phase 1: 發場牌 (8 張)
-      for (let i = 0; i < params.fieldCards.length; i++) {
+      // 花札發牌順序：4 輪手牌 → 場牌
+      // 每輪：莊家 2 張 → 閒家 2 張
+
+      let playerCardIndex = 0
+      let opponentCardIndex = 0
+
+      // 4 輪手牌發牌
+      for (let round = 0; round < 4; round++) {
         // 檢查中斷
+        if (this._interrupted) {
+          this._interrupted = false
+          return
+        }
+
+        // 決定發牌順序：莊家先發
+        const dealOrder = params.isPlayerDealer
+          ? ['player', 'opponent'] as const
+          : ['opponent', 'player'] as const
+
+        for (const target of dealOrder) {
+          // 每次發 2 張
+          for (let j = 0; j < 2; j++) {
+            if (this._interrupted) {
+              this._interrupted = false
+              return
+            }
+
+            if (target === 'player') {
+              // 發玩家手牌
+              if (playerCardIndex < params.playerHandCards.length) {
+                const cardId = params.playerHandCards[playerCardIndex]!
+                const cardElement = findCardElement(cardId)
+
+                if (cardElement && deckPosition && !this._interrupted) {
+                  params.onCardDealt?.()
+                  this.animateSingleDealCard(cardElement, deckPosition.rect)
+                  await sleep(ANIMATION_DURATION.DEAL_CARD)
+                }
+                playerCardIndex++
+              }
+            } else {
+              // 發對手手牌
+              if (opponentCardIndex < params.opponentHandCount) {
+                if (deckPosition && !this._interrupted) {
+                  params.onCardDealt?.()
+                  this.animateOpponentDealCard(opponentCardIndex, deckPosition.rect)
+                  await sleep(ANIMATION_DURATION.DEAL_CARD)
+                }
+                opponentCardIndex++
+              }
+            }
+
+            // 每張牌延遲
+            await sleep(ANIMATION_DURATION.DEAL_STAGGER)
+          }
+        }
+      }
+
+      // 第 5 輪：發場牌 (8 張)
+      for (let i = 0; i < params.fieldCards.length; i++) {
         if (this._interrupted) {
           this._interrupted = false
           return
@@ -115,56 +169,17 @@ export class AnimationPortAdapter implements AnimationPort {
         const cardId = params.fieldCards[i]!
         const cardElement = findCardElement(cardId)
 
-        // 執行單張發牌動畫
         if (cardElement && deckPosition && !this._interrupted) {
           params.onCardDealt?.()
           this.animateSingleDealCard(cardElement, deckPosition.rect)
           await sleep(ANIMATION_DURATION.DEAL_CARD)
         }
 
-        // 再次檢查中斷
-        if (this._interrupted) {
-          this._interrupted = false
-          return
-        }
-
-        // T061: 每張牌延遲（但最後一張不需要）
-        if (i < params.fieldCards.length - 1 || params.playerHandCards.length > 0) {
+        // 每張牌延遲（最後一張不需要）
+        if (i < params.fieldCards.length - 1) {
           await sleep(ANIMATION_DURATION.DEAL_STAGGER)
         }
       }
-
-      // Phase 2: 發玩家手牌 (8 張)
-      for (let i = 0; i < params.playerHandCards.length; i++) {
-        // 檢查中斷
-        if (this._interrupted) {
-          this._interrupted = false
-          return
-        }
-
-        const cardId = params.playerHandCards[i]!
-        const cardElement = findCardElement(cardId)
-
-        // 執行單張發牌動畫
-        if (cardElement && deckPosition && !this._interrupted) {
-          params.onCardDealt?.()
-          this.animateSingleDealCard(cardElement, deckPosition.rect)
-          await sleep(ANIMATION_DURATION.DEAL_CARD)
-        }
-
-        // 再次檢查中斷
-        if (this._interrupted) {
-          this._interrupted = false
-          return
-        }
-
-        // T061: 每張牌延遲（但最後一張不需要）
-        if (i < params.playerHandCards.length - 1) {
-          await sleep(ANIMATION_DURATION.DEAL_STAGGER)
-        }
-      }
-
-      // 對手手牌不播放動畫（牌面朝下，直接出現）- 這裡不需要處理
     } finally {
       this._isAnimating = false
     }
@@ -205,6 +220,55 @@ export class AnimationPortAdapter implements AnimationPort {
 
     // 動畫完成後顯示原始卡片
     this.animationLayerStore.showCard(cardId)
+  }
+
+  /**
+   * 對手發牌動畫輔助方法
+   * @private
+   * @param cardIndex - 卡片索引（用於計算目標位置）
+   * @param fromRect - 牌堆位置（動畫起點）
+   */
+  private async animateOpponentDealCard(
+    cardIndex: number,
+    fromRect: DOMRect
+  ): Promise<void> {
+    // 獲取對手手牌區域位置
+    const opponentHandPosition = this.registry.getPosition('opponent-hand')
+    if (!opponentHandPosition) {
+      console.warn('[AnimationPort] opponent-hand zone not registered')
+      return
+    }
+
+    // 計算目標位置（使用 getCardPosition 計算每張牌的位置）
+    const cardPosition = this.registry.getCardPosition('opponent-hand', cardIndex)
+    if (!cardPosition) {
+      console.warn('[AnimationPort] Cannot calculate card position for index', cardIndex)
+      return
+    }
+
+    // 創建虛擬 cardId 用於動畫
+    const virtualCardId = `opponent-hand-${cardIndex}`
+
+    // 創建目標 DOMRect
+    const toRect = new DOMRect(
+      cardPosition.x,
+      cardPosition.y,
+      60,  // CARD_WIDTH
+      90   // CARD_HEIGHT (估算)
+    )
+
+    // 通過 store 添加動畫卡片，設定 isFaceDown 為 true
+    await new Promise<void>(resolve => {
+      this.animationLayerStore.addCard({
+        cardId: virtualCardId,
+        fromRect,
+        toRect,
+        onComplete: resolve,
+        isFaceDown: true,  // 對手牌顯示牌背
+      })
+    })
+
+    // 對手牌不需要 showCard，動畫完成後直接移除
   }
 
   async playCardToFieldAnimation(cardId: string, isOpponent: boolean): Promise<void> {

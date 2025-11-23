@@ -218,6 +218,7 @@ export function createMockGameStatePort(): GameStatePort {
     restoreGameState: vi.fn(),
     setFlowStage: vi.fn(),
     setActivePlayer: vi.fn(),
+    setDealerId: vi.fn(),
     updateFieldCards: vi.fn(),
     updateHandCards: vi.fn(),
     updateOpponentHandCount: vi.fn(),
@@ -229,6 +230,7 @@ export function createMockGameStatePort(): GameStatePort {
     getFieldCards: vi.fn().mockReturnValue([]),
     getDepositoryCards: vi.fn().mockReturnValue([]),
     getDeckRemaining: vi.fn().mockReturnValue(48),
+    getDealerId: vi.fn().mockReturnValue(null),
   }
 }
 

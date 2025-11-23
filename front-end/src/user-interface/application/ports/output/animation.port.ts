@@ -52,6 +52,8 @@ export interface DealAnimationParams {
   readonly playerHandCards: readonly string[]
   /** 對手手牌數量（不顯示具體牌面） */
   readonly opponentHandCount: number
+  /** 玩家是否為莊家（決定發牌順序） */
+  readonly isPlayerDealer: boolean
   /** 每張牌發完的回調（用於更新牌堆數量） */
   readonly onCardDealt?: () => void
 }

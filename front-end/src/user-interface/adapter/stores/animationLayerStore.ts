@@ -21,6 +21,8 @@ export interface AnimatingCard {
   toRect: DOMRect
   /** 動畫完成回調 */
   onComplete: () => void
+  /** 是否顯示牌背（用於對手手牌） */
+  isFaceDown?: boolean
 }
 
 /**

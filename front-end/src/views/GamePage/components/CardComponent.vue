@@ -10,7 +10,7 @@
 
 import { computed, ref } from 'vue'
 import SvgIcon from '@/components/SvgIcon.vue'
-import { getCardIconName } from '@/utils/cardMapping'
+import { getCardIconName, CARD_BACK_ICON_NAME } from '@/utils/cardMapping'
 import { useMotion } from '@vueuse/motion'
 import { useAnimationLayerStore } from '@/user-interface/adapter/stores'
 
@@ -89,7 +89,7 @@ function handleClick() {
 // 取得卡片圖標名稱
 const cardIconName = computed(() => {
   if (props.isFaceDown) {
-    return 'card-back'
+    return CARD_BACK_ICON_NAME
   }
   return getCardIconName(props.cardId)
 })

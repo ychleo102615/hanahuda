@@ -30,6 +30,7 @@ function createMockZoneRegistry(): ZoneRegistry {
     getPosition: vi.fn().mockReturnValue({
       rect: { x: 0, y: 0, width: 100, height: 150 } as DOMRect,
     }),
+    getCardPosition: vi.fn().mockReturnValue({ x: 0, y: -150 }),
     clear: vi.fn(),
   }
 }

@@ -24,6 +24,10 @@ import GameFinishedModal from './GamePage/components/GameFinishedModal.vue'
 import ReconnectionBanner from './GamePage/components/ReconnectionBanner.vue'
 import AnimationLayer from './GamePage/components/AnimationLayer.vue'
 import { TOKENS } from '../user-interface/adapter/di/tokens'
+import { useZoneRegistration } from '../user-interface/adapter/composables/useZoneRegistration'
+
+// 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
+const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
@@ -74,6 +78,14 @@ function handleFieldCardClick(cardId: string) {
 
 <template>
   <div class="h-screen w-screen flex flex-col bg-green-900 overflow-hidden">
+    <!-- 虛擬對手手牌區域（viewport 上方，用於發牌動畫目標） -->
+    <div
+      ref="opponentHandRef"
+      class="fixed w-full h-24"
+      style="top: -150px; left: 0;"
+      aria-hidden="true"
+    />
+
     <!-- 頂部資訊列 (~10% viewport) -->
     <header class="h-[10%] min-h-12">
       <TopInfoBar />

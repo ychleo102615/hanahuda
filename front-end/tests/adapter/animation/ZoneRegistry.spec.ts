@@ -170,28 +170,25 @@ describe('ZoneRegistry', () => {
       expect(position?.rect.y).toBe(250)
     })
 
-    it('should calculate card position based on index', () => {
+    it('should calculate card position as zone center', () => {
       // Setup element for card layout calculation
       vi.spyOn(mockElement, 'getBoundingClientRect').mockReturnValue({
         x: 0, y: 0, width: 400, height: 100,
-        top: 0, left: 0, right: 400, bottom: 100,
+        top: 50, left: 100, right: 500, bottom: 150,
         toJSON: () => ({}),
       } as DOMRect)
 
       registry.register('player-hand', mockElement)
 
-      // 假設卡片寬度 50px，間距 10px
+      // 目前實現返回區域中心 x 座標和頂部 y 座標
       const pos0 = registry.getCardPosition('player-hand', 0)
       const pos1 = registry.getCardPosition('player-hand', 1)
-      const pos2 = registry.getCardPosition('player-hand', 2)
 
-      // 第一張卡應在區域起點
-      expect(pos0.x).toBeGreaterThanOrEqual(0)
-      expect(pos0.y).toBeGreaterThanOrEqual(0)
-
-      // 後續卡片應該有偏移
-      expect(pos1.x).toBeGreaterThan(pos0.x)
-      expect(pos2.x).toBeGreaterThan(pos1.x)
+      // 所有卡片位置應相同（區域中心）
+      expect(pos0.x).toBe(300) // left (100) + width (400) / 2
+      expect(pos0.y).toBe(50)  // top
+      expect(pos1.x).toBe(pos0.x)
+      expect(pos1.y).toBe(pos0.y)
     })
 
     it('should return default position for unregistered zone card position', () => {

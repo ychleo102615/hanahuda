@@ -43,6 +43,10 @@ export function createGameStatePortAdapter(): GameStatePort {
       store.activePlayerId = playerId
     },
 
+    setDealerId(playerId: string): void {
+      store.dealerId = playerId
+    },
+
     updateFieldCards(cards: string[]): void {
       store.updateFieldCards(cards)
     },
@@ -91,6 +95,10 @@ export function createGameStatePortAdapter(): GameStatePort {
 
     getDeckRemaining(): number {
       return store.deckRemaining
+    },
+
+    getDealerId(): string | null {
+      return store.dealerId
     },
   }
 }

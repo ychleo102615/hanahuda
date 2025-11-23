@@ -104,6 +104,7 @@ function startAnimationIfNeeded(cardId: string) {
         <CardComponent
           :card-id="card.cardId"
           :is-animation-clone="true"
+          :is-face-down="card.isFaceDown"
         />
       </div>
     </div>

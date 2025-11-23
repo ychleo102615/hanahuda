@@ -58,6 +58,7 @@ export interface GameStateStoreState {
   // 流程狀態
   flowStage: FlowState | null
   activePlayerId: string | null
+  dealerId: string | null // 當前回合莊家
 
   // 牌面狀態
   fieldCards: string[] // 場上卡片 ID 列表
@@ -109,6 +110,7 @@ export const useGameStateStore = defineStore('gameState', {
     // 流程狀態
     flowStage: null,
     activePlayerId: null,
+    dealerId: null,
 
     // 牌面狀態
     fieldCards: [],
@@ -390,6 +392,7 @@ export const useGameStateStore = defineStore('gameState', {
 
       this.flowStage = null
       this.activePlayerId = null
+      this.dealerId = null
 
       this.fieldCards = []
       this.myHandCards = []

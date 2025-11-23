@@ -121,6 +121,18 @@ export interface GameStatePort {
   setActivePlayer(playerId: string): void
 
   /**
+   * 設定當前回合莊家
+   *
+   * @param playerId - 莊家玩家 ID
+   *
+   * @example
+   * ```typescript
+   * gameState.setDealerId('player-1')
+   * ```
+   */
+  setDealerId(playerId: string): void
+
+  /**
    * 更新場牌列表
    *
    * @param cards - 場牌 ID 列表
@@ -267,4 +279,17 @@ export interface GameStatePort {
    * ```
    */
   getDeckRemaining(): number
+
+  /**
+   * 取得當前回合莊家 ID
+   *
+   * @returns 莊家玩家 ID，若未設定則返回 null
+   *
+   * @example
+   * ```typescript
+   * const dealerId = gameState.getDealerId()
+   * const isPlayerDealer = dealerId === localPlayerId
+   * ```
+   */
+  getDealerId(): string | null
 }

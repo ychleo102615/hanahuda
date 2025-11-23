@@ -44,6 +44,10 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
   private async executeAsync(event: RoundDealtEvent): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
 
+    // 記錄莊家 ID
+    this.gameState.setDealerId(event.dealer_id)
+    const isPlayerDealer = event.dealer_id === localPlayerId
+
     // 1. 先更新遊戲狀態（讓卡片元素在 DOM 中渲染）
     // 這樣動畫系統才能找到卡片元素
     this.gameState.updateFieldCards([...event.field])
@@ -67,6 +71,7 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
       fieldCards: [...event.field],
       playerHandCards: playerHand ? [...playerHand.cards] : [],
       opponentHandCount: opponentHand ? opponentHand.cards.length : 0,
+      isPlayerDealer,
       onCardDealt: () => {
         const current = this.gameState.getDeckRemaining()
         this.gameState.updateDeckRemaining(current - 1)

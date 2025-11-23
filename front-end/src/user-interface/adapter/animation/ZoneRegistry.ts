@@ -21,12 +21,6 @@ interface ZoneEntry {
 }
 
 /**
- * 卡片佈局常數
- */
-const CARD_WIDTH = 60  // px
-const CARD_GAP = 8     // px
-
-/**
  * ZoneRegistry 類別
  *
  * @description
@@ -115,13 +109,8 @@ export class ZoneRegistry {
     }
 
     const { rect } = entry.position
-    const index = Math.max(0, cardIndex) // 處理負數索引
-
-    // 計算卡片在區域中的水平偏移
-    const xOffset = index * (CARD_WIDTH + CARD_GAP)
-
     return {
-      x: rect.left + xOffset,
+      x: rect.left + rect.width / 2,
       y: rect.top,
     }
   }
