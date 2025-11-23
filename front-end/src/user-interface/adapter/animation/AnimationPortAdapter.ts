@@ -118,7 +118,8 @@ export class AnimationPortAdapter implements AnimationPort {
         // 執行單張發牌動畫
         if (cardElement && deckPosition && !this._interrupted) {
           params.onCardDealt?.()
-          await this.animateSingleDealCard(cardElement, deckPosition.rect)
+          this.animateSingleDealCard(cardElement, deckPosition.rect)
+          await sleep(ANIMATION_DURATION.DEAL_CARD)
         }
 
         // 再次檢查中斷
@@ -146,9 +147,9 @@ export class AnimationPortAdapter implements AnimationPort {
 
         // 執行單張發牌動畫
         if (cardElement && deckPosition && !this._interrupted) {
-          await this.animateSingleDealCard(cardElement, deckPosition.rect)
-          // 每張牌發完後調用回調（更新牌堆數量）
           params.onCardDealt?.()
+          this.animateSingleDealCard(cardElement, deckPosition.rect)
+          await sleep(ANIMATION_DURATION.DEAL_CARD)
         }
 
         // 再次檢查中斷

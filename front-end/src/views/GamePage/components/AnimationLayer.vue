@@ -78,28 +78,12 @@ function startAnimationIfNeeded(cardId: string) {
 
   // 執行動畫並等待完成
   apply('enter')?.then(() => {
-    // 短暫延遲確保動畫完全結束
-    setTimeout(() => {
-      card.onComplete()
-      store.removeCard(card.cardId)
-      animatedCardIds.value.delete(cardId)
-    }, 80)
+    card.onComplete()
+    store.removeCard(card.cardId)
+    animatedCardIds.value.delete(cardId)
   })
 }
 
-// 監聽新卡片加入
-watch(
-  () => [...store.animatingCards],
-  async (newCards) => {
-    await nextTick()
-
-    // 為所有新卡片開始動畫
-    for (const card of newCards) {
-      startAnimationIfNeeded(card.cardId)
-    }
-  },
-  { deep: true }
-)
 </script>
 
 <template>
