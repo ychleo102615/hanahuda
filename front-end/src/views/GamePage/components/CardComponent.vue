@@ -66,7 +66,7 @@ const sizeClasses = computed(() => {
 // 容器樣式 - 移除 hover:scale 因為改用 @vueuse/motion
 const containerClasses = computed(() => {
   return [
-    'inline-flex items-center justify-center p-1 rounded-md transition-shadow duration-200',
+    'inline-flex items-center justify-center rounded-md transition-shadow duration-200',
     {
       // 可選狀態 - 只保留 cursor 和 shadow，scale 由 motion 處理
       'cursor-pointer hover:drop-shadow-lg': props.isSelectable,

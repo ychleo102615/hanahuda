@@ -111,7 +111,7 @@ defineExpose({
 
 <template>
   <div ref="handRef" class="h-full flex items-center justify-center p-4 overflow-x-auto">
-    <div class="flex gap-2">
+    <div class="flex gap-3">
       <CardComponent
         v-for="cardId in myHandCards"
         :key="cardId"

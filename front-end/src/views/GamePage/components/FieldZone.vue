@@ -55,7 +55,7 @@ const displayCards = computed(() => {
 
 <template>
   <div ref="fieldRef" class="h-full flex items-center justify-center p-4">
-    <div class="grid grid-cols-4 grid-rows-2 gap-2">
+    <div class="grid grid-cols-4 grid-rows-2 gap-4">
       <template v-for="(cardId, index) in displayCards" :key="index">
         <CardComponent
           v-if="cardId"
@@ -64,10 +64,6 @@ const displayCards = computed(() => {
           :is-selectable="isSelectable(cardId)"
           size="md"
           @click="handleCardClick"
-        />
-        <div
-          v-else
-          class="h-24 w-16 rounded-md border-2 border-dashed border-gray-600 bg-gray-800/50"
         />
       </template>
     </div>
