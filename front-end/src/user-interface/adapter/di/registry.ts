@@ -49,7 +49,8 @@ import { MockApiClient } from '../mock/MockApiClient'
 import { MockEventEmitter } from '../mock/MockEventEmitter'
 import { EventRouter } from '../sse/EventRouter'
 import { AnimationQueue } from '../animation/AnimationQueue'
-import { createAnimationPortAdapter } from '../animation/AnimationPortAdapter'
+import { AnimationPortAdapter } from '../animation/AnimationPortAdapter'
+import { zoneRegistry } from '../animation/ZoneRegistry'
 import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
 import { createGameStatePortAdapter } from '../stores/GameStatePortAdapter'
 
@@ -123,6 +124,12 @@ function registerStores(container: DIContainer): void {
     () => useAnimationLayerStore(),
     { singleton: true },
   )
+
+  container.register(
+    TOKENS.ZoneRegistry,
+    () => zoneRegistry,
+    { singleton: true },
+  )
 }
 
 /**
@@ -165,11 +172,14 @@ function registerOutputPorts(container: DIContainer): void {
   )
 
   // AnimationPort: 由 AnimationPortAdapter 實作
-  // 注入 AnimationLayerStore 支援跨容器動畫
-  const animationLayerStore = container.resolve(TOKENS.AnimationLayerStore) as ReturnType<typeof useAnimationLayerStore>
+  // 從 container resolve 依賴，統一由 DI 管理
   container.register(
     TOKENS.AnimationPort,
-    () => createAnimationPortAdapter(animationLayerStore),
+    () => {
+      const registry = container.resolve(TOKENS.ZoneRegistry) as typeof zoneRegistry
+      const animationLayerStore = container.resolve(TOKENS.AnimationLayerStore) as ReturnType<typeof useAnimationLayerStore>
+      return new AnimationPortAdapter(registry, animationLayerStore)
+    },
     { singleton: true },
   )
 

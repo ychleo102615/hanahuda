@@ -77,16 +77,14 @@ function startAnimationIfNeeded(cardId: string) {
   })
 
   // 執行動畫並等待完成
-  if (apply) {
-    apply('enter')?.then(() => {
-      // 短暫延遲確保動畫完全結束
-      setTimeout(() => {
-        card.onComplete()
-        store.removeCard(card.cardId)
-        animatedCardIds.value.delete(cardId)
-      }, 80)
-    })
-  }
+  apply('enter')?.then(() => {
+    // 短暫延遲確保動畫完全結束
+    setTimeout(() => {
+      card.onComplete()
+      store.removeCard(card.cardId)
+      animatedCardIds.value.delete(cardId)
+    }, 80)
+  })
 }
 
 // 監聽新卡片加入

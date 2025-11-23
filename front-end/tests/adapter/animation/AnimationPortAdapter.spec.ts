@@ -12,6 +12,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { AnimationPortAdapter } from '@/user-interface/adapter/animation/AnimationPortAdapter'
+import type { ZoneRegistry } from '@/user-interface/adapter/animation/ZoneRegistry'
+import type { AnimationLayerStore } from '@/user-interface/adapter/stores'
 
 // Mock @vueuse/motion for testing
 vi.mock('@vueuse/motion', () => ({
@@ -20,12 +22,44 @@ vi.mock('@vueuse/motion', () => ({
   })),
 }))
 
+// Mock ZoneRegistry
+function createMockZoneRegistry(): ZoneRegistry {
+  return {
+    register: vi.fn(),
+    unregister: vi.fn(),
+    getPosition: vi.fn().mockReturnValue({
+      rect: { x: 0, y: 0, width: 100, height: 150 } as DOMRect,
+    }),
+    clear: vi.fn(),
+  }
+}
+
+// Mock AnimationLayerStore
+function createMockAnimationLayerStore(): AnimationLayerStore {
+  return {
+    cards: [],
+    hiddenCardIds: new Set(),
+    addCard: vi.fn((params) => {
+      // 模擬動畫完成
+      setTimeout(() => params.onComplete?.(), 0)
+    }),
+    removeCard: vi.fn(),
+    showCard: vi.fn(),
+    hideCards: vi.fn(),
+    clearAll: vi.fn(),
+  } as unknown as AnimationLayerStore
+}
+
 describe('AnimationPortAdapter', () => {
   let adapter: AnimationPortAdapter
+  let mockRegistry: ZoneRegistry
+  let mockAnimationLayerStore: AnimationLayerStore
 
   beforeEach(() => {
     vi.useFakeTimers()
-    adapter = new AnimationPortAdapter()
+    mockRegistry = createMockZoneRegistry()
+    mockAnimationLayerStore = createMockAnimationLayerStore()
+    adapter = new AnimationPortAdapter(mockRegistry, mockAnimationLayerStore)
   })
 
   afterEach(() => {

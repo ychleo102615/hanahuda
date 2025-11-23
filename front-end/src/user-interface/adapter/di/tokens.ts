@@ -48,6 +48,7 @@ export const TOKENS = {
   GameStateStore: Symbol('GameStateStore'),
   UIStateStore: Symbol('UIStateStore'),
   AnimationLayerStore: Symbol('AnimationLayerStore'),
+  ZoneRegistry: Symbol('ZoneRegistry'),
 
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),

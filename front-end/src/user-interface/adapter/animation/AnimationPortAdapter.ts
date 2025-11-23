@@ -34,7 +34,7 @@ const ANIMATION_DURATION = {
   MATCH_EFFECT: 150,
   TO_DEPOSITORY: 300,
   DEAL_CARD: 80,        // 單張發牌動畫時長
-  DEAL_STAGGER: 100,    // 每張卡片延遲（T061）
+  DEAL_STAGGER: 0,    // 每張卡片延遲（T061）
   FLIP_FROM_DECK: 200,  // 翻牌動畫時長
 }
 
@@ -55,11 +55,11 @@ export class AnimationPortAdapter implements AnimationPort {
   private _isAnimating = false
   private _interrupted = false
   private registry: ZoneRegistry
-  private animationLayerStore: AnimationLayerStore | null
+  private animationLayerStore: AnimationLayerStore
 
   constructor(
-    registry: ZoneRegistry = zoneRegistry,
-    animationLayerStore: AnimationLayerStore | null = null
+    registry: ZoneRegistry,
+    animationLayerStore: AnimationLayerStore
   ) {
     this.registry = registry
     this.animationLayerStore = animationLayerStore
@@ -117,9 +117,8 @@ export class AnimationPortAdapter implements AnimationPort {
 
         // 執行單張發牌動畫
         if (cardElement && deckPosition && !this._interrupted) {
-          await this.animateSingleDealCard(cardElement, deckPosition.rect)
-          // 每張牌發完後調用回調（更新牌堆數量）
           params.onCardDealt?.()
+          await this.animateSingleDealCard(cardElement, deckPosition.rect)
         }
 
         // 再次檢查中斷
@@ -188,61 +187,23 @@ export class AnimationPortAdapter implements AnimationPort {
     const cardId = cardElement.getAttribute('data-card-id')
     const cardRect = cardElement.getBoundingClientRect()
 
-    // 如果有動畫層 store，使用 Vue 組件方式
-    if (this.animationLayerStore && cardId) {
-      // 通過 store 添加動畫卡片，等待動畫完成
-      await new Promise<void>(resolve => {
-        this.animationLayerStore!.addCard({
-          cardId,
-          fromRect,
-          toRect: cardRect,
-          onComplete: resolve,
-        })
-      })
-
-      // 動畫完成後顯示原始卡片
-      this.animationLayerStore.showCard(cardId)
+    // 使用動畫層 Vue 組件方式
+    if (!cardId) {
       return
     }
 
-    // Fallback: 無動畫層時使用原有邏輯
-    const originalZIndex = cardElement.style.zIndex
-    const originalPosition = cardElement.style.position
-    cardElement.style.zIndex = '9999'
-    cardElement.style.position = 'relative'
-
-    // 計算從牌堆到目標位置的位移
-    const initialX = fromRect.x + fromRect.width / 2 - cardRect.x - cardRect.width / 2
-    const initialY = fromRect.y + fromRect.height / 2 - cardRect.y - cardRect.height / 2
-
-    const { apply } = useMotion(cardElement, {
-      initial: {
-        x: initialX,
-        y: initialY,
-        scale: 0.8,
-        opacity: 0,
-      },
-      enter: {
-        x: 0,
-        y: 0,
-        scale: 1,
-        opacity: 1,
-        transition: {
-          type: 'spring',
-          stiffness: 300,
-          damping: 25,
-        },
-      },
+    // 通過 store 添加動畫卡片，等待動畫完成
+    await new Promise<void>(resolve => {
+      this.animationLayerStore.addCard({
+        cardId,
+        fromRect,
+        toRect: cardRect,
+        onComplete: resolve,
+      })
     })
 
-    await apply('enter')
-    await sleep(ANIMATION_DURATION.DEAL_CARD)
-
-    // 清理：恢復原始樣式
-    cardElement.style.transform = ''
-    cardElement.style.opacity = ''
-    cardElement.style.zIndex = originalZIndex
-    cardElement.style.position = originalPosition
+    // 動畫完成後顯示原始卡片
+    this.animationLayerStore.showCard(cardId)
   }
 
   async playCardToFieldAnimation(cardId: string, isOpponent: boolean): Promise<void> {
@@ -510,14 +471,3 @@ export class AnimationPortAdapter implements AnimationPort {
   }
 }
 
-/**
- * 建立 AnimationPort Adapter
- *
- * @param animationLayerStore - 動畫層 store（可選，用於跨容器動畫）
- * @returns AnimationPort 實作
- */
-export function createAnimationPortAdapter(
-  animationLayerStore?: AnimationLayerStore
-): AnimationPort {
-  return new AnimationPortAdapter(zoneRegistry, animationLayerStore || null)
-}
