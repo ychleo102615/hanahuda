@@ -23,7 +23,7 @@
             :is-selected="false"
             :is-highlighted="false"
             size="sm"
-            class="flex-shrink-0"
+            class="shrink-0"
           />
 
         </div>

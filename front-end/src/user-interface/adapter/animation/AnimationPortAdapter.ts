@@ -335,8 +335,8 @@ export class AnimationPortAdapter implements AnimationPort {
       toRect = new DOMRect(
         targetRect.x + 8,
         targetRect.y - 8,
-        fromRect.width,
-        fromRect.height
+        targetRect.width,
+        targetRect.height
       )
     } else if (fieldPosition) {
       // 無配對：飛到場牌區中心
