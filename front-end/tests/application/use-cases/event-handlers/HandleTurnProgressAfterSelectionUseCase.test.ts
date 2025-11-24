@@ -75,10 +75,11 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
 
       // Assert: 應該播放配對動畫（翻牌動畫已在 HandleSelectionRequiredUseCase 播放）
       expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0501', '0201')
-      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
+      expect(mockAnimation.playFadeInAtCurrentPosition).toHaveBeenCalledWith(
         ['0501', '0201'],
-        'PLAIN',
-        false
+        false, // isOpponent
+        '0501', // playedCardId
+        undefined // matchPosition (mock 返回 undefined)
       )
     })
 
@@ -277,10 +278,11 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
       await flushPromises()
 
       // Assert: isOpponent = true
-      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
-        expect.any(Array),
-        expect.any(String),
-        true // isOpponent = true
+      expect(mockAnimation.playFadeInAtCurrentPosition).toHaveBeenCalledWith(
+        ['0501', '0201'],
+        true, // isOpponent = true
+        '0501', // playedCardId
+        undefined // matchPosition (mock 返回 undefined)
       )
     })
   })

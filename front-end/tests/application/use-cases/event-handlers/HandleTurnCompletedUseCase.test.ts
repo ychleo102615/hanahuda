@@ -67,10 +67,11 @@ describe('HandleTurnCompletedUseCase', () => {
 
       // Assert: 應該播放配對動畫
       expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0301', '0101')
-      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
+      expect(mockAnimation.playFadeInAtCurrentPosition).toHaveBeenCalledWith(
         ['0301', '0101'],
-        'PLAIN', // mockDomainFacade 預設返回 'PLAIN'
-        false // isOpponent = false (player-1 is local player)
+        false, // isOpponent = false (player-1 is local player)
+        '0301', // playedCardId
+        undefined // matchPosition (mock 返回 undefined)
       )
     })
 
@@ -99,7 +100,7 @@ describe('HandleTurnCompletedUseCase', () => {
       await flushPromises()
 
       // Assert: 應該播放移至場牌動畫
-      expect(mockAnimation.playCardToFieldAnimation).toHaveBeenCalledWith('0301', false)
+      expect(mockAnimation.playCardToFieldAnimation).toHaveBeenCalledWith('0301', false, undefined)
       expect(mockAnimation.playMatchAnimation).not.toHaveBeenCalled()
     })
 
@@ -179,7 +180,12 @@ describe('HandleTurnCompletedUseCase', () => {
 
       // Assert: 應該播放翻牌配對動畫（不含 playFlipFromDeckAnimation，那是 Phase 8）
       expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0302', '0102')
-      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalled()
+      expect(mockAnimation.playFadeInAtCurrentPosition).toHaveBeenCalledWith(
+        ['0302', '0102'],
+        false, // isOpponent = false
+        '0302', // playedCardId
+        undefined // matchPosition (mock 返回 undefined)
+      )
     })
 
     it('應該在翻牌無配對時不播放任何動畫', async () => {
@@ -298,10 +304,11 @@ describe('HandleTurnCompletedUseCase', () => {
       await flushPromises()
 
       // Assert: isOpponent = true
-      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
-        expect.any(Array),
-        expect.any(String),
-        true // isOpponent = true
+      expect(mockAnimation.playFadeInAtCurrentPosition).toHaveBeenCalledWith(
+        ['0301', '0101'],
+        true, // isOpponent = true
+        '0301', // playedCardId
+        undefined // matchPosition (mock 返回 undefined)
       )
     })
   })

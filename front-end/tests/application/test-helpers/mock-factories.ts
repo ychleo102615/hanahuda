@@ -228,6 +228,8 @@ export function createMockGameStatePort(): GameStatePort {
     updateYaku: vi.fn(),
     getLocalPlayerId: vi.fn().mockReturnValue('player-1'),
     getFieldCards: vi.fn().mockReturnValue([]),
+    getHandCards: vi.fn().mockReturnValue([]),
+    getOpponentHandCount: vi.fn().mockReturnValue(8),
     getDepositoryCards: vi.fn().mockReturnValue([]),
     getDeckRemaining: vi.fn().mockReturnValue(48),
     getDealerId: vi.fn().mockReturnValue(null),
@@ -260,7 +262,10 @@ export function createMockAnimationPort(): AnimationPort {
     playMatchAnimation: vi.fn().mockResolvedValue(undefined),
     playToDepositoryAnimation: vi.fn().mockResolvedValue(undefined),
     playFlipFromDeckAnimation: vi.fn().mockResolvedValue(undefined),
+    playFadeInAtCurrentPosition: vi.fn().mockResolvedValue(undefined),
     interrupt: vi.fn(),
     isAnimating: vi.fn().mockReturnValue(false),
+    hideCards: vi.fn(),
+    clearHiddenCards: vi.fn(),
   }
 }
