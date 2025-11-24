@@ -97,6 +97,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         await this.animation.playFadeInAtCurrentPosition(
           result.capturedCards,
           isOpponent,
+          event.hand_card_play.played_card,
           result.matchPosition
         )
 
@@ -131,6 +132,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         await this.animation.playFadeInAtCurrentPosition(
           result.capturedCards,
           isOpponent,
+          event.draw_card_play.played_card,
           result.matchPosition
         )
 

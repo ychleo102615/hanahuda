@@ -631,6 +631,7 @@ export class AnimationPortAdapter implements AnimationPort {
   async playFadeInAtCurrentPosition(
     cardIds: string[],
     isOpponent: boolean,
+    playedCardId: string,
     fadeOutPosition?: { x: number; y: number }
   ): Promise<void> {
     if (this._interrupted || cardIds.length === 0) {
@@ -639,7 +640,7 @@ export class AnimationPortAdapter implements AnimationPort {
 
     this._isAnimating = true
 
-    console.info('[AnimationPort] playFadeInAtCurrentPosition', { cardIds, isOpponent, fadeOutPosition })
+    console.info('[AnimationPort] playFadeInAtCurrentPosition', { cardIds, isOpponent, playedCardId, fadeOutPosition })
 
     // 卡片尺寸常數
     const cardWidth = 60
@@ -652,12 +653,19 @@ export class AnimationPortAdapter implements AnimationPort {
 
     // === 階段 1：立即創建淡出克隆（無縫銜接 pulse 動畫） ===
     // 在等待 DOM 布局之前就創建，避免 pulse 克隆移除後出現空窗期
+    // 排序：playedCardId 最後創建，z-order 最高（在上層）
     if (fadeOutPosition) {
-      cardIds.forEach((cardId, index) => {
-        const isHandCard = index === 0
+      const sortedCardIds = [...cardIds].sort((a, b) => {
+        if (a === playedCardId) return 1
+        if (b === playedCardId) return -1
+        return 0
+      })
+
+      sortedCardIds.forEach(cardId => {
+        const isPlayedCard = cardId === playedCardId
         const fadeOutRect = new DOMRect(
-          fadeOutPosition.x + (isHandCard ? 8 : 0),
-          fadeOutPosition.y + (isHandCard ? -8 : 0),
+          fadeOutPosition.x + (isPlayedCard ? 8 : 0),
+          fadeOutPosition.y + (isPlayedCard ? -8 : 0),
           cardWidth,
           cardHeight
         )
