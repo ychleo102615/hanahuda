@@ -14,7 +14,7 @@
         </div>
 
         <!-- 卡片列表 -->
-        <div class="flex gap-1 flex-wrap justify-center flex-1">
+        <div class="flex gap-1 flex-wrap justify-center flex-1 items-center">
           <CardComponent
             v-for="cardId in group.cards"
             :key="cardId"
@@ -26,11 +26,6 @@
             class="flex-shrink-0"
           />
 
-          <!-- 空分組佔位 -->
-          <div
-            v-if="group.cards.length === 0"
-            class="empty-placeholder w-10 h-14 border border-dashed border-gray-600 rounded opacity-30"
-          />
         </div>
       </div>
     </div>
