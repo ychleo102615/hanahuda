@@ -271,7 +271,7 @@ export class AnimationPortAdapter implements AnimationPort {
     // 對手牌不需要 showCard，動畫完成後直接移除
   }
 
-  async playCardToFieldAnimation(cardId: string, isOpponent: boolean): Promise<void> {
+  async playCardToFieldAnimation(cardId: string, isOpponent: boolean, targetCardId?: string): Promise<void> {
     if (this._interrupted) {
       this._interrupted = false
       return
@@ -279,102 +279,176 @@ export class AnimationPortAdapter implements AnimationPort {
 
     this._isAnimating = true
 
-    const fromZone: ZoneName = isOpponent ? 'opponent-hand' : 'player-hand'
-    const fromPosition = this.registry.getPosition(fromZone)
-    const toPosition = this.registry.getPosition('field')
     const cardElement = findCardElement(cardId)
+    const targetElement = targetCardId ? findCardElement(targetCardId) : null
+    const fieldPosition = this.registry.getPosition('field')
 
     console.info('[AnimationPort] playCardToFieldAnimation', {
       cardId,
       isOpponent,
+      targetCardId,
       hasElement: !!cardElement,
+      hasTarget: !!targetElement,
     })
 
-    // 執行實際動畫
-    if (cardElement && fromPosition && toPosition && !this._interrupted) {
-      const deltaX = toPosition.rect.x - fromPosition.rect.x
-      const deltaY = toPosition.rect.y - fromPosition.rect.y
+    // 計算卡片尺寸（預設值）
+    const cardWidth = 60
+    const cardHeight = 90
 
-      const { apply } = useMotion(cardElement, {
-        initial: { x: 0, y: 0 },
-        enter: {
-          x: deltaX,
-          y: deltaY,
-          transition: {
-            type: 'spring',
-            stiffness: 300,
-            damping: 25,
-          },
-        },
-      })
+    // 計算起始位置
+    let fromRect: DOMRect
+    let isFaceDown = false
 
-      await apply('enter')
-      await sleep(ANIMATION_DURATION.CARD_TO_FIELD)
-
-      // 清理 transform（讓 Vue 組件管理最終位置）
-      cardElement.style.transform = ''
+    if (cardElement) {
+      // 玩家手牌：使用真實 DOM 位置
+      fromRect = cardElement.getBoundingClientRect()
+    } else if (isOpponent) {
+      // 對手手牌：從對手手牌區位置開始，顯示牌背
+      const opponentHandPosition = this.registry.getPosition('opponent-hand')
+      if (opponentHandPosition) {
+        // 從對手手牌區中心開始
+        fromRect = new DOMRect(
+          opponentHandPosition.rect.x + opponentHandPosition.rect.width / 2 - cardWidth / 2,
+          opponentHandPosition.rect.y + opponentHandPosition.rect.height / 2 - cardHeight / 2,
+          cardWidth,
+          cardHeight
+        )
+        isFaceDown = true
+      } else {
+        // 備用：等待時長
+        await sleep(ANIMATION_DURATION.CARD_TO_FIELD)
+        this._isAnimating = false
+        return
+      }
     } else {
-      // 無元素時等待時長
+      // 無元素且非對手：等待時長
       await sleep(ANIMATION_DURATION.CARD_TO_FIELD)
+      this._isAnimating = false
+      return
     }
+
+    // 計算目標位置
+    let toRect: DOMRect
+    if (targetElement) {
+      // 有配對：飛到配對場牌位置（稍微偏移避免完全重疊）
+      const targetRect = targetElement.getBoundingClientRect()
+      toRect = new DOMRect(
+        targetRect.x + 8,
+        targetRect.y - 8,
+        fromRect.width,
+        fromRect.height
+      )
+    } else if (fieldPosition) {
+      // 無配對：飛到場牌區中心
+      toRect = new DOMRect(
+        fieldPosition.rect.x + fieldPosition.rect.width / 2 - fromRect.width / 2,
+        fieldPosition.rect.y + fieldPosition.rect.height / 2 - fromRect.height / 2,
+        fromRect.width,
+        fromRect.height
+      )
+    } else {
+      toRect = fromRect
+    }
+
+    // 隱藏原始卡片（玩家手牌）
+    if (cardElement) {
+      this.animationLayerStore.hideCards([cardId])
+    }
+
+    // 使用動畫層播放克隆卡片動畫（move 類型，不需要淡入）
+    await new Promise<void>(resolve => {
+      this.animationLayerStore.addCard({
+        cardId,
+        fromRect,
+        toRect,
+        onComplete: resolve,
+        cardEffectType: 'move',
+        isFaceDown,  // 對手牌顯示牌背
+      })
+    })
+
+    // 動畫完成後：有配對時保持隱藏，無配對時顯示
+    if (!targetCardId && cardElement) {
+      this.animationLayerStore.showCard(cardId)
+    }
+    // 有配對時，卡片保持隱藏，由後續動畫處理
 
     this._isAnimating = false
   }
 
-  async playMatchAnimation(handCardId: string, fieldCardId: string): Promise<void> {
+  async playMatchAnimation(handCardId: string, fieldCardId: string): Promise<{ x: number; y: number } | null> {
     if (this._interrupted) {
       this._interrupted = false
-      return
+      return null
     }
 
     this._isAnimating = true
 
-    const handCardElement = findCardElement(handCardId)
     const fieldCardElement = findCardElement(fieldCardId)
 
     console.info('[AnimationPort] playMatchAnimation (merge effect)', {
       handCardId,
       fieldCardId,
-      hasHandElement: !!handCardElement,
       hasFieldElement: !!fieldCardElement,
     })
 
-    // 執行合併特效（縮放 + 發光）
-    if ((handCardElement || fieldCardElement) && !this._interrupted) {
-      const elements = [handCardElement, fieldCardElement].filter(Boolean) as HTMLElement[]
+    let fieldPosition: { x: number; y: number } | null = null
 
-      // 對所有元素執行合併特效
-      const animations = elements.map(element => {
-        const { apply } = useMotion(element, {
-          initial: { scale: 1 },
-          enter: {
-            scale: [1, 1.15, 1],
-            transition: {
-              duration: ANIMATION_DURATION.MATCH_EFFECT,
-              ease: 'easeInOut',
-            },
-          },
-        })
-        return apply('enter')
-      })
+    // 使用 AnimationLayer 播放合併特效
+    // 手牌已在 playCardToFieldAnimation 中隱藏，場牌保持可見
+    if (fieldCardElement && !this._interrupted) {
+      const fieldRect = fieldCardElement.getBoundingClientRect()
+      fieldPosition = { x: fieldRect.x, y: fieldRect.y }
 
-      await Promise.all(animations)
+      // 隱藏場牌，準備用克隆做動畫
+      this.animationLayerStore.hideCards([fieldCardId])
 
-      // 清理樣式
-      elements.forEach(el => {
-        el.style.transform = ''
-      })
+      // 手牌和場牌克隆一起做 pulse 效果
+      // 手牌克隆稍微偏移避免完全重疊
+      const handRect = new DOMRect(
+        fieldRect.x + 8,
+        fieldRect.y - 8,
+        fieldRect.width,
+        fieldRect.height
+      )
+
+      // 兩個克隆同時做 pulse
+      // 注意順序：場牌先加入，手牌後加入（z-index 更高，視覺上在上面）
+      await Promise.all([
+        new Promise<void>(resolve => {
+          this.animationLayerStore.addCard({
+            cardId: fieldCardId,
+            fromRect: fieldRect,
+            toRect: fieldRect,
+            onComplete: resolve,
+            cardEffectType: 'pulse',
+          })
+        }),
+        new Promise<void>(resolve => {
+          this.animationLayerStore.addCard({
+            cardId: handCardId,
+            fromRect: handRect,
+            toRect: handRect,
+            onComplete: resolve,
+            cardEffectType: 'pulse',
+          })
+        }),
+      ])
+
+      // 動畫完成後保持隱藏（等待 depository 動畫）
     } else {
       await sleep(ANIMATION_DURATION.MATCH_EFFECT)
     }
 
     this._isAnimating = false
+    return fieldPosition
   }
 
   async playToDepositoryAnimation(
     cardIds: string[],
     targetType: CardType,
-    isOpponent: boolean
+    isOpponent: boolean,
+    fromPosition?: { x: number; y: number }
   ): Promise<void> {
     if (this._interrupted) {
       this._interrupted = false
@@ -383,61 +457,80 @@ export class AnimationPortAdapter implements AnimationPort {
 
     this._isAnimating = true
 
-    const depositoryZone: ZoneName = isOpponent ? 'opponent-depository' : 'player-depository'
-    // TODO: 未來可改用分組區域 `${isOpponent ? 'opponent' : 'player'}-depository-${targetType}`
-    const depositoryPosition = this.registry.getPosition(depositoryZone)
-    const fieldPosition = this.registry.getPosition('field')
-
-    // 找到所有卡片元素
-    const cardElements = cardIds
-      .map(id => findCardElement(id))
-      .filter(Boolean) as HTMLElement[]
-
     console.info('[AnimationPort] playToDepositoryAnimation', {
       cardIds,
       targetType,
       isOpponent,
-      hasElements: cardElements.length,
+      fromPosition,
     })
 
-    // 執行移動動畫
-    if (cardElements.length > 0 && depositoryPosition && !this._interrupted) {
-      // 計算從場牌到獲得區的位移
-      const fromRect = fieldPosition?.rect || { x: 0, y: 0 }
-      const toRect = depositoryPosition.rect
+    // 計算淡出位置
+    const cardWidth = 60
+    const cardHeight = 90
+    let fadeOutRect: DOMRect
 
-      const deltaX = toRect.x - fromRect.x
-      const deltaY = toRect.y - fromRect.y
-
-      const animations = cardElements.map(element => {
-        const { apply } = useMotion(element, {
-          initial: { x: 0, y: 0, opacity: 1 },
-          enter: {
-            x: deltaX,
-            y: deltaY,
-            opacity: [1, 1, 0.8],
-            transition: {
-              type: 'spring',
-              stiffness: 200,
-              damping: 20,
-            },
-          },
-        })
-        return apply('enter')
-      })
-
-      await Promise.all(animations)
-      await sleep(ANIMATION_DURATION.TO_DEPOSITORY)
-
-      // 清理樣式
-      cardElements.forEach(el => {
-        el.style.transform = ''
-        el.style.opacity = ''
-      })
+    if (fromPosition) {
+      // 使用指定的起始位置（配對場牌位置）
+      fadeOutRect = new DOMRect(
+        fromPosition.x,
+        fromPosition.y,
+        cardWidth,
+        cardHeight
+      )
     } else {
-      await sleep(ANIMATION_DURATION.TO_DEPOSITORY)
+      // 備用：使用場牌區中心
+      const fieldPosition = this.registry.getPosition('field')
+      if (!fieldPosition || this._interrupted) {
+        this._isAnimating = false
+        return
+      }
+      fadeOutRect = new DOMRect(
+        fieldPosition.rect.x + fieldPosition.rect.width / 2 - cardWidth / 2,
+        fieldPosition.rect.y + fieldPosition.rect.height / 2 - cardHeight / 2,
+        cardWidth,
+        cardHeight
+      )
     }
 
+    // 淡出動畫（在配對位置）
+    // 注意：captured_cards[0] 是手牌（偏移位置），其餘是場牌（原位）
+    // 順序：場牌先加入，手牌後加入（z-index 更高）
+    const fadeOutPromises = cardIds.map((cardId, index) => {
+      // index=0 是手牌，有偏移 (+8, -8)；其他是場牌，無偏移
+      const isHandCard = index === 0
+      const offsetRect = new DOMRect(
+        fadeOutRect.x + (isHandCard ? 8 : 0),
+        fadeOutRect.y + (isHandCard ? -8 : 0),
+        fadeOutRect.width,
+        fadeOutRect.height
+      )
+      return {
+        cardId,
+        rect: offsetRect,
+        isHandCard,
+      }
+    })
+
+    // 場牌先加入，手牌後加入
+    const sortedCards = [...fadeOutPromises].sort((a, b) =>
+      a.isHandCard ? 1 : -1
+    )
+
+    const animations = sortedCards.map(({ cardId, rect }) => {
+      return new Promise<void>(resolve => {
+        this.animationLayerStore.addCard({
+          cardId,
+          fromRect: rect,
+          toRect: rect,
+          onComplete: resolve,
+          cardEffectType: 'fadeOut',
+        })
+      })
+    })
+
+    await Promise.all(animations)
+
+    // 不在這裡 showCard，由 clearHiddenCards 統一處理
     this._isAnimating = false
   }
 
@@ -533,6 +626,116 @@ export class AnimationPortAdapter implements AnimationPort {
 
   isAnimating(): boolean {
     return this._isAnimating
+  }
+
+  async playFadeInAtCurrentPosition(
+    cardIds: string[],
+    fadeOutPosition?: { x: number; y: number }
+  ): Promise<void> {
+    if (this._interrupted || cardIds.length === 0) {
+      return
+    }
+
+    this._isAnimating = true
+
+    console.info('[AnimationPort] playFadeInAtCurrentPosition', { cardIds, fadeOutPosition })
+
+    // 卡片尺寸常數
+    const cardWidth = 60
+    const cardHeight = 90
+
+    // 卡片此時應該已被 hideCards（在 playMatchAnimation 中處理）
+    // 且獲得區的 DOM 已渲染（Vue 狀態已更新）
+
+    // === 階段 1：等待 DOM 布局完成 ===
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    await new Promise(resolve => requestAnimationFrame(resolve))
+
+    // === 階段 2：獲取獲得區真實位置 ===
+    const cardPositions: { cardId: string; rect: DOMRect }[] = []
+    cardIds.forEach(cardId => {
+      const cardElement = findCardElement(cardId)
+      if (cardElement) {
+        cardPositions.push({
+          cardId,
+          rect: cardElement.getBoundingClientRect(),
+        })
+      }
+    })
+
+    console.info('[AnimationPort] playFadeInAtCurrentPosition positions', {
+      requested: cardIds.length,
+      found: cardPositions.length,
+      positions: cardPositions.map(p => ({ cardId: p.cardId, x: p.rect.x, y: p.rect.y })),
+    })
+
+    // === 階段 3：同時播放淡出和淡入動畫 ===
+    const allAnimations: Promise<void>[] = []
+
+    // 3a. 淡出動畫（在配對位置）
+    if (fadeOutPosition) {
+      cardIds.forEach((cardId, index) => {
+        const isHandCard = index === 0
+        const fadeOutRect = new DOMRect(
+          fadeOutPosition.x + (isHandCard ? 8 : 0),
+          fadeOutPosition.y + (isHandCard ? -8 : 0),
+          cardWidth,
+          cardHeight
+        )
+
+        // 使用後綴區分動畫 ID，但 displayCardId 保持原始 cardId
+        allAnimations.push(
+          new Promise<void>(resolve => {
+            this.animationLayerStore.addCard({
+              cardId: `${cardId}-fadeOut`,
+              displayCardId: cardId,  // 用於 CardComponent 渲染
+              fromRect: fadeOutRect,
+              toRect: fadeOutRect,
+              onComplete: resolve,
+              cardEffectType: 'fadeOut',
+            })
+          })
+        )
+      })
+    }
+
+    // 3b. 淡入動畫（在獲得區位置）
+    cardPositions.forEach(({ cardId, rect }) => {
+      if (!this._interrupted) {
+        // 使用後綴區分動畫 ID，但 displayCardId 保持原始 cardId
+        allAnimations.push(
+          new Promise<void>(resolve => {
+            this.animationLayerStore.addCard({
+              cardId: `${cardId}-fadeIn`,
+              displayCardId: cardId,  // 用於 CardComponent 渲染
+              fromRect: rect,
+              toRect: rect,
+              onComplete: resolve,
+              cardEffectType: 'fadeIn',
+            })
+          })
+        )
+      }
+    })
+
+    await Promise.all(allAnimations)
+
+    // === 階段 4：動畫完成後顯示真實卡片 ===
+    cardIds.forEach(cardId => {
+      this.animationLayerStore.showCard(cardId)
+    })
+
+    this._isAnimating = false
+  }
+
+  clearHiddenCards(): void {
+    this.animationLayerStore.clear()
+    console.info('[AnimationPort] clearHiddenCards')
+  }
+
+  hideCards(cardIds: string[]): void {
+    this.animationLayerStore.hideCards(cardIds)
+    console.info('[AnimationPort] hideCards', { cardIds })
   }
 }
 

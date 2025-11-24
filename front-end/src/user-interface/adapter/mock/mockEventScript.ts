@@ -102,10 +102,9 @@ export const mockEventScript: MockEventItem[] = [
         active_player_id: 'player-1',
       },
     },
-    delay: 1000,
+    delay: 3000,
   },
 
-  /*
   // 3. 玩家出牌完成 (松赤短配對松かす)
   {
     eventType: 'TurnCompleted',
@@ -133,6 +132,7 @@ export const mockEventScript: MockEventItem[] = [
     delay: 2000,
   },
 
+  /*
   // 4. 對手出牌完成 (松光配對松かす2)
   {
     eventType: 'TurnCompleted',

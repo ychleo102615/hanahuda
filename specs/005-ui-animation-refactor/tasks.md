@@ -172,7 +172,7 @@
 - [x] T052 [US5] 實作 AnimationPortAdapter.playCardToFieldAnimation（手牌→場牌位置）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
 - [x] T053 [US5] 實作 AnimationPortAdapter.playMatchAnimation（合併特效：縮放+發光，無移動）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
 - [x] T054 [US5] 實作 AnimationPortAdapter.playToDepositoryAnimation（合併後→獲得區）在 front-end/src/user-interface/adapter/animation/AnimationPortAdapter.ts
-- [x] T055 [US5] 整合配對動畫到 HandleCardsMatchedUseCase 或相關 Use Case
+- [x] T055 [US5] 整合配對動畫到相關 Use Case
 - [x] T056 [US5] 確保動畫進行中阻止玩家操作（isAnimating 狀態）
 
 **Checkpoint**: User Story 5 fully functional - 配對動畫流暢，完成後狀態正確更新

@@ -180,7 +180,6 @@ const groupedMyDepository = computed(() => ({
 **步驟**:
 1. 實作 playMatchAnimation
 2. 實作 playToDepositoryAnimation
-3. 更新 HandleCardsMatchedUseCase
 
 ---
 
@@ -295,35 +294,35 @@ onUnmounted(() => {
 ## Verification Checklist
 
 ### P1 完成標準
-- [ ] 獲得區顯示四個分組
-- [ ] 每個分組顯示數量
-- [ ] 空分組保持佔位
+- [x] 獲得區顯示四個分組
+- [x] 每個分組顯示數量
+- [x] 空分組保持佔位
 
 ### P2 完成標準
-- [ ] AnimationPort 介面定義完成
-- [ ] NotificationPort 介面定義完成
-- [ ] DI Container 更新完成
-- [ ] 編譯無錯誤
+- [x] AnimationPort 介面定義完成
+- [x] NotificationPort 介面定義完成
+- [x] DI Container 更新完成
+- [x] 編譯無錯誤
 
 ### P3 完成標準
-- [ ] 牌堆組件顯示
-- [ ] 剩餘牌數正確
-- [ ] 視覺堆疊效果
+- [x] 牌堆組件顯示
+- [x] 剩餘牌數正確
+- [x] 視覺堆疊效果
 
 ### P4 完成標準
-- [ ] ZoneRegistry 運作正常
-- [ ] 區域位置可查詢
-- [ ] 動畫使用實際座標
+- [x] ZoneRegistry 運作正常
+- [x] 區域位置可查詢
+- [x] 動畫使用實際座標
 
 ### P5 完成標準
-- [ ] 配對動畫流暢
-- [ ] 移動至獲得區動畫
-- [ ] 動畫完成後狀態更新
+- [x] 配對動畫流暢
+- [x] 移動至獲得區動畫
+- [x] 動畫完成後狀態更新
 
 ### P6 完成標準
-- [ ] 發牌動畫依序播放
-- [ ] 總時長 < 2 秒
-- [ ] 支援中斷
+- [x] 發牌動畫依序播放
+- [x] 總時長 < 2 秒
+- [x] 支援中斷
 
 ### P7 完成標準
 - [ ] 可拖曳手牌

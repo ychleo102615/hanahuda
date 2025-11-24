@@ -47,37 +47,72 @@ export class HandleTurnProgressAfterSelectionUseCase
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
 
+    // 取得當前狀態（動畫前）
+    const currentFieldCards = this.gameState.getFieldCards()
+    const currentMyDepository = this.gameState.getDepositoryCards(localPlayerId)
+    const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
+    const currentOpponentDepository = this.gameState.getDepositoryCards(opponentPlayerId)
+
     // 1. 播放配對動畫
     // 注意：翻牌動畫已在 HandleSelectionRequiredUseCase 中播放（Phase 8）
     // 這裡只需處理配對效果
     const drawCardPlay = event.draw_card_play
 
+    // 1.1 播放合併特效，獲取場牌位置
+    let fieldPosition: { x: number; y: number } | null = null
     if (drawCardPlay.matched_card) {
-      // 播放合併特效
-      await this.animation.playMatchAnimation(
+      fieldPosition = await this.animation.playMatchAnimation(
         drawCardPlay.played_card,
         drawCardPlay.matched_card
       )
-
-      // 決定目標分組（使用第一張牌的類型）
-      const cardType = this.domainFacade.getCardTypeFromId(drawCardPlay.played_card)
-
-      // 移動配對的牌到獲得區
-      await this.animation.playToDepositoryAnimation(
-        [...drawCardPlay.captured_cards],
-        cardType,
-        isOpponent
-      )
     }
 
-    // 2. 若有新役種形成，記錄（役種特效動畫為 Post-MVP）
+    // 2. 收集被捕獲的卡片
+    const capturedCards = drawCardPlay.captured_cards
+
+    // 3. 更新狀態
+    // 3.1 更新場牌（移除被配對的場牌）
+    let newFieldCards = [...currentFieldCards]
+    if (drawCardPlay.matched_card) {
+      newFieldCards = newFieldCards.filter(id => id !== drawCardPlay.matched_card)
+    }
+    // 如果翻牌無配對，加入場牌
+    if (!drawCardPlay.matched_card) {
+      newFieldCards.push(drawCardPlay.played_card)
+    }
+    this.gameState.updateFieldCards(newFieldCards)
+
+    // 3.2 更新獲得區
+    if (capturedCards.length > 0) {
+      if (!isOpponent) {
+        const newMyDepository = [...currentMyDepository, ...capturedCards]
+        this.gameState.updateDepositoryCards(newMyDepository, currentOpponentDepository)
+      } else {
+        const newOpponentDepository = [...currentOpponentDepository, ...capturedCards]
+        this.gameState.updateDepositoryCards(currentMyDepository, newOpponentDepository)
+      }
+    }
+
+    // 3.3 更新牌堆剩餘數量
+    this.gameState.updateDeckRemaining(event.deck_remaining)
+
+    // 4. 若有新役種形成，記錄（役種特效動畫為 Post-MVP）
     if (event.yaku_update && event.yaku_update.newly_formed_yaku.length > 0) {
       console.info('[HandleTurnProgressAfterSelection] Yaku formed:',
         event.yaku_update.newly_formed_yaku.map(y => y.yaku_type))
       // TODO: Post-MVP 實作役種特效動畫
     }
 
-    // 3. 更新 FlowStage
+    // 5. 更新 FlowStage 和活動玩家
     this.gameState.setFlowStage(event.next_state.state_type)
+    this.gameState.setActivePlayer(event.next_state.active_player_id)
+
+    // 6. 同時播放淡出（在配對位置）和淡入（在獲得區）動畫
+    if (capturedCards.length > 0) {
+      await this.animation.playFadeInAtCurrentPosition([...capturedCards], fieldPosition ?? undefined)
+    }
+
+    // 7. 清除隱藏的卡片
+    this.animation.clearHiddenCards()
   }
 }

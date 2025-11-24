@@ -100,5 +100,13 @@ export function createGameStatePortAdapter(): GameStatePort {
     getDealerId(): string | null {
       return store.dealerId
     },
+
+    getHandCards(): string[] {
+      return [...store.myHandCards]
+    },
+
+    getOpponentHandCount(): number {
+      return store.opponentHandCount
+    },
   }
 }

@@ -194,7 +194,8 @@ describe('AnimationPortAdapter', () => {
     it('playMatchAnimation should resolve', async () => {
       const promise = adapter.playMatchAnimation('0101', '0102')
       await vi.runAllTimersAsync()
-      await expect(promise).resolves.toBeUndefined()
+      // 沒有 DOM 元素時返回 null
+      await expect(promise).resolves.toBeNull()
     })
 
     it('playToDepositoryAnimation should resolve', async () => {
@@ -252,7 +253,8 @@ describe('AnimationPortAdapter', () => {
     it('should resolve Promise after merge effect completes', async () => {
       const promise = adapter.playMatchAnimation('0101', '0102')
       await vi.runAllTimersAsync()
-      await expect(promise).resolves.toBeUndefined()
+      // 沒有 DOM 元素時返回 null
+      await expect(promise).resolves.toBeNull()
     })
 
     it('should set isAnimating to false after completion', async () => {
@@ -266,19 +268,20 @@ describe('AnimationPortAdapter', () => {
       const promise = adapter.playMatchAnimation('0101', '0102')
       adapter.interrupt()
       await vi.runAllTimersAsync()
-      await expect(promise).resolves.toBeUndefined()
+      // 中斷時返回 null
+      await expect(promise).resolves.toBeNull()
       expect(adapter.isAnimating()).toBe(false)
     })
 
     it('should accept valid card ID pairs', async () => {
-      // 同月份的牌配對
+      // 同月份的牌配對（測試環境沒有 DOM，返回 null）
       const p1 = adapter.playMatchAnimation('0101', '0104')
       await vi.runAllTimersAsync()
-      await expect(p1).resolves.toBeUndefined()
+      await expect(p1).resolves.toBeNull()
 
       const p2 = adapter.playMatchAnimation('1201', '1204')
       await vi.runAllTimersAsync()
-      await expect(p2).resolves.toBeUndefined()
+      await expect(p2).resolves.toBeNull()
     })
 
     it('should complete within expected time (< 200ms for merge effect)', async () => {
@@ -536,7 +539,8 @@ describe('AnimationPortAdapter', () => {
       // 其他動畫應該正常工作
       const matchPromise = adapter.playMatchAnimation('0301', '0302')
       await vi.runAllTimersAsync()
-      await expect(matchPromise).resolves.toBeUndefined()
+      // 沒有 DOM 元素時返回 null
+      await expect(matchPromise).resolves.toBeNull()
     })
 
     it('should support reconnection scenario (interrupt and show final state)', async () => {

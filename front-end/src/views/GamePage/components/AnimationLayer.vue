@@ -45,36 +45,87 @@ function startAnimationIfNeeded(cardId: string) {
   // 標記為已開始動畫
   animatedCardIds.value.add(cardId)
 
-  // 計算 scale 比例：從牌堆大小到目標大小
-  const scaleRatio = card.toRect.width / card.fromRect.width
-
-  // 計算位移：從 fromRect 到 toRect（左上角基準）
-  const deltaX = card.toRect.x - card.fromRect.x
-  const deltaY = card.toRect.y - card.fromRect.y
+  const effectType = card.cardEffectType || 'deal'
 
   // 設置 transform-origin 為左上角
   el.style.transformOrigin = '0 0'
 
-  // 執行動畫
-  const { apply } = useMotion(el, {
-    initial: {
-      x: 0,
-      y: 0,
-      scale: 1,
-      opacity: 0,
-    },
-    enter: {
-      x: deltaX,
-      y: deltaY,
-      scale: scaleRatio,
-      opacity: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 300,
-        damping: 25,
+  // 根據效果類型執行不同動畫
+  let motionConfig: Parameters<typeof useMotion>[1]
+
+  if (effectType === 'pulse') {
+    // 脈衝效果：原地縮放
+    motionConfig = {
+      initial: {
+        scale: 1,
+        opacity: 1,
       },
-    },
-  })
+      enter: {
+        scale: [1, 1.15, 1],
+        opacity: 1,
+        transition: {
+          duration: 300,
+          ease: 'easeInOut',
+        },
+      },
+    }
+  } else if (effectType === 'fadeOut') {
+    // 淡出效果
+    motionConfig = {
+      initial: {
+        opacity: 1,
+      },
+      enter: {
+        opacity: 0,
+        transition: {
+          duration: 250,
+          ease: 'easeOut',
+        },
+      },
+    }
+  } else if (effectType === 'fadeIn') {
+    // 淡入效果
+    motionConfig = {
+      initial: {
+        opacity: 0,
+      },
+      enter: {
+        opacity: 1,
+        transition: {
+          duration: 250,
+          ease: 'easeIn',
+        },
+      },
+    }
+  } else {
+    // deal 或 move：移動動畫
+    const scaleRatio = card.toRect.width / card.fromRect.width
+    const deltaX = card.toRect.x - card.fromRect.x
+    const deltaY = card.toRect.y - card.fromRect.y
+    const initialOpacity = effectType === 'move' ? 1 : 0
+
+    motionConfig = {
+      initial: {
+        x: 0,
+        y: 0,
+        scale: 1,
+        opacity: initialOpacity,
+      },
+      enter: {
+        x: deltaX,
+        y: deltaY,
+        scale: scaleRatio,
+        opacity: 1,
+        transition: {
+          type: 'spring',
+          stiffness: 300,
+          damping: 25,
+        },
+      },
+    }
+  }
+
+  const { apply } = useMotion(el, motionConfig)
 
   // 執行動畫並等待完成
   apply('enter')?.then(() => {
@@ -102,7 +153,7 @@ function startAnimationIfNeeded(cardId: string) {
         }"
       >
         <CardComponent
-          :card-id="card.cardId"
+          :card-id="card.displayCardId || card.cardId"
           :is-animation-clone="true"
           :is-face-down="card.isFaceDown"
         />

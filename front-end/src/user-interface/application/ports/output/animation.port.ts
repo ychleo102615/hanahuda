@@ -106,7 +106,7 @@ export interface AnimationPort {
    * await animation.playCardToFieldAnimation('0201', true)
    * ```
    */
-  playCardToFieldAnimation(cardId: string, isOpponent: boolean): Promise<void>
+  playCardToFieldAnimation(cardId: string, isOpponent: boolean, targetCardId?: string): Promise<void>
 
   /**
    * 播放配對合併動畫
@@ -117,14 +117,15 @@ export interface AnimationPort {
    *
    * @param handCardId - 手牌 ID
    * @param fieldCardId - 場牌 ID
-   * @returns Promise 完成後 resolve
+   * @returns Promise 完成後 resolve，包含場牌位置資訊
    *
    * @example
    * ```typescript
-   * await animation.playMatchAnimation('0101', '0102')
+   * const pos = await animation.playMatchAnimation('0101', '0102')
+   * // pos = { x: 100, y: 200 }
    * ```
    */
-  playMatchAnimation(handCardId: string, fieldCardId: string): Promise<void>
+  playMatchAnimation(handCardId: string, fieldCardId: string): Promise<{ x: number; y: number } | null>
 
   /**
    * 播放移動至獲得區動畫
@@ -136,6 +137,7 @@ export interface AnimationPort {
    * @param cardIds - 配對的牌 ID 列表（通常 2 張）
    * @param targetType - 牌的類型，決定進入哪個分組
    * @param isOpponent - 是否為對手的獲得區（false = 玩家，true = 對手）
+   * @param fromPosition - 可選，淡出動畫的起始位置（配對場牌位置）
    * @returns Promise 完成後 resolve
    *
    * @example
@@ -146,7 +148,7 @@ export interface AnimationPort {
    * await animation.playToDepositoryAnimation(['0201', '0202'], 'ANIMAL', true)
    * ```
    */
-  playToDepositoryAnimation(cardIds: string[], targetType: CardType, isOpponent: boolean): Promise<void>
+  playToDepositoryAnimation(cardIds: string[], targetType: CardType, isOpponent: boolean, fromPosition?: { x: number; y: number }): Promise<void>
 
   /**
    * 播放翻牌動畫
@@ -199,4 +201,66 @@ export interface AnimationPort {
    * ```
    */
   isAnimating(): boolean
+
+  /**
+   * 播放卡片在當前位置的淡入動畫（可同時淡出）
+   *
+   * @description
+   * 用於狀態更新後，讓卡片在新位置（如獲得區）淡入顯示。
+   * 如果提供 fadeOutPosition，會同時在該位置播放淡出動畫。
+   * 應在更新 Vue 狀態後調用。
+   *
+   * @param cardIds - 要淡入的卡片 ID 列表
+   * @param fadeOutPosition - 可選，淡出動畫的位置（配對場牌位置）
+   * @returns Promise 完成後 resolve
+   *
+   * @example
+   * ```typescript
+   * // 更新狀態後，同時淡出淡入
+   * gameState.updateDepositoryCards(...)
+   * await animation.playFadeInAtCurrentPosition(['0101', '0102'], { x: 100, y: 200 })
+   * ```
+   */
+  playFadeInAtCurrentPosition(cardIds: string[], fadeOutPosition?: { x: number; y: number }): Promise<void>
+
+  /**
+   * 清除所有隱藏的卡片
+   *
+   * @description
+   * 用於動畫完成且狀態更新後，讓卡片在新位置顯示。
+   * 應在所有動畫完成並更新 Vue 狀態後調用。
+   *
+   * @example
+   * ```typescript
+   * // 動畫完成後
+   * await animation.playToDepositoryAnimation(...)
+   * // 更新狀態
+   * gameState.updateFieldCards(...)
+   * gameState.updateDepositoryCards(...)
+   * // 清除隱藏，讓卡片在新位置顯示
+   * animation.clearHiddenCards()
+   * ```
+   */
+  clearHiddenCards(): void
+
+  /**
+   * 預先隱藏指定卡片
+   *
+   * @description
+   * 用於在 Vue 狀態更新前預先隱藏卡片，避免新渲染的 DOM 元素閃爍。
+   * 應在 updateDepository 等狀態更新前調用。
+   *
+   * @param cardIds - 要隱藏的卡片 ID 列表
+   *
+   * @example
+   * ```typescript
+   * // 預先隱藏即將出現在獲得區的卡片
+   * animation.hideCards(['0101', '0102'])
+   * // 然後更新狀態（新渲染的卡片會被隱藏）
+   * gameState.updateDepositoryCards(...)
+   * // 播放淡入動畫
+   * await animation.playFadeInAtCurrentPosition(['0101', '0102'])
+   * ```
+   */
+  hideCards(cardIds: string[]): void
 }

@@ -292,4 +292,28 @@ export interface GameStatePort {
    * ```
    */
   getDealerId(): string | null
+
+  /**
+   * 取得玩家手牌列表
+   *
+   * @returns 手牌 ID 列表
+   *
+   * @example
+   * ```typescript
+   * const handCards = gameState.getHandCards()
+   * ```
+   */
+  getHandCards(): string[]
+
+  /**
+   * 取得對手手牌數量
+   *
+   * @returns 對手手牌數量
+   *
+   * @example
+   * ```typescript
+   * const count = gameState.getOpponentHandCount()
+   * ```
+   */
+  getOpponentHandCount(): number
 }
