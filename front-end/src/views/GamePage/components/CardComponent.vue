@@ -161,7 +161,7 @@ watch(() => props.isSelected, (selected) => {
   <div
     ref="cardRef"
     :class="[containerClasses, { 'invisible': isHidden }]"
-    :data-card-id="cardId"
+    :data-card-id="isAnimationClone ? undefined : cardId"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"

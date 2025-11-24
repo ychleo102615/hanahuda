@@ -630,6 +630,7 @@ export class AnimationPortAdapter implements AnimationPort {
 
   async playFadeInAtCurrentPosition(
     cardIds: string[],
+    isOpponent: boolean,
     fadeOutPosition?: { x: number; y: number }
   ): Promise<void> {
     if (this._interrupted || cardIds.length === 0) {
@@ -638,7 +639,7 @@ export class AnimationPortAdapter implements AnimationPort {
 
     this._isAnimating = true
 
-    console.info('[AnimationPort] playFadeInAtCurrentPosition', { cardIds, fadeOutPosition })
+    console.info('[AnimationPort] playFadeInAtCurrentPosition', { cardIds, isOpponent, fadeOutPosition })
 
     // 卡片尺寸常數
     const cardWidth = 60
@@ -647,32 +648,10 @@ export class AnimationPortAdapter implements AnimationPort {
     // 卡片此時應該已被 hideCards（在 playMatchAnimation 中處理）
     // 且獲得區的 DOM 已渲染（Vue 狀態已更新）
 
-    // === 階段 1：等待 DOM 布局完成 ===
-    await new Promise(resolve => requestAnimationFrame(resolve))
-    await new Promise(resolve => requestAnimationFrame(resolve))
-
-    // === 階段 2：獲取獲得區真實位置 ===
-    const cardPositions: { cardId: string; rect: DOMRect }[] = []
-    cardIds.forEach(cardId => {
-      const cardElement = findCardElement(cardId)
-      if (cardElement) {
-        cardPositions.push({
-          cardId,
-          rect: cardElement.getBoundingClientRect(),
-        })
-      }
-    })
-
-    console.info('[AnimationPort] playFadeInAtCurrentPosition positions', {
-      requested: cardIds.length,
-      found: cardPositions.length,
-      positions: cardPositions.map(p => ({ cardId: p.cardId, x: p.rect.x, y: p.rect.y })),
-    })
-
-    // === 階段 3：同時播放淡出和淡入動畫 ===
     const allAnimations: Promise<void>[] = []
 
-    // 3a. 淡出動畫（在配對位置）
+    // === 階段 1：立即創建淡出克隆（無縫銜接 pulse 動畫） ===
+    // 在等待 DOM 布局之前就創建，避免 pulse 克隆移除後出現空窗期
     if (fadeOutPosition) {
       cardIds.forEach((cardId, index) => {
         const isHandCard = index === 0
@@ -699,7 +678,36 @@ export class AnimationPortAdapter implements AnimationPort {
       })
     }
 
-    // 3b. 淡入動畫（在獲得區位置）
+    // === 階段 2：等待 DOM 布局完成 ===
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    await new Promise(resolve => requestAnimationFrame(resolve))
+
+    // === 階段 3：獲取獲得區真實位置 ===
+    // 在獲得區容器內查找，避免找到場牌區的同 cardId 元素
+    const depositoryContainer = document.querySelector(
+      isOpponent ? '.opponent-depository-zone' : '.player-depository-zone'
+    )
+
+    const cardPositions: { cardId: string; rect: DOMRect }[] = []
+    cardIds.forEach(cardId => {
+      const cardElement = depositoryContainer?.querySelector(
+        `[data-card-id="${cardId}"]`
+      ) as HTMLElement | null
+      if (cardElement) {
+        cardPositions.push({
+          cardId,
+          rect: cardElement.getBoundingClientRect(),
+        })
+      }
+    })
+
+    console.info('[AnimationPort] playFadeInAtCurrentPosition positions', {
+      requested: cardIds.length,
+      found: cardPositions.length,
+      positions: cardPositions.map(p => ({ cardId: p.cardId, x: p.rect.x, y: p.rect.y })),
+    })
+
+    // === 階段 4：創建淡入動畫（在獲得區位置） ===
     cardPositions.forEach(({ cardId, rect }) => {
       if (!this._interrupted) {
         // 使用後綴區分動畫 ID，但 displayCardId 保持原始 cardId
@@ -720,7 +728,7 @@ export class AnimationPortAdapter implements AnimationPort {
 
     await Promise.all(allAnimations)
 
-    // === 階段 4：動畫完成後顯示真實卡片 ===
+    // === 階段 5：動畫完成後顯示真實卡片 ===
     cardIds.forEach(cardId => {
       this.animationLayerStore.showCard(cardId)
     })

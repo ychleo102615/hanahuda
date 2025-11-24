@@ -109,7 +109,7 @@ export class HandleTurnProgressAfterSelectionUseCase
 
     // 6. 同時播放淡出（在配對位置）和淡入（在獲得區）動畫
     if (capturedCards.length > 0) {
-      await this.animation.playFadeInAtCurrentPosition([...capturedCards], fieldPosition ?? undefined)
+      await this.animation.playFadeInAtCurrentPosition([...capturedCards], isOpponent, fieldPosition ?? undefined)
     }
 
     // 7. 清除隱藏的卡片

@@ -211,6 +211,7 @@ export interface AnimationPort {
    * 應在更新 Vue 狀態後調用。
    *
    * @param cardIds - 要淡入的卡片 ID 列表
+   * @param isOpponent - 是否為對手的獲得區
    * @param fadeOutPosition - 可選，淡出動畫的位置（配對場牌位置）
    * @returns Promise 完成後 resolve
    *
@@ -218,10 +219,10 @@ export interface AnimationPort {
    * ```typescript
    * // 更新狀態後，同時淡出淡入
    * gameState.updateDepositoryCards(...)
-   * await animation.playFadeInAtCurrentPosition(['0101', '0102'], { x: 100, y: 200 })
+   * await animation.playFadeInAtCurrentPosition(['0101', '0102'], false, { x: 100, y: 200 })
    * ```
    */
-  playFadeInAtCurrentPosition(cardIds: string[], fadeOutPosition?: { x: number; y: number }): Promise<void>
+  playFadeInAtCurrentPosition(cardIds: string[], isOpponent: boolean, fadeOutPosition?: { x: number; y: number }): Promise<void>
 
   /**
    * 清除所有隱藏的卡片
