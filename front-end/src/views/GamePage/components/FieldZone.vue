@@ -71,14 +71,14 @@ function handleCardClick(cardId: string) {
   transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* 新卡片淡入（無配對時加入場牌） */
-.field-cards-enter-active {
+/* 新卡片淡入 - 已註釋，避免與動畫層衝突 */
+/* .field-cards-enter-active {
   transition: opacity 200ms ease-in;
 }
 
 .field-cards-enter-from {
   opacity: 0;
-}
+} */
 
 /* 移除 leave 動畫 - 讓卡片直接消失 */
 .field-cards-leave-active {

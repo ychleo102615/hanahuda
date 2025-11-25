@@ -73,9 +73,6 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
     let myDepository = [...this.gameState.getDepositoryCards(localPlayerId)]
     let opponentDepository = [...this.gameState.getDepositoryCards(opponentPlayerId)]
 
-    // 追蹤需要加入場牌的卡片（無配對的情況）
-    const cardsToAddToField: string[] = []
-
     // === 階段 1：處理手牌操作 ===
     if (event.hand_card_play) {
       const result = await this.processHandCardPlay(event.hand_card_play, isOpponent)
@@ -107,19 +104,31 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
           result.matchPosition
         )
       } else {
-        // 1b. 無配對：移除手牌，記錄需加入場牌
+        // 1b. 無配對：移除手牌，立即加入場牌
         this.removePlayedHandCard(event.hand_card_play.played_card, isOpponent)
-        cardsToAddToField.push(result.playedCard)
+        this.addCardsToField([result.playedCard])
       }
     }
 
     // === 階段 2：處理翻牌操作 ===
     if (event.draw_card_play) {
+      // 預先隱藏（在 DOM 存在前記錄到 Set）
+      this.animation.hideCards([event.draw_card_play.played_card])
+
+      // 加入場牌（渲染時已是 invisible 狀態，無閃現）
+      this.addCardsToField([event.draw_card_play.played_card])
+
+      // 等待 DOM 布局完成
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      // 執行翻牌動畫
       const result = await this.processDrawCardPlay(event.draw_card_play)
 
       if (result.hasMatch && result.matchedCard) {
-        // 2a. 有配對：立即移除場牌（觸發 FLIP），更新獲得區，播放淡入動畫
-        // 先移除場牌，讓 TransitionGroup 正確執行 FLIP 動畫
+        // 2a. 有配對：移除翻牌和場牌，更新獲得區，播放淡入動畫
+        // 移除翻牌（剛加入的）
+        this.removeFieldCard(result.playedCard)
+        // 移除場牌
         this.removeFieldCard(result.matchedCard)
 
         // 更新獲得區
@@ -142,23 +151,16 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
           event.draw_card_play.played_card,
           result.matchPosition
         )
-      } else {
-        // 2b. 無配對：記錄需加入場牌
-        cardsToAddToField.push(result.playedCard)
       }
+      // 2b. 無配對時不需要額外處理，動畫完成後卡片自然顯示在場牌區
     }
 
-    // === 階段 3：統一處理無配對的場牌新增 ===
-    if (cardsToAddToField.length > 0) {
-      this.addCardsToField(cardsToAddToField)
-    }
-
-    // === 階段 4：更新遊戲流程狀態 ===
+    // === 階段 3：更新遊戲流程狀態 ===
     this.gameState.updateDeckRemaining(event.deck_remaining)
     this.gameState.setFlowStage(event.next_state.state_type)
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // === 階段 5：清理動畫層 ===
+    // === 階段 4：清理動畫層 ===
     this.animation.clearHiddenCards()
   }
 

@@ -400,8 +400,8 @@ export class AnimationPortAdapter implements AnimationPort {
       })
     })
 
-    // 動畫完成後：有配對時保持隱藏，無配對時顯示
-    if (!targetCardId && cardElement) {
+    // 動畫完成後：有配對時保持隱藏，無配對時立即顯示
+    if (!targetCardId) {
       this.animationLayerStore.showCard(cardId)
     }
     // 有配對時，卡片保持隱藏，由後續動畫處理
@@ -573,7 +573,7 @@ export class AnimationPortAdapter implements AnimationPort {
 
   async playFlipFromDeckAnimation(cardId: string): Promise<void> {
     // T060: 翻牌階段單張翻牌動畫
-    // 從牌堆翻一張牌到場牌區
+    // 從牌堆飛到場牌區（與發牌動畫相同效果）
 
     if (this._interrupted) {
       this._interrupted = false
@@ -596,16 +596,19 @@ export class AnimationPortAdapter implements AnimationPort {
     try {
       // 執行翻牌動畫
       if (cardElement && deckPosition && fieldPosition && !this._interrupted) {
-        // A. 等待 DOM 布局完成
+        // A. 先顯示卡片（移除 invisible），但立即設置 opacity: 0
+        this.animationLayerStore.showCard(cardId)
+
+        // B. 等待 DOM 布局完成
         await waitForLayout(1)
 
-        // B. 保存原始樣式並設置動畫樣式
+        // C. 保存原始樣式並設置動畫樣式
         const originalZIndex = cardElement.style.zIndex
         const originalPosition = cardElement.style.position
         cardElement.style.zIndex = '9999'
         cardElement.style.position = 'relative'
 
-        // C. 計算卡片當前位置（DOM 已布局完成）
+        // D. 計算卡片當前位置（DOM 已布局完成）
         const cardRect = cardElement.getBoundingClientRect()
 
         // 計算從牌堆到場牌的位移
@@ -618,14 +621,12 @@ export class AnimationPortAdapter implements AnimationPort {
             y: initialY,
             scale: 0.8,
             opacity: 0,
-            rotateY: 180,  // 牌面朝下
           },
           enter: {
             x: 0,
             y: 0,
             scale: 1,
             opacity: 1,
-            rotateY: 0,    // 翻轉到牌面朝上
             transition: {
               type: 'spring',
               stiffness: 250,
@@ -637,7 +638,7 @@ export class AnimationPortAdapter implements AnimationPort {
         await apply('enter')
         await sleep(ANIMATION_DURATION.FLIP_FROM_DECK)
 
-        // D. 清理：恢復原始樣式
+        // E. 清理：恢復原始樣式
         cardElement.style.transform = ''
         cardElement.style.opacity = ''
         cardElement.style.zIndex = originalZIndex
