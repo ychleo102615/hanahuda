@@ -183,11 +183,10 @@ export const mockEventScript: MockEventItem[] = [
         active_player_id: 'player-2',
       },
     },
-    delay: 1500,
+    delay: 3000,
   },
-  /*
 
-  // 6. 對手出牌完成
+  // 6. 對手出牌完成（梅鶯配對梅かす2，菊かす配對菊青短）
   {
     eventType: 'TurnCompleted',
     payload: {
@@ -202,8 +201,8 @@ export const mockEventScript: MockEventItem[] = [
       },
       draw_card_play: {
         played_card: '0941', // 菊かす1
-        matched_card: null,
-        captured_cards: [],
+        matched_card: '0931', // 配對菊青短（場上的九月牌）
+        captured_cards: ['0941', '0931'], // 兩張都進入獲得區
       },
       deck_remaining: 20,
       next_state: {
@@ -211,9 +210,10 @@ export const mockEventScript: MockEventItem[] = [
         active_player_id: 'player-1',
       },
     },
-    delay: 1500,
+    delay: 3000,
   },
 
+  /*
   // 7. 玩家出牌完成 (櫻赤短配對櫻かす) - 形成赤短役
   {
     eventType: 'TurnCompleted',
@@ -238,7 +238,7 @@ export const mockEventScript: MockEventItem[] = [
         active_player_id: 'player-1', // 繼續玩家回合因為形成役
       },
     },
-    delay: 1500,
+    delay: 3000,
   },
 
   // 8. 需要 Koi-Koi 決策 (赤短役形成)
@@ -283,7 +283,7 @@ export const mockEventScript: MockEventItem[] = [
       },
       deck_remaining: 19,
     },
-    delay: 2000,
+    delay: 3000,
   },
 
   // 9. 玩家選擇結束 (赤短 6 分已達標)
@@ -306,7 +306,7 @@ export const mockEventScript: MockEventItem[] = [
         active_player_id: 'player-2',
       },
     },
-    delay: 1000,
+    delay: 3000,
   },
 
   // 10. 回合計分
@@ -337,7 +337,7 @@ export const mockEventScript: MockEventItem[] = [
         { player_id: 'player-2', score: 0 },
       ],
     },
-    delay: 2000,
+    delay: 3000,
   },
 
   // 11. 遊戲結束
@@ -353,7 +353,7 @@ export const mockEventScript: MockEventItem[] = [
         { player_id: 'player-2', score: 0 },
       ],
     },
-    delay: 1000,
+    delay: 3000,
   },
   */
 ]

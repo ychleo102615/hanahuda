@@ -346,7 +346,6 @@ export class AnimationPortAdapter implements AnimationPort {
           cardWidth,
           cardHeight
         )
-        isFaceDown = true
       } else {
         // 備用：等待時長
         await sleep(ANIMATION_DURATION.CARD_TO_FIELD)

@@ -70,14 +70,17 @@ export interface RoundDealtEvent {
  * @description
  * 回合完成（無中斷、無役種形成），
  * 包含手牌操作和翻牌操作的結果。
+ *
+ * 注意：此事件中手牌和翻牌操作都必須存在，不會是 null。
+ * 如果役種在中途形成，會觸發 DecisionRequiredEvent 而非此事件。
  */
 export interface TurnCompletedEvent {
   readonly event_type: 'TurnCompleted'
   readonly event_id: string
   readonly timestamp: string
   readonly player_id: string
-  readonly hand_card_play: CardPlay | null
-  readonly draw_card_play: CardPlay | null
+  readonly hand_card_play: CardPlay
+  readonly draw_card_play: CardPlay
   readonly deck_remaining: number
   readonly next_state: NextState
 }
