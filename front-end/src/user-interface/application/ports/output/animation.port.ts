@@ -205,6 +205,9 @@ export interface AnimationPort {
   /**
    * 播放卡片在當前位置的淡入動畫（可同時淡出）
    *
+   * @deprecated 推薦使用 playToDepositoryAnimation 替代，以確保動畫和狀態更新的時序清晰。
+   *             此方法保留用於向後相容，但在新代碼中應避免使用。
+   *
    * @description
    * 用於狀態更新後，讓卡片在新位置（如獲得區）淡入顯示。
    * 如果提供 fadeOutPosition，會同時在該位置播放淡出動畫。

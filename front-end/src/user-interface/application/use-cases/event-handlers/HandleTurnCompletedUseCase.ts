@@ -78,12 +78,11 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
       const result = await this.processHandCardPlay(event.hand_card_play, isOpponent)
 
       if (result.hasMatch && result.matchedCard) {
-        // 1a. 有配對：立即移除卡片（觸發 FLIP），更新獲得區，播放淡入動畫
-        // 先移除場牌和手牌，讓 TransitionGroup 正確執行 FLIP 動畫
-        this.removeFieldCard(result.matchedCard)
-        this.removePlayedHandCard(event.hand_card_play.played_card, isOpponent)
+        // 1a. 有配對：預先隱藏，更新獲得區，播放轉移動畫，最後移除場牌/手牌
+        // 預先隱藏即將加入獲得區的卡片
+        this.animation.hideCards(result.capturedCards)
 
-        // 更新獲得區
+        // 先更新獲得區（新卡片渲染，但被隱藏）
         const updated = this.updateDepository(
           result.capturedCards,
           isOpponent,
@@ -93,16 +92,29 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         myDepository = updated.my
         opponentDepository = updated.opponent
 
-        // 等待 DOM 更新完成
+        // 等待 DOM 布局完成（讓獲得區新卡片完成渲染）
         await new Promise(resolve => setTimeout(resolve, 0))
 
-        // 播放淡入動畫（AnimationLayer 使用卡片 ID 渲染克隆）
-        await this.animation.playFadeInAtCurrentPosition(
-          result.capturedCards,
-          isOpponent,
-          event.hand_card_play.played_card,
-          result.matchPosition
-        )
+        // 播放轉移動畫（淡出 + 淡入，視覺上是卡片轉移到獲得區）
+        const firstCapturedCard = result.capturedCards[0]
+        if (firstCapturedCard) {
+          const targetType = this.domainFacade.getCardTypeFromId(firstCapturedCard)
+          await this.animation.playToDepositoryAnimation(
+            result.capturedCards,
+            targetType,
+            isOpponent,
+            result.matchPosition  // 淡出位置
+          )
+        }
+
+        // 動畫完成後才移除場牌/手牌
+        this.removeFieldCard(result.matchedCard)
+        this.removePlayedHandCard(event.hand_card_play.played_card, isOpponent)
+
+        // 等待 TransitionGroup FLIP 動畫完成
+        // FieldZone 和 PlayerHandZone 的 FLIP 動畫時長為 300ms
+        // 額外增加 50ms buffer 確保動畫完全結束
+        await new Promise(resolve => setTimeout(resolve, 350))
       } else {
         // 1b. 無配對：移除手牌，立即加入場牌
         this.removePlayedHandCard(event.hand_card_play.played_card, isOpponent)
@@ -125,13 +137,11 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
       const result = await this.processDrawCardPlay(event.draw_card_play)
 
       if (result.hasMatch && result.matchedCard) {
-        // 2a. 有配對：移除翻牌和場牌，更新獲得區，播放淡入動畫
-        // 移除翻牌（剛加入的）
-        this.removeFieldCard(result.playedCard)
-        // 移除場牌
-        this.removeFieldCard(result.matchedCard)
+        // 2a. 有配對：預先隱藏，更新獲得區，播放轉移動畫，最後移除翻牌和場牌
+        // 預先隱藏即將加入獲得區的卡片
+        this.animation.hideCards(result.capturedCards)
 
-        // 更新獲得區
+        // 先更新獲得區（新卡片渲染，但被隱藏）
         const updated = this.updateDepository(
           result.capturedCards,
           isOpponent,
@@ -141,16 +151,27 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         myDepository = updated.my
         opponentDepository = updated.opponent
 
-        // 等待 DOM 更新完成
+        // 等待 DOM 布局完成
         await new Promise(resolve => setTimeout(resolve, 0))
 
-        // 播放淡入動畫
-        await this.animation.playFadeInAtCurrentPosition(
-          result.capturedCards,
-          isOpponent,
-          event.draw_card_play.played_card,
-          result.matchPosition
-        )
+        // 播放轉移動畫（淡出 + 淡入）
+        const firstCapturedCard = result.capturedCards[0]
+        if (firstCapturedCard) {
+          const targetType = this.domainFacade.getCardTypeFromId(firstCapturedCard)
+          await this.animation.playToDepositoryAnimation(
+            result.capturedCards,
+            targetType,
+            isOpponent,
+            result.matchPosition
+          )
+        }
+
+        // 動畫完成後才移除翻牌和場牌
+        this.removeFieldCard(result.playedCard)
+        this.removeFieldCard(result.matchedCard)
+
+        // 等待 DOM 更新完成
+        await new Promise(resolve => setTimeout(resolve, 0))
       }
       // 2b. 無配對時不需要額外處理，動畫完成後卡片自然顯示在場牌區
     }

@@ -549,7 +549,7 @@ export class AnimationPortAdapter implements AnimationPort {
     })
 
     // 場牌先加入，手牌後加入
-    const sortedCards = [...fadeOutPromises].sort((a, b) =>
+    const sortedCards = [...fadeOutPromises].sort((a) =>
       a.isHandCard ? 1 : -1
     )
 
@@ -567,7 +567,72 @@ export class AnimationPortAdapter implements AnimationPort {
 
     await Promise.all(animations)
 
-    // 不在這裡 showCard，由 clearHiddenCards 統一處理
+    if (this._interrupted) {
+      this._isAnimating = false
+      return
+    }
+
+    // === 階段 2：等待 DOM 布局完成 ===
+    await waitForLayout()
+
+    if (this._interrupted) {
+      this._isAnimating = false
+      return
+    }
+
+    // === 階段 3：查詢獲得區目標位置 ===
+    // 在獲得區容器內查找，避免找到場牌區的同 cardId 元素
+    const depositoryContainer = document.querySelector(
+      isOpponent ? '.opponent-depository-zone' : '.player-depository-zone'
+    )
+
+    const cardPositions: { cardId: string; rect: DOMRect }[] = []
+    cardIds.forEach(cardId => {
+      const cardElement = depositoryContainer?.querySelector(
+        `[data-card-id="${cardId}"]`
+      ) as HTMLElement | null
+      if (cardElement) {
+        cardPositions.push({
+          cardId,
+          rect: cardElement.getBoundingClientRect(),
+        })
+      }
+    })
+
+    console.info('[AnimationPort] playToDepositoryAnimation positions', {
+      requested: cardIds.length,
+      found: cardPositions.length,
+      positions: cardPositions.map(p => ({ cardId: p.cardId, x: p.rect.x, y: p.rect.y })),
+    })
+
+    // === 階段 4：創建淡入動畫組（在獲得區位置） ===
+    if (cardPositions.length > 0 && !this._interrupted) {
+      const fadeInGroupCards = cardPositions.map(({ cardId, rect }) => ({
+        cardId: `${cardId}-fadeIn`,
+        renderCardId: cardId,  // 用於 CardComponent 渲染
+        fromRect: rect,
+        toRect: rect,  // group 動畫不需要 toRect
+        onComplete: () => {},  // 由 group 統一處理
+      }))
+
+      // 使用 addGroup 將多張卡片作為一個整體執行 fadeIn
+      const fadeInRects = cardPositions.map(p => p.rect)
+      await new Promise<void>(resolve => {
+        this.animationLayerStore.addGroup({
+          groupId: `fadeIn-${Date.now()}`,
+          cards: fadeInGroupCards,
+          groupEffectType: 'fadeIn',
+          onComplete: resolve,
+          boundingBox: calculateBoundingBox(fadeInRects),
+        })
+      })
+    }
+
+    // === 階段 5：動畫完成後顯示真實卡片 ===
+    cardIds.forEach(cardId => {
+      this.animationLayerStore.showCard(cardId)
+    })
+
     this._isAnimating = false
   }
 
@@ -666,6 +731,9 @@ export class AnimationPortAdapter implements AnimationPort {
     return this._isAnimating
   }
 
+  /**
+   * @deprecated 推薦使用 playToDepositoryAnimation 替代
+   */
   async playFadeInAtCurrentPosition(
     cardIds: string[],
     isOpponent: boolean,

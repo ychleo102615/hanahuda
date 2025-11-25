@@ -37,8 +37,11 @@ describe('HandleTurnCompletedUseCase', () => {
     useCase = new HandleTurnCompletedUseCase(mockGameState, mockAnimation, mockDomainFacade)
   })
 
-  // Helper: 等待異步操作完成
-  const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0))
+  // Helper: 等待異步操作完成（增加等待時間以確保所有 Promise 完成，包括 TransitionGroup 動畫延遲）
+  const flushPromises = async () => {
+    // 等待 TransitionGroup FLIP 動畫完成（350ms）+ 額外時間確保所有操作完成
+    await new Promise(resolve => setTimeout(resolve, 400))
+  }
 
   describe('播放配對動畫', () => {
     it('應該在有配對時播放 playMatchAnimation + playToDepositoryAnimation', async () => {
@@ -65,12 +68,12 @@ describe('HandleTurnCompletedUseCase', () => {
       useCase.execute(event)
       await flushPromises()
 
-      // Assert: 應該播放配對動畫
+      // Assert: 應該播放配對動畫和轉移動畫
       expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0301', '0101')
-      expect(mockAnimation.playFadeInAtCurrentPosition).toHaveBeenCalledWith(
+      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
         ['0301', '0101'],
+        'PLAIN', // targetType (mock 返回 PLAIN)
         false, // isOpponent = false (player-1 is local player)
-        '0301', // playedCardId
         undefined // matchPosition (mock 返回 undefined)
       )
     })
@@ -178,12 +181,12 @@ describe('HandleTurnCompletedUseCase', () => {
       useCase.execute(event)
       await flushPromises()
 
-      // Assert: 應該播放翻牌配對動畫（不含 playFlipFromDeckAnimation，那是 Phase 8）
+      // Assert: 應該播放翻牌配對動畫和轉移動畫（不含 playFlipFromDeckAnimation，那是 Phase 8）
       expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0302', '0102')
-      expect(mockAnimation.playFadeInAtCurrentPosition).toHaveBeenCalledWith(
+      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
         ['0302', '0102'],
+        'PLAIN', // targetType (mock 返回 PLAIN)
         false, // isOpponent = false
-        '0302', // playedCardId
         undefined // matchPosition (mock 返回 undefined)
       )
     })
@@ -304,10 +307,10 @@ describe('HandleTurnCompletedUseCase', () => {
       await flushPromises()
 
       // Assert: isOpponent = true
-      expect(mockAnimation.playFadeInAtCurrentPosition).toHaveBeenCalledWith(
+      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
         ['0301', '0101'],
+        'PLAIN', // targetType (mock 返回 PLAIN)
         true, // isOpponent = true
-        '0301', // playedCardId
         undefined // matchPosition (mock 返回 undefined)
       )
     })
