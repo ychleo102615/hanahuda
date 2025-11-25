@@ -203,32 +203,6 @@ export interface AnimationPort {
   isAnimating(): boolean
 
   /**
-   * 播放卡片在當前位置的淡入動畫（可同時淡出）
-   *
-   * @deprecated 推薦使用 playToDepositoryAnimation 替代，以確保動畫和狀態更新的時序清晰。
-   *             此方法保留用於向後相容，但在新代碼中應避免使用。
-   *
-   * @description
-   * 用於狀態更新後，讓卡片在新位置（如獲得區）淡入顯示。
-   * 如果提供 fadeOutPosition，會同時在該位置播放淡出動畫。
-   * 應在更新 Vue 狀態後調用。
-   *
-   * @param cardIds - 要淡入的卡片 ID 列表
-   * @param isOpponent - 是否為對手的獲得區
-   * @param playedCardId - 打出的牌 ID（手牌或翻牌），淡出時會在上層顯示
-   * @param fadeOutPosition - 可選，淡出動畫的位置（配對場牌位置）
-   * @returns Promise 完成後 resolve
-   *
-   * @example
-   * ```typescript
-   * // 更新狀態後，同時淡出淡入
-   * gameState.updateDepositoryCards(...)
-   * await animation.playFadeInAtCurrentPosition(['0101', '0102'], false, '0101', { x: 100, y: 200 })
-   * ```
-   */
-  playFadeInAtCurrentPosition(cardIds: string[], isOpponent: boolean, playedCardId: string, fadeOutPosition?: { x: number; y: number }): Promise<void>
-
-  /**
    * 清除所有隱藏的卡片
    *
    * @description

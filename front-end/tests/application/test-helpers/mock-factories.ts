@@ -262,7 +262,6 @@ export function createMockAnimationPort(): AnimationPort {
     playMatchAnimation: vi.fn().mockResolvedValue(undefined),
     playToDepositoryAnimation: vi.fn().mockResolvedValue(undefined),
     playFlipFromDeckAnimation: vi.fn().mockResolvedValue(undefined),
-    playFadeInAtCurrentPosition: vi.fn().mockResolvedValue(undefined),
     interrupt: vi.fn(),
     isAnimating: vi.fn().mockReturnValue(false),
     hideCards: vi.fn(),

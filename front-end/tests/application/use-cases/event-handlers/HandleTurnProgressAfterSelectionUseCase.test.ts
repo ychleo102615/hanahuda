@@ -41,7 +41,10 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
   })
 
   // Helper: 等待異步操作完成
-  const flushPromises = () => new Promise(resolve => setTimeout(resolve, 0))
+  const flushPromises = async () => {
+    // 等待所有 Promise 完成
+    await new Promise(resolve => setTimeout(resolve, 50))
+  }
 
   describe('播放配對動畫', () => {
     it('應該在翻牌有配對時播放 playMatchAnimation + playToDepositoryAnimation', async () => {
@@ -75,10 +78,10 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
 
       // Assert: 應該播放配對動畫（翻牌動畫已在 HandleSelectionRequiredUseCase 播放）
       expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0501', '0201')
-      expect(mockAnimation.playFadeInAtCurrentPosition).toHaveBeenCalledWith(
+      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
         ['0501', '0201'],
+        'PLAIN', // targetType (mock 返回 PLAIN)
         false, // isOpponent
-        '0501', // playedCardId
         undefined // matchPosition (mock 返回 undefined)
       )
     })
@@ -278,10 +281,10 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
       await flushPromises()
 
       // Assert: isOpponent = true
-      expect(mockAnimation.playFadeInAtCurrentPosition).toHaveBeenCalledWith(
+      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
         ['0501', '0201'],
+        'PLAIN', // targetType (mock 返回 PLAIN)
         true, // isOpponent = true
-        '0501', // playedCardId
         undefined // matchPosition (mock 返回 undefined)
       )
     })

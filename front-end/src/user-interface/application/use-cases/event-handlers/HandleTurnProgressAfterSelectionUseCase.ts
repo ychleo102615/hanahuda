@@ -42,48 +42,45 @@ export class HandleTurnProgressAfterSelectionUseCase
 
   /**
    * 非同步執行動畫和狀態更新
+   *
+   * 關鍵順序：先播放動畫，再更新獲得區，播放轉移動畫，最後移除場牌
+   *
+   * 階段：
+   * 1. 播放配對動畫（如有配對）
+   * 2. 更新獲得區並播放轉移動畫（先更新獲得區 → 播放動畫 → 移除場牌）
+   * 3. 更新場牌（無配對時加入翻牌）
+   * 4. 更新其他狀態
+   * 5. 清理動畫層
    */
   private async executeAsync(event: TurnProgressAfterSelectionEvent): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
-
-    // 取得當前狀態（動畫前）
-    const currentFieldCards = this.gameState.getFieldCards()
-    const currentMyDepository = this.gameState.getDepositoryCards(localPlayerId)
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
-    const currentOpponentDepository = this.gameState.getDepositoryCards(opponentPlayerId)
 
-    // 1. 播放配對動畫
+    const drawCardPlay = event.draw_card_play
+    const capturedCards = drawCardPlay.captured_cards
+
+    // === 階段 1：播放配對動畫 ===
     // 注意：翻牌動畫已在 HandleSelectionRequiredUseCase 中播放（Phase 8）
     // 這裡只需處理配對效果
-    const drawCardPlay = event.draw_card_play
-
-    // 1.1 播放合併特效，獲取場牌位置
-    let fieldPosition: { x: number; y: number } | null = null
+    let matchPosition: { x: number; y: number } | undefined
     if (drawCardPlay.matched_card) {
-      fieldPosition = await this.animation.playMatchAnimation(
+      const position = await this.animation.playMatchAnimation(
         drawCardPlay.played_card,
         drawCardPlay.matched_card
       )
+      matchPosition = position ?? undefined
     }
 
-    // 2. 收集被捕獲的卡片
-    const capturedCards = drawCardPlay.captured_cards
+    // === 階段 2：處理有配對的情況 ===
+    if (drawCardPlay.matched_card && capturedCards.length > 0) {
+      // 2.1 預先隱藏即將加入獲得區的卡片
+      this.animation.hideCards([...capturedCards])
 
-    // 3. 更新狀態
-    // 3.1 更新場牌（移除被配對的場牌）
-    let newFieldCards = [...currentFieldCards]
-    if (drawCardPlay.matched_card) {
-      newFieldCards = newFieldCards.filter(id => id !== drawCardPlay.matched_card)
-    }
-    // 如果翻牌無配對，加入場牌
-    if (!drawCardPlay.matched_card) {
-      newFieldCards.push(drawCardPlay.played_card)
-    }
-    this.gameState.updateFieldCards(newFieldCards)
+      // 2.2 更新獲得區（新卡片渲染，但被隱藏）
+      const currentMyDepository = this.gameState.getDepositoryCards(localPlayerId)
+      const currentOpponentDepository = this.gameState.getDepositoryCards(opponentPlayerId)
 
-    // 3.2 更新獲得區
-    if (capturedCards.length > 0) {
       if (!isOpponent) {
         const newMyDepository = [...currentMyDepository, ...capturedCards]
         this.gameState.updateDepositoryCards(newMyDepository, currentOpponentDepository)
@@ -91,33 +88,48 @@ export class HandleTurnProgressAfterSelectionUseCase
         const newOpponentDepository = [...currentOpponentDepository, ...capturedCards]
         this.gameState.updateDepositoryCards(currentMyDepository, newOpponentDepository)
       }
+
+      // 2.3 等待 DOM 布局完成（讓獲得區新卡片完成渲染）
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      // 2.4 播放轉移動畫（淡出 + 淡入，視覺上是卡片轉移到獲得區）
+      const firstCapturedCard = capturedCards[0]
+      if (firstCapturedCard) {
+        const targetType = this.domainFacade.getCardTypeFromId(firstCapturedCard)
+        await this.animation.playToDepositoryAnimation(
+          [...capturedCards],
+          targetType,
+          isOpponent,
+          matchPosition
+        )
+      }
+
+      // 2.5 動畫完成後才移除場牌
+      const currentFieldCards = this.gameState.getFieldCards()
+      const newFieldCards = currentFieldCards.filter(id => id !== drawCardPlay.matched_card)
+      this.gameState.updateFieldCards(newFieldCards)
+    } else {
+      // === 階段 3：處理無配對的情況（將翻牌加入場牌區）===
+      const currentFieldCards = this.gameState.getFieldCards()
+      const newFieldCards = [...currentFieldCards, drawCardPlay.played_card]
+      this.gameState.updateFieldCards(newFieldCards)
     }
 
-    // 3.3 更新牌堆剩餘數量
+    // === 階段 4：更新其他狀態 ===
     this.gameState.updateDeckRemaining(event.deck_remaining)
 
-    // 4. 若有新役種形成，記錄（役種特效動畫為 Post-MVP）
+    // 若有新役種形成，記錄（役種特效動畫為 Post-MVP）
     if (event.yaku_update && event.yaku_update.newly_formed_yaku.length > 0) {
       console.info('[HandleTurnProgressAfterSelection] Yaku formed:',
         event.yaku_update.newly_formed_yaku.map(y => y.yaku_type))
       // TODO: Post-MVP 實作役種特效動畫
     }
 
-    // 5. 更新 FlowStage 和活動玩家
+    // 更新 FlowStage 和活動玩家
     this.gameState.setFlowStage(event.next_state.state_type)
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // 6. 同時播放淡出（在配對位置）和淡入（在獲得區）動畫
-    if (capturedCards.length > 0) {
-      await this.animation.playFadeInAtCurrentPosition(
-        [...capturedCards],
-        isOpponent,
-        drawCardPlay.played_card,
-        fieldPosition ?? undefined
-      )
-    }
-
-    // 7. 清除隱藏的卡片
+    // === 階段 5：清理動畫層 ===
     this.animation.clearHiddenCards()
   }
 }
