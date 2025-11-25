@@ -43,29 +43,46 @@ function handleCardClick(cardId: string) {
   }
 }
 
-// 填充空位到 8 張
-const displayCards = computed(() => {
-  const cards = [...fieldCards.value]
-  while (cards.length < 8) {
-    cards.push('')
-  }
-  return cards
-})
 </script>
 
 <template>
   <div ref="fieldRef" class="h-full flex items-center justify-center p-4">
-    <div class="grid grid-cols-4 grid-rows-2 gap-4">
-      <template v-for="(cardId, index) in displayCards" :key="index">
-        <CardComponent
-          v-if="cardId"
-          :card-id="cardId"
-          :is-highlighted="isHighlighted(cardId)"
-          :is-selectable="isSelectable(cardId)"
-          size="md"
-          @click="handleCardClick"
-        />
-      </template>
-    </div>
+    <TransitionGroup
+      name="field-cards"
+      tag="div"
+      class="grid grid-cols-4 gap-4"
+    >
+      <CardComponent
+        v-for="cardId in fieldCards"
+        :key="cardId"
+        :card-id="cardId"
+        :is-highlighted="isHighlighted(cardId)"
+        :is-selectable="isSelectable(cardId)"
+        size="md"
+        @click="handleCardClick"
+      />
+    </TransitionGroup>
   </div>
 </template>
+
+<style scoped>
+/* FLIP 動畫 - 只動畫 transform */
+.field-cards-move {
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 新卡片淡入（無配對時加入場牌） */
+.field-cards-enter-active {
+  transition: opacity 200ms ease-in;
+}
+
+.field-cards-enter-from {
+  opacity: 0;
+}
+
+/* 移除 leave 動畫 - 讓卡片直接消失 */
+.field-cards-leave-active {
+  position: absolute;
+  opacity: 0;
+}
+</style>

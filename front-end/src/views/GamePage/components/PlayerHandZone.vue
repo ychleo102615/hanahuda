@@ -111,7 +111,12 @@ defineExpose({
 
 <template>
   <div ref="handRef" class="h-full flex items-center justify-center p-4 overflow-x-auto">
-    <div class="flex gap-3">
+    <TransitionGroup
+      v-if="myHandCards.length > 0"
+      name="hand-cards"
+      tag="div"
+      class="flex gap-3"
+    >
       <CardComponent
         v-for="cardId in myHandCards"
         :key="cardId"
@@ -121,12 +126,25 @@ defineExpose({
         size="lg"
         @click="handleCardClick"
       />
-      <div
-        v-if="myHandCards.length === 0"
-        class="text-gray-500 text-sm"
-      >
-        No cards
-      </div>
+    </TransitionGroup>
+    <div
+      v-else
+      class="text-gray-500 text-sm"
+    >
+      No cards
     </div>
   </div>
 </template>
+
+<style scoped>
+/* FLIP 動畫 */
+.hand-cards-move {
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 移除 leave 動畫 - 讓卡片直接消失並脫離文檔流 */
+.hand-cards-leave-active {
+  position: absolute;
+  opacity: 0;
+}
+</style>

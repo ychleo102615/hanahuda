@@ -81,10 +81,12 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
       const result = await this.processHandCardPlay(event.hand_card_play, isOpponent)
 
       if (result.hasMatch && result.matchedCard) {
-        // 1a. 有配對：更新獲得區，播放淡入動畫
-        // 預先隱藏獲得區卡片，避免閃爍
-        this.animation.hideCards(result.capturedCards)
+        // 1a. 有配對：立即移除卡片（觸發 FLIP），更新獲得區，播放淡入動畫
+        // 先移除場牌和手牌，讓 TransitionGroup 正確執行 FLIP 動畫
+        this.removeFieldCard(result.matchedCard)
+        this.removePlayedHandCard(event.hand_card_play.played_card, isOpponent)
 
+        // 更新獲得區
         const updated = this.updateDepository(
           result.capturedCards,
           isOpponent,
@@ -94,16 +96,16 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         myDepository = updated.my
         opponentDepository = updated.opponent
 
+        // 等待 DOM 更新完成
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        // 播放淡入動畫（AnimationLayer 使用卡片 ID 渲染克隆）
         await this.animation.playFadeInAtCurrentPosition(
           result.capturedCards,
           isOpponent,
           event.hand_card_play.played_card,
           result.matchPosition
         )
-
-        // 動畫完成後移除場牌和手牌（避免翻牌動畫時 cardId 重複）
-        this.removeFieldCard(result.matchedCard)
-        this.removePlayedHandCard(event.hand_card_play.played_card, isOpponent)
       } else {
         // 1b. 無配對：移除手牌，記錄需加入場牌
         this.removePlayedHandCard(event.hand_card_play.played_card, isOpponent)
@@ -116,10 +118,11 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
       const result = await this.processDrawCardPlay(event.draw_card_play)
 
       if (result.hasMatch && result.matchedCard) {
-        // 2a. 有配對：更新獲得區，播放淡入動畫
-        // 預先隱藏獲得區卡片，避免閃爍
-        this.animation.hideCards(result.capturedCards)
+        // 2a. 有配對：立即移除場牌（觸發 FLIP），更新獲得區，播放淡入動畫
+        // 先移除場牌，讓 TransitionGroup 正確執行 FLIP 動畫
+        this.removeFieldCard(result.matchedCard)
 
+        // 更新獲得區
         const updated = this.updateDepository(
           result.capturedCards,
           isOpponent,
@@ -129,15 +132,16 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         myDepository = updated.my
         opponentDepository = updated.opponent
 
+        // 等待 DOM 更新完成
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        // 播放淡入動畫
         await this.animation.playFadeInAtCurrentPosition(
           result.capturedCards,
           isOpponent,
           event.draw_card_play.played_card,
           result.matchPosition
         )
-
-        // 動畫完成後移除場牌
-        this.removeFieldCard(result.matchedCard)
       } else {
         // 2b. 無配對：記錄需加入場牌
         cardsToAddToField.push(result.playedCard)
