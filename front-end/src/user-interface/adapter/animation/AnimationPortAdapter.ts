@@ -27,6 +27,15 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * 輔助函數：等待 DOM 布局完成
+ */
+async function waitForLayout(frames = 2): Promise<void> {
+  for (let i = 0; i < frames; i++) {
+    await new Promise(resolve => requestAnimationFrame(resolve))
+  }
+}
+
+/**
  * 動畫時長常數 (ms)
  */
 const ANIMATION_DURATION = {
@@ -36,6 +45,33 @@ const ANIMATION_DURATION = {
   DEAL_CARD: 80,        // 單張發牌動畫時長
   DEAL_STAGGER: 0,    // 每張卡片延遲（T061）
   FLIP_FROM_DECK: 200,  // 翻牌動畫時長
+}
+
+/**
+ * 卡片偏移量常數（用於重疊動畫時的視覺區分）
+ */
+const CARD_OFFSET = {
+  X: 8,
+  Y: -8,
+}
+
+/**
+ * 計算多張卡片的包圍盒（最小外接矩形）
+ *
+ * @description
+ * 用於 CardGroup 容器定位，確保 transform-origin 正確。
+ */
+function calculateBoundingBox(rects: DOMRect[]): DOMRect {
+  if (rects.length === 0) {
+    return new DOMRect(0, 0, 0, 0)
+  }
+
+  const minX = Math.min(...rects.map(r => r.x))
+  const minY = Math.min(...rects.map(r => r.y))
+  const maxX = Math.max(...rects.map(r => r.x + r.width))
+  const maxY = Math.max(...rects.map(r => r.y + r.height))
+
+  return new DOMRect(minX, minY, maxX - minX, maxY - minY)
 }
 
 /**
@@ -97,8 +133,7 @@ export class AnimationPortAdapter implements AnimationPort {
     this.animationLayerStore?.hideCards(allCardIds)
 
     // 等待 DOM 渲染完成（兩個 frame 確保布局穩定）
-    await new Promise(resolve => requestAnimationFrame(resolve))
-    await new Promise(resolve => requestAnimationFrame(resolve))
+    await waitForLayout()
 
     try {
       // 花札發牌順序：4 輪手牌 → 場牌
@@ -196,9 +231,7 @@ export class AnimationPortAdapter implements AnimationPort {
     fromRect: DOMRect
   ): Promise<void> {
     // 等待 DOM 布局完成
-    await new Promise(resolve => requestAnimationFrame(resolve))
-    await new Promise(resolve => requestAnimationFrame(resolve))
-    await new Promise(resolve => requestAnimationFrame(resolve))
+    await waitForLayout(3)
 
     const cardId = cardElement.getAttribute('data-card-id')
     const cardRect = cardElement.getBoundingClientRect()
@@ -333,8 +366,8 @@ export class AnimationPortAdapter implements AnimationPort {
       // 有配對：飛到配對場牌位置（稍微偏移避免完全重疊）
       const targetRect = targetElement.getBoundingClientRect()
       toRect = new DOMRect(
-        targetRect.x + 8,
-        targetRect.y - 8,
+        targetRect.x + CARD_OFFSET.X,
+        targetRect.y + CARD_OFFSET.Y,
         targetRect.width,
         targetRect.height
       )
@@ -403,37 +436,41 @@ export class AnimationPortAdapter implements AnimationPort {
       // 隱藏場牌，準備用克隆做動畫
       this.animationLayerStore.hideCards([fieldCardId])
 
-      // 手牌和場牌克隆一起做 pulse 效果
+      // 手牌和場牌作為一組執行 pulse 效果
       // 手牌克隆稍微偏移避免完全重疊
       const handRect = new DOMRect(
-        fieldRect.x + 8,
-        fieldRect.y - 8,
+        fieldRect.x + CARD_OFFSET.X,
+        fieldRect.y + CARD_OFFSET.Y,
         fieldRect.width,
         fieldRect.height
       )
 
-      // 兩個克隆同時做 pulse
+      // 使用 group 方式執行 pulse，兩張卡片作為整體執行縮放動畫
       // 注意順序：場牌先加入，手牌後加入（z-index 更高，視覺上在上面）
-      await Promise.all([
-        new Promise<void>(resolve => {
-          this.animationLayerStore.addCard({
-            cardId: fieldCardId,
-            fromRect: fieldRect,
-            toRect: fieldRect,
-            onComplete: resolve,
-            cardEffectType: 'pulse',
-          })
-        }),
-        new Promise<void>(resolve => {
-          this.animationLayerStore.addCard({
-            cardId: handCardId,
-            fromRect: handRect,
-            toRect: handRect,
-            onComplete: resolve,
-            cardEffectType: 'pulse',
-          })
-        }),
-      ])
+      const pulseCards = [
+        {
+          cardId: fieldCardId,
+          fromRect: fieldRect,
+          toRect: fieldRect,
+          onComplete: () => {},
+        },
+        {
+          cardId: handCardId,
+          fromRect: handRect,
+          toRect: handRect,
+          onComplete: () => {},
+        },
+      ]
+
+      await new Promise<void>(resolve => {
+        this.animationLayerStore.addGroup({
+          groupId: `pulse-${Date.now()}`,
+          cards: pulseCards,
+          groupEffectType: 'pulse',
+          onComplete: resolve,
+          boundingBox: calculateBoundingBox([fieldRect, handRect]),
+        })
+      })
 
       // 動畫完成後保持隱藏（等待 depository 動畫）
     } else {
@@ -560,7 +597,7 @@ export class AnimationPortAdapter implements AnimationPort {
       // 執行翻牌動畫
       if (cardElement && deckPosition && fieldPosition && !this._interrupted) {
         // A. 等待 DOM 布局完成
-        await new Promise(resolve => requestAnimationFrame(resolve))
+        await waitForLayout(1)
 
         // B. 保存原始樣式並設置動畫樣式
         const originalZIndex = cardElement.style.zIndex
@@ -651,9 +688,9 @@ export class AnimationPortAdapter implements AnimationPort {
 
     const allAnimations: Promise<void>[] = []
 
-    // === 階段 1：立即創建淡出克隆（無縫銜接 pulse 動畫） ===
-    // 在等待 DOM 布局之前就創建，避免 pulse 克隆移除後出現空窗期
-    // 排序：playedCardId 最後創建，z-order 最高（在上層）
+    // === 階段 1：創建淡出動畫組（無縫銜接 pulse 動畫） ===
+    // 使用 group 方式，避免多張重疊卡片透明度穿透問題
+    // 排序：playedCardId 最後加入，z-order 最高（在上層）
     if (fadeOutPosition) {
       const sortedCardIds = [...cardIds].sort((a, b) => {
         if (a === playedCardId) return 1
@@ -661,34 +698,41 @@ export class AnimationPortAdapter implements AnimationPort {
         return 0
       })
 
-      sortedCardIds.forEach(cardId => {
+      const fadeOutGroupCards = sortedCardIds.map(cardId => {
         const isPlayedCard = cardId === playedCardId
         const fadeOutRect = new DOMRect(
-          fadeOutPosition.x + (isPlayedCard ? 8 : 0),
-          fadeOutPosition.y + (isPlayedCard ? -8 : 0),
+          fadeOutPosition.x + (isPlayedCard ? CARD_OFFSET.X : 0),
+          fadeOutPosition.y + (isPlayedCard ? CARD_OFFSET.Y : 0),
           cardWidth,
           cardHeight
         )
 
-        // 使用後綴區分動畫 ID，但 displayCardId 保持原始 cardId
-        allAnimations.push(
-          new Promise<void>(resolve => {
-            this.animationLayerStore.addCard({
-              cardId: `${cardId}-fadeOut`,
-              displayCardId: cardId,  // 用於 CardComponent 渲染
-              fromRect: fadeOutRect,
-              toRect: fadeOutRect,
-              onComplete: resolve,
-              cardEffectType: 'fadeOut',
-            })
-          })
-        )
+        return {
+          cardId: `${cardId}-fadeOut`,
+          displayCardId: cardId,  // 用於 CardComponent 渲染
+          fromRect: fadeOutRect,
+          toRect: fadeOutRect,  // group 動畫不需要 toRect
+          onComplete: () => {},  // 由 group 統一處理
+        }
       })
+
+      // 使用 addGroup 將多張卡片作為一個整體執行 fadeOut
+      const fadeOutRects = fadeOutGroupCards.map(c => c.fromRect)
+      allAnimations.push(
+        new Promise<void>(resolve => {
+          this.animationLayerStore.addGroup({
+            groupId: `fadeOut-${Date.now()}`,
+            cards: fadeOutGroupCards,
+            groupEffectType: 'fadeOut',
+            onComplete: resolve,
+            boundingBox: calculateBoundingBox(fadeOutRects),
+          })
+        })
+      )
     }
 
     // === 階段 2：等待 DOM 布局完成 ===
-    await new Promise(resolve => requestAnimationFrame(resolve))
-    await new Promise(resolve => requestAnimationFrame(resolve))
+    await waitForLayout()
 
     // === 階段 3：獲取獲得區真實位置 ===
     // 在獲得區容器內查找，避免找到場牌區的同 cardId 元素
@@ -715,24 +759,30 @@ export class AnimationPortAdapter implements AnimationPort {
       positions: cardPositions.map(p => ({ cardId: p.cardId, x: p.rect.x, y: p.rect.y })),
     })
 
-    // === 階段 4：創建淡入動畫（在獲得區位置） ===
-    cardPositions.forEach(({ cardId, rect }) => {
-      if (!this._interrupted) {
-        // 使用後綴區分動畫 ID，但 displayCardId 保持原始 cardId
-        allAnimations.push(
-          new Promise<void>(resolve => {
-            this.animationLayerStore.addCard({
-              cardId: `${cardId}-fadeIn`,
-              displayCardId: cardId,  // 用於 CardComponent 渲染
-              fromRect: rect,
-              toRect: rect,
-              onComplete: resolve,
-              cardEffectType: 'fadeIn',
-            })
+    // === 階段 4：創建淡入動畫組（在獲得區位置） ===
+    if (cardPositions.length > 0 && !this._interrupted) {
+      const fadeInGroupCards = cardPositions.map(({ cardId, rect }) => ({
+        cardId: `${cardId}-fadeIn`,
+        displayCardId: cardId,  // 用於 CardComponent 渲染
+        fromRect: rect,
+        toRect: rect,  // group 動畫不需要 toRect
+        onComplete: () => {},  // 由 group 統一處理
+      }))
+
+      // 使用 addGroup 將多張卡片作為一個整體執行 fadeIn
+      const fadeInRects = cardPositions.map(p => p.rect)
+      allAnimations.push(
+        new Promise<void>(resolve => {
+          this.animationLayerStore.addGroup({
+            groupId: `fadeIn-${Date.now()}`,
+            cards: fadeInGroupCards,
+            groupEffectType: 'fadeIn',
+            onComplete: resolve,
+            boundingBox: calculateBoundingBox(fadeInRects),
           })
-        )
-      }
-    })
+        })
+      )
+    }
 
     await Promise.all(allAnimations)
 

@@ -20,6 +20,12 @@ const animatedCardIds = ref<Set<string>>(new Set())
 // 追蹤每張卡片的 DOM 元素
 const cardRefs = ref<Map<string, HTMLElement>>(new Map())
 
+// 追蹤已經開始動畫的組 ID
+const animatedGroupIds = ref<Set<string>>(new Set())
+
+// 追蹤每個組容器的 DOM 元素
+const groupRefs = ref<Map<string, HTMLElement>>(new Map())
+
 // 設置卡片 ref
 function setCardRef(cardId: string, el: HTMLElement | null) {
   if (el) {
@@ -135,11 +141,104 @@ function startAnimationIfNeeded(cardId: string) {
   })
 }
 
+// 設置組容器 ref
+function setGroupRef(groupId: string, el: HTMLElement | null) {
+  if (el) {
+    groupRefs.value.set(groupId, el)
+    // 當元素掛載時，立即檢查是否需要開始動畫
+    startGroupAnimation(groupId)
+  } else {
+    groupRefs.value.delete(groupId)
+  }
+}
+
+// 為指定組開始動畫
+function startGroupAnimation(groupId: string) {
+  // 如果已經在動畫中，跳過
+  if (animatedGroupIds.value.has(groupId)) return
+
+  const group = store.animatingGroups.find(g => g.groupId === groupId)
+  if (!group) return
+
+  const el = groupRefs.value.get(groupId)
+  if (!el) return
+
+  // 標記為已開始動畫
+  animatedGroupIds.value.add(groupId)
+
+  const effectType = group.groupEffectType
+
+  // 根據效果類型執行不同動畫
+  let motionConfig: Parameters<typeof useMotion>[1]
+
+  if (effectType === 'pulse') {
+    // 脈衝效果：原地縮放
+    motionConfig = {
+      initial: {
+        scale: 1,
+        opacity: 1,
+      },
+      enter: {
+        scale: [1, 1.15, 1],
+        opacity: 1,
+        transition: {
+          duration: 300,
+          ease: 'easeInOut',
+        },
+      },
+    }
+  } else if (effectType === 'fadeOut') {
+    // 淡出效果
+    motionConfig = {
+      initial: {
+        opacity: 1,
+      },
+      enter: {
+        opacity: 0,
+        transition: {
+          duration: 250,
+          ease: 'easeOut',
+        },
+      },
+    }
+  } else if (effectType === 'fadeIn') {
+    // 淡入效果
+    motionConfig = {
+      initial: {
+        opacity: 0,
+      },
+      enter: {
+        opacity: 1,
+        transition: {
+          duration: 250,
+          ease: 'easeIn',
+        },
+      },
+    }
+  } else {
+    // 預設：無動畫
+    motionConfig = {
+      initial: { opacity: 1 },
+      enter: { opacity: 1 },
+    }
+  }
+
+  const { apply } = useMotion(el, motionConfig)
+
+  // 執行動畫並等待完成
+  apply('enter')?.then(() => {
+    group.onComplete()
+    store.removeGroup(group.groupId)
+    animatedGroupIds.value.delete(groupId)
+  })
+}
+
 </script>
 
 <template>
   <Teleport to="body">
     <div class="fixed inset-0 pointer-events-none" style="z-index: 9999;">
+      <!-- 單獨卡片動畫 -->
       <div
         v-for="card in store.animatingCards"
         :key="card.cardId"
@@ -157,6 +256,38 @@ function startAnimationIfNeeded(cardId: string) {
           :is-animation-clone="true"
           :is-face-down="card.isFaceDown"
         />
+      </div>
+
+      <!-- 卡片組動畫（容器控制 opacity/scale，卡片使用相對座標） -->
+      <div
+        v-for="group in store.animatingGroups"
+        :key="group.groupId"
+        :ref="(el) => setGroupRef(group.groupId, el as HTMLElement)"
+        class="absolute"
+        :style="{
+          left: `${group.boundingBox.x}px`,
+          top: `${group.boundingBox.y}px`,
+          width: `${group.boundingBox.width}px`,
+          height: `${group.boundingBox.height}px`,
+        }"
+      >
+        <div
+          v-for="card in group.cards"
+          :key="card.cardId"
+          class="absolute"
+          :style="{
+            left: `${card.fromRect.x - group.boundingBox.x}px`,
+            top: `${card.fromRect.y - group.boundingBox.y}px`,
+            width: `${card.fromRect.width}px`,
+            height: `${card.fromRect.height}px`,
+          }"
+        >
+          <CardComponent
+            :card-id="card.displayCardId || card.cardId"
+            :is-animation-clone="true"
+            :is-face-down="card.isFaceDown"
+          />
+        </div>
       </div>
     </div>
   </Teleport>

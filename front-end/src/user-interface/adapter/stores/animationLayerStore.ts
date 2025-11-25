@@ -20,6 +20,11 @@ export type CardEffectType =
   | 'fadeIn'    // 淡入：淡入出現
 
 /**
+ * 組級效果類型（用於多張卡片整體動畫）
+ */
+export type GroupEffectType = 'fadeOut' | 'fadeIn' | 'pulse'
+
+/**
  * 動畫卡片資料
  */
 export interface AnimatingCard {
@@ -40,11 +45,35 @@ export interface AnimatingCard {
 }
 
 /**
+ * 卡片組資料（用於多張卡片整體動畫）
+ *
+ * @description
+ * 將多張需要一起執行動畫的卡片包裹在同一容器中。
+ * 容器定位到包圍盒（bounding box），內層卡片使用相對座標。
+ * 這樣可以：
+ * 1. 避免透明度穿透（fadeOut/fadeIn）
+ * 2. 正確的 transform-origin（pulse）
+ */
+export interface CardGroup {
+  /** 組識別 ID */
+  groupId: string
+  /** 組內的卡片列表 */
+  cards: AnimatingCard[]
+  /** 組級效果類型 */
+  groupEffectType: GroupEffectType
+  /** 動畫完成回調 */
+  onComplete: () => void
+  /** 包圍盒：所有卡片的最小外接矩形 */
+  boundingBox: DOMRect
+}
+
+/**
  * Animation Layer Store
  */
 export const useAnimationLayerStore = defineStore('animationLayer', () => {
   // State
   const animatingCards = ref<AnimatingCard[]>([])
+  const animatingGroups = ref<CardGroup[]>([])
   const hiddenCardIds = ref<Set<string>>(new Set())
 
   // Actions - 動畫卡片管理
@@ -56,8 +85,18 @@ export const useAnimationLayerStore = defineStore('animationLayer', () => {
     animatingCards.value = animatingCards.value.filter(c => c.cardId !== cardId)
   }
 
+  // Actions - 動畫卡片組管理
+  function addGroup(group: CardGroup): void {
+    animatingGroups.value.push(group)
+  }
+
+  function removeGroup(groupId: string): void {
+    animatingGroups.value = animatingGroups.value.filter(g => g.groupId !== groupId)
+  }
+
   function clear(): void {
     animatingCards.value = []
+    animatingGroups.value = []
     hiddenCardIds.value.clear()
   }
 
@@ -77,10 +116,15 @@ export const useAnimationLayerStore = defineStore('animationLayer', () => {
   return {
     // State
     animatingCards,
+    animatingGroups,
     hiddenCardIds,
-    // Actions
+    // Actions - 卡片管理
     addCard,
     removeCard,
+    // Actions - 卡片組管理
+    addGroup,
+    removeGroup,
+    // Actions - 通用
     clear,
     hideCards,
     showCard,
