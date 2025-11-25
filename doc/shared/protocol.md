@@ -89,10 +89,15 @@
 #### CardPlay（卡片操作）
 ```typescript
 {
-  card: string,              // 打出/翻開的卡片 ID
-  captured: string[]         // 捕獲的卡片
+  played_card: string,           // 打出/翻開的卡片 ID
+  matched_card: string | null,   // 配對的場牌 ID（無配對為 null）
+  captured_cards: string[]       // 捕獲的卡片（配對成功包含 played_card + matched_card）
 }
 ```
+
+**說明**：
+- `matched_card` 為 `null` 時，表示無配對，`captured_cards` 為空陣列 `[]`
+- 配對成功時，`captured_cards` 包含 `played_card` 和 `matched_card` 兩張牌
 
 #### CardSelection（卡片選擇）
 ```typescript
@@ -308,11 +313,14 @@ Teshi 或場牌流局立即結束
 
 #### TurnCompleted
 打手牌、翻牌均完成（無中斷、無役型形成）
+
+**注意**：此事件中手牌和翻牌操作都必須存在，不會是 null。
+
 ```json
 {
   player_id: string,
-  hand_play: CardPlay,                 // 打手牌操作
-  deck_flip: CardPlay,                 // 翻牌操作
+  hand_card_play: CardPlay,            // 打手牌操作（必定存在）
+  draw_card_play: CardPlay,            // 翻牌操作（必定存在）
   deck_remaining: number,
   next_state: NextState
 }
@@ -323,8 +331,10 @@ Teshi 或場牌流局立即結束
 ```json
 {
   player_id: string,
-  hand_play: CardPlay,                 // 已完成的打手牌操作
-  selection: CardSelection             // 需要選擇的翻牌配對
+  hand_card_play: CardPlay,            // 已完成的打手牌操作
+  drawn_card: string,                  // 翻出的卡片 ID
+  possible_targets: string[],          // 可選擇的配對目標
+  deck_remaining: number
 }
 ```
 
@@ -332,22 +342,28 @@ Teshi 或場牌流局立即結束
 翻牌選擇完成，繼續流程
 ```json
 {
-  selected_capture: CardPlay,         // 選擇後的翻牌操作
+  player_id: string,
+  selection: CardSelection,            // 玩家的選擇
+  draw_card_play: CardPlay,            // 選擇後的翻牌操作
+  yaku_update: YakuUpdate | null,      // 有新役型時才有值
   deck_remaining: number,
-  yaku_update?: YakuUpdate | null,    // 有新役型時才有值
   next_state: NextState
 }
 ```
 
 #### DecisionRequired
 形成役型，需決策 Koi-Koi（隱含狀態：`AWAITING_DECISION`，行動玩家為 `player_id`）
+
+**注意**：役種可能在手牌階段或翻牌階段形成，因此兩個字段可能為 null。
+
 ```json
 {
   player_id: string,
-  hand_play: CardPlay,                 // 本回合打手牌操作
-  deck_flip: CardPlay,                 // 本回合翻牌操作
-  deck_remaining: number,
-  yaku_update: YakuUpdate
+  hand_card_play: CardPlay | null,     // 本回合打手牌操作（可能為 null）
+  draw_card_play: CardPlay | null,     // 本回合翻牌操作（可能為 null）
+  yaku_update: YakuUpdate,
+  current_multipliers: ScoreMultipliers,
+  deck_remaining: number
 }
 ```
 
@@ -395,8 +411,16 @@ Teshi 或場牌流局立即結束
 C→S: TurnPlayHandCard {card: "0341", target: "0342"}
 S→C: TurnCompleted {
        player_id: "p1",
-       hand_play: {card: "0341", captured: ["0342"]},
-       deck_flip: {card: "0843", captured: []},
+       hand_card_play: {
+         played_card: "0341",
+         matched_card: "0342",
+         captured_cards: ["0341", "0342"]
+       },
+       draw_card_play: {
+         played_card: "0843",
+         matched_card: null,
+         captured_cards: []
+       },
        deck_remaining: 23,
        next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
      }
@@ -407,12 +431,29 @@ S→C: TurnCompleted {
 C→S: TurnPlayHandCard {card: "0341", target: "0342"}
 S→C: SelectionRequired {
        player_id: "p1",
-       hand_play: {card: "0341", captured: ["0342"]},
-       selection: {source: "0841", options: ["0842", "0843"]}
+       hand_card_play: {
+         played_card: "0341",
+         matched_card: "0342",
+         captured_cards: ["0341", "0342"]
+       },
+       drawn_card: "0841",
+       possible_targets: ["0842", "0843"],
+       deck_remaining: 23
      }
 C→S: TurnSelectTarget {source: "0841", target: "0842"}
 S→C: TurnProgressAfterSelection {
-       selected_capture: {card: "0841", captured: ["0842"]},
+       player_id: "p1",
+       selection: {
+         source_card: "0841",
+         selected_target: "0842",
+         captured_cards: ["0841", "0842"]
+       },
+       draw_card_play: {
+         played_card: "0841",
+         matched_card: "0842",
+         captured_cards: ["0841", "0842"]
+       },
+       yaku_update: null,
        deck_remaining: 23,
        next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
      }
@@ -423,16 +464,28 @@ S→C: TurnProgressAfterSelection {
 C→S: TurnPlayHandCard {card: "0331", target: null}
 S→C: DecisionRequired {
        player_id: "p1",
-       hand_play: {card: "0331", captured: ["0332"]},
-       deck_flip: {card: "0333", captured: ["0334"]},
-       deck_remaining: 23,
-       yaku_update: {new: [{type: "AKATAN", base_points: 5}], total_base: 5}
+       hand_card_play: {
+         played_card: "0331",
+         matched_card: "0332",
+         captured_cards: ["0331", "0332"]
+       },
+       draw_card_play: {
+         played_card: "0333",
+         matched_card: "0334",
+         captured_cards: ["0333", "0334"]
+       },
+       yaku_update: {
+         newly_formed_yaku: [{yaku_type: "AKA_TAN", base_points: 6}],
+         all_active_yaku: [{yaku_type: "AKA_TAN", base_points: 6}]
+       },
+       current_multipliers: {player_multipliers: {"p1": 1, "p2": 1}},
+       deck_remaining: 23
      }
 C→S: RoundMakeDecision {decision: "KOI_KOI"}
 S→C: DecisionMade {
        player_id: "p1",
        decision: "KOI_KOI",
-       koi_multiplier_update: 2,
+       updated_multipliers: {player_multipliers: {"p1": 2, "p2": 1}},
        next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
      }
 ```
@@ -442,19 +495,37 @@ S→C: DecisionMade {
 C→S: TurnPlayHandCard {card: "0131", target: "0132"}
 S→C: DecisionRequired {
        player_id: "p1",
-       hand_play: {card: "0131", captured: ["0132"]},
-       deck_flip: {card: "0133", captured: ["0134"]},
-       deck_remaining: 22,
-       yaku_update: {new: [{type: "AOTAN", base_points: 5}], total_base: 10}
+       hand_card_play: {
+         played_card: "0131",
+         matched_card: "0132",
+         captured_cards: ["0131", "0132"]
+       },
+       draw_card_play: {
+         played_card: "0133",
+         matched_card: "0134",
+         captured_cards: ["0133", "0134"]
+       },
+       yaku_update: {
+         newly_formed_yaku: [{yaku_type: "AO_TAN", base_points: 6}],
+         all_active_yaku: [
+           {yaku_type: "AKA_TAN", base_points: 6},
+           {yaku_type: "AO_TAN", base_points: 6}
+         ]
+       },
+       current_multipliers: {player_multipliers: {"p1": 2, "p2": 1}},
+       deck_remaining: 22
      }
 C→S: RoundMakeDecision {decision: "END_ROUND"}
 S→C: RoundScored {
        winner_id: "p1",
-       yakus: [{type: "AKATAN", base_points: 5}, {type: "AOTAN", base_points: 5}],
-       base_total: 10,
-       multipliers: {seven_plus: 2},
-       final_points: 20,
-       cumulative_scores: [{player_id: "p1", score: 20}, {player_id: "p2", score: 0}]
+       yaku_list: [
+         {yaku_type: "AKA_TAN", base_points: 6},
+         {yaku_type: "AO_TAN", base_points: 6}
+       ],
+       base_score: 12,
+       final_score: 24,
+       multipliers: {player_multipliers: {"p1": 2, "p2": 1}},
+       updated_total_scores: [{player_id: "p1", score: 24}, {player_id: "p2", score: 0}]
      }
      // END_ROUND 時直接發送 RoundScored，省略 DecisionMade
 ```
