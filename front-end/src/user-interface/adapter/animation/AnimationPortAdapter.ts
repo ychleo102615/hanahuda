@@ -709,7 +709,7 @@ export class AnimationPortAdapter implements AnimationPort {
 
         return {
           cardId: `${cardId}-fadeOut`,
-          displayCardId: cardId,  // 用於 CardComponent 渲染
+          renderCardId: cardId,  // 用於 CardComponent 渲染
           fromRect: fadeOutRect,
           toRect: fadeOutRect,  // group 動畫不需要 toRect
           onComplete: () => {},  // 由 group 統一處理
@@ -763,7 +763,7 @@ export class AnimationPortAdapter implements AnimationPort {
     if (cardPositions.length > 0 && !this._interrupted) {
       const fadeInGroupCards = cardPositions.map(({ cardId, rect }) => ({
         cardId: `${cardId}-fadeIn`,
-        displayCardId: cardId,  // 用於 CardComponent 渲染
+        renderCardId: cardId,  // 用於 CardComponent 渲染
         fromRect: rect,
         toRect: rect,  // group 動畫不需要 toRect
         onComplete: () => {},  // 由 group 統一處理

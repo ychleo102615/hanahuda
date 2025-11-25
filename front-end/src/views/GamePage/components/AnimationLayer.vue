@@ -252,7 +252,7 @@ function startGroupAnimation(groupId: string) {
         }"
       >
         <CardComponent
-          :card-id="card.displayCardId || card.cardId"
+          :card-id="card.renderCardId || card.cardId"
           :is-animation-clone="true"
           :is-face-down="card.isFaceDown"
         />
@@ -283,7 +283,7 @@ function startGroupAnimation(groupId: string) {
           }"
         >
           <CardComponent
-            :card-id="card.displayCardId || card.cardId"
+            :card-id="card.renderCardId || card.cardId"
             :is-animation-clone="true"
             :is-face-down="card.isFaceDown"
           />

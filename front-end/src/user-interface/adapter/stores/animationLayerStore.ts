@@ -30,8 +30,8 @@ export type GroupEffectType = 'fadeOut' | 'fadeIn' | 'pulse'
 export interface AnimatingCard {
   /** 動畫識別 ID（用於追蹤動畫狀態，可帶後綴如 -fadeOut） */
   cardId: string
-  /** 顯示用卡片 ID（用於 CardComponent 渲染卡片圖案，預設使用 cardId） */
-  displayCardId?: string
+  /** 渲染用卡片 ID（用於 CardComponent 顯示卡片圖案，預設使用 cardId） */
+  renderCardId?: string
   /** 起始位置（牌堆） */
   fromRect: DOMRect
   /** 目標位置（最終位置） */
