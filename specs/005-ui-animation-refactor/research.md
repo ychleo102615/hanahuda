@@ -223,13 +223,47 @@ groupedDepository: {
 
 **Research Question**: 如何處理動畫進行中的狀態變更？
 
-**Decision**: 使用 async/await 序列式執行 + Interrupt 機制
+**Decision**: 使用 async/await 序列式執行 + EventRouter 事件序列化 + Interrupt 機制
 
 **Rationale**:
-- async/await Promise 鏈確保動畫依序執行，符合現代 JavaScript 最佳實踐
-- isAnimating flag 阻止用戶操作
+- async/await Promise 鏈確保單個 Use Case 內動畫依序執行，符合現代 JavaScript 最佳實踐
+- **EventRouter 事件序列化**：防止不同 Use Case 之間的動畫衝突，保證事件依序處理
+- isAnimating flag 阻止用戶操作（PlayHandCardUseCase 等會檢查）
 - 狀態同步（如重連）可 interrupt 所有進行中的動畫
 - 避免過度設計（YAGNI 原則），遊戲動畫本質上是序列式的
+
+**Implementation Details**:
+
+1. **EventRouter 序列化**（防止事件衝突）:
+```typescript
+// EventRouter.ts
+private eventChain: Promise<void> = Promise.resolve()
+
+route(eventType: string, payload: any): void {
+  this.eventChain = this.eventChain
+    .then(() => port.execute(payload))
+    .catch((error) => console.error(`Error processing ${eventType}:`, error))
+}
+```
+
+2. **AnimationPort.interrupt() 改進**（緊急中斷）:
+```typescript
+interrupt(): void {
+  this._interrupted = true
+  this._isAnimating = false
+  this.animationLayerStore.clear()  // 清空動畫層
+  setTimeout(() => { this._interrupted = false }, 0)  // 重置 flag
+}
+```
+
+3. **HandleReconnectionUseCase 保護**（重連時清理）:
+```typescript
+execute(snapshot: GameSnapshotRestoreEvent): void {
+  this.animationPort.interrupt()         // 中斷動畫
+  this.animationPort.clearHiddenCards()  // 清除隱藏狀態
+  this.gameState.restoreSnapshot(snapshot)
+}
+```
 
 **State Management**:
 ```typescript

@@ -139,7 +139,14 @@
 ### Edge Cases
 
 - 動畫播放中斷線重連時，如何處理？（中斷動畫，直接恢復最終狀態）
+  - **實作方式**：HandleReconnectionUseCase 開始時調用 animationPort.interrupt() 和 clearHiddenCards()
+  - **效果**：立即清空動畫層，阻止新動畫開始，確保快照狀態正確顯示
 - 多個動畫同時觸發時，如何排序？（使用 async/await 序列式執行，確保動畫完成後再執行下一個）
+  - **實作方式**：EventRouter 使用 Promise 鏈序列化事件處理
+  - **效果**：保證事件依序處理，前一個事件的動畫完成後才開始下一個
+- 不同 Use Case 之間的動畫衝突？（玩家操作會被阻擋，事件處理會序列化）
+  - **玩家操作保護**：PlayHandCardUseCase 等檢查 isAnimating()，動畫進行中返回 ANIMATION_IN_PROGRESS 錯誤
+  - **事件序列化**：EventRouter 確保事件依序處理，避免事件動畫相撞
 - 拖曳過程中對手回合開始，如何處理？（取消拖曳，手牌返回原位）
 - 牌堆剩餘 0 張時翻牌階段如何處理？（根據遊戲規則，應觸發回合結束）
 

@@ -343,9 +343,10 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T086 [US4]: 註冊 GameSnapshotRestore (Reconnection) 事件處理器
+  // Phase 8: 加入 AnimationPort 確保重連時清理動畫
   container.register(
     TOKENS.HandleGameSnapshotRestorePort,
-    () => new HandleReconnectionUseCase(uiStatePort, triggerUIEffectPort),
+    () => new HandleReconnectionUseCase(uiStatePort, triggerUIEffectPort, animationPort),
     { singleton: true }
   )
 

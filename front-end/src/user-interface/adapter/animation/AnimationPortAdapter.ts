@@ -720,10 +720,35 @@ export class AnimationPortAdapter implements AnimationPort {
 
   // ===== 控制方法 =====
 
+  /**
+   * 中斷所有進行中和等待中的動畫
+   *
+   * @description
+   * 用於緊急情況（斷線重連、快速狀態同步）時立即停止動畫。
+   *
+   * 執行步驟：
+   * 1. 設置中斷 flag（_interrupted = true），阻止新動畫開始
+   * 2. 清除動畫狀態 flag（_isAnimating = false），解除操作阻擋
+   * 3. 清空 AnimationLayerStore，移除所有動畫卡片
+   * 4. 重置中斷 flag（下次檢查時生效）
+   *
+   * 注意：
+   * - 正在播放的 @vueuse/motion 動畫會繼續播放完畢（無法立即停止）
+   * - 但不會觸發後續動畫，達到快速恢復的目的
+   */
   interrupt(): void {
     this._interrupted = true
     this._isAnimating = false
-    console.info('[AnimationPort] interrupt')
+
+    // 清空動畫層，移除所有動畫卡片
+    this.animationLayerStore.clear()
+
+    // 重置中斷 flag（在下一個事件循環）
+    setTimeout(() => {
+      this._interrupted = false
+    }, 0)
+
+    console.info('[AnimationPort] interrupt - all animations stopped')
   }
 
   isAnimating(): boolean {
