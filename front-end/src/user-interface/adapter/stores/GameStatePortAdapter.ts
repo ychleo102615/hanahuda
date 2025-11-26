@@ -76,6 +76,10 @@ export function createGameStatePortAdapter(): GameStatePort {
       store.opponentYaku = [...opponentYaku]
     },
 
+    setPossibleTargetCardIds(cardIds: string[]): void {
+      store.setPossibleTargetCardIds(cardIds)
+    },
+
     // ===== 查詢 =====
     getLocalPlayerId(): string {
       return store.getLocalPlayerId()

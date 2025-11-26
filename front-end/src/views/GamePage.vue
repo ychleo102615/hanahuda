@@ -23,6 +23,7 @@ import ErrorToast from './GamePage/components/ErrorToast.vue'
 import GameFinishedModal from './GamePage/components/GameFinishedModal.vue'
 import ReconnectionBanner from './GamePage/components/ReconnectionBanner.vue'
 import AnimationLayer from './GamePage/components/AnimationLayer.vue'
+import ConfirmationHint from './GamePage/components/ConfirmationHint.vue'
 import { TOKENS } from '../user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '../user-interface/adapter/composables/useZoneRegistration'
 
@@ -32,10 +33,15 @@ const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
 
-const { opponentHandCount } = storeToRefs(gameState)
-const { infoMessage } = storeToRefs(uiState)
+const { opponentHandCount, fieldCards } = storeToRefs(gameState)
+const { infoMessage, handCardConfirmationMode, handCardAwaitingConfirmation } = storeToRefs(uiState)
 
 const playerHandZoneRef = ref<InstanceType<typeof PlayerHandZone> | null>(null)
+
+// 注入 Ports
+import type { PlayHandCardPort, SelectMatchTargetPort } from '../user-interface/application/ports/input'
+const playHandCardPort = inject<PlayHandCardPort>(TOKENS.PlayHandCardPort.toString())
+const selectMatchTargetPort = inject<SelectMatchTargetPort>(TOKENS.SelectMatchTargetPort.toString())
 
 // 初始化遊戲
 onMounted(async () => {
@@ -65,13 +71,40 @@ onMounted(async () => {
 // 處理手牌選擇
 function handleHandCardSelect(cardId: string) {
   console.info('[GamePage] 選擇手牌:', cardId)
-  // TODO: 呼叫 PlayHandCardUseCase
+  // 手牌選擇邏輯已在 PlayerHandZone 內部處理
 }
 
 // 處理場牌點擊（配對選擇）
 function handleFieldCardClick(cardId: string) {
-  console.info('[GamePage] 選擇場牌配對:', cardId)
-  // TODO: 呼叫 SelectMatchTargetUseCase
+  console.info('[GamePage] 場牌點擊:', cardId)
+
+  // 情境 1: 手牌確認模式 - 點擊場牌來配對
+  if (handCardConfirmationMode.value && handCardAwaitingConfirmation.value) {
+    const selectedHandCard = handCardAwaitingConfirmation.value
+    console.info('[GamePage] 手牌確認模式 - 執行配對:', { selectedHandCard, fieldCard: cardId })
+
+    if (playHandCardPort) {
+      playHandCardPort.execute({
+        cardId: selectedHandCard,
+        handCards: gameState.myHandCards,
+        fieldCards: fieldCards.value,
+        targetCardId: cardId, // 指定配對目標
+      })
+      uiState.exitHandCardConfirmationMode()
+    } else {
+      console.warn('[GamePage] PlayHandCardPort not injected')
+    }
+    return
+  }
+
+  // 情境 2: 翻牌選擇模式（舊架構）- SelectMatchTargetPort
+  if (selectMatchTargetPort) {
+    selectMatchTargetPort.execute({ targetCardId: cardId })
+  } else {
+    console.warn('[GamePage] SelectMatchTargetPort not injected')
+  }
+
+  // 清除選擇狀態
   playerHandZoneRef.value?.clearSelection()
 }
 </script>
@@ -144,6 +177,9 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- 動畫層：跨容器動畫支援 -->
     <AnimationLayer />
+
+    <!-- 底部提示：兩次點擊確認模式 -->
+    <ConfirmationHint />
   </div>
 </template>
 

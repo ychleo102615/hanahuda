@@ -55,6 +55,7 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
    * @returns 操作結果（成功/失敗）
    */
   execute(input: PlayHandCardInput): Result<PlayHandCardOutput> {
+    console.log('PlayHandCardUseCase.execute called with input:', input)
     // Step 0: 檢查動畫狀態 - 若動畫進行中則阻止操作
     if (this.animationPort.isAnimating()) {
       return {

@@ -225,6 +225,22 @@ export interface GameStatePort {
    */
   updateYaku(playerYaku: YakuScore[], opponentYaku: YakuScore[]): void
 
+  /**
+   * 設定可配對目標卡片列表
+   *
+   * @description
+   * 用於 SelectionRequired 事件，保存翻牌後可選擇配對的場牌列表。
+   * Adapter Layer 可監聽此狀態變化來觸發場牌選擇 UI。
+   *
+   * @param cardIds - 可配對的場牌 ID 列表
+   *
+   * @example
+   * ```typescript
+   * gameState.setPossibleTargetCardIds(['0101', '0201'])
+   * ```
+   */
+  setPossibleTargetCardIds(cardIds: string[]): void
+
   // ===== 查詢 =====
 
   /**

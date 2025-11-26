@@ -25,8 +25,7 @@ const uiState = useUIStateStore()
 // 註冊區域位置
 const { elementRef: handRef } = useZoneRegistration('player-hand')
 const { myHandCards, isMyTurn, fieldCards } = storeToRefs(gameState)
-
-const selectedCardId = ref<string | null>(null)
+const { handCardAwaitingConfirmation } = storeToRefs(uiState)
 
 // T058 [US2]: 注入 PlayHandCardPort
 const playHandCardPort = inject<PlayHandCardPort>(
@@ -38,21 +37,44 @@ const domainFacade = inject<DomainFacade>(
   TOKENS.DomainFacade.toString()
 )
 
+// 注入 AnimationPort 用於檢查動畫狀態
+import type { AnimationPort } from '../../../user-interface/application/ports/output'
+const animationPort = inject<AnimationPort>(
+  TOKENS.AnimationPort.toString()
+)
+
 const emit = defineEmits<{
   cardSelect: [cardId: string]
 }>()
 
-// T054 [US2]: 處理手牌點擊
+// 處理手牌點擊（兩次點擊確認）
 function handleCardClick(cardId: string) {
+  // 前置條件檢查
   if (!isMyTurn.value) return
-  if (!domainFacade) {
-    console.warn('[PlayerHandZone] DomainFacade not injected')
+  if (animationPort?.isAnimating()) return
+  if (!domainFacade || !playHandCardPort) return
+
+  // 第一次點擊：進入確認模式
+  if (handCardAwaitingConfirmation.value !== cardId) {
+    const handCard = getCardById(cardId)
+    if (!handCard) {
+      console.warn('[PlayerHandZone] Card not found:', cardId)
+      return
+    }
+
+    const fieldCardObjects = fieldCards.value
+      .map(id => getCardById(id))
+      .filter((card): card is NonNullable<typeof card> => card !== undefined)
+
+    const matchableCards = domainFacade.findMatchableCards(handCard, fieldCardObjects)
+    const matchableCardIds = matchableCards.map(card => card.card_id)
+
+    uiState.enterHandCardConfirmationMode(cardId, matchableCardIds, matchableCardIds.length)
+    emit('cardSelect', cardId)
     return
   }
 
-  selectedCardId.value = cardId
-
-  // 將 cardId 轉換為 Card 物件
+  // 第二次點擊同一張牌：執行打牌邏輯
   const handCard = getCardById(cardId)
   if (!handCard) {
     console.warn('[PlayerHandZone] Card not found:', cardId)
@@ -63,46 +85,99 @@ function handleCardClick(cardId: string) {
     .map(id => getCardById(id))
     .filter((card): card is NonNullable<typeof card> => card !== undefined)
 
-  // 使用 DomainFacade 找出可配對的場牌
   const matchableCards = domainFacade.findMatchableCards(handCard, fieldCardObjects)
   const matchableCardIds = matchableCards.map(card => card.card_id)
 
-  if (matchableCardIds.length === 0) {
-    // 無配對，直接打出（卡片放到場上）
-    if (playHandCardPort) {
-      playHandCardPort.execute({
-        cardId,
-        handCards: myHandCards.value,
-        fieldCards: fieldCards.value,
-      })
-    }
-  } else if (matchableCardIds.length === 1) {
-    // 只有一張配對，直接選擇
-    if (playHandCardPort) {
-      playHandCardPort.execute({
-        cardId,
-        handCards: myHandCards.value,
-        fieldCards: fieldCards.value,
-      })
-    }
+  if (matchableCardIds.length === 0 || matchableCardIds.length === 1) {
+    // 無配對或單一配對：直接執行
+    playHandCardPort.execute({
+      cardId,
+      handCards: myHandCards.value,
+      fieldCards: fieldCards.value,
+    })
+    uiState.exitHandCardConfirmationMode()
   } else {
-    // 多張配對，顯示選擇 UI
-    uiState.selectionSourceCard = cardId
-    uiState.showSelectionUI(matchableCardIds)
+    // 多張配對：觸發震動，不執行任何操作
+    // 震動動畫通過 CardComponent 的 enableShake prop 觸發
+    console.info('[PlayerHandZone] Multiple matches, please click field card')
+  }
+}
+
+// 處理滑鼠進入手牌（懸浮預覽）
+function handleMouseEnter(cardId: string) {
+  if (!isMyTurn.value) return
+  if (animationPort?.isAnimating()) return
+  if (!domainFacade) return
+
+  // 如果是已選中的手牌，不顯示預覽高亮
+  if (handCardAwaitingConfirmation.value === cardId) {
+    return
   }
 
-  emit('cardSelect', cardId)
+  const handCard = getCardById(cardId)
+  if (!handCard) return
+
+  const fieldCardObjects = fieldCards.value
+    .map(id => getCardById(id))
+    .filter((card): card is NonNullable<typeof card> => card !== undefined)
+
+  const matchableCards = domainFacade.findMatchableCards(handCard, fieldCardObjects)
+  const matchableCardIds = matchableCards.map(card => card.card_id)
+
+  uiState.setHandCardHoverPreview(cardId, matchableCardIds)
+}
+
+// 處理滑鼠離開手牌
+function handleMouseLeave() {
+  uiState.clearHandCardHoverPreview()
 }
 
 // 判斷卡片是否被選中
 function isSelected(cardId: string): boolean {
-  return selectedCardId.value === cardId
+  return handCardAwaitingConfirmation.value === cardId
 }
 
 // 清除選擇（供外部呼叫）
 function clearSelection() {
-  selectedCardId.value = null
+  uiState.exitHandCardConfirmationMode()
 }
+
+// 監聽回合變化，非玩家回合時退出確認模式
+import { watch } from 'vue'
+watch(isMyTurn, (newIsMyTurn) => {
+  if (!newIsMyTurn && uiState.handCardConfirmationMode) {
+    uiState.exitHandCardConfirmationMode()
+  }
+})
+
+// 監聽 FlowStage 變化，處理 AWAITING_SELECTION 狀態
+// 當 HandleSelectionRequiredUseCase 設定 FlowStage 為 AWAITING_SELECTION 時，
+// 根據 possibleTargetCardIds 數量來決定 UI 行為
+const { flowStage, possibleTargetCardIds } = storeToRefs(gameState)
+watch(flowStage, (newStage) => {
+  if (newStage === 'AWAITING_SELECTION' && possibleTargetCardIds.value.length > 0) {
+    // 進入場牌選擇模式
+    const sourceCard = possibleTargetCardIds.value[0] ?? ''
+    const highlightType = possibleTargetCardIds.value.length === 1 ? 'single' : 'multiple'
+
+    // 退出手牌確認模式（如果存在）
+    if (uiState.handCardConfirmationMode) {
+      uiState.exitHandCardConfirmationMode()
+    }
+
+    // 進入場牌選擇模式
+    uiState.enterFieldCardSelectionMode(
+      sourceCard,
+      possibleTargetCardIds.value,
+      highlightType
+    )
+
+    console.info('[PlayerHandZone] 進入場牌選擇模式:', {
+      targets: possibleTargetCardIds.value,
+      highlightType,
+    })
+  }
+})
 
 defineExpose({
   clearSelection,
@@ -125,6 +200,8 @@ defineExpose({
         :is-selected="isSelected(cardId)"
         size="lg"
         @click="handleCardClick"
+        @mouseenter="handleMouseEnter(cardId)"
+        @mouseleave="handleMouseLeave"
       />
     </TransitionGroup>
     <div

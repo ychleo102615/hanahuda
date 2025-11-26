@@ -67,6 +67,7 @@ export interface GameStateStoreState {
   myDepository: string[] // 玩家已獲得牌列表
   opponentDepository: string[] // 對手已獲得牌列表
   deckRemaining: number // 牌堆剩餘數量
+  possibleTargetCardIds: string[] // 翻牌後可選擇配對的場牌列表 (用於 AWAITING_SELECTION)
 
   // 分數與役種
   myScore: number
@@ -119,6 +120,7 @@ export const useGameStateStore = defineStore('gameState', {
     myDepository: [],
     opponentDepository: [],
     deckRemaining: 24,
+    possibleTargetCardIds: [],
 
     // 分數與役種
     myScore: 0,
@@ -369,6 +371,16 @@ export const useGameStateStore = defineStore('gameState', {
     },
 
     /**
+     * 設定可配對目標卡片列表
+     *
+     * @param cardIds - 可配對的場牌 ID 列表
+     */
+    setPossibleTargetCardIds(cardIds: string[]): void {
+      this.possibleTargetCardIds = [...cardIds]
+      console.info('[GameStateStore] 設定可配對目標:', cardIds)
+    },
+
+    /**
      * 取得本地玩家 ID
      *
      * @returns 本地玩家的 player_id
@@ -400,6 +412,7 @@ export const useGameStateStore = defineStore('gameState', {
       this.myDepository = []
       this.opponentDepository = []
       this.deckRemaining = 24
+      this.possibleTargetCardIds = []
 
       this.myScore = 0
       this.opponentScore = 0

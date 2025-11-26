@@ -4,14 +4,20 @@
  *
  * @description
  * 顯示場上 8 張卡片，支援配對高亮。
+ * 新增兩次點擊確認架構：
+ * - 懸浮預覽高亮（紫色框）
+ * - 單一配對高亮（綠色框 + 輕微閃爍）
+ * - 多重配對高亮（橙色框 + 明顯閃爍）
  */
 
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
 import { useZoneRegistration } from '../../../user-interface/adapter/composables/useZoneRegistration'
 import CardComponent from './CardComponent.vue'
+import { TOKENS } from '../../../user-interface/adapter/di/tokens'
+import type { SelectMatchTargetPort } from '../../../user-interface/application/ports/input'
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
@@ -20,24 +26,98 @@ const uiState = useUIStateStore()
 const { elementRef: fieldRef } = useZoneRegistration('field')
 
 const { fieldCards } = storeToRefs(gameState)
-const { selectionMode, selectionPossibleTargets } = storeToRefs(uiState)
+const {
+  selectionMode,
+  selectionPossibleTargets,
+  previewHighlightedTargets,
+  fieldCardSelectionMode,
+  fieldCardSelectableTargets,
+  fieldCardHighlightType,
+  handCardConfirmationMode,
+  matchableFieldCards,
+  matchCount,
+} = storeToRefs(uiState)
+
+// 注入 SelectMatchTargetPort 用於場牌選擇
+const selectMatchTargetPort = inject<SelectMatchTargetPort>(
+  TOKENS.SelectMatchTargetPort.toString()
+)
 
 const emit = defineEmits<{
   cardClick: [cardId: string]
 }>()
 
-// 判斷卡片是否為可配對目標
+// 判斷卡片是否為可配對目標（舊架構，保留向後兼容）
 function isHighlighted(cardId: string): boolean {
   return selectionMode.value && selectionPossibleTargets.value.includes(cardId)
 }
 
-// 判斷卡片是否可選擇
+// 判斷卡片是否可選擇（舊架構，保留向後兼容）
 function isSelectable(cardId: string): boolean {
   return selectionMode.value && selectionPossibleTargets.value.includes(cardId)
 }
 
+// 判斷卡片是否為懸浮預覽高亮（紫色框）
+// 只在懸浮且沒有進入確認模式時顯示
+function isPreviewHighlighted(cardId: string): boolean {
+  if (handCardConfirmationMode.value || fieldCardSelectionMode.value) {
+    return false
+  }
+  return previewHighlightedTargets.value.includes(cardId)
+}
+
+// 判斷卡片是否為單一配對高亮（綠色框 + 輕微閃爍）
+function isSingleMatchHighlight(cardId: string): boolean {
+  // 情境 1: 翻牌選擇模式（AWAITING_SELECTION）
+  if (fieldCardSelectionMode.value && fieldCardHighlightType.value === 'single') {
+    return fieldCardSelectableTargets.value.includes(cardId)
+  }
+
+  // 情境 2: 手牌確認模式（兩次點擊）
+  if (handCardConfirmationMode.value && matchCount.value === 1) {
+    return matchableFieldCards.value.includes(cardId)
+  }
+
+  return false
+}
+
+// 判斷卡片是否為多重配對高亮（橙色框 + 明顯閃爍）
+function isMultipleMatchHighlight(cardId: string): boolean {
+  // 情境 1: 翻牌選擇模式（AWAITING_SELECTION）
+  if (fieldCardSelectionMode.value && fieldCardHighlightType.value === 'multiple') {
+    return fieldCardSelectableTargets.value.includes(cardId)
+  }
+
+  // 情境 2: 手牌確認模式（兩次點擊）
+  if (handCardConfirmationMode.value && matchCount.value > 1) {
+    return matchableFieldCards.value.includes(cardId)
+  }
+
+  return false
+}
+
 // 處理卡片點擊
 function handleCardClick(cardId: string) {
+  // 情境 1: 翻牌選擇模式（AWAITING_SELECTION）
+  if (fieldCardSelectionMode.value && fieldCardSelectableTargets.value.includes(cardId)) {
+    if (selectMatchTargetPort) {
+      selectMatchTargetPort.execute({ targetCardId: cardId })
+      uiState.exitFieldCardSelectionMode()
+    } else {
+      console.warn('[FieldZone] SelectMatchTargetPort not injected')
+    }
+    return
+  }
+
+  // 情境 2: 手牌確認模式（兩次點擊） - 點擊場牌來配對
+  if (handCardConfirmationMode.value && matchableFieldCards.value.includes(cardId)) {
+    console.info('[FieldZone] 場牌點擊配對:', cardId)
+    // 透過 emit 通知 GamePage，由 GamePage 呼叫 SelectMatchTargetPort
+    emit('cardClick', cardId)
+    return
+  }
+
+  // 舊架構：保留向後兼容
   if (isSelectable(cardId)) {
     emit('cardClick', cardId)
   }
@@ -57,7 +137,14 @@ function handleCardClick(cardId: string) {
         :key="cardId"
         :card-id="cardId"
         :is-highlighted="isHighlighted(cardId)"
-        :is-selectable="isSelectable(cardId)"
+        :is-selectable="
+          isSelectable(cardId) ||
+          (fieldCardSelectionMode && fieldCardSelectableTargets.includes(cardId)) ||
+          (handCardConfirmationMode && matchableFieldCards.includes(cardId))
+        "
+        :is-preview-highlighted="isPreviewHighlighted(cardId)"
+        :is-single-match-highlight="isSingleMatchHighlight(cardId)"
+        :is-multiple-match-highlight="isMultipleMatchHighlight(cardId)"
         size="md"
         @click="handleCardClick"
       />

@@ -71,6 +71,22 @@ export interface UIStateStoreState {
   // 連線狀態
   connectionStatus: ConnectionStatus
   reconnecting: boolean
+
+  // 手牌確認模式（兩次點擊）
+  handCardConfirmationMode: boolean
+  handCardAwaitingConfirmation: string | null
+  matchableFieldCards: string[]
+  matchCount: number
+
+  // 手牌懸浮預覽
+  handCardHoverPreview: string | null
+  previewHighlightedTargets: string[]
+
+  // 場牌選擇模式（取代 SelectionOverlay）
+  fieldCardSelectionMode: boolean
+  fieldCardSelectableTargets: string[]
+  fieldCardHighlightType: 'single' | 'multiple' | null
+  fieldCardSourceCard: string | null
 }
 
 /**
@@ -93,6 +109,18 @@ export interface UIStateStoreActions {
   hideReconnectionMessage(): void
   setConnectionStatus(status: ConnectionStatus): void
   reset(): void
+
+  // 手牌確認模式管理
+  enterHandCardConfirmationMode(cardId: string, matchableCards: string[], matchCount: number): void
+  exitHandCardConfirmationMode(): void
+
+  // 手牌懸浮預覽管理
+  setHandCardHoverPreview(cardId: string, highlightedTargets: string[]): void
+  clearHandCardHoverPreview(): void
+
+  // 場牌選擇模式管理
+  enterFieldCardSelectionMode(sourceCard: string, selectableTargets: string[], highlightType: 'single' | 'multiple'): void
+  exitFieldCardSelectionMode(): void
 }
 
 /**
@@ -124,6 +152,22 @@ export const useUIStateStore = defineStore('uiState', {
     // 連線狀態
     connectionStatus: 'disconnected',
     reconnecting: false,
+
+    // 手牌確認模式
+    handCardConfirmationMode: false,
+    handCardAwaitingConfirmation: null,
+    matchableFieldCards: [],
+    matchCount: 0,
+
+    // 手牌懸浮預覽
+    handCardHoverPreview: null,
+    previewHighlightedTargets: [],
+
+    // 場牌選擇模式
+    fieldCardSelectionMode: false,
+    fieldCardSelectableTargets: [],
+    fieldCardHighlightType: null,
+    fieldCardSourceCard: null,
   }),
 
   actions: {
@@ -299,7 +343,88 @@ export const useUIStateStore = defineStore('uiState', {
       this.connectionStatus = 'disconnected'
       this.reconnecting = false
 
+      // 手牌確認模式
+      this.handCardConfirmationMode = false
+      this.handCardAwaitingConfirmation = null
+      this.matchableFieldCards = []
+      this.matchCount = 0
+
+      // 手牌懸浮預覽
+      this.handCardHoverPreview = null
+      this.previewHighlightedTargets = []
+
+      // 場牌選擇模式
+      this.fieldCardSelectionMode = false
+      this.fieldCardSelectableTargets = []
+      this.fieldCardHighlightType = null
+      this.fieldCardSourceCard = null
+
       console.info('[UIStateStore] 狀態已重置')
+    },
+
+    /**
+     * 進入手牌確認模式
+     */
+    enterHandCardConfirmationMode(cardId: string, matchableCards: string[], matchCount: number): void {
+      this.handCardConfirmationMode = true
+      this.handCardAwaitingConfirmation = cardId
+      this.matchableFieldCards = [...matchableCards]
+      this.matchCount = matchCount
+      console.info('[UIStateStore] 進入手牌確認模式', { cardId, matchCount })
+    },
+
+    /**
+     * 退出手牌確認模式
+     */
+    exitHandCardConfirmationMode(): void {
+      this.handCardConfirmationMode = false
+      this.handCardAwaitingConfirmation = null
+      this.matchableFieldCards = []
+      this.matchCount = 0
+      console.info('[UIStateStore] 退出手牌確認模式')
+    },
+
+    /**
+     * 設定手牌懸浮預覽
+     */
+    setHandCardHoverPreview(cardId: string, highlightedTargets: string[]): void {
+      this.handCardHoverPreview = cardId
+      this.previewHighlightedTargets = [...highlightedTargets]
+    },
+
+    /**
+     * 清除手牌懸浮預覽
+     */
+    clearHandCardHoverPreview(): void {
+      this.handCardHoverPreview = null
+      this.previewHighlightedTargets = []
+    },
+
+    /**
+     * 進入場牌選擇模式
+     */
+    enterFieldCardSelectionMode(sourceCard: string, selectableTargets: string[], highlightType: 'single' | 'multiple'): void {
+      // 如果正在確認模式，先退出
+      if (this.handCardConfirmationMode) {
+        this.exitHandCardConfirmationMode()
+      }
+
+      this.fieldCardSelectionMode = true
+      this.fieldCardSelectableTargets = [...selectableTargets]
+      this.fieldCardHighlightType = highlightType
+      this.fieldCardSourceCard = sourceCard
+      console.info('[UIStateStore] 進入場牌選擇模式', { sourceCard, highlightType, targetCount: selectableTargets.length })
+    },
+
+    /**
+     * 退出場牌選擇模式
+     */
+    exitFieldCardSelectionMode(): void {
+      this.fieldCardSelectionMode = false
+      this.fieldCardSelectableTargets = []
+      this.fieldCardHighlightType = null
+      this.fieldCardSourceCard = null
+      console.info('[UIStateStore] 退出場牌選擇模式')
     },
   },
 })

@@ -22,6 +22,10 @@ interface Props {
   isFaceDown?: boolean
   size?: 'sm' | 'md' | 'lg'
   isAnimationClone?: boolean  // 是否為動畫演出用的複製品
+  isPreviewHighlighted?: boolean  // 懸浮預覽高亮（紫色框，不閃爍）
+  isSingleMatchHighlight?: boolean  // 單一配對高亮（綠色框 + 輕微閃爍）
+  isMultipleMatchHighlight?: boolean  // 多重配對高亮（橙色框 + 明顯閃爍）
+  enableShake?: boolean  // 啟用震動動畫
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -31,6 +35,10 @@ const props = withDefaults(defineProps<Props>(), {
   isFaceDown: false,
   size: 'md',
   isAnimationClone: false,
+  isPreviewHighlighted: false,
+  isSingleMatchHighlight: false,
+  isMultipleMatchHighlight: false,
+  enableShake: false,
 })
 
 const emit = defineEmits<{
@@ -71,10 +79,25 @@ const containerClasses = computed(() => {
       // 可選狀態 - 只保留 cursor 和 shadow，scale 由 motion 處理
       'cursor-pointer hover:drop-shadow-lg': props.isSelectable,
       'cursor-default': !props.isSelectable,
-      // 選中狀態 - 只保留 ring 效果，scale 由 motion 處理
+
+      // 選中狀態（優先級最高）- 金色框
       'ring-2 ring-yellow-400 ring-offset-2 drop-shadow-lg': props.isSelected,
-      // 高亮狀態（可配對）
-      'ring-2 ring-green-400 ring-offset-1 drop-shadow-md': props.isHighlighted && !props.isSelected,
+
+      // 多重配對高亮（優先級次高）- 橙色框 + 閃爍
+      'ring-2 ring-orange-400 ring-offset-1 drop-shadow-md animate-pulse-strong':
+        props.isMultipleMatchHighlight && !props.isSelected,
+
+      // 單一配對高亮（優先級中）- 綠色框 + 輕微閃爍
+      'ring-2 ring-green-400 ring-offset-1 drop-shadow-md animate-pulse-soft':
+        props.isSingleMatchHighlight && !props.isMultipleMatchHighlight && !props.isSelected,
+
+      // 原配對高亮狀態（保留，用於其他情境）- 綠色框，不閃爍
+      'ring-2 ring-green-400 ring-offset-1 drop-shadow-md':
+        props.isHighlighted && !props.isSingleMatchHighlight && !props.isMultipleMatchHighlight && !props.isSelected,
+
+      // 預覽高亮狀態（最低優先）- 紫色框
+      'ring-2 ring-purple-400 ring-offset-1 drop-shadow-sm':
+        props.isPreviewHighlighted && !props.isHighlighted && !props.isSingleMatchHighlight && !props.isMultipleMatchHighlight && !props.isSelected,
     },
   ]
 })
@@ -155,6 +178,16 @@ watch(() => props.isSelected, (selected) => {
     apply('rest')
   }
 })
+
+// 監聽震動動畫
+watch(() => props.enableShake, (shouldShake) => {
+  if (shouldShake && cardRef.value) {
+    cardRef.value.classList.add('shake')
+    setTimeout(() => {
+      cardRef.value?.classList.remove('shake')
+    }, 500)
+  }
+})
 </script>
 
 <template>
@@ -173,3 +206,36 @@ watch(() => props.isSelected, (selected) => {
     />
   </div>
 </template>
+
+<style scoped>
+/* 輕微閃爍 - 單一配對 */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* 明顯閃爍 - 多重配對 */
+@keyframes pulse-strong {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.02); }
+}
+
+.animate-pulse-strong {
+  animation: pulse-strong 1s ease-in-out infinite;
+}
+
+/* 震動動畫 */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+</style>
