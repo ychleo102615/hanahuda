@@ -223,12 +223,13 @@ groupedDepository: {
 
 **Research Question**: 如何處理動畫進行中的狀態變更？
 
-**Decision**: 使用 AnimationQueue 阻塞 + Interrupt 機制
+**Decision**: 使用 async/await 序列式執行 + Interrupt 機制
 
 **Rationale**:
-- AnimationQueue 確保動畫依序執行
-- UI 操作在動畫進行中被 disable
-- 狀態同步（如重連）可 interrupt 所有動畫
+- async/await Promise 鏈確保動畫依序執行，符合現代 JavaScript 最佳實踐
+- isAnimating flag 阻止用戶操作
+- 狀態同步（如重連）可 interrupt 所有進行中的動畫
+- 避免過度設計（YAGNI 原則），遊戲動畫本質上是序列式的
 
 **State Management**:
 ```typescript

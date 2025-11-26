@@ -5,12 +5,12 @@
  * 統一管理所有依賴的註冊邏輯，根據遊戲模式註冊對應的 Adapters。
  *
  * 註冊順序:
- * 1. Stores (GameStateStore, UIStateStore)
- * 2. Output Ports (UIStatePort, TriggerUIEffectPort, SendCommandPort)
- * 3. Use Cases as Input Ports (18 個)
- * 4. Mode-specific Adapters (Backend / Mock / Local)
- * 5. Animation System
- * 6. SSE Client & Event Router (僅 Backend 模式)
+ * 1. Stores (GameStateStore, UIStateStore, AnimationLayerStore, ZoneRegistry)
+ * 2. Output Ports (GameStatePort, AnimationPort, NotificationPort, UIStatePort, TriggerUIEffectPort)
+ * 3. Mode-specific Adapters (Backend / Mock / Local) - 提供 SendCommandPort
+ * 4. Use Cases as Input Ports (18 個)
+ * 5. Event Router (事件路由)
+ * 6. SSE Client & Event Emitter (根據模式初始化)
  *
  * @example
  * ```typescript
@@ -48,7 +48,6 @@ import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
 import { MockEventEmitter } from '../mock/MockEventEmitter'
 import { EventRouter } from '../sse/EventRouter'
-import { AnimationQueue } from '../animation/AnimationQueue'
 import { AnimationPortAdapter } from '../animation/AnimationPortAdapter'
 import { zoneRegistry } from '../animation/ZoneRegistry'
 import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
@@ -69,13 +68,10 @@ export function registerDependencies(container: DIContainer, mode: GameMode): vo
   // 1. 註冊 Stores
   registerStores(container)
 
-  // 2. 註冊動畫系統 (必須在 Output Ports 之前)
-  registerAnimationSystem(container)
-
-  // 3. 註冊 Output Ports
+  // 2. 註冊 Output Ports
   registerOutputPorts(container)
 
-  // 4. 根據模式註冊 Adapters (必須在 Input Ports 之前，提供 SendCommandPort)
+  // 3. 根據模式註冊 Adapters (必須在 Input Ports 之前，提供 SendCommandPort)
   if (mode === 'backend') {
     registerBackendAdapters(container)
   } else if (mode === 'mock') {
@@ -84,13 +80,13 @@ export function registerDependencies(container: DIContainer, mode: GameMode): vo
     registerLocalAdapters(container)
   }
 
-  // 5. 註冊 Use Cases (作為 Input Ports)
+  // 4. 註冊 Use Cases (作為 Input Ports)
   registerInputPorts(container)
 
-  // 6. 註冊事件路由 (必須在 Input Ports 之後)
+  // 5. 註冊事件路由 (必須在 Input Ports 之後)
   registerEventRoutes(container)
 
-  // 7. 根據模式初始化事件發射器 (必須在事件路由之後)
+  // 6. 根據模式初始化事件發射器 (必須在事件路由之後)
   if (mode === 'backend') {
     registerSSEClient(container)
   } else if (mode === 'mock') {
@@ -492,22 +488,4 @@ function registerEventRoutes(container: DIContainer): void {
 function registerLocalAdapters(container: DIContainer): void {
   console.warn('[DI] Local mode not implemented, using Mock mode fallback (Post-MVP)')
   registerMockAdapters(container)
-}
-
-/**
- * 註冊動畫系統
- *
- * @description
- * 註冊 AnimationQueue。
- * AnimationPortAdapter 由 registerOutputPorts 註冊。
- */
-function registerAnimationSystem(container: DIContainer): void {
-  // 註冊 AnimationQueue
-  container.register(
-    TOKENS.AnimationQueue,
-    () => new AnimationQueue(),
-    { singleton: true },
-  )
-
-  console.info('[DI] Registered AnimationQueue')
 }

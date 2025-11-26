@@ -276,7 +276,8 @@ type ZoneName =
 ### 實作要求
 
 - ✅ 所有動畫方法返回 Promise
-- ✅ 內部管理 AnimationQueue 和 ZoneRegistry
+- ✅ 使用 async/await 模式管理動畫時序（無需 AnimationQueue）
+- ✅ 內部管理 ZoneRegistry 和 AnimationLayerStore
 - ✅ 使用 @vueuse/motion 實現動畫
 - ✅ 動畫期間 isAnimating() 返回 true
 - ✅ 支援中斷機制

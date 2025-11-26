@@ -33,10 +33,10 @@
 
 - 規格書已通過所有品質檢查項目
 - 無需進一步澄清，可直接進入 `/speckit.plan` 階段
-- **重要更新**：已分析現有 AnimationService/AnimationQueue，確認需要重構（新增 User Story 3）
+- **重要更新**：已分析現有動畫系統，確認需要重構（新增 User Story 4）
 - 現有動畫系統問題：
-  - DEAL_CARDS 只有 console.log，無實際視覺效果
-  - CARD_MOVE 位置硬編碼為 (0,0)
+  - 缺少實際視覺效果
   - 缺少區域位置追蹤系統
-- AnimationQueue 基礎架構可保留，AnimationService 需大幅重構
+- **架構決策**：使用 async/await 模式管理動畫時序，取代 AnimationQueue（符合 YAGNI 原則）
 - 新增 ZoneRegistry 和 ZonePosition 實體用於位置追蹤
+- AnimationPortAdapter 實作 AnimationPort 介面，整合 ZoneRegistry 和 AnimationLayerStore

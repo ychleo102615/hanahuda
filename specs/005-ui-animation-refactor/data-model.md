@@ -448,14 +448,14 @@ ZoneRegistry
     │       │
     │       └── DOMRect
     │
-AnimationService
+AnimationPortAdapter (實作 AnimationPort 介面)
     │
-    ├── AnimationQueue
-    │       │
-    │       └── Animation (many)
-    │               │
-    │               ├── AnimationType
-    │               └── AnimationParams
+    ├── ZoneRegistry (位置追蹤)
+    │
+    ├── AnimationLayerStore (動畫狀態管理)
+    │
+    └── 使用 async/await 序列式執行動畫
+        (無需 AnimationQueue，Promise 鏈管理時序)
     │
 DragState
     │

@@ -61,15 +61,14 @@ front-end/
 ├── src/
 │   ├── user-interface/
 │   │   ├── adapter/
-│   │   │   ├── animation/              # 動畫系統重構
-│   │   │   │   ├── AnimationService.ts # 重構：支援位置追蹤
-│   │   │   │   ├── AnimationQueue.ts   # 保留現有架構
-│   │   │   │   ├── ZoneRegistry.ts     # 新增：區域位置註冊
-│   │   │   │   └── types.ts            # 擴展動畫類型
+│   │   │   ├── animation/                 # 動畫系統重構
+│   │   │   │   ├── AnimationPortAdapter.ts # 實作 AnimationPort 介面
+│   │   │   │   ├── ZoneRegistry.ts        # 區域位置註冊
+│   │   │   │   └── types.ts               # 動畫類型定義
 │   │   │   └── stores/
-│   │   │       └── gameState.ts        # 獲得區分組邏輯
+│   │   │       └── gameState.ts           # 獲得區分組邏輯
 │   │   └── domain/
-│   │       └── types.ts                # CardType 已存在
+│   │       └── types.ts                   # CardType 已存在
 │   └── views/
 │       └── GamePage/
 │           └── components/
@@ -80,8 +79,7 @@ front-end/
 └── tests/
     ├── adapter/
     │   └── animation/
-    │       ├── AnimationService.spec.ts
-    │       ├── AnimationQueue.spec.ts
+    │       ├── AnimationPortAdapter.spec.ts
     │       └── ZoneRegistry.spec.ts
     └── unit/
 ```

@@ -69,7 +69,7 @@
 
 ### User Story 4 - 動畫系統重構 (Priority: P4)
 
-系統需要重構現有的 AnimationService 和 AnimationQueue，實作 AnimationPort 介面，支援實際的卡片位置追蹤和視覺動畫效果。
+系統需要重構現有的 AnimationService，實作 AnimationPort 介面，支援實際的卡片位置追蹤和視覺動畫效果。動畫時序使用 async/await 模式管理。
 
 **Why this priority**: 現有動畫系統只有時序控制，缺乏位置追蹤和實際視覺效果。這是 P5、P6 動畫功能的基礎設施。
 
@@ -139,7 +139,7 @@
 ### Edge Cases
 
 - 動畫播放中斷線重連時，如何處理？（中斷動畫，直接恢復最終狀態）
-- 多個動畫同時觸發時，如何排序？（使用 AnimationQueue 依序執行）
+- 多個動畫同時觸發時，如何排序？（使用 async/await 序列式執行，確保動畫完成後再執行下一個）
 - 拖曳過程中對手回合開始，如何處理？（取消拖曳，手牌返回原位）
 - 牌堆剩餘 0 張時翻牌階段如何處理？（根據遊戲規則，應觸發回合結束）
 
@@ -172,7 +172,7 @@
 - **FR-009**: 系統 MUST 能根據區域名稱查詢該區域的螢幕座標
 - **FR-010**: 系統 MUST 在視窗大小改變時自動更新已註冊區域的位置
 - **FR-011**: 卡片移動動畫 MUST 使用實際螢幕座標（而非硬編碼值）
-- **FR-012**: 動畫 MUST 使用 AnimationQueue 系統進行排程
+- **FR-012**: 動畫 MUST 使用 async/await 模式進行序列式執行，確保動畫完成後再執行下一個
 - **FR-013**: 動畫進行中 MUST 阻止玩家操作
 - **FR-014**: 動畫 MUST 支援中斷機制以處理狀態同步需求
 
@@ -226,7 +226,7 @@
 - @vueuse/motion 庫能夠滿足所有動畫效果需求
 - 卡片類型分類邏輯已在 Domain Layer 實現（CardType enum 和 getCardType 函數）
 - 遊戲狀態（deckRemaining, depository）已在 GameStateStore 中維護
-- 現有 AnimationQueue 基礎架構（佇列管理、中斷機制）可保留，但 AnimationService 需大幅重構
+- 使用 async/await 模式管理動畫時序，符合現代 JavaScript/TypeScript 的最佳實踐
 
 ## Dependencies
 
