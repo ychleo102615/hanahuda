@@ -23,7 +23,7 @@ import type {
   MakeKoiKoiDecisionInput,
   MakeKoiKoiDecisionOutput,
 } from '../../ports/input/player-operations.port'
-import type { SendCommandPort, TriggerUIEffectPort, AnimationPort } from '../../ports/output'
+import type { SendCommandPort, AnimationPort } from '../../ports/output'
 import type { DomainFacade, Result, YakuScore } from '../../types'
 
 /**
@@ -34,13 +34,11 @@ export class MakeKoiKoiDecisionUseCase implements MakeKoiKoiDecisionPort {
    * 建構子
    *
    * @param sendCommandPort - 發送命令到後端的 Output Port
-   * @param triggerUIEffectPort - 觸發 UI 效果的 Output Port（預留，可用於更新 UI 狀態）
    * @param domainFacade - Domain Layer 業務邏輯門面（預留，可用於役種驗證）
    * @param animationPort - 動畫系統 Output Port（用於檢查動畫狀態）
    */
   constructor(
     private readonly sendCommandPort: SendCommandPort,
-    private readonly triggerUIEffectPort: TriggerUIEffectPort,
     private readonly domainFacade: DomainFacade,
     private readonly animationPort: AnimationPort
   ) {}

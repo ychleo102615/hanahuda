@@ -14,14 +14,11 @@
  */
 
 import type { DecisionMadeEvent } from '../../types/events'
-import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort } from '../../ports/output'
 import type { HandleDecisionMadePort } from '../../ports/input'
 
 export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
-  constructor(
-    private readonly updateUIState: UIStatePort,
-    private readonly triggerUIEffect: TriggerUIEffectPort
-  ) {}
+  constructor(private readonly updateUIState: UIStatePort) {}
 
   execute(event: DecisionMadeEvent): void {
     // 1. 更新玩家 Koi-Koi 倍率

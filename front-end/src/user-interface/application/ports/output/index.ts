@@ -18,15 +18,10 @@
 
 export type { SendCommandPort } from './send-command.port'
 
-// New Output Ports (Phase 4 refactor)
+// Output Ports (Phase 4+ refactor)
 export type { GameStatePort } from './game-state.port'
 export type { AnimationPort, DealAnimationParams } from './animation.port'
 export type { NotificationPort } from './notification.port'
 
-// Legacy Output Ports (deprecated, will be removed)
+// Legacy Output Ports
 export type { UIStatePort } from './ui-state.port'
-export type {
-  TriggerUIEffectPort,
-  AnimationType,
-  AnimationParams,
-} from './trigger-ui-effect.port'

@@ -16,8 +16,9 @@
  * // 導入 Output Ports
  * import type {
  *   SendCommandPort,
- *   UIStatePort,
- *   TriggerUIEffectPort
+ *   GameStatePort,
+ *   AnimationPort,
+ *   NotificationPort
  * } from '@/user-interface/application/ports'
  * ```
  */
@@ -50,5 +51,12 @@ export type {
   HandleReconnectionPort,
 } from './input'
 
-// Output Ports (3 個)
-export type { SendCommandPort, UIStatePort, TriggerUIEffectPort, AnimationType, AnimationParams } from './output'
+// Output Ports
+export type {
+  SendCommandPort,
+  UIStatePort,
+  GameStatePort,
+  AnimationPort,
+  NotificationPort,
+  DealAnimationParams
+} from './output'

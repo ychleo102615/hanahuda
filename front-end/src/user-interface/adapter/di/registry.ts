@@ -24,7 +24,7 @@
 import type { DIContainer } from './container'
 import { TOKENS } from './tokens'
 import { useGameStateStore, createUIStatePortAdapter } from '../stores/gameState'
-import { useUIStateStore, createTriggerUIEffectPortAdapter } from '../stores/uiState'
+import { useUIStateStore } from '../stores/uiState'
 import { useAnimationLayerStore } from '../stores/animationLayerStore'
 import { HandleGameStartedUseCase } from '../../application/use-cases/event-handlers/HandleGameStartedUseCase'
 import { HandleRoundDealtUseCase } from '../../application/use-cases/event-handlers/HandleRoundDealtUseCase'
@@ -42,7 +42,7 @@ import { HandleReconnectionUseCase } from '../../application/use-cases/event-han
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, TriggerUIEffectPort, GameStatePort, AnimationPort, NotificationPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort } from '../../application/ports/output'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
@@ -142,23 +142,7 @@ function registerOutputPorts(container: DIContainer): void {
     { singleton: true },
   )
 
-  // TriggerUIEffectPort: @deprecated - 使用 AnimationPort + NotificationPort 代替
-  // 提供 stub 實作以保持向後相容，但會記錄警告
-  container.register(
-    TOKENS.TriggerUIEffectPort,
-    () => {
-      const stubAnimationService = {
-        trigger: (type: unknown, params: unknown) => {
-          console.warn('[DEPRECATED] TriggerUIEffectPort.triggerAnimation called. Use AnimationPort instead.', { type, params })
-          return Promise.resolve()
-        }
-      }
-      return createTriggerUIEffectPortAdapter(stubAnimationService)
-    },
-    { singleton: true },
-  )
-
-  // ===== New Output Ports (Phase 4) =====
+  // ===== New Output Ports (Phase 4+) =====
 
   // GameStatePort: 由 GameStateStore 實作
   container.register(
@@ -214,12 +198,12 @@ function registerOutputPorts(container: DIContainer): void {
 function registerInputPorts(container: DIContainer): void {
   // 取得 Output Ports (Legacy)
   const uiStatePort = container.resolve(TOKENS.UIStatePort) as UIStatePort
-  const triggerUIEffectPort = container.resolve(TOKENS.TriggerUIEffectPort) as TriggerUIEffectPort
   const domainFacade = container.resolve(TOKENS.DomainFacade) as DomainFacade
 
   // 取得 Output Ports (New - Phase 4+)
   const gameStatePort = container.resolve(TOKENS.GameStatePort) as GameStatePort
   const animationPort = container.resolve(TOKENS.AnimationPort) as AnimationPort
+  const notificationPort = container.resolve(TOKENS.NotificationPort) as NotificationPort
 
   // Player Operations Use Cases
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -229,7 +213,7 @@ function registerInputPorts(container: DIContainer): void {
   // Phase 7: 加入 animationPort 用於檢查動畫狀態
   container.register(
     TOKENS.PlayHandCardPort,
-    () => new PlayHandCardUseCase(sendCommandPort, triggerUIEffectPort, domainFacade, animationPort),
+    () => new PlayHandCardUseCase(sendCommandPort, notificationPort, domainFacade, animationPort),
     { singleton: true }
   )
 
@@ -245,7 +229,7 @@ function registerInputPorts(container: DIContainer): void {
   // Phase 7: 加入 animationPort 用於檢查動畫狀態
   container.register(
     TOKENS.MakeKoiKoiDecisionPort,
-    () => new MakeKoiKoiDecisionUseCase(sendCommandPort, triggerUIEffectPort, domainFacade, animationPort),
+    () => new MakeKoiKoiDecisionUseCase(sendCommandPort, domainFacade, animationPort),
     { singleton: true }
   )
 
@@ -254,7 +238,7 @@ function registerInputPorts(container: DIContainer): void {
   // T030 [US1]: 註冊 GameStarted 事件處理器
   container.register(
     TOKENS.HandleGameStartedPort,
-    () => new HandleGameStartedUseCase(uiStatePort, triggerUIEffectPort, gameStatePort),
+    () => new HandleGameStartedUseCase(uiStatePort, gameStatePort),
     { singleton: true }
   )
 
@@ -297,49 +281,49 @@ function registerInputPorts(container: DIContainer): void {
   // T068 [US3]: 註冊 DecisionRequired 事件處理器
   container.register(
     TOKENS.HandleDecisionRequiredPort,
-    () => new HandleDecisionRequiredUseCase(uiStatePort, triggerUIEffectPort, domainFacade),
+    () => new HandleDecisionRequiredUseCase(uiStatePort, notificationPort, domainFacade),
     { singleton: true }
   )
 
   // T069 [US3]: 註冊 DecisionMade 事件處理器
   container.register(
     TOKENS.HandleDecisionMadePort,
-    () => new HandleDecisionMadeUseCase(uiStatePort, triggerUIEffectPort),
+    () => new HandleDecisionMadeUseCase(uiStatePort),
     { singleton: true }
   )
 
   // T081 [US4]: 註冊 RoundScored 事件處理器
   container.register(
     TOKENS.HandleRoundScoredPort,
-    () => new HandleRoundScoredUseCase(uiStatePort, triggerUIEffectPort, domainFacade),
+    () => new HandleRoundScoredUseCase(uiStatePort, domainFacade),
     { singleton: true }
   )
 
   // T082 [US4]: 註冊 RoundEndedInstantly 事件處理器
   container.register(
     TOKENS.HandleRoundEndedInstantlyPort,
-    () => new HandleRoundEndedInstantlyUseCase(uiStatePort, triggerUIEffectPort),
+    () => new HandleRoundEndedInstantlyUseCase(uiStatePort),
     { singleton: true }
   )
 
   // T083 [US4]: 註冊 RoundDrawn 事件處理器
   container.register(
     TOKENS.HandleRoundDrawnPort,
-    () => new HandleRoundDrawnUseCase(triggerUIEffectPort),
+    () => new HandleRoundDrawnUseCase(notificationPort),
     { singleton: true }
   )
 
   // T084 [US4]: 註冊 GameFinished 事件處理器
   container.register(
     TOKENS.HandleGameFinishedPort,
-    () => new HandleGameFinishedUseCase(triggerUIEffectPort, uiStatePort),
+    () => new HandleGameFinishedUseCase(notificationPort, uiStatePort),
     { singleton: true }
   )
 
   // T085 [US4]: 註冊 TurnError 事件處理器
   container.register(
     TOKENS.HandleTurnErrorPort,
-    () => new HandleTurnErrorUseCase(triggerUIEffectPort),
+    () => new HandleTurnErrorUseCase(notificationPort),
     { singleton: true }
   )
 
@@ -347,7 +331,7 @@ function registerInputPorts(container: DIContainer): void {
   // Phase 8: 加入 AnimationPort 確保重連時清理動畫
   container.register(
     TOKENS.HandleGameSnapshotRestorePort,
-    () => new HandleReconnectionUseCase(uiStatePort, triggerUIEffectPort, animationPort),
+    () => new HandleReconnectionUseCase(uiStatePort, notificationPort, animationPort),
     { singleton: true }
   )
 

@@ -25,7 +25,7 @@ import type {
   PlayHandCardInput,
   PlayHandCardOutput,
 } from '../../ports/input/player-operations.port'
-import type { SendCommandPort, TriggerUIEffectPort, AnimationPort } from '../../ports/output'
+import type { SendCommandPort, NotificationPort, AnimationPort } from '../../ports/output'
 import type { DomainFacade, Result } from '../../types'
 import { getCardById, type Card } from '@/user-interface/domain'
 
@@ -37,13 +37,13 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
    * 建構子
    *
    * @param sendCommandPort - 發送命令到後端的 Output Port
-   * @param triggerUIEffectPort - 觸發 UI 效果的 Output Port
+   * @param notification - 觸發通知效果的 Output Port
    * @param domainFacade - Domain Layer 業務邏輯門面
    * @param animationPort - 動畫系統 Output Port（用於檢查動畫狀態）
    */
   constructor(
     private readonly sendCommandPort: SendCommandPort,
-    private readonly triggerUIEffectPort: TriggerUIEffectPort,
+    private readonly notification: NotificationPort,
     private readonly domainFacade: DomainFacade,
     private readonly animationPort: AnimationPort
   ) {}
@@ -122,7 +122,7 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
       // 多重配對：觸發選擇 UI
       const possibleTargetIds = matchableCards.map((card) => card.card_id)
 
-      this.triggerUIEffectPort.showSelectionUI(possibleTargetIds)
+      this.notification.showSelectionUI(possibleTargetIds)
 
       return {
         success: true,

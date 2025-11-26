@@ -6,7 +6,7 @@
  */
 
 export { useGameStateStore, createUIStatePortAdapter } from './gameState'
-export { useUIStateStore, createTriggerUIEffectPortAdapter } from './uiState'
+export { useUIStateStore } from './uiState'
 export { useAnimationLayerStore } from './animationLayerStore'
 
 export type { GameStateStoreState, GameStateStoreGetters, GameStateStoreActions } from './gameState'

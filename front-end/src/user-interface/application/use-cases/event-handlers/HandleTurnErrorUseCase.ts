@@ -3,14 +3,14 @@
  */
 
 import type { TurnErrorEvent } from '../../types/events'
-import type { TriggerUIEffectPort } from '../../ports/output'
+import type { NotificationPort } from '../../ports/output'
 import type { HandleTurnErrorPort } from '../../ports/input'
 
 export class HandleTurnErrorUseCase implements HandleTurnErrorPort {
-  constructor(private readonly triggerUIEffect: TriggerUIEffectPort) {}
+  constructor(private readonly notification: NotificationPort) {}
 
   execute(event: TurnErrorEvent): void {
     // 顯示錯誤訊息
-    this.triggerUIEffect.showErrorMessage(event.error_message)
+    this.notification.showErrorMessage(event.error_message)
   }
 }

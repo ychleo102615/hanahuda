@@ -90,12 +90,13 @@ export { ERROR_MESSAGES, RECONNECTION_RETRY, FlowStateEnum } from './types'
 // ============================================================================
 
 export type {
-  // Output Ports (3)
+  // Output Ports
   SendCommandPort,
   UIStatePort,
-  TriggerUIEffectPort,
-  AnimationType,
-  AnimationParams,
+  GameStatePort,
+  AnimationPort,
+  NotificationPort,
+  DealAnimationParams,
   // Input Ports - Player Operations (3)
   PlayHandCardPort,
   PlayHandCardInput,

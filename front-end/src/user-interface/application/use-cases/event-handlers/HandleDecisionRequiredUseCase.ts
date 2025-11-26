@@ -17,37 +17,23 @@
  */
 
 import type { DecisionRequiredEvent } from '../../types/events'
-import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort, NotificationPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleDecisionRequiredPort } from '../../ports/input'
 
 export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort {
   constructor(
     private readonly updateUIState: UIStatePort,
-    private readonly triggerUIEffect: TriggerUIEffectPort,
+    private readonly notification: NotificationPort,
     private readonly domainFacade: DomainFacade
   ) {}
 
   execute(event: DecisionRequiredEvent): void {
-    // 1. 觸發卡片移動動畫（手牌操作）
-    if (event.hand_card_play) {
-      this.triggerUIEffect.triggerAnimation('CARD_MOVE', {
-        cardId: event.hand_card_play.played_card,
-        from: 'hand',
-        to: 'depository',
-      })
-    }
+    // 移除舊的卡片移動動畫調用
+    // 理由：卡片移動動畫應在前一個事件 (TurnCompleted) 中完成
+    // DecisionRequired 事件觸發時，卡片操作已經完成
 
-    // 2. 觸發卡片移動動畫（翻牌操作）
-    if (event.draw_card_play) {
-      this.triggerUIEffect.triggerAnimation('CARD_MOVE', {
-        cardId: event.draw_card_play.played_card,
-        from: 'deck',
-        to: 'depository',
-      })
-    }
-
-    // 3. 計算當前役種與得分
+    // 1. 計算當前役種與得分
     const currentScore = event.yaku_update.all_active_yaku.reduce(
       (sum, yaku) => sum + yaku.base_points,
       0
@@ -55,14 +41,13 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
     const multiplier = event.current_multipliers.player_multipliers[event.player_id] || 1
     const finalScore = currentScore * multiplier
 
-    // 4. 顯示 Koi-Koi 決策 Modal
-    this.triggerUIEffect.showDecisionModal(
+    // 2. 顯示 Koi-Koi 決策 Modal
+    this.notification.showDecisionModal(
       [...event.yaku_update.all_active_yaku],
-      finalScore,
-      undefined // 潛在分數（可選功能，暫不實作）
+      finalScore
     )
 
-    // 5. 更新 FlowStage 為 AWAITING_DECISION
+    // 3. 更新 FlowStage 為 AWAITING_DECISION
     this.updateUIState.setFlowStage('AWAITING_DECISION')
   }
 }

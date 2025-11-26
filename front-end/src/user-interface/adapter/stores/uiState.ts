@@ -17,7 +17,6 @@
  */
 
 import { defineStore } from 'pinia'
-import type { TriggerUIEffectPort, AnimationType, AnimationParams } from '../../application/ports/output/trigger-ui-effect.port'
 import type { YakuScore, PlayerScore } from '../../application/types'
 
 /**
@@ -429,27 +428,3 @@ export const useUIStateStore = defineStore('uiState', {
   },
 })
 
-/**
- * 建立 TriggerUIEffectPort Adapter
- *
- * @description
- * 將 UIStateStore 與 AnimationService 組合適配為 TriggerUIEffectPort 介面。
- * 由 DI Container 使用。
- *
- * @param animationService - AnimationService 實例 (負責 triggerAnimation 方法)
- * @returns TriggerUIEffectPort 實作
- */
-export function createTriggerUIEffectPortAdapter(animationService: {
-  trigger<T extends AnimationType>(type: T, params: AnimationParams<T>): void
-}): TriggerUIEffectPort {
-  const store = useUIStateStore()
-  return {
-    showSelectionUI: store.showSelectionUI.bind(store),
-    showDecisionModal: store.showDecisionModal.bind(store),
-    showErrorMessage: store.showErrorMessage.bind(store),
-    showReconnectionMessage: store.showReconnectionMessage.bind(store),
-    triggerAnimation: animationService.trigger.bind(animationService), // 委派給 AnimationService
-    showGameFinishedUI: store.showGameFinishedUI.bind(store),
-    showRoundDrawnUI: store.showRoundDrawnUI.bind(store),
-  }
-}

@@ -21,7 +21,6 @@ export {
   useGameStateStore,
   useUIStateStore,
   createUIStatePortAdapter,
-  createTriggerUIEffectPortAdapter,
 } from './stores'
 
 export type {

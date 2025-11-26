@@ -12,13 +12,13 @@
  */
 
 import type { GameSnapshotRestore } from '../../types/events'
-import type { UIStatePort, TriggerUIEffectPort, AnimationPort } from '../../ports/output'
+import type { UIStatePort, NotificationPort, AnimationPort } from '../../ports/output'
 import type { HandleReconnectionPort } from '../../ports/input'
 
 export class HandleReconnectionUseCase implements HandleReconnectionPort {
   constructor(
     private readonly updateUIState: UIStatePort,
-    private readonly triggerUIEffect: TriggerUIEffectPort,
+    private readonly notification: NotificationPort,
     private readonly animationPort: AnimationPort
   ) {}
 
@@ -32,6 +32,6 @@ export class HandleReconnectionUseCase implements HandleReconnectionPort {
     this.updateUIState.restoreGameState(snapshot)
 
     // 2. 顯示「連線已恢復」提示訊息
-    this.triggerUIEffect.showReconnectionMessage()
+    this.notification.showReconnectionMessage()
   }
 }

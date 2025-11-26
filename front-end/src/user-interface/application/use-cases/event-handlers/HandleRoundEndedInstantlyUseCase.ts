@@ -3,14 +3,11 @@
  */
 
 import type { RoundEndedInstantlyEvent } from '../../types/events'
-import type { UIStatePort, TriggerUIEffectPort } from '../../ports/output'
+import type { UIStatePort } from '../../ports/output'
 import type { HandleRoundEndedInstantlyPort } from '../../ports/input'
 
 export class HandleRoundEndedInstantlyUseCase implements HandleRoundEndedInstantlyPort {
-  constructor(
-    private readonly updateUIState: UIStatePort,
-    private readonly triggerUIEffect: TriggerUIEffectPort
-  ) {}
+  constructor(private readonly updateUIState: UIStatePort) {}
 
   execute(event: RoundEndedInstantlyEvent): void {
     // 1. 更新分數

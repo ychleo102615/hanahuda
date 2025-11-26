@@ -14,13 +14,12 @@
  */
 
 import type { GameStartedEvent } from '../../types/events'
-import type { UIStatePort, TriggerUIEffectPort, GameStatePort } from '../../ports/output'
+import type { UIStatePort, GameStatePort } from '../../ports/output'
 import type { HandleGameStartedPort } from '../../ports/input'
 
 export class HandleGameStartedUseCase implements HandleGameStartedPort {
   constructor(
     private readonly updateUIState: UIStatePort,
-    private readonly triggerUIEffect: TriggerUIEffectPort,
     private readonly gameState: GameStatePort
   ) {}
 

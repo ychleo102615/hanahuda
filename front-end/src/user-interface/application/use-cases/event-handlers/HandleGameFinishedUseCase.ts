@@ -3,12 +3,12 @@
  */
 
 import type { GameFinishedEvent } from '../../types/events'
-import type { TriggerUIEffectPort, UIStatePort } from '../../ports/output'
+import type { NotificationPort, UIStatePort } from '../../ports/output'
 import type { HandleGameFinishedPort } from '../../ports/input'
 
 export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
   constructor(
-    private readonly triggerUIEffect: TriggerUIEffectPort,
+    private readonly notification: NotificationPort,
     private readonly updateUIState: UIStatePort,
   ) {}
 
@@ -20,7 +20,7 @@ export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
     const isPlayerWinner = event.winner_id === currentPlayerId
 
     // 3. 顯示遊戲結束畫面
-    this.triggerUIEffect.showGameFinishedUI(
+    this.notification.showGameFinishedUI(
       event.winner_id,
       [...event.final_scores],
       isPlayerWinner,
