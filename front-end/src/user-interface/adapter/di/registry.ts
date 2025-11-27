@@ -259,10 +259,10 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T051 [US2]: 註冊 SelectionRequired 事件處理器
-  // Phase 7: 使用 GameStatePort + AnimationPort（場牌選擇 UI 架構重構）
+  // Phase 7: 使用 GameStatePort + AnimationPort + DomainFacade（場牌選擇 UI 架構重構）
   container.register(
     TOKENS.HandleSelectionRequiredPort,
-    () => new HandleSelectionRequiredUseCase(gameStatePort, animationPort),
+    () => new HandleSelectionRequiredUseCase(gameStatePort, animationPort, domainFacade),
     { singleton: true }
   )
 

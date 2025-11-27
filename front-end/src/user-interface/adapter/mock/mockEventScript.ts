@@ -83,8 +83,7 @@ export const mockEventScript: MockEventItem[] = [
       timestamp: new Date().toISOString(),
       dealer_id: 'player-1',
       // 場牌: 1-8月各一張かす
-      field: ['0141', '0142', '0341', '0441', '0541', '0641', '0741', '0841'],
-      // field: ['0141', '0241', '0341', '0441', '0541', '0641', '0741', '0841'],
+      field: ['0141', '0241', '0341', '0441', '0541', '0641', '0741', '0841'],
       hands: [
         {
           // 玩家手牌: 赤短3張 + 其他
@@ -106,7 +105,6 @@ export const mockEventScript: MockEventItem[] = [
     delay: 3000,
   },
 
-  /*
   // 3. 玩家出牌完成 (松赤短配對松かす)
   {
     eventType: 'TurnCompleted',
@@ -133,6 +131,7 @@ export const mockEventScript: MockEventItem[] = [
     },
     delay: 3000,
   },
+  /*
 
   // 4. 對手出牌完成 (松光配對松かす2)
   {
