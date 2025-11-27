@@ -80,6 +80,10 @@ export function createGameStatePortAdapter(): GameStatePort {
       store.setPossibleTargetCardIds(cardIds)
     },
 
+    setDrawnCard(cardId: string | null): void {
+      store.setDrawnCard(cardId)
+    },
+
     // ===== 查詢 =====
     getLocalPlayerId(): string {
       return store.getLocalPlayerId()
@@ -111,6 +115,14 @@ export function createGameStatePortAdapter(): GameStatePort {
 
     getOpponentHandCount(): number {
       return store.opponentHandCount
+    },
+
+    getDrawnCard(): string | null {
+      return store.getDrawnCard()
+    },
+
+    getPossibleTargetCardIds(): string[] {
+      return store.getPossibleTargetCardIds()
     },
   }
 }

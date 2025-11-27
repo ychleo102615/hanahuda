@@ -36,12 +36,7 @@ const uiState = useUIStateStore()
 const { opponentHandCount, fieldCards } = storeToRefs(gameState)
 const { infoMessage, handCardConfirmationMode, handCardAwaitingConfirmation } = storeToRefs(uiState)
 
-const playerHandZoneRef = ref<InstanceType<typeof PlayerHandZone> | null>(null)
-
-// 注入 Ports
-import type { PlayHandCardPort, SelectMatchTargetPort } from '../user-interface/application/ports/input'
-const playHandCardPort = inject<PlayHandCardPort>(TOKENS.PlayHandCardPort.toString())
-const selectMatchTargetPort = inject<SelectMatchTargetPort>(TOKENS.SelectMatchTargetPort.toString())
+// GamePage 不再直接調用業務 Port，由子組件負責
 
 // 初始化遊戲
 onMounted(async () => {
@@ -68,44 +63,10 @@ onMounted(async () => {
   }
 })
 
-// 處理手牌選擇
-function handleHandCardSelect(cardId: string) {
-  console.info('[GamePage] 選擇手牌:', cardId)
-  // 手牌選擇邏輯已在 PlayerHandZone 內部處理
-}
-
-// 處理場牌點擊（配對選擇）
+// GamePage 只作為協調者，不處理業務邏輯
+// 所有場牌點擊邏輯已移至 FieldZone 組件內部處理
 function handleFieldCardClick(cardId: string) {
-  console.info('[GamePage] 場牌點擊:', cardId)
-
-  // 情境 1: 手牌確認模式 - 點擊場牌來配對
-  if (handCardConfirmationMode.value && handCardAwaitingConfirmation.value) {
-    const selectedHandCard = handCardAwaitingConfirmation.value
-    console.info('[GamePage] 手牌確認模式 - 執行配對:', { selectedHandCard, fieldCard: cardId })
-
-    if (playHandCardPort) {
-      playHandCardPort.execute({
-        cardId: selectedHandCard,
-        handCards: gameState.myHandCards,
-        fieldCards: fieldCards.value,
-        targetCardId: cardId, // 指定配對目標
-      })
-      uiState.exitHandCardConfirmationMode()
-    } else {
-      console.warn('[GamePage] PlayHandCardPort not injected')
-    }
-    return
-  }
-
-  // 情境 2: 翻牌選擇模式（舊架構）- SelectMatchTargetPort
-  if (selectMatchTargetPort) {
-    selectMatchTargetPort.execute({ targetCardId: cardId })
-  } else {
-    console.warn('[GamePage] SelectMatchTargetPort not injected')
-  }
-
-  // 清除選擇狀態
-  playerHandZoneRef.value?.clearSelection()
+  console.info('[GamePage] 場牌點擊事件（已由 FieldZone 處理）:', cardId)
 }
 </script>
 
@@ -142,7 +103,7 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- 玩家手牌區 (~30% viewport) -->
     <section class="h-[30%] bg-gray-800/50">
-      <PlayerHandZone ref="playerHandZoneRef" @card-select="handleHandCardSelect" />
+      <PlayerHandZone />
     </section>
 
     <!-- Opponent hand count indicator -->

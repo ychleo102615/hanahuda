@@ -61,7 +61,8 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     const newFieldCards = [...currentFieldCards, event.hand_card_play.played_card]
     this.gameState.updateFieldCards(newFieldCards)
 
-    // === 階段 4：保存可配對目標 ===
+    // === 階段 4：保存翻出卡片與可配對目標 ===
+    this.gameState.setDrawnCard(event.drawn_card)
     this.gameState.setPossibleTargetCardIds([...event.possible_targets])
 
     // === 階段 5：更新 FlowStage ===

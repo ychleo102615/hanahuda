@@ -55,7 +55,6 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
    * @returns 操作結果（成功/失敗）
    */
   execute(input: PlayHandCardInput): Result<PlayHandCardOutput> {
-    console.log('PlayHandCardUseCase.execute called with input:', input)
     // Step 0: 檢查動畫狀態 - 若動畫進行中則阻止操作
     if (this.animationPort.isAnimating()) {
       return {
@@ -94,6 +93,29 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
     const matchableCards = this.domainFacade.findMatchableCards(handCard, fieldCardObjects)
 
     // Step 4: Handle different match scenarios
+    // 如果有明確指定 targetCardId（手牌確認模式），則直接使用
+    if (input.targetCardId) {
+      // 驗證 targetCardId 是否在可配對列表中
+      const isValidTarget = matchableCards.some(card => card.card_id === input.targetCardId)
+
+      if (isValidTarget) {
+        this.sendCommandPort.playHandCard(input.cardId, input.targetCardId)
+        return {
+          success: true,
+          value: {
+            needSelection: false,
+            selectedTarget: input.targetCardId,
+          },
+        }
+      } else {
+        return {
+          success: false,
+          error: 'INVALID_TARGET',
+        }
+      }
+    }
+
+    // 沒有指定 targetCardId，根據配對數量自動處理
     if (matchableCards.length === 0) {
       // 無配對：發送命令（無 target）
       this.sendCommandPort.playHandCard(input.cardId, undefined)

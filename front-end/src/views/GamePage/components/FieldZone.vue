@@ -17,7 +17,7 @@ import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
 import { useZoneRegistration } from '../../../user-interface/adapter/composables/useZoneRegistration'
 import CardComponent from './CardComponent.vue'
 import { TOKENS } from '../../../user-interface/adapter/di/tokens'
-import type { SelectMatchTargetPort } from '../../../user-interface/application/ports/input'
+import type { SelectMatchTargetPort, PlayHandCardPort } from '../../../user-interface/application/ports/input'
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
@@ -38,14 +38,13 @@ const {
   matchCount,
 } = storeToRefs(uiState)
 
-// 注入 SelectMatchTargetPort 用於場牌選擇
+// 注入 Ports
 const selectMatchTargetPort = inject<SelectMatchTargetPort>(
   TOKENS.SelectMatchTargetPort.toString()
 )
-
-const emit = defineEmits<{
-  cardClick: [cardId: string]
-}>()
+const playHandCardPort = inject<PlayHandCardPort>(
+  TOKENS.PlayHandCardPort.toString()
+)
 
 // 判斷卡片是否為可配對目標（舊架構，保留向後兼容）
 function isHighlighted(cardId: string): boolean {
@@ -101,7 +100,20 @@ function handleCardClick(cardId: string) {
   // 情境 1: 翻牌選擇模式（AWAITING_SELECTION）
   if (fieldCardSelectionMode.value && fieldCardSelectableTargets.value.includes(cardId)) {
     if (selectMatchTargetPort) {
-      selectMatchTargetPort.execute({ targetCardId: cardId })
+      // 從 gameState 取得完整參數
+      const drawnCard = gameState.drawnCard
+      const possibleTargets = gameState.possibleTargetCardIds
+
+      if (!drawnCard || possibleTargets.length === 0) {
+        console.error('[FieldZone] Missing drawnCard or possibleTargets for AWAITING_SELECTION')
+        return
+      }
+
+      selectMatchTargetPort.execute({
+        sourceCardId: drawnCard,
+        targetCardId: cardId,
+        possibleTargets: possibleTargets
+      })
       uiState.exitFieldCardSelectionMode()
     } else {
       console.warn('[FieldZone] SelectMatchTargetPort not injected')
@@ -111,15 +123,21 @@ function handleCardClick(cardId: string) {
 
   // 情境 2: 手牌確認模式（兩次點擊） - 點擊場牌來配對
   if (handCardConfirmationMode.value && matchableFieldCards.value.includes(cardId)) {
-    console.info('[FieldZone] 場牌點擊配對:', cardId)
-    // 透過 emit 通知 GamePage，由 GamePage 呼叫 SelectMatchTargetPort
-    emit('cardClick', cardId)
-    return
-  }
+    if (playHandCardPort && uiState.handCardAwaitingConfirmation) {
+      const selectedHandCard = uiState.handCardAwaitingConfirmation
+      console.info('[FieldZone] 手牌確認模式 - 執行配對:', { selectedHandCard, fieldCard: cardId })
 
-  // 舊架構：保留向後兼容
-  if (isSelectable(cardId)) {
-    emit('cardClick', cardId)
+      playHandCardPort.execute({
+        cardId: selectedHandCard,
+        handCards: gameState.myHandCards,
+        fieldCards: gameState.fieldCards,
+        targetCardId: cardId,
+      })
+      uiState.exitHandCardConfirmationMode()
+    } else {
+      console.warn('[FieldZone] PlayHandCardPort not injected or no handCard awaiting')
+    }
+    return
   }
 }
 

@@ -68,6 +68,7 @@ export interface GameStateStoreState {
   opponentDepository: string[] // 對手已獲得牌列表
   deckRemaining: number // 牌堆剩餘數量
   possibleTargetCardIds: string[] // 翻牌後可選擇配對的場牌列表 (用於 AWAITING_SELECTION)
+  drawnCard: string | null // 翻出的卡片 ID (用於 AWAITING_SELECTION 時的 source)
 
   // 分數與役種
   myScore: number
@@ -121,6 +122,7 @@ export const useGameStateStore = defineStore('gameState', {
     opponentDepository: [],
     deckRemaining: 24,
     possibleTargetCardIds: [],
+    drawnCard: null,
 
     // 分數與役種
     myScore: 0,
@@ -381,6 +383,16 @@ export const useGameStateStore = defineStore('gameState', {
     },
 
     /**
+     * 設定翻出的卡片 ID
+     *
+     * @param cardId - 翻出的卡片 ID，若要清除則傳入 null
+     */
+    setDrawnCard(cardId: string | null): void {
+      this.drawnCard = cardId
+      console.info('[GameStateStore] 設定翻出卡片:', cardId)
+    },
+
+    /**
      * 取得本地玩家 ID
      *
      * @returns 本地玩家的 player_id
@@ -391,6 +403,24 @@ export const useGameStateStore = defineStore('gameState', {
         throw new Error('[GameStateStore] LocalPlayerId not initialized')
       }
       return this.localPlayerId
+    },
+
+    /**
+     * 取得翻出的卡片 ID
+     *
+     * @returns 翻出的卡片 ID，若無則返回 null
+     */
+    getDrawnCard(): string | null {
+      return this.drawnCard
+    },
+
+    /**
+     * 取得可配對目標卡片列表
+     *
+     * @returns 可配對的場牌 ID 列表
+     */
+    getPossibleTargetCardIds(): string[] {
+      return [...this.possibleTargetCardIds]
     },
 
     /**
@@ -413,6 +443,7 @@ export const useGameStateStore = defineStore('gameState', {
       this.opponentDepository = []
       this.deckRemaining = 24
       this.possibleTargetCardIds = []
+      this.drawnCard = null
 
       this.myScore = 0
       this.opponentScore = 0

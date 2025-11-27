@@ -176,6 +176,7 @@ export const useUIStateStore = defineStore('uiState', {
      * @param possibleTargets - 可選目標列表
      */
     showSelectionUI(possibleTargets: string[]): void {
+      console.trace()
       this.selectionMode = true
       this.selectionPossibleTargets = [...possibleTargets]
       console.info('[UIStateStore] 顯示配對選擇 UI', { possibleTargets })

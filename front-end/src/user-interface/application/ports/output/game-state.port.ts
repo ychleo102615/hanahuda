@@ -241,6 +241,26 @@ export interface GameStatePort {
    */
   setPossibleTargetCardIds(cardIds: string[]): void
 
+  /**
+   * 設定翻出的卡片 ID
+   *
+   * @description
+   * 用於 SelectionRequired 事件，保存翻出的卡片 ID（drawn_card）。
+   * 此卡片在翻牌雙重配對時作為 TurnSelectTarget 命令的 source 參數。
+   *
+   * @param cardId - 翻出的卡片 ID，若要清除則傳入 null
+   *
+   * @example
+   * ```typescript
+   * // SelectionRequired 事件時保存
+   * gameState.setDrawnCard('0841')
+   *
+   * // 選擇完成後清除
+   * gameState.setDrawnCard(null)
+   * ```
+   */
+  setDrawnCard(cardId: string | null): void
+
   // ===== 查詢 =====
 
   /**
@@ -332,4 +352,37 @@ export interface GameStatePort {
    * ```
    */
   getOpponentHandCount(): number
+
+  /**
+   * 取得翻出的卡片 ID
+   *
+   * @description
+   * 用於 AWAITING_SELECTION 狀態時，取得當前等待配對的翻牌。
+   *
+   * @returns 翻出的卡片 ID，若無則返回 null
+   *
+   * @example
+   * ```typescript
+   * const drawnCard = gameState.getDrawnCard()
+   * if (drawnCard) {
+   *   // 使用 drawnCard 作為 TurnSelectTarget 的 source
+   * }
+   * ```
+   */
+  getDrawnCard(): string | null
+
+  /**
+   * 取得可配對目標卡片列表
+   *
+   * @description
+   * 用於 AWAITING_SELECTION 狀態時，取得可選擇的配對目標列表。
+   *
+   * @returns 可配對的場牌 ID 列表
+   *
+   * @example
+   * ```typescript
+   * const possibleTargets = gameState.getPossibleTargetCardIds()
+   * ```
+   */
+  getPossibleTargetCardIds(): string[]
 }

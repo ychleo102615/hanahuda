@@ -129,6 +129,10 @@ export class HandleTurnProgressAfterSelectionUseCase
     this.gameState.setFlowStage(event.next_state.state_type)
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
+    // 清除 AWAITING_SELECTION 相關狀態
+    this.gameState.setDrawnCard(null)
+    this.gameState.setPossibleTargetCardIds([])
+
     // === 階段 5：清理動畫層 ===
     this.animation.clearHiddenCards()
   }

@@ -38,6 +38,7 @@ export interface PlayHandCardInput {
   readonly cardId: string // 要打出的手牌 ID
   readonly handCards: string[] // 當前手牌列表
   readonly fieldCards: string[] // 當前場牌列表
+  readonly targetCardId?: string // 指定的配對目標 ID（手牌確認模式使用）
 }
 
 /**
