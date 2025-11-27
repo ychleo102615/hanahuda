@@ -125,6 +125,44 @@ export class ZoneRegistry {
   }
 
   /**
+   * 在指定 zone 內查找卡片元素
+   *
+   * @param zoneName - Zone 名稱
+   * @param cardId - 卡片 ID
+   * @returns 卡片 DOM 元素，找不到或 zone 未註冊時返回 null
+   */
+  findCardInZone(zoneName: ZoneName, cardId: string): HTMLElement | null {
+    const entry = this.zones.get(zoneName)
+    if (!entry) {
+      return null
+    }
+    return entry.element.querySelector(`[data-card-id="${cardId}"]`) as HTMLElement | null
+  }
+
+  /**
+   * 查找卡片元素，支援優先 zone 和 fallback
+   *
+   * @param cardId - 卡片 ID
+   * @param preferredZone - 優先查找的 zone（可選）
+   * @returns 卡片 DOM 元素或 null
+   */
+  findCard(cardId: string, preferredZone?: ZoneName): HTMLElement | null {
+    // 1. 如果指定優先 zone，先在該 zone 查找
+    if (preferredZone) {
+      const element = this.findCardInZone(preferredZone, cardId)
+      if (element) return element
+    }
+
+    // 2. Fallback: 遍歷所有已註冊的 zone
+    for (const zoneName of this.zones.keys()) {
+      const element = this.findCardInZone(zoneName, cardId)
+      if (element) return element
+    }
+
+    return null
+  }
+
+  /**
    * 清理所有註冊和 observers
    */
   dispose(): void {

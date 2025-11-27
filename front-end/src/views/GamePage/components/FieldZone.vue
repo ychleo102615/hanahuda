@@ -148,7 +148,7 @@ function handleCardClick(cardId: string) {
     <TransitionGroup
       name="field-cards"
       tag="div"
-      class="grid grid-cols-4 gap-4"
+      class="grid grid-flow-col grid-rows-2 gap-4"
     >
       <CardComponent
         v-for="cardId in fieldCards"

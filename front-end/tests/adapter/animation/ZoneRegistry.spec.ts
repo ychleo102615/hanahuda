@@ -275,4 +275,141 @@ describe('ZoneRegistry', () => {
       expect(zones).toHaveLength(3)
     })
   })
+
+  describe('卡片查詢功能', () => {
+    let playerHandElement: HTMLElement
+    let fieldElement: HTMLElement
+
+    beforeEach(() => {
+      // 創建兩個不同的 zone 元素
+      playerHandElement = document.createElement('div')
+      playerHandElement.classList.add('player-hand-zone')
+
+      fieldElement = document.createElement('div')
+      fieldElement.classList.add('field-zone')
+
+      // 註冊 zones
+      registry.register('player-hand', playerHandElement)
+      registry.register('field', fieldElement)
+    })
+
+    describe('findCardInZone', () => {
+      it('應該能在指定 zone 內查找卡片', () => {
+        // 在 player-hand zone 添加卡片
+        const card = document.createElement('div')
+        card.setAttribute('data-card-id', 'card-01')
+        playerHandElement.appendChild(card)
+
+        const result = registry.findCardInZone('player-hand', 'card-01')
+
+        expect(result).toBe(card)
+      })
+
+      it('當 zone 未註冊時應該返回 null', () => {
+        const result = registry.findCardInZone('deck' as ZoneName, 'card-01')
+
+        expect(result).toBeNull()
+      })
+
+      it('當卡片不在指定 zone 時應該返回 null', () => {
+        // 卡片在 field zone
+        const card = document.createElement('div')
+        card.setAttribute('data-card-id', 'card-01')
+        fieldElement.appendChild(card)
+
+        // 但查詢 player-hand zone
+        const result = registry.findCardInZone('player-hand', 'card-01')
+
+        expect(result).toBeNull()
+      })
+
+      it('應該正確區分同一 cardId 在不同 zone 的元素', () => {
+        // 在兩個 zone 都添加同一 cardId
+        const handCard = document.createElement('div')
+        handCard.setAttribute('data-card-id', 'card-01')
+        handCard.classList.add('in-hand')
+        playerHandElement.appendChild(handCard)
+
+        const fieldCard = document.createElement('div')
+        fieldCard.setAttribute('data-card-id', 'card-01')
+        fieldCard.classList.add('in-field')
+        fieldElement.appendChild(fieldCard)
+
+        // 查詢 player-hand 應該找到手牌區的卡片
+        const handResult = registry.findCardInZone('player-hand', 'card-01')
+        expect(handResult).toBe(handCard)
+        expect(handResult?.classList.contains('in-hand')).toBe(true)
+
+        // 查詢 field 應該找到場牌區的卡片
+        const fieldResult = registry.findCardInZone('field', 'card-01')
+        expect(fieldResult).toBe(fieldCard)
+        expect(fieldResult?.classList.contains('in-field')).toBe(true)
+      })
+    })
+
+    describe('findCard', () => {
+      it('應該優先查找 preferredZone', () => {
+        // 在兩個 zone 都添加同一 cardId
+        const handCard = document.createElement('div')
+        handCard.setAttribute('data-card-id', 'card-01')
+        handCard.classList.add('in-hand')
+        playerHandElement.appendChild(handCard)
+
+        const fieldCard = document.createElement('div')
+        fieldCard.setAttribute('data-card-id', 'card-01')
+        fieldCard.classList.add('in-field')
+        fieldElement.appendChild(fieldCard)
+
+        // 指定優先 zone 為 player-hand
+        const result = registry.findCard('card-01', 'player-hand')
+        expect(result).toBe(handCard)
+        expect(result?.classList.contains('in-hand')).toBe(true)
+
+        // 指定優先 zone 為 field
+        const result2 = registry.findCard('card-01', 'field')
+        expect(result2).toBe(fieldCard)
+        expect(result2?.classList.contains('in-field')).toBe(true)
+      })
+
+      it('沒有 preferredZone 時應該返回第一個找到的', () => {
+        const card = document.createElement('div')
+        card.setAttribute('data-card-id', 'card-01')
+        fieldElement.appendChild(card)
+
+        const result = registry.findCard('card-01')
+
+        expect(result).toBe(card)
+      })
+
+      it('當 preferredZone 找不到時應該 fallback 到其他 zone', () => {
+        // 卡片只在 field zone
+        const card = document.createElement('div')
+        card.setAttribute('data-card-id', 'card-01')
+        fieldElement.appendChild(card)
+
+        // 優先查詢 player-hand，但會 fallback 到 field
+        const result = registry.findCard('card-01', 'player-hand')
+
+        expect(result).toBe(card)
+      })
+
+      it('當所有 zone 都找不到時應該返回 null', () => {
+        const result = registry.findCard('non-existent-card')
+
+        expect(result).toBeNull()
+      })
+
+      it('當 preferredZone 未註冊時應該 fallback 到其他 zone', () => {
+        // 卡片在 field zone
+        const card = document.createElement('div')
+        card.setAttribute('data-card-id', 'card-01')
+        fieldElement.appendChild(card)
+
+        // 優先 zone 是未註冊的 deck
+        const result = registry.findCard('card-01', 'deck')
+
+        expect(result).toBe(card)
+      })
+    })
+  })
 })

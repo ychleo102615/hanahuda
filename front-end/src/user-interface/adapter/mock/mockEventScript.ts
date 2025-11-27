@@ -131,7 +131,6 @@ export const mockEventScript: MockEventItem[] = [
     },
     delay: 3000,
   },
-  /*
 
   // 4. 對手出牌完成 (松光配對松かす2)
   {
@@ -213,6 +212,7 @@ export const mockEventScript: MockEventItem[] = [
     },
     delay: 3000,
   },
+  /*
 
   // 7. 玩家出牌完成 (櫻赤短配對櫻かす) - 形成赤短役
   {

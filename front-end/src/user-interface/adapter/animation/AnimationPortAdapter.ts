@@ -75,13 +75,6 @@ function calculateBoundingBox(rects: DOMRect[]): DOMRect {
 }
 
 /**
- * 查找卡片 DOM 元素
- */
-function findCardElement(cardId: string): HTMLElement | null {
-  return document.querySelector(`[data-card-id="${cardId}"]`) as HTMLElement | null
-}
-
-/**
  * AnimationPortAdapter 類別
  *
  * @description
@@ -167,7 +160,7 @@ export class AnimationPortAdapter implements AnimationPort {
               // 發玩家手牌
               if (playerCardIndex < params.playerHandCards.length) {
                 const cardId = params.playerHandCards[playerCardIndex]!
-                const cardElement = findCardElement(cardId)
+                const cardElement = this.registry.findCard(cardId, 'player-hand')
 
                 if (cardElement && deckPosition && !this._interrupted) {
                   params.onCardDealt?.()
@@ -202,7 +195,7 @@ export class AnimationPortAdapter implements AnimationPort {
         }
 
         const cardId = params.fieldCards[i]!
-        const cardElement = findCardElement(cardId)
+        const cardElement = this.registry.findCard(cardId, 'field')
 
         if (cardElement && deckPosition && !this._interrupted) {
           params.onCardDealt?.()
@@ -312,8 +305,10 @@ export class AnimationPortAdapter implements AnimationPort {
 
     this._isAnimating = true
 
-    const cardElement = findCardElement(cardId)
-    const targetElement = targetCardId ? findCardElement(targetCardId) : null
+    // 根據情況查找卡片元素（優先在預期的 zone 中查找）
+    const cardElement = this.registry.findCard(cardId, isOpponent ? 'opponent-hand' : 'player-hand')
+    // 配對目標一定在場牌區
+    const targetElement = targetCardId ? this.registry.findCard(targetCardId, 'field') : null
     const fieldPosition = this.registry.getPosition('field')
 
     console.info('[AnimationPort] playCardToFieldAnimation', {
@@ -332,8 +327,27 @@ export class AnimationPortAdapter implements AnimationPort {
     let fromRect: DOMRect
     let isFaceDown = false
 
-    if (cardElement) {
-      // 玩家手牌：使用真實 DOM 位置
+    // 無配對情況：明確從手牌區查找
+    const isNoMatchCase = !targetCardId
+
+    if (isNoMatchCase) {
+      // 根據 isOpponent 決定查找哪個手牌區
+      const handZone = isOpponent ? 'opponent-hand' : 'player-hand'
+      const handCardElement = this.registry.findCardInZone(handZone, cardId)
+
+      if (handCardElement) {
+        fromRect = handCardElement.getBoundingClientRect()
+      } else if (cardElement) {
+        // Fallback: 使用之前找到的元素（可能在其他 zone）
+        fromRect = cardElement.getBoundingClientRect()
+      } else {
+        // 無法找到元素，跳過動畫
+        await sleep(ANIMATION_DURATION.CARD_TO_FIELD)
+        this._isAnimating = false
+        return
+      }
+    } else if (cardElement) {
+      // 有配對或其他情況：使用真實 DOM 位置
       fromRect = cardElement.getBoundingClientRect()
     } else if (isOpponent) {
       // 對手手牌：從對手手牌區位置開始，顯示牌背
@@ -346,6 +360,7 @@ export class AnimationPortAdapter implements AnimationPort {
           cardWidth,
           cardHeight
         )
+        isFaceDown = true
       } else {
         // 備用：等待時長
         await sleep(ANIMATION_DURATION.CARD_TO_FIELD)
@@ -370,16 +385,31 @@ export class AnimationPortAdapter implements AnimationPort {
         targetRect.width,
         targetRect.height
       )
-    } else if (fieldPosition) {
-      // 無配對：飛到場牌區中心
-      toRect = new DOMRect(
-        fieldPosition.rect.x + fieldPosition.rect.width / 2 - fromRect.width / 2,
-        fieldPosition.rect.y + fieldPosition.rect.height / 2 - fromRect.height / 2,
-        fromRect.width,
-        fromRect.height
-      )
     } else {
-      toRect = fromRect
+      // 無配對：明確從場牌區查找
+      const fieldCardElement = this.registry.findCardInZone('field', cardId)
+
+      if (fieldCardElement) {
+        // 找到場牌區的新增位置 → 飛到該位置
+        const fieldCardRect = fieldCardElement.getBoundingClientRect()
+        toRect = new DOMRect(
+          fieldCardRect.x,
+          fieldCardRect.y,
+          fieldCardRect.width,
+          fieldCardRect.height
+        )
+      } else if (fieldPosition) {
+        // 場牌區沒有該卡片 → 飛到場牌區中心（備用方案）
+        console.warn('[AnimationPort] 場牌區找不到卡片，使用中心位置', { cardId })
+        toRect = new DOMRect(
+          fieldPosition.rect.x + fieldPosition.rect.width / 2 - fromRect.width / 2,
+          fieldPosition.rect.y + fieldPosition.rect.height / 2 - fromRect.height / 2,
+          fromRect.width,
+          fromRect.height
+        )
+      } else {
+        toRect = fromRect
+      }
     }
 
     // 隱藏原始卡片（玩家手牌）
@@ -416,7 +446,8 @@ export class AnimationPortAdapter implements AnimationPort {
 
     this._isAnimating = true
 
-    const fieldCardElement = findCardElement(fieldCardId)
+    // 配對時場牌在 field zone
+    const fieldCardElement = this.registry.findCard(fieldCardId, 'field')
 
     console.info('[AnimationPort] playMatchAnimation (merge effect)', {
       handCardId,
@@ -648,7 +679,8 @@ export class AnimationPortAdapter implements AnimationPort {
 
     const deckPosition = this.registry.getPosition('deck')
     const fieldPosition = this.registry.getPosition('field')
-    const cardElement = findCardElement(cardId)
+    // 翻牌後卡片在 field zone
+    const cardElement = this.registry.findCard(cardId, 'field')
 
     console.info('[AnimationPort] playFlipFromDeckAnimation', {
       cardId,

@@ -36,13 +36,14 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
    * 非同步執行動畫和狀態更新
    *
    * 業務流程：
-   * 1. 手牌階段已完成配對（hand_card_play 包含 matched_card 和 captured_cards）
-   * 2. 播放手牌配對動畫
-   * 3. 更新獲得區（加入 captured_cards）
-   * 4. 移除配對的場牌（matched_card）
-   * 5. 更新手牌（移除 played_card）
+   * 1. 播放手牌操作動畫（有配對 or 無配對）
+   * 2. 更新獲得區（若手牌有配對，加入 captured_cards）
+   * 3. 更新手牌（移除 played_card）
+   * 4. 更新場牌（有配對：移除 matched_card；無配對：加入 played_card）
+   * 5. 播放翻牌動畫（從牌堆飛到場牌）
    * 6. 保存翻出卡片與可配對目標（等待玩家選擇）
    * 7. 設定 AWAITING_SELECTION 狀態
+   * 8. 清理動畫層
    */
   private async executeAsync(event: SelectionRequiredEvent): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
@@ -56,14 +57,12 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     let matchPosition: { x: number; y: number } | undefined
     if (handCardPlay.matched_card) {
       // 情況 1：手牌有配對
-      // 先播放手牌移動到場牌
       await this.animation.playCardToFieldAnimation(
         handCardPlay.played_card,
         isOpponent,
         handCardPlay.matched_card
       )
 
-      // 播放配對動畫
       const position = await this.animation.playMatchAnimation(
         handCardPlay.played_card,
         handCardPlay.matched_card
@@ -71,12 +70,36 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
       matchPosition = position ?? undefined
     } else {
       // 情況 2：手牌無配對
-      // 只播放手牌移動到場牌（無配對目標）
+      // 需要先加入場牌 DOM，動畫才能飛到正確的新增位置
+      // 但手牌 DOM 要保留到動畫播放完成後才移除
+
+      // 1.1 預先隱藏手牌（保留 DOM，只是 invisible）
+      this.animation.hideCards([handCardPlay.played_card])
+
+      // 1.2 加入場牌 DOM（渲染時已是 invisible 狀態）
+      const currentFieldCards = this.gameState.getFieldCards()
+      const newFieldCards = [...currentFieldCards, handCardPlay.played_card]
+      this.gameState.updateFieldCards(newFieldCards)
+
+      // 1.3 等待 DOM 布局完成
+      await new Promise(resolve => setTimeout(resolve, 0))
+
+      // 1.4 播放動畫（手牌 DOM 還在，可以找到正確起始位置）
       await this.animation.playCardToFieldAnimation(
         handCardPlay.played_card,
         isOpponent,
         undefined
       )
+
+      // 1.5 動畫完成後移除手牌 DOM
+      if (!isOpponent) {
+        const currentHandCards = this.gameState.getHandCards()
+        const newHandCards = currentHandCards.filter(id => id !== handCardPlay.played_card)
+        this.gameState.updateHandCards(newHandCards)
+      } else {
+        const currentCount = this.gameState.getOpponentHandCount()
+        this.gameState.updateOpponentHandCount(currentCount - 1)
+      }
     }
 
     // === 階段 2：更新獲得區（手牌配對成功時）===
@@ -112,41 +135,54 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
       }
     }
 
-    // === 階段 3：更新場牌 ===
-    const currentFieldCards = this.gameState.getFieldCards()
+    // === 階段 3：更新手牌和場牌 ===
     if (handCardPlay.matched_card) {
-      // 情況 1：手牌有配對 → 移除被配對的場牌
+      // 情況 1：手牌有配對
+      // 3.1 移除打出的手牌
+      if (!isOpponent) {
+        const currentHandCards = this.gameState.getHandCards()
+        const newHandCards = currentHandCards.filter(id => id !== handCardPlay.played_card)
+        this.gameState.updateHandCards(newHandCards)
+      } else {
+        const currentCount = this.gameState.getOpponentHandCount()
+        this.gameState.updateOpponentHandCount(currentCount - 1)
+      }
+
+      // 3.2 移除被配對的場牌
+      const currentFieldCards = this.gameState.getFieldCards()
       const newFieldCards = currentFieldCards.filter(id => id !== handCardPlay.matched_card)
       this.gameState.updateFieldCards(newFieldCards)
-    } else {
-      // 情況 2：手牌無配對 → 將打出的手牌加入場牌區
-      const newFieldCards = [...currentFieldCards, handCardPlay.played_card]
+
+      // 3.3 等待 TransitionGroup FLIP 動畫完成
+      await new Promise(resolve => setTimeout(resolve, 350))
+    }
+    // 情況 2：手牌無配對時，已在階段 1 完成手牌移除和場牌加入
+
+    // === 階段 5：處理翻牌動畫 ===
+    // 預先隱藏翻出的牌（避免閃現）
+    this.animation.hideCards([event.drawn_card])
+
+    // 加入場牌（渲染時已是 invisible 狀態）
+    {
+      const currentFieldCards = this.gameState.getFieldCards()
+      const newFieldCards = [...currentFieldCards, event.drawn_card]
       this.gameState.updateFieldCards(newFieldCards)
     }
 
-    // 等待 TransitionGroup FLIP 動畫完成
-    // FieldZone 的 FLIP 動畫時長為 300ms
-    // 額外增加 50ms buffer 確保動畫完全結束
-    await new Promise(resolve => setTimeout(resolve, 350))
+    // 等待 DOM 布局完成
+    await new Promise(resolve => setTimeout(resolve, 0))
 
-    // === 階段 4：更新手牌 ===
-    if (!isOpponent) {
-      const currentHandCards = this.gameState.getHandCards()
-      const newHandCards = currentHandCards.filter(id => id !== handCardPlay.played_card)
-      this.gameState.updateHandCards(newHandCards)
-    } else {
-      const currentCount = this.gameState.getOpponentHandCount()
-      this.gameState.updateOpponentHandCount(currentCount - 1)
-    }
+    // 播放翻牌動畫（從牌堆飛到場牌）
+    await this.animation.playFlipFromDeckAnimation(event.drawn_card)
 
-    // === 階段 5：保存翻出卡片與可配對目標 ===
+    // === 階段 6：保存翻出卡片與可配對目標 ===
     this.gameState.setDrawnCard(event.drawn_card)
     this.gameState.setPossibleTargetCardIds([...event.possible_targets])
 
-    // === 階段 6：更新 FlowStage ===
+    // === 階段 7：更新 FlowStage ===
     this.gameState.setFlowStage('AWAITING_SELECTION')
 
-    // === 階段 7：清理動畫層 ===
+    // === 階段 8：清理動畫層 ===
     this.animation.clearHiddenCards()
 
     // Adapter Layer 的 watcher 會監聽 FlowStage 變為 'AWAITING_SELECTION'

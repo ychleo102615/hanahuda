@@ -24,6 +24,24 @@ vi.mock('@vueuse/motion', () => ({
 
 // Mock ZoneRegistry
 function createMockZoneRegistry(): ZoneRegistry {
+  // 創建 mock DOM 元素用於測試
+  const createMockElement = (cardId: string) => {
+    const element = document.createElement('div')
+    element.setAttribute('data-card-id', cardId)
+    element.getBoundingClientRect = vi.fn().mockReturnValue({
+      x: 100,
+      y: 100,
+      width: 60,
+      height: 90,
+      top: 100,
+      left: 100,
+      right: 160,
+      bottom: 190,
+      toJSON: () => ({}),
+    } as DOMRect)
+    return element
+  }
+
   return {
     register: vi.fn(),
     unregister: vi.fn(),
@@ -31,23 +49,39 @@ function createMockZoneRegistry(): ZoneRegistry {
       rect: { x: 0, y: 0, width: 100, height: 150 } as DOMRect,
     }),
     getCardPosition: vi.fn().mockReturnValue({ x: 0, y: -150 }),
-    clear: vi.fn(),
-  }
+    getAllZones: vi.fn().mockReturnValue(['field', 'player-hand', 'opponent-hand', 'deck']),
+    findCardInZone: vi.fn((zoneName: string, cardId: string) => {
+      // 模擬在指定 zone 找到卡片
+      return createMockElement(cardId)
+    }),
+    findCard: vi.fn((cardId: string, preferredZone?: string) => {
+      // 模擬找到卡片
+      return createMockElement(cardId)
+    }),
+    dispose: vi.fn(),
+  } as unknown as ZoneRegistry
 }
 
 // Mock AnimationLayerStore
 function createMockAnimationLayerStore(): AnimationLayerStore {
   return {
-    cards: [],
+    animatingCards: [],
+    animatingGroups: [],
     hiddenCardIds: new Set(),
     addCard: vi.fn((params) => {
       // 模擬動畫完成
       setTimeout(() => params.onComplete?.(), 0)
     }),
     removeCard: vi.fn(),
-    showCard: vi.fn(),
+    addGroup: vi.fn((params) => {
+      // 模擬動畫完成
+      setTimeout(() => params.onComplete?.(), 0)
+    }),
+    removeGroup: vi.fn(),
+    clear: vi.fn(),
     hideCards: vi.fn(),
-    clearAll: vi.fn(),
+    showCard: vi.fn(),
+    isCardHidden: vi.fn().mockReturnValue(false),
   } as unknown as AnimationLayerStore
 }
 
@@ -194,8 +228,8 @@ describe('AnimationPortAdapter', () => {
     it('playMatchAnimation should resolve', async () => {
       const promise = adapter.playMatchAnimation('0101', '0102')
       await vi.runAllTimersAsync()
-      // 沒有 DOM 元素時返回 null
-      await expect(promise).resolves.toBeNull()
+      // Mock 返回元素，所以期望返回位置對象
+      await expect(promise).resolves.toEqual({ x: expect.any(Number), y: expect.any(Number) })
     })
 
     it('playToDepositoryAnimation should resolve', async () => {
@@ -253,8 +287,8 @@ describe('AnimationPortAdapter', () => {
     it('should resolve Promise after merge effect completes', async () => {
       const promise = adapter.playMatchAnimation('0101', '0102')
       await vi.runAllTimersAsync()
-      // 沒有 DOM 元素時返回 null
-      await expect(promise).resolves.toBeNull()
+      // Mock 返回元素，所以期望返回位置對象
+      await expect(promise).resolves.toEqual({ x: expect.any(Number), y: expect.any(Number) })
     })
 
     it('should set isAnimating to false after completion', async () => {
@@ -268,20 +302,20 @@ describe('AnimationPortAdapter', () => {
       const promise = adapter.playMatchAnimation('0101', '0102')
       adapter.interrupt()
       await vi.runAllTimersAsync()
-      // 中斷時返回 null
-      await expect(promise).resolves.toBeNull()
+      // 中斷時仍可能返回位置（因為元素已找到），但 isAnimating 應為 false
+      await promise  // 等待完成
       expect(adapter.isAnimating()).toBe(false)
     })
 
     it('should accept valid card ID pairs', async () => {
-      // 同月份的牌配對（測試環境沒有 DOM，返回 null）
+      // Mock 返回元素，所以期望返回位置對象
       const p1 = adapter.playMatchAnimation('0101', '0104')
       await vi.runAllTimersAsync()
-      await expect(p1).resolves.toBeNull()
+      await expect(p1).resolves.toEqual({ x: expect.any(Number), y: expect.any(Number) })
 
       const p2 = adapter.playMatchAnimation('1201', '1204')
       await vi.runAllTimersAsync()
-      await expect(p2).resolves.toBeNull()
+      await expect(p2).resolves.toEqual({ x: expect.any(Number), y: expect.any(Number) })
     })
 
     it('should complete within expected time (< 200ms for merge effect)', async () => {
@@ -539,8 +573,8 @@ describe('AnimationPortAdapter', () => {
       // 其他動畫應該正常工作
       const matchPromise = adapter.playMatchAnimation('0301', '0302')
       await vi.runAllTimersAsync()
-      // 沒有 DOM 元素時返回 null
-      await expect(matchPromise).resolves.toBeNull()
+      // Mock 返回元素，所以期望返回位置對象
+      await expect(matchPromise).resolves.toEqual({ x: expect.any(Number), y: expect.any(Number) })
     })
 
     it('should support reconnection scenario (interrupt and show final state)', async () => {

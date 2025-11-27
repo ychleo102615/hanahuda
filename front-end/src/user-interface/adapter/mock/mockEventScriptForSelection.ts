@@ -115,7 +115,6 @@ export const mockEventScriptForSelection: MockEventItem[] = [
     },
     delay: 3000,
   },
-  /*
 
   // 4. TurnProgressAfterSelection - 玩家選擇了 0242
   {
@@ -144,6 +143,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
     },
     delay: 3000,
   },
+  /*
 
   // 5. 對手回合完成（簡單操作）
   {
