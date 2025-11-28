@@ -60,6 +60,7 @@ export interface RoundDealtEvent {
   readonly hands: ReadonlyArray<PlayerHand>
   readonly deck_remaining: number
   readonly next_state: NextState
+  readonly action_timeout_seconds: number
 }
 
 /**
@@ -102,6 +103,7 @@ export interface SelectionRequiredEvent {
   readonly drawn_card: string
   readonly possible_targets: ReadonlyArray<string>
   readonly deck_remaining: number
+  readonly action_timeout_seconds: number
 }
 
 /**
@@ -123,6 +125,7 @@ export interface TurnProgressAfterSelectionEvent {
   readonly yaku_update: YakuUpdate | null
   readonly deck_remaining: number
   readonly next_state: NextState
+  readonly action_timeout_seconds: number
 }
 
 /**
@@ -143,6 +146,7 @@ export interface DecisionRequiredEvent {
   readonly yaku_update: YakuUpdate
   readonly current_multipliers: ScoreMultipliers
   readonly deck_remaining: number
+  readonly action_timeout_seconds: number
 }
 
 /**
@@ -182,6 +186,7 @@ export interface RoundScoredEvent {
   readonly final_score: number
   readonly multipliers: ScoreMultipliers
   readonly updated_total_scores: ReadonlyArray<PlayerScore>
+  readonly display_timeout_seconds: number
 }
 
 /**
@@ -197,6 +202,7 @@ export interface RoundDrawnEvent {
   readonly event_id: string
   readonly timestamp: string
   readonly current_total_scores: ReadonlyArray<PlayerScore>
+  readonly display_timeout_seconds: number
 }
 
 /**
@@ -215,6 +221,7 @@ export interface RoundEndedInstantlyEvent {
   readonly winner_id: string | null
   readonly awarded_points: number
   readonly updated_total_scores: ReadonlyArray<PlayerScore>
+  readonly display_timeout_seconds: number
 }
 
 /**
@@ -271,4 +278,5 @@ export interface GameSnapshotRestore {
   readonly current_flow_stage: FlowState
   readonly active_player_id: string
   readonly koi_statuses: ReadonlyArray<KoiStatus>
+  readonly action_timeout_seconds: number
 }

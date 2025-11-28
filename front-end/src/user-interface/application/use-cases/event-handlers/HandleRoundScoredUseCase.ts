@@ -3,14 +3,15 @@
  */
 
 import type { RoundScoredEvent } from '../../types/events'
-import type { UIStatePort } from '../../ports/output'
+import type { UIStatePort, NotificationPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleRoundScoredPort } from '../../ports/input'
 
 export class HandleRoundScoredUseCase implements HandleRoundScoredPort {
   constructor(
     private readonly updateUIState: UIStatePort,
-    private readonly domainFacade: DomainFacade
+    private readonly domainFacade: DomainFacade,
+    private readonly notification: NotificationPort
   ) {}
 
   execute(event: RoundScoredEvent): void {
@@ -21,5 +22,8 @@ export class HandleRoundScoredUseCase implements HandleRoundScoredPort {
     const player1Score = event.updated_total_scores.find((s) => s.player_id === 'player-1')?.score || 0
     const player2Score = event.updated_total_scores.find((s) => s.player_id === 'player-2')?.score || 0
     this.updateUIState.updateScores(player1Score, player2Score)
+
+    // 啟動顯示倒數（用於回合結束面板自動關閉）
+    this.notification.startDisplayCountdown(event.display_timeout_seconds)
   }
 }

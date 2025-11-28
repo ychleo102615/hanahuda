@@ -17,13 +17,14 @@
  */
 
 import type { RoundDealtEvent } from '../../types/events'
-import type { GameStatePort, AnimationPort } from '../../ports/output'
+import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { HandleRoundDealtPort } from '../../ports/input'
 
 export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
   constructor(
     private readonly gameState: GameStatePort,
-    private readonly animation: AnimationPort
+    private readonly animation: AnimationPort,
+    private readonly notification: NotificationPort
   ) {}
 
   /**
@@ -80,5 +81,8 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
 
     // 3. 動畫完成後更新 FlowStage
     this.gameState.setFlowStage(event.next_state.state_type)
+
+    // 4. 啟動操作倒數
+    this.notification.startActionCountdown(event.action_timeout_seconds)
   }
 }

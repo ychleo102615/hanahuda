@@ -3,11 +3,14 @@
  */
 
 import type { RoundEndedInstantlyEvent } from '../../types/events'
-import type { UIStatePort } from '../../ports/output'
+import type { UIStatePort, NotificationPort } from '../../ports/output'
 import type { HandleRoundEndedInstantlyPort } from '../../ports/input'
 
 export class HandleRoundEndedInstantlyUseCase implements HandleRoundEndedInstantlyPort {
-  constructor(private readonly updateUIState: UIStatePort) {}
+  constructor(
+    private readonly updateUIState: UIStatePort,
+    private readonly notification: NotificationPort
+  ) {}
 
   execute(event: RoundEndedInstantlyEvent): void {
     // 1. 更新分數
@@ -17,5 +20,8 @@ export class HandleRoundEndedInstantlyUseCase implements HandleRoundEndedInstant
 
     // 2. 顯示特殊結束訊息（通過 animation 或 message）
     // 暫時省略，視 UI 需求而定
+
+    // 3. 啟動顯示倒數（用於回合結束面板自動關閉）
+    this.notification.startDisplayCountdown(event.display_timeout_seconds)
   }
 }

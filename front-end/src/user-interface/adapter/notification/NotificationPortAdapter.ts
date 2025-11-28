@@ -76,5 +76,22 @@ export function createNotificationPortAdapter(): NotificationPort {
         store.roundDrawnVisible
       )
     },
+
+    // ===== 倒數計時 =====
+    startActionCountdown(seconds: number): void {
+      store.startActionCountdown(seconds)
+    },
+
+    stopActionCountdown(): void {
+      store.stopActionCountdown()
+    },
+
+    startDisplayCountdown(seconds: number, onComplete?: () => void): void {
+      store.startDisplayCountdown(seconds, onComplete)
+    },
+
+    stopDisplayCountdown(): void {
+      store.stopDisplayCountdown()
+    },
   }
 }

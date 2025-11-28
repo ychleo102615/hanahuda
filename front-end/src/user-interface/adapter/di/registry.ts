@@ -244,9 +244,10 @@ function registerInputPorts(container: DIContainer): void {
 
   // T030 [US1]: 註冊 RoundDealt 事件處理器
   // Phase 8: 使用 GameStatePort + AnimationPort（發牌動畫整合）
+  // Phase 9: 加入 NotificationPort（倒數計時整合）
   container.register(
     TOKENS.HandleRoundDealtPort,
-    () => new HandleRoundDealtUseCase(gameStatePort, animationPort),
+    () => new HandleRoundDealtUseCase(gameStatePort, animationPort, notificationPort),
     { singleton: true }
   )
 
@@ -260,20 +261,23 @@ function registerInputPorts(container: DIContainer): void {
 
   // T051 [US2]: 註冊 SelectionRequired 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort + DomainFacade（場牌選擇 UI 架構重構）
+  // Phase 9: 加入 NotificationPort（倒數計時整合）
   container.register(
     TOKENS.HandleSelectionRequiredPort,
-    () => new HandleSelectionRequiredUseCase(gameStatePort, animationPort, domainFacade),
+    () => new HandleSelectionRequiredUseCase(gameStatePort, animationPort, domainFacade, notificationPort),
     { singleton: true }
   )
 
   // T052 [US2]: 註冊 TurnProgressAfterSelection 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort（配對動畫整合）
+  // Phase 9: 加入 NotificationPort（倒數計時整合）
   container.register(
     TOKENS.HandleTurnProgressAfterSelectionPort,
     () => new HandleTurnProgressAfterSelectionUseCase(
       gameStatePort,
       animationPort,
-      domainFacade
+      domainFacade,
+      notificationPort
     ),
     { singleton: true }
   )
@@ -293,16 +297,18 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T081 [US4]: 註冊 RoundScored 事件處理器
+  // Phase 9: 加入 NotificationPort（倒數計時整合）
   container.register(
     TOKENS.HandleRoundScoredPort,
-    () => new HandleRoundScoredUseCase(uiStatePort, domainFacade),
+    () => new HandleRoundScoredUseCase(uiStatePort, domainFacade, notificationPort),
     { singleton: true }
   )
 
   // T082 [US4]: 註冊 RoundEndedInstantly 事件處理器
+  // Phase 9: 加入 NotificationPort（倒數計時整合）
   container.register(
     TOKENS.HandleRoundEndedInstantlyPort,
-    () => new HandleRoundEndedInstantlyUseCase(uiStatePort),
+    () => new HandleRoundEndedInstantlyUseCase(uiStatePort, notificationPort),
     { singleton: true }
   )
 

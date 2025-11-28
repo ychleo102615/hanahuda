@@ -19,7 +19,7 @@
  */
 
 import type { TurnProgressAfterSelectionEvent } from '../../types/events'
-import type { GameStatePort, AnimationPort } from '../../ports/output'
+import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleTurnProgressAfterSelectionPort } from '../../ports/input'
 
@@ -29,7 +29,8 @@ export class HandleTurnProgressAfterSelectionUseCase
   constructor(
     private readonly gameState: GameStatePort,
     private readonly animation: AnimationPort,
-    private readonly domainFacade: DomainFacade
+    private readonly domainFacade: DomainFacade,
+    private readonly notification: NotificationPort
   ) {}
 
   /**
@@ -164,5 +165,8 @@ export class HandleTurnProgressAfterSelectionUseCase
 
     // === 階段 6：清理動畫層 ===
     this.animation.clearHiddenCards()
+
+    // === 階段 7：啟動操作倒數 ===
+    this.notification.startActionCountdown(event.action_timeout_seconds)
   }
 }

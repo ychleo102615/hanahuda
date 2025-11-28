@@ -33,5 +33,8 @@ export class HandleReconnectionUseCase implements HandleReconnectionPort {
 
     // 2. 顯示「連線已恢復」提示訊息
     this.notification.showReconnectionMessage()
+
+    // 3. 恢復操作倒數（如果有）
+    this.notification.startActionCountdown(snapshot.action_timeout_seconds)
   }
 }

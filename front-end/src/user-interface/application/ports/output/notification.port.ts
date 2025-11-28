@@ -161,4 +161,65 @@ export interface NotificationPort {
    * ```
    */
   isModalVisible(): boolean
+
+  // ===== 倒數計時 =====
+
+  /**
+   * 啟動操作倒數
+   *
+   * @description
+   * 用於玩家回合操作（出牌、選擇、決策）的時限倒數。
+   *
+   * @param seconds - 倒數秒數
+   *
+   * @example
+   * ```typescript
+   * notification.startActionCountdown(30)
+   * ```
+   */
+  startActionCountdown(seconds: number): void
+
+  /**
+   * 停止操作倒數
+   *
+   * @description
+   * 停止當前操作倒數（通常在玩家完成操作或事件更新時調用）。
+   *
+   * @example
+   * ```typescript
+   * notification.stopActionCountdown()
+   * ```
+   */
+  stopActionCountdown(): void
+
+  /**
+   * 啟動顯示倒數
+   *
+   * @description
+   * 用於回合結束面板的自動關閉倒數。
+   *
+   * @param seconds - 倒數秒數
+   * @param onComplete - 倒數結束時的回調（可選）
+   *
+   * @example
+   * ```typescript
+   * notification.startDisplayCountdown(5, () => {
+   *   // 自動進入下一回合
+   * })
+   * ```
+   */
+  startDisplayCountdown(seconds: number, onComplete?: () => void): void
+
+  /**
+   * 停止顯示倒數
+   *
+   * @description
+   * 停止當前顯示倒數。
+   *
+   * @example
+   * ```typescript
+   * notification.stopDisplayCountdown()
+   * ```
+   */
+  stopDisplayCountdown(): void
 }

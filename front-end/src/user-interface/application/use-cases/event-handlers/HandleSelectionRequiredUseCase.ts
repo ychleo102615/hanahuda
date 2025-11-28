@@ -17,7 +17,7 @@
  */
 
 import type { SelectionRequiredEvent } from '../../types/events'
-import type { GameStatePort, AnimationPort } from '../../ports/output'
+import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleSelectionRequiredPort } from '../../ports/input'
 
@@ -25,7 +25,8 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
   constructor(
     private readonly gameState: GameStatePort,
     private readonly animation: AnimationPort,
-    private readonly domainFacade: DomainFacade
+    private readonly domainFacade: DomainFacade,
+    private readonly notification: NotificationPort
   ) {}
 
   execute(event: SelectionRequiredEvent): void {
@@ -184,6 +185,9 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
 
     // === 階段 8：清理動畫層 ===
     this.animation.clearHiddenCards()
+
+    // === 階段 9：啟動操作倒數 ===
+    this.notification.startActionCountdown(event.action_timeout_seconds)
 
     // Adapter Layer 的 watcher 會監聽 FlowStage 變為 'AWAITING_SELECTION'
     // 並根據 possibleTargetCardIds 數量調用 uiState.enterFieldCardSelectionMode()

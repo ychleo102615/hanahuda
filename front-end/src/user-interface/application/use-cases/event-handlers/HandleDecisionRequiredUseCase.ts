@@ -49,5 +49,8 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
 
     // 3. 更新 FlowStage 為 AWAITING_DECISION
     this.updateUIState.setFlowStage('AWAITING_DECISION')
+
+    // 4. 啟動操作倒數
+    this.notification.startActionCountdown(event.action_timeout_seconds)
   }
 }
