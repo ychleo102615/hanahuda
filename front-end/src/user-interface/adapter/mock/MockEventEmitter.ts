@@ -14,8 +14,8 @@
  */
 
 import { EventRouter } from '../sse/EventRouter'
-// import { mockEventScript } from './mockEventScript'
-import { mockEventScriptForSelection as mockEventScript } from './mockEventScriptForSelection'
+import { mockEventScript } from './mockEventScript'
+// import { mockEventScriptForSelection as mockEventScript } from './mockEventScriptForSelection'
 
 /**
  * MockEventEmitter 類別
