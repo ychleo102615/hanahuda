@@ -136,30 +136,32 @@ interface UIStateStoreState {
 
 ### Decision
 
-在各 Event Handler Use Case 中解析 timeout 欄位，透過現有 Port 介面更新 UI 狀態。
+在各 Event Handler Use Case 中解析 timeout 欄位，直接調用 UIStateStore 的 actions 更新倒數狀態。
 
 ### Rationale
 
 1. **現有架構**：
-   - SSE 事件 → EventRouter → HandleXxxUseCase → Ports (UIStatePort, AnimationPort, etc.)
+   - SSE 事件 → EventRouter → HandleXxxUseCase → Ports (GameStatePort, AnimationPort, NotificationPort)
    - Use Case 是事件處理的協調者
+   - **注意**：`TriggerUIEffectPort` 不存在，現有 Ports 為 `GameStatePort`、`AnimationPort`、`NotificationPort`
 
 2. **整合方式**：
-   - 擴展 `TriggerUIEffectPort` 介面，新增 `startActionCountdown(seconds)` 和 `startDisplayCountdown(seconds)` 方法
-   - 在 Use Case 中調用新方法
+   - 在 UIStateStore 中新增 `startActionCountdown(seconds)` 和 `startDisplayCountdown(seconds)` actions
+   - Use Case 直接調用 UIStateStore（或透過 NotificationPort 擴展）
+   - UIStateStore 內部管理 interval ID
 
 3. **受影響的 Use Cases**：
 
 | Use Case | 新增邏輯 |
 |----------|---------|
-| HandleRoundDealtUseCase | 調用 `startActionCountdown(action_timeout_seconds)` |
-| HandleSelectionRequiredUseCase | 調用 `startActionCountdown(action_timeout_seconds)` |
-| HandleTurnProgressAfterSelectionUseCase | 調用 `startActionCountdown(action_timeout_seconds)` (若有 next_state) |
-| HandleDecisionRequiredUseCase | 調用 `startActionCountdown(action_timeout_seconds)` |
-| HandleRoundScoredUseCase | 調用 `startDisplayCountdown(display_timeout_seconds)` |
-| HandleRoundEndedInstantlyUseCase | 調用 `startDisplayCountdown(display_timeout_seconds)` |
-| HandleRoundDrawnUseCase | 調用 `startDisplayCountdown(display_timeout_seconds)` |
-| HandleGameSnapshotRestoreUseCase | 調用 `startActionCountdown(action_timeout_seconds)` (若有) |
+| HandleRoundDealtUseCase | 調用 `uiState.startActionCountdown(action_timeout_seconds)` |
+| HandleSelectionRequiredUseCase | 調用 `uiState.startActionCountdown(action_timeout_seconds)` |
+| HandleTurnProgressAfterSelectionUseCase | 調用 `uiState.startActionCountdown(action_timeout_seconds)` |
+| HandleDecisionRequiredUseCase | 調用 `uiState.startActionCountdown(action_timeout_seconds)` |
+| HandleRoundScoredUseCase | 調用 `uiState.startDisplayCountdown(display_timeout_seconds)` |
+| HandleRoundEndedInstantlyUseCase | 調用 `uiState.startDisplayCountdown(display_timeout_seconds)` |
+| HandleRoundDrawnUseCase | 調用 `uiState.startDisplayCountdown(display_timeout_seconds)` |
+| HandleGameSnapshotRestoreUseCase | 調用 `uiState.startActionCountdown(action_timeout_seconds)` |
 
 ### Alternatives Considered
 
@@ -209,52 +211,7 @@ interface UIStateStoreState {
 
 ---
 
-## Research Task 5: 協議擴展方式
-
-### Question
-
-如何安全地擴展現有事件型別定義？
-
-### Decision
-
-在 TypeScript 型別定義中新增 optional 欄位，確保向後兼容。
-
-### Rationale
-
-1. **向後兼容**：欄位設為 optional，舊版後端（無此欄位）不會導致前端錯誤
-2. **型別安全**：TypeScript 編譯時檢查
-3. **漸進式採用**：前端可先實作，後端稍後補上
-
-### Implementation
-
-```typescript
-// events.ts 修改
-export interface RoundDealtEvent {
-  // ... existing fields
-  readonly action_timeout_seconds?: number  // 新增 (optional)
-}
-
-export interface SelectionRequiredEvent {
-  // ... existing fields
-  readonly action_timeout_seconds?: number  // 新增 (optional)
-}
-
-// ... 其他事件類似
-
-export interface RoundScoredEvent {
-  // ... existing fields
-  readonly display_timeout_seconds?: number  // 新增 (optional)
-}
-
-export interface GameSnapshotRestore {
-  // ... existing fields
-  readonly action_timeout_seconds?: number  // 新增 (optional)
-}
-```
-
----
-
-## Research Task 6: 視覺設計 - 警示色
+## Research Task 5: 視覺設計 - 警示色
 
 ### Question
 
@@ -339,11 +296,11 @@ watch(displayTimeoutRemaining, (val) => {
 
 | 項目 | 決策 |
 |------|------|
-| 計時器實作 | setInterval + Pinia State + Vue Composable |
+| 計時器實作 | setInterval + Pinia State（UIStateStore 內部管理 interval） |
 | 狀態位置 | UIStateStore（新增 `actionTimeoutRemaining`, `displayTimeoutRemaining`） |
-| 事件整合 | 在各 HandleXxxUseCase 中處理，透過 TriggerUIEffectPort |
+| 事件整合 | 在各 HandleXxxUseCase 中處理，直接調用 UIStateStore actions |
 | UI 整合 | 直接修改現有組件（TopInfoBar, DecisionModal），新增回合結束面板 |
-| 協議擴展 | Optional 欄位（向後兼容） |
+| 協議擴展 | 必須欄位（後端必須提供） |
 | 警示色 | `text-red-500`（Tailwind CSS） |
 | 面板互動 | 無關閉按鈕，倒數結束自動關閉 |
 
@@ -353,4 +310,4 @@ watch(displayTimeoutRemaining, (val) => {
 - 計時器精度：1 秒 interval，±2 秒誤差可接受
 - 狀態管理：UIStateStore
 - 組件整合：直接修改現有組件
-- 協議變更：向後兼容的 optional 欄位
+- 協議變更：必須欄位（後端必須提供）

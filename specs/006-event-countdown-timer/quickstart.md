@@ -29,10 +29,9 @@ pnpm install
 
 | File | Change Type | Description |
 |------|------------|-------------|
-| `front-end/src/user-interface/application/types/events.ts` | Modify | 新增 timeout 欄位到事件型別 |
-| `front-end/src/user-interface/adapter/stores/uiState.ts` | Modify | 新增倒數狀態和 actions |
-| `front-end/src/user-interface/application/ports/output/notification.port.ts` | Modify | 擴展 TriggerUIEffectPort |
-| `front-end/src/user-interface/application/use-cases/event-handlers/*.ts` | Modify | 處理 timeout 欄位 |
+| `front-end/src/user-interface/application/types/events.ts` | Modify | 新增 timeout 欄位到事件型別 (required) |
+| `front-end/src/user-interface/adapter/stores/uiState.ts` | Modify | 新增倒數狀態和 actions（含 interval 管理） |
+| `front-end/src/user-interface/application/use-cases/event-handlers/*.ts` | Modify | 處理 timeout 欄位，調用 UIStateStore actions |
 | `front-end/src/views/GamePage/components/TopInfoBar.vue` | Modify | 顯示操作倒數 |
 | `front-end/src/views/GamePage/components/DecisionModal.vue` | Modify | 顯示決策倒數 |
 | `doc/shared/protocol.md` | Modify | 更新協議規格 |
@@ -53,8 +52,8 @@ pnpm install
 ### Phase 1: Core Infrastructure
 
 1. **更新事件型別** (`events.ts`)
-   - 為 8 個事件新增 `action_timeout_seconds?: number`
-   - 為 3 個事件新增 `display_timeout_seconds?: number`
+   - 為 5 個事件新增 `action_timeout_seconds: number` (required)
+   - 為 3 個事件新增 `display_timeout_seconds: number` (required)
 
 2. **實作 useCountdown composable** (`useCountdown.ts`)
    - 封裝 setInterval 邏輯
@@ -63,15 +62,11 @@ pnpm install
 
 3. **擴展 UIStateStore** (`uiState.ts`)
    - 新增 `actionTimeoutRemaining`, `displayTimeoutRemaining` state
-   - 新增 countdown actions
+   - 新增 countdown actions（內部管理 interval ID）
 
 ### Phase 2: Event Handler Integration
 
-4. **擴展 TriggerUIEffectPort** (`notification.port.ts`)
-   - 新增 `startActionCountdown`, `stopActionCountdown`
-   - 新增 `startDisplayCountdown`, `stopDisplayCountdown`
-
-5. **更新各 Event Handler Use Cases**
+4. **更新各 Event Handler Use Cases**（直接調用 UIStateStore）
    - HandleRoundDealtUseCase
    - HandleSelectionRequiredUseCase
    - HandleTurnProgressAfterSelectionUseCase
@@ -167,7 +162,7 @@ displayTimeoutRemaining: null as number | null,
 // events.ts
 export interface RoundDealtEvent {
   // ... existing fields
-  readonly action_timeout_seconds?: number  // NEW
+  readonly action_timeout_seconds: number  // NEW (required)
 }
 ```
 
@@ -266,11 +261,10 @@ pnpm dev
 
 ## 7. Checklist
 
-- [ ] `events.ts` - 新增 timeout 欄位到 8 個事件型別
-- [ ] `useCountdown.ts` - 實作並測試 composable
-- [ ] `uiState.ts` - 新增 state 和 actions
-- [ ] `TriggerUIEffectPort` - 擴展介面
-- [ ] Event Handler Use Cases (8 個) - 整合 timeout 處理
+- [ ] `events.ts` - 新增 timeout 欄位到 8 個事件型別 (required)
+- [ ] `useCountdown.ts` - 實作並測試 composable (可選，若 UIStateStore 直接管理 interval)
+- [ ] `uiState.ts` - 新增 state 和 actions（含 interval 管理）
+- [ ] Event Handler Use Cases (8 個) - 整合 timeout 處理，調用 UIStateStore
 - [ ] `TopInfoBar.vue` - 顯示操作倒數
 - [ ] `DecisionModal.vue` - 顯示決策倒數
 - [ ] `RoundEndPanel.vue` - 新增回合結束面板
