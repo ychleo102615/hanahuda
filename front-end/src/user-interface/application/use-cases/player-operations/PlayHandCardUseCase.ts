@@ -141,10 +141,10 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
         },
       }
     } else {
-      // 多重配對：觸發選擇 UI
+      // 多重配對：在新架構中，手牌多重配對通過「兩次點擊確認模式」處理
+      // UI 層（PlayerHandZone）會進入 handCardConfirmationMode，玩家點擊場牌確認配對
+      // 此分支不應該被執行到，因為 UI 層已經處理了配對選擇
       const possibleTargetIds = matchableCards.map((card) => card.card_id)
-
-      this.notification.showSelectionUI(possibleTargetIds)
 
       return {
         success: true,

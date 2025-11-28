@@ -5,7 +5,6 @@
  * 管理 UI 互動狀態（前端臨時狀態），實作 TriggerUIEffectPort 介面的非動畫部分。
  *
  * 職責:
- * - 管理配對選擇狀態 (selectionMode, selectionPossibleTargets)
  * - 管理 Modal 顯示狀態 (decisionModal, gameFinishedModal)
  * - 管理訊息提示 (errorMessage, infoMessage)
  * - 管理連線狀態 (connectionStatus, reconnecting)
@@ -46,11 +45,6 @@ export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected'
  * UIStateStore State 介面
  */
 export interface UIStateStoreState {
-  // 配對選擇
-  selectionMode: boolean
-  selectionSourceCard: string | null
-  selectionPossibleTargets: string[]
-
   // Koi-Koi 決策 Modal
   decisionModalVisible: boolean
   decisionModalData: DecisionModalData | null
@@ -81,7 +75,7 @@ export interface UIStateStoreState {
   handCardHoverPreview: string | null
   previewHighlightedTargets: string[]
 
-  // 場牌選擇模式（取代 SelectionOverlay）
+  // 場牌選擇模式（翻牌多重配對）
   fieldCardSelectionMode: boolean
   fieldCardSelectableTargets: string[]
   fieldCardHighlightType: 'single' | 'multiple' | null
@@ -93,7 +87,6 @@ export interface UIStateStoreState {
  */
 export interface UIStateStoreActions {
   // TriggerUIEffectPort 方法（不含 triggerAnimation）
-  showSelectionUI(possibleTargets: string[]): void
   showDecisionModal(currentYaku: YakuScore[], currentScore: number, potentialScore?: number): void
   showErrorMessage(message: string): void
   showReconnectionMessage(): void
@@ -101,7 +94,6 @@ export interface UIStateStoreActions {
   showRoundDrawnUI(currentTotalScores: PlayerScore[]): void
 
   // 內部輔助方法
-  hideSelectionUI(): void
   hideDecisionModal(): void
   hideGameFinishedUI(): void
   hideRoundDrawnUI(): void
@@ -127,11 +119,6 @@ export interface UIStateStoreActions {
  */
 export const useUIStateStore = defineStore('uiState', {
   state: (): UIStateStoreState => ({
-    // 配對選擇
-    selectionMode: false,
-    selectionSourceCard: null,
-    selectionPossibleTargets: [],
-
     // Koi-Koi 決策 Modal
     decisionModalVisible: false,
     decisionModalData: null,
@@ -170,28 +157,6 @@ export const useUIStateStore = defineStore('uiState', {
   }),
 
   actions: {
-    /**
-     * 顯示選擇配對 UI
-     *
-     * @param possibleTargets - 可選目標列表
-     */
-    showSelectionUI(possibleTargets: string[]): void {
-      console.trace()
-      this.selectionMode = true
-      this.selectionPossibleTargets = [...possibleTargets]
-      console.info('[UIStateStore] 顯示配對選擇 UI', { possibleTargets })
-    },
-
-    /**
-     * 隱藏選擇配對 UI
-     */
-    hideSelectionUI(): void {
-      this.selectionMode = false
-      this.selectionSourceCard = null
-      this.selectionPossibleTargets = []
-      console.info('[UIStateStore] 隱藏配對選擇 UI')
-    },
-
     /**
      * 顯示 Koi-Koi 決策 Modal
      *
@@ -324,10 +289,6 @@ export const useUIStateStore = defineStore('uiState', {
      * 重置所有狀態（用於離開遊戲或重連後）
      */
     reset(): void {
-      this.selectionMode = false
-      this.selectionSourceCard = null
-      this.selectionPossibleTargets = []
-
       this.decisionModalVisible = false
       this.decisionModalData = null
 

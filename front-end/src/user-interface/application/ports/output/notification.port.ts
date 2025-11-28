@@ -3,29 +3,16 @@
  *
  * @description
  * 由 Application Layer 定義，Adapter Layer 實作。
- * 負責通知效果（Modal、Toast、選擇 UI 等）。
+ * 負責通知效果（Modal、Toast 等）。
  *
  * 與 AnimationPort 的區別：
  * - NotificationPort: 同步觸發，顯示 UI 元素
  * - AnimationPort: 異步執行，返回 Promise
  *
  * 使用於：
- * - HandleSelectionRequiredUseCase (顯示選擇 UI)
  * - HandleDecisionRequiredUseCase (顯示 Koi-Koi 決策 Modal)
  * - HandleGameFinishedUseCase (顯示遊戲結束 Modal)
  * - HandleTurnErrorUseCase (顯示錯誤訊息)
- *
- * @example
- * ```typescript
- * // Use Case 中使用
- * class HandleSelectionRequiredUseCase {
- *   constructor(private notification: NotificationPort) {}
- *
- *   execute(event: SelectionRequiredEvent): void {
- *     this.notification.showSelectionUI(event.possibleTargets)
- *   }
- * }
- * ```
  */
 
 import type { YakuScore, PlayerScore } from '../../types'
@@ -38,23 +25,6 @@ import type { YakuScore, PlayerScore } from '../../types'
  * 所有方法皆為同步，觸發後由 Adapter 層管理 UI 狀態。
  */
 export interface NotificationPort {
-  // ===== 選擇 UI =====
-
-  /**
-   * 顯示選擇配對 UI
-   *
-   * @description
-   * 當場上有多張同月份的牌可配對時，顯示選擇介面。
-   *
-   * @param possibleTargets - 可選目標卡片 ID 列表
-   *
-   * @example
-   * ```typescript
-   * notification.showSelectionUI(['0101', '0102', '0103'])
-   * ```
-   */
-  showSelectionUI(possibleTargets: string[]): void
-
   // ===== Modal =====
 
   /**
@@ -122,14 +92,8 @@ export interface NotificationPort {
    * 隱藏當前 Modal
    *
    * @description
-   * 隱藏當前顯示的 Modal（Selection UI、Decision Modal 等）。
+   * 隱藏當前顯示的 Modal（Decision Modal 等）。
    * 遊戲流程中一次只會有一個 Modal 顯示。
-   *
-   * @example
-   * ```typescript
-   * // 選擇完成後隱藏選擇 UI
-   * notification.hideModal()
-   * ```
    */
   hideModal(): void
 

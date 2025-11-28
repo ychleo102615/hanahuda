@@ -17,7 +17,6 @@ import PlayerHandZone from './GamePage/components/PlayerHandZone.vue'
 import OpponentDepositoryZone from './GamePage/components/OpponentDepositoryZone.vue'
 import PlayerDepositoryZone from './GamePage/components/PlayerDepositoryZone.vue'
 import DeckZone from './GamePage/components/DeckZone.vue'
-import SelectionOverlay from './GamePage/components/SelectionOverlay.vue'
 import DecisionModal from './GamePage/components/DecisionModal.vue'
 import ErrorToast from './GamePage/components/ErrorToast.vue'
 import GameFinishedModal from './GamePage/components/GameFinishedModal.vue'
@@ -126,9 +125,6 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- T109-T111 [US5]: Reconnection Banner -->
     <ReconnectionBanner />
-
-    <!-- T057 [US2]: Selection Overlay for multiple match targets -->
-    <SelectionOverlay @target-selected="handleFieldCardClick" />
 
     <!-- T072-T076 [US3]: Koi-Koi Decision Modal -->
     <DecisionModal />

@@ -14,45 +14,9 @@ import { describe, it, expect, vi } from 'vitest'
 import type { NotificationPort } from '@/user-interface/application/ports/output/notification.port'
 
 describe('NotificationPort Interface', () => {
-  describe('Selection UI Methods', () => {
-    it('should define showSelectionUI method', () => {
-      const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
-        showDecisionModal: vi.fn(),
-        showGameFinishedUI: vi.fn(),
-        showRoundDrawnUI: vi.fn(),
-        hideModal: vi.fn(),
-        showErrorMessage: vi.fn(),
-        showSuccessMessage: vi.fn(),
-        showReconnectionMessage: vi.fn(),
-        isModalVisible: vi.fn().mockReturnValue(false),
-      }
-
-      expect(mockPort.showSelectionUI).toBeDefined()
-      expect(typeof mockPort.showSelectionUI).toBe('function')
-    })
-
-    it('showSelectionUI should accept string array', () => {
-      const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
-        showDecisionModal: vi.fn(),
-        showGameFinishedUI: vi.fn(),
-        showRoundDrawnUI: vi.fn(),
-        hideModal: vi.fn(),
-        showErrorMessage: vi.fn(),
-        showSuccessMessage: vi.fn(),
-        showReconnectionMessage: vi.fn(),
-        isModalVisible: vi.fn().mockReturnValue(false),
-      }
-
-      mockPort.showSelectionUI(['0101', '0102', '0103'])
-
-      expect(mockPort.showSelectionUI).toHaveBeenCalledWith(['0101', '0102', '0103'])
-    })
-
+  describe('Modal Methods', () => {
     it('should define hideModal method', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -66,12 +30,10 @@ describe('NotificationPort Interface', () => {
       expect(mockPort.hideModal).toBeDefined()
       expect(() => mockPort.hideModal()).not.toThrow()
     })
-  })
 
-  describe('Modal Methods', () => {
+
     it('should define showDecisionModal method', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -88,7 +50,6 @@ describe('NotificationPort Interface', () => {
 
     it('showDecisionModal should accept yaku and score params', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -107,7 +68,6 @@ describe('NotificationPort Interface', () => {
 
     it('should define showGameFinishedUI method', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -123,7 +83,6 @@ describe('NotificationPort Interface', () => {
 
     it('showGameFinishedUI should accept winnerId, scores, and isPlayerWinner', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -145,7 +104,6 @@ describe('NotificationPort Interface', () => {
 
     it('should define showRoundDrawnUI method', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -161,7 +119,6 @@ describe('NotificationPort Interface', () => {
 
     it('showRoundDrawnUI should accept scores array', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -185,7 +142,6 @@ describe('NotificationPort Interface', () => {
   describe('Toast Methods', () => {
     it('should define showErrorMessage method', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -201,7 +157,6 @@ describe('NotificationPort Interface', () => {
 
     it('showErrorMessage should accept string message', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -219,7 +174,6 @@ describe('NotificationPort Interface', () => {
 
     it('should define showSuccessMessage method', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -235,7 +189,6 @@ describe('NotificationPort Interface', () => {
 
     it('should define showReconnectionMessage method', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -254,7 +207,6 @@ describe('NotificationPort Interface', () => {
   describe('Query Methods', () => {
     it('should define isModalVisible method', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),
@@ -271,8 +223,6 @@ describe('NotificationPort Interface', () => {
 
     it('isModalVisible should return boolean', () => {
       const mockPort: NotificationPort = {
-        showSelectionUI: vi.fn(),
-        hideSelectionUI: vi.fn(),
         showDecisionModal: vi.fn(),
         showGameFinishedUI: vi.fn(),
         showRoundDrawnUI: vi.fn(),

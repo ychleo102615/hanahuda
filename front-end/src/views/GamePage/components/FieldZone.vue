@@ -27,8 +27,6 @@ const { elementRef: fieldRef } = useZoneRegistration('field')
 
 const { fieldCards } = storeToRefs(gameState)
 const {
-  selectionMode,
-  selectionPossibleTargets,
   previewHighlightedTargets,
   fieldCardSelectionMode,
   fieldCardSelectableTargets,
@@ -45,16 +43,6 @@ const selectMatchTargetPort = inject<SelectMatchTargetPort>(
 const playHandCardPort = inject<PlayHandCardPort>(
   TOKENS.PlayHandCardPort.toString()
 )
-
-// 判斷卡片是否為可配對目標（舊架構，保留向後兼容）
-function isHighlighted(cardId: string): boolean {
-  return selectionMode.value && selectionPossibleTargets.value.includes(cardId)
-}
-
-// 判斷卡片是否可選擇（舊架構，保留向後兼容）
-function isSelectable(cardId: string): boolean {
-  return selectionMode.value && selectionPossibleTargets.value.includes(cardId)
-}
 
 // 判斷卡片是否為懸浮預覽高亮（紫色框）
 // 只在懸浮且沒有進入確認模式時顯示
@@ -154,9 +142,7 @@ function handleCardClick(cardId: string) {
         v-for="cardId in fieldCards"
         :key="cardId"
         :card-id="cardId"
-        :is-highlighted="isHighlighted(cardId)"
         :is-selectable="
-          isSelectable(cardId) ||
           (fieldCardSelectionMode && fieldCardSelectableTargets.includes(cardId)) ||
           (handCardConfirmationMode && matchableFieldCards.includes(cardId))
         "

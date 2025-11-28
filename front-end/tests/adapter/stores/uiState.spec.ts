@@ -23,9 +23,6 @@ describe('UIStateStore', () => {
     it('應該有正確的初始狀態', () => {
       const store = useUIStateStore()
 
-      expect(store.selectionMode).toBe(false)
-      expect(store.selectionSourceCard).toBeNull()
-      expect(store.selectionPossibleTargets).toEqual([])
       expect(store.decisionModalVisible).toBe(false)
       expect(store.decisionModalData).toBeNull()
       expect(store.gameFinishedVisible).toBe(false)
@@ -36,28 +33,6 @@ describe('UIStateStore', () => {
       expect(store.infoMessage).toBeNull()
       expect(store.connectionStatus).toBe('disconnected')
       expect(store.reconnecting).toBe(false)
-    })
-  })
-
-  describe('showSelectionUI / hideSelectionUI', () => {
-    it('應該正確顯示配對選擇 UI', () => {
-      const store = useUIStateStore()
-
-      store.showSelectionUI(['0111', '0112', '0113'])
-
-      expect(store.selectionMode).toBe(true)
-      expect(store.selectionPossibleTargets).toEqual(['0111', '0112', '0113'])
-    })
-
-    it('應該正確隱藏配對選擇 UI', () => {
-      const store = useUIStateStore()
-
-      store.showSelectionUI(['0111', '0112'])
-      store.hideSelectionUI()
-
-      expect(store.selectionMode).toBe(false)
-      expect(store.selectionSourceCard).toBeNull()
-      expect(store.selectionPossibleTargets).toEqual([])
     })
   })
 
@@ -237,7 +212,6 @@ describe('UIStateStore', () => {
       const store = useUIStateStore()
 
       // 先設定一些狀態
-      store.showSelectionUI(['0111', '0112'])
       store.showDecisionModal([{ yaku_type: 'INOU_SHIKO', base_points: 5 }], 5)
       store.showErrorMessage('Test error')
       store.setConnectionStatus('connected')
@@ -247,9 +221,6 @@ describe('UIStateStore', () => {
       store.reset()
 
       // 驗證所有狀態已重置
-      expect(store.selectionMode).toBe(false)
-      expect(store.selectionSourceCard).toBeNull()
-      expect(store.selectionPossibleTargets).toEqual([])
       expect(store.decisionModalVisible).toBe(false)
       expect(store.decisionModalData).toBeNull()
       expect(store.gameFinishedVisible).toBe(false)
@@ -271,7 +242,6 @@ describe('UIStateStore', () => {
 
       const adapter = createTriggerUIEffectPortAdapter(mockAnimationService)
 
-      expect(adapter).toHaveProperty('showSelectionUI')
       expect(adapter).toHaveProperty('showDecisionModal')
       expect(adapter).toHaveProperty('showErrorMessage')
       expect(adapter).toHaveProperty('showReconnectionMessage')
@@ -286,11 +256,7 @@ describe('UIStateStore', () => {
       }
 
       const adapter = createTriggerUIEffectPortAdapter(mockAnimationService)
-
-      adapter.showSelectionUI(['0111', '0112'])
       const store = useUIStateStore()
-      expect(store.selectionMode).toBe(true)
-      expect(store.selectionPossibleTargets).toEqual(['0111', '0112'])
 
       adapter.showErrorMessage('Test error')
       expect(store.errorMessage).toBe('Test error')

@@ -5,8 +5,9 @@
  * 測試 HandleSelectionRequiredUseCase 的事件處理邏輯：
  * - 觸發手牌移動動畫
  * - 更新手牌狀態
- * - 顯示選擇配對 UI 並高亮可選目標
+ * - 保存翻出卡片和可選目標列表
  * - 更新 FlowStage 為 AWAITING_SELECTION
+ * - Adapter Layer 監聽 FlowStage 變化觸發場牌選擇 UI
  *
  * 參考: specs/003-ui-application-layer/contracts/events.md#SelectionRequiredEvent
  */
@@ -62,8 +63,8 @@ describe('HandleSelectionRequiredUseCase', () => {
     })
   })
 
-  describe('顯示選擇配對 UI', () => {
-    it('應該調用 showSelectionUI 並傳遞可選目標列表', () => {
+  describe('保存可配對目標', () => {
+    it('應該保存翻出的卡片和可選目標列表', () => {
       // Arrange
       const event: SelectionRequiredEvent = {
         event_type: 'SelectionRequired',
@@ -84,31 +85,8 @@ describe('HandleSelectionRequiredUseCase', () => {
       useCase.execute(event)
 
       // Assert
-      expect(mockTriggerUIEffect.showSelectionUI).toHaveBeenCalledWith(['0102', '0103'])
-    })
-
-    it('應該處理多個可選目標', () => {
-      // Arrange
-      const event: SelectionRequiredEvent = {
-        event_type: 'SelectionRequired',
-        event_id: 'evt-303',
-        timestamp: '2025-01-15T10:03:00Z',
-        player_id: 'player-1',
-        hand_card_play: {
-          played_card: '0301',
-          matched_card: '0101',
-          captured_cards: ['0301', '0101'],
-        },
-        drawn_card: '0401',
-        possible_targets: ['0402', '0403', '0404'],
-        deck_remaining: 21,
-      }
-
-      // Act
-      useCase.execute(event)
-
-      // Assert
-      expect(mockTriggerUIEffect.showSelectionUI).toHaveBeenCalledWith(['0402', '0403', '0404'])
+      expect(mockUIState.setDrawnCard).toHaveBeenCalledWith('0401')
+      expect(mockUIState.setPossibleTargetCardIds).toHaveBeenCalledWith(['0102', '0103'])
     })
   })
 
@@ -161,7 +139,8 @@ describe('HandleSelectionRequiredUseCase', () => {
 
       // Assert: 驗證所有方法都被調用
       expect(mockTriggerUIEffect.triggerAnimation).toHaveBeenCalled()
-      expect(mockTriggerUIEffect.showSelectionUI).toHaveBeenCalled()
+      expect(mockUIState.setDrawnCard).toHaveBeenCalled()
+      expect(mockUIState.setPossibleTargetCardIds).toHaveBeenCalled()
       expect(mockUIState.setFlowStage).toHaveBeenCalled()
     })
   })

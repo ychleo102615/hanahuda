@@ -5,7 +5,6 @@
  * 實作 NotificationPort 介面，包裝 UIStateStore 處理通知效果。
  *
  * 職責：
- * - Selection UI 顯示/隱藏
  * - Modal 顯示/隱藏（Decision、GameFinished、RoundDrawn）
  * - Toast 訊息（Error、Success、Reconnection）
  */
@@ -23,11 +22,6 @@ export function createNotificationPortAdapter(): NotificationPort {
   const store = useUIStateStore()
 
   return {
-    // ===== Selection UI =====
-    showSelectionUI(possibleTargets: string[]): void {
-      store.showSelectionUI(possibleTargets)
-    },
-
     // ===== Modal =====
     showDecisionModal(currentYaku: YakuScore[], currentScore: number): void {
       store.showDecisionModal(currentYaku, currentScore)
@@ -43,9 +37,7 @@ export function createNotificationPortAdapter(): NotificationPort {
 
     hideModal(): void {
       // 隱藏當前顯示的 Modal（一次只會有一個）
-      if (store.selectionMode) {
-        store.hideSelectionUI()
-      } else if (store.decisionModalVisible) {
+      if (store.decisionModalVisible) {
         store.hideDecisionModal()
       } else if (store.gameFinishedVisible) {
         store.hideGameFinishedUI()
@@ -79,7 +71,6 @@ export function createNotificationPortAdapter(): NotificationPort {
     // ===== 查詢 =====
     isModalVisible(): boolean {
       return (
-        store.selectionMode ||
         store.decisionModalVisible ||
         store.gameFinishedVisible ||
         store.roundDrawnVisible
