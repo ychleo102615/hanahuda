@@ -331,7 +331,6 @@ export class AnimationPortAdapter implements AnimationPort {
 
     // 計算起始位置
     let fromRect: DOMRect
-    let isFaceDown = false
 
     // 無配對情況：明確從手牌區查找
     const isNoMatchCase = !targetCardId
@@ -356,7 +355,7 @@ export class AnimationPortAdapter implements AnimationPort {
       // 有配對或其他情況：使用真實 DOM 位置
       fromRect = cardElement.getBoundingClientRect()
     } else if (isOpponent) {
-      // 對手手牌：從對手手牌區位置開始，顯示牌背
+      // 對手手牌：從對手手牌區位置開始
       const opponentHandPosition = this.registry.getPosition('opponent-hand')
       if (opponentHandPosition) {
         // 從對手手牌區中心開始
@@ -366,7 +365,6 @@ export class AnimationPortAdapter implements AnimationPort {
           cardWidth,
           cardHeight
         )
-        isFaceDown = true
       } else {
         // 備用：等待時長
         await sleep(ANIMATION_DURATION.CARD_TO_FIELD)
@@ -431,7 +429,6 @@ export class AnimationPortAdapter implements AnimationPort {
         toRect,
         onComplete: resolve,
         cardEffectType: 'move',
-        isFaceDown,  // 對手牌顯示牌背
       })
     })
 
