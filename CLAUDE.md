@@ -56,6 +56,8 @@
 - TypeScript 5.9 + Vue 3.5 (004-ui-adapter-layer)
 - TypeScript 5.9 + Vue 3.5, @vueuse/motion, Pinia (005-ui-animation-refactor)
 - N/A（UI Layer 不處理持久化） (005-ui-animation-refactor)
+- TypeScript 5.9 + Vue 3.5 + Vue 3, Pinia, @vueuse/motion (006-event-countdown-timer)
+- N/A（前端功能，狀態由 Pinia store 管理） (006-event-countdown-timer)
 
 ## Recent Changes
 - 003-ui-application-layer: Added TypeScript 5.9 + 無（Pure functions, 零框架依賴）
