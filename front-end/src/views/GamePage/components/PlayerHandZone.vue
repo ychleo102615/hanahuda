@@ -154,7 +154,7 @@ watch(isMyTurn, (newIsMyTurn) => {
 // 當 HandleSelectionRequiredUseCase 設定 FlowStage 為 AWAITING_SELECTION 時，
 // 根據 possibleTargetCardIds 數量來決定 UI 行為
 const { flowStage, possibleTargetCardIds } = storeToRefs(gameState)
-watch(flowStage, (newStage) => {
+watch(flowStage, (newStage, oldStage) => {
   if (newStage === 'AWAITING_SELECTION' && possibleTargetCardIds.value.length > 0) {
     // 進入場牌選擇模式
     const sourceCard = possibleTargetCardIds.value[0] ?? ''
@@ -176,6 +176,10 @@ watch(flowStage, (newStage) => {
       targets: possibleTargetCardIds.value,
       highlightType,
     })
+  } else if (oldStage === 'AWAITING_SELECTION' && newStage !== 'AWAITING_SELECTION') {
+    // 離開場牌選擇模式（當 FlowStage 變化時自動清除）
+    uiState.exitFieldCardSelectionMode()
+    console.info('[PlayerHandZone] 離開場牌選擇模式')
   }
 })
 

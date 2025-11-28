@@ -306,7 +306,13 @@ export class AnimationPortAdapter implements AnimationPort {
     this._isAnimating = true
 
     // 根據情況查找卡片元素（優先在預期的 zone 中查找）
-    const cardElement = this.registry.findCard(cardId, isOpponent ? 'opponent-hand' : 'player-hand')
+    let cardElement = this.registry.findCard(cardId, isOpponent ? 'opponent-hand' : 'player-hand')
+
+    // 如果在手牌區找不到，嘗試在場牌區查找（用於翻牌飛向配對目標的情況）
+    if (!cardElement) {
+      cardElement = this.registry.findCard(cardId, 'field')
+    }
+
     // 配對目標一定在場牌區
     const targetElement = targetCardId ? this.registry.findCard(targetCardId, 'field') : null
     const fieldPosition = this.registry.getPosition('field')
@@ -583,7 +589,7 @@ export class AnimationPortAdapter implements AnimationPort {
       a.isHandCard ? 1 : -1
     )
 
-    const animations = sortedCards.map(({ cardId, rect }) => {
+    const fadeOutAnimations = sortedCards.map(({ cardId, rect }) => {
       return new Promise<void>(resolve => {
         this.animationLayerStore.addCard({
           cardId,
@@ -595,7 +601,8 @@ export class AnimationPortAdapter implements AnimationPort {
       })
     })
 
-    await Promise.all(animations)
+    // 啟動淡出動畫（不等待完成）
+    const fadeOutPromise = Promise.all(fadeOutAnimations)
 
     if (this._interrupted) {
       this._isAnimating = false
@@ -635,7 +642,9 @@ export class AnimationPortAdapter implements AnimationPort {
       positions: cardPositions.map(p => ({ cardId: p.cardId, x: p.rect.x, y: p.rect.y })),
     })
 
-    // === 階段 4：創建淡入動畫組（在獲得區位置） ===
+    // === 階段 4：創建淡入動畫組（在獲得區位置）並同時等待淡出淡入完成 ===
+    let fadeInPromise: Promise<void> = Promise.resolve()
+
     if (cardPositions.length > 0 && !this._interrupted) {
       const fadeInGroupCards = cardPositions.map(({ cardId, rect }) => ({
         cardId: `${cardId}-fadeIn`,
@@ -645,9 +654,9 @@ export class AnimationPortAdapter implements AnimationPort {
         onComplete: () => {},  // 由 group 統一處理
       }))
 
-      // 使用 addGroup 將多張卡片作為一個整體執行 fadeIn
+      // 使用 addGroup 將多張卡片作為一個整體執行 fadeIn（不等待完成）
       const fadeInRects = cardPositions.map(p => p.rect)
-      await new Promise<void>(resolve => {
+      fadeInPromise = new Promise<void>(resolve => {
         this.animationLayerStore.addGroup({
           groupId: `fadeIn-${Date.now()}`,
           cards: fadeInGroupCards,
@@ -657,6 +666,9 @@ export class AnimationPortAdapter implements AnimationPort {
         })
       })
     }
+
+    // 同時等待淡出和淡入動畫完成
+    await Promise.all([fadeOutPromise, fadeInPromise])
 
     // === 階段 5：動畫完成後顯示真實卡片 ===
     cardIds.forEach(cardId => {
