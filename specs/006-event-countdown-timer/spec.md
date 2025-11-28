@@ -9,7 +9,7 @@
 
 ### Session 2025-11-28
 
-- Q: 倒數計時的視覺緊急程度 → A: 低於 5 秒時數字變為警示色（如紅色/橘色）
+- Q: 倒數計時的視覺緊急程度 → A: 低於 5 秒時數字變為警示色（text-red-500, Tailwind CSS）
 - Q: 回合結束面板是否允許玩家提前跳過 → A: 不允許跳過，必須等待倒數結束才能繼續
 
 ## User Scenarios & Testing *(mandatory)*
@@ -162,7 +162,7 @@
 | RoundEndedInstantly         | display_timeout_seconds  | number          | 面板顯示時間                   |
 | RoundScored                 | display_timeout_seconds  | number          | 面板顯示時間                   |
 | RoundDrawn                  | display_timeout_seconds  | number          | 面板顯示時間                   |
-| GameSnapshotRestore         | action_timeout_seconds   | number (optional) | 重連時的剩餘時限             |
+| GameSnapshotRestore         | action_timeout_seconds   | number          | 重連時的剩餘時限             |
 
 不需修改的事件：
 - GameStarted（無操作需求）

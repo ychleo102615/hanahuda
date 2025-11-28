@@ -67,7 +67,7 @@
 
 - [ ] T015 [US1] 修改 TopInfoBar.vue 顯示操作倒數於 front-end/src/views/GamePage/components/TopInfoBar.vue
 - [ ] T016 [US1] 實作低於 5 秒警示色邏輯 (text-red-500) 於 front-end/src/views/GamePage/components/TopInfoBar.vue
-- [ ] T017 [US1] 驗證倒數遞減邏輯與事件觸發重置行為
+- [ ] T017 [US1] 手動測試驗證：模擬玩家回合，確認倒數每秒遞減，新事件觸發時正確重置
 
 **Checkpoint**: 玩家回合倒數顯示應完全正常運作並可獨立測試
 
@@ -87,7 +87,7 @@
 
 - [ ] T019 [US2] 修改 DecisionModal.vue 顯示決策倒數於 front-end/src/views/GamePage/components/DecisionModal.vue
 - [ ] T020 [US2] 實作低於 5 秒警示色邏輯於 DecisionModal.vue
-- [ ] T021 [US2] 驗證決策完成後倒數停止行為
+- [ ] T021 [US2] 自動化測試驗證：確認玩家做出決策後 stopActionCountdown() 被正確調用
 
 **Checkpoint**: Koi-Koi 決策倒數應完全正常運作並可獨立測試
 
@@ -110,7 +110,7 @@
 - [ ] T025 [US3] 實作倒數顯示與自動關閉邏輯 (displayTimeoutRemaining === 0)
 - [ ] T026 [US3] 實作互動限制 (攔截 ESC、背景點擊、無關閉按鈕)
 - [ ] T027 [US3] 整合 RoundEndPanel 至 GamePage.vue
-- [ ] T028 [US3] 驗證三種回合結束事件的面板顯示行為
+- [ ] T028 [US3] 整合測試驗證：模擬 RoundScored/RoundEndedInstantly/RoundDrawn 三種事件，確認面板正確顯示與自動關閉
 
 **Checkpoint**: 回合結束面板倒數應完全正常運作並可獨立測試
 
@@ -129,7 +129,7 @@
 ### Implementation for User Story 4
 
 - [ ] T030 [US4] 擴展 TopInfoBar.vue 支援對手回合倒數顯示於 front-end/src/views/GamePage/components/TopInfoBar.vue
-- [ ] T031 [US4] 驗證對手完成操作後倒數消失或切換行為
+- [ ] T031 [US4] 手動測試驗證：模擬對手回合切換為玩家回合，確認倒數顯示正確更新或消失
 
 **Checkpoint**: 對手回合倒數應完全正常運作並可獨立測試
 
@@ -255,6 +255,6 @@ With multiple developers:
 - **User Story 4 (P3)**: 3 tasks (1 test + 2 implementation)
 - **Polish (Phase 7)**: 6 tasks
 
-**Parallel Opportunities Identified**: 18 tasks marked [P]
+**Parallel Opportunities Identified**: 17 tasks marked [P]
 
 **MVP Scope** (建議)：Phase 1 + Phase 2 + User Story 1 + User Story 2 (21 tasks)
