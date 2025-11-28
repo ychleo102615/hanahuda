@@ -116,7 +116,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
     delay: 3000,
   },
 
-  // 4. TurnProgressAfterSelection - 玩家選擇了 0242
+  // 4. TurnProgressAfterSelection - 玩家選擇了 0241
   {
     eventType: 'TurnProgressAfterSelection',
     payload: {
@@ -125,14 +125,14 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       timestamp: new Date().toISOString(),
       player_id: 'player-1',
       selection: {
-        source_card: '0221', // 翻出的 2月鶯
-        selected_target: '0242', // 選擇的目標
-        captured_cards: ['0221', '0242'],
+        source_card: '0231', // 翻出的 2月赤短（與SelectionRequired一致）
+        selected_target: '0241', // 選擇的目標
+        captured_cards: ['0231', '0241'], // 獲得翻出的牌 + 選擇的牌
       },
       draw_card_play: {
-        played_card: '0221',
-        matched_card: '0242',
-        captured_cards: ['0221', '0242'],
+        played_card: '0231', // 翻出的牌
+        matched_card: '0241', // 配對的牌
+        captured_cards: ['0231', '0241'], // 翻牌階段獲得的牌
       },
       yaku_update: null, // 此回合未形成役種
       deck_remaining: 23,
@@ -143,9 +143,9 @@ export const mockEventScriptForSelection: MockEventItem[] = [
     },
     delay: 3000,
   },
-  /*
 
-  // 5. 對手回合完成（簡單操作）
+  /*
+  // 5. 對手回合完成 - 配對走1月和3月牌
   {
     eventType: 'TurnCompleted',
     payload: {
@@ -154,14 +154,14 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       timestamp: new Date().toISOString(),
       player_id: 'player-2',
       hand_card_play: {
-        played_card: '0111', // 1月光
-        matched_card: null, // 無配對
-        captured_cards: [],
+        played_card: '0131', // 1月短
+        matched_card: '0111', // 配對場上的1月光
+        captured_cards: ['0131', '0111'],
       },
       draw_card_play: {
-        played_card: '0142', // 1月かす
-        matched_card: null,
-        captured_cards: [],
+        played_card: '0311', // 翻出 3月光
+        matched_card: '0341', // 配對場上的3月かす1
+        captured_cards: ['0311', '0341'],
       },
       deck_remaining: 22,
       next_state: {
@@ -172,7 +172,8 @@ export const mockEventScriptForSelection: MockEventItem[] = [
     delay: 3000,
   },
 
-  // 6. 第二次 SelectionRequired - 玩家打出 3月牌，觸發另一次雙重配對
+  // 6. 第二次 SelectionRequired - 手牌有配對，翻牌複數配對
+  // 玩家打出3月短配對場上3月牌，翻牌翻出2月牌，場上有2張2月牌可選
   {
     eventType: 'SelectionRequired',
     payload: {
@@ -181,18 +182,18 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       timestamp: new Date().toISOString(),
       player_id: 'player-1',
       hand_card_play: {
-        played_card: '0331', // 3月赤短
-        matched_card: '0341', // 配對 3月かす1
-        captured_cards: ['0331', '0341'],
+        played_card: '0331', // 3月短（櫻赤短）
+        matched_card: '0342', // 配對場上的3月かす2
+        captured_cards: ['0331', '0342'], // 手牌階段獲得的牌
       },
-      drawn_card: '0311', // 翻出 3月光
-      possible_targets: ['0342'], // 可選擇配對 3月かす2（場上僅剩一張）
+      drawn_card: '0211', // 翻出 2月牌
+      possible_targets: ['0221', '0242'], // 場上有2張2月牌可選！
       deck_remaining: 21,
     },
     delay: 3000,
   },
 
-  // 7. TurnProgressAfterSelection - 第二次選擇後
+  // 7. TurnProgressAfterSelection - 玩家選擇了 0221
   {
     eventType: 'TurnProgressAfterSelection',
     payload: {
@@ -201,16 +202,16 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       timestamp: new Date().toISOString(),
       player_id: 'player-1',
       selection: {
-        source_card: '0311', // 3月光
-        selected_target: '0342', // 選擇 3月かす2
-        captured_cards: ['0311', '0342'],
+        source_card: '0211', // 翻出的2月牌
+        selected_target: '0221', // 選擇配對2月種
+        captured_cards: ['0211', '0221'], // 翻牌階段獲得的牌
       },
       draw_card_play: {
-        played_card: '0311',
-        matched_card: '0342',
-        captured_cards: ['0311', '0342'],
+        played_card: '0211',
+        matched_card: '0221',
+        captured_cards: ['0211', '0221'],
       },
-      yaku_update: null,
+      yaku_update: null, // 此回合未形成役種
       deck_remaining: 21,
       next_state: {
         state_type: 'AWAITING_HAND_PLAY',
@@ -219,55 +220,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
     },
     delay: 3000,
   },
-
-  // 8. 對手回合完成
-  {
-    eventType: 'TurnCompleted',
-    payload: {
-      event_type: 'TurnCompleted',
-      event_id: 'sel-evt-008',
-      timestamp: new Date().toISOString(),
-      player_id: 'player-2',
-      hand_card_play: {
-        played_card: '0211', // 2月種
-        matched_card: null,
-        captured_cards: [],
-      },
-      draw_card_play: {
-        played_card: '0442', // 4月かす
-        matched_card: '0441',
-        captured_cards: ['0442', '0441'],
-      },
-      deck_remaining: 20,
-      next_state: {
-        state_type: 'AWAITING_HAND_PLAY',
-        active_player_id: 'player-1',
-      },
-    },
-    delay: 3000,
-  },
-
-  // 9. 第三次 SelectionRequired - 測試三重配對場景
-  // 場上現在有 5月かす (0541)，玩家打出 5月牌，翻出另一張 5月牌
-  {
-    eventType: 'SelectionRequired',
-    payload: {
-      event_type: 'SelectionRequired',
-      event_id: 'sel-evt-009',
-      timestamp: new Date().toISOString(),
-      player_id: 'player-1',
-      hand_card_play: {
-        played_card: '0531', // 5月短
-        matched_card: '0541', // 配對 5月かす
-        captured_cards: ['0531', '0541'],
-      },
-      drawn_card: '0521', // 翻出 5月種
-      possible_targets: [], // 場上無其他 5月牌，無需選擇（但這不符合 SelectionRequired 的定義）
-      // 修正：應該是場上還有其他 5 月牌
-      deck_remaining: 19,
-    },
-    delay: 3000,
-  },
+  // 完整版腳本到此結束（包含2次 SelectionRequired 測試場景）
   */
 ]
 
