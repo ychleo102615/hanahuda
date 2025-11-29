@@ -101,6 +101,7 @@ export interface UIStateStoreActions {
   hideDecisionModal(): void
   hideGameFinishedUI(): void
   hideRoundDrawnUI(): void
+  hideModal(): void
   hideReconnectionMessage(): void
   setConnectionStatus(status: ConnectionStatus): void
   reset(): void
@@ -287,6 +288,20 @@ export const useUIStateStore = defineStore('uiState', {
       this.roundDrawnVisible = false
       this.roundDrawnScores = []
       console.info('[UIStateStore] 隱藏平局 UI')
+    },
+
+    /**
+     * 隱藏當前 Modal
+     *
+     * @description
+     * 通用方法，關閉所有可能打開的 modal/panel。
+     * 用於倒數結束時自動關閉面板。
+     */
+    hideModal(): void {
+      this.hideDecisionModal()
+      this.hideRoundDrawnUI()
+      this.stopDisplayCountdown()
+      console.info('[UIStateStore] 隱藏所有 Modal')
     },
 
     /**

@@ -108,10 +108,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T024 [US3] 建立 RoundEndPanel.vue 組件於 front-end/src/views/GamePage/components/RoundEndPanel.vue
-- [ ] T025 [US3] 實作倒數顯示與自動關閉邏輯 (displayTimeoutRemaining === 0)
-- [ ] T026 [US3] 實作互動限制 (攔截 ESC、背景點擊、無關閉按鈕)
-- [ ] T027 [US3] 整合 RoundEndPanel 至 GamePage.vue
+- [X] T024 [US3] 建立 RoundEndPanel.vue 組件於 front-end/src/views/GamePage/components/RoundEndPanel.vue
+- [X] T025 [US3] 實作倒數顯示與自動關閉邏輯 (displayTimeoutRemaining === 0)
+- [X] T026 [US3] 實作互動限制 (攔截 ESC、背景點擊、無關閉按鈕)
+- [X] T027 [US3] 整合 RoundEndPanel 至 GamePage.vue
 - [ ] T028 [US3] 整合測試驗證：模擬 RoundScored/RoundEndedInstantly/RoundDrawn 三種事件，確認面板正確顯示與自動關閉
 
 **Checkpoint**: 回合結束面板倒數應完全正常運作並可獨立測試

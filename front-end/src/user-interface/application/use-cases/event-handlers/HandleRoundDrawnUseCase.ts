@@ -14,6 +14,9 @@ export class HandleRoundDrawnUseCase implements HandleRoundDrawnPort {
     this.notification.showRoundDrawnUI([...event.current_total_scores])
 
     // 啟動顯示倒數（用於回合結束面板自動關閉）
-    this.notification.startDisplayCountdown(event.display_timeout_seconds)
+    // 倒數結束時自動關閉面板
+    this.notification.startDisplayCountdown(event.display_timeout_seconds, () => {
+      this.notification.hideModal()
+    })
   }
 }
