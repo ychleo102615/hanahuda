@@ -8,18 +8,19 @@
  * - End Round (end this round, get score immediately)
  *
  * T072-T076 [US3]: Complete decision UI implementation
+ * T019-T020 [US2]: Display countdown timer with warning color
  */
 
 import { storeToRefs } from 'pinia'
+import { computed, inject } from 'vue'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
-import { inject } from 'vue'
 import { TOKENS } from '../../../user-interface/adapter/di/tokens'
 import type { MakeKoiKoiDecisionPort } from '../../../user-interface/application/ports/input'
 
 const uiState = useUIStateStore()
 const gameState = useGameStateStore()
-const { decisionModalVisible, decisionModalData } = storeToRefs(uiState)
+const { decisionModalVisible, decisionModalData, actionTimeoutRemaining } = storeToRefs(uiState)
 const { myDepository, myKoiKoiMultiplier } = storeToRefs(gameState)
 
 // T074 [US3]: Inject MakeKoiKoiDecisionPort
@@ -27,8 +28,19 @@ const makeKoiKoiDecisionPort = inject<MakeKoiKoiDecisionPort>(
   TOKENS.MakeKoiKoiDecisionPort.toString()
 )
 
+// T020 [US2]: Warning color logic (red when <= 5 seconds)
+const countdownClass = computed(() => {
+  if (actionTimeoutRemaining.value !== null && actionTimeoutRemaining.value <= 5) {
+    return 'text-red-500'
+  }
+  return 'text-white'
+})
+
 // T076 [US3]: Handle Koi-Koi decision
 function handleKoiKoi() {
+  // T021 [US2]: Stop countdown when player makes decision
+  uiState.stopActionCountdown()
+
   if (makeKoiKoiDecisionPort && decisionModalData.value) {
     makeKoiKoiDecisionPort.execute({
       currentYaku: decisionModalData.value.currentYaku,
@@ -42,6 +54,9 @@ function handleKoiKoi() {
 
 // T076 [US3]: Handle End Round decision
 function handleEndRound() {
+  // T021 [US2]: Stop countdown when player makes decision
+  uiState.stopActionCountdown()
+
   if (makeKoiKoiDecisionPort && decisionModalData.value) {
     makeKoiKoiDecisionPort.execute({
       currentYaku: decisionModalData.value.currentYaku,
@@ -68,6 +83,21 @@ function handleEndRound() {
           <h2 class="mb-4 text-center text-2xl font-bold text-yellow-400">
             Yaku Achieved!
           </h2>
+
+          <!-- T019 [US2]: Countdown Display -->
+          <div
+            v-if="actionTimeoutRemaining !== null"
+            class="mb-4 text-center"
+          >
+            <div class="text-sm text-gray-400 mb-1">Time Remaining</div>
+            <div
+              data-testid="decision-countdown"
+              class="text-3xl font-bold"
+              :class="countdownClass"
+            >
+              {{ actionTimeoutRemaining }}
+            </div>
+          </div>
 
           <!-- T075 [US3]: Display yaku information -->
           <div class="mb-6 space-y-2">

@@ -81,13 +81,13 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T018 [US2] 撰寫 DecisionModal 倒數顯示測試於 front-end/tests/views/DecisionModal.spec.ts
+- [X] T018 [US2] 撰寫 DecisionModal 倒數顯示測試於 front-end/tests/views/DecisionModal.spec.ts
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] 修改 DecisionModal.vue 顯示決策倒數於 front-end/src/views/GamePage/components/DecisionModal.vue
-- [ ] T020 [US2] 實作低於 5 秒警示色邏輯於 DecisionModal.vue
-- [ ] T021 [US2] 自動化測試驗證：確認玩家做出決策後 stopActionCountdown() 被正確調用
+- [X] T019 [US2] 修改 DecisionModal.vue 顯示決策倒數於 front-end/src/views/GamePage/components/DecisionModal.vue
+- [X] T020 [US2] 實作低於 5 秒警示色邏輯於 DecisionModal.vue
+- [X] T021 [US2] 自動化測試驗證：確認玩家做出決策後 stopActionCountdown() 被正確調用
 
 **Checkpoint**: Koi-Koi 決策倒數應完全正常運作並可獨立測試
 
