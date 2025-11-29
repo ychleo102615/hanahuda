@@ -5,16 +5,16 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleRoundDrawnUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleRoundDrawnUseCase'
 import type { RoundDrawnEvent } from '@/user-interface/application/types'
-import { createMockTriggerUIEffectPort } from '../../test-helpers/mock-factories'
-import type { TriggerUIEffectPort } from '@/user-interface/application/ports'
+import { createMockNotificationPort } from '../../test-helpers/mock-factories'
+import type { NotificationPort } from '@/user-interface/application/ports'
 
 describe('HandleRoundDrawnUseCase', () => {
-  let mockTriggerUIEffect: TriggerUIEffectPort
+  let mockNotification: NotificationPort
   let useCase: HandleRoundDrawnUseCase
 
   beforeEach(() => {
-    mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleRoundDrawnUseCase(mockTriggerUIEffect)
+    mockNotification = createMockNotificationPort()
+    useCase = new HandleRoundDrawnUseCase(mockNotification)
   })
 
   it('應該呼叫 showRoundDrawnUI 並顯示平局畫面', () => {
@@ -26,16 +26,18 @@ describe('HandleRoundDrawnUseCase', () => {
         { player_id: 'player-1', score: 5 },
         { player_id: 'player-2', score: 3 },
       ],
+      display_timeout_seconds: 5,
     }
 
     useCase.execute(event)
 
     // 驗證 showRoundDrawnUI 被正確調用
-    expect(mockTriggerUIEffect.showRoundDrawnUI).toHaveBeenCalledTimes(1)
-    expect(mockTriggerUIEffect.showRoundDrawnUI).toHaveBeenCalledWith([
+    expect(mockNotification.showRoundDrawnUI).toHaveBeenCalledTimes(1)
+    expect(mockNotification.showRoundDrawnUI).toHaveBeenCalledWith([
       { player_id: 'player-1', score: 5 },
       { player_id: 'player-2', score: 3 },
     ])
+    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5)
   })
 
   it('應該正確傳遞當前總分列表', () => {
@@ -47,13 +49,15 @@ describe('HandleRoundDrawnUseCase', () => {
         { player_id: 'player-1', score: 20 },
         { player_id: 'player-2', score: 20 },
       ],
+      display_timeout_seconds: 5,
     }
 
     useCase.execute(event)
 
-    expect(mockTriggerUIEffect.showRoundDrawnUI).toHaveBeenCalledWith(
+    expect(mockNotification.showRoundDrawnUI).toHaveBeenCalledWith(
       event.current_total_scores,
     )
+    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5)
   })
 
   it('應該處理空的分數列表', () => {
@@ -62,10 +66,12 @@ describe('HandleRoundDrawnUseCase', () => {
       event_id: 'evt-803',
       timestamp: '2025-01-15T10:12:00Z',
       current_total_scores: [],
+      display_timeout_seconds: 5,
     }
 
     useCase.execute(event)
 
-    expect(mockTriggerUIEffect.showRoundDrawnUI).toHaveBeenCalledWith([])
+    expect(mockNotification.showRoundDrawnUI).toHaveBeenCalledWith([])
+    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5)
   })
 })
