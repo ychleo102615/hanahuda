@@ -24,9 +24,9 @@
 
 **Purpose**: 更新事件型別定義與倒數計時基礎設施
 
-- [ ] T001 更新事件型別定義，新增 timeout 欄位至 front-end/src/user-interface/application/types/events.ts
-- [ ] T002 建立 UIStateStore 擴展，新增 timeout 狀態與 actions 至 front-end/src/user-interface/adapter/stores/uiState.ts
-- [ ] T003 [P] 實作 useCountdown composable (可選) 於 front-end/src/user-interface/adapter/composables/useCountdown.ts
+- [X] T001 更新事件型別定義，新增 timeout 欄位至 front-end/src/user-interface/application/types/events.ts
+- [X] T002 建立 UIStateStore 擴展，新增 timeout 狀態與 actions 至 front-end/src/user-interface/adapter/stores/uiState.ts
+- [X] T003 [P] 實作 useCountdown composable (可選) 於 front-end/src/user-interface/adapter/composables/useCountdown.ts - SKIPPED (UIStateStore 已直接實作)
 
 ---
 
@@ -36,14 +36,14 @@
 
 **⚠️ CRITICAL**: 此階段必須完成後才能實作任何 User Story
 
-- [ ] T004 更新 HandleRoundDealtUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundDealtUseCase.ts
-- [ ] T005 [P] 更新 HandleSelectionRequiredUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase.ts
-- [ ] T006 [P] 更新 HandleTurnProgressAfterSelectionUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase.ts
-- [ ] T007 [P] 更新 HandleDecisionRequiredUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleDecisionRequiredUseCase.ts
-- [ ] T008 [P] 更新 HandleRoundScoredUseCase 處理 display_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundScoredUseCase.ts
-- [ ] T009 [P] 更新 HandleRoundEndedInstantlyUseCase 處理 display_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase.ts
-- [ ] T010 [P] 更新 HandleRoundDrawnUseCase 處理 display_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundDrawnUseCase.ts
-- [ ] T011 [P] 更新 HandleGameSnapshotRestoreUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleGameSnapshotRestoreUseCase.ts
+- [X] T004 更新 HandleRoundDealtUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundDealtUseCase.ts
+- [X] T005 [P] 更新 HandleSelectionRequiredUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase.ts
+- [X] T006 [P] 更新 HandleTurnProgressAfterSelectionUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase.ts
+- [X] T007 [P] 更新 HandleDecisionRequiredUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleDecisionRequiredUseCase.ts
+- [X] T008 [P] 更新 HandleRoundScoredUseCase 處理 display_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundScoredUseCase.ts
+- [X] T009 [P] 更新 HandleRoundEndedInstantlyUseCase 處理 display_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase.ts
+- [X] T010 [P] 更新 HandleRoundDrawnUseCase 處理 display_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundDrawnUseCase.ts
+- [X] T011 [P] 更新 HandleGameSnapshotRestoreUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleReconnectionUseCase.ts
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -59,15 +59,15 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T012 [P] [US1] 撰寫 UIStateStore 倒數狀態測試於 front-end/tests/adapter/stores/uiState.spec.ts
-- [ ] T013 [P] [US1] 撰寫 useCountdown composable 測試 (若使用) 於 front-end/tests/adapter/composables/useCountdown.spec.ts
-- [ ] T014 [P] [US1] 撰寫 TopInfoBar 倒數顯示測試於 front-end/tests/views/TopInfoBar.spec.ts
+- [X] T012 [P] [US1] 撰寫 UIStateStore 倒數狀態測試於 front-end/tests/adapter/stores/uiState.spec.ts
+- [X] T013 [P] [US1] 撰寫 useCountdown composable 測試 (若使用) 於 front-end/tests/adapter/composables/useCountdown.spec.ts - SKIPPED (無 useCountdown composable)
+- [ ] T014 [P] [US1] 撰寫 TopInfoBar 倒數顯示測試於 front-end/tests/views/TopInfoBar.spec.ts - DEFERRED (UI 層整合測試可後續補充)
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] 修改 TopInfoBar.vue 顯示操作倒數於 front-end/src/views/GamePage/components/TopInfoBar.vue
-- [ ] T016 [US1] 實作低於 5 秒警示色邏輯 (text-red-500) 於 front-end/src/views/GamePage/components/TopInfoBar.vue
-- [ ] T017 [US1] 手動測試驗證：模擬玩家回合，確認倒數每秒遞減，新事件觸發時正確重置
+- [X] T015 [US1] 修改 TopInfoBar.vue 顯示操作倒數於 front-end/src/views/GamePage/components/TopInfoBar.vue
+- [X] T016 [US1] 實作低於 5 秒警示色邏輯 (text-red-500) 於 front-end/src/views/GamePage/components/TopInfoBar.vue
+- [ ] T017 [US1] 手動測試驗證：模擬玩家回合，確認倒數每秒遞減，新事件觸發時正確重置 - 需要後端整合
 
 **Checkpoint**: 玩家回合倒數顯示應完全正常運作並可獨立測試
 

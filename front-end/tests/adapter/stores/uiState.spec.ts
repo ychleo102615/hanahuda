@@ -232,6 +232,208 @@ describe('UIStateStore', () => {
       expect(store.connectionStatus).toBe('disconnected')
       expect(store.reconnecting).toBe(false)
     })
+
+    it('應該清除所有倒數計時器', () => {
+      vi.useFakeTimers()
+      const store = useUIStateStore()
+
+      // 啟動倒數
+      store.startActionCountdown(30)
+      store.startDisplayCountdown(5)
+
+      expect(store.actionTimeoutRemaining).toBe(30)
+      expect(store.displayTimeoutRemaining).toBe(5)
+
+      // 重置
+      store.reset()
+
+      // 驗證倒數已清除
+      expect(store.actionTimeoutRemaining).toBeNull()
+      expect(store.displayTimeoutRemaining).toBeNull()
+
+      // 快進時間，確認 interval 已停止
+      vi.advanceTimersByTime(10000)
+      expect(store.actionTimeoutRemaining).toBeNull()
+      expect(store.displayTimeoutRemaining).toBeNull()
+
+      vi.useRealTimers()
+    })
+  })
+
+  describe('Countdown - startActionCountdown / stopActionCountdown', () => {
+    it('應該正確啟動操作倒數', () => {
+      const store = useUIStateStore()
+
+      store.startActionCountdown(30)
+
+      expect(store.actionTimeoutRemaining).toBe(30)
+    })
+
+    it('應該每秒遞減操作倒數', () => {
+      vi.useFakeTimers()
+      const store = useUIStateStore()
+
+      store.startActionCountdown(30)
+      expect(store.actionTimeoutRemaining).toBe(30)
+
+      // 快進 1 秒
+      vi.advanceTimersByTime(1000)
+      expect(store.actionTimeoutRemaining).toBe(29)
+
+      // 快進 5 秒
+      vi.advanceTimersByTime(5000)
+      expect(store.actionTimeoutRemaining).toBe(24)
+
+      vi.useRealTimers()
+    })
+
+    it('應該在倒數歸零時停止', () => {
+      vi.useFakeTimers()
+      const store = useUIStateStore()
+
+      store.startActionCountdown(3)
+      expect(store.actionTimeoutRemaining).toBe(3)
+
+      // 快進 3 秒
+      vi.advanceTimersByTime(3000)
+      expect(store.actionTimeoutRemaining).toBe(0)
+
+      // 再快進，應該停止在 null（自動清除）
+      vi.advanceTimersByTime(1000)
+      expect(store.actionTimeoutRemaining).toBeNull()
+
+      vi.useRealTimers()
+    })
+
+    it('應該正確停止操作倒數', () => {
+      vi.useFakeTimers()
+      const store = useUIStateStore()
+
+      store.startActionCountdown(30)
+      expect(store.actionTimeoutRemaining).toBe(30)
+
+      // 快進 5 秒
+      vi.advanceTimersByTime(5000)
+      expect(store.actionTimeoutRemaining).toBe(25)
+
+      // 手動停止
+      store.stopActionCountdown()
+      expect(store.actionTimeoutRemaining).toBeNull()
+
+      // 快進時間，確認不再遞減
+      vi.advanceTimersByTime(10000)
+      expect(store.actionTimeoutRemaining).toBeNull()
+
+      vi.useRealTimers()
+    })
+
+    it('應該能夠重新啟動操作倒數（自動停止舊的）', () => {
+      vi.useFakeTimers()
+      const store = useUIStateStore()
+
+      // 第一次啟動
+      store.startActionCountdown(30)
+      expect(store.actionTimeoutRemaining).toBe(30)
+
+      // 快進 5 秒
+      vi.advanceTimersByTime(5000)
+      expect(store.actionTimeoutRemaining).toBe(25)
+
+      // 第二次啟動（應該停止舊的）
+      store.startActionCountdown(20)
+      expect(store.actionTimeoutRemaining).toBe(20)
+
+      // 快進 5 秒
+      vi.advanceTimersByTime(5000)
+      expect(store.actionTimeoutRemaining).toBe(15)
+
+      vi.useRealTimers()
+    })
+  })
+
+  describe('Countdown - startDisplayCountdown / stopDisplayCountdown', () => {
+    it('應該正確啟動顯示倒數', () => {
+      const store = useUIStateStore()
+
+      store.startDisplayCountdown(5)
+
+      expect(store.displayTimeoutRemaining).toBe(5)
+    })
+
+    it('應該每秒遞減顯示倒數', () => {
+      vi.useFakeTimers()
+      const store = useUIStateStore()
+
+      store.startDisplayCountdown(5)
+      expect(store.displayTimeoutRemaining).toBe(5)
+
+      // 快進 1 秒
+      vi.advanceTimersByTime(1000)
+      expect(store.displayTimeoutRemaining).toBe(4)
+
+      // 快進 2 秒
+      vi.advanceTimersByTime(2000)
+      expect(store.displayTimeoutRemaining).toBe(2)
+
+      vi.useRealTimers()
+    })
+
+    it('應該在倒數歸零時執行回調並停止', () => {
+      vi.useFakeTimers()
+      const store = useUIStateStore()
+      const onComplete = vi.fn()
+
+      store.startDisplayCountdown(2, onComplete)
+      expect(store.displayTimeoutRemaining).toBe(2)
+
+      // 快進 2 秒
+      vi.advanceTimersByTime(2000)
+      expect(store.displayTimeoutRemaining).toBe(0)
+
+      // 再快進 1 秒，應該停止並執行回調
+      vi.advanceTimersByTime(1000)
+      expect(store.displayTimeoutRemaining).toBeNull()
+      expect(onComplete).toHaveBeenCalledTimes(1)
+
+      vi.useRealTimers()
+    })
+
+    it('應該正確停止顯示倒數', () => {
+      vi.useFakeTimers()
+      const store = useUIStateStore()
+      const onComplete = vi.fn()
+
+      store.startDisplayCountdown(5, onComplete)
+      expect(store.displayTimeoutRemaining).toBe(5)
+
+      // 快進 2 秒
+      vi.advanceTimersByTime(2000)
+      expect(store.displayTimeoutRemaining).toBe(3)
+
+      // 手動停止
+      store.stopDisplayCountdown()
+      expect(store.displayTimeoutRemaining).toBeNull()
+
+      // 快進時間，確認回調不被執行
+      vi.advanceTimersByTime(10000)
+      expect(onComplete).not.toHaveBeenCalled()
+
+      vi.useRealTimers()
+    })
+
+    it('應該支援無回調的顯示倒數', () => {
+      vi.useFakeTimers()
+      const store = useUIStateStore()
+
+      store.startDisplayCountdown(2)
+      expect(store.displayTimeoutRemaining).toBe(2)
+
+      // 快進到歸零
+      vi.advanceTimersByTime(3000)
+      expect(store.displayTimeoutRemaining).toBeNull()
+
+      vi.useRealTimers()
+    })
   })
 
   describe('createTriggerUIEffectPortAdapter', () => {

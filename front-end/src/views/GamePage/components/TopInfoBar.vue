@@ -15,7 +15,7 @@ const gameState = useGameStateStore()
 const uiState = useUIStateStore()
 
 const { myScore, opponentScore, isMyTurn, deckRemaining } = storeToRefs(gameState)
-const { connectionStatus } = storeToRefs(uiState)
+const { connectionStatus, actionTimeoutRemaining } = storeToRefs(uiState)
 
 // 連線狀態顯示
 const connectionStatusText = computed(() => {
@@ -48,6 +48,14 @@ const connectionStatusClass = computed(() => {
 const turnText = computed(() => {
   return isMyTurn.value ? 'Your Turn' : "Opponent's Turn"
 })
+
+// 倒數顯示樣式（低於 5 秒警示）
+const countdownClass = computed(() => {
+  if (actionTimeoutRemaining.value !== null && actionTimeoutRemaining.value <= 5) {
+    return 'text-red-500'
+  }
+  return 'text-white'
+})
 </script>
 
 <template>
@@ -64,6 +72,14 @@ const turnText = computed(() => {
     <div class="flex flex-col items-center">
       <div class="text-sm font-medium" :class="{ 'text-yellow-400': isMyTurn }">
         {{ turnText }}
+      </div>
+      <!-- Countdown Display -->
+      <div
+        v-if="actionTimeoutRemaining !== null"
+        class="text-xl font-bold"
+        :class="countdownClass"
+      >
+        {{ actionTimeoutRemaining }}
       </div>
       <div class="text-xs text-gray-400">
         Deck: {{ deckRemaining }}
