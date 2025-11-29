@@ -27,6 +27,8 @@ applies_to:
   - SelectionRequired
   - TurnProgressAfterSelection
   - DecisionRequired
+  - TurnCompleted
+  - DecisionMade
   - GameSnapshotRestore
 ```
 
@@ -174,7 +176,65 @@ applies_to:
 
 ---
 
-### 2.5 RoundScored
+### 2.5 TurnCompleted
+
+**Current Schema:**
+```json
+{
+  "player_id": "string",
+  "hand_card_play": {"played_card": "string", "matched_card": "string|null", "captured_cards": ["string"]},
+  "draw_card_play": {"played_card": "string", "matched_card": "string|null", "captured_cards": ["string"]},
+  "deck_remaining": "number",
+  "next_state": {"state_type": "FlowState", "active_player_id": "string"}
+}
+```
+
+**Updated Schema:**
+```json
+{
+  "player_id": "string",
+  "hand_card_play": {"played_card": "string", "matched_card": "string|null", "captured_cards": ["string"]},
+  "draw_card_play": {"played_card": "string", "matched_card": "string|null", "captured_cards": ["string"]},
+  "deck_remaining": "number",
+  "next_state": {"state_type": "FlowState", "active_player_id": "string"},
+  "action_timeout_seconds": "number"  // ✅ NEW (required)
+}
+```
+
+**Description Update:**
+> TurnCompleted 事件在回合完成時發送。`action_timeout_seconds` 表示下一位玩家（`next_state.active_player_id`）的出牌時限。
+
+---
+
+### 2.6 DecisionMade
+
+**Current Schema:**
+```json
+{
+  "player_id": "string",
+  "decision": "KOI_KOI",
+  "koi_multiplier_update": "number",
+  "next_state": {"state_type": "FlowState", "active_player_id": "string"}
+}
+```
+
+**Updated Schema:**
+```json
+{
+  "player_id": "string",
+  "decision": "KOI_KOI",
+  "koi_multiplier_update": "number",
+  "next_state": {"state_type": "FlowState", "active_player_id": "string"},
+  "action_timeout_seconds": "number"  // ✅ NEW (required)
+}
+```
+
+**Description Update:**
+> DecisionMade 事件在玩家選擇 Koi-Koi 後發送。`action_timeout_seconds` 表示下一位玩家（`next_state.active_player_id`）的出牌時限。
+
+---
+
+### 2.7 RoundScored
 
 **Current Schema:**
 ```json
@@ -206,7 +266,7 @@ applies_to:
 
 ---
 
-### 2.6 RoundEndedInstantly
+### 2.8 RoundEndedInstantly
 
 **Current Schema:**
 ```json
@@ -234,7 +294,7 @@ applies_to:
 
 ---
 
-### 2.7 RoundDrawn
+### 2.9 RoundDrawn
 
 **Current Schema:**
 ```json
@@ -258,7 +318,7 @@ applies_to:
 
 ---
 
-### 2.8 GameSnapshotRestore
+### 2.10 GameSnapshotRestore
 
 **Current Schema:**
 ```json
@@ -295,8 +355,6 @@ applies_to:
 | Event | Reason |
 |-------|--------|
 | GameStarted | 無操作需求，僅初始化 |
-| TurnCompleted | 回合已完成，無操作需求 |
-| DecisionMade | 決策已完成 |
 | TurnError | 錯誤訊息 |
 | GameFinished | 遊戲結束 |
 
@@ -332,6 +390,8 @@ function handleRoundDealt(event: RoundDealtEvent) {
 | SelectionRequired | `action_timeout_seconds` | number | Yes |
 | TurnProgressAfterSelection | `action_timeout_seconds` | number | Yes |
 | DecisionRequired | `action_timeout_seconds` | number | Yes |
+| TurnCompleted | `action_timeout_seconds` | number | Yes |
+| DecisionMade | `action_timeout_seconds` | number | Yes |
 | RoundScored | `display_timeout_seconds` | number | Yes |
 | RoundEndedInstantly | `display_timeout_seconds` | number | Yes |
 | RoundDrawn | `display_timeout_seconds` | number | Yes |

@@ -88,7 +88,7 @@
 
 ### Functional Requirements
 
-- **FR-001**: 系統 MUST 在以下事件中包含 `action_timeout_seconds` 欄位：RoundDealt、SelectionRequired、TurnProgressAfterSelection、DecisionRequired
+- **FR-001**: 系統 MUST 在以下事件中包含 `action_timeout_seconds` 欄位：RoundDealt、SelectionRequired、TurnProgressAfterSelection、DecisionRequired、TurnCompleted、DecisionMade
 - **FR-002**: 系統 MUST 在以下事件中包含 `display_timeout_seconds` 欄位：RoundEndedInstantly、RoundScored、RoundDrawn
 - **FR-003**: 時限欄位 MUST 為正整數，表示剩餘秒數（不含小數）
 - **FR-004**: 前端 MUST 在頂部資訊列（Your Turn / Opponent Turn 區域附近）顯示回合操作倒數
@@ -96,7 +96,7 @@
 - **FR-006**: 前端 MUST 在回合結束面板底部顯示進入下一回合的倒數
 - **FR-007**: 前端 MUST 以整數秒數格式顯示倒數（如「30」或「30秒」）
 - **FR-008**: GameSnapshotRestore 事件 MUST 包含當前狀態的剩餘時限，以支援斷線重連
-- **FR-009**: 以下事件不需要時限欄位：GameStarted、GameFinished、TurnCompleted、DecisionMade、TurnError
+- **FR-009**: 以下事件不需要時限欄位：GameStarted、GameFinished、TurnError
 - **FR-010**: 前端 MUST 在倒數剩餘時間低於 5 秒時，將數字顯示為警示色（如紅色或橘色）
 - **FR-011**: 前端 MUST NOT 允許玩家在回合結束面板顯示期間跳過或提前關閉面板，必須等待倒數結束
 
@@ -159,6 +159,8 @@
 | SelectionRequired           | action_timeout_seconds   | number          | 選擇配對目標的時限             |
 | TurnProgressAfterSelection  | action_timeout_seconds   | number          | 若進入下一狀態需操作，包含新時限 |
 | DecisionRequired            | action_timeout_seconds   | number          | Koi-Koi 決策時限               |
+| TurnCompleted               | action_timeout_seconds   | number          | 下一位玩家的出牌時限           |
+| DecisionMade                | action_timeout_seconds   | number          | 下一位玩家的出牌時限           |
 | RoundEndedInstantly         | display_timeout_seconds  | number          | 面板顯示時間                   |
 | RoundScored                 | display_timeout_seconds  | number          | 面板顯示時間                   |
 | RoundDrawn                  | display_timeout_seconds  | number          | 面板顯示時間                   |
@@ -167,6 +169,4 @@
 不需修改的事件：
 - GameStarted（無操作需求）
 - GameFinished（遊戲結束）
-- TurnCompleted（回合已完成，無操作需求）
-- DecisionMade（決策已完成）
 - TurnError（錯誤訊息）

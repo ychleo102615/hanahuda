@@ -113,6 +113,37 @@ export interface DecisionRequiredEvent {
 }
 ```
 
+#### TurnCompletedEvent
+
+```typescript
+export interface TurnCompletedEvent {
+  readonly event_type: 'TurnCompleted'
+  readonly event_id: string
+  readonly timestamp: string
+  readonly player_id: string
+  readonly hand_card_play: CardPlay
+  readonly draw_card_play: CardPlay
+  readonly deck_remaining: number
+  readonly next_state: NextState
+  readonly action_timeout_seconds: number  // ✅ NEW
+}
+```
+
+#### DecisionMadeEvent
+
+```typescript
+export interface DecisionMadeEvent {
+  readonly event_type: 'DecisionMade'
+  readonly event_id: string
+  readonly timestamp: string
+  readonly player_id: string
+  readonly decision: 'KOI_KOI'
+  readonly koi_multiplier_update: number
+  readonly next_state: NextState
+  readonly action_timeout_seconds: number  // ✅ NEW
+}
+```
+
 ### 2.2 Events with `display_timeout_seconds`
 
 #### RoundScoredEvent
@@ -294,13 +325,19 @@ export interface UIStateStoreActions {
 │  │  + timeout  │  │ Required    │  │ Required    │  ...    │
 │  │             │  │  + timeout  │  │  + timeout  │         │
 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │
-└─────────│────────────────│────────────────│─────────────────┘
+│  ┌─────────────┐  ┌─────────────┐                          │
+│  │ Turn        │  │ Decision    │                          │
+│  │ Completed   │  │ Made        │                          │
+│  │  + timeout  │  │  + timeout  │                          │
+│  └──────┬──────┘  └──────┬──────┘                          │
+└─────────│────────────────│──────────────────────────────────┘
           │                │                │
           ▼                ▼                ▼
 ┌─────────────────────────────────────────────────────────────┐
 │               Event Handler Use Cases                       │
 │  HandleRoundDealtUseCase, HandleSelectionRequiredUseCase,   │
-│  HandleDecisionRequiredUseCase, etc.                        │
+│  HandleDecisionRequiredUseCase, HandleTurnCompletedUseCase, │
+│  HandleDecisionMadeUseCase, etc.                            │
 │  - 解析 action_timeout_seconds / display_timeout_seconds    │
 │  - 直接調用 UIStateStore actions                            │
 └─────────────────────────┬───────────────────────────────────┘
@@ -345,6 +382,8 @@ export interface UIStateStoreActions {
 | SelectionRequired | `action_timeout_seconds` | number | Yes |
 | TurnProgressAfterSelection | `action_timeout_seconds` | number | Yes |
 | DecisionRequired | `action_timeout_seconds` | number | Yes |
+| TurnCompleted | `action_timeout_seconds` | number | Yes |
+| DecisionMade | `action_timeout_seconds` | number | Yes |
 | RoundScored | `display_timeout_seconds` | number | Yes |
 | RoundEndedInstantly | `display_timeout_seconds` | number | Yes |
 | RoundDrawn | `display_timeout_seconds` | number | Yes |
