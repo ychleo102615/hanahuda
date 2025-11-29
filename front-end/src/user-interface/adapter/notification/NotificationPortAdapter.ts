@@ -10,7 +10,8 @@
  */
 
 import type { NotificationPort } from '../../application/ports/output/notification.port'
-import type { YakuScore, PlayerScore } from '../../application/types'
+import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers } from '../../application/types'
+import type { RoundEndReason } from '../../application/types/errors'
 import { useUIStateStore } from '../stores/uiState'
 
 /**
@@ -27,22 +28,46 @@ export function createNotificationPortAdapter(): NotificationPort {
       store.showDecisionModal(currentYaku, currentScore)
     },
 
-    showGameFinishedUI(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void {
-      store.showGameFinishedUI(winnerId, finalScores, isPlayerWinner)
+    showGameFinishedModal(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void {
+      store.showGameFinishedModal(winnerId, finalScores, isPlayerWinner)
     },
 
-    showRoundDrawnUI(currentTotalScores: PlayerScore[]): void {
-      store.showRoundDrawnUI(currentTotalScores)
+    showRoundDrawnModal(currentTotalScores: PlayerScore[]): void {
+      store.showRoundDrawnModal(currentTotalScores)
+    },
+
+    showRoundScoredModal(
+      winnerId: string,
+      yakuList: ReadonlyArray<Yaku>,
+      baseScore: number,
+      finalScore: number,
+      multipliers: ScoreMultipliers,
+      updatedTotalScores: PlayerScore[],
+    ): void {
+      store.showRoundScoredModal(winnerId, yakuList, baseScore, finalScore, multipliers, updatedTotalScores)
+    },
+
+    showRoundEndedInstantlyModal(
+      reason: RoundEndReason,
+      winnerId: string | null,
+      awardedPoints: number,
+      updatedTotalScores: PlayerScore[],
+    ): void {
+      store.showRoundEndedInstantlyModal(reason, winnerId, awardedPoints, updatedTotalScores)
     },
 
     hideModal(): void {
       // 隱藏當前顯示的 Modal（一次只會有一個）
       if (store.decisionModalVisible) {
         store.hideDecisionModal()
-      } else if (store.gameFinishedVisible) {
-        store.hideGameFinishedUI()
-      } else if (store.roundDrawnVisible) {
-        store.hideRoundDrawnUI()
+      } else if (store.gameFinishedModalVisible) {
+        store.hideGameFinishedModal()
+      } else if (store.roundDrawnModalVisible) {
+        store.hideRoundDrawnModal()
+      } else if (store.roundScoredModalVisible) {
+        store.hideRoundScoredModal()
+      } else if (store.roundEndedInstantlyModalVisible) {
+        store.hideRoundEndedInstantlyModal()
       }
     },
 
@@ -72,8 +97,10 @@ export function createNotificationPortAdapter(): NotificationPort {
     isModalVisible(): boolean {
       return (
         store.decisionModalVisible ||
-        store.gameFinishedVisible ||
-        store.roundDrawnVisible
+        store.gameFinishedModalVisible ||
+        store.roundDrawnModalVisible ||
+        store.roundScoredModalVisible ||
+        store.roundEndedInstantlyModalVisible
       )
     },
 

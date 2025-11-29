@@ -20,7 +20,7 @@ export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
     const isPlayerWinner = event.winner_id === currentPlayerId
 
     // 3. 顯示遊戲結束畫面
-    this.notification.showGameFinishedUI(
+    this.notification.showGameFinishedModal(
       event.winner_id,
       [...event.final_scores],
       isPlayerWinner,

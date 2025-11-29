@@ -17,7 +17,7 @@ describe('HandleRoundDrawnUseCase', () => {
     useCase = new HandleRoundDrawnUseCase(mockNotification)
   })
 
-  it('應該呼叫 showRoundDrawnUI 並顯示平局畫面', () => {
+  it('應該呼叫 showRoundDrawnModal 並顯示平局畫面', () => {
     const event: RoundDrawnEvent = {
       event_type: 'RoundDrawn',
       event_id: 'evt-801',
@@ -31,9 +31,9 @@ describe('HandleRoundDrawnUseCase', () => {
 
     useCase.execute(event)
 
-    // 驗證 showRoundDrawnUI 被正確調用
-    expect(mockNotification.showRoundDrawnUI).toHaveBeenCalledTimes(1)
-    expect(mockNotification.showRoundDrawnUI).toHaveBeenCalledWith([
+    // 驗證 showRoundDrawnModal 被正確調用
+    expect(mockNotification.showRoundDrawnModal).toHaveBeenCalledTimes(1)
+    expect(mockNotification.showRoundDrawnModal).toHaveBeenCalledWith([
       { player_id: 'player-1', score: 5 },
       { player_id: 'player-2', score: 3 },
     ])
@@ -54,7 +54,7 @@ describe('HandleRoundDrawnUseCase', () => {
 
     useCase.execute(event)
 
-    expect(mockNotification.showRoundDrawnUI).toHaveBeenCalledWith(
+    expect(mockNotification.showRoundDrawnModal).toHaveBeenCalledWith(
       event.current_total_scores,
     )
     expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5)
@@ -71,7 +71,7 @@ describe('HandleRoundDrawnUseCase', () => {
 
     useCase.execute(event)
 
-    expect(mockNotification.showRoundDrawnUI).toHaveBeenCalledWith([])
+    expect(mockNotification.showRoundDrawnModal).toHaveBeenCalledWith([])
     expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5)
   })
 })

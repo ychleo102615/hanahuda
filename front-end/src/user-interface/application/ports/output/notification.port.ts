@@ -15,7 +15,8 @@
  * - HandleTurnErrorUseCase (顯示錯誤訊息)
  */
 
-import type { YakuScore, PlayerScore } from '../../types'
+import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers } from '../../types'
+import type { RoundEndReason } from '../../types/errors'
 
 /**
  * NotificationPort 介面
@@ -47,7 +48,7 @@ export interface NotificationPort {
   showDecisionModal(currentYaku: YakuScore[], currentScore: number): void
 
   /**
-   * 顯示遊戲結束 UI
+   * 顯示遊戲結束 Modal
    *
    * @description
    * 遊戲結束時，顯示最終結果 Modal。
@@ -58,7 +59,7 @@ export interface NotificationPort {
    *
    * @example
    * ```typescript
-   * notification.showGameFinishedUI(
+   * notification.showGameFinishedModal(
    *   'player-1',
    *   [
    *     { player_id: 'player-1', score: 50 },
@@ -68,10 +69,10 @@ export interface NotificationPort {
    * )
    * ```
    */
-  showGameFinishedUI(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void
+  showGameFinishedModal(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void
 
   /**
-   * 顯示平局 UI
+   * 顯示平局 Modal
    *
    * @description
    * 回合平局時，顯示平局訊息。
@@ -80,13 +81,81 @@ export interface NotificationPort {
    *
    * @example
    * ```typescript
-   * notification.showRoundDrawnUI([
+   * notification.showRoundDrawnModal([
    *   { player_id: 'player-1', score: 25 },
    *   { player_id: 'player-2', score: 25 }
    * ])
    * ```
    */
-  showRoundDrawnUI(currentTotalScores: PlayerScore[]): void
+  showRoundDrawnModal(currentTotalScores: PlayerScore[]): void
+
+  /**
+   * 顯示回合計分 Modal
+   *
+   * @description
+   * 回合結束計分時，顯示勝者、役種列表、分數計算和總分。
+   *
+   * @param winnerId - 勝者玩家 ID
+   * @param yakuList - 役種列表
+   * @param baseScore - 基礎分數
+   * @param finalScore - 最終分數
+   * @param multipliers - 分數倍率
+   * @param updatedTotalScores - 更新後的總分列表
+   *
+   * @example
+   * ```typescript
+   * notification.showRoundScoredModal(
+   *   'player-1',
+   *   [{ yaku_type: 'TANE', base_points: 1, contributing_cards: ['0301', '0401'] }],
+   *   1,
+   *   2,
+   *   { player_multipliers: { 'player-1': 2, 'player-2': 1 } },
+   *   [
+   *     { player_id: 'player-1', score: 2 },
+   *     { player_id: 'player-2', score: 0 }
+   *   ]
+   * )
+   * ```
+   */
+  showRoundScoredModal(
+    winnerId: string,
+    yakuList: ReadonlyArray<Yaku>,
+    baseScore: number,
+    finalScore: number,
+    multipliers: ScoreMultipliers,
+    updatedTotalScores: PlayerScore[]
+  ): void
+
+  /**
+   * 顯示局即時結束 Modal
+   *
+   * @description
+   * 回合因特殊原因立即結束時（Teshi、場牌流局、無役種），顯示結束原因和分數。
+   *
+   * @param reason - 結束原因（TESHI、FIELD_KUTTSUKI、NO_YAKU）
+   * @param winnerId - 勝者玩家 ID（可能為 null）
+   * @param awardedPoints - 獲得的分數
+   * @param updatedTotalScores - 更新後的總分列表
+   *
+   * @example
+   * ```typescript
+   * notification.showRoundEndedInstantlyModal(
+   *   'TESHI',
+   *   'player-1',
+   *   6,
+   *   [
+   *     { player_id: 'player-1', score: 6 },
+   *     { player_id: 'player-2', score: 0 }
+   *   ]
+   * )
+   * ```
+   */
+  showRoundEndedInstantlyModal(
+    reason: RoundEndReason,
+    winnerId: string | null,
+    awardedPoints: number,
+    updatedTotalScores: PlayerScore[]
+  ): void
 
   /**
    * 隱藏當前 Modal

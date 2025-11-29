@@ -6,20 +6,20 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { HandleGameFinishedUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleGameFinishedUseCase'
 import type { GameFinishedEvent } from '@/user-interface/application/types'
 import {
-  createMockTriggerUIEffectPort,
+  createMockNotificationPort,
   createMockUIStatePort,
 } from '../../test-helpers/mock-factories'
-import type { TriggerUIEffectPort, UIStatePort } from '@/user-interface/application/ports'
+import type { NotificationPort, UIStatePort } from '@/user-interface/application/ports'
 
 describe('HandleGameFinishedUseCase', () => {
-  let mockTriggerUIEffect: TriggerUIEffectPort
+  let mockNotification: NotificationPort
   let mockUIState: UIStatePort
   let useCase: HandleGameFinishedUseCase
 
   beforeEach(() => {
-    mockTriggerUIEffect = createMockTriggerUIEffectPort()
+    mockNotification = createMockNotificationPort()
     mockUIState = createMockUIStatePort()
-    useCase = new HandleGameFinishedUseCase(mockTriggerUIEffect, mockUIState)
+    useCase = new HandleGameFinishedUseCase(mockNotification, mockUIState)
   })
 
   it('當玩家獲勝時，isPlayerWinner 應為 true', () => {
@@ -42,9 +42,9 @@ describe('HandleGameFinishedUseCase', () => {
     // 驗證 getCurrentPlayerId 被調用
     expect(mockUIState.getLocalPlayerId).toHaveBeenCalledTimes(1)
 
-    // 驗證 showGameFinishedUI 被正確調用，isPlayerWinner 為 true
-    expect(mockTriggerUIEffect.showGameFinishedUI).toHaveBeenCalledTimes(1)
-    expect(mockTriggerUIEffect.showGameFinishedUI).toHaveBeenCalledWith(
+    // 驗證 showGameFinishedModal 被正確調用，isPlayerWinner 為 true
+    expect(mockNotification.showGameFinishedModal).toHaveBeenCalledTimes(1)
+    expect(mockNotification.showGameFinishedModal).toHaveBeenCalledWith(
       'player-1',
       [
         { player_id: 'player-1', score: 50 },
@@ -74,8 +74,8 @@ describe('HandleGameFinishedUseCase', () => {
     // 驗證 getCurrentPlayerId 被調用
     expect(mockUIState.getLocalPlayerId).toHaveBeenCalledTimes(1)
 
-    // 驗證 showGameFinishedUI 被正確調用，isPlayerWinner 為 false
-    expect(mockTriggerUIEffect.showGameFinishedUI).toHaveBeenCalledWith(
+    // 驗證 showGameFinishedModal 被正確調用，isPlayerWinner 為 false
+    expect(mockNotification.showGameFinishedModal).toHaveBeenCalledWith(
       'player-2',
       event.final_scores,
       false, // isPlayerWinner = false
@@ -100,7 +100,7 @@ describe('HandleGameFinishedUseCase', () => {
     useCase.execute(event)
 
     // player-2 獲勝且當前玩家是 player-2，所以 isPlayerWinner 應為 true
-    expect(mockTriggerUIEffect.showGameFinishedUI).toHaveBeenCalledWith(
+    expect(mockNotification.showGameFinishedModal).toHaveBeenCalledWith(
       'player-2',
       event.final_scores,
       true,

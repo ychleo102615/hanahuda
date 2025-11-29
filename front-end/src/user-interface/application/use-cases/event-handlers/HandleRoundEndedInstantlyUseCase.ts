@@ -18,10 +18,17 @@ export class HandleRoundEndedInstantlyUseCase implements HandleRoundEndedInstant
     const player2Score = event.updated_total_scores.find((s) => s.player_id === 'player-2')?.score || 0
     this.updateUIState.updateScores(player1Score, player2Score)
 
-    // 2. 顯示特殊結束訊息（通過 animation 或 message）
-    // 暫時省略，視 UI 需求而定
+    // 2. 顯示特殊結束面板
+    this.notification.showRoundEndedInstantlyModal(
+      event.reason,
+      event.winner_id,
+      event.awarded_points,
+      [...event.updated_total_scores]
+    )
 
-    // 3. 啟動顯示倒數（用於回合結束面板自動關閉）
-    this.notification.startDisplayCountdown(event.display_timeout_seconds)
+    // 3. 啟動顯示倒數（傳入回調，倒數結束時自動關閉面板）
+    this.notification.startDisplayCountdown(event.display_timeout_seconds, () => {
+      this.notification.hideModal()
+    })
   }
 }

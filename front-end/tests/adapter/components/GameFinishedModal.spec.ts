@@ -48,7 +48,7 @@ describe('GameFinishedModal', () => {
 
   it('should be visible when gameFinishedVisible is true with data', () => {
     const uiStore = useUIStateStore()
-    uiStore.showGameFinishedUI(
+    uiStore.showGameFinishedModal(
       'player-1',
       [
         { player_id: 'player-1', score: 10 },
@@ -64,7 +64,7 @@ describe('GameFinishedModal', () => {
 
   it('should display victory message when player wins', () => {
     const uiStore = useUIStateStore()
-    uiStore.showGameFinishedUI(
+    uiStore.showGameFinishedModal(
       'player-1',
       [
         { player_id: 'player-1', score: 10 },
@@ -85,7 +85,7 @@ describe('GameFinishedModal', () => {
     gameStore.localPlayerId = 'player-1'
     gameStore.opponentPlayerId = 'player-2'
 
-    uiStore.showGameFinishedUI(
+    uiStore.showGameFinishedModal(
       'player-2',
       [
         { player_id: 'player-1', score: 5 },
@@ -106,7 +106,7 @@ describe('GameFinishedModal', () => {
     gameStore.localPlayerId = 'player-1'
     gameStore.opponentPlayerId = 'player-2'
 
-    uiStore.showGameFinishedUI(
+    uiStore.showGameFinishedModal(
       'player-1',
       [
         { player_id: 'player-1', score: 15 },
@@ -126,7 +126,7 @@ describe('GameFinishedModal', () => {
 
   it('should close modal when close button is clicked', async () => {
     const uiStore = useUIStateStore()
-    uiStore.showGameFinishedUI(
+    uiStore.showGameFinishedModal(
       'player-1',
       [{ player_id: 'player-1', score: 10 }],
       true
@@ -143,7 +143,7 @@ describe('GameFinishedModal', () => {
   it('should navigate to home when new game button is clicked', async () => {
     const uiStore = useUIStateStore()
 
-    uiStore.showGameFinishedUI(
+    uiStore.showGameFinishedModal(
       'player-1',
       [{ player_id: 'player-1', score: 10 }],
       true
@@ -162,7 +162,7 @@ describe('GameFinishedModal', () => {
 
   it('should have proper accessibility attributes', () => {
     const uiStore = useUIStateStore()
-    uiStore.showGameFinishedUI(
+    uiStore.showGameFinishedModal(
       'player-1',
       [{ player_id: 'player-1', score: 10 }],
       true
@@ -177,7 +177,7 @@ describe('GameFinishedModal', () => {
 
   it('should display winner crown for winning player', () => {
     const uiStore = useUIStateStore()
-    uiStore.showGameFinishedUI(
+    uiStore.showGameFinishedModal(
       'player-1',
       [
         { player_id: 'player-1', score: 10 },
@@ -193,7 +193,7 @@ describe('GameFinishedModal', () => {
 
   it('should close when clicking backdrop', async () => {
     const uiStore = useUIStateStore()
-    uiStore.showGameFinishedUI(
+    uiStore.showGameFinishedModal(
       'player-1',
       [{ player_id: 'player-1', score: 10 }],
       true

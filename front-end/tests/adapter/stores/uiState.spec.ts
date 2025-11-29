@@ -25,9 +25,9 @@ describe('UIStateStore', () => {
 
       expect(store.decisionModalVisible).toBe(false)
       expect(store.decisionModalData).toBeNull()
-      expect(store.gameFinishedVisible).toBe(false)
+      expect(store.gameFinishedModalVisible).toBe(false)
       expect(store.gameFinishedData).toBeNull()
-      expect(store.roundDrawnVisible).toBe(false)
+      expect(store.roundDrawnModalVisible).toBe(false)
       expect(store.roundDrawnScores).toEqual([])
       expect(store.errorMessage).toBeNull()
       expect(store.infoMessage).toBeNull()
@@ -131,7 +131,7 @@ describe('UIStateStore', () => {
     })
   })
 
-  describe('showGameFinishedUI / hideGameFinishedUI', () => {
+  describe('showGameFinishedModal / hideGameFinishedUI', () => {
     it('應該正確顯示遊戲結束 UI', () => {
       const store = useUIStateStore()
 
@@ -140,9 +140,9 @@ describe('UIStateStore', () => {
         { player_id: 'player-2', score: 30 },
       ]
 
-      store.showGameFinishedUI('player-1', finalScores, true)
+      store.showGameFinishedModal('player-1', finalScores, true)
 
-      expect(store.gameFinishedVisible).toBe(true)
+      expect(store.gameFinishedModalVisible).toBe(true)
       expect(store.gameFinishedData).toEqual({
         winnerId: 'player-1',
         finalScores,
@@ -153,15 +153,15 @@ describe('UIStateStore', () => {
     it('應該正確隱藏遊戲結束 UI', () => {
       const store = useUIStateStore()
 
-      store.showGameFinishedUI('player-1', [{ player_id: 'player-1', score: 50 }], true)
+      store.showGameFinishedModal('player-1', [{ player_id: 'player-1', score: 50 }], true)
       store.hideGameFinishedUI()
 
-      expect(store.gameFinishedVisible).toBe(false)
+      expect(store.gameFinishedModalVisible).toBe(false)
       expect(store.gameFinishedData).toBeNull()
     })
   })
 
-  describe('showRoundDrawnUI / hideRoundDrawnUI', () => {
+  describe('showRoundDrawnModal / hideRoundDrawnUI', () => {
     it('應該正確顯示平局 UI', () => {
       const store = useUIStateStore()
 
@@ -170,22 +170,22 @@ describe('UIStateStore', () => {
         { player_id: 'player-2', score: 20 },
       ]
 
-      store.showRoundDrawnUI(scores)
+      store.showRoundDrawnModal(scores)
 
-      expect(store.roundDrawnVisible).toBe(true)
+      expect(store.roundDrawnModalVisible).toBe(true)
       expect(store.roundDrawnScores).toEqual(scores)
     })
 
     it('應該正確隱藏平局 UI', () => {
       const store = useUIStateStore()
 
-      store.showRoundDrawnUI([
+      store.showRoundDrawnModal([
         { player_id: 'player-1', score: 20 },
         { player_id: 'player-2', score: 20 },
       ])
       store.hideRoundDrawnUI()
 
-      expect(store.roundDrawnVisible).toBe(false)
+      expect(store.roundDrawnModalVisible).toBe(false)
       expect(store.roundDrawnScores).toEqual([])
     })
   })
@@ -223,9 +223,9 @@ describe('UIStateStore', () => {
       // 驗證所有狀態已重置
       expect(store.decisionModalVisible).toBe(false)
       expect(store.decisionModalData).toBeNull()
-      expect(store.gameFinishedVisible).toBe(false)
+      expect(store.gameFinishedModalVisible).toBe(false)
       expect(store.gameFinishedData).toBeNull()
-      expect(store.roundDrawnVisible).toBe(false)
+      expect(store.roundDrawnModalVisible).toBe(false)
       expect(store.roundDrawnScores).toEqual([])
       expect(store.errorMessage).toBeNull()
       expect(store.infoMessage).toBeNull()
@@ -448,8 +448,8 @@ describe('UIStateStore', () => {
       expect(adapter).toHaveProperty('showErrorMessage')
       expect(adapter).toHaveProperty('showReconnectionMessage')
       expect(adapter).toHaveProperty('triggerAnimation')
-      expect(adapter).toHaveProperty('showGameFinishedUI')
-      expect(adapter).toHaveProperty('showRoundDrawnUI')
+      expect(adapter).toHaveProperty('showGameFinishedModal')
+      expect(adapter).toHaveProperty('showRoundDrawnModal')
     })
 
     it('Adapter 的方法應該正確調用 Store', () => {

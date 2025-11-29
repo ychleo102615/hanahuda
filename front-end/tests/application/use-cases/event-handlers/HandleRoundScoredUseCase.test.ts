@@ -7,25 +7,25 @@ import { HandleRoundScoredUseCase } from '@/user-interface/application/use-cases
 import type { RoundScoredEvent } from '@/user-interface/application/types'
 import {
   createMockUIStatePort,
-  createMockTriggerUIEffectPort,
+  createMockNotificationPort,
   createMockDomainFacade,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, TriggerUIEffectPort, DomainFacade } from '@/user-interface/application'
+import type { UIStatePort, NotificationPort, DomainFacade } from '@/user-interface/application'
 
 describe('HandleRoundScoredUseCase', () => {
   let mockUIState: UIStatePort
-  let mockTriggerUIEffect: TriggerUIEffectPort
+  let mockNotification: NotificationPort
   let mockDomainFacade: DomainFacade
   let useCase: HandleRoundScoredUseCase
 
   beforeEach(() => {
     mockUIState = createMockUIStatePort()
-    mockTriggerUIEffect = createMockTriggerUIEffectPort()
+    mockNotification = createMockNotificationPort()
     mockDomainFacade = createMockDomainFacade()
-    useCase = new HandleRoundScoredUseCase(mockUIState, mockTriggerUIEffect, mockDomainFacade)
+    useCase = new HandleRoundScoredUseCase(mockUIState, mockDomainFacade, mockNotification)
   })
 
-  it('應該觸發分數更新動畫', () => {
+  it('應該顯示回合計分面板', () => {
     const event: RoundScoredEvent = {
       event_type: 'RoundScored',
       event_id: 'evt-701',
@@ -39,17 +39,22 @@ describe('HandleRoundScoredUseCase', () => {
         { player_id: 'player-1', score: 2 },
         { player_id: 'player-2', score: 0 },
       ],
+      display_timeout_seconds: 5,
     }
 
     useCase.execute(event)
 
-    expect(mockTriggerUIEffect.triggerAnimation).toHaveBeenCalledWith(
-      'SCORE_UPDATE',
-      expect.objectContaining({ playerId: 'player-1', newScore: 2 })
+    expect(mockNotification.showRoundScoredModal).toHaveBeenCalledWith(
+      'player-1',
+      event.yaku_list,
+      1,
+      2,
+      event.multipliers,
+      event.updated_total_scores
     )
   })
 
-  it('應該更新分數', () => {
+  it('應該更新分數並啟動倒數', () => {
     const event: RoundScoredEvent = {
       event_type: 'RoundScored',
       event_id: 'evt-702',
@@ -63,10 +68,15 @@ describe('HandleRoundScoredUseCase', () => {
         { player_id: 'player-1', score: 2 },
         { player_id: 'player-2', score: 0 },
       ],
+      display_timeout_seconds: 5,
     }
 
     useCase.execute(event)
 
     expect(mockUIState.updateScores).toHaveBeenCalledWith(2, 0)
+    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(
+      5,
+      expect.any(Function)
+    )
   })
 })

@@ -40,7 +40,13 @@ describe('HandleRoundEndedInstantlyUseCase', () => {
     useCase.execute(event)
 
     expect(mockGameState.updateScores).toHaveBeenCalledWith(6, 0)
-    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5)
+    expect(mockNotification.showRoundEndedInstantlyModal).toHaveBeenCalledWith(
+      'TESHI',
+      'player-1',
+      6,
+      event.updated_total_scores
+    )
+    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5, expect.any(Function))
   })
 
   it('應該處理 FIELD_KUTTSUKI 情況', () => {
@@ -59,6 +65,12 @@ describe('HandleRoundEndedInstantlyUseCase', () => {
     }
 
     expect(() => useCase.execute(event)).not.toThrow()
-    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5)
+    expect(mockNotification.showRoundEndedInstantlyModal).toHaveBeenCalledWith(
+      'FIELD_KUTTSUKI',
+      null,
+      0,
+      event.updated_total_scores
+    )
+    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5, expect.any(Function))
   })
 })

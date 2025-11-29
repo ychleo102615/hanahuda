@@ -301,8 +301,10 @@ export function createMockAnimationPort(): AnimationPort {
 export function createMockNotificationPort(): NotificationPort {
   return {
     showDecisionModal: vi.fn(),
-    showGameFinishedUI: vi.fn(),
-    showRoundDrawnUI: vi.fn(),
+    showGameFinishedModal: vi.fn(),
+    showRoundDrawnModal: vi.fn(),
+    showRoundScoredModal: vi.fn(),
+    showRoundEndedInstantlyModal: vi.fn(),
     hideModal: vi.fn(),
     showErrorMessage: vi.fn(),
     showSuccessMessage: vi.fn(),

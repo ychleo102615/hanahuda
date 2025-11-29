@@ -11,7 +11,7 @@ export class HandleRoundDrawnUseCase implements HandleRoundDrawnPort {
 
   execute(event: RoundDrawnEvent): void {
     // 顯示平局訊息
-    this.notification.showRoundDrawnUI([...event.current_total_scores])
+    this.notification.showRoundDrawnModal([...event.current_total_scores])
 
     // 啟動顯示倒數（用於回合結束面板自動關閉）
     // 倒數結束時自動關閉面板
