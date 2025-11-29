@@ -261,7 +261,8 @@
   field: string[],
   hands: PlayerHand[],              // 自己手牌傳 cards 陣列，對手僅傳 count
   deck_remaining: number,
-  next_state: NextState             // active_player_id 指明第一個行動玩家
+  next_state: NextState,            // active_player_id 指明第一個行動玩家
+  action_timeout_seconds: number    // 首位玩家的出牌時限
 }
 ```
 
@@ -272,7 +273,8 @@ Teshi 或場牌流局立即結束
   reason: RoundEndReason,              // TESHI | FIELD_KUTTSUKI
   winner_id?: string,                  // Teshi 時才有勝者
   points_earned?: number,              // 勝者獲得的分數
-  cumulative_scores: PlayerScore[]
+  cumulative_scores: PlayerScore[],
+  display_timeout_seconds: number      // 結果面板顯示時間
 }
 ```
 
@@ -285,7 +287,8 @@ Teshi 或場牌流局立即結束
   base_total: number,
   multipliers: ScoreMultipliers,
   final_points: number,                // 勝者實際獲得分數（base_total × 倍數）
-  cumulative_scores: PlayerScore[]
+  cumulative_scores: PlayerScore[],
+  display_timeout_seconds: number      // 結果面板顯示時間
 }
 ```
 
@@ -294,7 +297,8 @@ Teshi 或場牌流局立即結束
 ```json
 {
   reason: RoundEndReason,              // NO_YAKU
-  cumulative_scores: PlayerScore[]     // 分數無變化，僅返回當前分數
+  cumulative_scores: PlayerScore[]     // 分數無變化，僅返回當前分數,
+  display_timeout_seconds: number      // 結果面板顯示時間
 }
 ```
 
@@ -322,7 +326,8 @@ Teshi 或場牌流局立即結束
   hand_card_play: CardPlay,            // 打手牌操作（必定存在）
   draw_card_play: CardPlay,            // 翻牌操作（必定存在）
   deck_remaining: number,
-  next_state: NextState
+  next_state: NextState,
+  action_timeout_seconds: number       // 下一位玩家的出牌時限
 }
 ```
 
@@ -334,7 +339,8 @@ Teshi 或場牌流局立即結束
   hand_card_play: CardPlay,            // 已完成的打手牌操作
   drawn_card: string,                  // 翻出的卡片 ID
   possible_targets: string[],          // 可選擇的配對目標
-  deck_remaining: number
+  deck_remaining: number,
+  action_timeout_seconds: number       // 選擇配對目標的時限
 }
 ```
 
@@ -347,7 +353,8 @@ Teshi 或場牌流局立即結束
   draw_card_play: CardPlay,            // 選擇後的翻牌操作
   yaku_update: YakuUpdate | null,      // 有新役型時才有值
   deck_remaining: number,
-  next_state: NextState
+  next_state: NextState,
+  action_timeout_seconds: number       // 若進入下一狀態需操作,包含新時限
 }
 ```
 
@@ -363,7 +370,8 @@ Teshi 或場牌流局立即結束
   draw_card_play: CardPlay | null,     // 本回合翻牌操作（可能為 null）
   yaku_update: YakuUpdate,
   current_multipliers: ScoreMultipliers,
-  deck_remaining: number
+  deck_remaining: number,
+  action_timeout_seconds: number       // Koi-Koi 決策時限
 }
 ```
 
@@ -374,7 +382,8 @@ Teshi 或場牌流局立即結束
   player_id: string,
   decision: "KOI_KOI",
   koi_multiplier_update: number,       // 玩家更新後的 Koi-Koi 倍數
-  next_state: NextState                // 繼續遊戲，返回 AWAITING_HAND_PLAY
+  next_state: NextState                // 繼續遊戲，返回 AWAITING_HAND_PLAY,
+  action_timeout_seconds: number       // 下一位玩家的出牌時限
 }
 ```
 
@@ -398,7 +407,8 @@ Teshi 或場牌流局立即結束
   game: GameState,
   round: RoundState,
   cards: CardsState,
-  flow_state: CurrentFlowState       // context.selection 在 AWAITING_SELECTION 時存在
+  flow_state: CurrentFlowState,      // context.selection 在 AWAITING_SELECTION 時存在
+  action_timeout_seconds: number     // 重連時的剩餘時限
 }
 ```
 
@@ -422,7 +432,8 @@ S→C: TurnCompleted {
          captured_cards: []
        },
        deck_remaining: 23,
-       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
+       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"},
+       action_timeout_seconds: 30
      }
 ```
 
@@ -438,7 +449,8 @@ S→C: SelectionRequired {
        },
        drawn_card: "0841",
        possible_targets: ["0842", "0843"],
-       deck_remaining: 23
+       deck_remaining: 23,
+       action_timeout_seconds: 30
      }
 C→S: TurnSelectTarget {source: "0841", target: "0842"}
 S→C: TurnProgressAfterSelection {
@@ -455,7 +467,8 @@ S→C: TurnProgressAfterSelection {
        },
        yaku_update: null,
        deck_remaining: 23,
-       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
+       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"},
+       action_timeout_seconds: 30
      }
 ```
 
@@ -479,14 +492,16 @@ S→C: DecisionRequired {
          all_active_yaku: [{yaku_type: "AKA_TAN", base_points: 6}]
        },
        current_multipliers: {player_multipliers: {"p1": 1, "p2": 1}},
-       deck_remaining: 23
+       deck_remaining: 23,
+       action_timeout_seconds: 30
      }
 C→S: RoundMakeDecision {decision: "KOI_KOI"}
 S→C: DecisionMade {
        player_id: "p1",
        decision: "KOI_KOI",
        updated_multipliers: {player_multipliers: {"p1": 2, "p2": 1}},
-       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
+       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"},
+       action_timeout_seconds: 30
      }
 ```
 
@@ -513,7 +528,8 @@ S→C: DecisionRequired {
          ]
        },
        current_multipliers: {player_multipliers: {"p1": 2, "p2": 1}},
-       deck_remaining: 22
+       deck_remaining: 22,
+       action_timeout_seconds: 30
      }
 C→S: RoundMakeDecision {decision: "END_ROUND"}
 S→C: RoundScored {
@@ -525,7 +541,8 @@ S→C: RoundScored {
        base_score: 12,
        final_score: 24,
        multipliers: {player_multipliers: {"p1": 2, "p2": 1}},
-       updated_total_scores: [{player_id: "p1", score: 24}, {player_id: "p2", score: 0}]
+       updated_total_scores: [{player_id: "p1", score: 24}, {player_id: "p2", score: 0}],
+       display_timeout_seconds: 5
      }
      // END_ROUND 時直接發送 RoundScored，省略 DecisionMade
 ```
