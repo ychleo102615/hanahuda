@@ -17,7 +17,8 @@
       "Bash(else echo \"NO_CHECKLISTS\")",
       "Bash(fi)",
       "Bash(mv:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
