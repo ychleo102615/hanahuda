@@ -40,6 +40,8 @@
 - [X] T005 [P] 更新 HandleSelectionRequiredUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase.ts
 - [X] T006 [P] 更新 HandleTurnProgressAfterSelectionUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase.ts
 - [X] T007 [P] 更新 HandleDecisionRequiredUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleDecisionRequiredUseCase.ts
+- [X] T007a [P] 更新 HandleTurnCompletedUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleTurnCompletedUseCase.ts
+- [X] T007b [P] 更新 HandleDecisionMadeUseCase 處理 action_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleDecisionMadeUseCase.ts
 - [X] T008 [P] 更新 HandleRoundScoredUseCase 處理 display_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundScoredUseCase.ts
 - [X] T009 [P] 更新 HandleRoundEndedInstantlyUseCase 處理 display_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase.ts
 - [X] T010 [P] 更新 HandleRoundDrawnUseCase 處理 display_timeout_seconds 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleRoundDrawnUseCase.ts
@@ -175,7 +177,7 @@
 ### Parallel Opportunities
 
 - Phase 1: T003 可與 T001-T002 並行
-- Phase 2: T005-T011 可並行 (不同 Use Case 檔案)
+- Phase 2: T005-T011 (包含 T007a, T007b) 可並行 (不同 Use Case 檔案)
 - User Story 1 Tests: T012-T014 可並行
 - User Story 3 Tests: T022-T023 可並行
 - Phase 7: T032-T035 可並行
@@ -190,6 +192,8 @@
 Task: "更新 HandleSelectionRequiredUseCase"
 Task: "更新 HandleTurnProgressAfterSelectionUseCase"
 Task: "更新 HandleDecisionRequiredUseCase"
+Task: "更新 HandleTurnCompletedUseCase"
+Task: "更新 HandleDecisionMadeUseCase"
 Task: "更新 HandleRoundScoredUseCase"
 Task: "更新 HandleRoundEndedInstantlyUseCase"
 Task: "更新 HandleRoundDrawnUseCase"
@@ -246,15 +250,15 @@ With multiple developers:
 
 ## Task Count Summary
 
-- **Total Tasks**: 37
+- **Total Tasks**: 39
 - **Setup (Phase 1)**: 3 tasks
-- **Foundational (Phase 2)**: 8 tasks
+- **Foundational (Phase 2)**: 10 tasks (新增 T007a, T007b)
 - **User Story 1 (P1)**: 6 tasks (3 tests + 3 implementation)
 - **User Story 2 (P1)**: 4 tasks (1 test + 3 implementation)
 - **User Story 3 (P2)**: 7 tasks (2 tests + 5 implementation)
 - **User Story 4 (P3)**: 3 tasks (1 test + 2 implementation)
 - **Polish (Phase 7)**: 6 tasks
 
-**Parallel Opportunities Identified**: 17 tasks marked [P]
+**Parallel Opportunities Identified**: 19 tasks marked [P] (新增 T007a, T007b)
 
-**MVP Scope** (建議)：Phase 1 + Phase 2 + User Story 1 + User Story 2 (21 tasks)
+**MVP Scope** (建議)：Phase 1 + Phase 2 + User Story 1 + User Story 2 (23 tasks)

@@ -8,17 +8,21 @@
  * 1. 更新玩家 Koi-Koi 倍率
  * 2. 顯示「繼續遊戲」訊息
  * 3. 更新 FlowStage（返回 AWAITING_HAND_PLAY）
+ * 4. 啟動操作倒數
  *
  * @see specs/003-ui-application-layer/contracts/events.md#DecisionMadeEvent
  * @see specs/003-ui-application-layer/data-model.md#HandleDecisionMadeUseCase
  */
 
 import type { DecisionMadeEvent } from '../../types/events'
-import type { UIStatePort } from '../../ports/output'
+import type { UIStatePort, NotificationPort } from '../../ports/output'
 import type { HandleDecisionMadePort } from '../../ports/input'
 
 export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
-  constructor(private readonly updateUIState: UIStatePort) {}
+  constructor(
+    private readonly updateUIState: UIStatePort,
+    private readonly notification: NotificationPort
+  ) {}
 
   execute(event: DecisionMadeEvent): void {
     // 1. 更新玩家 Koi-Koi 倍率
@@ -32,5 +36,8 @@ export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
 
     // 3. 更新 FlowStage（返回 AWAITING_HAND_PLAY）
     this.updateUIState.setFlowStage(event.next_state.state_type)
+
+    // 4. 啟動操作倒數
+    this.notification.startActionCountdown(event.action_timeout_seconds)
   }
 }

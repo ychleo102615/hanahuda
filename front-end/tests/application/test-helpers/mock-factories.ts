@@ -46,6 +46,7 @@ import type {
   TriggerUIEffectPort,
   GameStatePort,
   AnimationPort,
+  NotificationPort,
 } from '@/user-interface/application/ports'
 import type { DomainFacade } from '@/user-interface/application/types'
 
@@ -270,5 +271,46 @@ export function createMockAnimationPort(): AnimationPort {
     isAnimating: vi.fn().mockReturnValue(false),
     hideCards: vi.fn(),
     clearHiddenCards: vi.fn(),
+  }
+}
+
+/**
+ * 建立 Mock NotificationPort
+ *
+ * @description
+ * 所有方法預設為空操作（no-op）。
+ * `isModalVisible` 預設返回 false。
+ * 可以在測試中驗證通知觸發。
+ *
+ * @example
+ * ```typescript
+ * const mockNotification = createMockNotificationPort()
+ *
+ * // 調用方法
+ * mockNotification.showDecisionModal([{ yaku_type: 'INOU_SHIKO', base_points: 5 }], 5)
+ * mockNotification.startActionCountdown(30)
+ *
+ * // 驗證方法調用
+ * expect(mockNotification.showDecisionModal).toHaveBeenCalled()
+ * expect(mockNotification.startActionCountdown).toHaveBeenCalledWith(30)
+ *
+ * // 覆寫 isModalVisible
+ * mockNotification.isModalVisible = vi.fn().mockReturnValue(true)
+ * ```
+ */
+export function createMockNotificationPort(): NotificationPort {
+  return {
+    showDecisionModal: vi.fn(),
+    showGameFinishedUI: vi.fn(),
+    showRoundDrawnUI: vi.fn(),
+    hideModal: vi.fn(),
+    showErrorMessage: vi.fn(),
+    showSuccessMessage: vi.fn(),
+    showReconnectionMessage: vi.fn(),
+    isModalVisible: vi.fn().mockReturnValue(false),
+    startActionCountdown: vi.fn(),
+    stopActionCountdown: vi.fn(),
+    startDisplayCountdown: vi.fn(),
+    stopDisplayCountdown: vi.fn(),
   }
 }

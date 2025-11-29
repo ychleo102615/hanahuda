@@ -4,13 +4,14 @@
  * @description
  * 處理 TurnCompleted 事件，觸發卡片配對動畫並更新遊戲狀態。
  *
- * 業務流程（6 個主要階段）：
+ * 業務流程（7 個主要階段）：
  * 1. 處理手牌操作（動畫）
  * 2. 更新手牌/場牌狀態（移除舊 DOM，避免 cardId 重複）
  * 3. 更新獲得區並播放淡入動畫
  * 4. 處理翻牌操作（同上流程）
  * 5. 更新遊戲流程狀態
- * 6. 清理動畫層
+ * 6. 啟動操作倒數
+ * 7. 清理動畫層
  *
  * @see specs/003-ui-application-layer/contracts/events.md#TurnCompletedEvent
  * @see specs/005-ui-animation-refactor/plan.md#AnimationPort
@@ -18,7 +19,7 @@
 
 import type { TurnCompletedEvent } from '../../types/events'
 import type { CardPlay } from '../../types/shared'
-import type { GameStatePort, AnimationPort } from '../../ports/output'
+import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { HandleTurnCompletedPort } from '../../ports/input'
 import type { DomainFacade } from '../../types/domain-facade'
 
@@ -42,6 +43,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
   constructor(
     private readonly gameState: GameStatePort,
     private readonly animation: AnimationPort,
+    private readonly notification: NotificationPort,
     private readonly domainFacade: DomainFacade
   ) {}
 
@@ -62,7 +64,8 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
    * 2. 處理翻牌操作（同上流程）
    * 3. 更新場牌（處理無配對的牌）
    * 4. 更新遊戲流程
-   * 5. 清理動畫層
+   * 5. 啟動操作倒數
+   * 6. 清理動畫層
    */
   private async executeAsync(event: TurnCompletedEvent): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
@@ -181,7 +184,10 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
     this.gameState.setFlowStage(event.next_state.state_type)
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // === 階段 4：清理動畫層 ===
+    // === 階段 4：啟動操作倒數 ===
+    this.notification.startActionCountdown(event.action_timeout_seconds)
+
+    // === 階段 5：清理動畫層 ===
     this.animation.clearHiddenCards()
   }
 

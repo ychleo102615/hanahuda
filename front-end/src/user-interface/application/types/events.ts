@@ -84,6 +84,7 @@ export interface TurnCompletedEvent {
   readonly draw_card_play: CardPlay
   readonly deck_remaining: number
   readonly next_state: NextState
+  readonly action_timeout_seconds: number
 }
 
 /**
@@ -166,6 +167,7 @@ export interface DecisionMadeEvent {
   readonly decision: 'KOI_KOI' | 'END_ROUND'
   readonly updated_multipliers: ScoreMultipliers
   readonly next_state: NextState
+  readonly action_timeout_seconds: number
 }
 
 /**

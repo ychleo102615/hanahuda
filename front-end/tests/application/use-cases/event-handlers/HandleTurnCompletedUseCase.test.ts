@@ -19,22 +19,25 @@ import type { TurnCompletedEvent } from '@/user-interface/application/types'
 import {
   createMockGameStatePort,
   createMockAnimationPort,
+  createMockNotificationPort,
   createMockDomainFacade,
 } from '../../test-helpers/mock-factories'
-import type { GameStatePort, AnimationPort } from '@/user-interface/application/ports'
+import type { GameStatePort, AnimationPort, NotificationPort } from '@/user-interface/application/ports'
 import type { DomainFacade } from '@/user-interface/application/types'
 
 describe('HandleTurnCompletedUseCase', () => {
   let mockGameState: GameStatePort
   let mockAnimation: AnimationPort
+  let mockNotification: NotificationPort
   let mockDomainFacade: DomainFacade
   let useCase: HandleTurnCompletedUseCase
 
   beforeEach(() => {
     mockGameState = createMockGameStatePort()
     mockAnimation = createMockAnimationPort()
+    mockNotification = createMockNotificationPort()
     mockDomainFacade = createMockDomainFacade()
-    useCase = new HandleTurnCompletedUseCase(mockGameState, mockAnimation, mockDomainFacade)
+    useCase = new HandleTurnCompletedUseCase(mockGameState, mockAnimation, mockNotification, mockDomainFacade)
   })
 
   // Helper: 等待異步操作完成（增加等待時間以確保所有 Promise 完成，包括 TransitionGroup 動畫延遲）
@@ -62,6 +65,7 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act
@@ -96,6 +100,7 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act
@@ -125,6 +130,7 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act & Assert: 不應拋出錯誤
@@ -149,6 +155,7 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act & Assert: 不應拋出錯誤
@@ -175,6 +182,7 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act
@@ -209,6 +217,7 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act
@@ -240,6 +249,7 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act
@@ -270,6 +280,7 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act
@@ -300,6 +311,7 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act

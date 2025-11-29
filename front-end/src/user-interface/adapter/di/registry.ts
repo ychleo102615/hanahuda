@@ -253,9 +253,10 @@ function registerInputPorts(container: DIContainer): void {
 
   // T050 [US2]: 註冊 TurnCompleted 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort（配對動畫整合）
+  // Phase 9: 加入 NotificationPort（倒數計時整合）
   container.register(
     TOKENS.HandleTurnCompletedPort,
-    () => new HandleTurnCompletedUseCase(gameStatePort, animationPort, domainFacade),
+    () => new HandleTurnCompletedUseCase(gameStatePort, animationPort, notificationPort, domainFacade),
     { singleton: true }
   )
 
@@ -290,9 +291,10 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T069 [US3]: 註冊 DecisionMade 事件處理器
+  // Phase 9: 加入 NotificationPort（倒數計時整合）
   container.register(
     TOKENS.HandleDecisionMadePort,
-    () => new HandleDecisionMadeUseCase(uiStatePort),
+    () => new HandleDecisionMadeUseCase(uiStatePort, notificationPort),
     { singleton: true }
   )
 

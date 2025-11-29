@@ -15,19 +15,19 @@ import { HandleDecisionMadeUseCase } from '@/user-interface/application/use-case
 import type { DecisionMadeEvent } from '@/user-interface/application/types'
 import {
   createMockUIStatePort,
-  createMockTriggerUIEffectPort,
+  createMockNotificationPort,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { UIStatePort, NotificationPort } from '@/user-interface/application/ports'
 
 describe('HandleDecisionMadeUseCase', () => {
   let mockUIState: UIStatePort
-  let mockTriggerUIEffect: TriggerUIEffectPort
+  let mockNotification: NotificationPort
   let useCase: HandleDecisionMadeUseCase
 
   beforeEach(() => {
     mockUIState = createMockUIStatePort()
-    mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleDecisionMadeUseCase(mockUIState, mockTriggerUIEffect)
+    mockNotification = createMockNotificationPort()
+    useCase = new HandleDecisionMadeUseCase(mockUIState, mockNotification)
   })
 
   describe('更新 Koi-Koi 倍率', () => {
@@ -49,6 +49,7 @@ describe('HandleDecisionMadeUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act
@@ -76,6 +77,7 @@ describe('HandleDecisionMadeUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act
@@ -105,6 +107,7 @@ describe('HandleDecisionMadeUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act
@@ -134,6 +137,7 @@ describe('HandleDecisionMadeUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
+        action_timeout_seconds: 30,
       }
 
       // Act
