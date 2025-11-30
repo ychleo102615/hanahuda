@@ -57,18 +57,8 @@ export function createNotificationPortAdapter(): NotificationPort {
     },
 
     hideModal(): void {
-      // 隱藏當前顯示的 Modal（一次只會有一個）
-      if (store.decisionModalVisible) {
-        store.hideDecisionModal()
-      } else if (store.gameFinishedModalVisible) {
-        store.hideGameFinishedModal()
-      } else if (store.roundDrawnModalVisible) {
-        store.hideRoundDrawnModal()
-      } else if (store.roundScoredModalVisible) {
-        store.hideRoundScoredModal()
-      } else if (store.roundEndedInstantlyModalVisible) {
-        store.hideRoundEndedInstantlyModal()
-      }
+      // 隱藏所有 Modal（Store 層已確保互斥性）
+      store.hideModal()
     },
 
     // ===== Toast =====

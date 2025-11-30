@@ -33,7 +33,7 @@ const countdownClass = computed(() => {
   if (actionTimeoutRemaining.value !== null && actionTimeoutRemaining.value <= 5) {
     return 'text-red-500'
   }
-  return 'text-white'
+  return 'text-gray-800'
 })
 
 // T076 [US3]: Handle Koi-Koi decision
@@ -78,9 +78,9 @@ function handleEndRound() {
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       >
         <!-- T073 [US3]: Modal content -->
-        <div class="w-full max-w-md rounded-lg bg-gray-900 p-6 shadow-2xl">
+        <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
           <!-- Title -->
-          <h2 class="mb-4 text-center text-2xl font-bold text-yellow-400">
+          <h2 class="mb-4 text-center text-2xl font-bold text-yellow-600">
             Yaku Achieved!
           </h2>
 
@@ -89,7 +89,7 @@ function handleEndRound() {
             v-if="actionTimeoutRemaining !== null"
             class="mb-4 text-center"
           >
-            <div class="text-sm text-gray-400 mb-1">Time Remaining</div>
+            <div class="text-sm text-gray-600 mb-1">Time Remaining</div>
             <div
               data-testid="decision-countdown"
               class="text-3xl font-bold"
@@ -104,18 +104,18 @@ function handleEndRound() {
             <div
               v-for="yaku in decisionModalData.currentYaku"
               :key="yaku.yaku_type"
-              class="flex items-center justify-between rounded bg-gray-800 px-4 py-2"
+              class="flex items-center justify-between rounded bg-yellow-50 px-4 py-2"
             >
-              <span class="font-medium text-white">{{ yaku.yaku_type }}</span>
-              <span class="text-yellow-400">{{ yaku.base_points }} pts</span>
+              <span class="font-medium text-gray-800">{{ yaku.yaku_type }}</span>
+              <span class="text-yellow-700">{{ yaku.base_points }} pts</span>
             </div>
           </div>
 
           <!-- Score information -->
-          <div class="mb-6 rounded bg-gray-800 p-4">
+          <div class="mb-6 rounded bg-gray-50 p-4">
             <div class="mb-2 flex items-center justify-between">
-              <span class="text-gray-300">Current Score:</span>
-              <span class="text-xl font-bold text-white">
+              <span class="text-gray-600">Current Score:</span>
+              <span class="text-xl font-bold text-gray-800">
                 {{ decisionModalData.currentScore }} pts
               </span>
             </div>
@@ -123,15 +123,15 @@ function handleEndRound() {
               v-if="decisionModalData.potentialScore"
               class="flex items-center justify-between"
             >
-              <span class="text-gray-300">Potential Score:</span>
-              <span class="text-xl font-bold text-green-400">
+              <span class="text-gray-600">Potential Score:</span>
+              <span class="text-xl font-bold text-green-600">
                 {{ decisionModalData.potentialScore }} pts
               </span>
             </div>
           </div>
 
           <!-- Decision explanation -->
-          <p class="mb-6 text-center text-sm text-gray-400">
+          <p class="mb-6 text-center text-sm text-gray-600">
             Choose "Koi-Koi" to continue and increase multiplier, but opponent may catch up.
             <br />
             Choose "End Round" to get your current score immediately.
@@ -154,7 +154,7 @@ function handleEndRound() {
           </div>
 
           <!-- Risk warning -->
-          <p class="mt-4 text-center text-xs text-gray-500">
+          <p class="mt-4 text-center text-xs text-gray-600">
             ⚠️ If you choose Koi-Koi and opponent scores first, you lose all points
           </p>
         </div>

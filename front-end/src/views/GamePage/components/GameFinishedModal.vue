@@ -1,8 +1,8 @@
 <template>
   <Transition name="modal-fade">
     <div
-      v-if="uiStateStore.gameFinishedVisible && uiStateStore.gameFinishedData"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
+      v-if="uiStateStore.gameFinishedModalVisible && uiStateStore.gameFinishedModalData"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="game-finished-title"
@@ -15,14 +15,14 @@
         <div
           :class="[
             'px-6 py-5 text-white',
-            uiStateStore.gameFinishedData.isPlayerWinner
+            uiStateStore.gameFinishedModalData.isPlayerWinner
               ? 'bg-gradient-to-r from-green-500 to-green-600'
               : 'bg-gradient-to-r from-blue-500 to-blue-600',
           ]"
         >
           <h2 id="game-finished-title" class="text-2xl font-bold text-center">
             {{
-              uiStateStore.gameFinishedData.isPlayerWinner
+              uiStateStore.gameFinishedModalData.isPlayerWinner
                 ? '🎉 Victory!'
                 : 'Game Over'
             }}
@@ -34,9 +34,9 @@
           <!-- Winner Announcement -->
           <p class="text-center text-lg font-medium text-gray-800">
             {{
-              uiStateStore.gameFinishedData.isPlayerWinner
+              uiStateStore.gameFinishedModalData.isPlayerWinner
                 ? 'Congratulations! You won the game!'
-                : `Player ${getPlayerName(uiStateStore.gameFinishedData.winnerId)} won the game.`
+                : `Player ${getPlayerName(uiStateStore.gameFinishedModalData.winnerId)} won the game.`
             }}
           </p>
 
@@ -46,7 +46,7 @@
               Final Scores
             </h3>
             <div
-              v-for="score in uiStateStore.gameFinishedData.finalScores"
+              v-for="score in uiStateStore.gameFinishedModalData.finalScores"
               :key="score.player_id"
               class="flex items-center justify-between py-2 border-b border-gray-200 last:border-0"
             >
@@ -55,7 +55,7 @@
                 <span
                   v-if="
                     score.player_id ===
-                    uiStateStore.gameFinishedData.winnerId
+                    uiStateStore.gameFinishedModalData.winnerId
                   "
                   class="ml-2 text-xs text-green-600 font-bold"
                 >
@@ -65,7 +65,7 @@
               <span
                 :class="[
                   'text-xl font-bold',
-                  score.player_id === uiStateStore.gameFinishedData.winnerId
+                  score.player_id === uiStateStore.gameFinishedModalData.winnerId
                     ? 'text-green-600'
                     : 'text-gray-600',
                 ]"
@@ -138,14 +138,14 @@ function getPlayerName(playerId: string): string {
  * 關閉 Modal
  */
 function handleClose(): void {
-  uiStateStore.hideGameFinishedUI()
+  uiStateStore.hideGameFinishedModal()
 }
 
 /**
  * 開始新遊戲
  */
 function handleNewGame(): void {
-  uiStateStore.hideGameFinishedUI()
+  uiStateStore.hideGameFinishedModal()
   // 重置遊戲狀態
   gameStateStore.$reset()
   uiStateStore.reset()

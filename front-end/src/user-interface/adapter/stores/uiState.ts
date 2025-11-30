@@ -216,6 +216,30 @@ export const useUIStateStore = defineStore('uiState', {
 
   actions: {
     /**
+     * 關閉所有 Modal（內部輔助方法）
+     *
+     * @description
+     * 確保 modal 互斥性：一次只能顯示一個 modal。
+     * 所有 show*Modal 方法都會先調用此方法。
+     */
+    _hideAllModals(): void {
+      this.decisionModalVisible = false
+      this.decisionModalData = null
+
+      this.gameFinishedModalVisible = false
+      this.gameFinishedModalData = null
+
+      this.roundDrawnModalVisible = false
+      this.roundDrawnModalScores = []
+
+      this.roundScoredModalVisible = false
+      this.roundScoredModalData = null
+
+      this.roundEndedInstantlyModalVisible = false
+      this.roundEndedInstantlyModalData = null
+    },
+
+    /**
      * 顯示 Koi-Koi 決策 Modal
      *
      * @param currentYaku - 當前役種列表
@@ -227,6 +251,8 @@ export const useUIStateStore = defineStore('uiState', {
       currentScore: number,
       potentialScore?: number,
     ): void {
+      this._hideAllModals()
+
       this.decisionModalVisible = true
       this.decisionModalData = {
         currentYaku: [...currentYaku],
@@ -295,6 +321,8 @@ export const useUIStateStore = defineStore('uiState', {
      * @param isPlayerWinner - 是否為當前玩家獲勝
      */
     showGameFinishedModal(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void {
+      this._hideAllModals()
+
       this.gameFinishedModalVisible = true
       this.gameFinishedModalData = {
         winnerId,
@@ -319,6 +347,8 @@ export const useUIStateStore = defineStore('uiState', {
      * @param currentTotalScores - 當前總分列表
      */
     showRoundDrawnModal(currentTotalScores: PlayerScore[]): void {
+      this._hideAllModals()
+
       this.roundDrawnModalVisible = true
       this.roundDrawnModalScores = [...currentTotalScores]
       console.info('[UIStateStore] 顯示平局 Modal', this.roundDrawnModalScores)
@@ -351,6 +381,8 @@ export const useUIStateStore = defineStore('uiState', {
       multipliers: ScoreMultipliers,
       updatedTotalScores: PlayerScore[],
     ): void {
+      this._hideAllModals()
+
       this.roundScoredModalVisible = true
       this.roundScoredModalData = {
         winnerId,
@@ -386,6 +418,8 @@ export const useUIStateStore = defineStore('uiState', {
       awardedPoints: number,
       updatedTotalScores: PlayerScore[],
     ): void {
+      this._hideAllModals()
+
       this.roundEndedInstantlyModalVisible = true
       this.roundEndedInstantlyModalData = {
         reason,
@@ -413,11 +447,7 @@ export const useUIStateStore = defineStore('uiState', {
      * 用於倒數結束時自動關閉面板。
      */
     hideModal(): void {
-      this.hideDecisionModal()
-      this.hideGameFinishedModal()
-      this.hideRoundDrawnModal()
-      this.hideRoundScoredModal()
-      this.hideRoundEndedInstantlyModal()
+      this._hideAllModals()
       this.stopDisplayCountdown()
       console.info('[UIStateStore] 隱藏所有 Modal')
     },
