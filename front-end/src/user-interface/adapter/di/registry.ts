@@ -26,6 +26,7 @@ import { TOKENS } from './tokens'
 import { useGameStateStore, createUIStatePortAdapter } from '../stores/gameState'
 import { useUIStateStore } from '../stores/uiState'
 import { useAnimationLayerStore } from '../stores/animationLayerStore'
+import { useMatchmakingStateStore } from '../stores/matchmakingState'
 import { HandleGameStartedUseCase } from '../../application/use-cases/event-handlers/HandleGameStartedUseCase'
 import { HandleRoundDealtUseCase } from '../../application/use-cases/event-handlers/HandleRoundDealtUseCase'
 import { HandleTurnCompletedUseCase } from '../../application/use-cases/event-handlers/HandleTurnCompletedUseCase'
@@ -39,10 +40,11 @@ import { HandleRoundDrawnUseCase } from '../../application/use-cases/event-handl
 import { HandleGameFinishedUseCase } from '../../application/use-cases/event-handlers/HandleGameFinishedUseCase'
 import { HandleTurnErrorUseCase } from '../../application/use-cases/event-handlers/HandleTurnErrorUseCase'
 import { HandleReconnectionUseCase } from '../../application/use-cases/event-handlers/HandleReconnectionUseCase'
+import { HandleGameErrorUseCase } from '../../application/use-cases/event-handlers/HandleGameErrorUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort } from '../../application/ports/output'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
@@ -52,6 +54,7 @@ import { AnimationPortAdapter } from '../animation/AnimationPortAdapter'
 import { zoneRegistry } from '../animation/ZoneRegistry'
 import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
 import { createGameStatePortAdapter } from '../stores/GameStatePortAdapter'
+import { createNavigationPortAdapter } from '../router/NavigationPortAdapter'
 
 /**
  * 遊戲模式
@@ -126,6 +129,12 @@ function registerStores(container: DIContainer): void {
     () => zoneRegistry,
     { singleton: true },
   )
+
+  container.register(
+    TOKENS.MatchmakingStateStore,
+    () => useMatchmakingStateStore(),
+    { singleton: true },
+  )
 }
 
 /**
@@ -184,6 +193,23 @@ function registerOutputPorts(container: DIContainer): void {
     { singleton: true },
   )
 
+  // MatchmakingStatePort: 由 MatchmakingStateStore 實作
+  container.register(
+    TOKENS.MatchmakingStatePort,
+    () => {
+      const store = container.resolve(TOKENS.MatchmakingStateStore) as ReturnType<typeof useMatchmakingStateStore>
+      return store as MatchmakingStatePort
+    },
+    { singleton: true },
+  )
+
+  // NavigationPort: 由 NavigationPortAdapter 實作
+  container.register(
+    TOKENS.NavigationPort,
+    () => createNavigationPortAdapter(),
+    { singleton: true },
+  )
+
   // SendCommandPort: 根據模式由不同的 Adapter 實作
   // 在 registerBackendAdapters / registerMockAdapters 中註冊
 }
@@ -193,7 +219,7 @@ function registerOutputPorts(container: DIContainer): void {
  *
  * @description
  * 註冊所有 Use Cases 為 Input Ports 的實作。
- * 包含 3 個玩家操作 Use Cases 與 15 個事件處理 Use Cases。
+ * 包含 3 個玩家操作 Use Cases 與 16 個事件處理 Use Cases。
  */
 function registerInputPorts(container: DIContainer): void {
   // 取得 Output Ports (Legacy)
@@ -204,6 +230,8 @@ function registerInputPorts(container: DIContainer): void {
   const gameStatePort = container.resolve(TOKENS.GameStatePort) as GameStatePort
   const animationPort = container.resolve(TOKENS.AnimationPort) as AnimationPort
   const notificationPort = container.resolve(TOKENS.NotificationPort) as NotificationPort
+  const matchmakingStatePort = container.resolve(TOKENS.MatchmakingStatePort) as MatchmakingStatePort
+  const navigationPort = container.resolve(TOKENS.NavigationPort) as NavigationPort
 
   // Player Operations Use Cases
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -238,7 +266,7 @@ function registerInputPorts(container: DIContainer): void {
   // T030 [US1]: 註冊 GameStarted 事件處理器
   container.register(
     TOKENS.HandleGameStartedPort,
-    () => new HandleGameStartedUseCase(uiStatePort, gameStatePort),
+    () => new HandleGameStartedUseCase(uiStatePort, gameStatePort, matchmakingStatePort),
     { singleton: true }
   )
 
@@ -339,7 +367,14 @@ function registerInputPorts(container: DIContainer): void {
   // Phase 8: 加入 AnimationPort 確保重連時清理動畫
   container.register(
     TOKENS.HandleGameSnapshotRestorePort,
-    () => new HandleReconnectionUseCase(uiStatePort, notificationPort, animationPort),
+    () => new HandleReconnectionUseCase(uiStatePort, notificationPort, animationPort, matchmakingStatePort),
+    { singleton: true }
+  )
+
+  // T019: 註冊 GameError 事件處理器
+  container.register(
+    TOKENS.HandleGameErrorPort,
+    () => new HandleGameErrorUseCase(notificationPort, matchmakingStatePort, navigationPort),
     { singleton: true }
   )
 
@@ -466,6 +501,10 @@ function registerEventRoutes(container: DIContainer): void {
   router.register('GameFinished', gameFinishedPort)
   router.register('TurnError', turnErrorPort)
   router.register('GameSnapshotRestore', gameSnapshotRestorePort)
+
+  // T020: 綁定 GameError 事件
+  const gameErrorPort = container.resolve(TOKENS.HandleGameErrorPort) as { execute: (payload: unknown) => void }
+  router.register('GameError', gameErrorPort)
 
   console.info('[DI] Phase 6: Registered US2, US3, and US4 event routes')
 }

@@ -22,6 +22,8 @@ export type { SendCommandPort } from './send-command.port'
 export type { GameStatePort } from './game-state.port'
 export type { AnimationPort, DealAnimationParams } from './animation.port'
 export type { NotificationPort } from './notification.port'
+export type { MatchmakingStatePort, MatchmakingStatus } from './matchmaking-state.port'
+export type { NavigationPort } from './navigation.port'
 
 // Legacy Output Ports
 export type { UIStatePort } from './ui-state.port'

@@ -6,6 +6,7 @@
  *
  * 功能:
  * - joinGame (加入遊戲,支援重連)
+ * - leaveGame (離開遊戲)
  * - playHandCard (打出手牌)
  * - selectTarget (選擇配對目標)
  * - makeDecision (做出 Koi-Koi 決策)
@@ -91,6 +92,32 @@ export class GameApiClient implements SendCommandPort {
     // joinGame 不進行重試 (避免重複加入遊戲)
     const response = await this.post(url, body)
     return response
+  }
+
+  /**
+   * 離開遊戲
+   *
+   * @param gameId - 遊戲 ID
+   * @throws {ValidationError} gameId 無效
+   * @throws {NetworkError} 網路連線失敗
+   * @throws {ServerError} 伺服器錯誤
+   * @throws {TimeoutError} 請求超時
+   *
+   * @description
+   * 通知伺服器玩家主動離開遊戲。
+   * 客戶端發送後無需等待確認，立即執行後續清理與導航。
+   * 不進行重試（離開遊戲是終結性操作）。
+   */
+  async leaveGame(gameId: string): Promise<void> {
+    if (!gameId) {
+      throw new ValidationError('遊戲 ID 不可為空')
+    }
+
+    const url = `${this.baseURL}/api/v1/games/${gameId}/leave`
+    const body = {}
+
+    // leaveGame 不進行重試（終結性操作）
+    await this.post(url, body)
   }
 
   /**

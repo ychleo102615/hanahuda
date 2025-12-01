@@ -12,14 +12,20 @@
  */
 
 import type { GameSnapshotRestore } from '../../types/events'
-import type { UIStatePort, NotificationPort, AnimationPort } from '../../ports/output'
+import type {
+  UIStatePort,
+  NotificationPort,
+  AnimationPort,
+  MatchmakingStatePort,
+} from '../../ports/output'
 import type { HandleReconnectionPort } from '../../ports/input'
 
 export class HandleReconnectionUseCase implements HandleReconnectionPort {
   constructor(
     private readonly updateUIState: UIStatePort,
     private readonly notification: NotificationPort,
-    private readonly animationPort: AnimationPort
+    private readonly animationPort: AnimationPort,
+    private readonly matchmakingState: MatchmakingStatePort
   ) {}
 
   execute(snapshot: GameSnapshotRestore): void {
@@ -27,6 +33,9 @@ export class HandleReconnectionUseCase implements HandleReconnectionPort {
     // 原因：重連後的快照是權威狀態，進行中的動畫已無意義
     this.animationPort.interrupt()
     this.animationPort.clearHiddenCards()
+
+    // 0.5. 清除配對狀態（防止殘留，重連時已有遊戲會話）
+    this.matchmakingState.clearSession()
 
     // 1. 靜默恢復完整遊戲狀態（無動畫）
     this.updateUIState.restoreGameState(snapshot)

@@ -6,9 +6,11 @@
  *
  * 守衛:
  * - gamePageGuard: 遊戲頁面守衛,處理遊戲初始化與模式切換
+ * - lobbyPageGuard: 大廳頁面守衛,防止遊戲會話已存在時進入大廳
  */
 
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
+import { useGameStateStore } from '../stores/gameState'
 
 /**
  * 遊戲頁面守衛
@@ -44,10 +46,20 @@ export function gamePageGuard(
   from: RouteLocationNormalized,
   next: NavigationGuardNext
 ): void {
+  const gameState = useGameStateStore()
+
   // 獲取遊戲模式 (預設為 mock)
   const mode = (to.query.mode as string) || 'mock'
 
   console.info('[Router] 進入遊戲頁面', { mode, from: from.path })
+
+  // Backend 模式下，檢查是否有遊戲會話
+  // (Mock 和 Local 模式會自動初始化，不需檢查)
+  if (mode === 'backend' && !gameState.gameId) {
+    console.warn('[Router] Backend 模式下無遊戲會話，重定向至 /lobby')
+    next({ name: 'lobby' })
+    return
+  }
 
   // 根據模式初始化
   switch (mode) {
@@ -120,4 +132,50 @@ function initLocalMode(): void {
   // 注意: Local Game BC 尚未實作,此為預留
 
   sessionStorage.setItem('gameMode', 'local')
+}
+
+/**
+ * 大廳頁面守衛
+ *
+ * @description
+ * 防止使用者在不適當的情況下進入大廳。
+ *
+ * 規則：
+ * - 若 gameState 已初始化（game_id 存在），代表遊戲會話已建立
+ *   → 重定向至 /game（可能是重連或誤導航）
+ * - 否則允許進入大廳
+ *
+ * @param to - 目標路由
+ * @param from - 來源路由
+ * @param next - 導航控制函數
+ *
+ * @example
+ * ```typescript
+ * // 在 router/index.ts 中使用:
+ * {
+ *   path: '/lobby',
+ *   component: GameLobby,
+ *   beforeEnter: lobbyPageGuard
+ * }
+ * ```
+ */
+export function lobbyPageGuard(
+  to: RouteLocationNormalized,
+  from: RouteLocationNormalized,
+  next: NavigationGuardNext
+): void {
+  const gameState = useGameStateStore()
+
+  // 若遊戲會話已建立，重定向至遊戲畫面
+  if (gameState.gameId) {
+    console.warn('[Router] 遊戲會話已存在，重定向至 /game', {
+      gameId: gameState.gameId,
+      from: from.path,
+    })
+    next({ name: 'game' })
+    return
+  }
+
+  console.info('[Router] 進入大廳頁面', { from: from.path })
+  next()
 }

@@ -37,38 +37,38 @@
 
 ### Application Layer - Ports 定義
 
-- [ ] T004 [P] 定義 MatchmakingStatePort 於 front-end/src/user-interface/application/ports/output/matchmaking-state.port.ts
-- [ ] T005 [P] 定義 NavigationPort 於 front-end/src/user-interface/application/ports/output/navigation.port.ts
-- [ ] T006 [P] 更新 Output Ports 匯出於 front-end/src/user-interface/application/ports/output/index.ts
-- [ ] T007 新增 GameErrorEvent 介面於 front-end/src/user-interface/application/types/events.ts
-- [ ] T008 定義 HandleGameErrorPort 於 front-end/src/user-interface/application/ports/input/event-handlers.port.ts
+- [X] T004 [P] 定義 MatchmakingStatePort 於 front-end/src/user-interface/application/ports/output/matchmaking-state.port.ts
+- [X] T005 [P] 定義 NavigationPort 於 front-end/src/user-interface/application/ports/output/navigation.port.ts
+- [X] T006 [P] 更新 Output Ports 匯出於 front-end/src/user-interface/application/ports/output/index.ts
+- [X] T007 新增 GameErrorEvent 介面於 front-end/src/user-interface/application/types/events.ts
+- [X] T008 定義 HandleGameErrorPort 於 front-end/src/user-interface/application/ports/input/event-handlers.port.ts
 
 ### Application Layer - Use Cases
 
-- [ ] T009 實作 HandleGameErrorUseCase 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleGameErrorUseCase.ts
-- [ ] T010 修改 HandleGameStartedUseCase 新增 matchmakingStatePort 依賴於 front-end/src/user-interface/application/use-cases/event-handlers/HandleGameStartedUseCase.ts
-- [ ] T011 修改 HandleReconnectionUseCase 新增 matchmakingStatePort 依賴於 front-end/src/user-interface/application/use-cases/event-handlers/HandleReconnectionUseCase.ts
+- [X] T009 實作 HandleGameErrorUseCase 於 front-end/src/user-interface/application/use-cases/event-handlers/HandleGameErrorUseCase.ts
+- [X] T010 修改 HandleGameStartedUseCase 新增 matchmakingStatePort 依賴於 front-end/src/user-interface/application/use-cases/event-handlers/HandleGameStartedUseCase.ts
+- [X] T011 修改 HandleReconnectionUseCase 新增 matchmakingStatePort 依賴於 front-end/src/user-interface/application/use-cases/event-handlers/HandleReconnectionUseCase.ts
 
 ### Adapter Layer - Stores
 
-- [ ] T012 建立 matchmakingState.ts Pinia Store 於 front-end/src/user-interface/adapter/stores/matchmakingState.ts
+- [X] T012 建立 matchmakingState.ts Pinia Store 於 front-end/src/user-interface/adapter/stores/matchmakingState.ts
 
 ### Adapter Layer - Router Guards
 
-- [ ] T013 [P] 建立 lobbyPageGuard 於 front-end/src/user-interface/adapter/router/guards/lobbyPageGuard.ts
-- [ ] T014 [P] 修改 gamePageGuard 重定向目標改為 lobby 於 front-end/src/user-interface/adapter/router/guards/gamePageGuard.ts
-- [ ] T015 更新路由配置新增 /lobby 路由於 front-end/src/router/index.ts
+- [X] T013 [P] 建立 lobbyPageGuard 於 front-end/src/user-interface/adapter/router/guards.ts
+- [X] T014 [P] 修改 gamePageGuard 重定向目標改為 lobby 於 front-end/src/user-interface/adapter/router/guards.ts
+- [X] T015 更新路由配置新增 /lobby 路由於 front-end/src/router/index.ts
 
 ### Adapter Layer - API Client
 
-- [ ] T016 新增 leaveGame() 方法於 front-end/src/user-interface/adapter/api/GameApiClient.ts
+- [X] T016 新增 leaveGame() 方法於 front-end/src/user-interface/adapter/api/GameApiClient.ts
 
 ### Adapter Layer - DI Container
 
-- [ ] T017 註冊 MatchmakingStatePort 實作於 front-end/src/user-interface/adapter/di/container.ts
-- [ ] T018 註冊 NavigationPort 實作於 front-end/src/user-interface/adapter/di/container.ts
-- [ ] T019 註冊 HandleGameErrorUseCase 於 front-end/src/user-interface/adapter/di/container.ts
-- [ ] T020 更新 EventRouter 註冊 GameError 事件處理器
+- [X] T017 註冊 MatchmakingStatePort 實作於 front-end/src/user-interface/adapter/di/registry.ts
+- [X] T018 註冊 NavigationPort 實作於 front-end/src/user-interface/adapter/di/registry.ts
+- [X] T019 註冊 HandleGameErrorUseCase 於 front-end/src/user-interface/adapter/di/registry.ts
+- [X] T020 更新 EventRouter 註冊 GameError 事件處理器於 front-end/src/user-interface/adapter/di/registry.ts
 
 **Checkpoint**: 基礎設施就緒 - 用戶故事實作可平行開始
 

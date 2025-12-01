@@ -5,7 +5,7 @@
  * 由 Application Layer 定義並實作為 Use Cases，
  * 供 Adapter Layer（SSE Listener）呼叫。
  *
- * 包含 15 個事件處理器 Input Ports（對應 15 種 SSE 事件 + 快照恢復）：
+ * 包含 16 個事件處理器 Input Ports（對應 16 種 SSE 事件 + 快照恢復）：
  * - HandleGameStartedPort
  * - HandleRoundDealtPort
  * - HandleTurnCompletedPort
@@ -18,6 +18,7 @@
  * - HandleRoundEndedInstantlyPort
  * - HandleGameFinishedPort
  * - HandleTurnErrorPort
+ * - HandleGameErrorPort
  * - HandleReconnectionPort (GameSnapshotRestore)
  */
 
@@ -34,6 +35,7 @@ import type {
   RoundEndedInstantlyEvent,
   GameFinishedEvent,
   TurnErrorEvent,
+  GameErrorEvent,
   GameSnapshotRestore,
 } from '../../types'
 
@@ -239,6 +241,28 @@ export interface HandleTurnErrorPort {
    * @param event - TurnError 事件
    */
   execute(event: TurnErrorEvent): void
+}
+
+/**
+ * HandleGameErrorPort - Input Port
+ *
+ * @description
+ * 處理 GameError 事件（遊戲層級錯誤）。
+ *
+ * 處理流程：
+ * 1. 顯示錯誤通知（NotificationPort）
+ * 2. 更新配對狀態為 'error'（MatchmakingStatePort）
+ * 3. 若不可恢復，清除會話並導航回首頁
+ *
+ * 實作: HandleGameErrorUseCase
+ */
+export interface HandleGameErrorPort {
+  /**
+   * 執行 GameError 事件處理
+   *
+   * @param event - GameError 事件
+   */
+  execute(event: GameErrorEvent): void
 }
 
 /**

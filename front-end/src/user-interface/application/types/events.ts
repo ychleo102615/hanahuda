@@ -261,6 +261,70 @@ export interface TurnErrorEvent {
 }
 
 /**
+ * GameError 事件
+ *
+ * 參考: specs/007-lobby-settings-panel/contracts/game-error-event.md
+ *
+ * @description
+ * 遊戲層級錯誤事件，用於處理配對超時、遊戲過期等非回合操作錯誤。
+ * 與 TurnErrorEvent 的區別：
+ * - TurnErrorEvent: 回合操作錯誤（如打牌無效）
+ * - GameErrorEvent: 遊戲會話錯誤（如配對超時、遊戲過期）
+ */
+export interface GameErrorEvent {
+  /** 事件類型（固定為 'GameError'） */
+  readonly event_type: 'GameError'
+
+  /** 事件 ID（唯一識別碼） */
+  readonly event_id: string
+
+  /** 事件時間戳（ISO 8601 格式） */
+  readonly timestamp: string
+
+  /**
+   * 錯誤代碼
+   *
+   * @example
+   * - MATCHMAKING_TIMEOUT: 配對超時（30 秒無配對成功）
+   * - GAME_EXPIRED: 遊戲會話過期（長時間無操作）
+   * - SESSION_INVALID: 會話 Token 無效
+   * - OPPONENT_DISCONNECTED: 對手永久斷線
+   */
+  readonly error_code:
+    | 'MATCHMAKING_TIMEOUT'
+    | 'GAME_EXPIRED'
+    | 'SESSION_INVALID'
+    | 'OPPONENT_DISCONNECTED'
+
+  /**
+   * 錯誤訊息（人類可讀）
+   *
+   * @example
+   * 'Matchmaking timeout, please retry'
+   */
+  readonly message: string
+
+  /**
+   * 錯誤是否可恢復
+   *
+   * @description
+   * - true: 使用者可重試（如配對超時）
+   * - false: 不可恢復，需返回首頁（如會話無效）
+   */
+  readonly recoverable: boolean
+
+  /**
+   * 建議的使用者操作（可選）
+   *
+   * @example
+   * - RETRY_MATCHMAKING: 重試配對
+   * - RETURN_HOME: 返回首頁
+   * - RECONNECT: 嘗試重連
+   */
+  readonly suggested_action?: 'RETRY_MATCHMAKING' | 'RETURN_HOME' | 'RECONNECT'
+}
+
+/**
  * GameSnapshotRestore 快照
  *
  * 參考: doc/shared/protocol.md#GameSnapshotRestore

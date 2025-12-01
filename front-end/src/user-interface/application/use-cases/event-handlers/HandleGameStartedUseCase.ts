@@ -14,13 +14,14 @@
  */
 
 import type { GameStartedEvent } from '../../types/events'
-import type { UIStatePort, GameStatePort } from '../../ports/output'
+import type { UIStatePort, GameStatePort, MatchmakingStatePort } from '../../ports/output'
 import type { HandleGameStartedPort } from '../../ports/input'
 
 export class HandleGameStartedUseCase implements HandleGameStartedPort {
   constructor(
     private readonly updateUIState: UIStatePort,
-    private readonly gameState: GameStatePort
+    private readonly gameState: GameStatePort,
+    private readonly matchmakingState: MatchmakingStatePort
   ) {}
 
   execute(event: GameStartedEvent): void {
@@ -33,5 +34,8 @@ export class HandleGameStartedUseCase implements HandleGameStartedPort {
 
     // 2. 設置初始牌堆數量（48 張）
     this.gameState.updateDeckRemaining(48)
+
+    // 3. 清除配對狀態（配對已成功，進入遊戲）
+    this.matchmakingState.clearSession()
   }
 }

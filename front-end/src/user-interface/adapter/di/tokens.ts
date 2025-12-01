@@ -11,6 +11,8 @@ export const TOKENS = {
   AnimationPort: Symbol('AnimationPort'),
   NotificationPort: Symbol('NotificationPort'),
   SendCommandPort: Symbol('SendCommandPort'),
+  MatchmakingStatePort: Symbol('MatchmakingStatePort'),
+  NavigationPort: Symbol('NavigationPort'),
 
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
@@ -20,7 +22,7 @@ export const TOKENS = {
   SelectMatchTargetPort: Symbol('SelectMatchTargetPort'),
   MakeKoiKoiDecisionPort: Symbol('MakeKoiKoiDecisionPort'),
 
-  // ===== Input Ports - Event Handlers (15 個) =====
+  // ===== Input Ports - Event Handlers (16 個) =====
   HandleGameStartedPort: Symbol('HandleGameStartedPort'),
   HandleRoundDealtPort: Symbol('HandleRoundDealtPort'),
   HandleTurnCompletedPort: Symbol('HandleTurnCompletedPort'),
@@ -36,6 +38,7 @@ export const TOKENS = {
   HandleTurnErrorPort: Symbol('HandleTurnErrorPort'),
   HandleGameSnapshotRestorePort: Symbol('HandleGameSnapshotRestorePort'),
   HandleReconnectionPort: Symbol('HandleReconnectionPort'),
+  HandleGameErrorPort: Symbol('HandleGameErrorPort'),
 
   // ===== Adapters =====
   GameApiClient: Symbol('GameApiClient'),
@@ -47,6 +50,7 @@ export const TOKENS = {
   UIStateStore: Symbol('UIStateStore'),
   AnimationLayerStore: Symbol('AnimationLayerStore'),
   ZoneRegistry: Symbol('ZoneRegistry'),
+  MatchmakingStateStore: Symbol('MatchmakingStateStore'),
 
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),
