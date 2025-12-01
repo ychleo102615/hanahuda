@@ -109,16 +109,16 @@
 
 ### Tests for User Story 2
 
-- [ ] T030 [P] [US2] 組件測試 ActionPanel.vue (lobby context) 於 front-end/tests/components/ActionPanel.spec.ts
+- [X] T030 [P] [US2] 組件測試 ActionPanel.vue (lobby context) 於 front-end/tests/components/ActionPanel.spec.ts
 
 ### Implementation for User Story 2
 
-- [ ] T031 [P] [US2] 建立 ActionPanel.vue 可重用組件於 front-end/src/components/ActionPanel.vue
-- [ ] T032 [US2] 實作選單按鈕與開關邏輯於 ActionPanel.vue
-- [ ] T033 [US2] 實作面板滑出動畫（@vueuse/motion）於 ActionPanel.vue
-- [ ] T034 [US2] 實作遮罩與點擊外部關閉功能於 ActionPanel.vue
-- [ ] T035 [US2] 實作大廳 context 的「Back to Home」選項於 ActionPanel.vue
-- [ ] T036 [US2] 整合 ActionPanel 至 GameLobby.vue
+- [X] T031 [P] [US2] 建立 ActionPanel.vue 可重用組件於 front-end/src/components/ActionPanel.vue
+- [X] T032 [US2] 實作選單按鈕與開關邏輯於 ActionPanel.vue
+- [X] T033 [US2] 實作面板滑出動畫（@vueuse/motion）於 ActionPanel.vue
+- [X] T034 [US2] 實作遮罩與點擊外部關閉功能於 ActionPanel.vue
+- [X] T035 [US2] 實作大廳 context 的「Back to Home」選項於 ActionPanel.vue
+- [X] T036 [US2] 整合 ActionPanel 至 GameLobby.vue
 
 **Checkpoint**: User Story 1 與 2 應都能獨立運作
 

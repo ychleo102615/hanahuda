@@ -17,10 +17,19 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMatchmakingStateStore } from '@/user-interface/adapter/stores/matchmakingState'
+import ActionPanel from '@/components/ActionPanel.vue'
+import type { ActionPanelItem } from '@/components/ActionPanel.vue'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()
+
+// Vue Router
+const router = useRouter()
+
+// Action Panel 狀態
+const isPanelOpen = ref(false)
 
 // 倒數計時器
 const countdown = ref(30)
@@ -32,6 +41,31 @@ const isFinding = computed(() => matchmakingStore.status === 'finding')
 const hasError = computed(() => matchmakingStore.status === 'error')
 const canStartMatchmaking = computed(() => matchmakingStore.canStartMatchmaking)
 const isCountdownWarning = computed(() => countdown.value < 10)
+
+// Action Panel 選單項目
+const menuItems = computed<ActionPanelItem[]>(() => [
+  {
+    id: 'back-home',
+    label: 'Back to Home',
+    icon: '🏠',
+    onClick: handleBackToHome,
+  },
+])
+
+// 開啟/關閉 Action Panel
+const togglePanel = () => {
+  isPanelOpen.value = !isPanelOpen.value
+}
+
+const closePanel = () => {
+  isPanelOpen.value = false
+}
+
+// 返回首頁
+const handleBackToHome = () => {
+  router.push('/')
+  closePanel()
+}
 
 // 開始配對
 const handleFindMatch = () => {
@@ -101,13 +135,39 @@ onUnmounted(() => {
     <div class="max-w-md w-full">
       <!-- 大廳卡片 -->
       <div class="bg-white rounded-lg shadow-xl p-8">
-        <!-- 標題 -->
-        <h1
-          data-testid="lobby-title"
-          class="text-3xl font-bold text-center text-primary-900 mb-8"
-        >
-          Game Lobby
-        </h1>
+        <!-- 標題與選單按鈕 -->
+        <div class="flex items-center justify-between mb-8">
+          <h1
+            data-testid="lobby-title"
+            class="text-3xl font-bold text-primary-900"
+          >
+            Game Lobby
+          </h1>
+
+          <!-- 選單按鈕 -->
+          <button
+            data-testid="menu-button"
+            aria-label="Open menu"
+            class="p-2 rounded-lg hover:bg-primary-50 transition-colors"
+            @click="togglePanel"
+          >
+            <!-- Hamburger Icon -->
+            <svg
+              class="h-6 w-6 text-primary-900"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        </div>
 
         <!-- Idle 狀態 -->
         <div v-if="isIdle" class="space-y-6">
@@ -239,6 +299,13 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Action Panel -->
+    <ActionPanel
+      :is-open="isPanelOpen"
+      :items="menuItems"
+      @close="closePanel"
+    />
   </div>
 </template>
 

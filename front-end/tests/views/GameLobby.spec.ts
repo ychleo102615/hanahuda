@@ -17,6 +17,17 @@ import { setActivePinia, createPinia } from 'pinia'
 import GameLobby from '../../src/views/GameLobby.vue'
 import { useMatchmakingStateStore } from '../../src/user-interface/adapter/stores/matchmakingState'
 
+// Mock Vue Router
+const mockPush = vi.fn()
+const mockRouter = {
+  push: mockPush,
+}
+
+// Mock useRouter before importing the component
+vi.mock('vue-router', () => ({
+  useRouter: () => mockRouter,
+}))
+
 describe('GameLobby', () => {
   let wrapper: VueWrapper<any>
 
@@ -24,6 +35,8 @@ describe('GameLobby', () => {
     // 建立新的 Pinia 實例
     setActivePinia(createPinia())
     vi.useFakeTimers()
+    // 清除 router mock
+    mockPush.mockClear()
   })
 
   afterEach(() => {
@@ -400,6 +413,154 @@ describe('GameLobby', () => {
 
       const errorMessage = wrapper.find('[data-testid="error-message"]')
       expect(errorMessage.attributes('role')).toBe('alert')
+    })
+  })
+
+  describe('Action Panel 整合', () => {
+    // Helper function to find elements in document (for Teleport)
+    const findInDocument = (selector: string): Element | null => {
+      return document.querySelector(selector)
+    }
+
+    beforeEach(() => {
+      // 清理 DOM
+      document.body.innerHTML = ''
+    })
+
+    afterEach(() => {
+      // 清理 DOM
+      document.body.innerHTML = ''
+    })
+
+    it('應該顯示選單按鈕', async () => {
+      wrapper = mount(GameLobby, {
+        attachTo: document.body,
+      })
+      await wrapper.vm.$nextTick()
+
+      const menuButton = wrapper.find('[data-testid="menu-button"]')
+      expect(menuButton.exists()).toBe(true)
+    })
+
+    it('初始狀態 ActionPanel 應該是關閉的', async () => {
+      wrapper = mount(GameLobby, {
+        attachTo: document.body,
+      })
+      await wrapper.vm.$nextTick()
+
+      const panel = findInDocument('[data-testid="action-panel"]')
+      expect(panel).toBeNull()
+    })
+
+    it('點擊選單按鈕應該開啟 ActionPanel', async () => {
+      wrapper = mount(GameLobby, {
+        attachTo: document.body,
+      })
+      await wrapper.vm.$nextTick()
+
+      const menuButton = wrapper.find('[data-testid="menu-button"]')
+      await menuButton.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      const panel = findInDocument('[data-testid="action-panel"]')
+      expect(panel).not.toBeNull()
+    })
+
+    it('ActionPanel 應該顯示 Back to Home 選項', async () => {
+      wrapper = mount(GameLobby, {
+        attachTo: document.body,
+      })
+      await wrapper.vm.$nextTick()
+
+      // 開啟面板
+      const menuButton = wrapper.find('[data-testid="menu-button"]')
+      await menuButton.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      // 檢查選單項目
+      const menuItems = Array.from(document.querySelectorAll('[data-testid="menu-item"]'))
+      expect(menuItems).toHaveLength(1)
+      expect(menuItems[0]?.textContent).toContain('Back to Home')
+    })
+
+    it('點擊 Back to Home 應該導航至首頁', async () => {
+      wrapper = mount(GameLobby, {
+        attachTo: document.body,
+      })
+      await wrapper.vm.$nextTick()
+
+      // 開啟面板
+      const menuButton = wrapper.find('[data-testid="menu-button"]')
+      await menuButton.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      // 點擊 Back to Home
+      const menuItem = findInDocument('[data-testid="menu-item"]')
+      ;(menuItem as HTMLElement)?.click()
+      await wrapper.vm.$nextTick()
+
+      // 檢查 router.push 是否被調用
+      expect(mockPush).toHaveBeenCalledWith('/')
+    })
+
+    it('點擊 Back to Home 後應該關閉面板', async () => {
+      wrapper = mount(GameLobby, {
+        attachTo: document.body,
+      })
+      await wrapper.vm.$nextTick()
+
+      // 開啟面板
+      const menuButton = wrapper.find('[data-testid="menu-button"]')
+      await menuButton.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      // 點擊 Back to Home
+      const menuItem = findInDocument('[data-testid="menu-item"]')
+      ;(menuItem as HTMLElement)?.click()
+      await wrapper.vm.$nextTick()
+
+      // 等待過渡效果 (使用 fake timers)
+      vi.advanceTimersByTime(300)
+      await wrapper.vm.$nextTick()
+
+      // 面板應該關閉
+      const panel = findInDocument('[data-testid="action-panel"]')
+      expect(panel).toBeNull()
+    })
+
+    it('點擊遮罩應該關閉面板', async () => {
+      wrapper = mount(GameLobby, {
+        attachTo: document.body,
+      })
+      await wrapper.vm.$nextTick()
+
+      // 開啟面板
+      const menuButton = wrapper.find('[data-testid="menu-button"]')
+      await menuButton.trigger('click')
+      await wrapper.vm.$nextTick()
+
+      // 點擊遮罩
+      const overlay = findInDocument('[data-testid="panel-overlay"]')
+      ;(overlay as HTMLElement)?.click()
+      await wrapper.vm.$nextTick()
+
+      // 等待過渡效果 (使用 fake timers)
+      vi.advanceTimersByTime(300)
+      await wrapper.vm.$nextTick()
+
+      // 面板應該關閉
+      const panel = findInDocument('[data-testid="action-panel"]')
+      expect(panel).toBeNull()
+    })
+
+    it('選單按鈕應該有適當的 ARIA 標籤', async () => {
+      wrapper = mount(GameLobby, {
+        attachTo: document.body,
+      })
+      await wrapper.vm.$nextTick()
+
+      const menuButton = wrapper.find('[data-testid="menu-button"]')
+      expect(menuButton.attributes('aria-label')).toBeDefined()
     })
   })
 })
