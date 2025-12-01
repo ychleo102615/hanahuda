@@ -878,9 +878,10 @@ const methods = {
    * 確認退出遊戲
    *
    * @description
-   * 1. 發送 GameLeave 命令（若需要，待確認是否有此命令）
-   * 2. 清除遊戲狀態
-   * 3. 導航至首頁
+   * 1. 調用 gameApiClient.leaveGame(gameId) 發送 GameLeave 命令
+   * 2. 清除 sessionStorage 中的 session_token
+   * 3. 中斷 SSE 連線
+   * 4. 導航至首頁
    */
   confirmLeaveGame(): void,
 
@@ -1058,6 +1059,36 @@ interface JoinGameResponse {
   player_id: string
   snapshot: GameSnapshotRestore | null  // 重連時有值
 }
+```
+
+### 8.2 GameApiClient.leaveGame()
+
+```typescript
+/**
+ * GameApiClient.leaveGame() - 發送 GameLeave 命令
+ *
+ * @location front-end/src/user-interface/adapter/api/GameApiClient.ts (新增)
+ *
+ * @description
+ * 發送 POST /api/v1/games/{gameId}/leave 請求，通知伺服器玩家主動離開遊戲。
+ * 客戶端發送後無需等待確認，立即執行後續清理與導航。
+ *
+ * @param gameId - 當前遊戲 ID
+ * @returns Promise<void> - 伺服器可選擇返回空回應
+ *
+ * @example
+ * ```typescript
+ * // 使用者確認離開遊戲後
+ * await gameApiClient.leaveGame(gameId)
+ * // 清除 session
+ * sessionStorage.removeItem('session_token')
+ * // 中斷 SSE
+ * gameEventClient.disconnect()
+ * // 導航至首頁
+ * router.push('/')
+ * ```
+ */
+async leaveGame(gameId: string): Promise<void>
 ```
 
 ---

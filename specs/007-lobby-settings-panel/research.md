@@ -189,6 +189,42 @@ interface JoinGameResponse {
 
 ---
 
+## 3.1. 新增命令發送機制 (GameLeave)
+
+### 設計決策
+
+✅ **在 GameApiClient 新增 leaveGame() 方法**
+- 端點: `POST /api/v1/games/{gameId}/leave`
+- Payload: 空物件 `{}`
+- 回應: 伺服器確認遊戲會話已結束 (可選回應，客戶端不等待)
+
+✅ **Leave Game 流程**
+1. 使用者在 ActionPanel 點擊「Leave Game」
+2. 顯示確認對話框 (FR-012)
+3. 使用者確認後:
+   - 調用 `gameApiClient.leaveGame(gameId)`
+   - 發送命令後立即導航回首頁 (FR-014)
+   - 清除 sessionStorage 中的 session_token
+   - 中斷 SSE 連線
+
+✅ **伺服器行為 (假設)**
+- 收到 GameLeave 命令後立即結束遊戲會話
+- 不發送確認事件給客戶端
+- 若對手仍在線，通知對手遊戲已結束 (後端處理)
+
+**決策理由**:
+- 遵循現有命令發送模式 (與 GameRequestJoin 一致)
+- 使用 GameApiClient 統一管理遊戲相關 API 調用
+- 符合 spec.md Assumptions #7: 客戶端發送後無需等待確認即可導航
+- 簡化前端邏輯，避免超時等待問題
+
+**替代方案 (已拒絕)**:
+- ❌ 等待伺服器確認事件: 增加複雜度,網路延遲可能導致使用者體驗差
+- ❌ 使用 GET 請求: 違反 REST 語意,離開遊戲是狀態變更操作應使用 POST
+- ❌ 在 URL query string 中傳遞 gameId: POST body 更適合敏感資料
+
+---
+
 ## 4. 現有重連機制
 
 ### 發現位置
@@ -525,6 +561,7 @@ execute(event: GameErrorEvent): void {
 | **路由** | 新增 `/lobby` 路由 + `lobbyPageGuard` | 遵循現有路由守衛模式,重連跳過大廳 |
 | **SSE 事件** | 使用現有 EventRouter,監聽 GameStarted | 符合現有事件處理架構 |
 | **命令發送** | 使用現有 `GameApiClient.joinGame()` | 無需新增 API 檔案,減少重複 |
+| **離開遊戲命令** | 新增 `GameApiClient.leaveGame()` | 遵循現有命令發送模式，無需等待確認 |
 | **重連機制** | 路由守衛檢查 session_token 跳過大廳 | 整合現有 HandleReconnectionUseCase |
 | **配對超時** | 後端發送 GameError 事件,前端響應 | 符合 Server Authority 原則 |
 | **新事件** | 定義 GameError 遊戲層級錯誤事件 | 通用性、可擴展性、符合協議分層 |

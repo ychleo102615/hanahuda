@@ -145,7 +145,7 @@
 4. **斷線重連邏輯**: 假設現有系統已有斷線重連機制（如 ReconnectionBanner），本功能只需確保重連後不進入大廳
 5. **操作選單按鈕位置**: 假設按鈕位於螢幕右上角，與現有 TopInfoBar 不衝突（可視需求調整 TopInfoBar 設計）
 6. **配對取消**: 假設在配對中途返回首頁時，系統會自動取消配對請求（避免伺服器資源浪費）
-7. **GameLeave 命令行為**: 假設 GameLeave 命令發送後，伺服器會立即結束遊戲會話，客戶端無需等待確認事件即可導航回首頁（詳細行為將在 plan 階段定義）
+7. **GameLeave 命令行為**: GameLeave 命令發送後，伺服器會立即結束遊戲會話，客戶端無需等待確認事件即可導航回首頁。詳細規格參見 [research.md](./research.md#31-新增命令發送機制-gameleave)
 
 ## Dependencies
 
@@ -153,7 +153,9 @@
 - 現有的遊戲狀態管理（Pinia stores）
 - 現有的 SSE 事件接收機制（接收 GameStarted 事件）
 - 現有的命令發送機制（發送 GameRequestJoin 命令）
-- **新增命令支援**：需要後端支援 GameLeave 命令（用於玩家主動離開遊戲會話）[NEEDS CLARIFICATION: GameLeave 命令的詳細規格將在 plan 階段定義於 protocol.md]
+- **新增命令支援**：需要後端支援 GameLeave 命令（用於玩家主動離開遊戲會話）
+  - 命令格式：`POST /api/v1/games/{gameId}/leave`，payload 為空物件 `{}`
+  - 詳細規格參見 [protocol.md](../../doc/shared/protocol.md#iv-客戶端命令-c2s)
 - 現有的斷線重連機制（ReconnectionBanner 或類似功能）
 
 ## Out of Scope

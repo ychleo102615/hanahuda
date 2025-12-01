@@ -41,6 +41,7 @@
 
 **客戶端命令 (C2S)**:
 - `GameRequestJoin` - 加入遊戲/重連
+- `GameLeave` - 離開遊戲
 - `TurnPlayHandCard` - 打出手牌
 - `TurnSelectTarget` - 選擇翻牌配對目標
 - `RoundMakeDecision` - Koi-Koi 決策
@@ -231,6 +232,7 @@
 | 命令 | 流程狀態 | Payload | 說明 |
 |------|---------|---------|------|
 | **GameRequestJoin** | 任意 | `{player_id, session_token}` | 加入或重連 |
+| **GameLeave** | 任意 | `{}` | 玩家主動離開遊戲（結束會話）|
 | **TurnPlayHandCard** | `AWAITING_HAND_PLAY` | `{card, target?}` | 打手牌，`target` 為配對目標或 `null` |
 | **TurnSelectTarget** | `AWAITING_SELECTION` | `{source, target}` | 翻牌雙重配對時選擇目標 |
 | **RoundMakeDecision** | `AWAITING_DECISION` | `{decision}` | `"KOI_KOI"` → `DecisionMade`，`"END_ROUND"` → `RoundScored` |
