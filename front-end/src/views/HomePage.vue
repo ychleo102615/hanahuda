@@ -15,7 +15,7 @@ import yakuDataJson from '@/data/yaku.json'
 const navigationLinks: NavigationLink[] = [
   { label: 'Rules', target: '#rules', isCta: false },
   { label: 'About', target: '#about', isCta: false },
-  { label: 'Start Game', target: '/game', isCta: true },
+  { label: 'Start Game', target: '/lobby', isCta: true },
 ]
 
 // Hero Section data
@@ -23,7 +23,7 @@ const heroData = {
   title: 'Hanafuda Koi-Koi',
   subtitle: 'Experience the classic Japanese card game online',
   ctaText: 'Start Playing',
-  ctaTarget: '/game',
+  ctaTarget: '/lobby',
 }
 
 // Rules Section data (with proper typing)

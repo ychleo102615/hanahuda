@@ -84,18 +84,18 @@
 
 > **NOTE: 先寫測試，確保測試失敗後再實作**
 
-- [ ] T021 [P] [US1] 單元測試 matchmakingState.ts store 於 front-end/tests/unit/matchmakingState.spec.ts
-- [ ] T022 [P] [US1] 單元測試 HandleGameErrorUseCase 於 front-end/tests/unit/HandleGameErrorUseCase.spec.ts
-- [ ] T023 [P] [US1] 組件測試 GameLobby.vue 於 front-end/tests/components/GameLobby.spec.ts
+- [X] T021 [P] [US1] 單元測試 matchmakingState.ts store 於 front-end/tests/adapter/stores/matchmakingState.spec.ts
+- [X] T022 [P] [US1] 單元測試 HandleGameErrorUseCase 於 front-end/tests/application/use-cases/HandleGameErrorUseCase.spec.ts
+- [X] T023 [P] [US1] 組件測試 GameLobby.vue 於 front-end/tests/views/GameLobby.spec.ts
 
 ### Implementation for User Story 1
 
-- [ ] T024 [US1] 建立 GameLobby.vue 頁面於 front-end/src/views/GameLobby.vue
-- [ ] T025 [US1] 實作大廳三種狀態 UI（idle、finding、error）於 GameLobby.vue
-- [ ] T026 [US1] 實作「Find Match」按鈕點擊處理於 GameLobby.vue
-- [ ] T027 [US1] 實作 UX 倒數計時器（30秒）於 GameLobby.vue
-- [ ] T028 [US1] 實作配對錯誤重試按鈕於 GameLobby.vue
-- [ ] T029 [US1] 修改 HomePage.vue 將「Start Game」導航目標改為 /lobby
+- [X] T024 [US1] 建立 GameLobby.vue 頁面於 front-end/src/views/GameLobby.vue
+- [X] T025 [US1] 實作大廳三種狀態 UI（idle、finding、error）於 GameLobby.vue
+- [X] T026 [US1] 實作「Find Match」按鈕點擊處理於 GameLobby.vue
+- [X] T027 [US1] 實作 UX 倒數計時器（30秒）於 GameLobby.vue
+- [X] T028 [US1] 實作配對錯誤重試按鈕於 GameLobby.vue
+- [X] T029 [US1] 修改 HomePage.vue 將「Start Game」導航目標改為 /lobby
 
 **Checkpoint**: 此時 User Story 1 應完全可獨立運作並測試
 
