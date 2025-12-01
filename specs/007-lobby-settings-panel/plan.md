@@ -27,6 +27,23 @@
 - 斷線重連時需跳過大廳直接進入遊戲 (NEEDS CLARIFICATION: 現有重連機制)
 - 操作面板不得影響遊戲畫面效能
 - 響應式設計，支援手機與桌面
+**Naming Conventions**:
+- **API/SSE Payloads**: snake_case（例如：`session_token`, `error_code`, `event_type`）
+  - 遵循 `doc/shared/protocol.md` 定義的契約格式
+  - JSON 序列化/反序列化由框架自動處理
+- **TypeScript Variables**: camelCase（例如：`sessionToken`, `errorCode`, `eventType`）
+  - 前端狀態管理（Pinia stores）使用 camelCase
+  - 組件 props 與 data 使用 camelCase
+- **Vue Components**: PascalCase（例如：`ActionPanel`, `GameLobby`）
+  - 檔案名稱與組件名稱一致（`ActionPanel.vue`）
+- **Pinia Stores**: camelCase + `State` 後綴（例如：`matchmakingState.ts`, `gameState.ts`）
+  - Store 實例名稱使用 `use*Store` 慣例（例如：`useMatchmakingStateStore()`）
+- **Router Guards**: camelCase（例如：`lobbyPageGuard`, `gamePageGuard`）
+- **Use Cases**: PascalCase + `UseCase` 後綴（例如：`HandleGameErrorUseCase`）
+- **Ports**: PascalCase + `Port` 後綴（例如：`MatchmakingStatePort`, `NavigationPort`）
+
+**理由**: 統一命名慣例確保程式碼一致性，避免前後端通訊時的混淆。snake_case 用於 API 契約（業界標準），camelCase 用於 JavaScript/TypeScript（語言慣例），PascalCase 用於類別與組件（框架慣例）。
+
 **Scale/Scope**:
 - 新增 2 個主要 Vue 組件（GameLobby, ActionPanel）
 - 新增 1 個 Pinia store (matchmakingStore) (NEEDS CLARIFICATION: 是否需要新 store 或擴充現有 store)

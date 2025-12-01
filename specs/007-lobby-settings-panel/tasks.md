@@ -133,13 +133,15 @@
 ### Tests for User Story 3
 
 - [ ] T037 [P] [US3] 組件測試 ActionPanel.vue (game context) 於 front-end/tests/components/ActionPanel.spec.ts
+- [ ] T038 [P] [US3] 單元測試 GameApiClient.leaveGame() 方法於 front-end/tests/unit/GameApiClient.spec.ts
+- [ ] T039 [P] [US3] 整合測試完整退出遊戲流程（API 呼叫 + 狀態清除 + 導航）於 front-end/tests/integration/leaveGame.spec.ts
 
 ### Implementation for User Story 3
 
-- [ ] T038 [US3] 實作遊戲 context 的「Leave Game」選項於 ActionPanel.vue
-- [ ] T039 [US3] 實作「Leave Game」確認對話框於 ActionPanel.vue
-- [ ] T040 [US3] 實作確認退出邏輯（調用 leaveGame API、清除狀態、中斷 SSE）於 ActionPanel.vue
-- [ ] T041 [US3] 整合 ActionPanel 至 GamePage.vue
+- [ ] T040 [US3] 實作遊戲 context 的「Leave Game」選項於 ActionPanel.vue
+- [ ] T041 [US3] 實作「Leave Game」確認對話框於 ActionPanel.vue
+- [ ] T042 [US3] 實作確認退出邏輯（調用 leaveGame API、清除狀態、中斷 SSE）於 ActionPanel.vue
+- [ ] T043 [US3] 整合 ActionPanel 至 GamePage.vue
 
 **Checkpoint**: 所有用戶故事應都能獨立運作
 
@@ -153,14 +155,14 @@
 
 ### Tests for User Story 4
 
-- [ ] T042 [P] [US4] 單元測試 lobbyPageGuard 重連邏輯於 front-end/tests/unit/lobbyPageGuard.spec.ts
-- [ ] T043 [P] [US4] 整合測試完整重連流程
+- [ ] T044 [P] [US4] 單元測試 lobbyPageGuard 重連邏輯於 front-end/tests/unit/lobbyPageGuard.spec.ts
+- [ ] T045 [P] [US4] 整合測試完整重連流程
 
 ### Implementation for User Story 4
 
-- [ ] T044 [US4] 驗證 lobbyPageGuard 檢查 gameState.gameId 邏輯是否正確實作
-- [ ] T045 [US4] 驗證 HandleReconnectionUseCase 清除 matchmakingState 邏輯是否正確實作
-- [ ] T046 [US4] 測試斷線重連時跳過大廳的完整流程
+- [ ] T046 [US4] 驗證 lobbyPageGuard 檢查 gameState.gameId 邏輯是否正確實作
+- [ ] T047 [US4] 驗證 HandleReconnectionUseCase 清除 matchmakingState 邏輯是否正確實作
+- [ ] T048 [US4] 測試斷線重連時跳過大廳的完整流程
 
 **Checkpoint**: 所有用戶故事應都能獨立且正確運作
 
@@ -170,14 +172,14 @@
 
 **Purpose**: 影響多個用戶故事的改進與優化
 
-- [ ] T047 [P] 更新 protocol.md 新增 GameError 事件規格於 doc/shared/protocol.md
-- [ ] T048 [P] 程式碼清理與重構（移除 TODO 註解、優化命名）
-- [ ] T049 [P] 新增缺失的單元測試（目標覆蓋率 > 70%）
-- [ ] T050 [P] 樣式優化與響應式設計調整
-- [ ] T051 [P] 可訪問性改進（鍵盤導航、ARIA 標籤）
-- [ ] T052 執行 quickstart.md 驗證（手動測試完整流程）
-- [ ] T053 效能優化（動畫流暢度、記憶體洩漏檢查）
-- [ ] T054 [P] 錯誤訊息國際化準備（i18n keys）
+- [ ] T049 [P] 更新 protocol.md 新增 GameError 事件規格於 doc/shared/protocol.md
+- [ ] T050 [P] 程式碼清理與重構（移除 TODO 註解、優化命名）
+- [ ] T051 [P] 新增缺失的單元測試（目標覆蓋率 > 70%）
+- [ ] T052 [P] 樣式優化與響應式設計調整
+- [ ] T053 [P] 可訪問性改進（鍵盤導航、ARIA 標籤）
+- [ ] T054 執行 quickstart.md 驗證（手動測試完整流程）
+- [ ] T055 效能優化（動畫流暢度、記憶體洩漏檢查）
+- [ ] T056 [P] 錯誤訊息國際化準備（i18n keys）
 
 ---
 
@@ -281,13 +283,13 @@ Task: "修改 gamePageGuard 重定向目標改為 lobby 於 front-end/src/user-i
 
 ## Summary
 
-### Total Tasks: 54
+### Total Tasks: 56
 
 - **Phase 1 (Setup)**: 3 tasks
 - **Phase 2 (Foundational)**: 17 tasks（關鍵阻塞階段）
 - **Phase 3 (US1 - MVP)**: 9 tasks（3 tests + 6 implementation）
 - **Phase 4 (US2)**: 7 tasks（1 test + 6 implementation）
-- **Phase 5 (US3)**: 5 tasks（1 test + 4 implementation）
+- **Phase 5 (US3)**: 7 tasks（3 tests + 4 implementation）
 - **Phase 6 (US4)**: 5 tasks（2 tests + 3 implementation）
 - **Phase 7 (Polish)**: 8 tasks
 
@@ -296,7 +298,7 @@ Task: "修改 gamePageGuard 重定向目標改為 lobby 於 front-end/src/user-i
 - **Phase 2**: 6 parallel opportunities（Ports 定義、Guards、API Client）
 - **User Story 1**: 3 tests 可平行
 - **User Story 2**: 1 test + 1 組件建立可平行
-- **User Story 3**: 1 test 可平行
+- **User Story 3**: 3 tests 可平行（新增 GameLeave 測試）
 - **User Story 4**: 2 tests 可平行
 - **Polish**: 6 tasks 可平行
 
@@ -317,7 +319,7 @@ Task: "修改 gamePageGuard 重定向目標改為 lobby 於 front-end/src/user-i
 - 總任務數: Phase 1 (3) + Phase 2 (17) + Phase 3 (9) = **29 tasks**
 - 預估工時: 約 6-8 小時（依據 quickstart.md）
 
-**擴充至完整功能**: US1 + US2 + US3 + US4 = 所有 54 tasks
+**擴充至完整功能**: US1 + US2 + US3 + US4 = 所有 56 tasks
 
 ---
 
@@ -326,7 +328,7 @@ Task: "修改 gamePageGuard 重定向目標改為 lobby 於 front-end/src/user-i
 所有任務嚴格遵循 checklist 格式：
 
 - ✅ 每個任務以 `- [ ]` 開頭（markdown checkbox）
-- ✅ 每個任務包含 Task ID（T001-T054）
+- ✅ 每個任務包含 Task ID（T001-T056）
 - ✅ 適當標記 [P]（可平行執行）
 - ✅ User Story 階段任務標記 [Story]（US1-US4）
 - ✅ 所有任務包含完整檔案路徑
