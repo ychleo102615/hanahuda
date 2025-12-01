@@ -23,9 +23,9 @@
 
 **Purpose**: 專案初始化與基本結構準備
 
-- [ ] T001 確認 Vue Router 配置檔案存在於 front-end/src/router/index.ts
-- [ ] T002 [P] 確認 Pinia stores 目錄結構於 front-end/src/user-interface/adapter/stores/
-- [ ] T003 [P] 確認 DI Container 配置檔案於 front-end/src/user-interface/adapter/di/container.ts
+- [X] T001 確認 Vue Router 配置檔案存在於 front-end/src/router/index.ts
+- [X] T002 [P] 確認 Pinia stores 目錄結構於 front-end/src/user-interface/adapter/stores/
+- [X] T003 [P] 確認 DI Container 配置檔案於 front-end/src/user-interface/adapter/di/container.ts
 
 ---
 
