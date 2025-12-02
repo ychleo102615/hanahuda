@@ -7,11 +7,11 @@
  * 整合所有遊戲區域組件。
  */
 
-import { ref, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '../user-interface/adapter/stores/uiState'
-import TopInfoBar from './GamePage/components/TopInfoBar.vue'
+import TopInfoBar from '@/components/TopInfoBar.vue'
 import FieldZone from './GamePage/components/FieldZone.vue'
 import PlayerHandZone from './GamePage/components/PlayerHandZone.vue'
 import OpponentDepositoryZone from './GamePage/components/OpponentDepositoryZone.vue'
@@ -37,7 +37,34 @@ const gameState = useGameStateStore()
 const uiState = useUIStateStore()
 
 const { opponentHandCount, fieldCards } = storeToRefs(gameState)
-const { infoMessage, handCardConfirmationMode, handCardAwaitingConfirmation } = storeToRefs(uiState)
+const { infoMessage, handCardConfirmationMode, handCardAwaitingConfirmation, connectionStatus } = storeToRefs(uiState)
+
+// 連線狀態顯示
+const connectionStatusText = computed(() => {
+  switch (connectionStatus.value) {
+    case 'connected':
+      return 'Connected'
+    case 'connecting':
+      return 'Connecting...'
+    case 'disconnected':
+      return 'Disconnected'
+    default:
+      return ''
+  }
+})
+
+const connectionStatusClass = computed(() => {
+  switch (connectionStatus.value) {
+    case 'connected':
+      return 'text-green-400'
+    case 'connecting':
+      return 'text-yellow-400'
+    case 'disconnected':
+      return 'text-red-400'
+    default:
+      return ''
+  }
+})
 
 // T043 [US3]: Leave Game 功能
 const {
@@ -96,31 +123,42 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- 頂部資訊列 (~10% viewport) -->
     <header class="h-[10%] min-h-12 relative">
-      <TopInfoBar />
-
-      <!-- T043 [US3]: Menu Button -->
-      <button
-        data-testid="menu-button"
-        aria-label="Open menu"
-        class="absolute top-2 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
-        @click="toggleActionPanel"
-      >
-        <!-- Hamburger Icon -->
-        <svg
-          class="h-6 w-6 text-white"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-      </button>
+      <TopInfoBar variant="game" @menu-click="toggleActionPanel">
+        <template #right>
+          <div class="flex items-center gap-4">
+            <div class="text-center">
+              <div class="text-xs text-gray-400">You</div>
+              <div class="text-xl font-bold">{{ gameState.myScore }}</div>
+            </div>
+            <div class="text-xs" :class="connectionStatusClass">
+              {{ connectionStatusText }}
+            </div>
+            <!-- T043 [US3]: Menu Button -->
+            <button
+              data-testid="menu-button"
+              aria-label="Open menu"
+              class="p-2 rounded-lg hover:bg-white/10 transition-colors"
+              @click="toggleActionPanel"
+            >
+              <!-- Hamburger Icon -->
+              <svg
+                class="h-6 w-6 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
+        </template>
+      </TopInfoBar>
     </header>
 
     <!-- 對手已獲得牌區 (~15% viewport) -->

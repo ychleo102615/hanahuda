@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import { watch, ref } from 'vue'
 import { useMotion } from '@vueuse/motion'
+import { Z_INDEX } from '@/constants'
 
 // Props 定義
 interface Props {
@@ -111,7 +112,8 @@ watch(
       <div
         v-if="isOpen"
         data-testid="confirm-dialog-overlay"
-        class="fixed inset-0 z-50 flex items-center justify-center"
+        class="fixed inset-0 flex items-center justify-center"
+        :style="{ zIndex: Z_INDEX.MODAL }"
       >
         <!-- 遮罩 -->
         <div

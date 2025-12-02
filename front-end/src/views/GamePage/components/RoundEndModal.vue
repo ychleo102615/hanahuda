@@ -14,10 +14,11 @@
   <Transition name="modal-fade">
     <div
       v-if="shouldShowPanel"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      class="fixed inset-0 flex items-center justify-center bg-black/60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="round-end-title"
+      :style="{ zIndex: Z_INDEX.MODAL }"
       @click.prevent
       @keydown.esc.prevent
     >
@@ -177,6 +178,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
+import { Z_INDEX } from '@/constants'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
 

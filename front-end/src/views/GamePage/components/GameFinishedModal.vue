@@ -2,10 +2,11 @@
   <Transition name="modal-fade">
     <div
       v-if="uiStateStore.gameFinishedModalVisible && uiStateStore.gameFinishedModalData"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      class="fixed inset-0 flex items-center justify-center bg-black/60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="game-finished-title"
+      :style="{ zIndex: Z_INDEX.MODAL }"
       @click.self="handleClose"
     >
       <div
@@ -114,6 +115,7 @@
  * - 根據勝負顯示不同顏色主題
  */
 
+import { Z_INDEX } from '@/constants'
 import { useUIStateStore } from '@/user-interface/adapter/stores/uiState'
 import { useGameStateStore } from '@/user-interface/adapter/stores/gameState'
 import { useRouter } from 'vue-router'

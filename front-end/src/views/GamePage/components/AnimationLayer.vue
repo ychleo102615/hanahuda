@@ -11,6 +11,7 @@ import { watch, ref, nextTick } from 'vue'
 import { useAnimationLayerStore } from '@/user-interface/adapter/stores'
 import CardComponent from './CardComponent.vue'
 import { useMotion } from '@vueuse/motion'
+import { Z_INDEX } from '@/constants'
 
 const store = useAnimationLayerStore()
 
@@ -237,7 +238,7 @@ function startGroupAnimation(groupId: string) {
 
 <template>
   <Teleport to="body">
-    <div class="fixed inset-0 pointer-events-none" style="z-index: 9999;">
+    <div class="fixed inset-0 pointer-events-none" :style="{ zIndex: Z_INDEX.ANIMATION }">
       <!-- 單獨卡片動畫 -->
       <div
         v-for="card in store.animatingCards"

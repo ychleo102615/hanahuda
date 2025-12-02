@@ -8,6 +8,7 @@
  */
 
 import { computed } from 'vue'
+import { Z_INDEX } from '@/constants'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
 
 const uiStore = useUIStateStore()
@@ -49,7 +50,7 @@ const statusMessage = computed(() => {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: v-bind('Z_INDEX.RECONNECTION');
   background-color: #f59e0b;
   color: white;
   padding: 0.75rem 1rem;

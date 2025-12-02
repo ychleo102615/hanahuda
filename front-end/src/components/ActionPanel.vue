@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useMotion } from '@vueuse/motion'
+import { Z_INDEX } from '@/constants'
 
 // Props 定義
 export interface ActionPanelItem {
@@ -99,11 +100,15 @@ const handleItemClick = (item: ActionPanelItem) => {
   <!-- 只在 isOpen 時渲染 -->
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-end">
+      <div
+        v-if="isOpen"
+        class="fixed inset-0 flex items-center justify-end"
+        :style="{ zIndex: Z_INDEX.OVERLAY }"
+      >
         <!-- 遮罩背景 -->
         <div
           data-testid="panel-overlay"
-          class="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
+          class="absolute inset-0 bg-black/50 transition-opacity"
           @click="handleClose"
         />
 
@@ -114,6 +119,7 @@ const handleItemClick = (item: ActionPanelItem) => {
           role="dialog"
           aria-label="Action menu"
           class="relative right-0 h-full w-80 bg-white shadow-2xl flex flex-col"
+          :style="{ zIndex: Z_INDEX.PANEL }"
         >
           <!-- 面板標題與關閉按鈕 -->
           <div class="flex items-center justify-between p-4 border-b border-gray-200">
@@ -184,10 +190,5 @@ const handleItemClick = (item: ActionPanelItem) => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-/* 確保面板在最上層 */
-.z-50 {
-  z-index: 50;
 }
 </style>

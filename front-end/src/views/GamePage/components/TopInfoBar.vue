@@ -2,6 +2,14 @@
 /**
  * TopInfoBar - 頂部資訊列
  *
+ * @deprecated 此元件已被 @/components/TopInfoBar.vue 取代。
+ * 新的統一元件支援 'game' 和 'lobby' 兩種模式。
+ * 請使用:
+ * ```typescript
+ * import TopInfoBar from '@/components/TopInfoBar.vue'
+ * <TopInfoBar variant="game" />
+ * ```
+ *
  * @description
  * 顯示遊戲分數、回合資訊、控制按鈕。
  */

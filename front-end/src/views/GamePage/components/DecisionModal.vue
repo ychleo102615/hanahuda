@@ -13,6 +13,7 @@
 
 import { storeToRefs } from 'pinia'
 import { computed, inject } from 'vue'
+import { Z_INDEX } from '@/constants'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
 import { TOKENS } from '../../../user-interface/adapter/di/tokens'
@@ -75,7 +76,8 @@ function handleEndRound() {
     <Transition name="fade">
       <div
         v-if="decisionModalVisible && decisionModalData"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+        class="fixed inset-0 flex items-center justify-center bg-black/60"
+        :style="{ zIndex: Z_INDEX.MODAL }"
       >
         <!-- T073 [US3]: Modal content -->
         <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
