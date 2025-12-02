@@ -22,16 +22,8 @@ app.use(createPinia())
 const gameMode = (sessionStorage.getItem('gameMode') as 'backend' | 'local' | 'mock') || 'mock'
 registerDependencies(container, gameMode)
 
-// Provide DI Container 到 Vue
-Object.entries(TOKENS).forEach(([key, token]) => {
-  try {
-    const dependency = container.resolve(token)
-    app.provide(token.toString(), dependency)
-  } catch {
-    // 某些 token 可能還未註冊，忽略
-    console.debug(`[DI] Token ${key} not yet registered`)
-  }
-})
+// 注意：不再使用 Vue provide/inject
+// 組件直接使用 useDependency(token) 從 container 解析依賴
 
 app.use(router)
 

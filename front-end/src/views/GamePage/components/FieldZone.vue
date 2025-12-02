@@ -10,11 +10,12 @@
  * - 多重配對高亮（橙色框 + 明顯閃爍）
  */
 
-import { computed, inject } from 'vue'
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
 import { useZoneRegistration } from '../../../user-interface/adapter/composables/useZoneRegistration'
+import { useDependency } from '../../../user-interface/adapter/composables/useDependency'
 import CardComponent from './CardComponent.vue'
 import { TOKENS } from '../../../user-interface/adapter/di/tokens'
 import type { SelectMatchTargetPort, PlayHandCardPort } from '../../../user-interface/application/ports/input'
@@ -37,12 +38,8 @@ const {
 } = storeToRefs(uiState)
 
 // 注入 Ports
-const selectMatchTargetPort = inject<SelectMatchTargetPort>(
-  TOKENS.SelectMatchTargetPort.toString()
-)
-const playHandCardPort = inject<PlayHandCardPort>(
-  TOKENS.PlayHandCardPort.toString()
-)
+const selectMatchTargetPort = useDependency<SelectMatchTargetPort>(TOKENS.SelectMatchTargetPort)
+const playHandCardPort = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
 
 // 判斷卡片是否為懸浮預覽高亮（紫色框）
 // 只在懸浮且沒有進入確認模式時顯示
@@ -87,44 +84,41 @@ function isMultipleMatchHighlight(cardId: string): boolean {
 function handleCardClick(cardId: string) {
   // 情境 1: 翻牌選擇模式（AWAITING_SELECTION）
   if (fieldCardSelectionMode.value && fieldCardSelectableTargets.value.includes(cardId)) {
-    if (selectMatchTargetPort) {
-      // 從 gameState 取得完整參數
-      const drawnCard = gameState.drawnCard
-      const possibleTargets = gameState.possibleTargetCardIds
+    // 從 gameState 取得完整參數
+    const drawnCard = gameState.drawnCard
+    const possibleTargets = gameState.possibleTargetCardIds
 
-      if (!drawnCard || possibleTargets.length === 0) {
-        console.error('[FieldZone] Missing drawnCard or possibleTargets for AWAITING_SELECTION')
-        return
-      }
-
-      selectMatchTargetPort.execute({
-        sourceCardId: drawnCard,
-        targetCardId: cardId,
-        possibleTargets: possibleTargets
-      })
-      uiState.exitFieldCardSelectionMode()
-    } else {
-      console.warn('[FieldZone] SelectMatchTargetPort not injected')
+    if (!drawnCard || possibleTargets.length === 0) {
+      console.error('[FieldZone] Missing drawnCard or possibleTargets for AWAITING_SELECTION')
+      return
     }
+
+    selectMatchTargetPort.execute({
+      sourceCardId: drawnCard,
+      targetCardId: cardId,
+      possibleTargets: possibleTargets
+    })
+    uiState.exitFieldCardSelectionMode()
     return
   }
 
   // 情境 2: 手牌確認模式（兩次點擊） - 點擊場牌來配對
   if (handCardConfirmationMode.value && matchableFieldCards.value.includes(cardId)) {
-    if (playHandCardPort && uiState.handCardAwaitingConfirmation) {
-      const selectedHandCard = uiState.handCardAwaitingConfirmation
-      console.info('[FieldZone] 手牌確認模式 - 執行配對:', { selectedHandCard, fieldCard: cardId })
-
-      playHandCardPort.execute({
-        cardId: selectedHandCard,
-        handCards: gameState.myHandCards,
-        fieldCards: gameState.fieldCards,
-        targetCardId: cardId,
-      })
-      uiState.exitHandCardConfirmationMode()
-    } else {
-      console.warn('[FieldZone] PlayHandCardPort not injected or no handCard awaiting')
+    if (!uiState.handCardAwaitingConfirmation) {
+      console.warn('[FieldZone] No handCard awaiting confirmation')
+      return
     }
+
+    const selectedHandCard = uiState.handCardAwaitingConfirmation
+    console.info('[FieldZone] 手牌確認模式 - 執行配對:', { selectedHandCard, fieldCard: cardId })
+
+    playHandCardPort.execute({
+      cardId: selectedHandCard,
+      handCards: gameState.myHandCards,
+      fieldCards: gameState.fieldCards,
+      targetCardId: cardId,
+    })
+    uiState.exitHandCardConfirmationMode()
     return
   }
 }

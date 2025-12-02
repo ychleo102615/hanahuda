@@ -13,13 +13,14 @@
  * const leaveGame = useLeaveGame({ requireConfirmation: false })
  */
 
-import { ref, inject } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStateStore } from '../stores/gameState'
 import { useUIStateStore } from '../stores/uiState'
 import { useMatchmakingStateStore } from '../stores/matchmakingState'
+import { useDependency } from './useDependency'
 import { TOKENS } from '../di/tokens'
-import type { GameApiClient } from '../api/GameApiClient'
+import type { SendCommandPort } from '../../application/ports/output/send-command.port.ts'
 import type { ActionPanelItem } from '@/components/ActionPanel.vue'
 
 export interface UseLeaveGameOptions {
@@ -35,7 +36,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   const gameState = useGameStateStore()
   const uiState = useUIStateStore()
   const matchmakingState = useMatchmakingStateStore()
-  const gameApiClient = inject<GameApiClient>(TOKENS.GameApiClient)
+  const gameApiClient = useDependency<SendCommandPort>(TOKENS.SendCommandPort)
 
   // State
   const isActionPanelOpen = ref(false)

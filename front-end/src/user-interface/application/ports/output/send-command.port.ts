@@ -9,6 +9,7 @@
  * - PlayHandCardUseCase
  * - SelectMatchTargetUseCase
  * - MakeKoiKoiDecisionUseCase
+ * - useLeaveGame composable
  *
  * @example
  * ```typescript
@@ -24,6 +25,18 @@
  * ```
  */
 export interface SendCommandPort {
+  /**
+   * 離開遊戲
+   *
+   * @param gameId - 遊戲 ID
+   * @throws 當網路錯誤或伺服器拒絕時拋出異常
+   *
+   * @example
+   * ```typescript
+   * await sendCommand.leaveGame('game-123')
+   * ```
+   */
+  leaveGame(gameId: string): Promise<void>
   /**
    * 發送打牌命令（TurnPlayHandCard）
    *

@@ -7,13 +7,14 @@
  * - T021 [US2]: 測試玩家做出決策後 stopActionCountdown() 被正確調用
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import DecisionModal from '../../src/views/GamePage/components/DecisionModal.vue'
 import { useUIStateStore } from '../../src/user-interface/adapter/stores/uiState'
 import { useGameStateStore } from '../../src/user-interface/adapter/stores/gameState'
 import { TOKENS } from '../../src/user-interface/adapter/di/tokens'
+import { container } from '../../src/user-interface/adapter/di/container'
 import type { MakeKoiKoiDecisionPort } from '../../src/user-interface/application/ports/input'
 
 describe('DecisionModal - Countdown Display', () => {
@@ -27,6 +28,18 @@ describe('DecisionModal - Countdown Display', () => {
     mockMakeKoiKoiDecisionPort = {
       execute: vi.fn(),
     }
+
+    // Mock container.resolve()
+    vi.spyOn(container, 'resolve').mockImplementation((token) => {
+      if (token === TOKENS.MakeKoiKoiDecisionPort) {
+        return mockMakeKoiKoiDecisionPort
+      }
+      throw new Error(`Unmocked dependency: ${token.toString()}`)
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('倒數顯示測試 (T018)', () => {
@@ -48,12 +61,7 @@ describe('DecisionModal - Countdown Display', () => {
       uiState.startActionCountdown(15)
 
       const wrapper = mount(DecisionModal, {
-        attachTo: document.body,
-        global: {
-          provide: {
-            [TOKENS.MakeKoiKoiDecisionPort.toString()]: mockMakeKoiKoiDecisionPort,
-          },
-        },
+        attachTo: document.body
       })
 
       // 等待組件渲染
@@ -86,12 +94,7 @@ describe('DecisionModal - Countdown Display', () => {
       uiState.startActionCountdown(4)
 
       const wrapper = mount(DecisionModal, {
-        attachTo: document.body,
-        global: {
-          provide: {
-            [TOKENS.MakeKoiKoiDecisionPort.toString()]: mockMakeKoiKoiDecisionPort,
-          },
-        },
+        attachTo: document.body
       })
 
       await wrapper.vm.$nextTick()
@@ -121,12 +124,7 @@ describe('DecisionModal - Countdown Display', () => {
       uiState.startActionCountdown(10)
 
       const wrapper = mount(DecisionModal, {
-        attachTo: document.body,
-        global: {
-          provide: {
-            [TOKENS.MakeKoiKoiDecisionPort.toString()]: mockMakeKoiKoiDecisionPort,
-          },
-        },
+        attachTo: document.body
       })
 
       await wrapper.vm.$nextTick()
@@ -155,12 +153,7 @@ describe('DecisionModal - Countdown Display', () => {
       )
 
       const wrapper = mount(DecisionModal, {
-        attachTo: document.body,
-        global: {
-          provide: {
-            [TOKENS.MakeKoiKoiDecisionPort.toString()]: mockMakeKoiKoiDecisionPort,
-          },
-        },
+        attachTo: document.body
       })
 
       await wrapper.vm.$nextTick()
@@ -191,12 +184,7 @@ describe('DecisionModal - Countdown Display', () => {
       uiState.startActionCountdown(15)
 
       const wrapper = mount(DecisionModal, {
-        attachTo: document.body,
-        global: {
-          provide: {
-            [TOKENS.MakeKoiKoiDecisionPort.toString()]: mockMakeKoiKoiDecisionPort,
-          },
-        },
+        attachTo: document.body
       })
 
       await wrapper.vm.$nextTick()
@@ -236,12 +224,7 @@ describe('DecisionModal - Countdown Display', () => {
       uiState.startActionCountdown(15)
 
       const wrapper = mount(DecisionModal, {
-        attachTo: document.body,
-        global: {
-          provide: {
-            [TOKENS.MakeKoiKoiDecisionPort.toString()]: mockMakeKoiKoiDecisionPort,
-          },
-        },
+        attachTo: document.body
       })
 
       await wrapper.vm.$nextTick()

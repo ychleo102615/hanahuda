@@ -17,6 +17,7 @@ import { useGameStateStore } from '../../src/user-interface/adapter/stores/gameS
 import { useUIStateStore } from '../../src/user-interface/adapter/stores/uiState'
 import { useMatchmakingStateStore } from '../../src/user-interface/adapter/stores/matchmakingState'
 import { TOKENS } from '../../src/user-interface/adapter/di/tokens'
+import { container } from '../../src/user-interface/adapter/di/container'
 
 // Mock Vue Router
 const mockPush = vi.fn()
@@ -28,25 +29,14 @@ vi.mock('vue-router', () => ({
   useRouter: () => mockRouter,
 }))
 
-// Mock GameApiClient
+// Mock SendCommandPort
 const mockLeaveGame = vi.fn()
-const mockGameApiClient = {
+const mockSendCommandPort = {
   leaveGame: mockLeaveGame,
+  playHandCard: vi.fn(),
+  selectTarget: vi.fn(),
+  makeDecision: vi.fn(),
 }
-
-// Mock inject
-vi.mock('vue', async () => {
-  const actual = await vi.importActual('vue')
-  return {
-    ...actual,
-    inject: (token: symbol) => {
-      if (token === TOKENS.GameApiClient) {
-        return mockGameApiClient
-      }
-      return undefined
-    },
-  }
-})
 
 describe('useLeaveGame Composable', () => {
   let gameStateStore: ReturnType<typeof useGameStateStore>
@@ -61,6 +51,14 @@ describe('useLeaveGame Composable', () => {
     gameStateStore = useGameStateStore()
     uiStateStore = useUIStateStore()
     matchmakingStateStore = useMatchmakingStateStore()
+
+    // Mock container.resolve()
+    vi.spyOn(container, 'resolve').mockImplementation((token) => {
+      if (token === TOKENS.SendCommandPort) {
+        return mockSendCommandPort
+      }
+      throw new Error(`Unmocked dependency: ${token.toString()}`)
+    })
 
     // 清除 mocks
     mockPush.mockClear()

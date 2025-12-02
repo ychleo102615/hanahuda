@@ -48,6 +48,17 @@ export class MockApiClient implements SendCommandPort {
   }
 
   /**
+   * Mock leaveGame
+   */
+  async leaveGame(gameId: string): Promise<void> {
+    await delay(50)
+
+    console.info('[Mock API] leaveGame', { gameId })
+
+    // Mock 不執行任何操作,只記錄日誌
+  }
+
+  /**
    * Mock playHandCard
    */
   async playHandCard(cardId: string, matchTargetId?: string): Promise<void> {

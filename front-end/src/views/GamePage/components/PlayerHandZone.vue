@@ -8,15 +8,17 @@
  * T058 [US2]: 注入 PlayHandCardPort
  */
 
-import { ref, inject } from 'vue'
+import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
 import { useZoneRegistration } from '../../../user-interface/adapter/composables/useZoneRegistration'
+import { useDependency } from '../../../user-interface/adapter/composables/useDependency'
 import CardComponent from './CardComponent.vue'
 import { TOKENS } from '../../../user-interface/adapter/di/tokens'
 import type { PlayHandCardPort } from '../../../user-interface/application/ports/input'
 import type { DomainFacade } from '../../../user-interface/application/types/domain-facade'
+import type { AnimationPort } from '../../../user-interface/application/ports/output'
 import { getCardById } from '../../../user-interface/domain'
 
 const gameState = useGameStateStore()
@@ -28,20 +30,13 @@ const { myHandCards, isMyTurn, fieldCards } = storeToRefs(gameState)
 const { handCardAwaitingConfirmation } = storeToRefs(uiState)
 
 // T058 [US2]: 注入 PlayHandCardPort
-const playHandCardPort = inject<PlayHandCardPort>(
-  TOKENS.PlayHandCardPort.toString()
-)
+const playHandCardPort = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
 
 // 通過 DI 獲取 DomainFacade
-const domainFacade = inject<DomainFacade>(
-  TOKENS.DomainFacade.toString()
-)
+const domainFacade = useDependency<DomainFacade>(TOKENS.DomainFacade)
 
 // 注入 AnimationPort 用於檢查動畫狀態
-import type { AnimationPort } from '../../../user-interface/application/ports/output'
-const animationPort = inject<AnimationPort>(
-  TOKENS.AnimationPort.toString()
-)
+const animationPort = useDependency<AnimationPort>(TOKENS.AnimationPort)
 
 const emit = defineEmits<{
   cardSelect: [cardId: string]
@@ -51,8 +46,7 @@ const emit = defineEmits<{
 function handleCardClick(cardId: string) {
   // 前置條件檢查
   if (!isMyTurn.value) return
-  if (animationPort?.isAnimating()) return
-  if (!domainFacade || !playHandCardPort) return
+  if (animationPort.isAnimating()) return
 
   // 第一次點擊：進入確認模式
   if (handCardAwaitingConfirmation.value !== cardId) {
@@ -106,8 +100,7 @@ function handleCardClick(cardId: string) {
 // 處理滑鼠進入手牌（懸浮預覽）
 function handleMouseEnter(cardId: string) {
   if (!isMyTurn.value) return
-  if (animationPort?.isAnimating()) return
-  if (!domainFacade) return
+  if (animationPort.isAnimating()) return
 
   // 如果是已選中的手牌，不顯示預覽高亮
   if (handCardAwaitingConfirmation.value === cardId) {

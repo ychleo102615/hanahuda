@@ -7,10 +7,11 @@
  * 整合所有遊戲區域組件。
  */
 
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '../user-interface/adapter/stores/uiState'
+import { useDependency, useOptionalDependency } from '../user-interface/adapter/composables/useDependency'
 import TopInfoBar from '@/components/TopInfoBar.vue'
 import FieldZone from './GamePage/components/FieldZone.vue'
 import PlayerHandZone from './GamePage/components/PlayerHandZone.vue'
@@ -29,6 +30,7 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import { TOKENS } from '../user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '../user-interface/adapter/composables/useZoneRegistration'
 import { useLeaveGame } from '../user-interface/adapter/composables/useLeaveGame'
+import type { SendCommandPort } from '../user-interface/application/ports/output'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
@@ -79,18 +81,15 @@ const {
 
 // GamePage 不再直接調用業務 Port，由子組件負責
 
+// 在 setup 階段獲取依賴（用於 Mock 模式）
+const gameMode = sessionStorage.getItem('gameMode') || 'mock'
+const mockApiClient = gameMode === 'mock' ? useDependency<SendCommandPort & { joinGame: () => Promise<void> }>(TOKENS.SendCommandPort) : null
+const mockEventEmitter = gameMode === 'mock' ? useOptionalDependency<{ start: () => void; reset: () => void }>(TOKENS.MockEventEmitter) : null
+
 // 初始化遊戲
 onMounted(async () => {
-  const gameMode = sessionStorage.getItem('gameMode') || 'mock'
-
   if (gameMode === 'mock') {
     console.info('[GamePage] 初始化 Mock 模式')
-
-    // 解析 MockApiClient 和 MockEventEmitter
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mockApiClient = inject<{ joinGame: () => Promise<void> }>(TOKENS.SendCommandPort.toString()) as any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mockEventEmitter = inject<{ start: () => void }>(TOKENS.MockEventEmitter.toString()) as any
 
     if (mockApiClient && mockEventEmitter) {
       // 調用 joinGame 初始化遊戲
@@ -103,6 +102,13 @@ onMounted(async () => {
     }
   }
 })
+
+onUnmounted(() => {
+  if (gameMode === 'mock' && mockEventEmitter) {
+    mockEventEmitter.reset()
+  }
+})
+
 
 // GamePage 只作為協調者，不處理業務邏輯
 // 所有場牌點擊邏輯已移至 FieldZone 組件內部處理

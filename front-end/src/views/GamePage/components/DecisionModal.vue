@@ -12,10 +12,11 @@
  */
 
 import { storeToRefs } from 'pinia'
-import { computed, inject } from 'vue'
+import { computed } from 'vue'
 import { Z_INDEX } from '@/constants'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
+import { useDependency } from '../../../user-interface/adapter/composables/useDependency'
 import { TOKENS } from '../../../user-interface/adapter/di/tokens'
 import type { MakeKoiKoiDecisionPort } from '../../../user-interface/application/ports/input'
 
@@ -25,9 +26,7 @@ const { decisionModalVisible, decisionModalData, actionTimeoutRemaining } = stor
 const { myDepository, myKoiKoiMultiplier } = storeToRefs(gameState)
 
 // T074 [US3]: Inject MakeKoiKoiDecisionPort
-const makeKoiKoiDecisionPort = inject<MakeKoiKoiDecisionPort>(
-  TOKENS.MakeKoiKoiDecisionPort.toString()
-)
+const makeKoiKoiDecisionPort = useDependency<MakeKoiKoiDecisionPort>(TOKENS.MakeKoiKoiDecisionPort)
 
 // T020 [US2]: Warning color logic (red when <= 5 seconds)
 const countdownClass = computed(() => {
@@ -42,7 +41,7 @@ function handleKoiKoi() {
   // T021 [US2]: Stop countdown when player makes decision
   uiState.stopActionCountdown()
 
-  if (makeKoiKoiDecisionPort && decisionModalData.value) {
+  if (decisionModalData.value) {
     makeKoiKoiDecisionPort.execute({
       currentYaku: decisionModalData.value.currentYaku,
       depositoryCards: myDepository.value,
@@ -58,7 +57,7 @@ function handleEndRound() {
   // T021 [US2]: Stop countdown when player makes decision
   uiState.stopActionCountdown()
 
-  if (makeKoiKoiDecisionPort && decisionModalData.value) {
+  if (decisionModalData.value) {
     makeKoiKoiDecisionPort.execute({
       currentYaku: decisionModalData.value.currentYaku,
       depositoryCards: myDepository.value,

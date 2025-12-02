@@ -30,7 +30,7 @@ export interface DependencyOptions {
  * 依賴注入錯誤
  */
 export class DependencyNotFoundError extends Error {
-  constructor(token: symbol | string) {
+  constructor(token: symbol) {
     super(`Dependency not found: ${token.toString()}`);
     this.name = 'DependencyNotFoundError';
   }
@@ -40,9 +40,9 @@ export class DependencyNotFoundError extends Error {
  * DIContainer 類別
  */
 export class DIContainer {
-  private dependencies: Map<symbol | string, DependencyFactory>
+  private dependencies: Map<symbol, DependencyFactory>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private singletons: Map<symbol | string, any>
+  private singletons: Map<symbol, any>
 
   constructor() {
     this.dependencies = new Map();
@@ -52,7 +52,7 @@ export class DIContainer {
   /**
    * 註冊依賴
    *
-   * @param token - 依賴 Token (Symbol 或 string)
+   * @param token - 依賴 Token (Symbol)
    * @param factory - 工廠函數
    * @param options - 註冊選項 (singleton)
    *
@@ -66,7 +66,7 @@ export class DIContainer {
    * ```
    */
   register<T>(
-    token: symbol | string,
+    token: symbol,
     factory: DependencyFactory<T>,
     options?: DependencyOptions
   ): void {
@@ -81,7 +81,7 @@ export class DIContainer {
   /**
    * 解析依賴
    *
-   * @param token - 依賴 Token
+   * @param token - 依賴 Token (Symbol)
    * @returns 依賴實例
    * @throws {DependencyNotFoundError} 若依賴未註冊
    *
@@ -90,7 +90,7 @@ export class DIContainer {
    * const apiClient = container.resolve<GameApiClient>(TOKENS.GameApiClient);
    * ```
    */
-  resolve<T>(token: symbol | string): T {
+  resolve<T>(token: symbol): T {
     // 檢查是否為單例
     if (this.singletons.has(token)) {
       return this.singletons.get(token) as T;
@@ -109,10 +109,10 @@ export class DIContainer {
   /**
    * 檢查依賴是否已註冊
    *
-   * @param token - 依賴 Token
+   * @param token - 依賴 Token (Symbol)
    * @returns 是否已註冊
    */
-  has(token: symbol | string): boolean {
+  has(token: symbol): boolean {
     return this.dependencies.has(token) || this.singletons.has(token);
   }
 
@@ -129,7 +129,7 @@ export class DIContainer {
    * 取得所有已註冊的 Token
    * (用於偵錯)
    */
-  getRegisteredTokens(): Array<symbol | string> {
+  getRegisteredTokens(): Array<symbol> {
     return Array.from(this.dependencies.keys());
   }
 }

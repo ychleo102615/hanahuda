@@ -20,6 +20,7 @@ import { useGameStateStore } from '../../src/user-interface/adapter/stores/gameS
 import { useUIStateStore } from '../../src/user-interface/adapter/stores/uiState'
 import { useMatchmakingStateStore } from '../../src/user-interface/adapter/stores/matchmakingState'
 import { TOKENS } from '../../src/user-interface/adapter/di/tokens'
+import { container } from '../../src/user-interface/adapter/di/container'
 
 // Mock Vue Router
 const mockPush = vi.fn()
@@ -31,10 +32,23 @@ vi.mock('vue-router', () => ({
   useRouter: () => mockRouter,
 }))
 
-// Mock GameApiClient
+// Mock SendCommandPort
 const mockLeaveGame = vi.fn()
-const mockGameApiClient = {
+const mockJoinGame = vi.fn()
+const mockSendCommandPort = {
   leaveGame: mockLeaveGame,
+  joinGame: mockJoinGame,
+  playHandCard: vi.fn(),
+  selectTarget: vi.fn(),
+  makeDecision: vi.fn(),
+}
+
+// Mock MockEventEmitter
+const mockStart = vi.fn()
+const mockReset = vi.fn()
+const mockEventEmitter = {
+  start: mockStart,
+  reset: mockReset,
 }
 
 // 輔助函數：在 document 中查找元素（支持 Teleport）
@@ -60,9 +74,23 @@ describe('GamePage - Leave Game Integration Tests', () => {
     uiStateStore = useUIStateStore()
     matchmakingStateStore = useMatchmakingStateStore()
 
+    // Mock container.resolve()
+    vi.spyOn(container, 'resolve').mockImplementation((token) => {
+      if (token === TOKENS.SendCommandPort) {
+        return mockSendCommandPort
+      }
+      if (token === TOKENS.MockEventEmitter) {
+        return mockEventEmitter
+      }
+      throw new Error(`Unmocked dependency: ${token.toString()}`)
+    })
+
     // 清除 mocks
     mockPush.mockClear()
     mockLeaveGame.mockClear()
+    mockJoinGame.mockClear()
+    mockStart.mockClear()
+    mockReset.mockClear()
 
     // 清除 sessionStorage
     sessionStorage.clear()
@@ -86,27 +114,8 @@ describe('GamePage - Leave Game Integration Tests', () => {
       sessionStorage.setItem('session_token', 'test-token')
       sessionStorage.setItem('gameMode', 'mock')
 
-      // Mock GameApiClient injection
       wrapper = mount(GamePage, {
         attachTo: document.body,
-        global: {
-          provide: {
-            [TOKENS.GameApiClient]: mockGameApiClient,
-            [TOKENS.SendCommandPort.toString()]: {
-              joinGame: vi.fn().mockResolvedValue(undefined),
-            },
-            [TOKENS.MockEventEmitter.toString()]: {
-              start: vi.fn(),
-            },
-            // Mock 其他必要的依賴
-            [TOKENS.DomainFacade]: {},
-            [TOKENS.PlayHandCardPort]: {},
-            [TOKENS.SelectMatchTargetPort]: {},
-            [TOKENS.AnimationPort]: {},
-            [TOKENS.MakeKoiKoiDecisionPort]: {},
-            [TOKENS.GameStatePort]: {},
-            [TOKENS.NotificationPort]: {},
-          },
           stubs: {
             // Stub 掉不需要測試的子組件
             TopInfoBar: true,
@@ -122,8 +131,7 @@ describe('GamePage - Leave Game Integration Tests', () => {
             ReconnectionBanner: true,
             AnimationLayer: true,
             ConfirmationHint: true,
-          },
-        },
+          }
       })
     })
 
@@ -355,25 +363,7 @@ describe('GamePage - Leave Game Integration Tests', () => {
 
       wrapper = mount(GamePage, {
         attachTo: document.body,
-        global: {
-          provide: {
-            [TOKENS.GameApiClient]: mockGameApiClient,
-            [TOKENS.SendCommandPort.toString()]: {
-              joinGame: vi.fn().mockResolvedValue(undefined),
-            },
-            [TOKENS.MockEventEmitter.toString()]: {
-              start: vi.fn(),
-            },
-            // Mock 其他必要的依賴
-            [TOKENS.DomainFacade]: {},
-            [TOKENS.PlayHandCardPort]: {},
-            [TOKENS.SelectMatchTargetPort]: {},
-            [TOKENS.AnimationPort]: {},
-            [TOKENS.MakeKoiKoiDecisionPort]: {},
-            [TOKENS.GameStatePort]: {},
-            [TOKENS.NotificationPort]: {},
-          },
-          stubs: {
+        stubs: {
             // Stub 掉不需要測試的子組件
             TopInfoBar: true,
             FieldZone: true,
@@ -388,8 +378,7 @@ describe('GamePage - Leave Game Integration Tests', () => {
             ReconnectionBanner: true,
             AnimationLayer: true,
             ConfirmationHint: true,
-          },
-        },
+          }
       })
     })
 
