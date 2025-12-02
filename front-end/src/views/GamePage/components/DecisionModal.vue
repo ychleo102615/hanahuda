@@ -17,11 +17,13 @@ import { Z_INDEX } from '@/constants'
 import { useUIStateStore } from '../../../user-interface/adapter/stores/uiState'
 import { useGameStateStore } from '../../../user-interface/adapter/stores/gameState'
 import { useDependency } from '../../../user-interface/adapter/composables/useDependency'
+import { useCountdown } from '../../../user-interface/adapter/composables/useCountdown'
 import { TOKENS } from '../../../user-interface/adapter/di/tokens'
 import type { MakeKoiKoiDecisionPort } from '../../../user-interface/application/ports/input'
 
 const uiState = useUIStateStore()
 const gameState = useGameStateStore()
+const countdown = useCountdown()
 const { decisionModalVisible, decisionModalData, actionTimeoutRemaining } = storeToRefs(uiState)
 const { myDepository, myKoiKoiMultiplier } = storeToRefs(gameState)
 
@@ -39,7 +41,7 @@ const countdownClass = computed(() => {
 // T076 [US3]: Handle Koi-Koi decision
 function handleKoiKoi() {
   // T021 [US2]: Stop countdown when player makes decision
-  uiState.stopActionCountdown()
+  countdown.stopActionCountdown()
 
   if (decisionModalData.value) {
     makeKoiKoiDecisionPort.execute({
@@ -55,7 +57,7 @@ function handleKoiKoi() {
 // T076 [US3]: Handle End Round decision
 function handleEndRound() {
   // T021 [US2]: Stop countdown when player makes decision
-  uiState.stopActionCountdown()
+  countdown.stopActionCountdown()
 
   if (decisionModalData.value) {
     makeKoiKoiDecisionPort.execute({

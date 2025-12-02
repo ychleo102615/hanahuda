@@ -55,6 +55,7 @@ import { zoneRegistry } from '../animation/ZoneRegistry'
 import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
 import { createGameStatePortAdapter } from '../stores/GameStatePortAdapter'
 import { createNavigationPortAdapter } from '../router/NavigationPortAdapter'
+import { CountdownManager } from '../services/CountdownManager'
 
 /**
  * 遊戲模式
@@ -135,6 +136,16 @@ function registerStores(container: DIContainer): void {
     () => useMatchmakingStateStore(),
     { singleton: true },
   )
+
+  // 註冊 CountdownManager 為單例
+  container.register(
+    TOKENS.CountdownManager,
+    () => {
+      const uiState = container.resolve(TOKENS.UIStateStore) as ReturnType<typeof useUIStateStore>
+      return new CountdownManager(uiState)
+    },
+    { singleton: true },
+  )
 }
 
 /**
@@ -172,10 +183,13 @@ function registerOutputPorts(container: DIContainer): void {
     { singleton: true },
   )
 
-  // NotificationPort: 由 NotificationPortAdapter 實作
+  // NotificationPort: 由 NotificationPortAdapter 實作（注入 CountdownManager）
   container.register(
     TOKENS.NotificationPort,
-    () => createNotificationPortAdapter(),
+    () => {
+      const countdown = container.resolve(TOKENS.CountdownManager) as CountdownManager
+      return createNotificationPortAdapter(countdown)
+    },
     { singleton: true },
   )
 

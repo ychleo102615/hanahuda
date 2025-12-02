@@ -152,12 +152,6 @@ export interface UIStateStoreActions {
   // 場牌選擇模式管理
   enterFieldCardSelectionMode(sourceCard: string, selectableTargets: string[], highlightType: 'single' | 'multiple'): void
   exitFieldCardSelectionMode(): void
-
-  // 倒數計時管理
-  startActionCountdown(seconds: number): void
-  stopActionCountdown(): void
-  startDisplayCountdown(seconds: number, onComplete?: () => void): void
-  stopDisplayCountdown(): void
 }
 
 /**
@@ -444,11 +438,10 @@ export const useUIStateStore = defineStore('uiState', {
      *
      * @description
      * 通用方法，關閉所有可能打開的 modal/panel。
-     * 用於倒數結束時自動關閉面板。
+     * 倒數計時由 CountdownManager 管理，不在此處停止。
      */
     hideModal(): void {
       this._hideAllModals()
-      this.stopDisplayCountdown()
       console.info('[UIStateStore] 隱藏所有 Modal')
     },
 
@@ -503,9 +496,9 @@ export const useUIStateStore = defineStore('uiState', {
       this.fieldCardHighlightType = null
       this.fieldCardSourceCard = null
 
-      // 倒數計時
-      this.stopActionCountdown()
-      this.stopDisplayCountdown()
+      // 倒數計時（只重置 state，interval 由 useCountdown 管理）
+      this.actionTimeoutRemaining = null
+      this.displayTimeoutRemaining = null
 
       console.info('[UIStateStore] 狀態已重置')
     },
@@ -573,91 +566,6 @@ export const useUIStateStore = defineStore('uiState', {
       this.fieldCardHighlightType = null
       this.fieldCardSourceCard = null
       console.info('[UIStateStore] 退出場牌選擇模式')
-    },
-
-    /**
-     * 啟動操作倒數
-     *
-     * @param seconds - 倒數秒數
-     */
-    startActionCountdown(seconds: number): void {
-      // 停止現有倒數
-      this.stopActionCountdown()
-
-      this.actionTimeoutRemaining = seconds
-      console.info('[UIStateStore] 啟動操作倒數:', seconds)
-
-      // 建立 interval ID（存在 Store 外部，因為 Pinia state 不應存 interval ID）
-      const intervalId = window.setInterval(() => {
-        if (this.actionTimeoutRemaining !== null && this.actionTimeoutRemaining > 0) {
-          this.actionTimeoutRemaining--
-        } else {
-          this.stopActionCountdown()
-        }
-      }, 1000)
-
-      // 使用 Symbol 作為 key 存在 Store 實例上（非 reactive state）
-      ;(this as any)._actionIntervalId = intervalId
-    },
-
-    /**
-     * 停止操作倒數
-     */
-    stopActionCountdown(): void {
-      const intervalId = (this as any)._actionIntervalId
-      if (intervalId !== undefined) {
-        clearInterval(intervalId)
-        ;(this as any)._actionIntervalId = undefined
-      }
-      this.actionTimeoutRemaining = null
-      console.info('[UIStateStore] 停止操作倒數')
-    },
-
-    /**
-     * 啟動顯示倒數
-     *
-     * @param seconds - 倒數秒數
-     * @param onComplete - 倒數結束時的回調（可選）
-     */
-    startDisplayCountdown(seconds: number, onComplete?: () => void): void {
-      // 停止現有倒數
-      this.stopDisplayCountdown()
-
-      this.displayTimeoutRemaining = seconds
-      console.info('[UIStateStore] 啟動顯示倒數:', seconds)
-
-      // 存儲回調
-      ;(this as any)._displayOnComplete = onComplete
-
-      // 建立 interval ID
-      const intervalId = window.setInterval(() => {
-        if (this.displayTimeoutRemaining !== null && this.displayTimeoutRemaining > 0) {
-          this.displayTimeoutRemaining--
-        } else {
-          // 倒數結束，執行回調並停止
-          const callback = (this as any)._displayOnComplete
-          this.stopDisplayCountdown()
-          if (callback) {
-            callback()
-          }
-        }
-      }, 1000)
-
-      ;(this as any)._displayIntervalId = intervalId
-    },
-
-    /**
-     * 停止顯示倒數
-     */
-    stopDisplayCountdown(): void {
-      const intervalId = (this as any)._displayIntervalId
-      if (intervalId !== undefined) {
-        clearInterval(intervalId)
-        ;(this as any)._displayIntervalId = undefined
-      }
-      ;(this as any)._displayOnComplete = undefined
-      this.displayTimeoutRemaining = null
-      console.info('[UIStateStore] 停止顯示倒數')
     },
   },
 })

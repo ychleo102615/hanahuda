@@ -52,6 +52,9 @@ export const TOKENS = {
   ZoneRegistry: Symbol('ZoneRegistry'),
   MatchmakingStateStore: Symbol('MatchmakingStateStore'),
 
+  // ===== Services =====
+  CountdownManager: Symbol('CountdownManager'),
+
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),
 

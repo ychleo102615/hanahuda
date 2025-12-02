@@ -7,19 +7,24 @@
  * 職責：
  * - Modal 顯示/隱藏（Decision、GameFinished、RoundDrawn）
  * - Toast 訊息（Error、Success、Reconnection）
+ * - 倒數計時管理（透過注入的 countdown composable）
  */
 
 import type { NotificationPort } from '../../application/ports/output/notification.port'
 import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers } from '../../application/types'
 import type { RoundEndReason } from '../../application/types/errors'
 import { useUIStateStore } from '../stores/uiState'
+import type { CountdownManager } from '../services/CountdownManager'
 
 /**
  * 建立 NotificationPort Adapter
  *
+ * @param countdown - 倒數計時管理器（依賴注入）
  * @returns NotificationPort 實作
  */
-export function createNotificationPortAdapter(): NotificationPort {
+export function createNotificationPortAdapter(
+  countdown: CountdownManager
+): NotificationPort {
   const store = useUIStateStore()
 
   return {
@@ -96,19 +101,19 @@ export function createNotificationPortAdapter(): NotificationPort {
 
     // ===== 倒數計時 =====
     startActionCountdown(seconds: number): void {
-      store.startActionCountdown(seconds)
+      countdown.startActionCountdown(seconds)
     },
 
     stopActionCountdown(): void {
-      store.stopActionCountdown()
+      countdown.stopActionCountdown()
     },
 
     startDisplayCountdown(seconds: number, onComplete?: () => void): void {
-      store.startDisplayCountdown(seconds, onComplete)
+      countdown.startDisplayCountdown(seconds, onComplete)
     },
 
     stopDisplayCountdown(): void {
-      store.stopDisplayCountdown()
+      countdown.stopDisplayCountdown()
     },
   }
 }
