@@ -619,4 +619,175 @@ describe('GameApiClient - User Story 3 Contract Tests', () => {
       })
     })
   })
+
+  describe('T038 [US3]: leaveGame API Contract', () => {
+    describe('成功場景', () => {
+      it('should send leaveGame command successfully', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 204,
+        })
+
+        await apiClient.leaveGame('game-123')
+
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+        expect(global.fetch).toHaveBeenCalledWith(
+          `${baseURL}/api/v1/games/game-123/leave`,
+          expect.objectContaining({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+          })
+        )
+      })
+
+      it('should handle 200 OK response', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: async () => ({ message: 'Game left successfully' }),
+        })
+
+        await expect(apiClient.leaveGame('game-123')).resolves.toBeUndefined()
+      })
+    })
+
+    describe('錯誤場景', () => {
+      it('should throw ValidationError when gameId is empty', async () => {
+        await expect(apiClient.leaveGame('')).rejects.toThrow(ValidationError)
+        await expect(apiClient.leaveGame('')).rejects.toThrow(
+          '遊戲 ID 不可為空'
+        )
+
+        // 不應該發送請求
+        expect(global.fetch).not.toHaveBeenCalled()
+      })
+
+      it('should throw ValidationError on 404 Not Found', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 404,
+          text: async () => 'Game not found',
+        })
+
+        await expect(apiClient.leaveGame('game-123')).rejects.toThrow(
+          ValidationError
+        )
+        await expect(apiClient.leaveGame('game-123')).rejects.toThrow(
+          '遊戲不存在或已結束'
+        )
+      })
+
+      it('should throw ValidationError on 422 Unprocessable Entity', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 422,
+          text: async () => 'Cannot leave game in current state',
+        })
+
+        await expect(apiClient.leaveGame('game-123')).rejects.toThrow(
+          ValidationError
+        )
+        await expect(apiClient.leaveGame('game-123')).rejects.toThrow(
+          '此操作不合法,請檢查遊戲狀態'
+        )
+      })
+
+      it('should throw ServerError on 500 Internal Server Error', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 500,
+          text: async () => 'Internal Server Error',
+        })
+
+        await expect(apiClient.leaveGame('game-123')).rejects.toThrow(
+          ServerError
+        )
+        await expect(apiClient.leaveGame('game-123')).rejects.toThrow(
+          '伺服器暫時無法使用,請稍後再試'
+        )
+      })
+
+      it('should throw NetworkError when fetch throws TypeError', async () => {
+        global.fetch = vi.fn().mockRejectedValue(new TypeError('Network error'))
+
+        await expect(apiClient.leaveGame('game-123')).rejects.toThrow(
+          NetworkError
+        )
+        await expect(apiClient.leaveGame('game-123')).rejects.toThrow(
+          '網路連線失敗'
+        )
+      })
+
+      it('should throw TimeoutError when request times out', async () => {
+        global.fetch = vi.fn().mockImplementation(() => {
+          return new Promise((_, reject) => {
+            setTimeout(() => {
+              const abortError = new Error('The operation was aborted')
+              abortError.name = 'AbortError'
+              reject(abortError)
+            }, 100)
+          })
+        })
+
+        const fastClient = new GameApiClient(baseURL, { timeout: 50 })
+
+        await expect(fastClient.leaveGame('game-123')).rejects.toThrow(
+          TimeoutError
+        )
+        await expect(fastClient.leaveGame('game-123')).rejects.toThrow(
+          '請求超時'
+        )
+      })
+    })
+
+    describe('重試機制 (leaveGame 不應重試)', () => {
+      it('should NOT retry on ServerError', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 500,
+          text: async () => 'Internal Server Error',
+        })
+
+        await expect(apiClient.leaveGame('game-123')).rejects.toThrow(
+          ServerError
+        )
+
+        // leaveGame 是終結性操作，失敗時不重試
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+
+      it('should NOT retry on NetworkError', async () => {
+        global.fetch = vi.fn().mockRejectedValue(new TypeError('Network error'))
+
+        await expect(apiClient.leaveGame('game-123')).rejects.toThrow(
+          NetworkError
+        )
+
+        // leaveGame 是終結性操作，失敗時不重試
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+
+      it('should NOT retry on TimeoutError', async () => {
+        global.fetch = vi.fn().mockImplementation(() => {
+          return new Promise((_, reject) => {
+            setTimeout(() => {
+              const abortError = new Error('The operation was aborted')
+              abortError.name = 'AbortError'
+              reject(abortError)
+            }, 100)
+          })
+        })
+
+        const fastClient = new GameApiClient(baseURL, { timeout: 50 })
+
+        await expect(fastClient.leaveGame('game-123')).rejects.toThrow(
+          TimeoutError
+        )
+
+        // leaveGame 是終結性操作，失敗時不重試
+        expect(global.fetch).toHaveBeenCalledTimes(1)
+      })
+    })
+  })
 })

@@ -132,15 +132,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T037 [P] [US3] 組件測試 ActionPanel.vue (game context) 於 front-end/tests/components/ActionPanel.spec.ts
-- [ ] T038 [P] [US3] 單元測試 GameApiClient.leaveGame() 方法於 front-end/tests/unit/GameApiClient.spec.ts
+- [X] T037 [P] [US3] 組件測試 ActionPanel.vue (game context) 於 front-end/tests/components/ActionPanel.spec.ts
+- [X] T038 [P] [US3] 單元測試 GameApiClient.leaveGame() 方法於 front-end/tests/adapter/api/GameApiClient.spec.ts
 - [ ] T039 [P] [US3] 整合測試完整退出遊戲流程（API 呼叫 + 狀態清除 + 導航）於 front-end/tests/integration/leaveGame.spec.ts
 
 ### Implementation for User Story 3
 
 - [ ] T040 [US3] 實作遊戲 context 的「Leave Game」選項於 ActionPanel.vue
-- [ ] T041 [US3] 實作「Leave Game」確認對話框於 ActionPanel.vue
-- [ ] T042 [US3] 實作確認退出邏輯（調用 leaveGame API、清除狀態、中斷 SSE）於 ActionPanel.vue
+- [X] T041 [US3] 實作「Leave Game」確認對話框於 ConfirmDialog.vue（新增獨立組件）
+- [ ] T042 [US3] 實作確認退出邏輯（調用 leaveGame API、清除狀態、中斷 SSE）於 GamePage.vue
 - [ ] T043 [US3] 整合 ActionPanel 至 GamePage.vue
 
 **Checkpoint**: 所有用戶故事應都能獨立運作

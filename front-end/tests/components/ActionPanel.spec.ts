@@ -380,6 +380,76 @@ describe('ActionPanel', () => {
       expect(menuItem?.textContent).toContain('Leave Game')
     })
 
+    it('Leave Game 選項應該有適當的圖標', async () => {
+      const items: ActionPanelItem[] = [
+        { id: 'leave-game', label: 'Leave Game', icon: '🚪', onClick: vi.fn() },
+      ]
+
+      wrapper = mount(ActionPanel, {
+        props: {
+          isOpen: true,
+          items,
+        },
+        attachTo: document.body,
+      })
+
+      await wrapper.vm.$nextTick()
+
+      const menuItem = findInDocument('[data-testid="menu-item"]')
+      expect(menuItem?.textContent).toContain('🚪')
+      expect(menuItem?.textContent).toContain('Leave Game')
+    })
+
+    it('點擊 Leave Game 應該觸發 onClick 回調', async () => {
+      const onLeaveGame = vi.fn()
+
+      const items: ActionPanelItem[] = [
+        { id: 'leave-game', label: 'Leave Game', onClick: onLeaveGame },
+      ]
+
+      wrapper = mount(ActionPanel, {
+        props: {
+          isOpen: true,
+          items,
+        },
+        attachTo: document.body,
+      })
+
+      await wrapper.vm.$nextTick()
+
+      const menuItem = findInDocument('[data-testid="menu-item"]')
+      ;(menuItem as HTMLElement)?.click()
+      await wrapper.vm.$nextTick()
+
+      expect(onLeaveGame).toHaveBeenCalledTimes(1)
+    })
+
+    it('點擊 Leave Game 後面板應該保持開啟（由父組件控制關閉）', async () => {
+      const onLeaveGame = vi.fn()
+
+      const items: ActionPanelItem[] = [
+        { id: 'leave-game', label: 'Leave Game', onClick: onLeaveGame },
+      ]
+
+      wrapper = mount(ActionPanel, {
+        props: {
+          isOpen: true,
+          items,
+        },
+        attachTo: document.body,
+      })
+
+      await wrapper.vm.$nextTick()
+
+      const menuItem = findInDocument('[data-testid="menu-item"]')
+      ;(menuItem as HTMLElement)?.click()
+      await wrapper.vm.$nextTick()
+
+      // 面板應該仍然開啟（由父組件決定何時關閉）
+      const panel = findInDocument('[data-testid="action-panel"]')
+      expect(panel).not.toBeNull()
+    })
+
     it('Game context 可以有多個選單項目', async () => {
       const items: ActionPanelItem[] = [
         { id: 'leave-game', label: 'Leave Game', onClick: vi.fn() },
@@ -398,6 +468,40 @@ describe('ActionPanel', () => {
 
       const menuItems = findAllInDocument('[data-testid="menu-item"]')
       expect(menuItems).toHaveLength(2)
+    })
+
+    it('所有 Game context 選單項目都應該可以獨立點擊', async () => {
+      const onLeaveGame = vi.fn()
+      const onSettings = vi.fn()
+
+      const items: ActionPanelItem[] = [
+        { id: 'leave-game', label: 'Leave Game', onClick: onLeaveGame },
+        { id: 'settings', label: 'Settings', onClick: onSettings },
+      ]
+
+      wrapper = mount(ActionPanel, {
+        props: {
+          isOpen: true,
+          items,
+        },
+        attachTo: document.body,
+      })
+
+      await wrapper.vm.$nextTick()
+
+      const menuItems = findAllInDocument('[data-testid="menu-item"]')
+
+      // 點擊第一個選項
+      ;(menuItems[0] as HTMLElement)?.click()
+      await wrapper.vm.$nextTick()
+      expect(onLeaveGame).toHaveBeenCalledTimes(1)
+      expect(onSettings).not.toHaveBeenCalled()
+
+      // 點擊第二個選項
+      ;(menuItems[1] as HTMLElement)?.click()
+      await wrapper.vm.$nextTick()
+      expect(onLeaveGame).toHaveBeenCalledTimes(1)
+      expect(onSettings).toHaveBeenCalledTimes(1)
     })
   })
 
