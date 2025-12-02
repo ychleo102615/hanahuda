@@ -155,14 +155,14 @@
 
 ### Tests for User Story 4
 
-- [ ] T044 [P] [US4] 單元測試 lobbyPageGuard 重連邏輯於 front-end/tests/unit/lobbyPageGuard.spec.ts
-- [ ] T045 [P] [US4] 整合測試完整重連流程
+- [X] T044 [P] [US4] 單元測試 lobbyPageGuard 重連邏輯於 front-end/tests/unit/lobbyPageGuard.spec.ts
+- [X] T045 [P] [US4] 整合測試完整重連流程
 
 ### Implementation for User Story 4
 
-- [ ] T046 [US4] 驗證 lobbyPageGuard 檢查 gameState.gameId 邏輯是否正確實作
-- [ ] T047 [US4] 驗證 HandleReconnectionUseCase 清除 matchmakingState 邏輯是否正確實作
-- [ ] T048 [US4] 測試斷線重連時跳過大廳的完整流程
+- [X] T046 [US4] 驗證 lobbyPageGuard 檢查 gameState.gameId 邏輯是否正確實作
+- [X] T047 [US4] 驗證 HandleReconnectionUseCase 清除 matchmakingState 邏輯是否正確實作
+- [X] T048 [US4] 測試斷線重連時跳過大廳的完整流程
 
 **Checkpoint**: 所有用戶故事應都能獨立且正確運作
 
