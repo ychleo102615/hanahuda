@@ -24,8 +24,11 @@ import RoundEndModal from './GamePage/components/RoundEndModal.vue'
 import ReconnectionBanner from './GamePage/components/ReconnectionBanner.vue'
 import AnimationLayer from './GamePage/components/AnimationLayer.vue'
 import ConfirmationHint from './GamePage/components/ConfirmationHint.vue'
+import ActionPanel from '../components/ActionPanel.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import { TOKENS } from '../user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '../user-interface/adapter/composables/useZoneRegistration'
+import { useLeaveGame } from '../user-interface/adapter/composables/useLeaveGame'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
@@ -35,6 +38,17 @@ const uiState = useUIStateStore()
 
 const { opponentHandCount, fieldCards } = storeToRefs(gameState)
 const { infoMessage, handCardConfirmationMode, handCardAwaitingConfirmation } = storeToRefs(uiState)
+
+// T043 [US3]: Leave Game 功能
+const {
+  isActionPanelOpen,
+  isConfirmDialogOpen,
+  menuItems,
+  toggleActionPanel,
+  closeActionPanel,
+  handleLeaveGameConfirm,
+  handleLeaveGameCancel,
+} = useLeaveGame({ requireConfirmation: true })
 
 // GamePage 不再直接調用業務 Port，由子組件負責
 
@@ -81,8 +95,32 @@ function handleFieldCardClick(cardId: string) {
     />
 
     <!-- 頂部資訊列 (~10% viewport) -->
-    <header class="h-[10%] min-h-12">
+    <header class="h-[10%] min-h-12 relative">
       <TopInfoBar />
+
+      <!-- T043 [US3]: Menu Button -->
+      <button
+        data-testid="menu-button"
+        aria-label="Open menu"
+        class="absolute top-2 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors"
+        @click="toggleActionPanel"
+      >
+        <!-- Hamburger Icon -->
+        <svg
+          class="h-6 w-6 text-white"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
+      </button>
     </header>
 
     <!-- 對手已獲得牌區 (~15% viewport) -->
@@ -141,6 +179,24 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- 底部提示：兩次點擊確認模式 -->
     <ConfirmationHint />
+
+    <!-- T043 [US3]: Action Panel -->
+    <ActionPanel
+      :is-open="isActionPanelOpen"
+      :items="menuItems"
+      @close="closeActionPanel"
+    />
+
+    <!-- T043 [US3]: Leave Game Confirmation Dialog -->
+    <ConfirmDialog
+      :is-open="isConfirmDialogOpen"
+      title="Leave Game"
+      message="Are you sure you want to leave this game? Your progress will be lost."
+      confirm-text="Leave"
+      cancel-text="Cancel"
+      @confirm="handleLeaveGameConfirm"
+      @cancel="handleLeaveGameCancel"
+    />
   </div>
 </template>
 
