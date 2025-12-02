@@ -37,7 +37,7 @@ export class HandleGameErrorUseCase implements HandleGameErrorPort {
 
   execute(event: GameErrorEvent): void {
     // 1. 顯示錯誤通知
-    this.notification.showError(event.message)
+    this.notification.showErrorMessage(event.message)
 
     // 2. 更新配對狀態為錯誤
     this.matchmakingState.setStatus('error')

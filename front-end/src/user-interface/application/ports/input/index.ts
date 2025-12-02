@@ -43,5 +43,6 @@ export type {
   HandleRoundEndedInstantlyPort,
   HandleGameFinishedPort,
   HandleTurnErrorPort,
+  HandleGameErrorPort,
   HandleReconnectionPort,
 } from './event-handlers.port'

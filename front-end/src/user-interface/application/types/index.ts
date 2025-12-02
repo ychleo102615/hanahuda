@@ -65,6 +65,7 @@ export type {
   RoundEndedInstantlyEvent,
   GameFinishedEvent,
   TurnErrorEvent,
+  GameErrorEvent,
   GameSnapshotRestore,
 } from './events'
 

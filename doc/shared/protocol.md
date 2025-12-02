@@ -49,6 +49,7 @@
 **伺服器事件 (S2C)**:
 - 遊戲級: `GameStarted` | `RoundDealt` | `RoundEndedInstantly` | `RoundScored` | `RoundDrawn` | `GameFinished`
 - 回合級: `TurnCompleted` | `SelectionRequired` | `TurnProgressAfterSelection` | `DecisionRequired` | `DecisionMade` | `TurnError`
+- 錯誤級: `GameError` (遊戲會話層級錯誤)
 - 重連: `GameSnapshotRestore`
 
 ### 關鍵枚舉值
@@ -394,6 +395,49 @@ Teshi 或場牌流局立即結束
 ```json
 {error_code, message, retry_allowed}
 ```
+
+#### GameError
+遊戲層級錯誤事件（配對超時、會話過期等）
+
+**與 TurnError 的區別**：
+- **TurnError**: 回合操作層級錯誤（打牌無效、選擇錯誤）
+- **GameError**: 遊戲會話層級錯誤（配對超時、遊戲過期、對手斷線）
+
+```json
+{
+  event_type: "GameError",
+  event_id: string,
+  timestamp: string,
+  error_code: "MATCHMAKING_TIMEOUT" | "GAME_EXPIRED" | "SESSION_INVALID" | "OPPONENT_DISCONNECTED",
+  message: string,
+  recoverable: boolean,
+  suggested_action?: "RETRY_MATCHMAKING" | "RETURN_HOME" | "RECONNECT"
+}
+```
+
+**錯誤代碼說明**：
+
+| error_code | recoverable | suggested_action | 說明 |
+|------------|-------------|------------------|------|
+| `MATCHMAKING_TIMEOUT` | `true` | `RETRY_MATCHMAKING` | 配對超時（30 秒內未找到對手） |
+| `GAME_EXPIRED` | `false` | `RETURN_HOME` | 遊戲會話過期（長時間未操作） |
+| `SESSION_INVALID` | `false` | `RETURN_HOME` | 會話 Token 無效/過期 |
+| `OPPONENT_DISCONNECTED` | `false` | `RETURN_HOME` | 對手永久斷線（超過重連時限） |
+
+**範例**（配對超時）：
+```json
+{
+  "event_type": "GameError",
+  "event_id": "550e8400-e29b-41d4-a716-446655440001",
+  "timestamp": "2025-11-30T12:00:30Z",
+  "error_code": "MATCHMAKING_TIMEOUT",
+  "message": "Matchmaking timeout after 30 seconds",
+  "recoverable": true,
+  "suggested_action": "RETRY_MATCHMAKING"
+}
+```
+
+**詳細規格**：參見 `specs/007-lobby-settings-panel/contracts/game-error-event.md`
 
 ---
 
