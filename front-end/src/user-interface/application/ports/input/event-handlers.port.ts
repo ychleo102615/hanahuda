@@ -53,7 +53,7 @@ export interface HandleGameStartedPort {
    *
    * @param event - GameStarted 事件
    */
-  execute(event: GameStartedEvent): void
+  execute(event: GameStartedEvent): void | Promise<void>
 }
 
 /**
@@ -70,7 +70,7 @@ export interface HandleRoundDealtPort {
    *
    * @param event - RoundDealt 事件
    */
-  execute(event: RoundDealtEvent): void
+  execute(event: RoundDealtEvent): void | Promise<void>
 }
 
 /**
@@ -87,7 +87,7 @@ export interface HandleTurnCompletedPort {
    *
    * @param event - TurnCompleted 事件
    */
-  execute(event: TurnCompletedEvent): void
+  execute(event: TurnCompletedEvent): void | Promise<void>
 }
 
 /**
@@ -104,7 +104,7 @@ export interface HandleSelectionRequiredPort {
    *
    * @param event - SelectionRequired 事件
    */
-  execute(event: SelectionRequiredEvent): void
+  execute(event: SelectionRequiredEvent): void | Promise<void>
 }
 
 /**
@@ -121,7 +121,7 @@ export interface HandleTurnProgressAfterSelectionPort {
    *
    * @param event - TurnProgressAfterSelection 事件
    */
-  execute(event: TurnProgressAfterSelectionEvent): void
+  execute(event: TurnProgressAfterSelectionEvent): void | Promise<void>
 }
 
 /**
@@ -138,7 +138,7 @@ export interface HandleDecisionRequiredPort {
    *
    * @param event - DecisionRequired 事件
    */
-  execute(event: DecisionRequiredEvent): void
+  execute(event: DecisionRequiredEvent): void | Promise<void>
 }
 
 /**
@@ -155,7 +155,7 @@ export interface HandleDecisionMadePort {
    *
    * @param event - DecisionMade 事件
    */
-  execute(event: DecisionMadeEvent): void
+  execute(event: DecisionMadeEvent): void | Promise<void>
 }
 
 /**
@@ -172,7 +172,7 @@ export interface HandleRoundScoredPort {
    *
    * @param event - RoundScored 事件
    */
-  execute(event: RoundScoredEvent): void
+  execute(event: RoundScoredEvent): void | Promise<void>
 }
 
 /**
@@ -189,7 +189,7 @@ export interface HandleRoundDrawnPort {
    *
    * @param event - RoundDrawn 事件
    */
-  execute(event: RoundDrawnEvent): void
+  execute(event: RoundDrawnEvent): void | Promise<void>
 }
 
 /**
@@ -206,7 +206,7 @@ export interface HandleRoundEndedInstantlyPort {
    *
    * @param event - RoundEndedInstantly 事件
    */
-  execute(event: RoundEndedInstantlyEvent): void
+  execute(event: RoundEndedInstantlyEvent): void | Promise<void>
 }
 
 /**
@@ -223,7 +223,7 @@ export interface HandleGameFinishedPort {
    *
    * @param event - GameFinished 事件
    */
-  execute(event: GameFinishedEvent): void
+  execute(event: GameFinishedEvent): void | Promise<void>
 }
 
 /**
@@ -240,7 +240,7 @@ export interface HandleTurnErrorPort {
    *
    * @param event - TurnError 事件
    */
-  execute(event: TurnErrorEvent): void
+  execute(event: TurnErrorEvent): void | Promise<void>
 }
 
 /**
@@ -262,7 +262,7 @@ export interface HandleGameErrorPort {
    *
    * @param event - GameError 事件
    */
-  execute(event: GameErrorEvent): void
+  execute(event: GameErrorEvent): void | Promise<void>
 }
 
 /**
@@ -279,5 +279,5 @@ export interface HandleReconnectionPort {
    *
    * @param snapshot - 遊戲狀態快照
    */
-  execute(snapshot: GameSnapshotRestore): void
+  execute(snapshot: GameSnapshotRestore): void | Promise<void>
 }

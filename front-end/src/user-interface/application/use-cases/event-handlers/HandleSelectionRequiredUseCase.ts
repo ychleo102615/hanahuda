@@ -29,8 +29,8 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     private readonly notification: NotificationPort
   ) {}
 
-  execute(event: SelectionRequiredEvent): void {
-    void this.executeAsync(event)
+  execute(event: SelectionRequiredEvent): Promise<void> {
+    return this.executeAsync(event)
   }
 
   /**

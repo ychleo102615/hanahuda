@@ -36,9 +36,8 @@ export class HandleTurnProgressAfterSelectionUseCase
   /**
    * 執行選擇後回合進展事件處理
    */
-  execute(event: TurnProgressAfterSelectionEvent): void {
-    // 使用 void 忽略 Promise 以符合同步介面
-    void this.executeAsync(event)
+  execute(event: TurnProgressAfterSelectionEvent): Promise<void> {
+    return this.executeAsync(event)
   }
 
   /**

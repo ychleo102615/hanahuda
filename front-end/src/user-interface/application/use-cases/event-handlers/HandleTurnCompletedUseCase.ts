@@ -50,8 +50,8 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
   /**
    * 執行回合完成事件處理
    */
-  execute(event: TurnCompletedEvent): void {
-    void this.executeAsync(event)
+  execute(event: TurnCompletedEvent): Promise<void> {
+    return this.executeAsync(event)
   }
 
   /**

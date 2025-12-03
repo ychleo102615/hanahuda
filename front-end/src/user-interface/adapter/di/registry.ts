@@ -105,8 +105,16 @@ export function registerDependencies(container: DIContainer, mode: GameMode): vo
  * @description
  * 註冊 GameStateStore 與 UIStateStore 為單例。
  * 這兩個 Store 在整個應用程式生命週期中只有一個實例。
+ *
+ * @note Nuxt 4: 僅在 client-side 註冊 Pinia stores
  */
 function registerStores(container: DIContainer): void {
+  // Nuxt 4: 確保僅在 client-side 註冊 Pinia stores
+  if (import.meta.server) {
+    console.warn('[DI] Skipping Pinia stores registration on server-side')
+    return
+  }
+
   // 註冊 Stores 為單例
   container.register(
     TOKENS.GameStateStore,

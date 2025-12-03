@@ -32,11 +32,9 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
    *
    * @description
    * 非同步執行動畫序列，確保動畫完成後再設定最終狀態。
-   * 使用 void 忽略 Promise 以符合 Port 介面簽名。
    */
-  execute(event: RoundDealtEvent): void {
-    // 使用 void 忽略 Promise 以符合同步介面
-    void this.executeAsync(event)
+  execute(event: RoundDealtEvent): Promise<void> {
+    return this.executeAsync(event)
   }
 
   /**

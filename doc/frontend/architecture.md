@@ -2,12 +2,13 @@
 
 ## 技術棧
 
-- **框架**: Vue 3 + TypeScript
+- **框架**: Nuxt 4 + Vue 3 + TypeScript
 - **樣式**: Tailwind CSS v4
-- **路由**: Vue Router
+- **路由**: Nuxt Router（基於 Vue Router）
 - **狀態管理**: Pinia
-- **HTTP 客戶端**: Fetch API
+- **HTTP 客戶端**: $fetch（Nuxt 內置）/ Fetch API
 - **SSE 客戶端**: EventSource API
+- **構建工具**: Nuxt 4（內建 Vite）
 
 ---
 
@@ -121,141 +122,173 @@ User Interface BC → Backend (REST + SSE)
 
 ### DI Container 配置範例
 
-#### 1. 註冊依賴（main.ts）
+#### 1. 註冊依賴（Nuxt 4 Plugin）
+
+**檔案**：`plugins/01.di-container.client.ts`
 
 ```typescript
-import { container } from '@/di'
+import { container } from '~/src/user-interface/adapter/di/container'
+import { registerDependencies, type GameMode } from '~/src/user-interface/adapter/di/registry'
 
-// Domain Services
-import * as CardDomain from '@/user-interface/domain/card'
-import * as MatchDomain from '@/user-interface/domain/match'
-import * as YakuDomain from '@/user-interface/domain/yaku'
+export default defineNuxtPlugin(() => {
+  // 僅在 client-side 執行（.client.ts 後綴已確保）
+  if (import.meta.server) {
+    console.warn('[DI Plugin] Skipping on server-side')
+    return
+  }
 
-// Use Cases
-import { PlayHandCardUseCase } from '@/user-interface/application/usecases'
-import { HandleRoundDealtUseCase } from '@/user-interface/application/usecases'
-// ... 其他 Use Cases
+  // 從 sessionStorage 讀取遊戲模式（預設為 'mock'）
+  const gameMode: GameMode = (sessionStorage.getItem('gameMode') as GameMode) || 'mock'
 
-// Ports 實作
-import { GameApiClient } from '@/user-interface/adapter/api'
-import { GameEventClient } from '@/user-interface/adapter/sse'
-import { AnimationService } from '@/user-interface/adapter/animations'
+  console.info('[DI Plugin] Initializing DI container', { gameMode })
 
-// 註冊 Domain Services
-container.register('CardDomainService', { useValue: CardDomain })
-container.register('MatchDomainService', { useValue: MatchDomain })
-container.register('YakuDomainService', { useValue: YakuDomain })
+  try {
+    // 註冊所有依賴（統一由 registry.ts 管理）
+    registerDependencies(container, gameMode)
 
-// 註冊 Ports 實作
-container.register('SendCommandPort', { useClass: GameApiClient })
-container.register('AnimationService', { useClass: AnimationService })
+    console.info('[DI Plugin] DI container initialized successfully', {
+      registeredTokens: container.getRegisteredTokens().length,
+    })
+  } catch (error) {
+    console.error('[DI Plugin] Failed to initialize DI container:', error)
+    throw error
+  }
 
-// 註冊 Pinia Stores（實作 Output Ports）
-const pinia = createPinia()
-app.use(pinia)
-const gameStateStore = useGameStateStore(pinia)
-const uiStateStore = useUIStateStore(pinia)
-
-container.register('UpdateUIStatePort', { useValue: gameStateStore })
-container.register('TriggerUIEffectPort', { useValue: uiStateStore })
-
-// 註冊 Use Cases（自動注入依賴）
-container.register('PlayHandCardUseCase', { useClass: PlayHandCardUseCase })
-container.register('SelectMatchTargetUseCase', { useClass: SelectMatchTargetUseCase })
-container.register('MakeKoiKoiDecisionUseCase', { useClass: MakeKoiKoiDecisionUseCase })
-
-// 註冊 SSE 事件處理 Use Cases
-container.register('HandleGameStartedUseCase', { useClass: HandleGameStartedUseCase })
-container.register('HandleRoundDealtUseCase', { useClass: HandleRoundDealtUseCase })
-// ... 其他事件處理 Use Cases
-
-// 初始化 SSE 客戶端並註冊事件處理器
-const gameEventClient = new GameEventClient()
-gameEventClient.registerEventHandler(
-  'GameStarted',
-  container.resolve('HandleGameStartedUseCase')
-)
-gameEventClient.registerEventHandler(
-  'RoundDealt',
-  container.resolve('HandleRoundDealtUseCase')
-)
-// ... 其他事件處理器
-
-container.register('GameEventClient', { useValue: gameEventClient })
+  // 提供全域 diContainer（可選）
+  return {
+    provide: {
+      diContainer: container,
+    },
+  }
+})
 ```
+
+**重點說明**：
+- **`.client.ts` 後綴**：確保此 plugin 僅在 client-side 運行（SSE 和 Pinia 僅支援 client-side）
+- **`01.` 前綴**：確保此 plugin 在其他 plugin 之後載入（Pinia 由 Nuxt 自動初始化）
+- **統一管理**：所有依賴註冊邏輯封裝在 `registry.ts` 中，支援 3 種遊戲模式（backend、mock、local）
 
 ---
 
-#### 2. Use Case 注入依賴
+#### 2. Use Case 實作與註冊
+
+**Use Case 實作（純粹的 TypeScript class）**
 
 ```typescript
 // PlayHandCardUseCase.ts
-import { injectable, inject } from '@/di'
-import type { CardDomainService, MatchDomainService } from '@/user-interface/domain'
-import type { SendCommandPort, TriggerUIEffectPort } from './ports/out'
+import type { SendCommandPort, NotificationPort, AnimationPort } from '../ports/output'
+import type { DomainFacade } from '../types/domain-facade'
+import type { PlayHandCardInput, PlayHandCardOutput, PlayHandCardPort } from '../ports/input'
 
-@injectable()
-export class PlayHandCardUseCase {
+export class PlayHandCardUseCase implements PlayHandCardPort {
   constructor(
-    @inject('CardDomainService') private cardDomain: CardDomainService,
-    @inject('MatchDomainService') private matchDomain: MatchDomainService,
-    @inject('SendCommandPort') private sendCommand: SendCommandPort,
-    @inject('TriggerUIEffectPort') private triggerUI: TriggerUIEffectPort
+    private readonly sendCommand: SendCommandPort,
+    private readonly notification: NotificationPort,
+    private readonly domain: DomainFacade,
+    private readonly animation: AnimationPort
   ) {}
 
   async execute(input: PlayHandCardInput): Promise<PlayHandCardOutput> {
-    // 1. 驗證卡片
-    const isValid = this.cardDomain.validateCardInHand(input.cardId, input.handCards)
+    // 1. 檢查是否有動畫正在執行
+    if (this.animation.isAnimating()) {
+      this.notification.showError('請等待動畫完成')
+      return { success: false }
+    }
+
+    // 2. 使用 Domain Facade 驗證卡片
+    const isValid = this.domain.validateCardInHand(input.cardId, input.handCards)
     if (!isValid) {
-      throw new Error('卡片不在手牌中')
+      this.notification.showError('卡片不在手牌中')
+      return { success: false }
     }
 
-    // 2. 檢查配對
-    const matchStatus = this.matchDomain.analyzeMatchStatus(input.cardId, input.fieldCards)
-
-    // 3. 若有多張可配對，顯示選擇 UI
-    if (matchStatus.status === 'MULTIPLE_MATCHES') {
-      this.triggerUI.showSelectionUI(input.cardId, matchStatus.targets)
-      return { needSelection: true, possibleTargets: matchStatus.targets }
-    }
-
-    // 4. 單一配對或無配對，直接發送命令
-    const target = matchStatus.status === 'SINGLE_MATCH' ? matchStatus.targets[0] : null
-    await this.sendCommand.playHandCard(input.cardId, target)
-
-    return { needSelection: false, selectedTarget: target }
+    // 3. 發送命令到後端
+    await this.sendCommand.playHandCard(input.cardId, input.matchTarget)
+    return { success: true }
   }
+}
+```
+
+**在 registry.ts 中註冊（注入依賴）**
+
+```typescript
+// registry.ts (節錄)
+function registerInputPorts(container: DIContainer): void {
+  // 1. 先解析所有需要的 Output Ports
+  const sendCommandPort = container.resolve(TOKENS.SendCommandPort)
+  const notificationPort = container.resolve(TOKENS.NotificationPort)
+  const domainFacade = container.resolve(TOKENS.DomainFacade)
+  const animationPort = container.resolve(TOKENS.AnimationPort)
+
+  // 2. 註冊 Use Case，並在 factory function 中傳入依賴
+  container.register(
+    TOKENS.PlayHandCardPort,
+    () => new PlayHandCardUseCase(
+      sendCommandPort,
+      notificationPort,
+      domainFacade,
+      animationPort
+    ),
+    { singleton: true }
+  )
 }
 ```
 
 ---
 
-#### 3. Vue 組件中使用
+#### 3. Vue 組件中使用（Nuxt 4 Composable）
 
-```typescript
-// PlayerHandZone.vue
+```vue
+<!-- PlayerHandZone.vue -->
 <script setup lang="ts">
-import { useDI } from '@/di'
-import type { PlayHandCardPort } from '@/application/ports/in'
+import { TOKENS } from '~/src/user-interface/adapter/di/tokens'
+import type { PlayHandCardPort } from '~/src/user-interface/application/ports/input'
 
-const di = useDI()
-const playHandCardUseCase = di.resolve<PlayHandCardPort>('PlayHandCardUseCase')
+// 使用 useDependency composable 解析依賴（基於 Symbol Token）
+const playHandCardUseCase = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
 const gameStateStore = useGameStateStore()
 
 const handleCardClick = async (cardId: string) => {
-  try {
-    const result = await playHandCardUseCase.execute({
-      cardId,
-      handCards: gameStateStore.myHandCards,
-      fieldCards: gameStateStore.fieldCards
-    })
+  // 呼叫 Use Case
+  const result = await playHandCardUseCase.execute({
+    cardId,
+    handCards: gameStateStore.myHandCards,
+    matchTarget: null // 若有配對目標則傳入
+  })
 
-    // Use Case 會自動通過 Output Port 更新 UI 狀態
-  } catch (error) {
-    console.error('打牌失敗:', error)
+  if (!result.success) {
+    // Use Case 已透過 NotificationPort 顯示錯誤訊息
+    return
   }
+
+  // Use Case 會自動通過 Output Ports 更新 UI 狀態
 }
 </script>
+
+<template>
+  <div class="player-hand-zone">
+    <CardComponent
+      v-for="card in gameStateStore.myHandCards"
+      :key="card.id"
+      :card="card"
+      @click="handleCardClick(card.id)"
+    />
+  </div>
+</template>
+```
+
+**useDependency Composable 實作**
+
+```typescript
+// composables/useDependency.ts
+import { container } from '~/src/user-interface/adapter/di/container'
+
+export function useDependency<T>(token: symbol): T {
+  if (!container.has(token)) {
+    throw new Error(`[useDependency] Dependency not found: ${token.toString()}`)
+  }
+  return container.resolve<T>(token)
+}
 ```
 
 ---
@@ -320,23 +353,52 @@ container.register('GameEventClient', { useClass: LocalGameEventEmitter })
 
 ## 目錄結構建議
 
+Nuxt 4 採用約定式目錄結構，將 Clean Architecture 與框架慣例結合：
+
 ```
-src/
-├── user-interface/
-│   ├── domain/           (純函數邏輯)
-│   ├── application/      (Use Cases)
-│   └── adapter/
-│       ├── stores/       (Pinia stores)
-│       ├── components/   (Vue 組件)
-│       ├── router/       (路由配置)
-│       └── api/          (API 客戶端)
-├── local-game/
-│   ├── domain/           (遊戲規則引擎)
-│   ├── application/      (遊戲流程 Use Cases)
-│   └── adapter/          (與 UI BC 的整合介面)
-└── shared/
-    └── types/            (TypeScript 型別定義)
+front-end/
+├── nuxt.config.ts        # Nuxt 4 核心配置
+├── app.vue               # 根組件
+├── pages/                # 路由頁面（Nuxt 約定，自動路由）
+│   ├── index.vue         # 首頁 (/)
+│   ├── lobby.vue         # 大廳 (/lobby)
+│   └── game.vue          # 遊戲頁面 (/game)
+├── components/           # 全域組件（Nuxt 自動導入）
+├── composables/          # Vue 組合函式（Nuxt 自動導入）
+│   └── useDependency.ts  # DI 容器使用
+├── plugins/              # Nuxt 插件
+│   ├── 01.di-container.client.ts   # DI 容器初始化
+│   └── 02.svg-icons.client.ts      # SVG 圖示註冊
+├── middleware/           # 路由中間件（替代 guards）
+│   ├── game-page.ts
+│   └── lobby-page.ts
+├── stores/               # Pinia Stores（Nuxt 頂層目錄）
+├── src/                  # 原有代碼保留在 src/
+│   ├── user-interface/   # User Interface BC（保持不變）
+│   │   ├── domain/       # Domain Layer（純函數邏輯）
+│   │   ├── application/  # Application Layer（Use Cases）
+│   │   └── adapter/      # Adapter Layer
+│   │       ├── di/       # DI 容器
+│   │       ├── api/      # API 客戶端
+│   │       ├── sse/      # SSE 客戶端
+│   │       ├── animation/# 動畫適配器
+│   │       └── composables/ # Vue composables
+│   ├── local-game/       # Local Game BC
+│   │   ├── domain/       # 遊戲規則引擎
+│   │   ├── application/  # 遊戲流程 Use Cases
+│   │   └── adapter/      # 與 UI BC 的整合介面
+│   ├── assets/           # 靜態資源
+│   ├── data/             # 靜態資料
+│   ├── types/            # 全域類型
+│   └── constants/        # 常數
+└── tsconfig.json         # TypeScript 配置
 ```
+
+**說明**：
+- **Nuxt 約定目錄**：`pages/`、`components/`、`plugins/`、`middleware/` 遵循 Nuxt 4 慣例
+- **Clean Architecture 保留**：`src/user-interface/` 和 `src/local-game/` 的 Domain/Application/Adapter 三層分離完整保留
+- **自動導入**：Nuxt 4 自動導入 `components/`、`composables/` 下的內容，無需手動 import
+- **約定式路由**：`pages/` 目錄自動生成路由，無需手動配置 Vue Router
 
 ---
 

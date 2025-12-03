@@ -67,7 +67,7 @@
 - **技術展示**: 完整的前後端分離架構，展示可擴展的分散式系統設計
 
 ### 1.4 技術棧
-- **前端**: Vue 3 + TypeScript + Tailwind CSS v4
+- **前端**: Nuxt 4 + Vue 3 + TypeScript + Tailwind CSS v4
 - **後端**: Java (Spring Boot) + PostgreSQL
 - **通訊**: REST API + Server-Sent Events (SSE)
 - **架構**: Clean Architecture + Domain-Driven Design + 微服務預備架構
@@ -469,6 +469,7 @@ Phase 3 (分散式):
 - **Clean Architecture** - Robert C. Martin
 - **Domain-Driven Design** - Eric Evans
 - **Spring Boot Documentation** - https://spring.io/projects/spring-boot
+- **Nuxt Documentation** - https://nuxt.com/
 - **Vue 3 Documentation** - https://vuejs.org/
 - **Server-Sent Events (MDN)** - https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
 
