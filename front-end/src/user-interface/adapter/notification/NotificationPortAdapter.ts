@@ -115,5 +115,9 @@ export function createNotificationPortAdapter(
     stopDisplayCountdown(): void {
       countdown.stopDisplayCountdown()
     },
+
+    cleanup(): void {
+      countdown.cleanup()
+    },
   }
 }

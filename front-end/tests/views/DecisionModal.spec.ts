@@ -52,13 +52,13 @@ describe('DecisionModal - Countdown Display', () => {
       gameState.koiKoiMultipliers = { 'player-1': 1 }
       gameState.myDepository = ['0111', '0112']
 
-      // 顯示決策面板並啟動倒數
+      // 顯示決策面板並設定倒數狀態
       uiState.showDecisionModal(
         [{ yaku_type: 'INOU_SHIKO', base_points: 5 }],
         5,
         10
       )
-      uiState.startActionCountdown(15)
+      uiState.actionTimeoutRemaining = 15
 
       const wrapper = mount(DecisionModal, {
         attachTo: document.body
@@ -91,7 +91,7 @@ describe('DecisionModal - Countdown Display', () => {
         5,
         10
       )
-      uiState.startActionCountdown(4)
+      uiState.actionTimeoutRemaining = 4
 
       const wrapper = mount(DecisionModal, {
         attachTo: document.body
@@ -121,7 +121,7 @@ describe('DecisionModal - Countdown Display', () => {
         5,
         10
       )
-      uiState.startActionCountdown(10)
+      uiState.actionTimeoutRemaining = 10
 
       const wrapper = mount(DecisionModal, {
         attachTo: document.body
@@ -167,8 +167,8 @@ describe('DecisionModal - Countdown Display', () => {
     })
   })
 
-  describe('stopActionCountdown 調用測試 (T021)', () => {
-    it('應該在玩家選擇 Koi-Koi 後停止倒數', async () => {
+  describe('Use Case 調用測試 (T021 - Pattern B)', () => {
+    it('應該在玩家選擇 Koi-Koi 後調用 Use Case', async () => {
       const uiState = useUIStateStore()
       const gameState = useGameStateStore()
 
@@ -181,7 +181,6 @@ describe('DecisionModal - Countdown Display', () => {
         5,
         10
       )
-      uiState.startActionCountdown(15)
 
       const wrapper = mount(DecisionModal, {
         attachTo: document.body
@@ -189,9 +188,6 @@ describe('DecisionModal - Countdown Display', () => {
 
       await wrapper.vm.$nextTick()
       await wrapper.vm.$nextTick()
-
-      // 間諜 stopActionCountdown 方法
-      const stopSpy = vi.spyOn(uiState, 'stopActionCountdown')
 
       // 點擊 Koi-Koi 按鈕（在 document.body 中查找）
       const buttons = Array.from(document.querySelectorAll('button'))
@@ -201,14 +197,14 @@ describe('DecisionModal - Countdown Display', () => {
 
       await wrapper.vm.$nextTick()
 
-      // 驗證 stopActionCountdown 被調用
-      expect(stopSpy).toHaveBeenCalledTimes(1)
+      // 驗證 Use Case 被調用（倒數停止由 Use Case 控制）
+      expect(mockMakeKoiKoiDecisionPort.execute).toHaveBeenCalledTimes(1)
       expect(uiState.decisionModalVisible).toBe(false)
 
       wrapper.unmount()
     })
 
-    it('應該在玩家選擇 End Round 後停止倒數', async () => {
+    it('應該在玩家選擇 End Round 後調用 Use Case', async () => {
       const uiState = useUIStateStore()
       const gameState = useGameStateStore()
 
@@ -221,7 +217,6 @@ describe('DecisionModal - Countdown Display', () => {
         5,
         10
       )
-      uiState.startActionCountdown(15)
 
       const wrapper = mount(DecisionModal, {
         attachTo: document.body
@@ -229,9 +224,6 @@ describe('DecisionModal - Countdown Display', () => {
 
       await wrapper.vm.$nextTick()
       await wrapper.vm.$nextTick()
-
-      // 間諜 stopActionCountdown 方法
-      const stopSpy = vi.spyOn(uiState, 'stopActionCountdown')
 
       // 點擊 End Round 按鈕（在 document.body 中查找）
       const buttons = Array.from(document.querySelectorAll('button'))
@@ -241,8 +233,8 @@ describe('DecisionModal - Countdown Display', () => {
 
       await wrapper.vm.$nextTick()
 
-      // 驗證 stopActionCountdown 被調用
-      expect(stopSpy).toHaveBeenCalledTimes(1)
+      // 驗證 Use Case 被調用（倒數停止由 Use Case 控制）
+      expect(mockMakeKoiKoiDecisionPort.execute).toHaveBeenCalledTimes(1)
       expect(uiState.decisionModalVisible).toBe(false)
 
       wrapper.unmount()

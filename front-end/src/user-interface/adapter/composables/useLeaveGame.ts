@@ -20,7 +20,7 @@ import { useUIStateStore } from '../stores/uiState'
 import { useMatchmakingStateStore } from '../stores/matchmakingState'
 import { useDependency } from './useDependency'
 import { TOKENS } from '../di/tokens'
-import type { SendCommandPort } from '../../application/ports/output/send-command.port.ts'
+import type { SendCommandPort, NotificationPort } from '../../application/ports/output'
 import type { ActionPanelItem } from '@/components/ActionPanel.vue'
 
 export interface UseLeaveGameOptions {
@@ -37,6 +37,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   const uiState = useUIStateStore()
   const matchmakingState = useMatchmakingStateStore()
   const gameApiClient = useDependency<SendCommandPort>(TOKENS.SendCommandPort)
+  const notification = useDependency<NotificationPort>(TOKENS.NotificationPort)
 
   // State
   const isActionPanelOpen = ref(false)
@@ -115,6 +116,9 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   function clearLocalStateAndNavigate() {
     // 清除 sessionStorage
     sessionStorage.removeItem('session_token')
+
+    // 清理通知系統資源（倒數計時器等）
+    notification.cleanup()
 
     // 清除所有 stores
     gameState.$reset()

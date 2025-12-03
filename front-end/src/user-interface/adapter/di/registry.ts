@@ -269,9 +269,13 @@ function registerInputPorts(container: DIContainer): void {
 
   // 註冊 MakeKoiKoiDecisionPort (T068-T070)
   // Phase 7: 加入 animationPort 用於檢查動畫狀態
+  // Pattern B: 加入 notification 用於停止倒數計時（Use Case 控制業務邏輯）
   container.register(
     TOKENS.MakeKoiKoiDecisionPort,
-    () => new MakeKoiKoiDecisionUseCase(sendCommandPort, domainFacade, animationPort),
+    () => {
+      const notification = container.resolve<NotificationPort>(TOKENS.NotificationPort)
+      return new MakeKoiKoiDecisionUseCase(sendCommandPort, domainFacade, animationPort, notification)
+    },
     { singleton: true }
   )
 

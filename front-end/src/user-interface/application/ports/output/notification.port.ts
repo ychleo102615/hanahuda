@@ -291,4 +291,17 @@ export interface NotificationPort {
    * ```
    */
   stopDisplayCountdown(): void
+
+  /**
+   * 清理所有資源
+   *
+   * @description
+   * 離開遊戲時調用，清理所有 interval 和監聽器。
+   *
+   * @example
+   * ```typescript
+   * notification.cleanup()
+   * ```
+   */
+  cleanup(): void
 }

@@ -23,7 +23,7 @@ import type {
   MakeKoiKoiDecisionInput,
   MakeKoiKoiDecisionOutput,
 } from '../../ports/input/player-operations.port'
-import type { SendCommandPort, AnimationPort } from '../../ports/output'
+import type { SendCommandPort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { DomainFacade, Result, YakuScore } from '../../types'
 
 /**
@@ -36,11 +36,13 @@ export class MakeKoiKoiDecisionUseCase implements MakeKoiKoiDecisionPort {
    * @param sendCommandPort - 發送命令到後端的 Output Port
    * @param domainFacade - Domain Layer 業務邏輯門面（預留，可用於役種驗證）
    * @param animationPort - 動畫系統 Output Port（用於檢查動畫狀態）
+   * @param notification - 通知系統 Output Port（用於停止倒數計時）
    */
   constructor(
     private readonly sendCommandPort: SendCommandPort,
     private readonly domainFacade: DomainFacade,
-    private readonly animationPort: AnimationPort
+    private readonly animationPort: AnimationPort,
+    private readonly notification: NotificationPort
   ) {}
 
   /**
@@ -57,6 +59,9 @@ export class MakeKoiKoiDecisionUseCase implements MakeKoiKoiDecisionPort {
         error: 'ANIMATION_IN_PROGRESS',
       }
     }
+
+    // 停止操作倒數（Use Case 控制業務邏輯）
+    this.notification.stopActionCountdown()
 
     // Step 1: Calculate current score
     // 加總所有役種的基礎分數
