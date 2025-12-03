@@ -69,8 +69,7 @@ describe('HandleTurnCompletedUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: 應該播放配對動畫和轉移動畫
       expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0301', '0101')
@@ -104,8 +103,7 @@ describe('HandleTurnCompletedUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: 應該播放移至場牌動畫
       expect(mockAnimation.playCardToFieldAnimation).toHaveBeenCalledWith('0301', false, undefined)
@@ -134,7 +132,7 @@ describe('HandleTurnCompletedUseCase', () => {
       }
 
       // Act & Assert: 不應拋出錯誤
-      expect(() => useCase.execute(event)).not.toThrow()
+      await expect(useCase.execute(event)).resolves.not.toThrow()
     })
 
     it('應該處理 draw_card_play 為 null 的情況', async () => {
@@ -159,7 +157,7 @@ describe('HandleTurnCompletedUseCase', () => {
       }
 
       // Act & Assert: 不應拋出錯誤
-      expect(() => useCase.execute(event)).not.toThrow()
+      await expect(useCase.execute(event)).resolves.not.toThrow()
     })
   })
 
@@ -186,8 +184,7 @@ describe('HandleTurnCompletedUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: 應該播放翻牌配對動畫和轉移動畫（不含 playFlipFromDeckAnimation，那是 Phase 8）
       expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0302', '0102')
@@ -221,8 +218,7 @@ describe('HandleTurnCompletedUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: 翻牌無配對時不播放動畫（牌已在場上）
       expect(mockAnimation.playMatchAnimation).not.toHaveBeenCalled()
@@ -253,8 +249,7 @@ describe('HandleTurnCompletedUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert
       expect(mockGameState.updateDeckRemaining).toHaveBeenCalledWith(22)
@@ -284,8 +279,7 @@ describe('HandleTurnCompletedUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert
       expect(mockGameState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
@@ -315,8 +309,7 @@ describe('HandleTurnCompletedUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: isOpponent = true
       expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(

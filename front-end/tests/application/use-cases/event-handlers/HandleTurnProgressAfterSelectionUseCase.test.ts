@@ -40,12 +40,6 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
     )
   })
 
-  // Helper: 等待異步操作完成
-  const flushPromises = async () => {
-    // 等待所有 Promise 完成（包含 350ms 的 FLIP 動畫等待）
-    await new Promise(resolve => setTimeout(resolve, 400))
-  }
-
   describe('播放配對動畫', () => {
     it('應該先播放翻牌飛向配對目標動畫，再播放配對動畫', async () => {
       // Arrange
@@ -73,8 +67,7 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: 應該先播放翻牌飛向配對目標動畫，再播放配對動畫和轉移動畫
       expect(mockAnimation.playCardToFieldAnimation).toHaveBeenCalledWith('0501', false, '0201')
@@ -120,8 +113,7 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: 翻牌無配對時不播放動畫
       expect(mockAnimation.playMatchAnimation).not.toHaveBeenCalled()
@@ -171,8 +163,7 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: 應該記錄役種形成
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -210,8 +201,7 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: 不應該記錄役種形成
       expect(consoleSpy).not.toHaveBeenCalledWith(
@@ -250,8 +240,7 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert
       expect(mockGameState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
@@ -285,8 +274,7 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: isOpponent = true
       expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
@@ -325,8 +313,7 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-      await flushPromises()
+      await useCase.execute(event)
 
       // Assert: 應該清除選擇狀態
       expect(mockGameState.setDrawnCard).toHaveBeenCalledWith(null)
@@ -376,10 +363,7 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
 
       // Act
       const startTime = Date.now()
-      useCase.execute(event)
-
-      // 等待足夠長的時間，確保包含 350ms 的 FLIP 動畫等待
-      await new Promise(resolve => setTimeout(resolve, 400))
+      await useCase.execute(event)
 
       // Assert: 驗證場牌被移除（同時移除翻牌和配對場牌）
       expect(mockGameState.updateFieldCards).toHaveBeenCalled()

@@ -314,5 +314,6 @@ export function createMockNotificationPort(): NotificationPort {
     stopActionCountdown: vi.fn(),
     startDisplayCountdown: vi.fn(),
     stopDisplayCountdown: vi.fn(),
+    cleanup: vi.fn(),
   }
 }
