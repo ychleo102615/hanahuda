@@ -9,12 +9,16 @@
  * @example
  * ```typescript
  * import type {
+ *   StartGamePort,
  *   PlayHandCardPort,
  *   HandleGameStartedPort,
  *   HandleRoundDealtPort
  * } from '@/user-interface/application/ports/input'
  * ```
  */
+
+// Game Initialization Input Ports
+export type { StartGamePort } from './start-game.port'
 
 // Player Operations Input Ports
 export type {

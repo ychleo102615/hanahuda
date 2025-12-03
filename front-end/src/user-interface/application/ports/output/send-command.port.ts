@@ -6,6 +6,7 @@
  * 負責發送命令到後端伺服器。
  *
  * 使用於：
+ * - StartGameUseCase
  * - PlayHandCardUseCase
  * - SelectMatchTargetUseCase
  * - MakeKoiKoiDecisionUseCase
@@ -24,7 +25,24 @@
  * }
  * ```
  */
+
+import type { JoinGameResponse } from '@/user-interface/adapter/api/types'
+
 export interface SendCommandPort {
+  /**
+   * 加入遊戲（配對或創建遊戲）
+   *
+   * @param sessionToken - 可選的會話 Token（用於重連）
+   * @returns JoinGameResponse - 包含 game_id, session_token, player_id, snapshot
+   * @throws 當網路錯誤或伺服器拒絕時拋出異常
+   *
+   * @example
+   * ```typescript
+   * const response = await sendCommand.joinGame()
+   * console.log(response.session_token)
+   * ```
+   */
+  joinGame(sessionToken?: string): Promise<JoinGameResponse>
   /**
    * 離開遊戲
    *

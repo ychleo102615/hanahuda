@@ -14,14 +14,15 @@
  */
 
 import type { GameStartedEvent } from '../../types/events'
-import type { UIStatePort, GameStatePort, MatchmakingStatePort } from '../../ports/output'
+import type { UIStatePort, GameStatePort, MatchmakingStatePort, NavigationPort } from '../../ports/output'
 import type { HandleGameStartedPort } from '../../ports/input'
 
 export class HandleGameStartedUseCase implements HandleGameStartedPort {
   constructor(
     private readonly updateUIState: UIStatePort,
     private readonly gameState: GameStatePort,
-    private readonly matchmakingState: MatchmakingStatePort
+    private readonly matchmakingState: MatchmakingStatePort,
+    private readonly navigationPort: NavigationPort
   ) {}
 
   execute(event: GameStartedEvent): void {
@@ -37,5 +38,8 @@ export class HandleGameStartedUseCase implements HandleGameStartedPort {
 
     // 3. 清除配對狀態（配對已成功，進入遊戲）
     this.matchmakingState.clearSession()
+
+    // 4. 導航至遊戲頁面
+    this.navigationPort.navigateToGame()
   }
 }

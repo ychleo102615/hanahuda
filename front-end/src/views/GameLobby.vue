@@ -19,6 +19,10 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMatchmakingStateStore } from '@/user-interface/adapter/stores/matchmakingState'
+import { useDependency, useOptionalDependency } from '@/user-interface/adapter/composables/useDependency'
+import { TOKENS } from '@/user-interface/adapter/di/tokens'
+import type { StartGamePort } from '@/user-interface/application/ports/input'
+import type { MockEventEmitter } from '@/user-interface/adapter/mock/MockEventEmitter'
 import ActionPanel from '@/components/ActionPanel.vue'
 import TopInfoBar from '@/components/TopInfoBar.vue'
 import type { ActionPanelItem } from '@/components/ActionPanel.vue'
@@ -28,6 +32,15 @@ const matchmakingStore = useMatchmakingStateStore()
 
 // Vue Router
 const router = useRouter()
+
+// Use Case 注入
+const startGameUseCase = useDependency<StartGamePort>(TOKENS.StartGamePort)
+
+// Mock Event Emitter 注入（僅 Mock 模式）
+const gameMode = sessionStorage.getItem('gameMode') || 'mock'
+const mockEventEmitter = gameMode === 'mock'
+  ? useOptionalDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
+  : null
 
 // Action Panel 狀態
 const isPanelOpen = ref(false)
@@ -69,11 +82,41 @@ const handleBackToHome = () => {
 }
 
 // 開始配對
-const handleFindMatch = () => {
+const handleFindMatch = async () => {
   if (!canStartMatchmaking.value) return
 
-  matchmakingStore.setStatus('finding')
-  startCountdown()
+  try {
+    // 1. 設定狀態為 finding
+    matchmakingStore.setStatus('finding')
+
+    // 2. 啟動倒數計時器
+    startCountdown()
+
+    // 3. 調用 StartGameUseCase
+    await startGameUseCase.execute()
+
+    console.info('[GameLobby] 遊戲啟動成功')
+
+    // 4. Mock 模式：啟動事件腳本
+    if (gameMode === 'mock' && mockEventEmitter) {
+      console.info('[GameLobby] 啟動 Mock 事件腳本')
+      mockEventEmitter.start()
+    }
+
+  } catch (error) {
+    console.error('[GameLobby] 遊戲啟動失敗:', error)
+
+    // 清除計時器
+    clearCountdownTimer()
+
+    // 設定錯誤狀態
+    matchmakingStore.setStatus('error')
+    matchmakingStore.setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : 'Failed to join matchmaking. Please try again.'
+    )
+  }
 }
 
 // 重試配對

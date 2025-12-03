@@ -17,6 +17,9 @@ export const TOKENS = {
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
 
+  // ===== Input Ports - Game Initialization =====
+  StartGamePort: Symbol('StartGamePort'),
+
   // ===== Input Ports - Player Operations (3 個) =====
   PlayHandCardPort: Symbol('PlayHandCardPort'),
   SelectMatchTargetPort: Symbol('SelectMatchTargetPort'),

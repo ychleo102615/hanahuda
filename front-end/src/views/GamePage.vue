@@ -11,7 +11,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '../user-interface/adapter/stores/uiState'
-import { useDependency, useOptionalDependency } from '../user-interface/adapter/composables/useDependency'
+import { useOptionalDependency } from '../user-interface/adapter/composables/useDependency'
+import type { MockEventEmitter } from '../user-interface/adapter/mock/MockEventEmitter'
 import TopInfoBar from '@/components/TopInfoBar.vue'
 import FieldZone from './GamePage/components/FieldZone.vue'
 import PlayerHandZone from './GamePage/components/PlayerHandZone.vue'
@@ -30,7 +31,6 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import { TOKENS } from '../user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '../user-interface/adapter/composables/useZoneRegistration'
 import { useLeaveGame } from '../user-interface/adapter/composables/useLeaveGame'
-import type { SendCommandPort } from '../user-interface/application/ports/output'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
@@ -81,30 +81,24 @@ const {
 
 // GamePage 不再直接調用業務 Port，由子組件負責
 
-// 在 setup 階段獲取依賴（用於 Mock 模式）
-const gameMode = sessionStorage.getItem('gameMode') || 'mock'
-const mockApiClient = gameMode === 'mock' ? useDependency<SendCommandPort & { joinGame: () => Promise<void> }>(TOKENS.SendCommandPort) : null
-const mockEventEmitter = gameMode === 'mock' ? useOptionalDependency<{ start: () => void; reset: () => void }>(TOKENS.MockEventEmitter) : null
-
 // 初始化遊戲
-onMounted(async () => {
-  if (gameMode === 'mock') {
-    console.info('[GamePage] 初始化 Mock 模式')
+const gameMode = sessionStorage.getItem('gameMode') || 'mock'
 
-    if (mockApiClient && mockEventEmitter) {
-      // 調用 joinGame 初始化遊戲
-      await mockApiClient.joinGame()
-
-      // 啟動 Mock 事件腳本
-      mockEventEmitter.start()
-    } else {
-      console.error('[GamePage] Mock 模式依賴注入失敗')
-    }
-  }
+onMounted(() => {
+  // GamePage 不再負責初始化遊戲
+  // 遊戲已在 GameLobby 初始化，此處只負責呈現
+  console.info('[GamePage] 遊戲頁面已載入', {
+    gameMode,
+    gameId: gameState.gameId
+  })
 })
 
 onUnmounted(() => {
-  if (gameMode === 'mock' && mockEventEmitter) {
+  // 透過 Container 的 useOptionalDependency 自動判斷是否有註冊 MockEventEmitter
+  // 只有在 Mock 模式下，registry.ts 才會註冊此依賴
+  const mockEventEmitter = useOptionalDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
+  if (mockEventEmitter) {
+    console.info('[GamePage] 重置 Mock 事件發射器')
     mockEventEmitter.reset()
   }
 })

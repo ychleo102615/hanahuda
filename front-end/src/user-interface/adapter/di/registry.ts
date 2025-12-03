@@ -41,6 +41,7 @@ import { HandleGameFinishedUseCase } from '../../application/use-cases/event-han
 import { HandleTurnErrorUseCase } from '../../application/use-cases/event-handlers/HandleTurnErrorUseCase'
 import { HandleReconnectionUseCase } from '../../application/use-cases/event-handlers/HandleReconnectionUseCase'
 import { HandleGameErrorUseCase } from '../../application/use-cases/event-handlers/HandleGameErrorUseCase'
+import { StartGameUseCase } from '../../application/use-cases/StartGameUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
@@ -247,9 +248,18 @@ function registerInputPorts(container: DIContainer): void {
   const matchmakingStatePort = container.resolve(TOKENS.MatchmakingStatePort) as MatchmakingStatePort
   const navigationPort = container.resolve(TOKENS.NavigationPort) as NavigationPort
 
-  // Player Operations Use Cases
+  // Game Initialization Use Cases
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
+
+  // 註冊 StartGamePort
+  container.register(
+    TOKENS.StartGamePort,
+    () => new StartGameUseCase(sendCommandPort, matchmakingStatePort),
+    { singleton: true }
+  )
+
+  // Player Operations Use Cases
 
   // 註冊 PlayHandCardPort
   // Phase 7: 加入 animationPort 用於檢查動畫狀態
@@ -284,7 +294,7 @@ function registerInputPorts(container: DIContainer): void {
   // T030 [US1]: 註冊 GameStarted 事件處理器
   container.register(
     TOKENS.HandleGameStartedPort,
-    () => new HandleGameStartedUseCase(uiStatePort, gameStatePort, matchmakingStatePort),
+    () => new HandleGameStartedUseCase(uiStatePort, gameStatePort, matchmakingStatePort, navigationPort),
     { singleton: true }
   )
 

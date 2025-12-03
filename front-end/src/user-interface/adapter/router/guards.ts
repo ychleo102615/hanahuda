@@ -53,10 +53,8 @@ export function gamePageGuard(
 
   console.info('[Router] 進入遊戲頁面', { mode, from: from.path })
 
-  // Backend 模式下，檢查是否有遊戲會話
-  // (Mock 和 Local 模式會自動初始化，不需檢查)
-  if (mode === 'backend' && !gameState.gameId) {
-    console.warn('[Router] Backend 模式下無遊戲會話，重定向至 /lobby')
+  if (!gameState.gameId) {
+    console.warn('[Router] 無遊戲會話，重定向至 /lobby')
     next({ name: 'lobby' })
     return
   }
