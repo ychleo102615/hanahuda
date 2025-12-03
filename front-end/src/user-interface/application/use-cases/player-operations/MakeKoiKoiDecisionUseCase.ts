@@ -60,8 +60,8 @@ export class MakeKoiKoiDecisionUseCase implements MakeKoiKoiDecisionPort {
       }
     }
 
-    // 停止操作倒數（Use Case 控制業務邏輯）
-    this.notification.stopActionCountdown()
+    // 停止 Modal 倒數（DecisionModal 使用 displayCountdown）
+    this.notification.stopDisplayCountdown()
 
     // Step 1: Calculate current score
     // 加總所有役種的基礎分數

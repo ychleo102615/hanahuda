@@ -72,6 +72,9 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
 
+    this.notification.cleanup()
+    const startTS = new Date()
+
     // 追蹤獲得區狀態
     let myDepository = [...this.gameState.getDepositoryCards(localPlayerId)]
     let opponentDepository = [...this.gameState.getDepositoryCards(opponentPlayerId)]
@@ -185,7 +188,9 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
     // === 階段 4：啟動操作倒數 ===
-    this.notification.startActionCountdown(event.action_timeout_seconds)
+    const currentTS = new Date()
+    const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
+    this.notification.startActionCountdown(event.action_timeout_seconds - dt)
 
     // === 階段 5：清理動畫層 ===
     this.animation.clearHiddenCards()

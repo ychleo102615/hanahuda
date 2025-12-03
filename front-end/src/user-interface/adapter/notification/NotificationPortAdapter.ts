@@ -101,6 +101,7 @@ export function createNotificationPortAdapter(
 
     // ===== 倒數計時 =====
     startActionCountdown(seconds: number): void {
+      countdown.cleanup()
       countdown.startActionCountdown(seconds)
     },
 
@@ -109,6 +110,7 @@ export function createNotificationPortAdapter(
     },
 
     startDisplayCountdown(seconds: number, onComplete?: () => void): void {
+      countdown.cleanup()
       countdown.startDisplayCountdown(seconds, onComplete)
     },
 

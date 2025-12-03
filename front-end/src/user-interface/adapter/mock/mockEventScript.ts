@@ -292,31 +292,7 @@ export const mockEventScript: MockEventItem[] = [
     delay: 3000,
   },
 
-  // 9. 玩家選擇結束 (赤短 6 分已達標)
-  {
-    eventType: 'DecisionMade',
-    payload: {
-      event_type: 'DecisionMade',
-      event_id: 'evt-009',
-      timestamp: new Date().toISOString(),
-      player_id: 'player-1',
-      decision: 'END_ROUND',
-      updated_multipliers: {
-        player_multipliers: {
-          'player-1': 1,
-          'player-2': 1,
-        },
-      },
-      next_state: {
-        state_type: 'AWAITING_HAND_PLAY',
-        active_player_id: 'player-2',
-      },
-      action_timeout_seconds: 30,
-    },
-    delay: 3000,
-  },
-
-  // 10. 回合計分
+  // 9. 回合計分
   {
     eventType: 'RoundScored',
     payload: {
@@ -347,9 +323,9 @@ export const mockEventScript: MockEventItem[] = [
     },
     delay: 3000,
   },
-  /*
 
-  // 11. 遊戲結束
+  /*
+  // 10. 遊戲結束
   {
     eventType: 'GameFinished',
     payload: {

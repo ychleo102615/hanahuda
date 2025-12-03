@@ -22,7 +22,7 @@ import type { MakeKoiKoiDecisionPort } from '../../../user-interface/application
 
 const uiState = useUIStateStore()
 const gameState = useGameStateStore()
-const { decisionModalVisible, decisionModalData, actionTimeoutRemaining } = storeToRefs(uiState)
+const { decisionModalVisible, decisionModalData, displayTimeoutRemaining } = storeToRefs(uiState)
 const { myDepository, myKoiKoiMultiplier } = storeToRefs(gameState)
 
 // T074 [US3]: Inject MakeKoiKoiDecisionPort
@@ -30,7 +30,7 @@ const makeKoiKoiDecisionPort = useDependency<MakeKoiKoiDecisionPort>(TOKENS.Make
 
 // T020 [US2]: Warning color logic (red when <= 5 seconds)
 const countdownClass = computed(() => {
-  if (actionTimeoutRemaining.value !== null && actionTimeoutRemaining.value <= 5) {
+  if (displayTimeoutRemaining.value !== null && displayTimeoutRemaining.value <= 5) {
     return 'text-red-500'
   }
   return 'text-gray-800'
@@ -83,7 +83,7 @@ function handleEndRound() {
 
           <!-- T019 [US2]: Countdown Display -->
           <div
-            v-if="actionTimeoutRemaining !== null"
+            v-if="displayTimeoutRemaining !== null"
             class="mb-4 text-center"
           >
             <div class="text-sm text-gray-600 mb-1">Time Remaining</div>
@@ -92,7 +92,7 @@ function handleEndRound() {
               class="text-3xl font-bold"
               :class="countdownClass"
             >
-              {{ actionTimeoutRemaining }}
+              {{ displayTimeoutRemaining }}
             </div>
           </div>
 
