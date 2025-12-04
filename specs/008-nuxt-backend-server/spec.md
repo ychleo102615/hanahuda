@@ -74,18 +74,20 @@
 
 ---
 
-### User Story 5 - 斷線重連恢復遊戲狀態 (Priority: P2)
+### User Story 5 - 斷線重連與後端代管操作 (Priority: P2)
 
-玩家在遊戲進行中斷線，重連後能恢復到離開時的遊戲狀態。
+玩家在遊戲進行中斷線，後端持續進行遊戲流程（代管操作），玩家可在遊戲結束前重連恢復狀態。
 
-**Why this priority**: 提升使用者體驗，但不影響核心遊戲功能。
+**Why this priority**: 提升使用者體驗，確保遊戲不會因斷線而卡住。
 
 **Independent Test**: 可透過模擬斷線（關閉 SSE）並重新發送 GameRequestJoin（含 session_token）來測試。
 
 **Acceptance Scenarios**:
 
-1. **Given** 玩家有有效的 session_token，**When** 發送 GameRequestJoin 重連請求，**Then** 伺服器回傳 GameSnapshotRestore 事件，包含完整遊戲狀態
-2. **Given** 玩家斷線超過重連時限，**When** 嘗試重連，**Then** 伺服器回傳 GameError（SESSION_INVALID）
+1. **Given** 玩家斷線且遊戲進行中，**When** action_timeout_seconds 到期，**Then** 後端自動為該玩家判定操作（代管模式）
+2. **Given** 玩家斷線但遊戲尚未結束，**When** 發送 GameRequestJoin 重連請求，**Then** 伺服器回傳 GameSnapshotRestore 事件，包含當前遊戲狀態
+3. **Given** 玩家斷線超過 60 秒，**When** 系統偵測到持續斷線，**Then** 視為玩家放棄遊戲，該場遊戲結束，對手獲勝
+4. **Given** 遊戲已結束，**When** 玩家嘗試重連，**Then** 伺服器回傳 GameError（SESSION_INVALID），會話已清除
 
 ---
 
@@ -114,6 +116,8 @@
 - 當玩家選擇無效的配對目標時，系統推送 TurnError（INVALID_TARGET）
 - 當牌堆耗盡且雙方均無役種時，系統推送 RoundDrawn 事件（平局）
 - 當出現手四（Teshi）或場牌流局（Kuttsuki）時，系統推送 RoundEndedInstantly 事件
+- 當玩家斷線超過 60 秒時，系統判定玩家放棄，推送 GameFinished 事件（對手獲勝）
+- 當玩家斷線且 action_timeout 到期時，系統自動為該玩家執行代管操作（最小影響策略：打出最低價值牌、END_ROUND）
 
 ## Requirements *(mandatory)*
 
@@ -121,8 +125,8 @@
 
 #### 遊戲房間與配對
 
-- **FR-001**: 系統 MUST 提供 `/api/v1/games/join` 端點接收 GameRequestJoin 請求
-- **FR-002**: 系統 MUST 為每個新遊戲生成唯一的 game_id（UUID 格式）和 session_token
+- **FR-001**: 系統 MUST 提供 `/api/v1/games/join` 端點接收 GameRequestJoin 請求，請求中包含前端提供的匿名 player_id
+- **FR-002**: 系統 MUST 為每個新遊戲生成唯一的 game_id（UUID 格式）和 session_token，並關聯玩家的 player_id
 - **FR-003**: 系統 MUST 提供 `/api/v1/games/[gameId]/events` SSE 端點供前端建立連線
 - **FR-004**: 系統 MUST 在 MVP 版本自動為單人玩家配對假玩家，無需等待真人配對
 
@@ -137,16 +141,16 @@
 #### 遊戲局數設定
 
 - **FR-010**: 系統 MUST 支援可設定的遊戲局數，預設為 2 局
-- **FR-011**: 系統 MUST 在每局結束後等待 display_timeout_seconds 再自動開始下一局
+- **FR-011**: 系統 MUST 在每局結束後等待 display_timeout_seconds（5 秒）再自動開始下一局
 - **FR-012**: 系統 MUST 在所有局數完成後推送 GameFinished 事件
 
 #### 假玩家服務
 
 - **FR-013**: 系統 MUST 提供假玩家服務（Bot Service），能自動執行所有遊戲操作
-- **FR-014**: 系統 MUST 在每個需要玩家操作的事件中提供 action_timeout_seconds，作為前端動畫演出加玩家思考/操作的總時限
-- **FR-015**: 假玩家 MUST 模擬「假玩家側的動畫演出時間」，確保與真實玩家側的動畫同步
-- **FR-016**: 假玩家 MUST 在模擬動畫時間後，再加上模擬思考時間（500ms-2000ms）才執行操作
-- **FR-017**: 後端 MUST 在 action_timeout_seconds 加上冗餘緩衝時間後，才判定玩家操作超時
+- **FR-014**: 系統 MUST 在每個需要玩家操作的事件中提供 action_timeout_seconds（預設 15 秒），作為前端動畫演出加玩家思考/操作的總時限
+- **FR-015**: 假玩家 MUST 模擬「假玩家側的動畫演出時間」（固定 3 秒），確保與真實玩家側的動畫同步
+- **FR-016**: 假玩家 MUST 在模擬動畫時間（3 秒）後，再加上模擬思考時間（1500ms-3000ms）才執行操作
+- **FR-017**: 後端 MUST 在 action_timeout_seconds 加上冗餘緩衝時間（3 秒）後，才判定玩家操作超時
 - **FR-018**: 假玩家 MVP 版本 MUST 使用隨機策略選擇手牌和配對目標
 - **FR-019**: 假玩家 MUST 在形成役種時根據隨機策略決策 Koi-Koi
 
@@ -155,12 +159,15 @@
 - **FR-020**: 系統 MUST 實現所有 protocol.md 定義的 S2C 事件（GameStarted、RoundDealt、TurnCompleted 等）
 - **FR-021**: 系統 MUST 確保事件推送的順序性和完整性
 - **FR-022**: 系統 MUST 支援斷線重連機制，提供 GameSnapshotRestore 快照
+- **FR-023**: 系統 MUST 在玩家斷線且 action_timeout_seconds 到期時，自動為該玩家判定操作（代管模式），採用最小影響策略：打出最低價值的牌、Koi-Koi 決策選擇 END_ROUND
+- **FR-024**: 系統 MUST 在玩家斷線超過 60 秒時，判定該玩家放棄遊戲，遊戲結束並由對手獲勝
+- **FR-025**: 系統 MUST 在遊戲結束後立即清除該遊戲會話資料
 
 #### 資料庫持久化
 
-- **FR-023**: 系統 MUST 使用 Drizzle ORM 搭配 PostgreSQL 進行資料持久化
-- **FR-024**: 系統 MUST 儲存每場遊戲的狀態（用於重連恢復）
-- **FR-025**: 系統 MUST 記錄每位玩家的統計數據：
+- **FR-026**: 系統 MUST 使用 Drizzle ORM 搭配 PostgreSQL 進行資料持久化
+- **FR-027**: 系統 MUST 儲存每場遊戲的狀態（用於重連恢復）
+- **FR-028**: 系統 MUST 記錄每位玩家的統計數據：
   - 總分
   - 對局次數
   - 勝利次數
@@ -171,14 +178,14 @@
 
 #### 錯誤處理
 
-- **FR-026**: 系統 MUST 在操作錯誤時推送 TurnError 事件，包含具體錯誤代碼
-- **FR-027**: 系統 MUST 在遊戲層級錯誤時推送 GameError 事件（配對超時、會話無效等）
+- **FR-029**: 系統 MUST 在操作錯誤時推送 TurnError 事件，包含具體錯誤代碼
+- **FR-030**: 系統 MUST 在遊戲層級錯誤時推送 GameError 事件（配對超時、會話無效、玩家放棄等）
 
 ### Key Entities
 
 - **Game（遊戲會話）**: 遊戲的聚合根，包含遊戲 ID、玩家列表、規則集、累計分數、已完成局數
 - **Round（局）**: 單局遊戲狀態，包含莊家、場牌、牌堆、玩家手牌、獲得區、Koi-Koi 狀態
-- **Player（玩家）**: 玩家資訊，區分真人玩家和假玩家（AI）
+- **Player（玩家）**: 玩家資訊，包含匿名 player_id（前端 localStorage UUID）、區分真人玩家和假玩家（AI）；清除 localStorage 後視為新玩家
 - **Card（卡片）**: 花牌卡片值物件，使用 MMTI 編碼格式
 - **Yaku（役種）**: 役種值物件，包含類型和基礎分數
 - **PlayerStats（玩家統計）**: 玩家的歷史遊戲統計數據
@@ -190,9 +197,9 @@
 
 - **SC-001**: 玩家從 GameLobby 發送 GameRequestJoin 到收到 RoundDealt 事件，整體時間不超過 3 秒
 - **SC-002**: 系統在 MVP 階段能同時支援 50 場以上的並發遊戲
-- **SC-003**: 假玩家的操作延遲（模擬動畫時間 + 模擬思考時間）在合理範圍內，營造自然的遊戲節奏
+- **SC-003**: 假玩家的操作延遲（模擬動畫 3 秒 + 模擬思考 1.5-3 秒）為 4.5-6 秒，營造自然的遊戲節奏
 - **SC-004**: 玩家操作後，SSE 事件推送延遲不超過 200ms
-- **SC-005**: 斷線後 60 秒內重連，能成功恢復遊戲狀態
+- **SC-005**: 玩家在遊戲結束前皆可重連恢復狀態；斷線超過 60 秒視為放棄遊戲
 - **SC-006**: 遊戲結束後，玩家統計數據在 5 秒內完成更新並可查詢
 - **SC-007**: 所有役種（12 種標準役種）的檢測準確率達到 100%
 
@@ -204,6 +211,16 @@
 4. **假玩家是同步操作**：MVP 版本假玩家在同一個伺服器進程中執行，不是獨立服務
 5. **單一伺服器部署**：MVP 版本採用單體架構，不考慮多伺服器的狀態同步問題
 6. **action_timeout_seconds 語意**：此參數為前端動畫演出加玩家思考/操作的總時限，後端會在此時限加上冗餘時間後才判定超時
+
+## Clarifications
+
+### Session 2024-12-04
+
+- Q: 在沒有帳號系統的情況下，如何識別玩家以追蹤其統計數據？ → A: 使用匿名 player_id（前端 localStorage UUID），清除後視為新玩家
+- Q: 遊戲會話保留期限與斷線重連機制？ → A: 斷線後後端持續進行流程（action_timeout 到期自動判定操作），遊戲結束前皆可重連；斷線超過 60 秒視為放棄遊戲，該場遊戲結束；遊戲結束後會話立即清除
+- Q: 假玩家操作延遲的具體數值？ → A: 模擬動畫時間統一 3 秒，模擬思考時間 1500-3000ms，總延遲 4.5-6 秒
+- Q: action_timeout_seconds 與相關時間參數？ → A: action_timeout_seconds=15秒、冗餘緩衝時間=3秒、display_timeout_seconds=5秒
+- Q: 代管操作（Auto-Action）的策略？ → A: 最小影響策略（打出最低價值的牌、Koi-Koi 決策選 END_ROUND）
 
 ## Out of Scope
 
