@@ -5,16 +5,18 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleTurnErrorUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnErrorUseCase'
 import type { TurnErrorEvent } from '@/user-interface/application/types'
-import { createMockTriggerUIEffectPort } from '../../test-helpers/mock-factories'
-import type { TriggerUIEffectPort } from '@/user-interface/application/ports'
+import { createMockTriggerUIEffectPort, createMockNotificationPort } from '../../test-helpers/mock-factories'
+import type { TriggerUIEffectPort, NotificationPort } from '@/user-interface/application/ports'
 
 describe('HandleTurnErrorUseCase', () => {
   let mockTriggerUIEffect: TriggerUIEffectPort
+  let mockNotification: NotificationPort
   let useCase: HandleTurnErrorUseCase
 
   beforeEach(() => {
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleTurnErrorUseCase(mockTriggerUIEffect)
+    mockNotification = createMockNotificationPort()
+    useCase = new HandleTurnErrorUseCase(mockTriggerUIEffect, mockNotification)
   })
 
   it('應該顯示錯誤訊息', () => {

@@ -147,4 +147,21 @@ export class EventRouter {
     console.info('[EventRouter] Clearing event chain')
     this.eventChain = Promise.resolve()
   }
+
+  /**
+   * 等待所有待處理的事件完成
+   *
+   * @description
+   * 返回一個 Promise，當所有排隊的事件都處理完畢時 resolve。
+   * 主要用於測試，確保所有事件都已處理完畢。
+   *
+   * @example
+   * ```typescript
+   * router.route('GameStarted', payload)
+   * await router.waitForPendingEvents()  // 等待事件處理完成
+   * ```
+   */
+  waitForPendingEvents(): Promise<void> {
+    return this.eventChain
+  }
 }

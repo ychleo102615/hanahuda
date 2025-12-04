@@ -18,18 +18,21 @@ import type { RoundDealtEvent } from '@/user-interface/application/types'
 import {
   createMockGameStatePort,
   createMockAnimationPort,
+  createMockNotificationPort,
 } from '../../test-helpers/mock-factories'
-import type { GameStatePort, AnimationPort } from '@/user-interface/application/ports'
+import type { GameStatePort, AnimationPort, NotificationPort } from '@/user-interface/application/ports'
 
 describe('HandleRoundDealtUseCase', () => {
   let mockGameState: GameStatePort
   let mockAnimation: AnimationPort
+  let mockNotification: NotificationPort
   let useCase: HandleRoundDealtUseCase
 
   beforeEach(() => {
     mockGameState = createMockGameStatePort()
     mockAnimation = createMockAnimationPort()
-    useCase = new HandleRoundDealtUseCase(mockGameState, mockAnimation)
+    mockNotification = createMockNotificationPort()
+    useCase = new HandleRoundDealtUseCase(mockGameState, mockAnimation, mockNotification)
   })
 
   describe('更新場牌狀態', () => {

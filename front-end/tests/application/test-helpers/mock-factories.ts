@@ -47,6 +47,8 @@ import type {
   GameStatePort,
   AnimationPort,
   NotificationPort,
+  MatchmakingStatePort,
+  NavigationPort,
 } from '@/user-interface/application/ports'
 import type { DomainFacade } from '@/user-interface/application/types'
 
@@ -315,5 +317,52 @@ export function createMockNotificationPort(): NotificationPort {
     startDisplayCountdown: vi.fn(),
     stopDisplayCountdown: vi.fn(),
     cleanup: vi.fn(),
+  }
+}
+
+/**
+ * 建立 Mock MatchmakingStatePort
+ *
+ * @description
+ * 所有方法預設為空操作（no-op）。
+ *
+ * @example
+ * ```typescript
+ * const mockMatchmakingState = createMockMatchmakingStatePort()
+ *
+ * // 調用方法
+ * mockMatchmakingState.clearSession()
+ *
+ * // 驗證方法調用
+ * expect(mockMatchmakingState.clearSession).toHaveBeenCalled()
+ * ```
+ */
+export function createMockMatchmakingStatePort(): MatchmakingStatePort {
+  return {
+    clearSession: vi.fn(),
+  }
+}
+
+/**
+ * 建立 Mock NavigationPort
+ *
+ * @description
+ * 所有方法預設為空操作（no-op）。
+ *
+ * @example
+ * ```typescript
+ * const mockNavigation = createMockNavigationPort()
+ *
+ * // 調用方法
+ * mockNavigation.navigateToGame()
+ *
+ * // 驗證方法調用
+ * expect(mockNavigation.navigateToGame).toHaveBeenCalled()
+ * ```
+ */
+export function createMockNavigationPort(): NavigationPort {
+  return {
+    navigateToGame: vi.fn(),
+    navigateToHome: vi.fn(),
   }
 }

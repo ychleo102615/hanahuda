@@ -8,18 +8,27 @@ import type { GameSnapshotRestore } from '@/user-interface/application/types'
 import {
   createMockUIStatePort,
   createMockTriggerUIEffectPort,
+  createMockNotificationPort,
+  createMockAnimationPort,
+  createMockMatchmakingStatePort,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, TriggerUIEffectPort } from '@/user-interface/application/ports'
+import type { UIStatePort, TriggerUIEffectPort, NotificationPort, AnimationPort, MatchmakingStatePort } from '@/user-interface/application/ports'
 
 describe('HandleReconnectionUseCase', () => {
   let mockUIState: UIStatePort
   let mockTriggerUIEffect: TriggerUIEffectPort
+  let mockNotification: NotificationPort
+  let mockAnimation: AnimationPort
+  let mockMatchmakingState: MatchmakingStatePort
   let useCase: HandleReconnectionUseCase
 
   beforeEach(() => {
     mockUIState = createMockUIStatePort()
     mockTriggerUIEffect = createMockTriggerUIEffectPort()
-    useCase = new HandleReconnectionUseCase(mockUIState, mockTriggerUIEffect)
+    mockNotification = createMockNotificationPort()
+    mockAnimation = createMockAnimationPort()
+    mockMatchmakingState = createMockMatchmakingStatePort()
+    useCase = new HandleReconnectionUseCase(mockUIState, mockNotification, mockAnimation, mockMatchmakingState)
   })
 
   it('應該恢復遊戲狀態', () => {

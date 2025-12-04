@@ -33,7 +33,7 @@ describe('SSE Client Integration Tests - User Story 4', () => {
   })
 
   describe('T080 [US4]: Complete Event Flow Integration', () => {
-    it('should handle complete game flow from GameStarted to GameFinished', () => {
+    it('should handle complete game flow from GameStarted to GameFinished', async () => {
       // 模擬各個 Use Case Input Ports
       const handleGameStarted: InputPort<GameStartedEvent> = {
         execute: vi.fn(),
@@ -214,6 +214,8 @@ describe('SSE Client Integration Tests - User Story 4', () => {
       }
       router.route('GameFinished', gameFinishedEvent)
 
+      await router.waitForPendingEvents()
+
       // 驗證所有事件都被正確路由到對應的 Use Cases
       expect(handleGameStarted.execute).toHaveBeenCalledTimes(1)
       expect(handleRoundDealt.execute).toHaveBeenCalledTimes(1)
@@ -238,7 +240,7 @@ describe('SSE Client Integration Tests - User Story 4', () => {
       }
     })
 
-    it('should allow independent event registration and unregistration', () => {
+    it('should allow independent event registration and unregistration', async () => {
       const mockPort1: InputPort<GameStartedEvent> = {
         execute: vi.fn(),
       }
@@ -249,11 +251,13 @@ describe('SSE Client Integration Tests - User Story 4', () => {
       // 註冊第一個事件
       router.register('GameStarted', mockPort1)
       router.route('GameStarted', {} as GameStartedEvent)
+      await router.waitForPendingEvents()
       expect(mockPort1.execute).toHaveBeenCalledTimes(1)
 
       // 註冊第二個事件
       router.register('RoundDealt', mockPort2)
       router.route('RoundDealt', {} as RoundDealtEvent)
+      await router.waitForPendingEvents()
       expect(mockPort2.execute).toHaveBeenCalledTimes(1)
 
       // 取消註冊第一個事件
@@ -263,10 +267,12 @@ describe('SSE Client Integration Tests - User Story 4', () => {
 
       // 第一個事件不再觸發
       router.route('GameStarted', {} as GameStartedEvent)
+      await router.waitForPendingEvents()
       expect(mockPort1.execute).toHaveBeenCalledTimes(1) // 沒有增加
 
       // 第二個事件仍然有效
       router.route('RoundDealt', {} as RoundDealtEvent)
+      await router.waitForPendingEvents()
       expect(mockPort2.execute).toHaveBeenCalledTimes(2)
 
       consoleSpy.mockRestore()
@@ -307,7 +313,7 @@ describe('SSE Client Integration Tests - User Story 4', () => {
       consoleSpy.mockRestore()
     })
 
-    it('should not interfere with event routing when Use Case throws error', () => {
+    it('should not interfere with event routing when Use Case throws error', async () => {
       const failingPort: InputPort<GameStartedEvent> = {
         execute: vi.fn().mockImplementation(() => {
           throw new Error('Use Case execution failed')
@@ -320,22 +326,23 @@ describe('SSE Client Integration Tests - User Story 4', () => {
       router.register('GameStarted', failingPort)
       router.register('RoundDealt', successPort)
 
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
       // 第一個事件拋出錯誤
-      expect(() => {
-        router.route('GameStarted', {} as GameStartedEvent)
-      }).toThrow('Use Case execution failed')
+      router.route('GameStarted', {} as GameStartedEvent)
+      router.route('RoundDealt', {} as RoundDealtEvent)
 
-      // 但不影響其他事件
-      expect(() => {
-        router.route('RoundDealt', {} as RoundDealtEvent)
-      }).not.toThrow()
+      await router.waitForPendingEvents()
 
+      expect(consoleErrorSpy).toHaveBeenCalled()
       expect(successPort.execute).toHaveBeenCalledTimes(1)
+
+      consoleErrorSpy.mockRestore()
     })
   })
 
   describe('Edge Cases', () => {
-    it('should handle rapid sequential events', () => {
+    it('should handle rapid sequential events', async () => {
       const mockPort: InputPort<TurnCompletedEvent> = {
         execute: vi.fn(),
       }
@@ -361,6 +368,8 @@ describe('SSE Client Integration Tests - User Story 4', () => {
         })
       }
 
+      await router.waitForPendingEvents()
+
       expect(mockPort.execute).toHaveBeenCalledTimes(10)
     })
 
@@ -378,7 +387,7 @@ describe('SSE Client Integration Tests - User Story 4', () => {
       router.route('gamestarted' as any, {} as GameStartedEvent)
 
       // 應該被視為未註冊的事件
-      expect(consoleSpy).toHaveBeenCalledWith('未註冊的事件類型: gamestarted')
+      expect(consoleSpy).toHaveBeenCalledWith('[EventRouter] 未註冊的事件類型: gamestarted')
       expect(mockPort.execute).not.toHaveBeenCalled()
 
       consoleSpy.mockRestore()

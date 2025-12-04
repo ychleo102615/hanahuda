@@ -17,30 +17,30 @@ import { HandleDecisionRequiredUseCase } from '@/user-interface/application/use-
 import type { DecisionRequiredEvent } from '@/user-interface/application/types'
 import {
   createMockUIStatePort,
-  createMockTriggerUIEffectPort,
   createMockDomainFacade,
+  createMockNotificationPort,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, TriggerUIEffectPort, DomainFacade } from '@/user-interface/application'
+import type { UIStatePort, DomainFacade, NotificationPort } from '@/user-interface/application'
 
 describe('HandleDecisionRequiredUseCase', () => {
   let mockUIState: UIStatePort
-  let mockTriggerUIEffect: TriggerUIEffectPort
   let mockDomainFacade: DomainFacade
+  let mockNotification: NotificationPort
   let useCase: HandleDecisionRequiredUseCase
 
   beforeEach(() => {
     mockUIState = createMockUIStatePort()
-    mockTriggerUIEffect = createMockTriggerUIEffectPort()
     mockDomainFacade = createMockDomainFacade()
+    mockNotification = createMockNotificationPort()
     useCase = new HandleDecisionRequiredUseCase(
       mockUIState,
-      mockTriggerUIEffect,
+      mockNotification,
       mockDomainFacade
     )
   })
 
-  describe('觸發卡片移動動畫', () => {
-    it('應該觸發手牌和翻牌的移動動畫', () => {
+  describe('啟動 Modal 倒數', () => {
+    it('應該啟動 Modal 倒數計時', () => {
       // Arrange
       const event: DecisionRequiredEvent = {
         event_type: 'DecisionRequired',
@@ -80,13 +80,14 @@ describe('HandleDecisionRequiredUseCase', () => {
           },
         },
         deck_remaining: 19,
+        action_timeout_seconds: 30,
       }
 
       // Act
       useCase.execute(event)
 
-      // Assert
-      expect(mockTriggerUIEffect.triggerAnimation).toHaveBeenCalled()
+      // Assert: 應該啟動顯示倒數（用於 Modal）
+      expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(30)
     })
   })
 
@@ -123,21 +124,21 @@ describe('HandleDecisionRequiredUseCase', () => {
           },
         },
         deck_remaining: 19,
+        action_timeout_seconds: 30,
       }
 
       // Act
       useCase.execute(event)
 
-      // Assert
-      expect(mockTriggerUIEffect.showDecisionModal).toHaveBeenCalledWith(
+      // Assert: 應該調用 NotificationPort 的 showDecisionModal
+      expect(mockNotification.showDecisionModal).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
             yaku_type: 'TANE',
             base_points: 1,
           }),
         ]),
-        expect.any(Number),
-        undefined
+        1  // finalScore = base_points (1) * multiplier (1)
       )
     })
   })
@@ -175,6 +176,7 @@ describe('HandleDecisionRequiredUseCase', () => {
           },
         },
         deck_remaining: 19,
+        action_timeout_seconds: 30,
       }
 
       // Act

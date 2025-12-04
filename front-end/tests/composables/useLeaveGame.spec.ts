@@ -38,6 +38,25 @@ const mockSendCommandPort = {
   makeDecision: vi.fn(),
 }
 
+// Mock NotificationPort
+const mockNotificationPort = {
+  showDecisionModal: vi.fn(),
+  showGameFinishedModal: vi.fn(),
+  showRoundDrawnModal: vi.fn(),
+  showRoundScoredModal: vi.fn(),
+  showRoundEndedInstantlyModal: vi.fn(),
+  hideModal: vi.fn(),
+  showErrorMessage: vi.fn(),
+  showSuccessMessage: vi.fn(),
+  showReconnectionMessage: vi.fn(),
+  isModalVisible: vi.fn().mockReturnValue(false),
+  startActionCountdown: vi.fn(),
+  stopActionCountdown: vi.fn(),
+  startDisplayCountdown: vi.fn(),
+  stopDisplayCountdown: vi.fn(),
+  cleanup: vi.fn(),
+}
+
 describe('useLeaveGame Composable', () => {
   let gameStateStore: ReturnType<typeof useGameStateStore>
   let uiStateStore: ReturnType<typeof useUIStateStore>
@@ -56,6 +75,9 @@ describe('useLeaveGame Composable', () => {
     vi.spyOn(container, 'resolve').mockImplementation((token) => {
       if (token === TOKENS.SendCommandPort) {
         return mockSendCommandPort
+      }
+      if (token === TOKENS.NotificationPort) {
+        return mockNotificationPort
       }
       throw new Error(`Unmocked dependency: ${token.toString()}`)
     })

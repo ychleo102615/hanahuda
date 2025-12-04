@@ -33,7 +33,7 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
   })
 
   describe('T015 [US1]: GameStarted Event Routing', () => {
-    it('should route GameStarted event to registered Input Port', () => {
+    it('should route GameStarted event to registered Input Port', async () => {
       const mockPort: InputPort<GameStartedEvent> = {
         execute: vi.fn(),
       }
@@ -58,6 +58,7 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
 
       router.register('GameStarted', mockPort)
       router.route('GameStarted', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledTimes(1)
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
@@ -84,7 +85,7 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
       // 不註冊 handler，直接路由
       router.route('GameStarted', mockPayload)
 
-      expect(consoleSpy).toHaveBeenCalledWith('未註冊的事件類型: GameStarted')
+      expect(consoleSpy).toHaveBeenCalledWith('[EventRouter] 未註冊的事件類型: GameStarted')
 
       consoleSpy.mockRestore()
     })
@@ -101,7 +102,7 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
 
       router.route('GameStarted', {} as GameStartedEvent)
 
-      expect(consoleSpy).toHaveBeenCalledWith('未註冊的事件類型: GameStarted')
+      expect(consoleSpy).toHaveBeenCalledWith('[EventRouter] 未註冊的事件類型: GameStarted')
       expect(mockPort.execute).not.toHaveBeenCalled()
 
       consoleSpy.mockRestore()
@@ -124,7 +125,8 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
       router.route('GameStarted', {} as GameStartedEvent)
       router.route('RoundDealt', {} as RoundDealtEvent)
 
-      expect(consoleSpy).toHaveBeenCalledTimes(2)
+      expect(consoleSpy).toHaveBeenNthCalledWith(1, '[EventRouter] 未註冊的事件類型: GameStarted')
+      expect(consoleSpy).toHaveBeenNthCalledWith(2, '[EventRouter] 未註冊的事件類型: RoundDealt')
       expect(mockPort1.execute).not.toHaveBeenCalled()
       expect(mockPort2.execute).not.toHaveBeenCalled()
 
@@ -133,7 +135,7 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
   })
 
   describe('T016 [US1]: RoundDealt Event Routing', () => {
-    it('should route RoundDealt event to registered Input Port', () => {
+    it('should route RoundDealt event to registered Input Port', async () => {
       const mockPort: InputPort<RoundDealtEvent> = {
         execute: vi.fn(),
       }
@@ -165,12 +167,13 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
 
       router.register('RoundDealt', mockPort)
       router.route('RoundDealt', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledTimes(1)
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
     })
 
-    it('should support multiple event types registered simultaneously', () => {
+    it('should support multiple event types registered simultaneously', async () => {
       const mockPort1: InputPort<GameStartedEvent> = {
         execute: vi.fn(),
       }
@@ -214,6 +217,7 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
 
       router.route('GameStarted', gameStartedPayload)
       router.route('RoundDealt', roundDealtPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort1.execute).toHaveBeenCalledTimes(1)
       expect(mockPort1.execute).toHaveBeenCalledWith(gameStartedPayload)
@@ -222,7 +226,7 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
       expect(mockPort2.execute).toHaveBeenCalledWith(roundDealtPayload)
     })
 
-    it('should pass payload directly without modification', () => {
+    it('should pass payload directly without modification', async () => {
       const mockPort: InputPort<RoundDealtEvent> = {
         execute: vi.fn(),
       }
@@ -245,6 +249,7 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
 
       router.register('RoundDealt', mockPort)
       router.route('RoundDealt', originalPayload)
+      await router.waitForPendingEvents()
 
       const receivedPayload = mockPort.execute.mock.calls[0][0]
 
@@ -255,7 +260,8 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
   })
 
   describe('Error Handling', () => {
-    it('should not throw error when routing to failing Input Port', () => {
+    it('should catch and log errors when routing to failing Input Port', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const mockPort: InputPort<GameStartedEvent> = {
         execute: vi.fn().mockImplementation(() => {
           throw new Error('Use Case execution failed')
@@ -264,11 +270,16 @@ describe('EventRouter - User Story 1 Contract Tests', () => {
 
       router.register('GameStarted', mockPort)
 
-      // EventRouter 不應該捕獲 Use Case 的錯誤
-      // 錯誤應該向上傳播，由更高層處理
-      expect(() => {
-        router.route('GameStarted', {} as GameStartedEvent)
-      }).toThrow('Use Case execution failed')
+      // EventRouter 在內部捕獲並記錄錯誤，不拋出
+      router.route('GameStarted', {} as GameStartedEvent)
+      await router.waitForPendingEvents()
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[EventRouter] Error processing event GameStarted:',
+        expect.any(Error)
+      )
+
+      consoleErrorSpy.mockRestore()
     })
   })
 })
@@ -281,7 +292,7 @@ describe('EventRouter - User Story 2 Contract Tests', () => {
   })
 
   describe('T045 [US2]: TurnCompleted Event Routing', () => {
-    it('should route TurnCompleted event to registered Input Port', () => {
+    it('should route TurnCompleted event to registered Input Port', async () => {
       const mockPort: InputPort<TurnCompletedEvent> = {
         execute: vi.fn(),
       }
@@ -312,12 +323,13 @@ describe('EventRouter - User Story 2 Contract Tests', () => {
 
       router.register('TurnCompleted', mockPort)
       router.route('TurnCompleted', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledTimes(1)
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
     })
 
-    it('should handle TurnCompleted with no matches', () => {
+    it('should handle TurnCompleted with no matches', async () => {
       const mockPort: InputPort<TurnCompletedEvent> = {
         execute: vi.fn(),
       }
@@ -348,13 +360,14 @@ describe('EventRouter - User Story 2 Contract Tests', () => {
 
       router.register('TurnCompleted', mockPort)
       router.route('TurnCompleted', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
     })
   })
 
   describe('T046 [US2]: SelectionRequired Event Routing', () => {
-    it('should route SelectionRequired event to registered Input Port', () => {
+    it('should route SelectionRequired event to registered Input Port', async () => {
       const mockPort: InputPort<SelectionRequiredEvent> = {
         execute: vi.fn(),
       }
@@ -376,12 +389,13 @@ describe('EventRouter - User Story 2 Contract Tests', () => {
 
       router.register('SelectionRequired', mockPort)
       router.route('SelectionRequired', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledTimes(1)
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
     })
 
-    it('should pass possible_targets array correctly', () => {
+    it('should pass possible_targets array correctly', async () => {
       const mockPort: InputPort<SelectionRequiredEvent> = {
         execute: vi.fn(),
       }
@@ -403,6 +417,7 @@ describe('EventRouter - User Story 2 Contract Tests', () => {
 
       router.register('SelectionRequired', mockPort)
       router.route('SelectionRequired', mockPayload)
+      await router.waitForPendingEvents()
 
       const receivedPayload = mockPort.execute.mock.calls[0][0]
       expect(receivedPayload.possible_targets).toEqual(['0312', '0313', '0314'])
@@ -415,7 +430,7 @@ describe('EventRouter - User Story 2 Contract Tests', () => {
       router.route('SelectionRequired', {} as SelectionRequiredEvent)
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        '未註冊的事件類型: SelectionRequired'
+        '[EventRouter] 未註冊的事件類型: SelectionRequired'
       )
 
       consoleSpy.mockRestore()
@@ -431,7 +446,7 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
   })
 
   describe('T064 [US3]: DecisionRequired Event Routing', () => {
-    it('should route DecisionRequired event to registered Input Port', () => {
+    it('should route DecisionRequired event to registered Input Port', async () => {
       const mockPort: InputPort<DecisionRequiredEvent> = {
         execute: vi.fn(),
       }
@@ -477,12 +492,13 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
 
       router.register('DecisionRequired', mockPort)
       router.route('DecisionRequired', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledTimes(1)
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
     })
 
-    it('should handle DecisionRequired with multiple new yaku', () => {
+    it('should handle DecisionRequired with multiple new yaku', async () => {
       const mockPort: InputPort<DecisionRequiredEvent> = {
         execute: vi.fn(),
       }
@@ -534,6 +550,7 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
 
       router.register('DecisionRequired', mockPort)
       router.route('DecisionRequired', mockPayload)
+      await router.waitForPendingEvents()
 
       const receivedPayload = mockPort.execute.mock.calls[0][0]
       expect(receivedPayload.yaku_update.new_yaku.length).toBe(2)
@@ -541,7 +558,7 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
       expect(receivedPayload.yaku_update.new_yaku[1].yaku_type).toBe('TAN')
     })
 
-    it('should handle DecisionRequired with null card plays', () => {
+    it('should handle DecisionRequired with null card plays', async () => {
       const mockPort: InputPort<DecisionRequiredEvent> = {
         execute: vi.fn(),
       }
@@ -567,6 +584,7 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
 
       router.register('DecisionRequired', mockPort)
       router.route('DecisionRequired', mockPayload)
+      await router.waitForPendingEvents()
 
       const receivedPayload = mockPort.execute.mock.calls[0][0]
       expect(receivedPayload.hand_card_play).toBeNull()
@@ -579,7 +597,7 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
       router.route('DecisionRequired', {} as DecisionRequiredEvent)
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        '未註冊的事件類型: DecisionRequired'
+        '[EventRouter] 未註冊的事件類型: DecisionRequired'
       )
 
       consoleSpy.mockRestore()
@@ -587,7 +605,7 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
   })
 
   describe('T065 [US3]: DecisionMade Event Routing', () => {
-    it('should route DecisionMade event with KOI_KOI decision', () => {
+    it('should route DecisionMade event with KOI_KOI decision', async () => {
       const mockPort: InputPort<DecisionMadeEvent> = {
         execute: vi.fn(),
       }
@@ -613,12 +631,13 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
 
       router.register('DecisionMade', mockPort)
       router.route('DecisionMade', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledTimes(1)
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
     })
 
-    it('should route DecisionMade event with END_ROUND decision', () => {
+    it('should route DecisionMade event with END_ROUND decision', async () => {
       const mockPort: InputPort<DecisionMadeEvent> = {
         execute: vi.fn(),
       }
@@ -644,12 +663,13 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
 
       router.register('DecisionMade', mockPort)
       router.route('DecisionMade', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledTimes(1)
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
     })
 
-    it('should correctly pass updated multipliers', () => {
+    it('should correctly pass updated multipliers', async () => {
       const mockPort: InputPort<DecisionMadeEvent> = {
         execute: vi.fn(),
       }
@@ -675,6 +695,7 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
 
       router.register('DecisionMade', mockPort)
       router.route('DecisionMade', mockPayload)
+      await router.waitForPendingEvents()
 
       const receivedPayload = mockPort.execute.mock.calls[0][0]
       expect(receivedPayload.updated_multipliers.koi_koi_count).toBe(2)
@@ -687,7 +708,7 @@ describe('EventRouter - User Story 3 Contract Tests', () => {
       router.route('DecisionMade', {} as DecisionMadeEvent)
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        '未註冊的事件類型: DecisionMade'
+        '[EventRouter] 未註冊的事件類型: DecisionMade'
       )
 
       consoleSpy.mockRestore()
@@ -703,7 +724,7 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
   })
 
   describe('T077 [US4]: RoundScored Event Routing', () => {
-    it('should route RoundScored event to registered Input Port', () => {
+    it('should route RoundScored event to registered Input Port', async () => {
       const mockPort: InputPort<RoundScoredEvent> = {
         execute: vi.fn(),
       }
@@ -740,12 +761,13 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.register('RoundScored', mockPort)
       router.route('RoundScored', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledTimes(1)
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
     })
 
-    it('should correctly pass yaku_list array', () => {
+    it('should correctly pass yaku_list array', async () => {
       const mockPort: InputPort<RoundScoredEvent> = {
         execute: vi.fn(),
       }
@@ -777,6 +799,7 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.register('RoundScored', mockPort)
       router.route('RoundScored', mockPayload)
+      await router.waitForPendingEvents()
 
       const receivedPayload = mockPort.execute.mock.calls[0][0]
       expect(receivedPayload.yaku_list.length).toBe(1)
@@ -785,7 +808,7 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
       expect(receivedPayload.final_score).toBe(15)
     })
 
-    it('should correctly pass updated_total_scores', () => {
+    it('should correctly pass updated_total_scores', async () => {
       const mockPort: InputPort<RoundScoredEvent> = {
         execute: vi.fn(),
       }
@@ -811,6 +834,7 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.register('RoundScored', mockPort)
       router.route('RoundScored', mockPayload)
+      await router.waitForPendingEvents()
 
       const receivedPayload = mockPort.execute.mock.calls[0][0]
       expect(receivedPayload.updated_total_scores.length).toBe(2)
@@ -823,14 +847,14 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.route('RoundScored', {} as RoundScoredEvent)
 
-      expect(consoleSpy).toHaveBeenCalledWith('未註冊的事件類型: RoundScored')
+      expect(consoleSpy).toHaveBeenCalledWith('[EventRouter] 未註冊的事件類型: RoundScored')
 
       consoleSpy.mockRestore()
     })
   })
 
   describe('T078 [US4]: GameFinished Event Routing', () => {
-    it('should route GameFinished event to registered Input Port', () => {
+    it('should route GameFinished event to registered Input Port', async () => {
       const mockPort: InputPort<GameFinishedEvent> = {
         execute: vi.fn(),
       }
@@ -848,12 +872,13 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.register('GameFinished', mockPort)
       router.route('GameFinished', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledTimes(1)
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
     })
 
-    it('should correctly pass final_scores array', () => {
+    it('should correctly pass final_scores array', async () => {
       const mockPort: InputPort<GameFinishedEvent> = {
         execute: vi.fn(),
       }
@@ -871,6 +896,7 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.register('GameFinished', mockPort)
       router.route('GameFinished', mockPayload)
+      await router.waitForPendingEvents()
 
       const receivedPayload = mockPort.execute.mock.calls[0][0]
       expect(receivedPayload.final_scores.length).toBe(2)
@@ -883,14 +909,14 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.route('GameFinished', {} as GameFinishedEvent)
 
-      expect(consoleSpy).toHaveBeenCalledWith('未註冊的事件類型: GameFinished')
+      expect(consoleSpy).toHaveBeenCalledWith('[EventRouter] 未註冊的事件類型: GameFinished')
 
       consoleSpy.mockRestore()
     })
   })
 
   describe('T079 [US4]: TurnError Event Routing', () => {
-    it('should route TurnError event to registered Input Port', () => {
+    it('should route TurnError event to registered Input Port', async () => {
       const mockPort: InputPort<TurnErrorEvent> = {
         execute: vi.fn(),
       }
@@ -907,12 +933,13 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.register('TurnError', mockPort)
       router.route('TurnError', mockPayload)
+      await router.waitForPendingEvents()
 
       expect(mockPort.execute).toHaveBeenCalledTimes(1)
       expect(mockPort.execute).toHaveBeenCalledWith(mockPayload)
     })
 
-    it('should correctly pass error information', () => {
+    it('should correctly pass error information', async () => {
       const mockPort: InputPort<TurnErrorEvent> = {
         execute: vi.fn(),
       }
@@ -929,6 +956,7 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.register('TurnError', mockPort)
       router.route('TurnError', mockPayload)
+      await router.waitForPendingEvents()
 
       const receivedPayload = mockPort.execute.mock.calls[0][0]
       expect(receivedPayload.error_code).toBe('NOT_YOUR_TURN')
@@ -936,7 +964,7 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
       expect(receivedPayload.retry_allowed).toBe(false)
     })
 
-    it('should handle different error codes', () => {
+    it('should handle different error codes', async () => {
       const mockPort: InputPort<TurnErrorEvent> = {
         execute: vi.fn(),
       }
@@ -953,6 +981,7 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.register('TurnError', mockPort)
       router.route('TurnError', mockPayload)
+      await router.waitForPendingEvents()
 
       const receivedPayload = mockPort.execute.mock.calls[0][0]
       expect(receivedPayload.error_code).toBe('INVALID_STATE')
@@ -964,7 +993,7 @@ describe('EventRouter - User Story 4 Contract Tests', () => {
 
       router.route('TurnError', {} as TurnErrorEvent)
 
-      expect(consoleSpy).toHaveBeenCalledWith('未註冊的事件類型: TurnError')
+      expect(consoleSpy).toHaveBeenCalledWith('[EventRouter] 未註冊的事件類型: TurnError')
 
       consoleSpy.mockRestore()
     })
