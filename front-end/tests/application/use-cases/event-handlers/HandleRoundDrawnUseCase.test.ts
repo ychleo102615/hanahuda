@@ -37,7 +37,7 @@ describe('HandleRoundDrawnUseCase', () => {
       { player_id: 'player-1', score: 5 },
       { player_id: 'player-2', score: 3 },
     ])
-    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5)
+    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5, expect.any(Function))
   })
 
   it('應該正確傳遞當前總分列表', () => {
@@ -57,7 +57,7 @@ describe('HandleRoundDrawnUseCase', () => {
     expect(mockNotification.showRoundDrawnModal).toHaveBeenCalledWith(
       event.current_total_scores,
     )
-    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5)
+    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5, expect.any(Function))
   })
 
   it('應該處理空的分數列表', () => {
@@ -72,6 +72,6 @@ describe('HandleRoundDrawnUseCase', () => {
     useCase.execute(event)
 
     expect(mockNotification.showRoundDrawnModal).toHaveBeenCalledWith([])
-    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5)
+    expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5, expect.any(Function))
   })
 })

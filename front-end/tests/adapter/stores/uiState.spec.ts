@@ -8,7 +8,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useUIStateStore, createTriggerUIEffectPortAdapter } from '../../../src/user-interface/adapter/stores/uiState'
+import { useUIStateStore } from '../../../src/user-interface/adapter/stores/uiState'
 import type { YakuScore, PlayerScore } from '../../../src/user-interface/application/types'
 
 describe('UIStateStore', () => {
@@ -26,9 +26,9 @@ describe('UIStateStore', () => {
       expect(store.decisionModalVisible).toBe(false)
       expect(store.decisionModalData).toBeNull()
       expect(store.gameFinishedModalVisible).toBe(false)
-      expect(store.gameFinishedData).toBeNull()
+      expect(store.gameFinishedModalData).toBeNull()
       expect(store.roundDrawnModalVisible).toBe(false)
-      expect(store.roundDrawnScores).toEqual([])
+      expect(store.roundDrawnModalScores).toEqual([])
       expect(store.errorMessage).toBeNull()
       expect(store.infoMessage).toBeNull()
       expect(store.connectionStatus).toBe('disconnected')
@@ -143,7 +143,7 @@ describe('UIStateStore', () => {
       store.showGameFinishedModal('player-1', finalScores, true)
 
       expect(store.gameFinishedModalVisible).toBe(true)
-      expect(store.gameFinishedData).toEqual({
+      expect(store.gameFinishedModalData).toEqual({
         winnerId: 'player-1',
         finalScores,
         isPlayerWinner: true,
@@ -154,10 +154,10 @@ describe('UIStateStore', () => {
       const store = useUIStateStore()
 
       store.showGameFinishedModal('player-1', [{ player_id: 'player-1', score: 50 }], true)
-      store.hideGameFinishedUI()
+      store.hideGameFinishedModal()
 
       expect(store.gameFinishedModalVisible).toBe(false)
-      expect(store.gameFinishedData).toBeNull()
+      expect(store.gameFinishedModalData).toBeNull()
     })
   })
 
@@ -173,7 +173,7 @@ describe('UIStateStore', () => {
       store.showRoundDrawnModal(scores)
 
       expect(store.roundDrawnModalVisible).toBe(true)
-      expect(store.roundDrawnScores).toEqual(scores)
+      expect(store.roundDrawnModalScores).toEqual(scores)
     })
 
     it('應該正確隱藏平局 UI', () => {
@@ -183,10 +183,10 @@ describe('UIStateStore', () => {
         { player_id: 'player-1', score: 20 },
         { player_id: 'player-2', score: 20 },
       ])
-      store.hideRoundDrawnUI()
+      store.hideRoundDrawnModal()
 
       expect(store.roundDrawnModalVisible).toBe(false)
-      expect(store.roundDrawnScores).toEqual([])
+      expect(store.roundDrawnModalScores).toEqual([])
     })
   })
 
@@ -224,9 +224,9 @@ describe('UIStateStore', () => {
       expect(store.decisionModalVisible).toBe(false)
       expect(store.decisionModalData).toBeNull()
       expect(store.gameFinishedModalVisible).toBe(false)
-      expect(store.gameFinishedData).toBeNull()
+      expect(store.gameFinishedModalData).toBeNull()
       expect(store.roundDrawnModalVisible).toBe(false)
-      expect(store.roundDrawnScores).toEqual([])
+      expect(store.roundDrawnModalScores).toEqual([])
       expect(store.errorMessage).toBeNull()
       expect(store.infoMessage).toBeNull()
       expect(store.connectionStatus).toBe('disconnected')
@@ -249,53 +249,6 @@ describe('UIStateStore', () => {
       // 驗證倒數狀態已清除
       expect(store.actionTimeoutRemaining).toBeNull()
       expect(store.displayTimeoutRemaining).toBeNull()
-    })
-  })
-
-  describe('createTriggerUIEffectPortAdapter', () => {
-    it('應該建立正確的 TriggerUIEffectPort Adapter', () => {
-      const mockAnimationService = {
-        trigger: vi.fn(),
-      }
-
-      const adapter = createTriggerUIEffectPortAdapter(mockAnimationService)
-
-      expect(adapter).toHaveProperty('showDecisionModal')
-      expect(adapter).toHaveProperty('showErrorMessage')
-      expect(adapter).toHaveProperty('showReconnectionMessage')
-      expect(adapter).toHaveProperty('triggerAnimation')
-      expect(adapter).toHaveProperty('showGameFinishedModal')
-      expect(adapter).toHaveProperty('showRoundDrawnModal')
-    })
-
-    it('Adapter 的方法應該正確調用 Store', () => {
-      const mockAnimationService = {
-        trigger: vi.fn(),
-      }
-
-      const adapter = createTriggerUIEffectPortAdapter(mockAnimationService)
-      const store = useUIStateStore()
-
-      adapter.showErrorMessage('Test error')
-      expect(store.errorMessage).toBe('Test error')
-    })
-
-    it('Adapter 的 triggerAnimation 應該委派給 AnimationService', () => {
-      const mockAnimationService = {
-        trigger: vi.fn(),
-      }
-
-      const adapter = createTriggerUIEffectPortAdapter(mockAnimationService)
-
-      adapter.triggerAnimation('DEAL_CARDS', {
-        fieldCards: ['0111', '0112'],
-        hands: [{ player_id: 'player-1', cards: ['0121', '0122'] }],
-      })
-
-      expect(mockAnimationService.trigger).toHaveBeenCalledWith('DEAL_CARDS', {
-        fieldCards: ['0111', '0112'],
-        hands: [{ player_id: 'player-1', cards: ['0121', '0122'] }],
-      })
     })
   })
 })

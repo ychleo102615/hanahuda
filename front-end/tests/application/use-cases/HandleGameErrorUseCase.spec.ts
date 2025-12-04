@@ -24,10 +24,21 @@ describe('HandleGameErrorUseCase', () => {
   beforeEach(() => {
     // Mock NotificationPort
     notificationPort = {
-      showInfo: vi.fn(),
-      showError: vi.fn(),
-      showWarning: vi.fn(),
-      showSuccess: vi.fn(),
+      showErrorMessage: vi.fn(),
+      showSuccessMessage: vi.fn(),
+      showReconnectionMessage: vi.fn(),
+      showDecisionModal: vi.fn(),
+      showGameFinishedModal: vi.fn(),
+      showRoundDrawnModal: vi.fn(),
+      showRoundScoredModal: vi.fn(),
+      showRoundEndedInstantlyModal: vi.fn(),
+      hideModal: vi.fn(),
+      isModalVisible: vi.fn(),
+      startActionCountdown: vi.fn(),
+      stopActionCountdown: vi.fn(),
+      startDisplayCountdown: vi.fn(),
+      stopDisplayCountdown: vi.fn(),
+      cleanup: vi.fn(),
     }
 
     // Mock MatchmakingStatePort
@@ -67,8 +78,8 @@ describe('HandleGameErrorUseCase', () => {
 
       useCase.execute(event)
 
-      expect(notificationPort.showError).toHaveBeenCalledWith('配對超時，請重試')
-      expect(notificationPort.showError).toHaveBeenCalledTimes(1)
+      expect(notificationPort.showErrorMessage).toHaveBeenCalledWith('配對超時，請重試')
+      expect(notificationPort.showErrorMessage).toHaveBeenCalledTimes(1)
     })
 
     it('應該設定配對狀態為錯誤', () => {
@@ -198,7 +209,7 @@ describe('HandleGameErrorUseCase', () => {
       useCase.execute(event)
 
       // 應該只設定錯誤狀態，不清除會話或導航
-      expect(notificationPort.showError).toHaveBeenCalledWith('配對超時，請重試')
+      expect(notificationPort.showErrorMessage).toHaveBeenCalledWith('配對超時，請重試')
       expect(matchmakingStatePort.setStatus).toHaveBeenCalledWith('error')
       expect(matchmakingStatePort.setErrorMessage).toHaveBeenCalledWith('配對超時，請重試')
       expect(matchmakingStatePort.clearSession).not.toHaveBeenCalled()
@@ -221,7 +232,7 @@ describe('HandleGameErrorUseCase', () => {
       useCase.execute(event)
 
       // 應該只設定錯誤狀態，不導航
-      expect(notificationPort.showError).toHaveBeenCalledWith('遊戲已過期')
+      expect(notificationPort.showErrorMessage).toHaveBeenCalledWith('遊戲已過期')
       expect(matchmakingStatePort.setStatus).toHaveBeenCalledWith('error')
       expect(matchmakingStatePort.setErrorMessage).toHaveBeenCalledWith('遊戲已過期')
       expect(matchmakingStatePort.clearSession).not.toHaveBeenCalled()
@@ -244,7 +255,7 @@ describe('HandleGameErrorUseCase', () => {
       useCase.execute(event)
 
       // 應該只設定錯誤狀態，不清除會話或導航
-      expect(notificationPort.showError).toHaveBeenCalledWith('連線中斷，嘗試重連')
+      expect(notificationPort.showErrorMessage).toHaveBeenCalledWith('連線中斷，嘗試重連')
       expect(matchmakingStatePort.setStatus).toHaveBeenCalledWith('error')
       expect(matchmakingStatePort.setErrorMessage).toHaveBeenCalledWith('連線中斷，嘗試重連')
       expect(matchmakingStatePort.clearSession).not.toHaveBeenCalled()
@@ -256,8 +267,8 @@ describe('HandleGameErrorUseCase', () => {
     it('應該按正確順序處理配對超時錯誤', () => {
       const callOrder: string[] = []
 
-      notificationPort.showError = vi.fn(() => {
-        callOrder.push('showError')
+      notificationPort.showErrorMessage = vi.fn(() => {
+        callOrder.push('showErrorMessage')
       })
       matchmakingStatePort.setStatus = vi.fn(() => {
         callOrder.push('setStatus')
@@ -278,14 +289,14 @@ describe('HandleGameErrorUseCase', () => {
 
       useCase.execute(event)
 
-      expect(callOrder).toEqual(['showError', 'setStatus', 'setErrorMessage'])
+      expect(callOrder).toEqual(['showErrorMessage', 'setStatus', 'setErrorMessage'])
     })
 
     it('應該按正確順序處理致命錯誤', () => {
       const callOrder: string[] = []
 
-      notificationPort.showError = vi.fn(() => {
-        callOrder.push('showError')
+      notificationPort.showErrorMessage = vi.fn(() => {
+        callOrder.push('showErrorMessage')
       })
       matchmakingStatePort.setStatus = vi.fn(() => {
         callOrder.push('setStatus')
@@ -312,7 +323,7 @@ describe('HandleGameErrorUseCase', () => {
       useCase.execute(event)
 
       expect(callOrder).toEqual([
-        'showError',
+        'showErrorMessage',
         'setStatus',
         'setErrorMessage',
         'clearSession',
@@ -342,7 +353,7 @@ describe('HandleGameErrorUseCase', () => {
 
         useCase.execute(event)
 
-        expect(notificationPort.showError).toHaveBeenCalledWith(`錯誤: ${errorCode}`)
+        expect(notificationPort.showErrorMessage).toHaveBeenCalledWith(`錯誤: ${errorCode}`)
         expect(matchmakingStatePort.setStatus).toHaveBeenCalledWith('error')
         expect(matchmakingStatePort.setErrorMessage).toHaveBeenCalledWith(`錯誤: ${errorCode}`)
       })
