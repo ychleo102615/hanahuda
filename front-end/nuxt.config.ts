@@ -1,6 +1,7 @@
 import { fileURLToPath, URL } from 'node:url'
 import path from 'path'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
+import tailwindcss from '@tailwindcss/vite'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -23,15 +24,9 @@ export default defineNuxtConfig({
 
   css: ['~/assets/styles/main.css'],
 
-  postcss: {
-    plugins: {
-      '@tailwindcss/postcss': {},
-      autoprefixer: {},
-    },
-  },
-
   vite: {
     plugins: [
+      tailwindcss(),
       createSvgIconsPlugin({
         // 指定需要快取的圖示資料夾路徑
         iconDirs: [path.resolve(process.cwd(), 'app/assets/icons')],

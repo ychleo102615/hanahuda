@@ -158,7 +158,7 @@ button:hover:not(:disabled) {
 
 /* Focus visible styles for accessibility */
 button:focus-visible {
-  outline: 2px solid theme('colors.primary.900');
+  outline: 2px solid var(--color-primary-900);
   outline-offset: 2px;
 }
 </style>
