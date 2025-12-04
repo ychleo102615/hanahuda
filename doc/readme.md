@@ -38,6 +38,9 @@
 - [測試策略](./quality/testing-strategy.md) - 各層測試重點與覆蓋率目標
 - [指標與標準](./quality/metrics.md) - 效能指標、程式碼品質標準
 
+### 架構決策記錄
+- [Nuxt 全棧整合可行性分析](./nuxt-fullstack-feasibility.md) - 後端整合至 Nuxt 4 的可行性評估、部署平台比較
+
 ---
 
 ## 目錄
