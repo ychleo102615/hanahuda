@@ -203,7 +203,8 @@ describe('PlayHandCardUseCase', () => {
       }
 
       expect(mockDomainFacade.findMatchableCards).toHaveBeenCalled()
-      expect(mockTriggerUIEffectPort.showSelectionUI).toHaveBeenCalledWith(['0142', '0143'])
+      // 注意：在新架構中，手牌多重配對通過「兩次點擊確認模式」在 UI 層處理
+      // Use Case 不再觸發 showSelectionUI，而是返回 needSelection: true
       expect(mockSendCommandPort.playHandCard).not.toHaveBeenCalled()
     })
 
@@ -242,7 +243,9 @@ describe('PlayHandCardUseCase', () => {
         expect(result.value.possibleTargets).toEqual(['0142', '0143', '0144'])
       }
 
-      expect(mockTriggerUIEffectPort.showSelectionUI).toHaveBeenCalledWith(['0142', '0143', '0144'])
+      // 注意：在新架構中，手牌多重配對通過「兩次點擊確認模式」在 UI 層處理
+      // Use Case 不再觸發 showSelectionUI，而是返回 needSelection: true
+      expect(mockSendCommandPort.playHandCard).not.toHaveBeenCalled()
     })
   })
 

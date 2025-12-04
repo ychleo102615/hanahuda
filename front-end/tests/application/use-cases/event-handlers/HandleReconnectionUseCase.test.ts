@@ -7,16 +7,14 @@ import { HandleReconnectionUseCase } from '@/user-interface/application/use-case
 import type { GameSnapshotRestore } from '@/user-interface/application/types'
 import {
   createMockUIStatePort,
-  createMockTriggerUIEffectPort,
   createMockNotificationPort,
   createMockAnimationPort,
   createMockMatchmakingStatePort,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, TriggerUIEffectPort, NotificationPort, AnimationPort, MatchmakingStatePort } from '@/user-interface/application/ports'
+import type { UIStatePort, NotificationPort, AnimationPort, MatchmakingStatePort } from '@/user-interface/application/ports'
 
 describe('HandleReconnectionUseCase', () => {
   let mockUIState: UIStatePort
-  let mockTriggerUIEffect: TriggerUIEffectPort
   let mockNotification: NotificationPort
   let mockAnimation: AnimationPort
   let mockMatchmakingState: MatchmakingStatePort
@@ -24,7 +22,6 @@ describe('HandleReconnectionUseCase', () => {
 
   beforeEach(() => {
     mockUIState = createMockUIStatePort()
-    mockTriggerUIEffect = createMockTriggerUIEffectPort()
     mockNotification = createMockNotificationPort()
     mockAnimation = createMockAnimationPort()
     mockMatchmakingState = createMockMatchmakingStatePort()
@@ -51,11 +48,16 @@ describe('HandleReconnectionUseCase', () => {
       current_flow_stage: 'AWAITING_HAND_PLAY',
       active_player_id: 'player-1',
       koi_statuses: [{ player_id: 'player-1', koi_multiplier: 1, times_continued: 0 }],
+      action_timeout_seconds: 30,
     }
 
     useCase.execute(snapshot)
 
     expect(mockUIState.restoreGameState).toHaveBeenCalledWith(snapshot)
-    expect(mockTriggerUIEffect.showReconnectionMessage).toHaveBeenCalled()
+    expect(mockNotification.showReconnectionMessage).toHaveBeenCalled()
+    expect(mockNotification.startActionCountdown).toHaveBeenCalledWith(30)
+    expect(mockAnimation.interrupt).toHaveBeenCalled()
+    expect(mockAnimation.clearHiddenCards).toHaveBeenCalled()
+    expect(mockMatchmakingState.clearSession).toHaveBeenCalled()
   })
 })
