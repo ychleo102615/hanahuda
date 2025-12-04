@@ -32,6 +32,9 @@ export { computedAsync, asyncComputed, computedEager, eagerComputed, computedInj
 export { useElementStyle, useElementTransform, useMotion, useMotionProperties, useMotionVariants, useSpring } from '@vueuse/motion';
 export { definePageMeta } from '../node_modules/nuxt/dist/pages/runtime/composables';
 export { defineLazyHydrationComponent } from '#app/composables/lazy-hydration';
-export { useDependency } from '../composables/useDependency';
+export { useDependency } from '../app/composables/useDependency';
+export { useScrollTo } from '../app/composables/useScrollTo';
+export { DEFAULT_CARD_ICON_NAME, CARD_BACK_ICON_NAME, mmtiToSvgName, getCardIconName } from '../app/utils/cardMapping';
+export { useCounterStore } from '../app/stores/counter';
 export { defineStore, acceptHMRUpdate, usePinia, storeToRefs } from '../node_modules/@pinia/nuxt/dist/runtime/composables';
 export { useNuxtDevTools } from '../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools';

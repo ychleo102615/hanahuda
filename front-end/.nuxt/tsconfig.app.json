@@ -53,16 +53,16 @@
         "../node_modules/vite/client"
       ],
       "~": [
-        ".."
+        "../app"
       ],
       "~/*": [
-        "../*"
+        "../app/*"
       ],
       "@": [
-        "../src"
+        "../app"
       ],
       "@/*": [
-        "../src/*"
+        "../app/*"
       ],
       "~~": [
         ".."
@@ -143,7 +143,7 @@
   },
   "include": [
     "./nuxt.d.ts",
-    "../**/*",
+    "../app/**/*",
     "../modules/*/runtime/**/*",
     "../layers/*/app/**/*",
     "../layers/*/modules/*/runtime/**/*",
@@ -154,7 +154,13 @@
     "../layers/*/*.d.ts"
   ],
   "exclude": [
+    "../node_modules",
     "../../node_modules",
+    "../node_modules/nuxt/node_modules",
+    "../node_modules/@pinia/nuxt/node_modules",
+    "../node_modules/@vueuse/nuxt/node_modules",
+    "../node_modules/@nuxt/devtools/node_modules",
+    "../node_modules/@nuxt/telemetry/node_modules",
     "../dist",
     "../.data",
     "../modules/*/runtime/server/**/*",

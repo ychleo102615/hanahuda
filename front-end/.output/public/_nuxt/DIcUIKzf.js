@@ -1,0 +1,1 @@
+import{a6 as t,L as o,q as d}from"./BKahYXLk.js";const n=t((r,e)=>{const a=o();if(a.gameId)return console.warn("[Middleware] 遊戲會話已存在，重定向至 /game",{gameId:a.gameId,from:e.path}),d("/game");console.info("[Middleware] 進入大廳頁面",{from:e.path})});export{n as default};

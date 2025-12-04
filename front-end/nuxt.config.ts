@@ -18,10 +18,10 @@ export default defineNuxtConfig({
   },
 
   alias: {
-    '@': fileURLToPath(new URL('./src', import.meta.url)),
+    '@': fileURLToPath(new URL('./app', import.meta.url)),
   },
 
-  css: ['~/src/assets/styles/main.css'],
+  css: ['~/assets/styles/main.css'],
 
   postcss: {
     plugins: {
@@ -34,7 +34,7 @@ export default defineNuxtConfig({
     plugins: [
       createSvgIconsPlugin({
         // 指定需要快取的圖示資料夾路徑
-        iconDirs: [path.resolve(process.cwd(), 'src/assets/icons')],
+        iconDirs: [path.resolve(process.cwd(), 'app/assets/icons')],
 
         // 指定 symbolId 格式 - 直接使用檔名（所有 SVG 都在根目錄）
         symbolId: 'icon-[name]',
@@ -62,7 +62,7 @@ export default defineNuxtConfig({
     ],
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@': fileURLToPath(new URL('./app', import.meta.url)),
       },
     },
   },

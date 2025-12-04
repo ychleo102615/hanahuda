@@ -14,16 +14,16 @@ type HydrationStrategies = {
 type LazyComponent<T> = DefineComponent<HydrationStrategies, {}, {}, {}, {}, {}, {}, { hydrated: () => void }> & T
 
 
-export const ActionPanel: typeof import("../components/ActionPanel.vue")['default']
-export const ConfirmDialog: typeof import("../components/ConfirmDialog.vue")['default']
-export const ExternalLinkIcon: typeof import("../components/ExternalLinkIcon.vue")['default']
-export const Footer: typeof import("../components/Footer.vue")['default']
-export const HeroSection: typeof import("../components/HeroSection.vue")['default']
-export const NavigationBar: typeof import("../components/NavigationBar.vue")['default']
-export const RulesSection: typeof import("../components/RulesSection.vue")['default']
-export const SvgIcon: typeof import("../components/SvgIcon.vue")['default']
-export const TopInfoBar: typeof import("../components/TopInfoBar.vue")['default']
-export const YakuCarousel: typeof import("../components/YakuCarousel.vue")['default']
+export const ActionPanel: typeof import("../app/components/ActionPanel.vue")['default']
+export const ConfirmDialog: typeof import("../app/components/ConfirmDialog.vue")['default']
+export const ExternalLinkIcon: typeof import("../app/components/ExternalLinkIcon.vue")['default']
+export const Footer: typeof import("../app/components/Footer.vue")['default']
+export const HeroSection: typeof import("../app/components/HeroSection.vue")['default']
+export const NavigationBar: typeof import("../app/components/NavigationBar.vue")['default']
+export const RulesSection: typeof import("../app/components/RulesSection.vue")['default']
+export const SvgIcon: typeof import("../app/components/SvgIcon.vue")['default']
+export const TopInfoBar: typeof import("../app/components/TopInfoBar.vue")['default']
+export const YakuCarousel: typeof import("../app/components/YakuCarousel.vue")['default']
 export const NuxtWelcome: typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']
 export const NuxtLayout: typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
 export const NuxtErrorBoundary: typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary.vue")['default']
@@ -47,16 +47,16 @@ export const Head: typeof import("../node_modules/nuxt/dist/head/runtime/compone
 export const Html: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Html']
 export const Body: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
 export const NuxtIsland: typeof import("../node_modules/nuxt/dist/app/components/nuxt-island")['default']
-export const LazyActionPanel: LazyComponent<typeof import("../components/ActionPanel.vue")['default']>
-export const LazyConfirmDialog: LazyComponent<typeof import("../components/ConfirmDialog.vue")['default']>
-export const LazyExternalLinkIcon: LazyComponent<typeof import("../components/ExternalLinkIcon.vue")['default']>
-export const LazyFooter: LazyComponent<typeof import("../components/Footer.vue")['default']>
-export const LazyHeroSection: LazyComponent<typeof import("../components/HeroSection.vue")['default']>
-export const LazyNavigationBar: LazyComponent<typeof import("../components/NavigationBar.vue")['default']>
-export const LazyRulesSection: LazyComponent<typeof import("../components/RulesSection.vue")['default']>
-export const LazySvgIcon: LazyComponent<typeof import("../components/SvgIcon.vue")['default']>
-export const LazyTopInfoBar: LazyComponent<typeof import("../components/TopInfoBar.vue")['default']>
-export const LazyYakuCarousel: LazyComponent<typeof import("../components/YakuCarousel.vue")['default']>
+export const LazyActionPanel: LazyComponent<typeof import("../app/components/ActionPanel.vue")['default']>
+export const LazyConfirmDialog: LazyComponent<typeof import("../app/components/ConfirmDialog.vue")['default']>
+export const LazyExternalLinkIcon: LazyComponent<typeof import("../app/components/ExternalLinkIcon.vue")['default']>
+export const LazyFooter: LazyComponent<typeof import("../app/components/Footer.vue")['default']>
+export const LazyHeroSection: LazyComponent<typeof import("../app/components/HeroSection.vue")['default']>
+export const LazyNavigationBar: LazyComponent<typeof import("../app/components/NavigationBar.vue")['default']>
+export const LazyRulesSection: LazyComponent<typeof import("../app/components/RulesSection.vue")['default']>
+export const LazySvgIcon: LazyComponent<typeof import("../app/components/SvgIcon.vue")['default']>
+export const LazyTopInfoBar: LazyComponent<typeof import("../app/components/TopInfoBar.vue")['default']>
+export const LazyYakuCarousel: LazyComponent<typeof import("../app/components/YakuCarousel.vue")['default']>
 export const LazyNuxtWelcome: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
 export const LazyNuxtLayout: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']>
 export const LazyNuxtErrorBoundary: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary.vue")['default']>
