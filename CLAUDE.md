@@ -62,6 +62,8 @@
 - TypeScript 5.9 + Vue 3.5 + Vue 3, Pinia, @vueuse/motion (006-event-countdown-timer)
 - N/A（前端功能，狀態由 Pinia store 管理） (006-event-countdown-timer)
 - N/A (前端功能，狀態由 Pinia store 管理) (007-lobby-settings-panel)
+- TypeScript 5.9 + Nuxt 4 (Nitro), Drizzle ORM, Zod, H3 (008-nuxt-backend-server)
+- PostgreSQL 14+ (Drizzle ORM) (008-nuxt-backend-server)
 
 ## Recent Changes
 - 003-ui-application-layer: Added TypeScript 5.9 + 無（Pure functions, 零框架依賴）
