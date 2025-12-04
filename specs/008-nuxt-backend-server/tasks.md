@@ -120,6 +120,7 @@
 - [ ] T040 [P] [US2] Create `front-end/server/domain/services/matchingService.ts` with canMatch() and findMatchableTargets()
 - [ ] T041 [P] [US2] Create `front-end/server/domain/services/yakuDetectionService.ts` with detectYaku() and detectNewYaku()
 - [ ] T042 [US2] Extend `front-end/server/domain/round/round.ts` with playHandCard(), selectTarget(), handleDecision() methods
+- [ ] T042b [US2] Create FlowState transition validator in `front-end/server/domain/round/flowStateTransitions.ts` with valid state paths (AWAITING_HAND_PLAY → AWAITING_SELECTION/AWAITING_DECISION, etc.)
 - [ ] T043 [US2] Extend `front-end/server/domain/game/game.ts` with turn execution and state transition logic
 
 ### Application Layer for US2
@@ -156,7 +157,7 @@
 ### Adapter Layer for US3
 
 - [ ] T053 [US3] Create `front-end/server/adapters/opponent/randomOpponentService.ts` with random strategy and simulated delays
-- [ ] T054 [US3] Create `front-end/server/adapters/timeout/actionTimeoutManager.ts` with timer management for action timeouts
+- [ ] T054 [US3] Create `front-end/server/adapters/timeout/actionTimeoutManager.ts` with timer management (action_timeout_seconds + 3s buffer before triggering timeout)
 - [ ] T055 [US3] Integrate opponent service into Use Cases - modify `front-end/server/application/use-cases/playHandCardUseCase.ts` to trigger opponent turn
 
 **Checkpoint**: User Story 3 complete - AI opponent executes turns automatically with realistic delays
@@ -172,6 +173,7 @@
 ### Domain Layer for US4
 
 - [ ] T056 [US4] Extend `front-end/server/domain/game/game.ts` with startNextRound(), finishGame(), calculateWinner() methods
+- [ ] T056b [US4] Implement Teshi (手四) and Kuttsuki (場牌流局) detection in `front-end/server/domain/services/specialRulesService.ts` with RoundEndedInstantly event trigger
 - [ ] T057 [US4] Extend `front-end/server/domain/round/round.ts` with endRound() and score calculation logic
 
 ### Application Layer for US4
