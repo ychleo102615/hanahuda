@@ -1,25 +1,31 @@
 <!--
 Sync Impact Report:
 ─────────────────────────────────────────────────────────────────────────────
-Version Change: 1.1.0 → 1.2.0
-Change Type: Minor amendment (added exception clause to Server Authority principle)
+Version Change: 1.2.0 → 1.3.0
+Change Type: Minor amendment (modified testing scope + updated tech stack)
 Modified Principles:
-  - Principle III: Server Authority - Added exception clause for "UI hint validation"
-    allowing client-side validation logic ONLY for immediate UI feedback (e.g., highlighting
-    matchable cards, showing yaku progress). Server remains final authority.
+  - Principle V: Test-First Development - Narrowed strict TDD scope to Domain and
+    Application Layers only. Adapter Layer (including Vue components, composables,
+    views) explicitly exempted from strict testing requirements.
+
+Modified Sections:
+  - 架構約束 > 技術棧（固定）→ 技術棧 - Updated to reflect Nuxt 4 for frontend
+    and flexible backend options (Nuxt or Java Spring Boot)
 
 Rationale:
-  - Resolved constitution conflict identified in /speckit.analyze for feature 002-user-interface-bc
-  - Balances UX requirements (instant feedback) with security principles (server authority)
-  - Client validation results MUST NOT affect game state
+  - Domain and Application Layers contain core business logic requiring rigorous testing
+  - Adapter Layer (Vue ecosystem: components, composables, views) is integration code
+    that changes frequently with UI requirements and framework updates
+  - Strict testing for Adapter Layer provides diminishing returns vs. implementation cost
+  - Tech stack update reflects current project direction with Nuxt 4 migration
 
 Templates Status:
-  ✅ plan-template.md: Aligned with updated Server Authority principle
+  ✅ plan-template.md: No changes needed (already references constitution for gates)
   ✅ spec-template.md: No changes needed
-  ✅ tasks-template.md: No changes needed
+  ✅ tasks-template.md: No changes needed (test phases remain optional per spec)
 
 Follow-up TODOs:
-  - Update 002-user-interface-bc/plan.md Constitution Check to reference new exception clause
+  - None
 ─────────────────────────────────────────────────────────────────────────────
 -->
 
@@ -98,21 +104,31 @@ Follow-up TODOs:
 
 ### V. Test-First Development (NON-NEGOTIABLE)
 
-**Domain 和 Application Layers 必須遵循 TDD：**
+**僅 Domain 和 Application Layers 必須遵循嚴格 TDD：**
 
 - 撰寫測試 → 獲得使用者/規格批准 → 測試失敗 → 實作
 - 嚴格執行 Red-Green-Refactor 循環
 - Domain Layer 單元測試覆蓋率必須超過 80%
 - Application Layer 整合測試覆蓋率必須超過 70%
-- Frontend 組件測試覆蓋率應超過 60%
+
+**Adapter Layer 測試範圍（非強制）**:
+- Adapter Layer 屬於整合層，**無需嚴格測試**
+- Vue 生態系中的所有元件皆屬於 Adapter Layer，包括：
+  - Vue Components（views、components）
+  - Composables（所有 use* 函數）
+  - Pinia Stores
+  - API Clients
+  - Router Guards
+- Adapter Layer 測試為**選擇性**，可根據需求補充
 
 **測試類別**:
-- **單元測試**: Domain 模型、業務規則（例如：配對邏輯、役種檢測）
-- **整合測試**: Use Cases 與 mocked repositories
-- **契約測試**: REST API endpoints、SSE 事件結構
-- **E2E 測試**（MVP 可選）: 完整遊戲流程驗證
+- **單元測試（必須）**: Domain 模型、業務規則（例如：配對邏輯、役種檢測）
+- **整合測試（必須）**: Use Cases 與 mocked repositories
+- **契約測試（建議）**: REST API endpoints、SSE 事件結構
+- **E2E 測試（可選）**: 完整遊戲流程驗證
+- **Adapter 測試（可選）**: Vue 元件、composables、stores
 
-**理由**: 確保複雜遊戲規則的正確性、防止回歸、記錄預期行為。
+**理由**: Domain 和 Application Layers 包含核心業務邏輯，必須確保正確性。Adapter Layer 為整合層，變更頻繁且與框架緊密耦合，嚴格測試的投資報酬率較低。
 
 ---
 
@@ -127,7 +143,7 @@ Follow-up TODOs:
 
 **當前 BCs**:
 
-**前端（Vue + TypeScript）**:
+**前端（Nuxt 4 + Vue 3 + TypeScript）**:
 - **User Interface BC**: 遊戲 UI 呈現層
   - Domain: 卡片邏輯、配對驗證、役種檢測（純函數）
   - Application: SSE 事件處理 Use Cases
@@ -138,11 +154,11 @@ Follow-up TODOs:
   - Application: 離線遊戲流程 Use Cases、對手決策邏輯
   - Adapter: 與 User Interface BC 的整合介面
 
-**後端（Spring Boot + Java）**:
+**後端（Nuxt 4 或 Spring Boot + Java）**:
 - **Core Game BC**: 核心遊戲服務
   - Domain: Game Aggregate、遊戲規則引擎
   - Application: 遊戲操作 Use Cases
-  - Adapter: REST API、SSE、JPA 持久化
+  - Adapter: REST API、SSE、持久化
 
 - **Opponent BC**: 對手策略服務
   - Domain: 對手決策邏輯
@@ -165,7 +181,7 @@ Follow-up TODOs:
 - 假設未來服務間的最終一致性（eventual consistency）
 - 每個 Bounded Context 使用獨立資料庫（即使在 MVP 中邏輯分離）
 
-**當前架構**: 具有邏輯 BC 分離的單體 Spring Boot 應用
+**當前架構**: 單體應用（前端 Nuxt 4，後端待定）具有邏輯 BC 分離
 
 **未來架構**: 多個服務（Game、User、Matchmaking、Opponent、Analytics）透過事件（Kafka/RabbitMQ）和 REST 通訊
 
@@ -190,14 +206,15 @@ Follow-up TODOs:
 
 ## 架構約束
 
-### 技術棧（固定）
+### 技術棧
 
-- **後端**: Java 17+、Spring Boot 3.x、PostgreSQL 14+、JPA/Hibernate
-- **前端**: Vue 3、TypeScript、Tailwind CSS v4、Pinia（狀態管理）
+- **前端**: Nuxt 4 + Vue 3 + TypeScript + Tailwind CSS v4 + Pinia（狀態管理）
+- **後端**: Nuxt 4（TypeScript）或 Java 17+ / Spring Boot 3.x（待定）
+- **資料庫**: PostgreSQL 14+（如使用 Java 後端則搭配 JPA/Hibernate）
 - **通訊**: REST API（命令）、Server-Sent Events（事件）
-- **測試**: JUnit 5（後端）、Vitest（前端）、Playwright（可選 E2E）
+- **測試**: Vitest（前端）、JUnit 5 或 Vitest（後端，視技術棧）、Playwright（可選 E2E）
 
-**理由**: 這些技術由 PRD 規定，展示現代全端能力。
+**理由**: 這些技術展示現代全端能力，並保持技術棧選擇的彈性。
 
 ### 效能需求
 
@@ -208,18 +225,18 @@ Follow-up TODOs:
 
 ### 安全需求
 
-- 所有 API endpoints 的輸入驗證（Bean Validation JSR-380）
+- 所有 API endpoints 的輸入驗證
 - CORS 限制於前端網域
 - 生產環境強制 HTTPS
 - 日誌或 SSE 事件中不得包含敏感資料
-- 透過 JPA Prepared Statements 防止 SQL 注入
+- 防止 SQL 注入（使用參數化查詢或 ORM）
 
 ### 可觀測性需求
 
-- 結構化日誌（JSON 格式）使用 SLF4J + Logback
+- 結構化日誌（JSON 格式）
 - 日誌層級: INFO（正常流程）、WARN（可恢復問題）、ERROR（失敗）
 - Correlation IDs 用於請求追蹤
-- Spring Boot Actuator 健康檢查
+- 健康檢查端點
 - （未來）Prometheus metrics、分散式追蹤
 
 ---
@@ -238,18 +255,18 @@ Follow-up TODOs:
 - 所有 PRs 必須通過自動化測試（CI）
 - 所有 PRs 必須審查是否符合憲法要求
 - 修改 Domain/Application layers 的 PRs 必須包含測試
-- 新增 REST endpoints 的 PRs 必須更新 Swagger 文檔
+- 新增 REST endpoints 的 PRs 必須更新 API 文檔
 
 ### Definition of Done
 
 功能完成的條件：
 
 - [ ] spec.md 中的所有驗收標準已滿足
-- [ ] 測試已撰寫且通過（TDD red-green-refactor）
+- [ ] Domain/Application Layer 測試已撰寫且通過（TDD red-green-refactor）
 - [ ] 程式碼遵循 Clean Architecture 分層
 - [ ] API 契約符合 `doc/shared/protocol.md`
 - [ ] 所有 BC 邊界使用 DTOs（不暴露 Domain Model）
-- [ ] Swagger/OpenAPI 文檔已更新
+- [ ] API 文檔已更新
 - [ ] Code review 已批准
 - [ ] CI pipeline 通過
 
@@ -291,7 +308,7 @@ Follow-up TODOs:
 - 每個 PR 必須驗證與核心原則的一致性
 - `plan.md` 中的 Constitution Check 必須在 Phase 0 之前完成
 - 任何已證明的複雜度必須每季度審查以考慮移除
-- 測試覆蓋率指標必須在 CI 中追蹤
+- Domain/Application Layer 測試覆蓋率指標必須在 CI 中追蹤
 
 ### 執行期指引
 
@@ -299,4 +316,4 @@ Follow-up TODOs:
 
 ---
 
-**Version**: 1.2.0 | **Ratified**: 2025-10-22 | **Last Amended**: 2025-11-10
+**Version**: 1.3.0 | **Ratified**: 2025-10-22 | **Last Amended**: 2025-12-04
