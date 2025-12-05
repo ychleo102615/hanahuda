@@ -26,11 +26,11 @@
 
 **Purpose**: Project initialization and dependency installation
 
-- [ ] T001 Install Drizzle ORM and related dependencies via `pnpm add drizzle-orm postgres && pnpm add -D drizzle-kit @types/pg` in `front-end/`
-- [ ] T002 [P] Install Zod for request validation via `pnpm add zod` in `front-end/`
-- [ ] T003 Create directory structure per plan.md in `front-end/server/` (api, application, domain, adapters, database)
-- [ ] T004 Create `.env` file with DATABASE_URL and game timing settings in `front-end/`
-- [ ] T005 Create Drizzle config file in `front-end/drizzle.config.ts`
+- [x] T001 Install Drizzle ORM and related dependencies via `pnpm add drizzle-orm postgres && pnpm add -D drizzle-kit @types/pg` in `front-end/`
+- [x] T002 [P] Install Zod for request validation via `pnpm add zod` in `front-end/`
+- [x] T003 Create directory structure per plan.md in `front-end/server/` (api, application, domain, adapters, database)
+- [x] T004 Create `.env` file with DATABASE_URL and game timing settings in `front-end/`
+- [x] T005 Create Drizzle config file in `front-end/drizzle.config.ts`
 
 ---
 
