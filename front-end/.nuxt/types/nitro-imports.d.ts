@@ -1,4 +1,9 @@
 declare global {
+  const ERROR_MESSAGES: typeof import('../../shared/types/index').ERROR_MESSAGES
+  const FlowState: typeof import('../../shared/types/flow-state').FlowState
+  const FlowStateEnum: typeof import('../../shared/types/index').FlowStateEnum
+  const GAME_ERROR_MESSAGES: typeof import('../../shared/types/index').GAME_ERROR_MESSAGES
+  const RECONNECTION_RETRY: typeof import('../../shared/types/index').RECONNECTION_RETRY
   const __buildAssetsURL: typeof import('../../node_modules/@nuxt/nitro-server/dist/runtime/utils/paths').buildAssetsURL
   const __publicAssetsURL: typeof import('../../node_modules/@nuxt/nitro-server/dist/runtime/utils/paths').publicAssetsURL
   const appendCorsHeaders: typeof import('../../node_modules/h3').appendCorsHeaders
@@ -13,12 +18,14 @@ declare global {
   const callNodeListener: typeof import('../../node_modules/h3').callNodeListener
   const clearResponseHeaders: typeof import('../../node_modules/h3').clearResponseHeaders
   const clearSession: typeof import('../../node_modules/h3').clearSession
+  const closeDatabase: typeof import('../../server/utils/db').closeDatabase
   const createApp: typeof import('../../node_modules/h3').createApp
   const createAppEventHandler: typeof import('../../node_modules/h3').createAppEventHandler
   const createError: typeof import('../../node_modules/h3').createError
   const createEvent: typeof import('../../node_modules/h3').createEvent
   const createEventStream: typeof import('../../node_modules/h3').createEventStream
   const createRouter: typeof import('../../node_modules/h3').createRouter
+  const db: typeof import('../../server/utils/db').db
   const defaultContentType: typeof import('../../node_modules/h3').defaultContentType
   const defineAppConfig: typeof import('../../node_modules/@nuxt/nitro-server/dist/runtime/utils/config').defineAppConfig
   const defineCachedEventHandler: typeof import('../../node_modules/nitropack/dist/runtime/internal/cache').defineCachedEventHandler
@@ -43,12 +50,15 @@ declare global {
   const fromNodeMiddleware: typeof import('../../node_modules/h3').fromNodeMiddleware
   const fromPlainHandler: typeof import('../../node_modules/h3').fromPlainHandler
   const fromWebHandler: typeof import('../../node_modules/h3').fromWebHandler
+  const gameConfig: typeof import('../../server/utils/config').gameConfig
   const getCookie: typeof import('../../node_modules/h3').getCookie
   const getHeader: typeof import('../../node_modules/h3').getHeader
   const getHeaders: typeof import('../../node_modules/h3').getHeaders
   const getMethod: typeof import('../../node_modules/h3').getMethod
+  const getOpponentTotalDelay: typeof import('../../server/utils/config').getOpponentTotalDelay
   const getProxyRequestHeaders: typeof import('../../node_modules/h3').getProxyRequestHeaders
   const getQuery: typeof import('../../node_modules/h3').getQuery
+  const getRandomOpponentThinkingTime: typeof import('../../server/utils/config').getRandomOpponentThinkingTime
   const getRequestFingerprint: typeof import('../../node_modules/h3').getRequestFingerprint
   const getRequestHeader: typeof import('../../node_modules/h3').getRequestHeader
   const getRequestHeaders: typeof import('../../node_modules/h3').getRequestHeaders
@@ -123,7 +133,20 @@ declare global {
   const useRuntimeConfig: typeof import('../../node_modules/nitropack/dist/runtime/internal/config').useRuntimeConfig
   const useSession: typeof import('../../node_modules/h3').useSession
   const useStorage: typeof import('../../node_modules/nitropack/dist/runtime/internal/storage').useStorage
+  const validateConfig: typeof import('../../server/utils/config').validateConfig
   const writeEarlyHints: typeof import('../../node_modules/h3').writeEarlyHints
+}
+// for type re-export
+declare global {
+  // @ts-ignore
+  export type { ErrorCode, GameErrorCode, SuggestedAction, RoundEndReason, TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision, BaseEvent, GameStartedEvent, RoundDealtEvent, TurnCompletedEvent, SelectionRequiredEvent, TurnProgressAfterSelectionEvent, DecisionRequiredEvent, DecisionMadeEvent, RoundScoredEvent, RoundDrawnEvent, RoundEndedInstantlyEvent, GameFinishedEvent, TurnErrorEvent, GameErrorEvent, GameSnapshotRestore, GameEvent } from '../../shared/types/index'
+  import('../../shared/types/index')
+  // @ts-ignore
+  export type { PlayerInfo, PlayerHand, PlayerDepository, PlayerScore, NextState, CardPlay, CardSelection, Yaku, YakuUpdate, ScoreMultipliers, KoiStatus, Ruleset, YakuSetting, SpecialRules, YakuScore } from '../../shared/types/shared'
+  import('../../shared/types/shared')
+  // @ts-ignore
+  export type { GameConfig } from '../../server/utils/config'
+  import('../../server/utils/config')
 }
 export { useNitroApp } from 'nitropack/runtime/internal/app';
 export { useRuntimeConfig, useAppConfig } from 'nitropack/runtime/internal/config';
@@ -139,3 +162,7 @@ export { defineNitroErrorHandler } from 'nitropack/runtime/internal/error/utils'
 export { appendCorsHeaders, appendCorsPreflightHeaders, appendHeader, appendHeaders, appendResponseHeader, appendResponseHeaders, assertMethod, callNodeListener, clearResponseHeaders, clearSession, createApp, createAppEventHandler, createError, createEvent, createEventStream, createRouter, defaultContentType, defineEventHandler, defineLazyEventHandler, defineNodeListener, defineNodeMiddleware, defineRequestMiddleware, defineResponseMiddleware, defineWebSocket, defineWebSocketHandler, deleteCookie, dynamicEventHandler, eventHandler, fetchWithEvent, fromNodeMiddleware, fromPlainHandler, fromWebHandler, getCookie, getHeader, getHeaders, getMethod, getProxyRequestHeaders, getQuery, getRequestFingerprint, getRequestHeader, getRequestHeaders, getRequestHost, getRequestIP, getRequestPath, getRequestProtocol, getRequestURL, getRequestWebStream, getResponseHeader, getResponseHeaders, getResponseStatus, getResponseStatusText, getRouterParam, getRouterParams, getSession, getValidatedQuery, getValidatedRouterParams, handleCacheHeaders, handleCors, isCorsOriginAllowed, isError, isEvent, isEventHandler, isMethod, isPreflightRequest, isStream, isWebResponse, lazyEventHandler, parseCookies, promisifyNodeListener, proxyRequest, readBody, readFormData, readMultipartFormData, readRawBody, readValidatedBody, removeResponseHeader, sanitizeStatusCode, sanitizeStatusMessage, sealSession, send, sendError, sendIterable, sendNoContent, sendProxy, sendRedirect, sendStream, sendWebResponse, serveStatic, setCookie, setHeader, setHeaders, setResponseHeader, setResponseHeaders, setResponseStatus, splitCookiesString, toEventHandler, toNodeListener, toPlainHandler, toWebHandler, toWebRequest, unsealSession, updateSession, useBase, useSession, writeEarlyHints } from 'h3';
 export { buildAssetsURL as __buildAssetsURL, publicAssetsURL as __publicAssetsURL } from '/Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/@nuxt/nitro-server/dist/runtime/utils/paths';
 export { defineAppConfig } from '/Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/@nuxt/nitro-server/dist/runtime/utils/config';
+export { FlowState } from '/Users/leo-huang/Projects/vue/hanahuda/front-end/shared/types/flow-state';
+export { FlowStateEnum, ERROR_MESSAGES, GAME_ERROR_MESSAGES, RECONNECTION_RETRY } from '/Users/leo-huang/Projects/vue/hanahuda/front-end/shared/types/index';
+export { gameConfig, getRandomOpponentThinkingTime, getOpponentTotalDelay, validateConfig } from '/Users/leo-huang/Projects/vue/hanahuda/front-end/server/utils/config';
+export { db, closeDatabase } from '/Users/leo-huang/Projects/vue/hanahuda/front-end/server/utils/db';

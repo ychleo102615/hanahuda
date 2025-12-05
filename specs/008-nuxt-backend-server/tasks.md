@@ -42,32 +42,32 @@
 
 ### Shared Types Migration
 
-- [ ] T006 Create `front-end/shared/types/` directory and move SSE event types from existing frontend types
-- [ ] T007 [P] Create `front-end/shared/types/commands.ts` with command type definitions
-- [ ] T008 [P] Create `front-end/shared/types/shared.ts` with shared data structures (CardPlay, Yaku, PlayerScore, Ruleset, etc.)
-- [ ] T009 [P] Create `front-end/shared/types/flow-state.ts` with FlowState type definition
-- [ ] T010 [P] Create `front-end/shared/types/errors.ts` with error code types (ErrorCode, GameErrorCode)
-- [ ] T011 [P] Create `front-end/shared/types/events.ts` with SSE event type definitions (GameStartedEvent, RoundDealtEvent, etc.)
-- [ ] T012 Create `front-end/shared/types/index.ts` to re-export all shared types
-- [ ] T013 Update `front-end/app/user-interface/application/types/index.ts` to re-export from `~/shared/types`
+- [x] T006 Create `front-end/shared/types/` directory and move SSE event types from existing frontend types
+- [x] T007 [P] Create `front-end/shared/types/commands.ts` with command type definitions
+- [x] T008 [P] Create `front-end/shared/types/shared.ts` with shared data structures (CardPlay, Yaku, PlayerScore, Ruleset, etc.)
+- [x] T009 [P] Create `front-end/shared/types/flow-state.ts` with FlowState type definition
+- [x] T010 [P] Create `front-end/shared/types/errors.ts` with error code types (ErrorCode, GameErrorCode)
+- [x] T011 [P] Create `front-end/shared/types/events.ts` with SSE event type definitions (GameStartedEvent, RoundDealtEvent, etc.)
+- [x] T012 Create `front-end/shared/types/index.ts` to re-export all shared types
+- [x] T013 Update `front-end/app/user-interface/application/types/index.ts` to re-export from `~/shared/types`
 
 ### Database Schema
 
-- [ ] T014 Create `front-end/server/database/schema/games.ts` with games table schema (Drizzle)
-- [ ] T015 [P] Create `front-end/server/database/schema/gameSnapshots.ts` with game_snapshots table schema
-- [ ] T016 [P] Create `front-end/server/database/schema/playerStats.ts` with player_stats table schema
-- [ ] T017 [P] Create `front-end/server/database/schema/sessions.ts` with sessions table schema
-- [ ] T018 Create `front-end/server/database/schema/index.ts` to export all schemas
-- [ ] T019 Create `front-end/server/utils/db.ts` with Drizzle client initialization
-- [ ] T020 Run `pnpm drizzle-kit generate` and `pnpm drizzle-kit migrate` to create database tables
+- [x] T014 Create `front-end/server/database/schema/games.ts` with games table schema (Drizzle)
+- [x] T015 [P] Create `front-end/server/database/schema/gameSnapshots.ts` with game_snapshots table schema
+- [x] T016 [P] Create `front-end/server/database/schema/playerStats.ts` with player_stats table schema
+- [x] T017 [P] Create `front-end/server/database/schema/sessions.ts` with sessions table schema
+- [x] T018 Create `front-end/server/database/schema/index.ts` to export all schemas
+- [x] T019 Create `front-end/server/utils/db.ts` with Drizzle client initialization
+- [x] T020 Run `pnpm drizzle-kit generate` and `pnpm drizzle-kit migrate` to create database tables
 
 ### Core Infrastructure
 
-- [ ] T021 Create `front-end/server/utils/config.ts` with environment configuration (timeouts, delays)
-- [ ] T022 [P] Create `front-end/server/adapters/event-publisher/connectionStore.ts` with SSE connection management
-- [ ] T023 [P] Create `front-end/server/adapters/event-publisher/gameEventBus.ts` with EventEmitter-based pub/sub
-- [ ] T024 Create `front-end/server/adapters/persistence/inMemoryGameStore.ts` with Map-based active game storage
-- [ ] T025 Create `front-end/server/api/health.get.ts` health check endpoint for verification
+- [x] T021 Create `front-end/server/utils/config.ts` with environment configuration (timeouts, delays)
+- [x] T022 [P] Create `front-end/server/adapters/event-publisher/connectionStore.ts` with SSE connection management
+- [x] T023 [P] Create `front-end/server/adapters/event-publisher/gameEventBus.ts` with EventEmitter-based pub/sub
+- [x] T024 Create `front-end/server/adapters/persistence/inMemoryGameStore.ts` with Map-based active game storage
+- [x] T025 Create `front-end/server/api/health.get.ts` health check endpoint for verification
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 

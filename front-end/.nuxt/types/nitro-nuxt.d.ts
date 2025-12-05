@@ -1,7 +1,7 @@
 
 /// <reference path="app.config.d.ts" />
 /// <reference path="runtime-config.d.ts" />
-/// <reference types="/Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/@nuxt/nitro-server/dist/index.mjs" />
+/// <reference types="/Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/.pnpm/@nuxt+nitro-server@4.2.1_db0@0.3.4_drizzle-orm@0.45.0_@types+pg@8.15.6_postgres@3.4.7___ac2e2dc97faeee916097818d2a1130ba/node_modules/@nuxt/nitro-server/dist/index.mjs" />
 /// <reference path="nitro-middleware.d.ts" />
 
 import type { RuntimeConfig } from 'nuxt/schema'

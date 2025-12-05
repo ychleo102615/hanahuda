@@ -5,6 +5,9 @@
  * 匯出所有 Application Layer 的型別定義，
  * 提供統一的導入入口。
  *
+ * 共用型別從 ~/shared/types 重新匯出，
+ * 確保前後端型別一致。
+ *
  * @example
  * ```typescript
  * import type {
@@ -18,16 +21,17 @@
  * ```
  */
 
-// Flow State
-export type { FlowState } from './flow-state'
-export { FlowState as FlowStateEnum } from './flow-state'
+// ============================================
+// Re-export from #shared/types (前後端共用)
+// ============================================
 
-// Result Type
-export type { Result } from './result'
+// Flow State
+export type { FlowState } from '#shared/types'
+export { FlowStateEnum } from '#shared/types'
 
 // Errors
-export type { ErrorCode, RoundEndReason } from './errors'
-export { ERROR_MESSAGES, RECONNECTION_RETRY } from './errors'
+export type { ErrorCode, GameErrorCode, SuggestedAction, RoundEndReason } from '#shared/types'
+export { ERROR_MESSAGES, GAME_ERROR_MESSAGES, RECONNECTION_RETRY } from '#shared/types'
 
 // Shared Data Structures
 export type {
@@ -46,13 +50,14 @@ export type {
   YakuSetting,
   SpecialRules,
   YakuScore,
-} from './shared'
+} from '#shared/types'
 
 // Commands
-export type { TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision } from './commands'
+export type { TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision } from '#shared/types'
 
 // Events
 export type {
+  BaseEvent,
   GameStartedEvent,
   RoundDealtEvent,
   TurnCompletedEvent,
@@ -67,7 +72,15 @@ export type {
   TurnErrorEvent,
   GameErrorEvent,
   GameSnapshotRestore,
-} from './events'
+  GameEvent,
+} from '#shared/types'
 
-// Domain Facade
+// ============================================
+// Frontend-specific types (不共用)
+// ============================================
+
+// Result Type (前端 Use Case 用)
+export type { Result } from './result'
+
+// Domain Facade (前端 Domain Layer 介面)
 export type { DomainFacade } from './domain-facade'
