@@ -11,7 +11,7 @@
  * 4. 顯示「連線已恢復」提示訊息
  */
 
-import type { GameSnapshotRestore } from '../../types/events'
+import type { GameSnapshotRestore } from '../../types'
 import type {
   UIStatePort,
   NotificationPort,

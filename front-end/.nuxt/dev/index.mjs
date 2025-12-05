@@ -27,13 +27,13 @@ import { SourceMapConsumer } from 'file:///Users/leo-huang/Projects/vue/hanahuda
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { stringify, uneval } from 'file:///Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/devalue/index.js';
 import { captureRawStackTrace, parseRawStackTrace } from 'file:///Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/errx/dist/index.js';
-import { isVNode, toValue, isRef } from 'file:///Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/vue/index.mjs';
+import { isVNode, toValue, isRef } from 'file:///Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/.pnpm/vue@3.5.25_typescript@5.9.3/node_modules/vue/index.mjs';
 import { promises } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname as dirname$1, resolve as resolve$1 } from 'file:///Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/pathe/dist/index.mjs';
 import { createHead as createHead$1, propsToString, renderSSRHead } from 'file:///Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/unhead/dist/server.mjs';
 import process$1 from 'node:process';
-import { renderToString } from 'file:///Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/vue/server-renderer/index.mjs';
+import { renderToString } from 'file:///Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/.pnpm/vue@3.5.25_typescript@5.9.3/node_modules/vue/server-renderer/index.mjs';
 import { walkResolver } from 'file:///Users/leo-huang/Projects/vue/hanahuda/front-end/node_modules/unhead/dist/utils.mjs';
 
 const serverAssets = [{"baseName":"server","dir":"/Users/leo-huang/Projects/vue/hanahuda/front-end/server/assets"}];
@@ -1868,10 +1868,12 @@ async function getIslandContext(event) {
   return ctx;
 }
 
+const _lazy_VTR8vK = () => Promise.resolve().then(function () { return health_get$1; });
 const _lazy_76hN_O = () => Promise.resolve().then(function () { return renderer$1; });
 
 const handlers = [
   { route: '', handler: _zyOnD8, lazy: false, middleware: true, method: undefined },
+  { route: '/api/health', handler: _lazy_VTR8vK, lazy: true, middleware: false, method: "get" },
   { route: '/__nuxt_error', handler: _lazy_76hN_O, lazy: true, middleware: false, method: undefined },
   { route: '/__nuxt_island/**', handler: _SxA8c9, lazy: false, middleware: false, method: undefined },
   { route: '/**', handler: _lazy_76hN_O, lazy: true, middleware: false, method: undefined }
@@ -2203,6 +2205,333 @@ const styles = {};
 const styles$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
   default: styles
+}, Symbol.toStringTag, { value: 'Module' }));
+
+var __defProp$1 = Object.defineProperty;
+var __defNormalProp$1 = (obj, key, value) => key in obj ? __defProp$1(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __publicField$1 = (obj, key, value) => __defNormalProp$1(obj, typeof key !== "symbol" ? key + "" : key, value);
+class InMemoryGameStore {
+  constructor() {
+    /**
+     * 遊戲 ID -> 遊戲狀態
+     */
+    __publicField$1(this, "games", /* @__PURE__ */ new Map());
+    /**
+     * 玩家 ID -> 遊戲 ID（用於快速查找玩家所在的遊戲）
+     */
+    __publicField$1(this, "playerGameMap", /* @__PURE__ */ new Map());
+    /**
+     * 會話 Token -> 遊戲 ID（用於驗證會話）
+     */
+    __publicField$1(this, "sessionGameMap", /* @__PURE__ */ new Map());
+  }
+  /**
+   * 取得遊戲狀態
+   *
+   * @param gameId 遊戲 ID
+   * @returns 遊戲狀態（若存在）
+   */
+  get(gameId) {
+    return this.games.get(gameId);
+  }
+  /**
+   * 儲存遊戲狀態
+   *
+   * @param game 遊戲狀態
+   */
+  set(game) {
+    const existingGame = this.games.get(game.id);
+    if (!existingGame) {
+      for (const player of game.players) {
+        this.playerGameMap.set(player.id, game.id);
+      }
+      this.sessionGameMap.set(game.sessionToken, game.id);
+    }
+    this.games.set(game.id, game);
+    console.log(`[InMemoryGameStore] Saved game ${game.id}, status: ${game.status}`);
+  }
+  /**
+   * 刪除遊戲狀態
+   *
+   * @param gameId 遊戲 ID
+   */
+  delete(gameId) {
+    const game = this.games.get(gameId);
+    if (game) {
+      for (const player of game.players) {
+        this.playerGameMap.delete(player.id);
+      }
+      this.sessionGameMap.delete(game.sessionToken);
+      this.games.delete(gameId);
+      console.log(`[InMemoryGameStore] Deleted game ${gameId}`);
+    }
+  }
+  /**
+   * 透過玩家 ID 取得遊戲狀態
+   *
+   * @param playerId 玩家 ID
+   * @returns 遊戲狀態（若存在）
+   */
+  getByPlayerId(playerId) {
+    const gameId = this.playerGameMap.get(playerId);
+    return gameId ? this.games.get(gameId) : void 0;
+  }
+  /**
+   * 透過會話 Token 取得遊戲狀態
+   *
+   * @param sessionToken 會話 Token
+   * @returns 遊戲狀態（若存在）
+   */
+  getBySessionToken(sessionToken) {
+    const gameId = this.sessionGameMap.get(sessionToken);
+    return gameId ? this.games.get(gameId) : void 0;
+  }
+  /**
+   * 檢查遊戲是否存在
+   *
+   * @param gameId 遊戲 ID
+   * @returns 是否存在
+   */
+  has(gameId) {
+    return this.games.has(gameId);
+  }
+  /**
+   * 取得所有活躍遊戲
+   *
+   * @returns 遊戲狀態列表
+   */
+  getAll() {
+    return Array.from(this.games.values());
+  }
+  /**
+   * 取得活躍遊戲數量
+   *
+   * @returns 遊戲數量
+   */
+  getCount() {
+    return this.games.size;
+  }
+  /**
+   * 取得等待中的遊戲（用於配對）
+   *
+   * @returns 等待中的遊戲列表
+   */
+  getWaitingGames() {
+    return Array.from(this.games.values()).filter((game) => game.status === "WAITING");
+  }
+  /**
+   * 清除所有遊戲（用於測試）
+   */
+  clear() {
+    this.games.clear();
+    this.playerGameMap.clear();
+    this.sessionGameMap.clear();
+    console.log("[InMemoryGameStore] Cleared all games");
+  }
+  /**
+   * 清除過期遊戲
+   *
+   * @param maxAgeMs 最大存活時間（毫秒）
+   * @returns 清除的遊戲數量
+   */
+  cleanupExpired(maxAgeMs) {
+    const now = Date.now();
+    let cleaned = 0;
+    for (const [gameId, game] of this.games.entries()) {
+      const age = now - game.updatedAt.getTime();
+      if (age > maxAgeMs && game.status !== "IN_PROGRESS") {
+        this.delete(gameId);
+        cleaned++;
+      }
+    }
+    if (cleaned > 0) {
+      console.log(`[InMemoryGameStore] Cleaned up ${cleaned} expired games`);
+    }
+    return cleaned;
+  }
+}
+const inMemoryGameStore = new InMemoryGameStore();
+
+var __defProp = Object.defineProperty;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __publicField = (obj, key, value) => __defNormalProp(obj, key + "" , value);
+class ConnectionStore {
+  constructor() {
+    /**
+     * 遊戲 ID -> 連線列表
+     */
+    __publicField(this, "connections", /* @__PURE__ */ new Map());
+  }
+  /**
+   * 新增連線
+   *
+   * @param gameId 遊戲 ID
+   * @param playerId 玩家 ID
+   * @param handler 事件處理器
+   */
+  addConnection(gameId, playerId, handler) {
+    if (!this.connections.has(gameId)) {
+      this.connections.set(gameId, /* @__PURE__ */ new Map());
+    }
+    const gameConnections = this.connections.get(gameId);
+    gameConnections.set(playerId, {
+      playerId,
+      connectedAt: /* @__PURE__ */ new Date(),
+      handler
+    });
+    console.log(`[ConnectionStore] Player ${playerId} connected to game ${gameId}`);
+  }
+  /**
+   * 移除連線
+   *
+   * @param gameId 遊戲 ID
+   * @param playerId 玩家 ID
+   */
+  removeConnection(gameId, playerId) {
+    const gameConnections = this.connections.get(gameId);
+    if (gameConnections) {
+      gameConnections.delete(playerId);
+      console.log(`[ConnectionStore] Player ${playerId} disconnected from game ${gameId}`);
+      if (gameConnections.size === 0) {
+        this.connections.delete(gameId);
+      }
+    }
+  }
+  /**
+   * 取得遊戲的所有連線
+   *
+   * @param gameId 遊戲 ID
+   * @returns 連線列表
+   */
+  getConnections(gameId) {
+    const gameConnections = this.connections.get(gameId);
+    return gameConnections ? Array.from(gameConnections.values()) : [];
+  }
+  /**
+   * 取得特定玩家的連線
+   *
+   * @param gameId 遊戲 ID
+   * @param playerId 玩家 ID
+   * @returns 連線資訊（若存在）
+   */
+  getConnection(gameId, playerId) {
+    var _a;
+    return (_a = this.connections.get(gameId)) == null ? void 0 : _a.get(playerId);
+  }
+  /**
+   * 檢查玩家是否已連線
+   *
+   * @param gameId 遊戲 ID
+   * @param playerId 玩家 ID
+   * @returns 是否已連線
+   */
+  isConnected(gameId, playerId) {
+    return this.getConnection(gameId, playerId) !== void 0;
+  }
+  /**
+   * 取得遊戲的連線數量
+   *
+   * @param gameId 遊戲 ID
+   * @returns 連線數量
+   */
+  getConnectionCount(gameId) {
+    var _a, _b;
+    return (_b = (_a = this.connections.get(gameId)) == null ? void 0 : _a.size) != null ? _b : 0;
+  }
+  /**
+   * 向遊戲的所有連線廣播事件
+   *
+   * @param gameId 遊戲 ID
+   * @param event 遊戲事件
+   */
+  broadcast(gameId, event) {
+    const connections = this.getConnections(gameId);
+    for (const connection of connections) {
+      try {
+        connection.handler(event);
+      } catch (error) {
+        console.error(
+          `[ConnectionStore] Error broadcasting to player ${connection.playerId}:`,
+          error
+        );
+      }
+    }
+  }
+  /**
+   * 向特定玩家發送事件
+   *
+   * @param gameId 遊戲 ID
+   * @param playerId 玩家 ID
+   * @param event 遊戲事件
+   * @returns 是否發送成功
+   */
+  sendToPlayer(gameId, playerId, event) {
+    const connection = this.getConnection(gameId, playerId);
+    if (connection) {
+      try {
+        connection.handler(event);
+        return true;
+      } catch (error) {
+        console.error(`[ConnectionStore] Error sending to player ${playerId}:`, error);
+        return false;
+      }
+    }
+    return false;
+  }
+  /**
+   * 清除遊戲的所有連線
+   *
+   * @param gameId 遊戲 ID
+   */
+  clearGame(gameId) {
+    this.connections.delete(gameId);
+    console.log(`[ConnectionStore] Cleared all connections for game ${gameId}`);
+  }
+  /**
+   * 取得所有活躍遊戲 ID
+   *
+   * @returns 遊戲 ID 列表
+   */
+  getActiveGameIds() {
+    return Array.from(this.connections.keys());
+  }
+  /**
+   * 取得總連線數
+   *
+   * @returns 總連線數
+   */
+  getTotalConnectionCount() {
+    let count = 0;
+    for (const gameConnections of this.connections.values()) {
+      count += gameConnections.size;
+    }
+    return count;
+  }
+}
+const connectionStore = new ConnectionStore();
+
+const startTime = Date.now();
+const health_get = defineEventHandler(() => {
+  const memoryUsage = process.memoryUsage();
+  return {
+    status: "ok",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    uptime: Math.floor((Date.now() - startTime) / 1e3),
+    memory: {
+      heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+      heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+      external: Math.round(memoryUsage.external / 1024 / 1024)
+    },
+    games: {
+      active: inMemoryGameStore.getCount(),
+      connections: connectionStore.getTotalConnectionCount()
+    }
+  };
+});
+
+const health_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: health_get
 }, Symbol.toStringTag, { value: 'Module' }));
 
 function renderPayloadResponse(ssrContext) {

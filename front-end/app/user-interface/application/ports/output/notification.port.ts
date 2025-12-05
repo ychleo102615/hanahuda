@@ -16,7 +16,7 @@
  */
 
 import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers } from '../../types'
-import type { RoundEndReason } from '../../types/errors'
+import type { RoundEndReason } from '../../types'
 
 /**
  * NotificationPort 介面

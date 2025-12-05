@@ -40,3 +40,4 @@ export { FlowStateEnum, ERROR_MESSAGES, GAME_ERROR_MESSAGES, RECONNECTION_RETRY,
 export { PlayerInfo, PlayerHand, PlayerDepository, PlayerScore, NextState, CardPlay, CardSelection, Yaku, YakuUpdate, ScoreMultipliers, KoiStatus, Ruleset, YakuSetting, SpecialRules, YakuScore } from '../shared/types/shared';
 export { useCounterStore } from '../app/stores/counter';
 export { defineStore, acceptHMRUpdate, usePinia, storeToRefs } from '../node_modules/.pnpm/@pinia+nuxt@0.11.3_magicast@0.5.1_pinia@3.0.4_typescript@5.9.3_vue@3.5.25_typescript@5.9.3__/node_modules/@pinia/nuxt/dist/runtime/composables';
+export { useNuxtDevTools } from '../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools';

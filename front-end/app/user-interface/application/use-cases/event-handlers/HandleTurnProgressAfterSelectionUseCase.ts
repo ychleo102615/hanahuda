@@ -18,7 +18,7 @@
  * @see specs/005-ui-animation-refactor/plan.md#AnimationPort
  */
 
-import type { TurnProgressAfterSelectionEvent } from '../../types/events'
+import type { TurnProgressAfterSelectionEvent } from '../../types'
 import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleTurnProgressAfterSelectionPort } from '../../ports/input'
