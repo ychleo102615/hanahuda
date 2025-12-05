@@ -21,6 +21,7 @@
  * ```
  */
 
+import type { Pinia } from 'pinia'
 import type { DIContainer } from './container'
 import { TOKENS } from './tokens'
 import { useGameStateStore, createUIStatePortAdapter } from '../stores/gameState'
@@ -68,10 +69,11 @@ export type GameMode = 'backend' | 'local' | 'mock'
  *
  * @param container - DI Container 實例
  * @param mode - 遊戲模式 (backend / local / mock)
+ * @param pinia - Pinia 實例，明確傳遞以避免初始化順序問題
  */
-export function registerDependencies(container: DIContainer, mode: GameMode): void {
-  // 1. 註冊 Stores
-  registerStores(container)
+export function registerDependencies(container: DIContainer, mode: GameMode, pinia: Pinia): void {
+  // 1. 註冊 Stores（明確傳遞 pinia 實例）
+  registerStores(container, pinia)
 
   // 2. 註冊 Output Ports
   registerOutputPorts(container)
@@ -106,31 +108,34 @@ export function registerDependencies(container: DIContainer, mode: GameMode): vo
  * 註冊 GameStateStore 與 UIStateStore 為單例。
  * 這兩個 Store 在整個應用程式生命週期中只有一個實例。
  *
+ * @param container - DI Container 實例
+ * @param pinia - Pinia 實例，明確傳遞以確保 store 正確初始化
+ *
  * @note Nuxt 4: 僅在 client-side 註冊 Pinia stores
  */
-function registerStores(container: DIContainer): void {
+function registerStores(container: DIContainer, pinia: Pinia): void {
   // Nuxt 4: 確保僅在 client-side 註冊 Pinia stores
   if (import.meta.server) {
     console.warn('[DI] Skipping Pinia stores registration on server-side')
     return
   }
 
-  // 註冊 Stores 為單例
+  // 註冊 Stores 為單例（明確傳遞 pinia 實例）
   container.register(
     TOKENS.GameStateStore,
-    () => useGameStateStore(),
+    () => useGameStateStore(pinia),
     { singleton: true },
   )
 
   container.register(
     TOKENS.UIStateStore,
-    () => useUIStateStore(),
+    () => useUIStateStore(pinia),
     { singleton: true },
   )
 
   container.register(
     TOKENS.AnimationLayerStore,
-    () => useAnimationLayerStore(),
+    () => useAnimationLayerStore(pinia),
     { singleton: true },
   )
 
@@ -142,7 +147,7 @@ function registerStores(container: DIContainer): void {
 
   container.register(
     TOKENS.MatchmakingStateStore,
-    () => useMatchmakingStateStore(),
+    () => useMatchmakingStateStore(pinia),
     { singleton: true },
   )
 

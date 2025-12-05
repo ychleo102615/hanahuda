@@ -9,15 +9,19 @@
  * @see /Users/leo-huang/Projects/vue/hanahuda/front-end/src/user-interface/adapter/di/registry.ts
  */
 
+import type { Pinia } from 'pinia'
 import { container } from '~/user-interface/adapter/di/container'
 import { registerDependencies, type GameMode } from '~/user-interface/adapter/di/registry'
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin({ dependsOn: ['pinia'], setup(nuxtApp) {
   // 僅在 client-side 執行（.client.ts 後綴已確保，此檢查為額外保險）
   if (import.meta.server) {
     console.warn('[DI Plugin] Skipping on server-side')
     return
   }
+
+  // 從 nuxtApp 取得 Pinia 實例，明確傳遞給 DI registry
+  const pinia = nuxtApp.$pinia as Pinia
 
   // 從 sessionStorage 讀取遊戲模式（預設為 'mock'）
   const gameMode: GameMode = (sessionStorage.getItem('gameMode') as GameMode) || 'mock'
@@ -25,8 +29,8 @@ export default defineNuxtPlugin(() => {
   console.info('[DI Plugin] Initializing DI container', { gameMode })
 
   try {
-    // 註冊所有依賴
-    registerDependencies(container, gameMode)
+    // 註冊所有依賴，明確傳遞 pinia 實例
+    registerDependencies(container, gameMode, pinia)
 
     console.info('[DI Plugin] DI container initialized successfully', {
       registeredTokens: container.getRegisteredTokens().length,
@@ -42,4 +46,4 @@ export default defineNuxtPlugin(() => {
       diContainer: container,
     },
   }
-})
+}})
