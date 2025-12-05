@@ -34,15 +34,16 @@ const layerStyles = computed(() => {
 </script>
 
 <template>
-  <div ref="deckRef" class="relative flex flex-col items-center justify-center h-full p-2">
+  <div class="relative flex flex-col items-center justify-center h-full p-2">
     <!-- 牌堆視覺堆疊 -->
-    <div class="relative w-16 h-24">
+    <div ref="deckRef" class="relative w-16 h-24 flex justify-center">
       <div
         v-for="(style, index) in layerStyles"
         :key="index"
+        :data-card-id="'deck' + index"
         :style="style"
         :data-testid="'deck-layer'"
-        class="absolute inset-0"
+        class="absolute inline-flex items-center justify-center rounded-md "
       >
         <SvgIcon
           :name="CARD_BACK_ICON_NAME"

@@ -16,7 +16,6 @@ import type { AnimationPort, DealAnimationParams } from '../../application/ports
 import type { CardType } from '../../domain/types'
 import { zoneRegistry, type ZoneRegistry } from './ZoneRegistry'
 import type { ZoneName } from './types'
-import { useMotion } from '@vueuse/motion'
 import type { AnimationLayerStore } from '../stores'
 
 /**
@@ -687,67 +686,38 @@ export class AnimationPortAdapter implements AnimationPort {
     this._isAnimating = true
 
     const deckPosition = this.registry.getPosition('deck')
-    const fieldPosition = this.registry.getPosition('field')
     // 翻牌後卡片在 field zone
     const cardElement = this.registry.findCard(cardId, 'field')
 
     console.info('[AnimationPort] playFlipFromDeckAnimation', {
       cardId,
       deck: deckPosition ? 'found' : 'not registered',
-      field: fieldPosition ? 'found' : 'not registered',
       hasElement: !!cardElement,
     })
 
     try {
-      // 執行翻牌動畫
-      if (cardElement && deckPosition && fieldPosition && !this._interrupted) {
-        // A. 先顯示卡片（移除 invisible），但立即設置 opacity: 0
-        this.animationLayerStore.showCard(cardId)
+      if (cardElement && deckPosition && !this._interrupted) {
+        // 隱藏原始卡片，準備動畫
+        this.animationLayerStore.hideCards([cardId])
 
-        // B. 等待 DOM 布局完成
-        await waitForLayout(1)
+        // 等待 DOM 布局完成
+        await waitForLayout(2)
 
-        // C. 保存原始樣式並設置動畫樣式
-        const originalZIndex = cardElement.style.zIndex
-        const originalPosition = cardElement.style.position
-        cardElement.style.zIndex = '9999'
-        cardElement.style.position = 'relative'
-
-        // D. 計算卡片當前位置（DOM 已布局完成）
+        // 取得目標位置
         const cardRect = cardElement.getBoundingClientRect()
 
-        // 計算從牌堆到場牌的位移
-        const initialX = deckPosition.rect.x + deckPosition.rect.width / 2 - cardRect.x - cardRect.width / 2
-        const initialY = deckPosition.rect.y + deckPosition.rect.height / 2 - cardRect.y - cardRect.height / 2
-
-        const { apply } = useMotion(cardElement, {
-          initial: {
-            x: initialX,
-            y: initialY,
-            scale: 0.8,
-            opacity: 0,
-          },
-          enter: {
-            x: 0,
-            y: 0,
-            scale: 1,
-            opacity: 1,
-            transition: {
-              type: 'spring',
-              stiffness: 250,
-              damping: 20,
-            },
-          },
+        // 通過 AnimationLayer 播放動畫（'deal' 效果：從 opacity 0 開始，移動 + 淡入）
+        await new Promise<void>(resolve => {
+          this.animationLayerStore.addCard({
+            cardId,
+            fromRect: deckPosition.rect,
+            toRect: cardRect,
+            onComplete: resolve,
+          })
         })
 
-        await apply('enter')
-        await sleep(ANIMATION_DURATION.FLIP_FROM_DECK)
-
-        // E. 清理：恢復原始樣式
-        cardElement.style.transform = ''
-        cardElement.style.opacity = ''
-        cardElement.style.zIndex = originalZIndex
-        cardElement.style.position = originalPosition
+        // 動畫完成後顯示原始卡片
+        this.animationLayerStore.showCard(cardId)
       } else {
         // 無元素時等待時長
         if (!this._interrupted) {
