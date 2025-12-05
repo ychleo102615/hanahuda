@@ -7,7 +7,7 @@
  * 透過 Teleport 將動畫層放到 body，確保在最上層。
  */
 
-import { watch, ref, nextTick } from 'vue'
+import { watch, ref } from 'vue'
 import { useAnimationLayerStore } from '~/user-interface/adapter/stores'
 import CardComponent from './CardComponent.vue'
 import { useMotion } from '@vueuse/motion'
@@ -18,23 +18,23 @@ const store = useAnimationLayerStore()
 // 追蹤已經開始動畫的卡片 ID
 const animatedCardIds = ref<Set<string>>(new Set())
 
-// 追蹤每張卡片的 DOM 元素
-const cardRefs = ref<Map<string, HTMLElement>>(new Map())
+// 追蹤每張卡片的 DOM 元素（不需要響應式）
+const cardRefs = new Map<string, HTMLElement>()
 
 // 追蹤已經開始動畫的組 ID
 const animatedGroupIds = ref<Set<string>>(new Set())
 
-// 追蹤每個組容器的 DOM 元素
-const groupRefs = ref<Map<string, HTMLElement>>(new Map())
+// 追蹤每個組容器的 DOM 元素（不需要響應式）
+const groupRefs = new Map<string, HTMLElement>()
 
 // 設置卡片 ref
 function setCardRef(cardId: string, el: HTMLElement | null) {
   if (el) {
-    cardRefs.value.set(cardId, el)
+    cardRefs.set(cardId, el)
     // 當元素掛載時，立即檢查是否需要開始動畫
     startAnimationIfNeeded(cardId)
   } else {
-    cardRefs.value.delete(cardId)
+    cardRefs.delete(cardId)
   }
 }
 
@@ -46,7 +46,7 @@ function startAnimationIfNeeded(cardId: string) {
   const card = store.animatingCards.find(c => c.cardId === cardId)
   if (!card) return
 
-  const el = cardRefs.value.get(cardId)
+  const el = cardRefs.get(cardId)
   if (!el) return
 
   // 標記為已開始動畫
@@ -145,11 +145,11 @@ function startAnimationIfNeeded(cardId: string) {
 // 設置組容器 ref
 function setGroupRef(groupId: string, el: HTMLElement | null) {
   if (el) {
-    groupRefs.value.set(groupId, el)
+    groupRefs.set(groupId, el)
     // 當元素掛載時，立即檢查是否需要開始動畫
     startGroupAnimation(groupId)
   } else {
-    groupRefs.value.delete(groupId)
+    groupRefs.delete(groupId)
   }
 }
 
@@ -161,7 +161,7 @@ function startGroupAnimation(groupId: string) {
   const group = store.animatingGroups.find(g => g.groupId === groupId)
   if (!group) return
 
-  const el = groupRefs.value.get(groupId)
+  const el = groupRefs.get(groupId)
   if (!el) return
 
   // 標記為已開始動畫

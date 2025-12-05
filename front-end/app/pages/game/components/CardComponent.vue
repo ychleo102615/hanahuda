@@ -8,7 +8,7 @@
  * 使用 @vueuse/motion 實現流暢的動畫效果。
  */
 
-import { computed, ref } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import SvgIcon from '~/components/SvgIcon.vue'
 import { getCardIconName, CARD_BACK_ICON_NAME } from '~/utils/cardMapping'
 import { useMotion } from '@vueuse/motion'
@@ -118,7 +118,7 @@ const cardIconName = computed(() => {
 })
 
 // 卡片容器 ref 用於 motion
-const cardRef = ref<HTMLElement | null>(null)
+const cardRef = shallowRef<HTMLElement | null>(null)
 
 // 使用 @vueuse/motion 設定動畫
 const { apply } = useMotion(cardRef, {
@@ -170,7 +170,6 @@ function handleMouseLeave() {
 }
 
 // 監聽選中狀態變化
-import { watch } from 'vue'
 watch(() => props.isSelected, (selected) => {
   if (selected) {
     apply('selected')

@@ -8,7 +8,7 @@
  * @since Phase 6 - User Story 4
  */
 
-import { ref, onMounted, onUnmounted, type Ref } from 'vue'
+import { ref, shallowRef, onMounted, onUnmounted, type Ref, type ShallowRef } from 'vue'
 import type { ZoneName } from '../animation/types'
 import { zoneRegistry } from '../animation/ZoneRegistry'
 
@@ -29,7 +29,7 @@ export interface UseZoneRegistrationReturn {
   /**
    * 綁定到元素的 ref
    */
-  elementRef: Ref<HTMLElement | null>
+  elementRef: ShallowRef<HTMLElement | null>
 
   /**
    * 手動註冊（若 autoRegister 為 false）
@@ -73,7 +73,7 @@ export function useZoneRegistration(
 ): UseZoneRegistrationReturn {
   const { autoRegister = true } = options
 
-  const elementRef = ref<HTMLElement | null>(null)
+  const elementRef = shallowRef<HTMLElement | null>(null)
   const isRegistered = ref(false)
 
   const register = () => {

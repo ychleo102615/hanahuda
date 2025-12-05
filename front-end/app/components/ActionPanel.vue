@@ -19,7 +19,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { shallowRef, watch } from 'vue'
 import { useMotion } from '@vueuse/motion'
 import { Z_INDEX } from '~/constants'
 
@@ -44,7 +44,7 @@ const emit = defineEmits<{
 }>()
 
 // Template refs
-const panelRef = ref<HTMLElement | null>(null)
+const panelRef = shallowRef<HTMLElement | null>(null)
 
 // 初始化動畫
 const initMotion = () => {
