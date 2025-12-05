@@ -50,7 +50,7 @@ import type {
   MatchmakingStatePort,
   NavigationPort,
 } from '@/user-interface/application/ports'
-import type { DomainFacade } from '@/user-interface/application/types'
+import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
 
 /**
  * 建立 Mock SendCommandPort

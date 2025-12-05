@@ -37,7 +37,8 @@
 // ============================================================================
 
 // Application Layer 專屬型別
-export type { Result, DomainFacade } from './types'
+export type { Result } from './types/result'
+export type { DomainFacade } from './types/domain-facade'
 
 // 共用型別（從 #shared/contracts 重新匯出）
 export type {

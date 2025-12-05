@@ -12,7 +12,7 @@
  */
 
 import type { YakuScore } from '#shared/contracts'
-import type { Result } from '../../types'
+import type { Result } from '../../types/result'
 
 /**
  * PlayHandCardPort - Input Port

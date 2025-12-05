@@ -26,7 +26,8 @@ import type {
   PlayHandCardOutput,
 } from '../../ports/input/player-operations.port'
 import type { SendCommandPort, NotificationPort, AnimationPort } from '../../ports/output'
-import type { DomainFacade, Result } from '../../types'
+import type { DomainFacade } from '../../types/domain-facade'
+import type { Result } from '../../types/result'
 import { getCardById, type Card } from '~/user-interface/domain'
 
 /**

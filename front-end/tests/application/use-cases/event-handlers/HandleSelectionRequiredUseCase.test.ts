@@ -22,7 +22,7 @@ import {
   createMockDomainFacade,
 } from '../../test-helpers/mock-factories'
 import type { NotificationPort, GameStatePort, AnimationPort } from '@/user-interface/application/ports'
-import type { DomainFacade } from '@/user-interface/application/types'
+import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
 
 describe('HandleSelectionRequiredUseCase', () => {
   let mockNotification: NotificationPort
