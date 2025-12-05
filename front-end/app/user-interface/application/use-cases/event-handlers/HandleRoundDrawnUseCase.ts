@@ -2,7 +2,7 @@
  * HandleRoundDrawnUseCase
  */
 
-import type { RoundDrawnEvent } from '../../types'
+import type { RoundDrawnEvent } from '#shared/contracts'
 import type { NotificationPort } from '../../ports/output'
 import type { HandleRoundDrawnPort } from '../../ports/input'
 

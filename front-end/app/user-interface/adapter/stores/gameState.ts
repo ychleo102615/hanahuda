@@ -24,7 +24,7 @@ import type {
   Ruleset,
   GameSnapshotRestore,
   YakuScore,
-} from '../../application/types'
+} from '#shared/contracts'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import { container } from '../di/container'
 import { TOKENS } from '../di/tokens'

@@ -11,7 +11,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleGameStartedUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleGameStartedUseCase'
-import type { GameStartedEvent } from '@/user-interface/application/types'
+import type { GameStartedEvent } from '#shared/contracts'
 import {
   createMockUIStatePort,
   createMockTriggerUIEffectPort,

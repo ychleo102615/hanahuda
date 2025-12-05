@@ -13,7 +13,7 @@ import type {
   Ruleset,
   GameSnapshotRestore,
   YakuScore,
-} from '../../application/types'
+} from '#shared/contracts'
 import { useGameStateStore } from './gameState'
 
 /**

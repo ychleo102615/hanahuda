@@ -16,7 +16,7 @@
  * @see specs/005-ui-animation-refactor/plan.md#AnimationPort
  */
 
-import type { RoundDealtEvent } from '../../types'
+import type { RoundDealtEvent } from '#shared/contracts'
 import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { HandleRoundDealtPort } from '../../ports/input'
 

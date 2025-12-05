@@ -9,7 +9,7 @@
  */
 
 import { pgTable, uuid, varchar, jsonb, timestamp, boolean, integer } from 'drizzle-orm/pg-core'
-import type { PlayerScore } from '#shared/types'
+import type { PlayerScore } from '#shared/contracts'
 
 /**
  * 遊戲狀態

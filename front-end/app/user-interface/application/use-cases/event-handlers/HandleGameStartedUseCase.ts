@@ -13,7 +13,7 @@
  * @see specs/003-ui-application-layer/data-model.md#HandleGameStartedUseCase
  */
 
-import type { GameStartedEvent } from '../../types'
+import type { GameStartedEvent } from '#shared/contracts'
 import type { UIStatePort, GameStatePort, MatchmakingStatePort, NavigationPort } from '../../ports/output'
 import type { HandleGameStartedPort } from '../../ports/input'
 

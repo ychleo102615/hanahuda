@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleRoundEndedInstantlyUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase'
-import type { RoundEndedInstantlyEvent } from '@/user-interface/application/types'
+import type { RoundEndedInstantlyEvent } from '#shared/contracts'
 import {
   createMockGameStatePort,
   createMockNotificationPort,

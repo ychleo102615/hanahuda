@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { HandleRoundDealtUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleRoundDealtUseCase'
-import type { RoundDealtEvent } from '@/user-interface/application/types'
+import type { RoundDealtEvent } from '#shared/contracts'
 import {
   createMockGameStatePort,
   createMockAnimationPort,

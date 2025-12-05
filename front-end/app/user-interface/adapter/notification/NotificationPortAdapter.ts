@@ -11,8 +11,7 @@
  */
 
 import type { NotificationPort } from '../../application/ports/output/notification.port'
-import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers } from '../../application/types'
-import type { RoundEndReason } from '../../application/types'
+import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers, RoundEndReason } from '#shared/contracts'
 import { useUIStateStore } from '../stores/uiState'
 import type { CountdownManager } from '../services/CountdownManager'
 

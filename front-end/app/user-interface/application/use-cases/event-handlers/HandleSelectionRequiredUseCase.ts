@@ -16,7 +16,7 @@
  * @see specs/005-ui-animation-refactor/plan.md#AnimationPort
  */
 
-import type { SelectionRequiredEvent } from '../../types'
+import type { SelectionRequiredEvent } from '#shared/contracts'
 import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleSelectionRequiredPort } from '../../ports/input'

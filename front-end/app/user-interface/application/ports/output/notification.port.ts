@@ -15,8 +15,7 @@
  * - HandleTurnErrorUseCase (顯示錯誤訊息)
  */
 
-import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers } from '../../types'
-import type { RoundEndReason } from '../../types'
+import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers, RoundEndReason } from '#shared/contracts'
 
 /**
  * NotificationPort 介面

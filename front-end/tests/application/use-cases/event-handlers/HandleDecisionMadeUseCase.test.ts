@@ -12,7 +12,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleDecisionMadeUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleDecisionMadeUseCase'
-import type { DecisionMadeEvent } from '@/user-interface/application/types'
+import type { DecisionMadeEvent } from '#shared/contracts'
 import {
   createMockUIStatePort,
   createMockNotificationPort,

@@ -33,7 +33,7 @@
  * ```
  */
 
-import type { FlowState, PlayerInfo, Ruleset, GameSnapshotRestore } from '../../types'
+import type { FlowState, PlayerInfo, Ruleset, GameSnapshotRestore } from '#shared/contracts'
 
 export interface UIStatePort {
   /**

@@ -2,7 +2,7 @@
  * HandleGameFinishedUseCase
  */
 
-import type { GameFinishedEvent } from '../../types'
+import type { GameFinishedEvent } from '#shared/contracts'
 import type { NotificationPort, UIStatePort } from '../../ports/output'
 import type { HandleGameFinishedPort } from '../../ports/input'
 

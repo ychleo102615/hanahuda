@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleSelectionRequiredUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase'
-import type { SelectionRequiredEvent } from '@/user-interface/application/types'
+import type { SelectionRequiredEvent } from '#shared/contracts'
 import {
   createMockNotificationPort,
   createMockGameStatePort,

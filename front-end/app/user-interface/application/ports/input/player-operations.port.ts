@@ -11,7 +11,8 @@
  * - MakeKoiKoiDecisionPort
  */
 
-import type { Result, YakuScore } from '../../types'
+import type { YakuScore } from '#shared/contracts'
+import type { Result } from '../../types'
 
 /**
  * PlayHandCardPort - Input Port

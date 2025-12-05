@@ -16,8 +16,7 @@
  */
 
 import { defineStore } from 'pinia'
-import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers } from '../../application/types'
-import type { RoundEndReason } from '../../application/types'
+import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers, RoundEndReason } from '#shared/contracts'
 
 /**
  * 決策 Modal 資料

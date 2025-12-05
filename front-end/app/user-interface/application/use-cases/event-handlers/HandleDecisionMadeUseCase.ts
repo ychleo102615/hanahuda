@@ -14,7 +14,7 @@
  * @see specs/003-ui-application-layer/data-model.md#HandleDecisionMadeUseCase
  */
 
-import type { DecisionMadeEvent } from '../../types'
+import type { DecisionMadeEvent } from '#shared/contracts'
 import type { UIStatePort, NotificationPort } from '../../ports/output'
 import type { HandleDecisionMadePort } from '../../ports/input'
 

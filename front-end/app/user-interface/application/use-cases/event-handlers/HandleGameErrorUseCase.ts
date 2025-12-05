@@ -26,7 +26,7 @@ import type {
   MatchmakingStatePort,
   NavigationPort,
 } from '../../ports/output'
-import type { GameErrorEvent } from '../../types'
+import type { GameErrorEvent } from '#shared/contracts'
 
 export class HandleGameErrorUseCase implements HandleGameErrorPort {
   constructor(

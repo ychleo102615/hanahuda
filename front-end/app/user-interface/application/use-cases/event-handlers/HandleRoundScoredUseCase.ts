@@ -2,7 +2,7 @@
  * HandleRoundScoredUseCase
  */
 
-import type { RoundScoredEvent } from '../../types'
+import type { RoundScoredEvent } from '#shared/contracts'
 import type { UIStatePort, NotificationPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleRoundScoredPort } from '../../ports/input'

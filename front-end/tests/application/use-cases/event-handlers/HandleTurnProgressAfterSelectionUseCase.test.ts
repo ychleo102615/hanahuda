@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { HandleTurnProgressAfterSelectionUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
-import type { TurnProgressAfterSelectionEvent } from '@/user-interface/application/types'
+import type { TurnProgressAfterSelectionEvent } from '#shared/contracts'
 import {
   createMockGameStatePort,
   createMockAnimationPort,

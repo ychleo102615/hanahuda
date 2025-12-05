@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleDecisionRequiredUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleDecisionRequiredUseCase'
-import type { DecisionRequiredEvent } from '@/user-interface/application/types'
+import type { DecisionRequiredEvent } from '#shared/contracts'
 import {
   createMockUIStatePort,
   createMockDomainFacade,

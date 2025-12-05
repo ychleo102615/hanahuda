@@ -24,7 +24,9 @@ import type {
   MakeKoiKoiDecisionOutput,
 } from '../../ports/input/player-operations.port'
 import type { SendCommandPort, AnimationPort, NotificationPort } from '../../ports/output'
-import type { DomainFacade, Result, YakuScore } from '../../types'
+import type { YakuScore } from '#shared/contracts'
+import type { DomainFacade } from '../../types/domain-facade'
+import type { Result } from '../../types/result'
 
 /**
  * MakeKoiKoiDecisionUseCase 實作

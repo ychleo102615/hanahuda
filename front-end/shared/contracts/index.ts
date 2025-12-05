@@ -1,16 +1,12 @@
 /**
- * Shared Types Barrel File
+ * Shared Contracts Barrel File
  *
  * @description
- * 匯出所有共用型別定義，供前後端使用。
+ * 匯出所有前後端共用的型別定義（契約）。
  *
  * @example
  * ```typescript
- * // 前端
- * import type { FlowState, GameStartedEvent } from '~/shared/types'
- *
- * // 後端
- * import type { FlowState, GameStartedEvent } from '~/shared/types'
+ * import type { FlowState, GameStartedEvent } from '#shared/contracts'
  * ```
  */
 

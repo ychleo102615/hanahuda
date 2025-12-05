@@ -15,7 +15,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { HandleTurnCompletedUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnCompletedUseCase'
-import type { TurnCompletedEvent } from '@/user-interface/application/types'
+import type { TurnCompletedEvent } from '#shared/contracts'
 import {
   createMockGameStatePort,
   createMockAnimationPort,

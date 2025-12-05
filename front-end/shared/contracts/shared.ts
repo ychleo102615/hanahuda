@@ -8,7 +8,7 @@
  * 與後端的 Protocol 定義保持一致。
  */
 
-import type { FlowState } from '#shared/types/flow-state'
+import type { FlowState } from './flow-state'
 
 /**
  * 玩家資訊

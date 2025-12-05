@@ -16,7 +16,7 @@
  * @see specs/003-ui-application-layer/data-model.md#HandleDecisionRequiredUseCase
  */
 
-import type { DecisionRequiredEvent } from '../../types'
+import type { DecisionRequiredEvent } from '#shared/contracts'
 import type { UIStatePort, NotificationPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleDecisionRequiredPort } from '../../ports/input'

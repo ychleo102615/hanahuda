@@ -17,8 +17,7 @@
  * @see specs/005-ui-animation-refactor/plan.md#AnimationPort
  */
 
-import type { TurnCompletedEvent } from '../../types'
-import type { CardPlay } from '../../types'
+import type { TurnCompletedEvent, CardPlay } from '#shared/contracts'
 import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { HandleTurnCompletedPort } from '../../ports/input'
 import type { DomainFacade } from '../../types/domain-facade'

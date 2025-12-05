@@ -21,9 +21,9 @@ import type {
   ScoreMultipliers,
   KoiStatus,
   Ruleset,
-} from '#shared/types/shared'
-import type { FlowState } from '#shared/types/flow-state'
-import type { ErrorCode, GameErrorCode, SuggestedAction, RoundEndReason } from '#shared/types/errors'
+} from './shared'
+import type { FlowState } from './flow-state'
+import type { ErrorCode, GameErrorCode, SuggestedAction, RoundEndReason } from './errors'
 
 /**
  * 基礎事件介面

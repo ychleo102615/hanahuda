@@ -2,7 +2,7 @@
  * HandleRoundEndedInstantlyUseCase
  */
 
-import type { RoundEndedInstantlyEvent } from '../../types'
+import type { RoundEndedInstantlyEvent } from '#shared/contracts'
 import type { UIStatePort, NotificationPort } from '../../ports/output'
 import type { HandleRoundEndedInstantlyPort } from '../../ports/input'
 

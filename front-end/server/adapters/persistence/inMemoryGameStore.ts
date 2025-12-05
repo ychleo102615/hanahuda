@@ -8,7 +8,7 @@
  * 參考: specs/008-nuxt-backend-server/data-model.md#Memory-State-Management
  */
 
-import type { PlayerScore, Ruleset, KoiStatus, FlowState, CardPlay } from '#shared/types'
+import type { PlayerScore, Ruleset, KoiStatus, FlowState, CardPlay } from '#shared/contracts'
 
 /**
  * 玩家實體（簡化版，完整版在 Domain Layer）

@@ -2,7 +2,7 @@
  * HandleTurnErrorUseCase
  */
 
-import type { TurnErrorEvent } from '../../types'
+import type { TurnErrorEvent } from '#shared/contracts'
 import type { NotificationPort } from '../../ports/output'
 import type { HandleTurnErrorPort } from '../../ports/input'
 

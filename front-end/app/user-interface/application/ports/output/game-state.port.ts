@@ -42,7 +42,7 @@ import type {
   Ruleset,
   GameSnapshotRestore,
   YakuScore,
-} from '../../types'
+} from '#shared/contracts'
 
 /**
  * GameStatePort 介面

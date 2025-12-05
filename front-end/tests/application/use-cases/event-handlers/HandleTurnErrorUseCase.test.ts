@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleTurnErrorUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnErrorUseCase'
-import type { TurnErrorEvent } from '@/user-interface/application/types'
+import type { TurnErrorEvent } from '#shared/contracts'
 import { createMockTriggerUIEffectPort, createMockNotificationPort } from '../../test-helpers/mock-factories'
 import type { TriggerUIEffectPort, NotificationPort } from '@/user-interface/application/ports'
 

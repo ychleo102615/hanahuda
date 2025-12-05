@@ -8,7 +8,7 @@
  */
 
 import { pgTable, uuid, jsonb, timestamp, integer, index } from 'drizzle-orm/pg-core'
-import type { FlowState, KoiStatus, CardPlay } from '#shared/types'
+import type { FlowState, KoiStatus, CardPlay } from '#shared/contracts'
 import { games } from './games'
 
 /**

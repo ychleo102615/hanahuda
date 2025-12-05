@@ -8,7 +8,7 @@
  * 參考: specs/008-nuxt-backend-server/data-model.md#SSE-Connection-Store
  */
 
-import type { GameEvent } from '#shared/types'
+import type { GameEvent } from '#shared/contracts'
 
 /**
  * 事件處理器類型

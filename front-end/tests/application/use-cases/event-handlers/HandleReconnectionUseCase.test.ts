@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleReconnectionUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleReconnectionUseCase'
-import type { GameSnapshotRestore } from '@/user-interface/application/types'
+import type { GameSnapshotRestore } from '#shared/contracts'
 import {
   createMockUIStatePort,
   createMockNotificationPort,

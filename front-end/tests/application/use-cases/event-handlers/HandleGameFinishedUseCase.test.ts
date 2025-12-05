@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { HandleGameFinishedUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleGameFinishedUseCase'
-import type { GameFinishedEvent } from '@/user-interface/application/types'
+import type { GameFinishedEvent } from '#shared/contracts'
 import {
   createMockNotificationPort,
   createMockUIStatePort,

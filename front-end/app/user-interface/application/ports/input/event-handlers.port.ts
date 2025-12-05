@@ -37,7 +37,7 @@ import type {
   TurnErrorEvent,
   GameErrorEvent,
   GameSnapshotRestore,
-} from '../../types'
+} from '#shared/contracts'
 
 /**
  * HandleGameStartedPort - Input Port

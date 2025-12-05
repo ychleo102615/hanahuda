@@ -36,11 +36,13 @@
 // Types
 // ============================================================================
 
+// Application Layer 專屬型別
+export type { Result, DomainFacade } from './types'
+
+// 共用型別（從 #shared/contracts 重新匯出）
 export type {
   // Flow State
   FlowState,
-  // Result Type
-  Result,
   // Errors
   ErrorCode,
   RoundEndReason,
@@ -78,12 +80,10 @@ export type {
   GameFinishedEvent,
   TurnErrorEvent,
   GameSnapshotRestore,
-  // Domain Facade
-  DomainFacade,
-} from './types'
+} from '#shared/contracts'
 
-// Constants
-export { ERROR_MESSAGES, RECONNECTION_RETRY, FlowStateEnum } from './types'
+// Constants（從 #shared/contracts 重新匯出）
+export { ERROR_MESSAGES, RECONNECTION_RETRY, FlowStateEnum } from '#shared/contracts'
 
 // ============================================================================
 // Ports

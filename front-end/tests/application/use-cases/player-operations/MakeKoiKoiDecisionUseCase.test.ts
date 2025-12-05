@@ -20,7 +20,7 @@ import {
   createMockAnimationPort,
   createMockNotificationPort,
 } from '../../test-helpers/mock-factories'
-import type { YakuScore } from '@/user-interface/application/types'
+import type { YakuScore } from '#shared/contracts'
 
 describe('MakeKoiKoiDecisionUseCase', () => {
   // Test fixtures

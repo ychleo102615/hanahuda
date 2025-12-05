@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleRoundScoredUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleRoundScoredUseCase'
-import type { RoundScoredEvent } from '@/user-interface/application/types'
+import type { RoundScoredEvent } from '#shared/contracts'
 import {
   createMockUIStatePort,
   createMockNotificationPort,
