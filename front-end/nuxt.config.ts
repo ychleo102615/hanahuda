@@ -67,4 +67,11 @@ export default defineNuxtConfig({
   devServer: {
     port: 5173, // 保持與原 Vite 一致
   },
+
+  // Route Rules: 禁用特定頁面的 SSR（這些頁面依賴 client-side 的 Pinia stores 和 DI Container）
+  routeRules: {
+    '/lobby': { ssr: false },
+    '/game': { ssr: false },
+    '/game/**': { ssr: false },
+  },
 })
