@@ -117,41 +117,79 @@ const activeGames: Map<GameId, GameAggregate> = new Map()
 
 ### 1.6 假玩家服務設計
 
-**Decision**: Opponent Service 作為 Adapter Layer 的獨立服務（Core Game BC 之外）
+**Decision**: Opponent Service 作為 Adapter Layer 的事件監聽服務
 
 **Rationale**:
-- 符合 Constitution 中 Opponent BC 的設計
-- 假玩家服務不屬於 Core Game BC，而是**外部服務**
-- 架構上視為 Adapter Layer 的一個 Service
-- 未來可獨立為 Opponent BC 或微服務
+- **Server 中立原則**：Core Game BC 不區分玩家類型（人類或 AI）
+- OpponentService 監聽內部事件，自動加入遊戲並執行回合
+- 與 REST endpoints 共用 Use Cases（直接呼叫，不經 HTTP）
+- 事件驅動模式，未來可獨立為 Opponent BC 或微服務
 
 **架構定位**:
 ```
-Core Game BC (Domain + Application)
-    ↓ (Output Port: OpponentActionPort)
-Opponent Adapter Service (Adapter Layer)
-    ↓ (未來可能)
-Opponent BC (獨立 Bounded Context)
+┌─────────────────────────────────────────────────────┐
+│  Adapter Layer                                       │
+│  ┌──────────────────┐                               │
+│  │ OpponentService  │ ← 監聽內部事件，呼叫 Use Cases │
+│  └────────┬─────────┘                               │
+│           │ 訂閱事件                                 │
+│           ▼                                          │
+│  ┌─────────────────────────────────────────────┐    │
+│  │ InternalEventBus (實作 InternalEventPublisherPort)│
+│  └──────────────────────────────┬──────────────┘    │
+│                                 ▲ 發布事件           │
+├─────────────────────────────────┼──────────────────┤
+│  Application Layer              │                   │
+│  • JoinGameUseCase 發布 ROOM_CREATED               │
+│  • 其他 Use Cases 發布 PLAYER_TURN_STARTED 等       │
+│  • 不區分 AI 或人類                                 │
+└─────────────────────────────────────────────────────┘
 ```
 
-**實現方式**:
+**內部事件發布（透過 Output Port）**:
+```typescript
+// server/application/ports/output/internalEventPublisherPort.ts
+interface InternalEventPublisherPort {
+  publishRoomCreated(gameId: string, waitingPlayerId: string): void
+  publishPlayerTurnStarted(gameId: string, playerId: string, flowState: FlowState): void
+  publishSelectionRequired(gameId: string, playerId: string, options: string[]): void
+  publishDecisionRequired(gameId: string, playerId: string): void
+}
+```
+
+**OpponentService 實現**:
 ```typescript
 // server/adapters/opponent/opponentService.ts
-// 此服務在 Core Game BC 之外，作為 Adapter 實現 OpponentActionPort
+class OpponentService {
+  private readonly aiPlayerIds = new Set<string>()
 
-interface OpponentActionPort {
-  decideHandCardPlay(gameState: GameSnapshot): HandCardPlay
-  decideTargetSelection(gameState: GameSnapshot, options: string[]): string
-  decideKoiKoi(gameState: GameSnapshot): 'KOI_KOI' | 'END_ROUND'
-}
+  constructor(
+    private internalEventBus: InternalEventBus,
+    private joinGameUseCase: JoinGameUseCase,
+    private playHandCardUseCase: PlayHandCardUseCase,
+    // ... 其他 Use Cases
+  ) {
+    this.subscribeToEvents()
+  }
 
-class RandomOpponentService implements OpponentActionPort {
-  async executeAction(gameState: GameSnapshot): Promise<void> {
-    const ANIMATION_DELAY = 3000 // 模擬對手側動畫
-    const THINKING_DELAY = 1500 + Math.random() * 1500 // 1.5-3秒
+  private subscribeToEvents() {
+    // 監聽房間建立 → 自動加入（透過 JoinGameUseCase）
+    this.internalEventBus.on('ROOM_CREATED', async (event) => {
+      const aiPlayer = this.createAiPlayer()
+      await this.joinGameUseCase.execute({
+        playerId: aiPlayer.id,
+        playerName: 'AI Opponent'
+      })
+      this.aiPlayerIds.add(aiPlayer.id)
+    })
 
-    await sleep(ANIMATION_DELAY + THINKING_DELAY)
-    // 隨機策略決策
+    // 監聽回合開始 → 若是 AI 則自動操作
+    this.internalEventBus.on('PLAYER_TURN_STARTED', async (event) => {
+      if (this.aiPlayerIds.has(event.playerId)) {
+        await this.simulateThinkingDelay()
+        await this.executeAiTurn(event.gameId, event.playerId, event.flowState)
+      }
+    })
   }
 }
 ```
@@ -160,6 +198,11 @@ class RandomOpponentService implements OpponentActionPort {
 - 模擬動畫時間：3 秒（固定）
 - 模擬思考時間：1.5-3 秒（隨機）
 - 使用 setTimeout 實現延遲
+
+**關鍵設計決策**:
+- AI 與人類玩家使用相同的 JoinGameUseCase 加入遊戲
+- AI 也獲得 session_token，保持介面一致性
+- JoinGameUseCase 包含配對邏輯，未來可獨立為 Matchmaking BC
 
 ---
 

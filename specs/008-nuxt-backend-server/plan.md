@@ -102,7 +102,7 @@ front-end/
 │   │       └── output/                  # Output Port interfaces
 │   │           ├── gameRepositoryPort.ts
 │   │           ├── eventPublisherPort.ts
-│   │           └── opponentActionPort.ts
+│   │           └── internalEventPublisherPort.ts  # 內部事件發布
 │   │
 │   ├── domain/                          # Domain Layer (Core Game BC)
 │   │   ├── game/
@@ -122,12 +122,19 @@ front-end/
 │   │   │   └── inMemoryGameStore.ts
 │   │   ├── event-publisher/
 │   │   │   ├── sseEventPublisher.ts
-│   │   │   └── connectionStore.ts
-│   │   ├── opponent/                    # Opponent Service (BC 外)
-│   │   │   └── randomOpponentService.ts
+│   │   │   ├── connectionStore.ts
+│   │   │   ├── gameEventBus.ts
+│   │   │   └── internalEventBus.ts      # 實作 InternalEventPublisherPort
+│   │   ├── opponent/                    # Opponent Service (事件監聽模式)
+│   │   │   └── opponentService.ts       # 監聽事件，呼叫 Use Cases
+│   │   ├── timeout/
+│   │   │   └── actionTimeoutManager.ts
 │   │   └── mappers/
 │   │       ├── eventMapper.ts           # Domain → SSE Event DTO
 │   │       └── dtos.ts                  # ScoreMultipliers 等 DTOs
+│   │
+│   ├── plugins/                         # Nitro plugins
+│   │   └── opponent.ts                  # OpponentService 初始化
 │   │
 │   ├── database/
 │   │   ├── schema/
@@ -175,7 +182,8 @@ front-end/
 │  2. 呼叫 Domain Layer 執行業務邏輯                          │
 │  3. Domain 返回結果 + 產生 Events                           │
 │  4. 透過 EventPublisher (Output Port) 推送 SSE 事件         │
-│  5. 透過 Repository (Output Port) 持久化                    │
+│  5. 透過 InternalEventPublisher (Output Port) 發布內部事件  │
+│  6. 透過 Repository (Output Port) 持久化                    │
 └─────────────────────────────────────────────────────────────┘
         │
         ▼
@@ -192,7 +200,8 @@ front-end/
 │  Adapter Layer (server/adapters/)                           │
 │  - DrizzleGameRepository: 實作 GameRepositoryPort           │
 │  - SSEEventPublisher: 實作 EventPublisherPort               │
-│  - RandomOpponentService: 實作 OpponentActionPort (BC 外)   │
+│  - InternalEventBus: 實作 InternalEventPublisherPort        │
+│  - OpponentService: 監聽內部事件，呼叫 Use Cases (BC 外)     │
 │  - EventMapper: Domain → DTO 轉換                           │
 └─────────────────────────────────────────────────────────────┘
 ```

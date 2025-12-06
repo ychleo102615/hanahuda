@@ -91,7 +91,14 @@
 
 - [x] T031 [P] [US1] Create `front-end/server/application/ports/output/gameRepositoryPort.ts` with GameRepository interface
 - [x] T032 [P] [US1] Create `front-end/server/application/ports/output/eventPublisherPort.ts` with EventPublisher interface
-- [x] T033 [US1] Create `front-end/server/application/use-cases/joinGameUseCase.ts` with execute() method for joining/creating games
+- [ ] T033 [US1] Create `front-end/server/application/use-cases/joinGameUseCase.ts` with execute() method for joining/creating games
+  - **⚠️ 需重新實作**：當前實作違反 Server 中立原則（直接建立 AI）
+  - **必須包含配對邏輯**：
+    1. 查找等待中的遊戲（status: WAITING）
+    2. 若無等待中遊戲 → 建立新遊戲，狀態為 WAITING，返回 game_id
+    3. 若有等待中遊戲 → 加入成為 Player 2，狀態改為 IN_PROGRESS
+  - **禁止**：直接建立 AI 對手（由 OpponentService 透過事件監聽處理）
+  - **配合 T056**：預留 InternalEventPublisherPort 注入點
 
 ### Adapter Layer for US1
 
@@ -150,17 +157,28 @@
 
 **Independent Test**: 觀察假玩家回合時 SSE 事件在模擬延遲（4.5-6秒）後自動推送
 
+**Architecture Note**: 採用事件驅動架構，Server 保持中立不區分玩家類型。OpponentService 監聽內部事件並呼叫 Use Cases（與人類玩家相同路徑）。
+
 ### Application Layer for US3
 
-- [ ] T052 [US3] Create `front-end/server/application/ports/output/opponentActionPort.ts` with OpponentActionPort interface
+- [ ] T052 [P] [US3] Create `front-end/server/application/ports/output/internalEventPublisherPort.ts` with InternalEventPublisherPort interface (publishRoomCreated, publishPlayerTurnStarted, publishSelectionRequired, publishDecisionRequired)
 
 ### Adapter Layer for US3
 
-- [ ] T053 [US3] Create `front-end/server/adapters/opponent/randomOpponentService.ts` with random strategy and simulated delays
-- [ ] T054 [US3] Create `front-end/server/adapters/timeout/actionTimeoutManager.ts` with timer management (action_timeout_seconds + 3s buffer before triggering timeout)
-- [ ] T055 [US3] Integrate opponent service into Use Cases - modify `front-end/server/application/use-cases/playHandCardUseCase.ts` to trigger opponent turn
+- [ ] T053 [US3] Create `front-end/server/adapters/event-publisher/internalEventBus.ts` implementing InternalEventPublisherPort with EventEmitter-based pub/sub
+- [ ] T054 [US3] Create `front-end/server/adapters/opponent/opponentService.ts` with event listener pattern, auto-join via JoinGameUseCase, random strategy, and simulated delays (3s animation + 1.5-3s thinking)
+- [ ] T055 [US3] Create `front-end/server/adapters/timeout/actionTimeoutManager.ts` with timer management (action_timeout_seconds + 3s buffer before triggering timeout)
+- [ ] T056 [US3] Update `front-end/server/application/use-cases/joinGameUseCase.ts` to inject InternalEventPublisherPort and publish ROOM_CREATED event when creating new game
+  - **變更重點**：
+    1. 注入 `InternalEventPublisherPort` 依賴
+    2. 建立新遊戲時（無等待中房間）→ 發布 `ROOM_CREATED` 事件
+    3. 加入等待中遊戲時（有等待中房間）→ 發布 `GameStarted` SSE 事件
+  - **依賴**：T052（InternalEventPublisherPort 介面）、T053（InternalEventBus 實作）
+  - **注意**：此任務與 T033 配對邏輯緊密相關
+- [ ] T057 [US3] Update other Use Cases (playHandCardUseCase, selectTargetUseCase, makeDecisionUseCase) to publish PLAYER_TURN_STARTED, SELECTION_REQUIRED, DECISION_REQUIRED events via InternalEventPublisherPort
+- [ ] T058 [US3] Create `front-end/server/plugins/opponent.ts` Nitro plugin to initialize OpponentService with all dependencies
 
-**Checkpoint**: User Story 3 complete - AI opponent executes turns automatically with realistic delays
+**Checkpoint**: User Story 3 complete - AI opponent executes turns automatically with realistic delays via event-driven architecture
 
 ---
 
@@ -172,23 +190,23 @@
 
 ### Domain Layer for US4
 
-- [ ] T056 [US4] Extend `front-end/server/domain/game/game.ts` with startNextRound(), finishGame(), calculateWinner() methods
-- [ ] T056b [US4] Implement Teshi (手四) and Kuttsuki (場牌流局) detection in `front-end/server/domain/services/specialRulesService.ts` with RoundEndedInstantly event trigger
-- [ ] T057 [US4] Extend `front-end/server/domain/round/round.ts` with endRound() and score calculation logic
+- [ ] T059 [US4] Extend `front-end/server/domain/game/game.ts` with startNextRound(), finishGame(), calculateWinner() methods
+- [ ] T059b [US4] Implement Teshi (手四) and Kuttsuki (場牌流局) detection in `front-end/server/domain/services/specialRulesService.ts` with RoundEndedInstantly event trigger
+- [ ] T060 [US4] Extend `front-end/server/domain/round/round.ts` with endRound() and score calculation logic
 
 ### Application Layer for US4
 
-- [ ] T058 [US4] Create `front-end/server/application/use-cases/transitionRoundUseCase.ts` with display_timeout delay and next round initialization
-- [ ] T059 [US4] Create `front-end/server/application/use-cases/leaveGameUseCase.ts` with early game termination handling
+- [ ] T061 [US4] Create `front-end/server/application/use-cases/transitionRoundUseCase.ts` with display_timeout delay and next round initialization
+- [ ] T062 [US4] Create `front-end/server/application/use-cases/leaveGameUseCase.ts` with early game termination handling
 
 ### Adapter Layer for US4
 
-- [ ] T060 [US4] Extend `front-end/server/adapters/mappers/eventMapper.ts` with RoundScored, RoundDrawn, RoundEndedInstantly, GameFinished mapping
-- [ ] T061 [US4] Create display timeout scheduler in `front-end/server/adapters/timeout/displayTimeoutManager.ts`
+- [ ] T063 [US4] Extend `front-end/server/adapters/mappers/eventMapper.ts` with RoundScored, RoundDrawn, RoundEndedInstantly, GameFinished mapping
+- [ ] T064 [US4] Create display timeout scheduler in `front-end/server/adapters/timeout/displayTimeoutManager.ts`
 
 ### API Layer for US4
 
-- [ ] T062 [US4] Create `front-end/server/api/v1/games/[gameId]/leave.post.ts` with LeaveGameUseCase call
+- [ ] T065 [US4] Create `front-end/server/api/v1/games/[gameId]/leave.post.ts` with LeaveGameUseCase call
 
 **Checkpoint**: User Story 4 complete - full multi-round games can be completed
 
@@ -202,23 +220,28 @@
 
 ### Domain Layer for US5
 
-- [ ] T063 [US5] Extend `front-end/server/domain/game/game.ts` with toSnapshot() method for state serialization
+- [ ] T066 [US5] Extend `front-end/server/domain/game/game.ts` with toSnapshot() method for state serialization
 
 ### Application Layer for US5
 
-- [ ] T064 [US5] Extend `front-end/server/application/use-cases/joinGameUseCase.ts` with reconnection logic (session_token validation)
-- [ ] T065 [US5] Create `front-end/server/application/use-cases/autoActionUseCase.ts` with minimal impact strategy for timeout actions
+- [ ] T067 [US5] Extend `front-end/server/application/use-cases/joinGameUseCase.ts` with reconnection logic (session_token validation)
+  - **現有實作需調整**：當前重連邏輯僅查找 sessionToken，需配合新配對邏輯
+  - **重連流程**：
+    1. 驗證 session_token 是否對應有效遊戲
+    2. 遊戲狀態為 WAITING → 等待對手加入（重連後繼續等待 SSE）
+    3. 遊戲狀態為 IN_PROGRESS → 返回 GameSnapshotRestore 事件
+- [ ] T068 [US5] Create `front-end/server/application/use-cases/autoActionUseCase.ts` with minimal impact strategy for timeout actions
 
 ### Adapter Layer for US5
 
-- [ ] T066 [US5] Extend `front-end/server/adapters/timeout/actionTimeoutManager.ts` with auto-action trigger on timeout
-- [ ] T067 [US5] Create disconnect timeout handler in `front-end/server/adapters/timeout/disconnectTimeoutManager.ts` (60s limit)
-- [ ] T068 [US5] Extend `front-end/server/adapters/mappers/eventMapper.ts` with GameSnapshotRestore and GameError mapping
-- [ ] T069 [US5] Extend `front-end/server/adapters/persistence/drizzleGameRepository.ts` with snapshot save/load
+- [ ] T069 [US5] Extend `front-end/server/adapters/timeout/actionTimeoutManager.ts` with auto-action trigger on timeout
+- [ ] T070 [US5] Create disconnect timeout handler in `front-end/server/adapters/timeout/disconnectTimeoutManager.ts` (60s limit)
+- [ ] T071 [US5] Extend `front-end/server/adapters/mappers/eventMapper.ts` with GameSnapshotRestore and GameError mapping
+- [ ] T072 [US5] Extend `front-end/server/adapters/persistence/drizzleGameRepository.ts` with snapshot save/load
 
 ### API Layer for US5
 
-- [ ] T070 [US5] Create `front-end/server/api/v1/games/[gameId]/snapshot.get.ts` with snapshot retrieval (SSE fallback)
+- [ ] T073 [US5] Create `front-end/server/api/v1/games/[gameId]/snapshot.get.ts` with snapshot retrieval (SSE fallback)
 
 **Checkpoint**: User Story 5 complete - reconnection and auto-action work correctly
 
@@ -232,13 +255,13 @@
 
 ### Application Layer for US6
 
-- [ ] T071 [P] [US6] Create `front-end/server/application/ports/output/playerStatsRepositoryPort.ts` with PlayerStatsRepository interface
-- [ ] T072 [US6] Create `front-end/server/application/use-cases/recordGameStatsUseCase.ts` with stats calculation and recording
+- [ ] T074 [P] [US6] Create `front-end/server/application/ports/output/playerStatsRepositoryPort.ts` with PlayerStatsRepository interface
+- [ ] T075 [US6] Create `front-end/server/application/use-cases/recordGameStatsUseCase.ts` with stats calculation and recording
 
 ### Adapter Layer for US6
 
-- [ ] T073 [US6] Create `front-end/server/adapters/persistence/drizzlePlayerStatsRepository.ts` with PlayerStatsRepositoryPort implementation
-- [ ] T074 [US6] Integrate stats recording into game finish flow in `front-end/server/application/use-cases/transitionRoundUseCase.ts`
+- [ ] T076 [US6] Create `front-end/server/adapters/persistence/drizzlePlayerStatsRepository.ts` with PlayerStatsRepositoryPort implementation
+- [ ] T077 [US6] Integrate stats recording into game finish flow in `front-end/server/application/use-cases/transitionRoundUseCase.ts`
 
 **Checkpoint**: User Story 6 complete - player statistics are recorded after each game
 
@@ -248,12 +271,12 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T075 [P] Add comprehensive error handling and logging across all API endpoints
-- [ ] T076 [P] Implement rate limiting as specified in contracts/rest-api.md (10 req/min for join, 60 req/min for turns)
-- [ ] T077 Add SSE heartbeat (keepalive every 30 seconds) in `front-end/server/api/v1/games/[gameId]/events.get.ts`
-- [ ] T078 Implement game cleanup scheduler to remove expired games from memory
-- [ ] T079 Run quickstart.md validation - verify all commands work as documented
-- [ ] T080 Final integration test - complete a full game manually from join to finish
+- [ ] T078 [P] Add comprehensive error handling and logging across all API endpoints
+- [ ] T079 [P] Implement rate limiting as specified in contracts/rest-api.md (10 req/min for join, 60 req/min for turns)
+- [ ] T080 Add SSE heartbeat (keepalive every 30 seconds) in `front-end/server/api/v1/games/[gameId]/events.get.ts`
+- [ ] T081 Implement game cleanup scheduler to remove expired games from memory
+- [ ] T082 Run quickstart.md validation - verify all commands work as documented
+- [ ] T083 Final integration test - complete a full game manually from join to finish
 
 ---
 
