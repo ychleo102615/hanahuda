@@ -6,72 +6,24 @@
  * 用於快速存取遊戲狀態，避免每次都查詢資料庫。
  *
  * 參考: specs/008-nuxt-backend-server/data-model.md#Memory-State-Management
+ *
+ * @note
+ * Adapter Layer 依賴 Domain Layer，符合 Clean Architecture 依賴方向。
  */
 
-import type { PlayerScore, Ruleset, KoiStatus, FlowState, CardPlay } from '#shared/contracts'
+// Domain Layer imports
+import type { Player } from '~~/server/domain/game/player'
+import type { Game, GameStatus } from '~~/server/domain/game/game'
+import type { Round, PlayerRoundState, PendingSelection } from '~~/server/domain/round/round'
+import type { KoiStatus } from '~~/server/domain/round/koiStatus'
 
-/**
- * 玩家實體（簡化版，完整版在 Domain Layer）
- */
-export interface PlayerEntity {
-  readonly id: string
-  readonly name: string
-  readonly isAi: boolean
-}
+// Re-export Domain types for backwards compatibility
+export type { Player, Game, GameStatus, Round, PlayerRoundState, PendingSelection, KoiStatus }
 
-/**
- * 玩家局內狀態
- */
-export interface PlayerRoundState {
-  readonly playerId: string
-  readonly hand: string[]
-  readonly depository: string[]
-}
-
-/**
- * 等待選擇的配對資訊
- */
-export interface PendingSelection {
-  readonly drawnCard: string
-  readonly possibleTargets: readonly string[]
-  readonly handCardPlay: CardPlay
-}
-
-/**
- * 局狀態
- */
-export interface RoundState {
-  readonly dealerId: string
-  readonly field: string[]
-  readonly deck: string[]
-  readonly playerStates: PlayerRoundState[]
-  readonly flowState: FlowState
-  readonly activePlayerId: string
-  readonly koiStatuses: KoiStatus[]
-  readonly pendingSelection: PendingSelection | null
-}
-
-/**
- * 遊戲狀態
- */
-export type GameStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED'
-
-/**
- * 遊戲聚合根狀態（記憶體中的完整遊戲狀態）
- */
-export interface GameState {
-  readonly id: string
-  readonly sessionToken: string
-  readonly players: PlayerEntity[]
-  readonly ruleset: Ruleset
-  readonly cumulativeScores: PlayerScore[]
-  readonly roundsPlayed: number
-  readonly totalRounds: number
-  readonly currentRound: RoundState | null
-  readonly status: GameStatus
-  readonly createdAt: Date
-  readonly updatedAt: Date
-}
+// Type aliases for backwards compatibility with existing code
+export type PlayerEntity = Player
+export type RoundState = Round
+export type GameState = Game
 
 /**
  * 記憶體遊戲儲存

@@ -81,29 +81,29 @@
 
 ### Domain Layer for US1
 
-- [ ] T026 [P] [US1] Create `front-end/server/domain/game/player.ts` with Player entity (id, name, isAi)
-- [ ] T027 [P] [US1] Create `front-end/server/domain/round/koiStatus.ts` with KoiStatus value object
-- [ ] T028 [P] [US1] Create `front-end/server/domain/services/deckService.ts` with createShuffledDeck() and deal() methods
-- [ ] T029 [US1] Create `front-end/server/domain/round/round.ts` with Round entity (field, deck, playerStates, flowState)
-- [ ] T030 [US1] Create `front-end/server/domain/game/game.ts` with Game aggregate root (players, ruleset, currentRound, status)
+- [x] T026 [P] [US1] Create `front-end/server/domain/game/player.ts` with Player entity (id, name, isAi)
+- [x] T027 [P] [US1] Create `front-end/server/domain/round/koiStatus.ts` with KoiStatus value object
+- [x] T028 [P] [US1] Create `front-end/server/domain/services/deckService.ts` with createShuffledDeck() and deal() methods
+- [x] T029 [US1] Create `front-end/server/domain/round/round.ts` with Round entity (field, deck, playerStates, flowState)
+- [x] T030 [US1] Create `front-end/server/domain/game/game.ts` with Game aggregate root (players, ruleset, currentRound, status)
 
 ### Application Layer for US1
 
-- [ ] T031 [P] [US1] Create `front-end/server/application/ports/output/gameRepositoryPort.ts` with GameRepository interface
-- [ ] T032 [P] [US1] Create `front-end/server/application/ports/output/eventPublisherPort.ts` with EventPublisher interface
-- [ ] T033 [US1] Create `front-end/server/application/use-cases/joinGameUseCase.ts` with execute() method for joining/creating games
+- [x] T031 [P] [US1] Create `front-end/server/application/ports/output/gameRepositoryPort.ts` with GameRepository interface
+- [x] T032 [P] [US1] Create `front-end/server/application/ports/output/eventPublisherPort.ts` with EventPublisher interface
+- [x] T033 [US1] Create `front-end/server/application/use-cases/joinGameUseCase.ts` with execute() method for joining/creating games
 
 ### Adapter Layer for US1
 
-- [ ] T034 [P] [US1] Create `front-end/server/adapters/mappers/dtos.ts` with ScoreMultipliers, NextState, YakuUpdate DTOs
-- [ ] T035 [P] [US1] Create `front-end/server/adapters/mappers/eventMapper.ts` with Domain → SSE Event conversion
-- [ ] T036 [US1] Implement `front-end/server/adapters/persistence/drizzleGameRepository.ts` with GameRepositoryPort
-- [ ] T037 [US1] Implement `front-end/server/adapters/event-publisher/sseEventPublisher.ts` with EventPublisherPort
+- [x] T034 [P] [US1] Create `front-end/server/adapters/mappers/dtos.ts` with ScoreMultipliers, NextState, YakuUpdate DTOs
+- [x] T035 [P] [US1] Create `front-end/server/adapters/mappers/eventMapper.ts` with Domain → SSE Event conversion
+- [x] T036 [US1] Implement `front-end/server/adapters/persistence/drizzleGameRepository.ts` with GameRepositoryPort
+- [x] T037 [US1] Implement `front-end/server/adapters/event-publisher/sseEventPublisher.ts` with EventPublisherPort
 
 ### API Layer for US1
 
-- [ ] T038 [US1] Create `front-end/server/api/v1/games/join.post.ts` with Zod validation and JoinGameUseCase call
-- [ ] T039 [US1] Create `front-end/server/api/v1/games/[gameId]/events.get.ts` with SSE eventStream and session validation
+- [x] T038 [US1] Create `front-end/server/api/v1/games/join.post.ts` with Zod validation and JoinGameUseCase call
+- [x] T039 [US1] Create `front-end/server/api/v1/games/[gameId]/events.get.ts` with SSE eventStream and session validation
 
 **Checkpoint**: User Story 1 complete - players can join games and receive GameStarted/RoundDealt events
 

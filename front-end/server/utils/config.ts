@@ -11,29 +11,32 @@
  * 遊戲設定介面
  */
 export interface GameConfig {
-  /** 玩家操作超時（秒） */
-  readonly actionTimeoutSeconds: number
+  /** 玩家操作超時（秒） - snake_case for SSE events */
+  readonly action_timeout_seconds: number
 
-  /** 結果畫面顯示時間（秒） */
-  readonly displayTimeoutSeconds: number
+  /** 結果畫面顯示時間（秒） - snake_case for SSE events */
+  readonly display_timeout_seconds: number
 
   /** 斷線超時（秒） */
-  readonly disconnectTimeoutSeconds: number
+  readonly disconnect_timeout_seconds: number
 
   /** 假玩家動畫模擬延遲（毫秒） */
-  readonly opponentAnimationDelayMs: number
+  readonly opponent_animation_delay_ms: number
 
   /** 假玩家思考時間下限（毫秒） */
-  readonly opponentThinkingMinMs: number
+  readonly opponent_thinking_min_ms: number
 
   /** 假玩家思考時間上限（毫秒） */
-  readonly opponentThinkingMaxMs: number
+  readonly opponent_thinking_max_ms: number
 
   /** SSE 心跳間隔（秒） */
-  readonly sseHeartbeatIntervalSeconds: number
+  readonly sse_heartbeat_interval_seconds: number
 
   /** 超時冗餘時間（秒） - 後端判定超時前的額外緩衝 */
-  readonly timeoutBufferSeconds: number
+  readonly timeout_buffer_seconds: number
+
+  /** 會話過期時間（毫秒） */
+  readonly session_timeout_ms: number
 }
 
 /**
@@ -71,14 +74,15 @@ function parseEnvNumber(key: string, defaultValue: number): number {
  * - OPPONENT_THINKING_MAX_MS: 假玩家思考上限（預設 3000）
  */
 export const gameConfig: GameConfig = {
-  actionTimeoutSeconds: parseEnvNumber('ACTION_TIMEOUT_SECONDS', 15),
-  displayTimeoutSeconds: parseEnvNumber('DISPLAY_TIMEOUT_SECONDS', 5),
-  disconnectTimeoutSeconds: parseEnvNumber('DISCONNECT_TIMEOUT_SECONDS', 60),
-  opponentAnimationDelayMs: parseEnvNumber('OPPONENT_ANIMATION_DELAY_MS', 3000),
-  opponentThinkingMinMs: parseEnvNumber('OPPONENT_THINKING_MIN_MS', 1500),
-  opponentThinkingMaxMs: parseEnvNumber('OPPONENT_THINKING_MAX_MS', 3000),
-  sseHeartbeatIntervalSeconds: 30,
-  timeoutBufferSeconds: 3,
+  action_timeout_seconds: parseEnvNumber('ACTION_TIMEOUT_SECONDS', 15),
+  display_timeout_seconds: parseEnvNumber('DISPLAY_TIMEOUT_SECONDS', 5),
+  disconnect_timeout_seconds: parseEnvNumber('DISCONNECT_TIMEOUT_SECONDS', 60),
+  opponent_animation_delay_ms: parseEnvNumber('OPPONENT_ANIMATION_DELAY_MS', 3000),
+  opponent_thinking_min_ms: parseEnvNumber('OPPONENT_THINKING_MIN_MS', 1500),
+  opponent_thinking_max_ms: parseEnvNumber('OPPONENT_THINKING_MAX_MS', 3000),
+  sse_heartbeat_interval_seconds: 30,
+  timeout_buffer_seconds: 3,
+  session_timeout_ms: parseEnvNumber('SESSION_TIMEOUT_MS', 24 * 60 * 60 * 1000), // 24 hours
 }
 
 /**
@@ -87,8 +91,8 @@ export const gameConfig: GameConfig = {
  * @returns 隨機思考時間（毫秒）
  */
 export function getRandomOpponentThinkingTime(): number {
-  const min = gameConfig.opponentThinkingMinMs
-  const max = gameConfig.opponentThinkingMaxMs
+  const min = gameConfig.opponent_thinking_min_ms
+  const max = gameConfig.opponent_thinking_max_ms
   return min + Math.random() * (max - min)
 }
 
@@ -98,7 +102,7 @@ export function getRandomOpponentThinkingTime(): number {
  * @returns 總延遲時間（毫秒）
  */
 export function getOpponentTotalDelay(): number {
-  return gameConfig.opponentAnimationDelayMs + getRandomOpponentThinkingTime()
+  return gameConfig.opponent_animation_delay_ms + getRandomOpponentThinkingTime()
 }
 
 /**
@@ -107,13 +111,13 @@ export function getOpponentTotalDelay(): number {
  * @throws 若設定不合理則拋出錯誤
  */
 export function validateConfig(): void {
-  if (gameConfig.actionTimeoutSeconds <= 0) {
+  if (gameConfig.action_timeout_seconds <= 0) {
     throw new Error('ACTION_TIMEOUT_SECONDS must be positive')
   }
-  if (gameConfig.opponentThinkingMinMs > gameConfig.opponentThinkingMaxMs) {
+  if (gameConfig.opponent_thinking_min_ms > gameConfig.opponent_thinking_max_ms) {
     throw new Error('OPPONENT_THINKING_MIN_MS must be <= OPPONENT_THINKING_MAX_MS')
   }
-  if (gameConfig.disconnectTimeoutSeconds <= gameConfig.actionTimeoutSeconds) {
+  if (gameConfig.disconnect_timeout_seconds <= gameConfig.action_timeout_seconds) {
     throw new Error('DISCONNECT_TIMEOUT_SECONDS must be > ACTION_TIMEOUT_SECONDS')
   }
 }

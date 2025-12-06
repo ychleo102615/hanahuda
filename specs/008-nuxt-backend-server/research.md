@@ -281,7 +281,7 @@ server/
 ```
 
 **依賴規則**:
-- `api/` → `application/` → `domain/`
+- `api/` `adapters/` `database` → `application/` → `domain/`
 - `adapters/` implements `application/ports/`
 - `domain/` 無外部依賴（純 TypeScript）
 
