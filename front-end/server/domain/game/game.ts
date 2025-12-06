@@ -263,3 +263,229 @@ export function getPlayerScore(game: Game, playerId: string): number {
   const score = game.cumulativeScores.find((s) => s.player_id === playerId)
   return score?.score ?? 0
 }
+
+// ============================================================
+// Turn Execution & State Management
+// ============================================================
+
+import type { FlowState } from '#shared/contracts'
+
+/**
+ * 檢查是否為指定玩家的回合
+ *
+ * @param game - 遊戲
+ * @param playerId - 玩家 ID
+ * @returns 是否為該玩家的回合
+ */
+export function isPlayerTurn(game: Game, playerId: string): boolean {
+  if (game.status !== 'IN_PROGRESS' || !game.currentRound) {
+    return false
+  }
+  return game.currentRound.activePlayerId === playerId
+}
+
+/**
+ * 取得目前流程狀態
+ *
+ * @param game - 遊戲
+ * @returns 目前的 FlowState（若遊戲未進行中則回傳 null）
+ */
+export function getCurrentFlowState(game: Game): FlowState | null {
+  if (game.status !== 'IN_PROGRESS' || !game.currentRound) {
+    return null
+  }
+  return game.currentRound.flowState
+}
+
+/**
+ * 取得目前行動玩家 ID
+ *
+ * @param game - 遊戲
+ * @returns 目前行動玩家 ID（若遊戲未進行中則回傳 null）
+ */
+export function getActivePlayerId(game: Game): string | null {
+  if (game.status !== 'IN_PROGRESS' || !game.currentRound) {
+    return null
+  }
+  return game.currentRound.activePlayerId
+}
+
+/**
+ * 更新目前局狀態
+ *
+ * @param game - 遊戲
+ * @param updatedRound - 更新後的局
+ * @returns 更新後的遊戲
+ */
+export function updateRound(game: Game, updatedRound: Round): Game {
+  if (game.status !== 'IN_PROGRESS') {
+    throw new Error(`Cannot update round for game with status: ${game.status}`)
+  }
+
+  return Object.freeze({
+    ...game,
+    currentRound: updatedRound,
+    updatedAt: new Date(),
+  })
+}
+
+/**
+ * 結束目前局並更新分數
+ *
+ * @param game - 遊戲
+ * @param winnerId - 勝者 ID
+ * @param score - 本局得分
+ * @returns 更新後的遊戲（若達到總局數則狀態為 FINISHED）
+ */
+export function finishRound(game: Game, winnerId: string, score: number): Game {
+  if (game.status !== 'IN_PROGRESS') {
+    throw new Error(`Cannot finish round for game with status: ${game.status}`)
+  }
+
+  // 更新累積分數
+  const updatedScores = game.cumulativeScores.map((ps) =>
+    ps.player_id === winnerId
+      ? Object.freeze({ ...ps, score: ps.score + score })
+      : ps
+  )
+
+  const newRoundsPlayed = game.roundsPlayed + 1
+  const isGameFinished = newRoundsPlayed >= game.totalRounds
+
+  return Object.freeze({
+    ...game,
+    cumulativeScores: Object.freeze(updatedScores),
+    roundsPlayed: newRoundsPlayed,
+    currentRound: null,
+    status: isGameFinished ? ('FINISHED' as GameStatus) : game.status,
+    updatedAt: new Date(),
+  })
+}
+
+/**
+ * 結束局（平局，無得分）
+ *
+ * @param game - 遊戲
+ * @returns 更新後的遊戲
+ */
+export function finishRoundDraw(game: Game): Game {
+  if (game.status !== 'IN_PROGRESS') {
+    throw new Error(`Cannot finish round for game with status: ${game.status}`)
+  }
+
+  const newRoundsPlayed = game.roundsPlayed + 1
+  const isGameFinished = newRoundsPlayed >= game.totalRounds
+
+  return Object.freeze({
+    ...game,
+    roundsPlayed: newRoundsPlayed,
+    currentRound: null,
+    status: isGameFinished ? ('FINISHED' as GameStatus) : game.status,
+    updatedAt: new Date(),
+  })
+}
+
+/**
+ * 強制結束遊戲（玩家離開或超時）
+ *
+ * @param game - 遊戲
+ * @param winnerId - 勝者 ID（可選，若無則視為平局）
+ * @returns 更新後的遊戲（狀態為 FINISHED）
+ */
+export function finishGame(game: Game, winnerId?: string): Game {
+  return Object.freeze({
+    ...game,
+    currentRound: null,
+    status: 'FINISHED' as GameStatus,
+    updatedAt: new Date(),
+  })
+}
+
+/**
+ * 取得對手玩家
+ *
+ * @param game - 遊戲
+ * @param playerId - 目前玩家 ID
+ * @returns 對手玩家（若找不到則回傳 null）
+ */
+export function getOpponentPlayer(game: Game, playerId: string): Player | null {
+  return game.players.find((p) => p.id !== playerId) ?? null
+}
+
+/**
+ * 判斷遊戲勝者
+ *
+ * @param game - 已結束的遊戲
+ * @returns 勝者 ID（若平局則回傳 null）
+ */
+export function determineWinner(game: Game): string | null {
+  if (game.cumulativeScores.length !== 2) {
+    return null
+  }
+
+  const score1 = game.cumulativeScores[0]
+  const score2 = game.cumulativeScores[1]
+
+  if (!score1 || !score2) {
+    return null
+  }
+
+  if (score1.score > score2.score) {
+    return score1.player_id
+  } else if (score2.score > score1.score) {
+    return score2.player_id
+  }
+
+  return null // 平局
+}
+
+/**
+ * 檢查牌堆是否已空（局結束條件之一）
+ *
+ * @param game - 遊戲
+ * @returns 牌堆是否已空
+ */
+export function isDeckEmpty(game: Game): boolean {
+  if (!game.currentRound) {
+    return true
+  }
+  return game.currentRound.deck.length === 0
+}
+
+/**
+ * 檢查是否有玩家手牌已空（局結束條件之一）
+ *
+ * @param game - 遊戲
+ * @returns 是否有玩家手牌已空
+ */
+export function hasPlayerWithEmptyHand(game: Game): boolean {
+  if (!game.currentRound) {
+    return false
+  }
+  return game.currentRound.playerStates.some((ps) => ps.hand.length === 0)
+}
+
+/**
+ * 檢查是否應該結束局
+ *
+ * @param game - 遊戲
+ * @returns 是否應該結束局
+ */
+export function shouldEndRound(game: Game): boolean {
+  return isDeckEmpty(game) || hasPlayerWithEmptyHand(game)
+}
+
+/**
+ * 取得玩家的獲得區（透過 Game 取得）
+ *
+ * @param game - 遊戲
+ * @param playerId - 玩家 ID
+ * @returns 玩家獲得區（若找不到則回傳空陣列）
+ */
+export function getPlayerDepositoryFromGame(game: Game, playerId: string): readonly string[] {
+  if (!game.currentRound) {
+    return []
+  }
+  const playerState = game.currentRound.playerStates.find((ps) => ps.playerId === playerId)
+  return playerState?.depository ?? []
+}

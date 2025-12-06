@@ -45,7 +45,8 @@ Core Game BC 負責遊戲會話管理、回合流程控制、規則驗證和事�
 │  Domain Services                                        │
 │  ├── DeckService (發牌、洗牌)                           │
 │  ├── MatchingService (配對驗證)                         │
-│  └── YakuDetectionService (役種檢測)                    │
+│  ├── YakuDetectionService (役種檢測)                    │
+│  └── ScoringService (計分規則)                          │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -318,6 +319,73 @@ interface YakuDetectionService {
     currentYaku: readonly Yaku[]
   ): readonly Yaku[]
 }
+```
+
+### 4.4 ScoringService
+
+```typescript
+// server/domain/services/scoringService.ts
+
+interface ScoreCalculationResult {
+  readonly baseScore: number        // 基礎分數（役種點數總和）
+  readonly koiMultiplier: number    // Koi-Koi 倍率
+  readonly isDoubled: boolean       // 是否觸發 7 點翻倍
+  readonly finalScore: number       // 最終分數
+}
+
+interface ScoringService {
+  /**
+   * 計算役種基礎分數
+   * @param yakuList 成立的役種列表
+   * @returns 基礎分數總和
+   */
+  calculateBaseScore(yakuList: readonly Yaku[]): number
+
+  /**
+   * 計算最終分數
+   *
+   * 計分公式：
+   * 1. 基礎分數 = Σ(役種點數)
+   * 2. 套用 Koi-Koi 倍率（每次喊 Koi-Koi 倍率 +1）
+   * 3. 若基礎分數 >= 7，最終分數再翻倍
+   *
+   * finalScore = baseScore × koiMultiplier × (baseScore >= 7 ? 2 : 1)
+   *
+   * @param baseScore 基礎分數
+   * @param koiMultiplier Koi-Koi 倍率（預設 1）
+   * @returns 計分結果
+   */
+  calculateFinalScore(baseScore: number, koiMultiplier?: number): ScoreCalculationResult
+
+  /**
+   * 從役種列表與 KoiStatus 計算最終分數
+   */
+  calculateScoreFromYaku(
+    yakuList: readonly Yaku[],
+    koiStatus: KoiStatus | null
+  ): ScoreCalculationResult
+}
+```
+
+**計分規則說明**：
+
+| 規則 | 描述 |
+|-----|------|
+| 基礎分數 | 所有成立役種的點數總和 |
+| Koi-Koi 倍率 | 初始為 1，每次喊 Koi-Koi 則 +1 |
+| 7 點門檻 | 基礎分數 ≥ 7 時，最終分數額外 ×2 |
+
+**計分範例**：
+
+```
+範例 1: 三光(6點) + 赤短(5點) = 11點，無 Koi-Koi
+→ 11 × 1 × 2 = 22 點（觸發 7 點翻倍）
+
+範例 2: 種(1點)，喊過 2 次 Koi-Koi
+→ 1 × 3 × 1 = 3 點（未達 7 點門檻）
+
+範例 3: 五光(15點)，喊過 1 次 Koi-Koi
+→ 15 × 2 × 2 = 60 點
 ```
 
 ---

@@ -12,8 +12,25 @@ import { randomUUID } from 'uncrypto'
 import type { Game } from '~~/server/domain/game/game'
 import type { Player } from '~~/server/domain/game/player'
 import type { Round } from '~~/server/domain/round/round'
-import type { GameStartedEvent, RoundDealtEvent, PlayerInfo, PlayerHand } from '#shared/contracts'
-import { toPlayerInfo, toPlayerInfoList, createNextState } from './dtos'
+import type {
+  GameStartedEvent,
+  RoundDealtEvent,
+  TurnCompletedEvent,
+  SelectionRequiredEvent,
+  TurnProgressAfterSelectionEvent,
+  DecisionRequiredEvent,
+  DecisionMadeEvent,
+  RoundScoredEvent,
+  PlayerInfo,
+  PlayerHand,
+  CardPlay,
+  CardSelection,
+  YakuUpdate,
+  Yaku,
+  ScoreMultipliers,
+  PlayerScore,
+} from '#shared/contracts'
+import { toPlayerInfo, toPlayerInfoList, createNextState, toScoreMultipliers } from './dtos'
 import { gameConfig } from '~~/server/utils/config'
 
 /**
@@ -99,6 +116,298 @@ export class EventMapper {
       player_id: playerState.playerId,
       cards: [...playerState.hand],
     }))
+  }
+
+  // ============================================================
+  // Turn Events
+  // ============================================================
+
+  /**
+   * 將回合完成資訊轉換為 TurnCompletedEvent
+   *
+   * @param game - 遊戲聚合根
+   * @param playerId - 玩家 ID
+   * @param handCardPlay - 手牌操作結果
+   * @param drawCardPlay - 翻牌操作結果
+   * @returns TurnCompletedEvent
+   */
+  toTurnCompletedEvent(
+    game: Game,
+    playerId: string,
+    handCardPlay: CardPlay,
+    drawCardPlay: CardPlay
+  ): TurnCompletedEvent {
+    if (!game.currentRound) {
+      throw new Error('Cannot create TurnCompletedEvent: currentRound is null')
+    }
+
+    const round = game.currentRound
+    const nextState = createNextState(round.flowState, round.activePlayerId)
+
+    return {
+      event_type: 'TurnCompleted',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      player_id: playerId,
+      hand_card_play: {
+        played_card: handCardPlay.played_card,
+        matched_card: handCardPlay.matched_card,
+        captured_cards: [...handCardPlay.captured_cards],
+      },
+      draw_card_play: {
+        played_card: drawCardPlay.played_card,
+        matched_card: drawCardPlay.matched_card,
+        captured_cards: [...drawCardPlay.captured_cards],
+      },
+      deck_remaining: round.deck.length,
+      next_state: nextState,
+      action_timeout_seconds: gameConfig.action_timeout_seconds,
+    }
+  }
+
+  /**
+   * 將選擇需求轉換為 SelectionRequiredEvent
+   *
+   * @param game - 遊戲聚合根
+   * @param playerId - 玩家 ID
+   * @param handCardPlay - 手牌操作結果
+   * @param drawnCard - 翻出的卡片
+   * @param possibleTargets - 可選配對目標
+   * @returns SelectionRequiredEvent
+   */
+  toSelectionRequiredEvent(
+    game: Game,
+    playerId: string,
+    handCardPlay: CardPlay,
+    drawnCard: string,
+    possibleTargets: readonly string[]
+  ): SelectionRequiredEvent {
+    if (!game.currentRound) {
+      throw new Error('Cannot create SelectionRequiredEvent: currentRound is null')
+    }
+
+    return {
+      event_type: 'SelectionRequired',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      player_id: playerId,
+      hand_card_play: {
+        played_card: handCardPlay.played_card,
+        matched_card: handCardPlay.matched_card,
+        captured_cards: [...handCardPlay.captured_cards],
+      },
+      drawn_card: drawnCard,
+      possible_targets: [...possibleTargets],
+      deck_remaining: game.currentRound.deck.length,
+      action_timeout_seconds: gameConfig.action_timeout_seconds,
+    }
+  }
+
+  /**
+   * 將選擇後的進度轉換為 TurnProgressAfterSelectionEvent
+   *
+   * @param game - 遊戲聚合根
+   * @param playerId - 玩家 ID
+   * @param selection - 選擇結果
+   * @param drawCardPlay - 翻牌操作結果
+   * @param yakuUpdate - 役種更新（可選）
+   * @returns TurnProgressAfterSelectionEvent
+   */
+  toTurnProgressAfterSelectionEvent(
+    game: Game,
+    playerId: string,
+    selection: CardSelection,
+    drawCardPlay: CardPlay,
+    yakuUpdate: YakuUpdate | null
+  ): TurnProgressAfterSelectionEvent {
+    if (!game.currentRound) {
+      throw new Error('Cannot create TurnProgressAfterSelectionEvent: currentRound is null')
+    }
+
+    const round = game.currentRound
+    const nextState = createNextState(round.flowState, round.activePlayerId)
+
+    return {
+      event_type: 'TurnProgressAfterSelection',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      player_id: playerId,
+      selection: {
+        source_card: selection.source_card,
+        selected_target: selection.selected_target,
+        captured_cards: [...selection.captured_cards],
+      },
+      draw_card_play: {
+        played_card: drawCardPlay.played_card,
+        matched_card: drawCardPlay.matched_card,
+        captured_cards: [...drawCardPlay.captured_cards],
+      },
+      yaku_update: yakuUpdate
+        ? {
+            newly_formed_yaku: yakuUpdate.newly_formed_yaku.map(y => ({
+              yaku_type: y.yaku_type,
+              base_points: y.base_points,
+              contributing_cards: [...y.contributing_cards],
+            })),
+            all_active_yaku: yakuUpdate.all_active_yaku.map(y => ({
+              yaku_type: y.yaku_type,
+              base_points: y.base_points,
+              contributing_cards: [...y.contributing_cards],
+            })),
+          }
+        : null,
+      deck_remaining: round.deck.length,
+      next_state: nextState,
+      action_timeout_seconds: gameConfig.action_timeout_seconds,
+    }
+  }
+
+  // ============================================================
+  // Decision Events
+  // ============================================================
+
+  /**
+   * 將決策需求轉換為 DecisionRequiredEvent
+   *
+   * @param game - 遊戲聚合根
+   * @param playerId - 玩家 ID
+   * @param handCardPlay - 手牌操作結果（可選）
+   * @param drawCardPlay - 翻牌操作結果（可選）
+   * @param yakuUpdate - 役種更新
+   * @returns DecisionRequiredEvent
+   */
+  toDecisionRequiredEvent(
+    game: Game,
+    playerId: string,
+    handCardPlay: CardPlay | null,
+    drawCardPlay: CardPlay | null,
+    yakuUpdate: YakuUpdate
+  ): DecisionRequiredEvent {
+    if (!game.currentRound) {
+      throw new Error('Cannot create DecisionRequiredEvent: currentRound is null')
+    }
+
+    const multipliers = toScoreMultipliers(game.currentRound.koiStatuses)
+
+    return {
+      event_type: 'DecisionRequired',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      player_id: playerId,
+      hand_card_play: handCardPlay
+        ? {
+            played_card: handCardPlay.played_card,
+            matched_card: handCardPlay.matched_card,
+            captured_cards: [...handCardPlay.captured_cards],
+          }
+        : null,
+      draw_card_play: drawCardPlay
+        ? {
+            played_card: drawCardPlay.played_card,
+            matched_card: drawCardPlay.matched_card,
+            captured_cards: [...drawCardPlay.captured_cards],
+          }
+        : null,
+      yaku_update: {
+        newly_formed_yaku: yakuUpdate.newly_formed_yaku.map(y => ({
+          yaku_type: y.yaku_type,
+          base_points: y.base_points,
+          contributing_cards: [...y.contributing_cards],
+        })),
+        all_active_yaku: yakuUpdate.all_active_yaku.map(y => ({
+          yaku_type: y.yaku_type,
+          base_points: y.base_points,
+          contributing_cards: [...y.contributing_cards],
+        })),
+      },
+      current_multipliers: multipliers,
+      deck_remaining: game.currentRound.deck.length,
+      action_timeout_seconds: gameConfig.action_timeout_seconds,
+    }
+  }
+
+  /**
+   * 將決策結果轉換為 DecisionMadeEvent
+   *
+   * @param game - 遊戲聚合根
+   * @param playerId - 玩家 ID
+   * @param decision - 決策
+   * @param multipliers - 倍率資訊
+   * @returns DecisionMadeEvent
+   */
+  toDecisionMadeEvent(
+    game: Game,
+    playerId: string,
+    decision: 'KOI_KOI' | 'END_ROUND',
+    multipliers: ScoreMultipliers
+  ): DecisionMadeEvent {
+    if (!game.currentRound) {
+      throw new Error('Cannot create DecisionMadeEvent: currentRound is null')
+    }
+
+    const round = game.currentRound
+    const nextState = createNextState(round.flowState, round.activePlayerId)
+
+    return {
+      event_type: 'DecisionMade',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      player_id: playerId,
+      decision,
+      updated_multipliers: {
+        player_multipliers: { ...multipliers.player_multipliers },
+      },
+      next_state: nextState,
+      action_timeout_seconds: gameConfig.action_timeout_seconds,
+    }
+  }
+
+  // ============================================================
+  // Round End Events
+  // ============================================================
+
+  /**
+   * 將局計分轉換為 RoundScoredEvent
+   *
+   * @param game - 遊戲聚合根
+   * @param winnerId - 勝者 ID
+   * @param yakuList - 役種列表
+   * @param baseScore - 基礎分數
+   * @param finalScore - 最終分數
+   * @param multipliers - 倍率資訊
+   * @param updatedScores - 更新後的分數
+   * @returns RoundScoredEvent
+   */
+  toRoundScoredEvent(
+    game: Game,
+    winnerId: string,
+    yakuList: readonly Yaku[],
+    baseScore: number,
+    finalScore: number,
+    multipliers: ScoreMultipliers,
+    updatedScores: readonly PlayerScore[]
+  ): RoundScoredEvent {
+    return {
+      event_type: 'RoundScored',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      winner_id: winnerId,
+      yaku_list: yakuList.map(y => ({
+        yaku_type: y.yaku_type,
+        base_points: y.base_points,
+        contributing_cards: [...y.contributing_cards],
+      })),
+      base_score: baseScore,
+      final_score: finalScore,
+      multipliers: {
+        player_multipliers: { ...multipliers.player_multipliers },
+      },
+      updated_total_scores: updatedScores.map(s => ({
+        player_id: s.player_id,
+        score: s.score,
+      })),
+      display_timeout_seconds: gameConfig.display_timeout_seconds,
+    }
   }
 }
 

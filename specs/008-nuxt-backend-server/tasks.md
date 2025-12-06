@@ -117,28 +117,28 @@
 
 ### Domain Layer for US2
 
-- [ ] T040 [P] [US2] Create `front-end/server/domain/services/matchingService.ts` with canMatch() and findMatchableTargets()
-- [ ] T041 [P] [US2] Create `front-end/server/domain/services/yakuDetectionService.ts` with detectYaku() and detectNewYaku()
-- [ ] T042 [US2] Extend `front-end/server/domain/round/round.ts` with playHandCard(), selectTarget(), handleDecision() methods
-- [ ] T042b [US2] Create FlowState transition validator in `front-end/server/domain/round/flowStateTransitions.ts` with valid state paths (AWAITING_HAND_PLAY → AWAITING_SELECTION/AWAITING_DECISION, etc.)
-- [ ] T043 [US2] Extend `front-end/server/domain/game/game.ts` with turn execution and state transition logic
+- [x] T040 [P] [US2] Create `front-end/server/domain/services/matchingService.ts` with canMatch() and findMatchableTargets()
+- [x] T041 [P] [US2] Create `front-end/server/domain/services/yakuDetectionService.ts` with detectYaku() and detectNewYaku()
+- [x] T042 [US2] Extend `front-end/server/domain/round/round.ts` with playHandCard(), selectTarget(), handleDecision() methods
+- [x] T042b [US2] Create FlowState transition validator in `front-end/server/domain/round/flowStateTransitions.ts` with valid state paths (AWAITING_HAND_PLAY → AWAITING_SELECTION/AWAITING_DECISION, etc.)
+- [x] T043 [US2] Extend `front-end/server/domain/game/game.ts` with turn execution and state transition logic
 
 ### Application Layer for US2
 
-- [ ] T044 [US2] Create `front-end/server/application/use-cases/playHandCardUseCase.ts` with card play validation and event generation
-- [ ] T045 [US2] Create `front-end/server/application/use-cases/selectTargetUseCase.ts` with target selection logic
-- [ ] T046 [US2] Create `front-end/server/application/use-cases/makeDecisionUseCase.ts` with Koi-Koi decision handling
+- [x] T044 [US2] Create `front-end/server/application/use-cases/playHandCardUseCase.ts` with card play validation and event generation
+- [x] T045 [US2] Create `front-end/server/application/use-cases/selectTargetUseCase.ts` with target selection logic
+- [x] T046 [US2] Create `front-end/server/application/use-cases/makeDecisionUseCase.ts` with Koi-Koi decision handling
 
 ### Adapter Layer for US2
 
-- [ ] T047 [US2] Extend `front-end/server/adapters/mappers/eventMapper.ts` with TurnCompleted, SelectionRequired, DecisionRequired event mapping
-- [ ] T048 [US2] Create middleware for session token validation in `front-end/server/middleware/` or inline in handlers
+- [x] T047 [US2] Extend `front-end/server/adapters/mappers/eventMapper.ts` with TurnCompleted, SelectionRequired, DecisionRequired event mapping
+- [x] T048 [US2] Create middleware for session token validation in `front-end/server/utils/sessionValidation.ts`
 
 ### API Layer for US2
 
-- [ ] T049 [US2] Create `front-end/server/api/v1/games/[gameId]/turns/play-card.post.ts` with PlayHandCardUseCase call
-- [ ] T050 [US2] Create `front-end/server/api/v1/games/[gameId]/turns/select-target.post.ts` with SelectTargetUseCase call
-- [ ] T051 [US2] Create `front-end/server/api/v1/games/[gameId]/rounds/decision.post.ts` with MakeDecisionUseCase call
+- [x] T049 [US2] Create `front-end/server/api/v1/games/[gameId]/turns/play-card.post.ts` with PlayHandCardUseCase call
+- [x] T050 [US2] Create `front-end/server/api/v1/games/[gameId]/turns/select-target.post.ts` with SelectTargetUseCase call
+- [x] T051 [US2] Create `front-end/server/api/v1/games/[gameId]/rounds/decision.post.ts` with MakeDecisionUseCase call
 
 **Checkpoint**: User Story 2 complete - players can execute full turn operations
 
