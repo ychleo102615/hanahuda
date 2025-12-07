@@ -221,23 +221,23 @@
 
 ### Domain Layer for US4
 
-- [ ] T059 [US4] Extend `front-end/server/domain/game/game.ts` with startNextRound(), finishGame(), calculateWinner() methods
-- [ ] T059b [US4] Implement Teshi (手四) and Kuttsuki (場牌流局) detection in `front-end/server/domain/services/specialRulesService.ts` with RoundEndedInstantly event trigger
-- [ ] T060 [US4] Extend `front-end/server/domain/round/round.ts` with endRound() and score calculation logic
+- [x] T059 [US4] Extend `front-end/server/domain/game/game.ts` with startNextRound(), finishGame(), calculateWinner() methods
+- [x] T059b [US4] Implement Teshi (手四) and Kuttsuki (場牌流局) detection in `front-end/server/domain/services/specialRulesService.ts` with RoundEndedInstantly event trigger
+- [x] T060 [US4] Extend `front-end/server/domain/round/round.ts` with endRound() and score calculation logic
 
 ### Application Layer for US4
 
-- [ ] T061 [US4] Create `front-end/server/application/use-cases/transitionRoundUseCase.ts` with display_timeout delay and next round initialization
-- [ ] T062 [US4] Create `front-end/server/application/use-cases/leaveGameUseCase.ts` with early game termination handling
+- [x] T061 [US4] Create `front-end/server/application/use-cases/transitionRoundUseCase.ts` with display_timeout delay and next round initialization
+- [x] T062 [US4] Create `front-end/server/application/use-cases/leaveGameUseCase.ts` with early game termination handling
 
 ### Adapter Layer for US4
 
-- [ ] T063 [US4] Extend `front-end/server/adapters/mappers/eventMapper.ts` with RoundScored, RoundDrawn, RoundEndedInstantly, GameFinished mapping
-- [ ] T064 [US4] Create display timeout scheduler in `front-end/server/adapters/timeout/displayTimeoutManager.ts`
+- [x] T063 [US4] Extend `front-end/server/adapters/mappers/eventMapper.ts` with RoundScored, RoundDrawn, RoundEndedInstantly, GameFinished mapping
+- [x] T064 [US4] Create display timeout scheduler in `front-end/server/adapters/timeout/displayTimeoutManager.ts`
 
 ### API Layer for US4
 
-- [ ] T065 [US4] Create `front-end/server/api/v1/games/[gameId]/leave.post.ts` with LeaveGameUseCase call
+- [x] T065 [US4] Create `front-end/server/api/v1/games/[gameId]/leave.post.ts` with LeaveGameUseCase call
 
 **Checkpoint**: User Story 4 complete - full multi-round games can be completed
 
