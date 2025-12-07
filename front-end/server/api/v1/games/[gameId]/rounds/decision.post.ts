@@ -9,11 +9,8 @@
  */
 
 import { z } from 'zod'
-import { MakeDecisionUseCase, MakeDecisionError } from '~~/server/application/use-cases/makeDecisionUseCase'
-import { gameRepository } from '~~/server/adapters/persistence/drizzleGameRepository'
-import { sseEventPublisher } from '~~/server/adapters/event-publisher/sseEventPublisher'
-import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
-import { eventMapper } from '~~/server/adapters/mappers/eventMapper'
+import { MakeDecisionError } from '~~/server/application/use-cases/makeDecisionUseCase'
+import { container } from '~~/server/utils/container'
 import {
   validateSession,
   SessionValidationError,
@@ -94,13 +91,8 @@ export default defineEventHandler(async (event): Promise<DecisionResponse | Erro
 
     const { decision } = parseResult.data
 
-    // 4. 建立 UseCase 並注入依賴
-    const useCase = new MakeDecisionUseCase(
-      gameRepository,
-      sseEventPublisher,
-      inMemoryGameStore,
-      eventMapper
-    )
+    // 4. 從容器取得 UseCase
+    const useCase = container.makeDecisionUseCase
 
     // 5. 執行用例
     await useCase.execute({

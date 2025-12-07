@@ -9,11 +9,7 @@
  */
 
 import { z } from 'zod'
-import { JoinGameUseCase } from '~~/server/application/use-cases/joinGameUseCase'
-import { gameRepository } from '~~/server/adapters/persistence/drizzleGameRepository'
-import { sseEventPublisher } from '~~/server/adapters/event-publisher/sseEventPublisher'
-import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
-import { eventMapper } from '~~/server/adapters/mappers/eventMapper'
+import { container } from '~~/server/utils/container'
 
 /**
  * 請求 Body Schema
@@ -69,8 +65,8 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
 
     const { player_id, player_name, session_token } = parseResult.data
 
-    // 2. 建立 JoinGameUseCase 並注入依賴
-    const useCase = new JoinGameUseCase(gameRepository, sseEventPublisher, inMemoryGameStore, eventMapper)
+    // 2. 從容器取得 JoinGameUseCase
+    const useCase = container.joinGameUseCase
 
     // 3. 執行用例
     const result = await useCase.execute({

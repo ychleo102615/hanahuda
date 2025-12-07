@@ -9,11 +9,8 @@
  */
 
 import { z } from 'zod'
-import { PlayHandCardUseCase, PlayHandCardError } from '~~/server/application/use-cases/playHandCardUseCase'
-import { gameRepository } from '~~/server/adapters/persistence/drizzleGameRepository'
-import { sseEventPublisher } from '~~/server/adapters/event-publisher/sseEventPublisher'
-import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
-import { eventMapper } from '~~/server/adapters/mappers/eventMapper'
+import { PlayHandCardError } from '~~/server/application/use-cases/playHandCardUseCase'
+import { container } from '~~/server/utils/container'
 import {
   validateSession,
   SessionValidationError,
@@ -95,13 +92,8 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
 
     const { card_id, target_card_id } = parseResult.data
 
-    // 4. 建立 UseCase 並注入依賴
-    const useCase = new PlayHandCardUseCase(
-      gameRepository,
-      sseEventPublisher,
-      inMemoryGameStore,
-      eventMapper
-    )
+    // 4. 從容器取得 UseCase
+    const useCase = container.playHandCardUseCase
 
     // 5. 執行用例
     await useCase.execute({

@@ -160,24 +160,54 @@
 
 **Architecture Note**: 採用事件驅動架構，Server 保持中立不區分玩家類型。OpponentService 監聽內部事件並呼叫 Use Cases（與人類玩家相同路徑）。
 
+### 架構設計 - 事件通道語意區分
+
+| 通道類型 | 用途 | 發布者 | 訂閱者 |
+|---------|------|--------|--------|
+| **InternalEventBus** | 僅限 `ROOM_CREATED` | JoinGameUseCase | OpponentService |
+| **OpponentEventBus** | AI 專用遊戲事件路由 | SSEEventPublisher | OpponentService |
+| **SSE (connectionStore)** | Normal Client 遊戲事件 | SSEEventPublisher | Browser SSE Client |
+
 ### Application Layer for US3
 
-- [ ] T052 [P] [US3] Create `front-end/server/application/ports/output/internalEventPublisherPort.ts` with InternalEventPublisherPort interface (publishRoomCreated, publishPlayerTurnStarted, publishSelectionRequired, publishDecisionRequired)
+- [x] T052 [P] [US3] Create `front-end/server/application/ports/output/internalEventPublisherPort.ts` with InternalEventPublisherPort interface
+  - ✅ **僅包含 `publishRoomCreated`**：其他遊戲事件透過 EventPublisher 路由
+- [x] T057b [P] [US3] Create Input Ports for Use Cases (DIP 依賴反轉)
+  - `front-end/server/application/ports/input/joinGameInputPort.ts`
+  - `front-end/server/application/ports/input/playHandCardInputPort.ts`
+  - `front-end/server/application/ports/input/selectTargetInputPort.ts`
+  - `front-end/server/application/ports/input/makeDecisionInputPort.ts`
+  - `front-end/server/application/ports/input/index.ts`
+  - ✅ **Use Cases implements Input Ports**：`JoinGameUseCase implements JoinGameInputPort`
 
 ### Adapter Layer for US3
 
-- [ ] T053 [US3] Create `front-end/server/adapters/event-publisher/internalEventBus.ts` implementing InternalEventPublisherPort with EventEmitter-based pub/sub
-- [ ] T054 [US3] Create `front-end/server/adapters/opponent/opponentService.ts` with event listener pattern, auto-join via JoinGameUseCase, random strategy, and simulated delays (3s animation + 1.5-3s thinking)
-- [ ] T055 [US3] Create `front-end/server/adapters/timeout/actionTimeoutManager.ts` with timer management (action_timeout_seconds + 3s buffer before triggering timeout)
-- [ ] T056 [US3] Update `front-end/server/application/use-cases/joinGameUseCase.ts` to inject InternalEventPublisherPort and publish ROOM_CREATED event when creating new game
-  - **變更重點**：
-    1. 注入 `InternalEventPublisherPort` 依賴
-    2. 建立新遊戲時（無等待中房間）→ 發布 `ROOM_CREATED` 事件
-    3. 加入等待中遊戲時（有等待中房間）→ 發布 `GameStarted` SSE 事件
-  - **依賴**：T052（InternalEventPublisherPort 介面）、T053（InternalEventBus 實作）
-  - **注意**：此任務與 T033 配對邏輯緊密相關
-- [ ] T057 [US3] Update other Use Cases (playHandCardUseCase, selectTargetUseCase, makeDecisionUseCase) to publish PLAYER_TURN_STARTED, SELECTION_REQUIRED, DECISION_REQUIRED events via InternalEventPublisherPort
-- [ ] T058 [US3] Create `front-end/server/plugins/opponent.ts` Nitro plugin to initialize OpponentService with all dependencies
+- [x] T053 [US3] Create `front-end/server/adapters/event-publisher/internalEventBus.ts` implementing InternalEventPublisherPort
+  - ✅ **僅處理 ROOM_CREATED**：不處理遊戲進行中的事件
+- [x] T053b [US3] Create `front-end/server/adapters/event-publisher/opponentEventBus.ts` AI 專用遊戲事件匯流排
+  - ✅ **語意區分**：與 gameEventBus（SSE 用）平行的通道，專門給 OpponentService 使用
+- [x] T054 [US3] Create `front-end/server/adapters/opponent/opponentService.ts` AI 對手服務
+  - ✅ **定位**：Adapter Layer Controller（類似 REST Controller，接收事件並呼叫 Use Cases）
+  - ✅ **依賴 Input Ports**：非 Use Case 實作類別，遵循 DIP
+  - ✅ **監聽 ROOM_CREATED**：透過 InternalEventBus → 自動建立 AI 並加入遊戲
+  - ✅ **訂閱 OpponentEventBus**：監聽遊戲事件，判斷是否該 AI 行動
+  - ✅ **時序控制**：3s 動畫延遲 + 1.5-3s 隨機思考延遲
+  - ✅ **AI 策略**：隨機選牌、隨機選擇配對目標、MVP 直接 END_ROUND
+- [x] T055 [US3] Create `front-end/server/adapters/timeout/actionTimeoutManager.ts` 操作超時管理器
+  - ✅ **scheduleAction**：用於 AI 操作的延遲排程
+  - ✅ **startTimeout/clearTimeout**：預留給 Phase 7 的 autoAction 功能
+- [x] T056 [US3] Update `front-end/server/application/use-cases/joinGameUseCase.ts`
+  - ✅ 注入 `InternalEventPublisherPort` 依賴
+  - ✅ 建立新遊戲時（WAITING 狀態）→ 發布 `ROOM_CREATED` 內部事件
+  - ✅ `implements JoinGameInputPort`
+- [x] T057 [US3] Update `front-end/server/adapters/event-publisher/sseEventPublisher.ts` 事件路由
+  - ✅ **不在 Use Cases 發布內部事件**：事件路由由 SSEEventPublisher 負責
+  - ✅ **路由邏輯**：若 `next_state.active_player_id` 是 AI → 額外發布到 `opponentEventBus`
+  - ✅ **SSE 永遠廣播**：所有 Normal Clients 透過 SSE 收到事件
+- [x] T058 [US3] Create Composition Root
+  - ✅ `front-end/server/utils/container.ts`：依賴注入容器，建立和組裝所有依賴
+  - ✅ `front-end/server/plugins/opponent.ts`：Nitro Plugin，初始化 OpponentService
+  - ✅ **API 端點更新**：`join.post.ts`、`play-card.post.ts`、`select-target.post.ts`、`decision.post.ts` 改用 `container` 取得 Use Cases
 
 **Checkpoint**: User Story 3 complete - AI opponent executes turns automatically with realistic delays via event-driven architecture
 

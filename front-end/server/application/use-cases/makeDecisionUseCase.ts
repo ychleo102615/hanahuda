@@ -35,6 +35,7 @@ import { detectYaku } from '~~/server/domain/services/yakuDetectionService'
 import { calculateScoreFromYaku } from '~~/server/domain/services/scoringService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
+import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
 import type { GameStorePort, EventMapperPort } from './joinGameUseCase'
 
 /**
@@ -97,7 +98,7 @@ export class MakeDecisionError extends Error {
  *
  * 處理玩家 Koi-Koi 決策的完整流程。
  */
-export class MakeDecisionUseCase {
+export class MakeDecisionUseCase implements MakeDecisionInputPort {
   constructor(
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,

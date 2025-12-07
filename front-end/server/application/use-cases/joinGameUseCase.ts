@@ -21,6 +21,8 @@ import { createPlayer } from '~~/server/domain/game/player'
 import { detectTeshi, detectKuttsuki } from '~~/server/domain/round/round'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
+import type { InternalEventPublisherPort } from '~~/server/application/ports/output/internalEventPublisherPort'
+import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
 
 /**
  * 遊戲記憶體儲存介面
@@ -28,6 +30,7 @@ import type { EventPublisherPort } from '~~/server/application/ports/output/even
  * Use Case 不直接依賴具體實作，只依賴介面
  */
 export interface GameStorePort {
+  get(gameId: string): Game | undefined
   set(game: Game): void
   getBySessionToken(token: string): Game | undefined
   findWaitingGame(): Game | undefined
@@ -84,17 +87,17 @@ const INITIAL_EVENT_DELAY_MS = 100
  *
  * 處理玩家加入遊戲的完整流程，實作 Server 中立的配對邏輯。
  *
- * 預留 InternalEventPublisherPort 注入點供 T056 使用：
- * - 建立新遊戲時 → 發布 ROOM_CREATED 內部事件
+ * 事件發布設計：
+ * - 建立新遊戲時 → 發布 ROOM_CREATED 內部事件（通知 OpponentService）
  * - 加入現有遊戲時 → 發布 GameStarted SSE 事件
  */
-export class JoinGameUseCase {
+export class JoinGameUseCase implements JoinGameInputPort {
   constructor(
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
-    private readonly eventMapper: EventMapperPort
-    // TODO T056: 新增 InternalEventPublisherPort 參數
+    private readonly eventMapper: EventMapperPort,
+    private readonly internalEventPublisher: InternalEventPublisherPort
   ) {}
 
   /**
@@ -169,8 +172,11 @@ export class JoinGameUseCase {
 
     console.log(`[JoinGameUseCase] Created new WAITING game ${gameId} for player ${playerName}`)
 
-    // TODO T056: 發布 ROOM_CREATED 內部事件
-    // this.internalEventPublisher.publishRoomCreated(gameId)
+    // 發布 ROOM_CREATED 內部事件（通知 OpponentService 有新房間需要 AI 加入）
+    this.internalEventPublisher.publishRoomCreated({
+      gameId: game.id,
+      waitingPlayerId: playerId,
+    })
 
     return {
       gameId: game.id,

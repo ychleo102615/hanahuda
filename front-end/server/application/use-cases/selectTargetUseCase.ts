@@ -34,6 +34,7 @@ import {
 } from '~~/server/domain/services/yakuDetectionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
+import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
 import type { GameStorePort, EventMapperPort } from './joinGameUseCase'
 import type { TurnEventMapperPort } from './playHandCardUseCase'
 
@@ -90,7 +91,7 @@ export class SelectTargetError extends Error {
  *
  * 處理玩家選擇配對目標的完整流程。
  */
-export class SelectTargetUseCase {
+export class SelectTargetUseCase implements SelectTargetInputPort {
   constructor(
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,

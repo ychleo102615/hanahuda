@@ -38,6 +38,7 @@ import {
 } from '~~/server/domain/services/yakuDetectionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
+import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
 import type { GameStorePort, EventMapperPort } from './joinGameUseCase'
 
 /**
@@ -108,7 +109,7 @@ export class PlayHandCardError extends Error {
  *
  * 處理玩家打出手牌的完整流程。
  */
-export class PlayHandCardUseCase {
+export class PlayHandCardUseCase implements PlayHandCardInputPort {
   constructor(
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
