@@ -32,7 +32,7 @@ export function createNotificationPortAdapter(
       store.showDecisionModal(currentYaku, currentScore)
     },
 
-    showGameFinishedModal(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void {
+    showGameFinishedModal(winnerId: string | null, finalScores: PlayerScore[], isPlayerWinner: boolean): void {
       store.showGameFinishedModal(winnerId, finalScores, isPlayerWinner)
     },
 

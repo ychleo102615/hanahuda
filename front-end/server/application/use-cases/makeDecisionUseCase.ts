@@ -13,6 +13,8 @@ import type { Game } from '~~/server/domain/game/game'
 import type {
   DecisionMadeEvent,
   RoundScoredEvent,
+  RoundDealtEvent,
+  GameFinishedEvent,
   ScoreMultipliers,
   Yaku,
   PlayerScore,
@@ -22,21 +24,21 @@ import {
   getCurrentFlowState,
   isPlayerTurn,
   getAiPlayer,
-  finishRound,
-  canContinue,
-  startRound,
 } from '~~/server/domain/game/game'
 import {
   handleDecision as domainHandleDecision,
   getPlayerDepository,
   getPlayerKoiStatus,
+  calculateRoundEndResult,
 } from '~~/server/domain/round/round'
-import { detectYaku } from '~~/server/domain/services/yakuDetectionService'
-import { calculateScoreFromYaku } from '~~/server/domain/services/scoringService'
+import {
+  transitionAfterRoundScored,
+} from '~~/server/domain/services/roundTransitionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
 import type { GameStorePort, EventMapperPort } from './joinGameUseCase'
+import { gameConfig } from '~~/server/utils/config'
 
 /**
  * 擴展 EventMapperPort 以支援決策事件
@@ -58,6 +60,11 @@ export interface DecisionEventMapperPort extends EventMapperPort {
     multipliers: ScoreMultipliers,
     updatedScores: readonly PlayerScore[]
   ): RoundScoredEvent
+
+  toGameFinishedEvent(
+    winnerId: string | null,
+    finalScores: readonly PlayerScore[]
+  ): GameFinishedEvent
 }
 
 /**
@@ -165,40 +172,54 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       }
     } else {
       // 5b. END_ROUND: 結束局並計分
-      const depository = getPlayerDepository(game.currentRound, playerId)
-      const yakuList = detectYaku(depository, game.ruleset.yaku_settings)
-      const koiStatus = getPlayerKoiStatus(game.currentRound, playerId)
+      // 使用 Domain Service 計算局結束結果
+      const roundEndResult = calculateRoundEndResult(
+        game.currentRound,
+        playerId,
+        game.ruleset.yaku_settings
+      )
 
-      // 使用 Domain Service 計算分數
-      const scoreResult = calculateScoreFromYaku(yakuList, koiStatus)
+      // 建立倍率資訊（使用更新前的遊戲取得倍率）
+      const multipliers = this.buildMultipliers(existingGame)
 
-      // 結束局
-      game = finishRound(game, playerId, scoreResult.finalScore)
-
-      // 建立倍率資訊
-      const multipliers = this.buildMultipliers(existingGame) // 使用更新前的遊戲取得倍率
-
-      const event = this.eventMapper.toRoundScoredEvent(
+      // 使用 Domain Service 處理局轉換
+      const transitionResult = transitionAfterRoundScored(
         game,
         playerId,
-        yakuList,
-        scoreResult.baseScore,
-        scoreResult.finalScore,
+        roundEndResult.finalScore
+      )
+      game = transitionResult.game
+
+      // 發送 RoundScored 事件
+      const roundScoredEvent = this.eventMapper.toRoundScoredEvent(
+        game,
+        playerId,
+        roundEndResult.yakuList,
+        roundEndResult.baseScore,
+        roundEndResult.finalScore,
         multipliers,
         game.cumulativeScores
       )
-      this.eventPublisher.publishToGame(gameId, event)
+      this.eventPublisher.publishToGame(gameId, roundScoredEvent)
 
-      // 檢查是否繼續下一局
-      if (canContinue(game)) {
-        // 開始新局
-        game = startRound(game)
-
+      // 根據轉換結果決定下一步
+      if (transitionResult.transitionType === 'NEXT_ROUND') {
         // 發送 RoundDealt 事件（延遲讓前端顯示結算畫面）
+        const displayTimeoutMs = gameConfig.display_timeout_seconds * 1000
         setTimeout(() => {
           const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
           this.eventPublisher.publishToGame(gameId, roundDealtEvent)
-        }, 5000) // display_timeout_seconds 預設 5 秒
+        }, displayTimeoutMs)
+      } else {
+        // 遊戲結束 - 發送 GameFinished 事件
+        const winner = transitionResult.winner
+        if (winner) {
+          const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
+            winner.winnerId,
+            winner.finalScores
+          )
+          this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
+        }
       }
     }
 

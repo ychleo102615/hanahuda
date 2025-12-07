@@ -225,7 +225,8 @@ export interface RoundEndedInstantlyEvent extends BaseEvent {
  */
 export interface GameFinishedEvent extends BaseEvent {
   readonly event_type: 'GameFinished'
-  readonly winner_id: string
+  /** 勝者 ID（平局時為 null） */
+  readonly winner_id: string | null
   readonly final_scores: ReadonlyArray<PlayerScore>
 }
 

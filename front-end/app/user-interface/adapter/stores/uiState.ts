@@ -31,7 +31,7 @@ export interface DecisionModalData {
  * 遊戲結束資料
  */
 export interface GameFinishedData {
-  winnerId: string
+  winnerId: string | null
   finalScores: PlayerScore[]
   isPlayerWinner: boolean
 }
@@ -124,7 +124,7 @@ export interface UIStateStoreActions {
   showDecisionModal(currentYaku: YakuScore[], currentScore: number, potentialScore?: number): void
   showErrorMessage(message: string): void
   showReconnectionMessage(): void
-  showGameFinishedModal(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void
+  showGameFinishedModal(winnerId: string | null, finalScores: PlayerScore[], isPlayerWinner: boolean): void
   showRoundDrawnModal(currentTotalScores: PlayerScore[]): void
   showRoundScoredModal(winnerId: string, yakuList: ReadonlyArray<Yaku>, baseScore: number, finalScore: number, multipliers: ScoreMultipliers, updatedTotalScores: PlayerScore[]): void
   showRoundEndedInstantlyModal(reason: RoundEndReason, winnerId: string | null, awardedPoints: number, updatedTotalScores: PlayerScore[]): void
@@ -313,7 +313,7 @@ export const useUIStateStore = defineStore('uiState', {
      * @param finalScores - 最終分數列表
      * @param isPlayerWinner - 是否為當前玩家獲勝
      */
-    showGameFinishedModal(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void {
+    showGameFinishedModal(winnerId: string | null, finalScores: PlayerScore[], isPlayerWinner: boolean): void {
       this._hideAllModals()
 
       this.gameFinishedModalVisible = true

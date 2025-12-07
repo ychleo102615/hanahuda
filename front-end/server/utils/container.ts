@@ -27,18 +27,21 @@ import { eventMapper } from '~~/server/adapters/mappers/eventMapper'
 
 // Adapters - Timeout
 import { actionTimeoutManager } from '~~/server/adapters/timeout/actionTimeoutManager'
+import { displayTimeoutManager } from '~~/server/adapters/timeout/displayTimeoutManager'
 
 // Use Cases
 import { JoinGameUseCase } from '~~/server/application/use-cases/joinGameUseCase'
 import { PlayHandCardUseCase } from '~~/server/application/use-cases/playHandCardUseCase'
 import { SelectTargetUseCase } from '~~/server/application/use-cases/selectTargetUseCase'
 import { MakeDecisionUseCase } from '~~/server/application/use-cases/makeDecisionUseCase'
+import { LeaveGameUseCase } from '~~/server/application/use-cases/leaveGameUseCase'
 
 // Input Port Types
 import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
 import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
 import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
+import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
 
 /**
  * 建立 SSEEventPublisher（需要 gameStore）
@@ -77,6 +80,13 @@ const makeDecisionUseCase: MakeDecisionInputPort = new MakeDecisionUseCase(
   eventMapper
 )
 
+const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(
+  gameRepository,
+  sseEventPublisher,
+  inMemoryGameStore,
+  eventMapper
+)
+
 /**
  * 容器匯出
  *
@@ -91,10 +101,12 @@ export const container = {
   internalEventBus,
   opponentEventBus,
   actionTimeoutManager,
+  displayTimeoutManager,
 
   // Use Cases (Input Ports)
   joinGameUseCase,
   playHandCardUseCase,
   selectTargetUseCase,
   makeDecisionUseCase,
+  leaveGameUseCase,
 } as const

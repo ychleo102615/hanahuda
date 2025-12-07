@@ -52,7 +52,7 @@ export interface NotificationPort {
    * @description
    * 遊戲結束時，顯示最終結果 Modal。
    *
-   * @param winnerId - 贏家玩家 ID
+   * @param winnerId - 贏家玩家 ID（平局時為 null）
    * @param finalScores - 最終分數列表
    * @param isPlayerWinner - 是否為當前玩家獲勝
    *
@@ -68,7 +68,7 @@ export interface NotificationPort {
    * )
    * ```
    */
-  showGameFinishedModal(winnerId: string, finalScores: PlayerScore[], isPlayerWinner: boolean): void
+  showGameFinishedModal(winnerId: string | null, finalScores: PlayerScore[], isPlayerWinner: boolean): void
 
   /**
    * 顯示平局 Modal

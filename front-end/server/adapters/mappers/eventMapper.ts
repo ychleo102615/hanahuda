@@ -21,6 +21,10 @@ import type {
   DecisionRequiredEvent,
   DecisionMadeEvent,
   RoundScoredEvent,
+  RoundDrawnEvent,
+  RoundEndedInstantlyEvent,
+  GameFinishedEvent,
+  RoundEndReason,
   PlayerInfo,
   PlayerHand,
   CardPlay,
@@ -407,6 +411,80 @@ export class EventMapper {
         score: s.score,
       })),
       display_timeout_seconds: gameConfig.display_timeout_seconds,
+    }
+  }
+
+  /**
+   * 將平局結果轉換為 RoundDrawnEvent
+   *
+   * @param currentScores - 目前累積分數
+   * @returns RoundDrawnEvent
+   */
+  toRoundDrawnEvent(
+    currentScores: readonly PlayerScore[]
+  ): RoundDrawnEvent {
+    return {
+      event_type: 'RoundDrawn',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      current_total_scores: currentScores.map(s => ({
+        player_id: s.player_id,
+        score: s.score,
+      })),
+      display_timeout_seconds: gameConfig.display_timeout_seconds,
+    }
+  }
+
+  /**
+   * 將特殊規則觸發轉換為 RoundEndedInstantlyEvent
+   *
+   * @param reason - 結束原因（TESHI / FIELD_KUTTSUKI / NO_YAKU）
+   * @param winnerId - 勝者 ID（平局時為 null）
+   * @param awardedPoints - 獎勵/懲罰分數
+   * @param updatedScores - 更新後的分數
+   * @returns RoundEndedInstantlyEvent
+   */
+  toRoundEndedInstantlyEvent(
+    reason: RoundEndReason,
+    winnerId: string | null,
+    awardedPoints: number,
+    updatedScores: readonly PlayerScore[]
+  ): RoundEndedInstantlyEvent {
+    return {
+      event_type: 'RoundEndedInstantly',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      reason,
+      winner_id: winnerId,
+      awarded_points: awardedPoints,
+      updated_total_scores: updatedScores.map(s => ({
+        player_id: s.player_id,
+        score: s.score,
+      })),
+      display_timeout_seconds: gameConfig.display_timeout_seconds,
+    }
+  }
+
+  /**
+   * 將遊戲結束轉換為 GameFinishedEvent
+   *
+   * @param winnerId - 勝者 ID（平局時為 null）
+   * @param finalScores - 最終分數
+   * @returns GameFinishedEvent
+   */
+  toGameFinishedEvent(
+    winnerId: string | null,
+    finalScores: readonly PlayerScore[]
+  ): GameFinishedEvent {
+    return {
+      event_type: 'GameFinished',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      winner_id: winnerId,
+      final_scores: finalScores.map(s => ({
+        player_id: s.player_id,
+        score: s.score,
+      })),
     }
   }
 }

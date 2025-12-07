@@ -32,6 +32,7 @@ import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGa
 export interface GameStorePort {
   get(gameId: string): Game | undefined
   set(game: Game): void
+  delete(gameId: string): void
   getBySessionToken(token: string): Game | undefined
   findWaitingGame(): Game | undefined
   addPlayerSession(sessionToken: string, gameId: string, playerId: string): void

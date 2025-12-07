@@ -505,3 +505,73 @@ export function getPlayerDepositoryFromGame(game: Game, playerId: string): reado
   const playerState = game.currentRound.playerStates.find((ps) => ps.playerId === playerId)
   return playerState?.depository ?? []
 }
+
+// ============================================================
+// Game Result Calculation (Phase 6)
+// ============================================================
+
+/**
+ * 遊戲勝者計算結果
+ */
+export interface GameWinnerResult {
+  /** 勝者 ID（平局時為 null） */
+  readonly winnerId: string | null
+  /** 分差（絕對值） */
+  readonly margin: number
+  /** 最終分數 */
+  readonly finalScores: readonly PlayerScore[]
+}
+
+/**
+ * 計算遊戲最終勝者
+ *
+ * 比較雙方累積分數，計算勝者和分差。
+ *
+ * @param game - 遊戲（通常為已結束或即將結束的遊戲）
+ * @returns 勝者計算結果
+ */
+export function calculateWinner(game: Game): GameWinnerResult {
+  const finalScores = game.cumulativeScores
+
+  if (finalScores.length !== 2) {
+    return {
+      winnerId: null,
+      margin: 0,
+      finalScores,
+    }
+  }
+
+  const score1 = finalScores[0]
+  const score2 = finalScores[1]
+
+  if (!score1 || !score2) {
+    return {
+      winnerId: null,
+      margin: 0,
+      finalScores,
+    }
+  }
+
+  const margin = Math.abs(score1.score - score2.score)
+
+  if (score1.score > score2.score) {
+    return {
+      winnerId: score1.player_id,
+      margin,
+      finalScores,
+    }
+  } else if (score2.score > score1.score) {
+    return {
+      winnerId: score2.player_id,
+      margin,
+      finalScores,
+    }
+  }
+
+  // 平局
+  return {
+    winnerId: null,
+    margin: 0,
+    finalScores,
+  }
+}

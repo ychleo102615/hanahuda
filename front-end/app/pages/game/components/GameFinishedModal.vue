@@ -35,9 +35,11 @@
           <!-- Winner Announcement -->
           <p class="text-center text-lg font-medium text-gray-800">
             {{
-              uiStateStore.gameFinishedModalData.isPlayerWinner
-                ? 'Congratulations! You won the game!'
-                : `Player ${getPlayerName(uiStateStore.gameFinishedModalData.winnerId)} won the game.`
+              uiStateStore.gameFinishedModalData.winnerId === null
+                ? "It's a draw!"
+                : uiStateStore.gameFinishedModalData.isPlayerWinner
+                  ? 'Congratulations! You won the game!'
+                  : `Player ${getPlayerName(uiStateStore.gameFinishedModalData.winnerId)} won the game.`
             }}
           </p>
 
