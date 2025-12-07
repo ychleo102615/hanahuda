@@ -1,0 +1,151 @@
+/**
+ * GET /api/v1/games/:gameId/snapshot - Framework Layer
+ *
+ * @description
+ * 取得遊戲快照 API 端點。
+ * 用於斷線重連時，客戶端可主動請求完整遊戲狀態。
+ *
+ * 參考: specs/008-nuxt-backend-server/contracts/rest-api.md
+ */
+
+import { z } from 'zod'
+import { container } from '~~/server/utils/container'
+import type { GameSnapshotRestore } from '#shared/contracts'
+
+/**
+ * 請求參數 Schema
+ */
+const RequestParamsSchema = z.object({
+  gameId: z.string().uuid('gameId must be a valid UUID'),
+})
+
+/**
+ * 請求 Header Schema
+ */
+const RequestHeadersSchema = z.object({
+  'x-session-token': z.string().uuid('x-session-token must be a valid UUID'),
+})
+
+/**
+ * 錯誤回應型別
+ */
+interface ErrorResponse {
+  error: {
+    code: string
+    message: string
+  }
+  timestamp: string
+}
+
+/**
+ * 成功回應型別
+ */
+interface SnapshotResponse {
+  data: GameSnapshotRestore
+  timestamp: string
+}
+
+export default defineEventHandler(async (event): Promise<SnapshotResponse | ErrorResponse> => {
+  try {
+    // 1. 解析並驗證路由參數
+    const params = getRouterParams(event)
+    const paramsResult = RequestParamsSchema.safeParse(params)
+
+    if (!paramsResult.success) {
+      setResponseStatus(event, 400)
+      return {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid gameId parameter',
+        },
+        timestamp: new Date().toISOString(),
+      }
+    }
+
+    const { gameId } = paramsResult.data
+
+    // 2. 解析並驗證 session token
+    const sessionToken = getHeader(event, 'x-session-token')
+    const headersResult = RequestHeadersSchema.safeParse({ 'x-session-token': sessionToken })
+
+    if (!headersResult.success) {
+      setResponseStatus(event, 401)
+      return {
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Missing or invalid session token',
+        },
+        timestamp: new Date().toISOString(),
+      }
+    }
+
+    // 3. 從 gameStore 取得遊戲（驗證 session token）
+    const game = container.gameStore.getBySessionToken(sessionToken!)
+    if (!game) {
+      setResponseStatus(event, 401)
+      return {
+        error: {
+          code: 'SESSION_INVALID',
+          message: 'Session token is invalid or expired',
+        },
+        timestamp: new Date().toISOString(),
+      }
+    }
+
+    // 4. 驗證 gameId 匹配
+    if (game.id !== gameId) {
+      setResponseStatus(event, 404)
+      return {
+        error: {
+          code: 'GAME_NOT_FOUND',
+          message: 'Game not found',
+        },
+        timestamp: new Date().toISOString(),
+      }
+    }
+
+    // 5. 檢查遊戲狀態
+    if (game.status === 'FINISHED') {
+      setResponseStatus(event, 410)
+      return {
+        error: {
+          code: 'GAME_FINISHED',
+          message: 'Game has already finished',
+        },
+        timestamp: new Date().toISOString(),
+      }
+    }
+
+    // 6. 若遊戲為 WAITING 狀態（尚未開始），無法建立快照
+    if (game.status === 'WAITING') {
+      setResponseStatus(event, 409)
+      return {
+        error: {
+          code: 'GAME_NOT_STARTED',
+          message: 'Game has not started yet',
+        },
+        timestamp: new Date().toISOString(),
+      }
+    }
+
+    // 7. 建立並回傳快照
+    const snapshotEvent = container.eventMapper.toGameSnapshotRestoreEvent(game)
+
+    setResponseStatus(event, 200)
+    return {
+      data: snapshotEvent,
+      timestamp: new Date().toISOString(),
+    }
+  } catch (error) {
+    console.error('[GET /api/v1/games/:gameId/snapshot] Error:', error)
+
+    setResponseStatus(event, 500)
+    return {
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
+      },
+      timestamp: new Date().toISOString(),
+    }
+  }
+})

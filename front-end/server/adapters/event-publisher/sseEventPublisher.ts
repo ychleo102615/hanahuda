@@ -68,6 +68,25 @@ export class SSEEventPublisher implements EventPublisherPort {
   }
 
   /**
+   * 發佈事件到指定玩家
+   *
+   * @description
+   * 用於重連時發送 GameSnapshotRestore 事件給單一玩家。
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param event - 遊戲事件
+   */
+  publishToPlayer(gameId: string, playerId: string, event: GameEvent): void {
+    const success = connectionStore.sendToPlayer(gameId, playerId, event)
+    if (success) {
+      console.log(`[SSEEventPublisher] Sent ${event.event_type} to player ${playerId} in game ${gameId}`)
+    } else {
+      console.log(`[SSEEventPublisher] No connection for player ${playerId} in game ${gameId}, event not sent`)
+    }
+  }
+
+  /**
    * 若 next_state.player_id 是 AI，路由到 opponentEventBus
    *
    * @param gameId - 遊戲 ID

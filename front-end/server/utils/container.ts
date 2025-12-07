@@ -28,6 +28,7 @@ import { eventMapper } from '~~/server/adapters/mappers/eventMapper'
 // Adapters - Timeout
 import { actionTimeoutManager } from '~~/server/adapters/timeout/actionTimeoutManager'
 import { displayTimeoutManager } from '~~/server/adapters/timeout/displayTimeoutManager'
+import { disconnectTimeoutManager } from '~~/server/adapters/timeout/disconnectTimeoutManager'
 
 // Use Cases
 import { JoinGameUseCase } from '~~/server/application/use-cases/joinGameUseCase'
@@ -35,6 +36,7 @@ import { PlayHandCardUseCase } from '~~/server/application/use-cases/playHandCar
 import { SelectTargetUseCase } from '~~/server/application/use-cases/selectTargetUseCase'
 import { MakeDecisionUseCase } from '~~/server/application/use-cases/makeDecisionUseCase'
 import { LeaveGameUseCase } from '~~/server/application/use-cases/leaveGameUseCase'
+import { AutoActionUseCase } from '~~/server/application/use-cases/autoActionUseCase'
 
 // Input Port Types
 import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
@@ -42,6 +44,7 @@ import type { PlayHandCardInputPort } from '~~/server/application/ports/input/pl
 import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
 import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
+import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 
 /**
  * 建立 SSEEventPublisher（需要 gameStore）
@@ -59,33 +62,68 @@ const joinGameUseCase: JoinGameInputPort = new JoinGameUseCase(
   internalEventBus
 )
 
-const playHandCardUseCase: PlayHandCardInputPort = new PlayHandCardUseCase(
-  gameRepository,
-  sseEventPublisher,
-  inMemoryGameStore,
-  eventMapper
-)
-
-const selectTargetUseCase: SelectTargetInputPort = new SelectTargetUseCase(
-  gameRepository,
-  sseEventPublisher,
-  inMemoryGameStore,
-  eventMapper
-)
-
-const makeDecisionUseCase: MakeDecisionInputPort = new MakeDecisionUseCase(
-  gameRepository,
-  sseEventPublisher,
-  inMemoryGameStore,
-  eventMapper
-)
-
 const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(
   gameRepository,
   sseEventPublisher,
   inMemoryGameStore,
   eventMapper
 )
+
+/**
+ * 解決循環依賴：
+ * - autoActionUseCase 需要 playHandCardUseCase, selectTargetUseCase, makeDecisionUseCase
+ * - 這些 Use Cases 需要 autoActionUseCase 來設定超時回調
+ *
+ * 解決方案：使用 Proxy 模式延遲取得依賴
+ */
+
+// 延遲取得 autoActionUseCase 的 holder
+let _autoActionUseCase: AutoActionInputPort | null = null
+const getAutoActionUseCase = (): AutoActionInputPort => {
+  if (!_autoActionUseCase) {
+    throw new Error('AutoActionUseCase not initialized yet')
+  }
+  return _autoActionUseCase
+}
+
+// 建立帶有超時功能的 Use Cases
+const playHandCardUseCase: PlayHandCardInputPort = new PlayHandCardUseCase(
+  gameRepository,
+  sseEventPublisher,
+  inMemoryGameStore,
+  eventMapper,
+  actionTimeoutManager,
+  { execute: (input) => getAutoActionUseCase().execute(input) }
+)
+
+const selectTargetUseCase: SelectTargetInputPort = new SelectTargetUseCase(
+  gameRepository,
+  sseEventPublisher,
+  inMemoryGameStore,
+  eventMapper,
+  actionTimeoutManager,
+  { execute: (input) => getAutoActionUseCase().execute(input) }
+)
+
+const makeDecisionUseCase: MakeDecisionInputPort = new MakeDecisionUseCase(
+  gameRepository,
+  sseEventPublisher,
+  inMemoryGameStore,
+  eventMapper,
+  actionTimeoutManager,
+  { execute: (input) => getAutoActionUseCase().execute(input) }
+)
+
+// 建立 autoActionUseCase（使用帶超時的 Use Cases）
+const autoActionUseCase: AutoActionInputPort = new AutoActionUseCase(
+  inMemoryGameStore,
+  playHandCardUseCase,
+  selectTargetUseCase,
+  makeDecisionUseCase
+)
+
+// 初始化 holder
+_autoActionUseCase = autoActionUseCase
 
 /**
  * 容器匯出
@@ -102,6 +140,7 @@ export const container = {
   opponentEventBus,
   actionTimeoutManager,
   displayTimeoutManager,
+  disconnectTimeoutManager,
 
   // Use Cases (Input Ports)
   joinGameUseCase,
@@ -109,4 +148,5 @@ export const container = {
   selectTargetUseCase,
   makeDecisionUseCase,
   leaveGameUseCase,
+  autoActionUseCase,
 } as const

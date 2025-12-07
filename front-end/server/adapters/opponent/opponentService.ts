@@ -22,6 +22,7 @@ import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGa
 import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
 import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
+import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
 import type { GameStorePort } from '~~/server/application/use-cases/joinGameUseCase'
 import type { Unsubscribe } from './types'
 
@@ -32,12 +33,6 @@ interface InternalEventBusLike {
 
 interface OpponentEventBusLike {
   subscribe(gameId: string, handler: (event: GameEvent) => void): Unsubscribe
-}
-
-interface ActionTimeoutManagerLike {
-  scheduleAction(key: string, delayMs: number, callback: () => void): void
-  clearTimeout(key: string): void
-  clearAllForGame(gameId: string): void
 }
 
 /**
@@ -76,7 +71,7 @@ export class OpponentService {
     private readonly playHandCard: PlayHandCardInputPort,
     private readonly selectTarget: SelectTargetInputPort,
     private readonly makeDecision: MakeDecisionInputPort,
-    private readonly actionTimeoutManager: ActionTimeoutManagerLike,
+    private readonly actionTimeoutManager: ActionTimeoutPort,
     private readonly gameStore: GameStorePort
   ) {
     this.subscribeToRoomCreated()

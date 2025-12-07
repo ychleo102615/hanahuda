@@ -15,7 +15,7 @@
 
 import { randomUUID } from 'uncrypto'
 import type { Game } from '~~/server/domain/game/game'
-import type { GameStartedEvent, RoundDealtEvent } from '#shared/contracts'
+import type { GameStartedEvent, RoundDealtEvent, GameSnapshotRestore } from '#shared/contracts'
 import { createGame, addSecondPlayerAndStart, startRound } from '~~/server/domain/game/game'
 import { createPlayer } from '~~/server/domain/game/player'
 import { detectTeshi, detectKuttsuki } from '~~/server/domain/round/round'
@@ -46,6 +46,7 @@ export interface GameStorePort {
 export interface EventMapperPort {
   toGameStartedEvent(game: Game): GameStartedEvent
   toRoundDealtEvent(game: Game): RoundDealtEvent
+  toGameSnapshotRestoreEvent(game: Game): GameSnapshotRestore
 }
 
 /**
@@ -132,9 +133,41 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
   /**
    * 處理重連
+   *
+   * @description
+   * 1. 驗證玩家是否屬於此遊戲
+   * 2. 檢查遊戲狀態
+   * 3. 若遊戲 IN_PROGRESS → 排程發送 GameSnapshotRestore 事件
+   * 4. 若遊戲 WAITING → 僅回傳連線資訊（等待對手）
+   * 5. 若遊戲 FINISHED → 拋出錯誤
+   *
+   * @param game - 遊戲
+   * @param playerId - 玩家 ID
+   * @param sessionToken - 會話 Token
+   * @returns 加入遊戲結果
+   * @throws Error 如果遊戲已結束
    */
   private handleReconnection(game: Game, playerId: string, sessionToken: string): JoinGameOutput {
     console.log(`[JoinGameUseCase] Reconnection for game ${game.id}, player ${playerId}`)
+
+    // 1. 驗證玩家是否屬於此遊戲
+    const isPlayer = game.players.some((p) => p.id === playerId)
+    if (!isPlayer) {
+      throw new Error(`Player ${playerId} is not part of game ${game.id}`)
+    }
+
+    // 2. 檢查遊戲狀態
+    if (game.status === 'FINISHED') {
+      throw new Error(`Game ${game.id} has already finished`)
+    }
+
+    // 3. 若遊戲 IN_PROGRESS → 排程發送 GameSnapshotRestore 事件
+    if (game.status === 'IN_PROGRESS') {
+      this.scheduleSnapshotEvent(game, playerId)
+    }
+
+    // 4. 若遊戲 WAITING → 僅回傳連線資訊（等待對手）
+    // （不需額外處理，直接回傳）
 
     return {
       gameId: game.id,
@@ -143,6 +176,39 @@ export class JoinGameUseCase implements JoinGameInputPort {
       sseEndpoint: `/api/v1/games/${game.id}/events`,
       reconnected: true,
     }
+  }
+
+  /**
+   * 排程發送 GameSnapshotRestore 事件
+   *
+   * @description
+   * 延遲發送，給 SSE 連線建立時間。
+   *
+   * @param game - 遊戲
+   * @param playerId - 重連的玩家 ID
+   */
+  private scheduleSnapshotEvent(game: Game, playerId: string): void {
+    setTimeout(() => {
+      try {
+        // 從記憶體取得最新的遊戲狀態（因為可能在延遲期間有更新）
+        const currentGame = this.gameStore.get(game.id)
+        if (!currentGame || currentGame.status !== 'IN_PROGRESS') {
+          console.log(`[JoinGameUseCase] Game ${game.id} is no longer in progress, skipping snapshot`)
+          return
+        }
+
+        // 建立並發送 GameSnapshotRestore 事件
+        const snapshotEvent = this.eventMapper.toGameSnapshotRestoreEvent(currentGame)
+        this.eventPublisher.publishToPlayer(game.id, playerId, snapshotEvent)
+
+        console.log(`[JoinGameUseCase] GameSnapshotRestore event sent to player ${playerId} for game ${game.id}`)
+      } catch (error) {
+        console.error(
+          `[JoinGameUseCase] Failed to send GameSnapshotRestore for game ${game.id}:`,
+          error
+        )
+      }
+    }, INITIAL_EVENT_DELAY_MS)
   }
 
   /**

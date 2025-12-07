@@ -36,7 +36,9 @@ import {
 } from '~~/server/domain/services/roundTransitionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
+import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
+import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type { GameStorePort, EventMapperPort } from './joinGameUseCase'
 import { gameConfig } from '~~/server/utils/config'
 
@@ -110,7 +112,9 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
-    private readonly eventMapper: DecisionEventMapperPort
+    private readonly eventMapper: DecisionEventMapperPort,
+    private readonly actionTimeoutManager?: ActionTimeoutPort,
+    private readonly autoActionUseCase?: AutoActionInputPort
   ) {}
 
   /**
@@ -122,6 +126,9 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
    */
   async execute(input: MakeDecisionInput): Promise<MakeDecisionOutput> {
     const { gameId, playerId, decision } = input
+
+    // 0. 清除當前玩家的超時計時器
+    this.actionTimeoutManager?.clearTimeout(`${gameId}:${playerId}`)
 
     // 1. 取得遊戲狀態
     const existingGame = await this.gameRepository.findById(gameId)
@@ -164,11 +171,10 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       )
       this.eventPublisher.publishToGame(gameId, event)
 
-      // 如果換到 AI，觸發 AI 回合（Phase 5 實作）
-      const aiPlayer = getAiPlayer(game)
-      if (aiPlayer && game.currentRound?.activePlayerId === aiPlayer.id) {
-        // TODO: 觸發 AI 回合（T052-T055 實作）
-        console.log(`[MakeDecisionUseCase] AI turn triggered for player ${aiPlayer.id}`)
+      // 啟動下一位玩家的超時（KOI_KOI 後換人）
+      const nextPlayerId = game.currentRound?.activePlayerId
+      if (nextPlayerId) {
+        this.startTimeoutForPlayer(gameId, nextPlayerId, 'AWAITING_HAND_PLAY')
       }
     } else {
       // 5b. END_ROUND: 結束局並計分
@@ -206,9 +212,15 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       if (transitionResult.transitionType === 'NEXT_ROUND') {
         // 發送 RoundDealt 事件（延遲讓前端顯示結算畫面）
         const displayTimeoutMs = gameConfig.display_timeout_seconds * 1000
+        const firstPlayerId = game.currentRound?.activePlayerId
         setTimeout(() => {
           const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
           this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+
+          // 啟動新回合第一位玩家的超時
+          if (firstPlayerId) {
+            this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
+          }
         }, displayTimeoutMs)
       } else {
         // 遊戲結束 - 發送 GameFinished 事件
@@ -246,5 +258,38 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     }
 
     return { player_multipliers: playerMultipliers }
+  }
+
+  /**
+   * 為玩家啟動操作超時計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param flowState - 目前流程狀態
+   */
+  private startTimeoutForPlayer(
+    gameId: string,
+    playerId: string,
+    flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
+  ): void {
+    if (!this.actionTimeoutManager || !this.autoActionUseCase) {
+      return
+    }
+
+    const key = `${gameId}:${playerId}`
+    this.actionTimeoutManager.startTimeout(
+      key,
+      gameConfig.action_timeout_seconds,
+      () => {
+        console.log(`[MakeDecisionUseCase] Timeout for player ${playerId} in game ${gameId}, executing auto-action`)
+        this.autoActionUseCase!.execute({
+          gameId,
+          playerId,
+          currentFlowState: flowState,
+        }).catch((error) => {
+          console.error(`[MakeDecisionUseCase] Auto-action failed:`, error)
+        })
+      }
+    )
   }
 }

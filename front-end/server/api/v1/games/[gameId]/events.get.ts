@@ -11,6 +11,8 @@
 import type { GameEvent } from '#shared/contracts'
 import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
 import { connectionStore } from '~~/server/adapters/event-publisher/connectionStore'
+import { disconnectTimeoutManager } from '~~/server/adapters/timeout/disconnectTimeoutManager'
+import { container } from '~~/server/utils/container'
 import { gameConfig } from '~~/server/utils/config'
 
 /**
@@ -98,6 +100,9 @@ export default defineEventHandler(async (event) => {
       connectionStore.addConnection(gameId, playerId, handler)
       console.log(`[SSE] Player ${playerId} connected to game ${gameId}`)
 
+      // 清除斷線超時（重連時）
+      disconnectTimeoutManager.clearDisconnectTimeout(gameId, playerId)
+
       // 心跳計時器
       const heartbeatInterval = setInterval(() => {
         try {
@@ -115,6 +120,27 @@ export default defineEventHandler(async (event) => {
         connectionStore.removeConnection(gameId, playerId)
         controller.close()
         console.log(`[SSE] Player ${playerId} disconnected from game ${gameId}`)
+
+        // 啟動斷線超時（若超時未重連，對手獲勝）
+        const currentGame = inMemoryGameStore.get(gameId)
+        if (currentGame && currentGame.status === 'IN_PROGRESS') {
+          disconnectTimeoutManager.startDisconnectTimeout(
+            gameId,
+            playerId,
+            async () => {
+              console.log(`[SSE] Player ${playerId} disconnect timeout in game ${gameId}`)
+              try {
+                await container.leaveGameUseCase.execute({
+                  gameId,
+                  playerId,
+                })
+                console.log(`[SSE] Game ${gameId} ended due to player ${playerId} disconnect timeout`)
+              } catch (error) {
+                console.error(`[SSE] Failed to handle disconnect timeout:`, error)
+              }
+            }
+          )
+        }
       })
 
       // 發送初始連線成功訊息

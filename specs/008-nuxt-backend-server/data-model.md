@@ -418,6 +418,9 @@ export const games = pgTable('games', {
 
 ### 5.2 Game Snapshots Table
 
+> **⚠️ MVP 階段不使用**：採用純記憶體快照策略，快照存於 `inMemoryGameStore` 而非資料庫。
+> 此表 Schema 已建立但不寫入資料，保留供未來高可用性需求使用。
+
 ```typescript
 // server/database/schema/gameSnapshots.ts
 

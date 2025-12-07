@@ -249,30 +249,79 @@
 
 **Independent Test**: 模擬斷線（關閉 SSE）並重新發送 GameRequestJoin（含 session_token）驗證 GameSnapshotRestore
 
+### 設計決策：純記憶體快照策略
+
+**決策**：快照不寫入資料庫，僅存於 `inMemoryGameStore`
+
+**原因**：
+- MVP 階段簡化實作複雜度
+- 避免頻繁 DB 寫入（每次操作都要更新快照）
+- 伺服器重啟遺失進行中遊戲 → MVP 可接受
+
+**權衡**：
+- ✅ 實作簡單
+- ✅ 效能好（無 DB I/O）
+- ❌ 伺服器重啟後無法恢復
+- ❌ 無法支援多實例部署（需 Redis 等共享儲存）
+
 ### Domain Layer for US5
 
-- [ ] T066 [US5] Extend `front-end/server/domain/game/game.ts` with toSnapshot() method for state serialization
+- [x] T066 [US5] Extend `front-end/server/domain/game/game.ts` with toSnapshot() method for state serialization
+  - ✅ 新增 `GameSnapshot` 介面
+  - ✅ 新增 `toSnapshot(game: Game): GameSnapshot | null` 函數
 
 ### Application Layer for US5
 
-- [ ] T067 [US5] Extend `front-end/server/application/use-cases/joinGameUseCase.ts` with reconnection logic (session_token validation)
-  - **現有實作需調整**：當前重連邏輯僅查找 sessionToken，需配合新配對邏輯
-  - **重連流程**：
+- [x] T067 [US5] Extend `front-end/server/application/use-cases/joinGameUseCase.ts` with reconnection logic (session_token validation)
+  - ✅ **重連流程**：
     1. 驗證 session_token 是否對應有效遊戲
-    2. 遊戲狀態為 WAITING → 等待對手加入（重連後繼續等待 SSE）
-    3. 遊戲狀態為 IN_PROGRESS → 返回 GameSnapshotRestore 事件
-- [ ] T068 [US5] Create `front-end/server/application/use-cases/autoActionUseCase.ts` with minimal impact strategy for timeout actions
+    2. 驗證玩家是否屬於此遊戲
+    3. 遊戲狀態為 FINISHED → 拋出錯誤
+    4. 遊戲狀態為 IN_PROGRESS → 排程發送 GameSnapshotRestore 事件（延遲 100ms）
+  - ✅ 新增 `scheduleSnapshotEvent()` 方法
+  - ✅ 新增 `EventPublisherPort.publishToPlayer()` 方法
+- [x] T068 [US5] Create `front-end/server/application/use-cases/autoActionUseCase.ts` with minimal impact strategy for timeout actions
+  - ✅ **最小影響策略**：
+    - 打牌：選最低價值卡（カス > 短冊 > 種札 > 光札）
+    - 選擇配對：選擇第一個有效目標
+    - 決策：永遠選擇 END_ROUND
+  - ✅ 新增 `front-end/server/application/ports/input/autoActionInputPort.ts`
 
 ### Adapter Layer for US5
 
-- [ ] T069 [US5] Extend `front-end/server/adapters/timeout/actionTimeoutManager.ts` with auto-action trigger on timeout
-- [ ] T070 [US5] Create disconnect timeout handler in `front-end/server/adapters/timeout/disconnectTimeoutManager.ts` (60s limit)
-- [ ] T071 [US5] Extend `front-end/server/adapters/mappers/eventMapper.ts` with GameSnapshotRestore and GameError mapping
-- [ ] T072 [US5] Extend `front-end/server/adapters/persistence/drizzleGameRepository.ts` with snapshot save/load
+- [x] T069 [US5] Extend Use Cases with auto-action timeout integration
+  - ✅ `playHandCardUseCase.ts` - 清除當前超時、設定下一玩家/狀態超時
+  - ✅ `selectTargetUseCase.ts` - 清除當前超時、設定下一玩家/決策超時
+  - ✅ `makeDecisionUseCase.ts` - 清除當前超時、設定下一玩家/新回合超時
+  - ✅ 使用 Proxy 模式解決循環依賴（container.ts）
+- [x] T070 [US5] Create disconnect timeout handler in `front-end/server/adapters/timeout/disconnectTimeoutManager.ts` (60s limit)
+  - ✅ 在 SSE 連線關閉時啟動 60 秒斷線超時
+  - ✅ 在 SSE 連線建立時清除斷線超時（重連）
+  - ✅ 超時後呼叫 `leaveGameUseCase.execute()` 結束遊戲
+- [x] T071 [US5] Extend `front-end/server/adapters/mappers/eventMapper.ts` with GameSnapshotRestore and GameError mapping
+  - ✅ 新增 `toGameSnapshotRestoreEvent(game: Game): GameSnapshotRestore`
+  - ✅ 新增 `toGameErrorEvent(errorCode, message, recoverable, suggestedAction?): GameErrorEvent`
+- [x] T072 [US5] ~~Extend drizzleGameRepository.ts with snapshot save/load~~ **已取消 - 採用純記憶體策略**
+  - ⚠️ **設計決策變更**：不使用 DB 持久化快照
+  - ✅ 快照從 `inMemoryGameStore` 取得
 
 ### API Layer for US5
 
-- [ ] T073 [US5] Create `front-end/server/api/v1/games/[gameId]/snapshot.get.ts` with snapshot retrieval (SSE fallback)
+- [x] T073 [US5] Create `front-end/server/api/v1/games/[gameId]/snapshot.get.ts` with snapshot retrieval (SSE fallback)
+  - ✅ 驗證 session token
+  - ✅ 回傳 JSON 格式的 GameSnapshotRestore 結構
+
+### Clean Architecture 修正 (Phase 7 後追加)
+
+- [x] T073b [US5] Create `front-end/server/application/ports/output/actionTimeoutPort.ts` with ActionTimeoutPort interface
+  - ✅ 將 Port 定義從 Use Case 移至獨立檔案
+- [x] T073c [US5] Create `front-end/server/application/ports/output/disconnectTimeoutPort.ts` with DisconnectTimeoutPort interface
+  - ✅ 為斷線超時管理器建立標準 Port
+- [x] T073d [US5] Update Use Cases and Services to use standard Ports
+  - ✅ `playHandCardUseCase.ts` - 使用 ActionTimeoutPort
+  - ✅ `selectTargetUseCase.ts` - 使用 ActionTimeoutPort
+  - ✅ `makeDecisionUseCase.ts` - 使用 ActionTimeoutPort
+  - ✅ `opponentService.ts` - 移除 ActionTimeoutManagerLike，使用標準 Port
 
 **Checkpoint**: User Story 5 complete - reconnection and auto-action work correctly
 

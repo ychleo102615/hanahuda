@@ -40,4 +40,16 @@ export interface EventPublisherPort {
    * @param event - 發牌事件
    */
   publishRoundDealt(gameId: string, event: RoundDealtEvent): void
+
+  /**
+   * 發佈事件到指定玩家
+   *
+   * @description
+   * 用於重連時發送 GameSnapshotRestore 事件給單一玩家。
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param event - 遊戲事件
+   */
+  publishToPlayer(gameId: string, playerId: string, event: GameEvent): void
 }

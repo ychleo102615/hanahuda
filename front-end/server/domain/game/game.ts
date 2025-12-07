@@ -284,7 +284,13 @@ export function getPlayerScore(game: Game, playerId: string): number {
 // Turn Execution & State Management
 // ============================================================
 
-import type { FlowState } from '#shared/contracts'
+import type {
+  FlowState,
+  PlayerInfo,
+  PlayerHand,
+  PlayerDepository,
+  KoiStatus as ContractKoiStatus,
+} from '#shared/contracts'
 
 /**
  * 檢查是否為指定玩家的回合
@@ -574,4 +580,115 @@ export function calculateWinner(game: Game): GameWinnerResult {
     margin: 0,
     finalScores,
   }
+}
+
+// ============================================================
+// Game Snapshot (Phase 7 - Reconnection Support)
+// ============================================================
+
+/**
+ * 遊戲快照
+ *
+ * @description
+ * 用於斷線重連時恢復完整遊戲狀態。
+ * 結構與 GameSnapshotRestore 事件一致（不含事件元資料）。
+ */
+export interface GameSnapshot {
+  /** 遊戲 ID */
+  readonly game_id: string
+  /** 玩家資訊 */
+  readonly players: readonly PlayerInfo[]
+  /** 規則集 */
+  readonly ruleset: Ruleset
+  /** 場牌 */
+  readonly field_cards: readonly string[]
+  /** 牌堆剩餘數量 */
+  readonly deck_remaining: number
+  /** 玩家手牌 */
+  readonly player_hands: readonly PlayerHand[]
+  /** 玩家獲得區 */
+  readonly player_depositories: readonly PlayerDepository[]
+  /** 玩家累積分數 */
+  readonly player_scores: readonly PlayerScore[]
+  /** 目前流程狀態 */
+  readonly current_flow_stage: FlowState
+  /** 目前行動玩家 ID */
+  readonly active_player_id: string
+  /** 各玩家的 Koi-Koi 狀態 */
+  readonly koi_statuses: readonly ContractKoiStatus[]
+}
+
+/**
+ * 建立遊戲快照
+ *
+ * @description
+ * 從 Game 聚合根提取完整狀態，用於斷線重連恢復。
+ * 若 currentRound 為 null（遊戲未開始或局間），回傳 null。
+ *
+ * @param game - 遊戲聚合根
+ * @returns 遊戲快照（若無法建立則回傳 null）
+ */
+export function toSnapshot(game: Game): GameSnapshot | null {
+  // 若無進行中的局，無法建立快照
+  if (!game.currentRound) {
+    return null
+  }
+
+  const round = game.currentRound
+
+  // 轉換 Player → PlayerInfo
+  const players: readonly PlayerInfo[] = Object.freeze(
+    game.players.map((player) =>
+      Object.freeze({
+        player_id: player.id,
+        player_name: player.name,
+        is_ai: player.isAi,
+      })
+    )
+  )
+
+  // 轉換 PlayerRoundState → PlayerHand
+  const player_hands: readonly PlayerHand[] = Object.freeze(
+    round.playerStates.map((ps) =>
+      Object.freeze({
+        player_id: ps.playerId,
+        cards: ps.hand,
+      })
+    )
+  )
+
+  // 轉換 PlayerRoundState → PlayerDepository
+  const player_depositories: readonly PlayerDepository[] = Object.freeze(
+    round.playerStates.map((ps) =>
+      Object.freeze({
+        player_id: ps.playerId,
+        cards: ps.depository,
+      })
+    )
+  )
+
+  // 轉換 KoiStatus（Domain → Contract 格式一致，直接使用）
+  const koi_statuses: readonly ContractKoiStatus[] = Object.freeze(
+    round.koiStatuses.map((ks) =>
+      Object.freeze({
+        player_id: ks.player_id,
+        koi_multiplier: ks.koi_multiplier,
+        times_continued: ks.times_continued,
+      })
+    )
+  )
+
+  return Object.freeze({
+    game_id: game.id,
+    players,
+    ruleset: game.ruleset,
+    field_cards: round.field,
+    deck_remaining: round.deck.length,
+    player_hands,
+    player_depositories,
+    player_scores: game.cumulativeScores,
+    current_flow_stage: round.flowState,
+    active_player_id: round.activePlayerId,
+    koi_statuses,
+  })
 }

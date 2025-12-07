@@ -24,16 +24,23 @@ import type {
   RoundDrawnEvent,
   RoundEndedInstantlyEvent,
   GameFinishedEvent,
+  GameSnapshotRestore,
+  GameErrorEvent,
   RoundEndReason,
+  GameErrorCode,
+  SuggestedAction,
   PlayerInfo,
   PlayerHand,
+  PlayerDepository,
   CardPlay,
   CardSelection,
   YakuUpdate,
   Yaku,
   ScoreMultipliers,
   PlayerScore,
+  KoiStatus,
 } from '#shared/contracts'
+import { toSnapshot } from '~~/server/domain/game/game'
 import { toPlayerInfo, toPlayerInfoList, createNextState, toScoreMultipliers } from './dtos'
 import { gameConfig } from '~~/server/utils/config'
 
@@ -486,6 +493,98 @@ export class EventMapper {
         score: s.score,
       })),
     }
+  }
+
+  // ============================================================
+  // Reconnection Events (Phase 7)
+  // ============================================================
+
+  /**
+   * 將遊戲狀態轉換為 GameSnapshotRestore 事件
+   *
+   * @description
+   * 用於斷線重連時發送完整遊戲狀態。
+   * 使用 Domain Layer 的 toSnapshot() 取得快照資料。
+   *
+   * @param game - 遊戲聚合根
+   * @returns GameSnapshotRestore 事件
+   * @throws Error 如果遊戲無法建立快照（currentRound 為 null）
+   */
+  toGameSnapshotRestoreEvent(game: Game): GameSnapshotRestore {
+    const snapshot = toSnapshot(game)
+
+    if (!snapshot) {
+      throw new Error('Cannot create GameSnapshotRestore: unable to create snapshot (currentRound is null)')
+    }
+
+    return {
+      event_type: 'GameSnapshotRestore',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      game_id: snapshot.game_id,
+      players: snapshot.players.map(p => ({
+        player_id: p.player_id,
+        player_name: p.player_name,
+        is_ai: p.is_ai,
+      })),
+      ruleset: snapshot.ruleset,
+      field_cards: [...snapshot.field_cards],
+      deck_remaining: snapshot.deck_remaining,
+      player_hands: snapshot.player_hands.map(h => ({
+        player_id: h.player_id,
+        cards: [...h.cards],
+      })),
+      player_depositories: snapshot.player_depositories.map(d => ({
+        player_id: d.player_id,
+        cards: [...d.cards],
+      })),
+      player_scores: snapshot.player_scores.map(s => ({
+        player_id: s.player_id,
+        score: s.score,
+      })),
+      current_flow_stage: snapshot.current_flow_stage,
+      active_player_id: snapshot.active_player_id,
+      koi_statuses: snapshot.koi_statuses.map(ks => ({
+        player_id: ks.player_id,
+        koi_multiplier: ks.koi_multiplier,
+        times_continued: ks.times_continued,
+      })),
+      action_timeout_seconds: gameConfig.action_timeout_seconds,
+    }
+  }
+
+  /**
+   * 建立 GameErrorEvent
+   *
+   * @description
+   * 用於遊戲層級錯誤（如配對超時、對手斷線等）。
+   *
+   * @param errorCode - 錯誤代碼
+   * @param message - 錯誤訊息
+   * @param recoverable - 是否可恢復
+   * @param suggestedAction - 建議操作（可選）
+   * @returns GameErrorEvent
+   */
+  toGameErrorEvent(
+    errorCode: GameErrorCode,
+    message: string,
+    recoverable: boolean,
+    suggestedAction?: SuggestedAction
+  ): GameErrorEvent {
+    const event: GameErrorEvent = {
+      event_type: 'GameError',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      error_code: errorCode,
+      message,
+      recoverable,
+    }
+
+    if (suggestedAction) {
+      return { ...event, suggested_action: suggestedAction }
+    }
+
+    return event
   }
 }
 

@@ -38,8 +38,11 @@ import {
 } from '~~/server/domain/services/yakuDetectionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
+import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
 import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
+import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type { GameStorePort, EventMapperPort } from './joinGameUseCase'
+import { gameConfig } from '~~/server/utils/config'
 
 /**
  * 擴展 EventMapperPort 以支援回合事件
@@ -114,7 +117,9 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
-    private readonly eventMapper: TurnEventMapperPort
+    private readonly eventMapper: TurnEventMapperPort,
+    private readonly actionTimeoutManager?: ActionTimeoutPort,
+    private readonly autoActionUseCase?: AutoActionInputPort
   ) {}
 
   /**
@@ -126,6 +131,9 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
    */
   async execute(input: PlayHandCardInput): Promise<PlayHandCardOutput> {
     const { gameId, playerId, cardId, targetCardId } = input
+
+    // 0. 清除當前玩家的超時計時器
+    this.actionTimeoutManager?.clearTimeout(`${gameId}:${playerId}`)
 
     // 1. 取得遊戲狀態
     const existingGame = await this.gameRepository.findById(gameId)
@@ -183,6 +191,9 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
         playResult.selectionInfo.possibleTargets
       )
       this.eventPublisher.publishToGame(gameId, event)
+
+      // 啟動超時（同一玩家需要選擇）
+      this.startTimeoutForPlayer(gameId, playerId, 'AWAITING_SELECTION')
     } else if (playResult.drawCardPlay) {
       // 回合完成，檢查役種
       const currentDepository = getPlayerDepository(playResult.updatedRound, playerId)
@@ -207,6 +218,9 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
           yakuUpdate
         )
         this.eventPublisher.publishToGame(gameId, event)
+
+        // 啟動超時（同一玩家需要決策）
+        this.startTimeoutForPlayer(gameId, playerId, 'AWAITING_DECISION')
       } else {
         // 無新役種，回合完成，換人
         const updatedRound = advanceToNextPlayer(playResult.updatedRound)
@@ -220,11 +234,10 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
         )
         this.eventPublisher.publishToGame(gameId, event)
 
-        // 如果換到 AI，觸發 AI 回合（Phase 5 實作）
-        const aiPlayer = getAiPlayer(game)
-        if (aiPlayer && game.currentRound?.activePlayerId === aiPlayer.id) {
-          // TODO: 觸發 AI 回合（T052-T055 實作）
-          console.log(`[PlayHandCardUseCase] AI turn triggered for player ${aiPlayer.id}`)
+        // 啟動下一位玩家的超時
+        const nextPlayerId = game.currentRound?.activePlayerId
+        if (nextPlayerId) {
+          this.startTimeoutForPlayer(gameId, nextPlayerId, 'AWAITING_HAND_PLAY')
         }
       }
     }
@@ -236,5 +249,38 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
     console.log(`[PlayHandCardUseCase] Player ${playerId} played card ${cardId}`)
 
     return { success: true }
+  }
+
+  /**
+   * 為玩家啟動操作超時計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param flowState - 目前流程狀態
+   */
+  private startTimeoutForPlayer(
+    gameId: string,
+    playerId: string,
+    flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
+  ): void {
+    if (!this.actionTimeoutManager || !this.autoActionUseCase) {
+      return
+    }
+
+    const key = `${gameId}:${playerId}`
+    this.actionTimeoutManager.startTimeout(
+      key,
+      gameConfig.action_timeout_seconds,
+      () => {
+        console.log(`[PlayHandCardUseCase] Timeout for player ${playerId} in game ${gameId}, executing auto-action`)
+        this.autoActionUseCase!.execute({
+          gameId,
+          playerId,
+          currentFlowState: flowState,
+        }).catch((error) => {
+          console.error(`[PlayHandCardUseCase] Auto-action failed:`, error)
+        })
+      }
+    )
   }
 }
