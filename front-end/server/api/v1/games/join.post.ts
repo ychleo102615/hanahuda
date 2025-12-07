@@ -80,7 +80,8 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
     })
 
     // 4. 設定回應狀態碼
-    // 201 Created for new game, 200 OK for reconnection
+    // 201 Created: 新遊戲建立（WAITING 或 IN_PROGRESS）
+    // 200 OK: 重連現有遊戲
     setResponseStatus(event, result.reconnected ? 200 : 201)
 
     // 5. 返回回應

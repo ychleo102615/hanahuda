@@ -62,4 +62,24 @@ export interface GameRepositoryPort {
    * @param gameId - 遊戲 ID
    */
   delete(gameId: string): Promise<void>
+
+  /**
+   * 查找等待中的遊戲（用於配對）
+   *
+   * 返回最早建立的等待中遊戲，供配對使用。
+   *
+   * @returns 等待中的遊戲（若存在）
+   */
+  findWaitingGame(): Promise<Game | null>
+
+  /**
+   * 儲存玩家會話
+   *
+   * 為玩家建立獨立的 session_token，用於識別身份和重連。
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param sessionToken - 會話 Token
+   */
+  saveSession(gameId: string, playerId: string, sessionToken: string): Promise<void>
 }

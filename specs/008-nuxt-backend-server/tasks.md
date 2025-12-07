@@ -91,14 +91,15 @@
 
 - [x] T031 [P] [US1] Create `front-end/server/application/ports/output/gameRepositoryPort.ts` with GameRepository interface
 - [x] T032 [P] [US1] Create `front-end/server/application/ports/output/eventPublisherPort.ts` with EventPublisher interface
-- [ ] T033 [US1] Create `front-end/server/application/use-cases/joinGameUseCase.ts` with execute() method for joining/creating games
-  - **⚠️ 需重新實作**：當前實作違反 Server 中立原則（直接建立 AI）
-  - **必須包含配對邏輯**：
+- [x] T033 [US1] Create `front-end/server/application/use-cases/joinGameUseCase.ts` with execute() method for joining/creating games
+  - ✅ **已重新實作**：Server 中立配對邏輯
+  - **實作內容**：
     1. 查找等待中的遊戲（status: WAITING）
     2. 若無等待中遊戲 → 建立新遊戲，狀態為 WAITING，返回 game_id
     3. 若有等待中遊戲 → 加入成為 Player 2，狀態改為 IN_PROGRESS
-  - **禁止**：直接建立 AI 對手（由 OpponentService 透過事件監聽處理）
-  - **配合 T056**：預留 InternalEventPublisherPort 注入點
+  - ✅ **不直接建立 AI**：AI 配對由 OpponentService 透過事件監聽處理（T056）
+  - ✅ **已預留**：InternalEventPublisherPort 注入點（TODO 標記）
+  - **連鎖修改**：T030（addSecondPlayerAndStart）、T031/T036（findWaitingGame, saveSession）
 
 ### Adapter Layer for US1
 

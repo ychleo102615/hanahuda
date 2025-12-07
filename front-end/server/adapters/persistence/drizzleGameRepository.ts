@@ -132,6 +132,43 @@ export class DrizzleGameRepository implements GameRepositoryPort {
   }
 
   /**
+   * 查找等待中的遊戲（用於配對）
+   *
+   * 返回最早建立的等待中遊戲。
+   */
+  async findWaitingGame(): Promise<Game | null> {
+    const results = await db
+      .select()
+      .from(games)
+      .where(eq(games.status, 'WAITING'))
+      .orderBy(games.createdAt)
+      .limit(1)
+
+    const record = results[0]
+    return record ? this.toDomainModel(record) : null
+  }
+
+  /**
+   * 儲存玩家會話
+   *
+   * 為玩家建立獨立的 session_token。
+   */
+  async saveSession(gameId: string, playerId: string, sessionToken: string): Promise<void> {
+    const expiresAt = new Date(Date.now() + gameConfig.session_timeout_ms)
+
+    await db.insert(sessions).values({
+      token: sessionToken,
+      gameId,
+      playerId,
+      connectedAt: new Date(),
+      lastActivityAt: new Date(),
+      expiresAt,
+    })
+
+    console.log(`[DrizzleGameRepository] Saved session ${sessionToken} for player ${playerId} in game ${gameId}`)
+  }
+
+  /**
    * Domain Game → DB Record 轉換
    */
   private toDbRecord(game: Game): NewGame {

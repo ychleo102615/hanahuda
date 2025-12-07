@@ -156,6 +156,37 @@ class InMemoryGameStore {
   }
 
   /**
+   * 查找等待中的遊戲（用於配對）
+   *
+   * 返回最早建立的等待中遊戲。
+   *
+   * @returns 等待中的遊戲（若存在）
+   */
+  findWaitingGame(): GameState | undefined {
+    const waiting = this.getWaitingGames()
+    // 按建立時間排序，返回最早的
+    if (waiting.length === 0) {
+      return undefined
+    }
+    return waiting.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0]
+  }
+
+  /**
+   * 為玩家新增 session 映射
+   *
+   * 用於第二位玩家加入遊戲時，建立其 session token 到 game 的映射。
+   *
+   * @param sessionToken - 玩家的 session token
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   */
+  addPlayerSession(sessionToken: string, gameId: string, playerId: string): void {
+    this.sessionGameMap.set(sessionToken, gameId)
+    this.playerGameMap.set(playerId, gameId)
+    console.log(`[InMemoryGameStore] Added session ${sessionToken} for player ${playerId} in game ${gameId}`)
+  }
+
+  /**
    * 清除所有遊戲（用於測試）
    */
   clear(): void {

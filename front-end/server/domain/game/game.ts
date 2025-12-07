@@ -136,34 +136,50 @@ export function createGame(params: CreateGameParams): Game {
 }
 
 /**
- * 加入 AI 對手並開始遊戲
+ * 加入第二位玩家並開始遊戲
  *
- * 將 AI 對手加入遊戲，並將狀態改為進行中
+ * 將任意玩家（人類或 AI）加入遊戲，並將狀態改為 IN_PROGRESS。
+ * 這是 Server 中立的配對邏輯核心函數。
  *
  * @param game - 等待中的遊戲
- * @param aiPlayer - AI 玩家實體
+ * @param player - 要加入的玩家
  * @returns 更新後的遊戲（狀態改為 IN_PROGRESS）
  */
-export function addAiOpponentAndStart(game: Game, aiPlayer: Player): Game {
+export function addSecondPlayerAndStart(game: Game, player: Player): Game {
   if (game.status !== 'WAITING') {
-    throw new Error(`Cannot add AI opponent to game with status: ${game.status}`)
+    throw new Error(`Cannot add player to game with status: ${game.status}`)
   }
 
   if (game.players.length !== 1) {
     throw new Error(`Expected 1 player, got ${game.players.length}`)
   }
 
+  return Object.freeze({
+    ...game,
+    players: Object.freeze([...game.players, player]),
+    cumulativeScores: Object.freeze([...game.cumulativeScores, { player_id: player.id, score: 0 }]),
+    status: 'IN_PROGRESS' as GameStatus,
+    updatedAt: new Date(),
+  })
+}
+
+/**
+ * 加入 AI 對手並開始遊戲
+ *
+ * 將 AI 對手加入遊戲，並將狀態改為進行中。
+ * 此函數為向後兼容保留，內部呼叫 addSecondPlayerAndStart。
+ *
+ * @param game - 等待中的遊戲
+ * @param aiPlayer - AI 玩家實體
+ * @returns 更新後的遊戲（狀態改為 IN_PROGRESS）
+ * @deprecated 使用 addSecondPlayerAndStart 替代
+ */
+export function addAiOpponentAndStart(game: Game, aiPlayer: Player): Game {
   if (!aiPlayer.isAi) {
     throw new Error('Expected AI player')
   }
 
-  return Object.freeze({
-    ...game,
-    players: Object.freeze([...game.players, aiPlayer]),
-    cumulativeScores: Object.freeze([...game.cumulativeScores, { player_id: aiPlayer.id, score: 0 }]),
-    status: 'IN_PROGRESS' as GameStatus,
-    updatedAt: new Date(),
-  })
+  return addSecondPlayerAndStart(game, aiPlayer)
 }
 
 /**

@@ -3,16 +3,21 @@
  *
  * @description
  * 處理玩家加入遊戲的用例。
- * 建立遊戲、加入 AI 對手、發牌，並排程初始事件。
+ * 實作 Server 中立的配對邏輯：
+ * 1. 查找等待中的遊戲
+ * 2. 若無等待中遊戲 → 建立新遊戲（WAITING 狀態）
+ * 3. 若有等待中遊戲 → 加入成為 Player 2（IN_PROGRESS 狀態）
+ *
+ * 注意：不直接建立 AI 對手，AI 配對由 OpponentService 透過事件監聽處理（T056）
  *
  * @module server/application/use-cases/joinGameUseCase
  */
 
 import { randomUUID } from 'uncrypto'
 import type { Game } from '~~/server/domain/game/game'
-import type { GameEvent, GameStartedEvent, RoundDealtEvent } from '#shared/contracts'
-import { createGame, addAiOpponentAndStart, startRound } from '~~/server/domain/game/game'
-import { createPlayer, createAiPlayer } from '~~/server/domain/game/player'
+import type { GameStartedEvent, RoundDealtEvent } from '#shared/contracts'
+import { createGame, addSecondPlayerAndStart, startRound } from '~~/server/domain/game/game'
+import { createPlayer } from '~~/server/domain/game/player'
 import { detectTeshi, detectKuttsuki } from '~~/server/domain/round/round'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
@@ -25,6 +30,8 @@ import type { EventPublisherPort } from '~~/server/application/ports/output/even
 export interface GameStorePort {
   set(game: Game): void
   getBySessionToken(token: string): Game | undefined
+  findWaitingGame(): Game | undefined
+  addPlayerSession(sessionToken: string, gameId: string, playerId: string): void
 }
 
 /**
@@ -55,7 +62,7 @@ export interface JoinGameInput {
 export interface JoinGameOutput {
   /** 遊戲 ID */
   readonly gameId: string
-  /** 會話 Token */
+  /** 會話 Token（該玩家的獨立 Token） */
   readonly sessionToken: string
   /** 玩家 ID */
   readonly playerId: string
@@ -75,7 +82,11 @@ const INITIAL_EVENT_DELAY_MS = 100
 /**
  * JoinGameUseCase
  *
- * 處理玩家加入遊戲的完整流程。
+ * 處理玩家加入遊戲的完整流程，實作 Server 中立的配對邏輯。
+ *
+ * 預留 InternalEventPublisherPort 注入點供 T056 使用：
+ * - 建立新遊戲時 → 發布 ROOM_CREATED 內部事件
+ * - 加入現有遊戲時 → 發布 GameStarted SSE 事件
  */
 export class JoinGameUseCase {
   constructor(
@@ -83,6 +94,7 @@ export class JoinGameUseCase {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: EventMapperPort
+    // TODO T056: 新增 InternalEventPublisherPort 參數
   ) {}
 
   /**
@@ -98,21 +110,45 @@ export class JoinGameUseCase {
     if (sessionToken) {
       const existingGame = this.gameStore.getBySessionToken(sessionToken)
       if (existingGame) {
-        console.log(`[JoinGameUseCase] Reconnection for game ${existingGame.id}`)
-        return {
-          gameId: existingGame.id,
-          sessionToken: existingGame.sessionToken,
-          playerId,
-          sseEndpoint: `/api/v1/games/${existingGame.id}/events`,
-          reconnected: true,
-        }
+        return this.handleReconnection(existingGame, playerId, sessionToken)
       }
     }
 
-    // 2. 建立新遊戲
+    // 2. 查找等待中的遊戲
+    const waitingGame = this.gameStore.findWaitingGame()
+
+    if (waitingGame) {
+      // 3a. 加入現有遊戲
+      return this.joinExistingGame(waitingGame, playerId, playerName)
+    } else {
+      // 3b. 建立新遊戲（WAITING 狀態）
+      return this.createNewGame(playerId, playerName)
+    }
+  }
+
+  /**
+   * 處理重連
+   */
+  private handleReconnection(game: Game, playerId: string, sessionToken: string): JoinGameOutput {
+    console.log(`[JoinGameUseCase] Reconnection for game ${game.id}, player ${playerId}`)
+
+    return {
+      gameId: game.id,
+      sessionToken,
+      playerId,
+      sseEndpoint: `/api/v1/games/${game.id}/events`,
+      reconnected: true,
+    }
+  }
+
+  /**
+   * 建立新遊戲（WAITING 狀態）
+   *
+   * 不發牌、不開始遊戲，等待第二位玩家加入。
+   */
+  private async createNewGame(playerId: string, playerName: string): Promise<JoinGameOutput> {
     const gameId = randomUUID()
-    const newSessionToken = randomUUID()
-    const aiPlayerId = randomUUID()
+    const sessionToken = randomUUID()
 
     const humanPlayer = createPlayer({
       id: playerId,
@@ -120,25 +156,63 @@ export class JoinGameUseCase {
       isAi: false,
     })
 
-    let game = createGame({
+    const game = createGame({
       id: gameId,
-      sessionToken: newSessionToken,
+      sessionToken, // Game 的 sessionToken 為第一位玩家的 token
       player: humanPlayer,
     })
 
-    // 3. 加入 AI 對手（MVP: 立即配對）
-    const aiPlayer = createAiPlayer(aiPlayerId)
-    game = addAiOpponentAndStart(game, aiPlayer)
+    // 儲存到記憶體和資料庫
+    this.gameStore.set(game)
+    await this.gameRepository.save(game)
+    await this.gameRepository.saveSession(gameId, playerId, sessionToken)
 
-    // 4. 發牌並開始第一局
+    console.log(`[JoinGameUseCase] Created new WAITING game ${gameId} for player ${playerName}`)
+
+    // TODO T056: 發布 ROOM_CREATED 內部事件
+    // this.internalEventPublisher.publishRoomCreated(gameId)
+
+    return {
+      gameId: game.id,
+      sessionToken,
+      playerId,
+      sseEndpoint: `/api/v1/games/${game.id}/events`,
+      reconnected: false,
+    }
+  }
+
+  /**
+   * 加入現有遊戲（成為 Player 2）
+   *
+   * 將遊戲狀態改為 IN_PROGRESS，發牌，並推送初始事件。
+   */
+  private async joinExistingGame(
+    waitingGame: Game,
+    playerId: string,
+    playerName: string
+  ): Promise<JoinGameOutput> {
+    const sessionToken = randomUUID()
+
+    const secondPlayer = createPlayer({
+      id: playerId,
+      name: playerName,
+      isAi: false,
+    })
+
+    // 加入遊戲並開始
+    let game = addSecondPlayerAndStart(waitingGame, secondPlayer)
+
+    // 發牌並開始第一局
     game = startRound(game)
 
-    // 5. 檢查 Teshi/Kuttsuki（Phase 3 先記錄，US4 完整處理）
+    // 檢查 Teshi/Kuttsuki
     if (game.currentRound) {
       for (const playerState of game.currentRound.playerStates) {
         const teshiResult = detectTeshi(playerState.hand)
         if (teshiResult.hasTeshi) {
-          console.log(`[JoinGameUseCase] Teshi detected for player ${playerState.playerId}, month: ${teshiResult.month}`)
+          console.log(
+            `[JoinGameUseCase] Teshi detected for player ${playerState.playerId}, month: ${teshiResult.month}`
+          )
         }
       }
 
@@ -148,19 +222,22 @@ export class JoinGameUseCase {
       }
     }
 
-    // 6. 儲存到記憶體和資料庫
+    // 儲存到記憶體和資料庫
     this.gameStore.set(game)
+    this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
     await this.gameRepository.save(game)
+    await this.gameRepository.saveSession(game.id, playerId, sessionToken)
 
-    console.log(`[JoinGameUseCase] Created game ${gameId} with players: ${humanPlayer.name}, ${aiPlayer.name}`)
+    console.log(
+      `[JoinGameUseCase] Player ${playerName} joined game ${game.id}, game is now IN_PROGRESS`
+    )
 
-    // 7. 排程初始事件（延遲讓客戶端建立 SSE 連線）
+    // 排程初始事件（延遲讓客戶端建立 SSE 連線）
     this.scheduleInitialEvents(game)
 
-    // 8. 返回遊戲資訊
     return {
       gameId: game.id,
-      sessionToken: game.sessionToken,
+      sessionToken,
       playerId,
       sseEndpoint: `/api/v1/games/${game.id}/events`,
       reconnected: false,
@@ -185,7 +262,10 @@ export class JoinGameUseCase {
 
         console.log(`[JoinGameUseCase] Initial events published for game ${game.id}`)
       } catch (error) {
-        console.error(`[JoinGameUseCase] Failed to publish initial events for game ${game.id}:`, error)
+        console.error(
+          `[JoinGameUseCase] Failed to publish initial events for game ${game.id}:`,
+          error
+        )
       }
     }, INITIAL_EVENT_DELAY_MS)
   }
