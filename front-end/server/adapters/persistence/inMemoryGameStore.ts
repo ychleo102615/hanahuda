@@ -17,6 +17,9 @@ import type { Game, GameStatus } from '~~/server/domain/game/game'
 import type { Round, PlayerRoundState, PendingSelection } from '~~/server/domain/round/round'
 import type { KoiStatus } from '~~/server/domain/round/koiStatus'
 
+// Application Layer Port
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
+
 // Re-export Domain types for backwards compatibility
 export type { Player, Game, GameStatus, Round, PlayerRoundState, PendingSelection, KoiStatus }
 
@@ -31,8 +34,10 @@ export type GameState = Game
  * @description
  * 單例模式，全域共用。
  * 提供快速的遊戲狀態存取。
+ *
+ * 實作 GameStorePort（Application Layer Output Port）。
  */
-class InMemoryGameStore {
+class InMemoryGameStore implements GameStorePort {
   /**
    * 遊戲 ID -> 遊戲狀態
    */

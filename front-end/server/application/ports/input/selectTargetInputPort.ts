@@ -8,10 +8,61 @@
  * @module server/application/ports/input/selectTargetInputPort
  */
 
-import type {
-  SelectTargetInput,
-  SelectTargetOutput,
-} from '~~/server/application/use-cases/selectTargetUseCase'
+// ============================================================
+// DTOs
+// ============================================================
+
+/**
+ * 選擇配對目標輸入參數
+ */
+export interface SelectTargetInput {
+  /** 遊戲 ID */
+  readonly gameId: string
+  /** 玩家 ID */
+  readonly playerId: string
+  /** 來源卡片（翻出的卡片） */
+  readonly sourceCardId: string
+  /** 選擇的配對目標 */
+  readonly targetCardId: string
+}
+
+/**
+ * 選擇配對目標輸出結果
+ */
+export interface SelectTargetOutput {
+  /** 是否成功 */
+  readonly success: true
+}
+
+// ============================================================
+// Error
+// ============================================================
+
+/**
+ * 選擇配對目標錯誤代碼
+ */
+export type SelectTargetErrorCode =
+  | 'WRONG_PLAYER'
+  | 'INVALID_STATE'
+  | 'INVALID_SELECTION'
+  | 'GAME_NOT_FOUND'
+
+/**
+ * 選擇配對目標錯誤
+ */
+export class SelectTargetError extends Error {
+  constructor(
+    public readonly code: SelectTargetErrorCode,
+    message: string
+  ) {
+    super(message)
+    this.name = 'SelectTargetError'
+  }
+}
+
+// ============================================================
+// Input Port
+// ============================================================
 
 /**
  * 選擇配對目標 Input Port

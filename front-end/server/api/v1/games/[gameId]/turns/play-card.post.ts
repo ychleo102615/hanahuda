@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod'
-import { PlayHandCardError } from '~~/server/application/use-cases/playHandCardUseCase'
+import { PlayHandCardError } from '~~/server/application/ports/input/playHandCardInputPort'
 import { container } from '~~/server/utils/container'
 import {
   validateSession,

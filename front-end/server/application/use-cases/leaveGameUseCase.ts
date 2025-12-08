@@ -13,51 +13,18 @@ import type { GameFinishedEvent, PlayerScore } from '#shared/contracts'
 import { transitionAfterPlayerLeave } from '~~/server/domain/services/roundTransitionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
-import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
-import type { GameStorePort } from './joinGameUseCase'
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
+import type { LeaveGameEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import {
+  LeaveGameError,
+  type LeaveGameInputPort,
+  type LeaveGameInput,
+  type LeaveGameOutput,
+} from '~~/server/application/ports/input/leaveGameInputPort'
 
-/**
- * 擴展介面以支援 GameFinished 事件
- */
-export interface LeaveGameEventMapperPort {
-  toGameFinishedEvent(
-    winnerId: string | null,
-    finalScores: readonly PlayerScore[]
-  ): GameFinishedEvent
-}
-
-/**
- * 離開遊戲輸入參數
- */
-export interface LeaveGameInput {
-  /** 遊戲 ID */
-  readonly gameId: string
-  /** 離開的玩家 ID */
-  readonly playerId: string
-}
-
-/**
- * 離開遊戲輸出結果
- */
-export interface LeaveGameOutput {
-  /** 是否成功 */
-  readonly success: true
-  /** 離開時間 */
-  readonly leftAt: string
-}
-
-/**
- * 離開遊戲錯誤
- */
-export class LeaveGameError extends Error {
-  constructor(
-    public readonly code: 'GAME_NOT_FOUND' | 'PLAYER_NOT_IN_GAME' | 'GAME_ALREADY_FINISHED',
-    message: string
-  ) {
-    super(message)
-    this.name = 'LeaveGameError'
-  }
-}
+// Re-export for backwards compatibility
+export { LeaveGameError } from '~~/server/application/ports/input/leaveGameInputPort'
+export type { LeaveGameEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 
 /**
  * LeaveGameUseCase

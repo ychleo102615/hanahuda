@@ -43,6 +43,7 @@ import type {
 import { toSnapshot } from '~~/server/domain/game/game'
 import { toPlayerInfo, toPlayerInfoList, createNextState, toScoreMultipliers } from './dtos'
 import { gameConfig } from '~~/server/utils/config'
+import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 
 /**
  * 產生 ISO 8601 格式的時間戳
@@ -61,9 +62,10 @@ function createEventId(): string {
 /**
  * EventMapper
  *
- * 提供 Domain → SSE Event 的轉換方法
+ * 提供 Domain → SSE Event 的轉換方法。
+ * 實作 FullEventMapperPort（Application Layer Output Port）。
  */
-export class EventMapper {
+export class EventMapper implements FullEventMapperPort {
   /**
    * 將 Game 轉換為 GameStartedEvent
    *

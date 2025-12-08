@@ -31,7 +31,7 @@ import type {
   AutoActionInputPort,
   AutoActionInput,
 } from '~~/server/application/ports/input/autoActionInputPort'
-import type { GameStorePort } from './joinGameUseCase'
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 
 /**
  * 卡片價值等級（數值越低，價值越低，越優先被打出）

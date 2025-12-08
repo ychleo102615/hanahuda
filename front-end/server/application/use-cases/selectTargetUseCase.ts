@@ -35,59 +35,20 @@ import {
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
-import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
-import type { GameStorePort, EventMapperPort } from './joinGameUseCase'
-import type { TurnEventMapperPort } from './playHandCardUseCase'
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
+import type { SelectionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import {
+  SelectTargetError,
+  type SelectTargetInputPort,
+  type SelectTargetInput,
+  type SelectTargetOutput,
+} from '~~/server/application/ports/input/selectTargetInputPort'
 import { gameConfig } from '~~/server/utils/config'
 
-/**
- * 擴展 TurnEventMapperPort 以支援選擇完成事件
- */
-export interface SelectionEventMapperPort extends TurnEventMapperPort {
-  toTurnProgressAfterSelectionEvent(
-    game: Game,
-    playerId: string,
-    selection: CardSelection,
-    drawCardPlay: CardPlay,
-    yakuUpdate: YakuUpdate | null
-  ): TurnProgressAfterSelectionEvent
-}
-
-/**
- * 選擇配對目標輸入參數
- */
-export interface SelectTargetInput {
-  /** 遊戲 ID */
-  readonly gameId: string
-  /** 玩家 ID */
-  readonly playerId: string
-  /** 來源卡片（翻出的卡片） */
-  readonly sourceCardId: string
-  /** 選擇的配對目標 */
-  readonly targetCardId: string
-}
-
-/**
- * 選擇配對目標輸出結果
- */
-export interface SelectTargetOutput {
-  /** 是否成功 */
-  readonly success: true
-}
-
-/**
- * 選擇配對目標錯誤
- */
-export class SelectTargetError extends Error {
-  constructor(
-    public readonly code: 'WRONG_PLAYER' | 'INVALID_STATE' | 'INVALID_SELECTION' | 'GAME_NOT_FOUND',
-    message: string
-  ) {
-    super(message)
-    this.name = 'SelectTargetError'
-  }
-}
+// Re-export for backwards compatibility
+export { SelectTargetError } from '~~/server/application/ports/input/selectTargetInputPort'
+export type { SelectionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 
 /**
  * SelectTargetUseCase

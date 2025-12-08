@@ -15,67 +15,19 @@
 
 import { randomUUID } from 'uncrypto'
 import type { Game } from '~~/server/domain/game/game'
-import type { GameStartedEvent, RoundDealtEvent, GameSnapshotRestore } from '#shared/contracts'
 import { createGame, addSecondPlayerAndStart, startRound } from '~~/server/domain/game/game'
 import { createPlayer } from '~~/server/domain/game/player'
 import { detectTeshi, detectKuttsuki } from '~~/server/domain/round/round'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { InternalEventPublisherPort } from '~~/server/application/ports/output/internalEventPublisherPort'
-import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
-
-/**
- * 遊戲記憶體儲存介面
- *
- * Use Case 不直接依賴具體實作，只依賴介面
- */
-export interface GameStorePort {
-  get(gameId: string): Game | undefined
-  set(game: Game): void
-  delete(gameId: string): void
-  getBySessionToken(token: string): Game | undefined
-  findWaitingGame(): Game | undefined
-  addPlayerSession(sessionToken: string, gameId: string, playerId: string): void
-}
-
-/**
- * 事件映射器介面
- *
- * 將 Domain entities 轉換為 SSE events
- */
-export interface EventMapperPort {
-  toGameStartedEvent(game: Game): GameStartedEvent
-  toRoundDealtEvent(game: Game): RoundDealtEvent
-  toGameSnapshotRestoreEvent(game: Game): GameSnapshotRestore
-}
-
-/**
- * 加入遊戲輸入參數
- */
-export interface JoinGameInput {
-  /** 玩家 ID (UUID v4) */
-  readonly playerId: string
-  /** 玩家名稱 */
-  readonly playerName: string
-  /** 會話 Token（用於重連） */
-  readonly sessionToken?: string
-}
-
-/**
- * 加入遊戲輸出結果
- */
-export interface JoinGameOutput {
-  /** 遊戲 ID */
-  readonly gameId: string
-  /** 會話 Token（該玩家的獨立 Token） */
-  readonly sessionToken: string
-  /** 玩家 ID */
-  readonly playerId: string
-  /** SSE 端點路徑 */
-  readonly sseEndpoint: string
-  /** 是否為重連 */
-  readonly reconnected: boolean
-}
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
+import type { EventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type {
+  JoinGameInputPort,
+  JoinGameInput,
+  JoinGameOutput,
+} from '~~/server/application/ports/input/joinGameInputPort'
 
 /**
  * 初始事件延遲（毫秒）

@@ -37,70 +37,20 @@ import {
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
-import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
-import type { GameStorePort, EventMapperPort } from './joinGameUseCase'
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
+import type { DecisionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import {
+  MakeDecisionError,
+  type MakeDecisionInputPort,
+  type MakeDecisionInput,
+  type MakeDecisionOutput,
+} from '~~/server/application/ports/input/makeDecisionInputPort'
 import { gameConfig } from '~~/server/utils/config'
 
-/**
- * 擴展 EventMapperPort 以支援決策事件
- */
-export interface DecisionEventMapperPort extends EventMapperPort {
-  toDecisionMadeEvent(
-    game: Game,
-    playerId: string,
-    decision: 'KOI_KOI' | 'END_ROUND',
-    multipliers: ScoreMultipliers
-  ): DecisionMadeEvent
-
-  toRoundScoredEvent(
-    game: Game,
-    winnerId: string,
-    yakuList: readonly Yaku[],
-    baseScore: number,
-    finalScore: number,
-    multipliers: ScoreMultipliers,
-    updatedScores: readonly PlayerScore[]
-  ): RoundScoredEvent
-
-  toGameFinishedEvent(
-    winnerId: string | null,
-    finalScores: readonly PlayerScore[]
-  ): GameFinishedEvent
-}
-
-/**
- * 決策輸入參數
- */
-export interface MakeDecisionInput {
-  /** 遊戲 ID */
-  readonly gameId: string
-  /** 玩家 ID */
-  readonly playerId: string
-  /** 決策 */
-  readonly decision: 'KOI_KOI' | 'END_ROUND'
-}
-
-/**
- * 決策輸出結果
- */
-export interface MakeDecisionOutput {
-  /** 是否成功 */
-  readonly success: true
-}
-
-/**
- * 決策錯誤
- */
-export class MakeDecisionError extends Error {
-  constructor(
-    public readonly code: 'WRONG_PLAYER' | 'INVALID_STATE' | 'GAME_NOT_FOUND',
-    message: string
-  ) {
-    super(message)
-    this.name = 'MakeDecisionError'
-  }
-}
+// Re-export for backwards compatibility
+export { MakeDecisionError } from '~~/server/application/ports/input/makeDecisionInputPort'
+export type { DecisionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 
 /**
  * MakeDecisionUseCase

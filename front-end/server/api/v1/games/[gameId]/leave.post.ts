@@ -9,7 +9,7 @@
  * 參考: specs/008-nuxt-backend-server/contracts/rest-api.md
  */
 
-import { LeaveGameError } from '~~/server/application/use-cases/leaveGameUseCase'
+import { LeaveGameError } from '~~/server/application/ports/input/leaveGameInputPort'
 import { container } from '~~/server/utils/container'
 import {
   validateSession,

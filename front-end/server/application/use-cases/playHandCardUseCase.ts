@@ -39,73 +39,20 @@ import {
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
-import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
-import type { GameStorePort, EventMapperPort } from './joinGameUseCase'
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
+import type { TurnEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import {
+  PlayHandCardError,
+  type PlayHandCardInputPort,
+  type PlayHandCardInput,
+  type PlayHandCardOutput,
+} from '~~/server/application/ports/input/playHandCardInputPort'
 import { gameConfig } from '~~/server/utils/config'
 
-/**
- * 擴展 EventMapperPort 以支援回合事件
- */
-export interface TurnEventMapperPort extends EventMapperPort {
-  toTurnCompletedEvent(
-    game: Game,
-    playerId: string,
-    handCardPlay: CardPlay,
-    drawCardPlay: CardPlay
-  ): TurnCompletedEvent
-
-  toSelectionRequiredEvent(
-    game: Game,
-    playerId: string,
-    handCardPlay: CardPlay,
-    drawnCard: string,
-    possibleTargets: readonly string[]
-  ): SelectionRequiredEvent
-
-  toDecisionRequiredEvent(
-    game: Game,
-    playerId: string,
-    handCardPlay: CardPlay | null,
-    drawCardPlay: CardPlay | null,
-    yakuUpdate: YakuUpdate
-  ): DecisionRequiredEvent
-}
-
-/**
- * 打手牌輸入參數
- */
-export interface PlayHandCardInput {
-  /** 遊戲 ID */
-  readonly gameId: string
-  /** 玩家 ID */
-  readonly playerId: string
-  /** 要打出的卡片 ID */
-  readonly cardId: string
-  /** 配對目標（雙重配對時必須指定） */
-  readonly targetCardId?: string
-}
-
-/**
- * 打手牌輸出結果
- */
-export interface PlayHandCardOutput {
-  /** 是否成功 */
-  readonly success: true
-}
-
-/**
- * 打手牌錯誤
- */
-export class PlayHandCardError extends Error {
-  constructor(
-    public readonly code: 'WRONG_PLAYER' | 'INVALID_STATE' | 'INVALID_CARD' | 'INVALID_TARGET' | 'GAME_NOT_FOUND',
-    message: string
-  ) {
-    super(message)
-    this.name = 'PlayHandCardError'
-  }
-}
+// Re-export for backwards compatibility
+export { PlayHandCardError } from '~~/server/application/ports/input/playHandCardInputPort'
+export type { TurnEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 
 /**
  * PlayHandCardUseCase

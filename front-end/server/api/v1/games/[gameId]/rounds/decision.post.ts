@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod'
-import { MakeDecisionError } from '~~/server/application/use-cases/makeDecisionUseCase'
+import { MakeDecisionError } from '~~/server/application/ports/input/makeDecisionInputPort'
 import { container } from '~~/server/utils/container'
 import {
   validateSession,

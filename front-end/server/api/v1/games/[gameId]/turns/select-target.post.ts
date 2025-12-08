@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod'
-import { SelectTargetError } from '~~/server/application/use-cases/selectTargetUseCase'
+import { SelectTargetError } from '~~/server/application/ports/input/selectTargetInputPort'
 import { container } from '~~/server/utils/container'
 import {
   validateSession,

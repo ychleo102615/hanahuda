@@ -8,10 +8,41 @@
  * @module server/application/ports/input/joinGameInputPort
  */
 
-import type {
-  JoinGameInput,
-  JoinGameOutput,
-} from '~~/server/application/use-cases/joinGameUseCase'
+// ============================================================
+// DTOs
+// ============================================================
+
+/**
+ * 加入遊戲輸入參數
+ */
+export interface JoinGameInput {
+  /** 玩家 ID (UUID v4) */
+  readonly playerId: string
+  /** 玩家名稱 */
+  readonly playerName: string
+  /** 會話 Token（用於重連） */
+  readonly sessionToken?: string
+}
+
+/**
+ * 加入遊戲輸出結果
+ */
+export interface JoinGameOutput {
+  /** 遊戲 ID */
+  readonly gameId: string
+  /** 會話 Token（該玩家的獨立 Token） */
+  readonly sessionToken: string
+  /** 玩家 ID */
+  readonly playerId: string
+  /** SSE 端點路徑 */
+  readonly sseEndpoint: string
+  /** 是否為重連 */
+  readonly reconnected: boolean
+}
+
+// ============================================================
+// Input Port
+// ============================================================
 
 /**
  * 加入遊戲 Input Port

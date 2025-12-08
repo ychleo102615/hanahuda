@@ -12,7 +12,7 @@
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameEvent, GameStartedEvent, RoundDealtEvent } from '#shared/contracts'
 import type { Game } from '~~/server/domain/game/game'
-import type { GameStorePort } from '~~/server/application/use-cases/joinGameUseCase'
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import { connectionStore } from './connectionStore'
 import { opponentEventBus } from './opponentEventBus'
 

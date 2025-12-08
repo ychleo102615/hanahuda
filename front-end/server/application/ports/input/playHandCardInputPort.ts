@@ -8,10 +8,62 @@
  * @module server/application/ports/input/playHandCardInputPort
  */
 
-import type {
-  PlayHandCardInput,
-  PlayHandCardOutput,
-} from '~~/server/application/use-cases/playHandCardUseCase'
+// ============================================================
+// DTOs
+// ============================================================
+
+/**
+ * 打手牌輸入參數
+ */
+export interface PlayHandCardInput {
+  /** 遊戲 ID */
+  readonly gameId: string
+  /** 玩家 ID */
+  readonly playerId: string
+  /** 要打出的卡片 ID */
+  readonly cardId: string
+  /** 配對目標（雙重配對時必須指定） */
+  readonly targetCardId?: string
+}
+
+/**
+ * 打手牌輸出結果
+ */
+export interface PlayHandCardOutput {
+  /** 是否成功 */
+  readonly success: true
+}
+
+// ============================================================
+// Error
+// ============================================================
+
+/**
+ * 打手牌錯誤代碼
+ */
+export type PlayHandCardErrorCode =
+  | 'WRONG_PLAYER'
+  | 'INVALID_STATE'
+  | 'INVALID_CARD'
+  | 'INVALID_TARGET'
+  | 'GAME_NOT_FOUND'
+
+/**
+ * 打手牌錯誤
+ */
+export class PlayHandCardError extends Error {
+  constructor(
+    public readonly code: PlayHandCardErrorCode,
+    message: string
+  ) {
+    super(message)
+    this.name = 'PlayHandCardError'
+  }
+}
+
+// ============================================================
+// Input Port
+// ============================================================
 
 /**
  * 打手牌 Input Port
