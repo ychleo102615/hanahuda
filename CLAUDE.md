@@ -43,13 +43,17 @@
 在提供任何與程式設計、架構、技術選擇相關的協助時，請優先採用『符合設計語意、抽象一致性、可讀性與長期可維護性』的解法，而非技術上最快、最簡單或最直接的做法。你的回答應著重於設計哲學、語意清晰、結構合理，而不是技巧性捷徑。
 
 # 限制
-- 開發 TypeScript 時，禁止使用 `as` 斷言，除非有使用者、註解特別允許。
+- 使用 Clean Architecture, Domain-Driven Design 架構
 
 ---
 
 # 專案概述
 
 參考 @doc/readme.md
+
+## 專案限制
+- 開發 TypeScript 時，禁止使用 `as` 斷言，除非有使用者、註解特別允許。
+- 定義 CA ports 檔案時，使用 abstract class 定義介面，防止 dock typing。
 
 
 ## Active Technologies
