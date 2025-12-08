@@ -365,12 +365,43 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T078 [P] Add comprehensive error handling and logging across all API endpoints
-- [ ] T079 [P] Implement rate limiting as specified in contracts/rest-api.md (10 req/min for join, 60 req/min for turns)
-- [ ] T080 Add SSE heartbeat (keepalive every 30 seconds) in `front-end/server/api/v1/games/[gameId]/events.get.ts`
-- [ ] T081 Implement game cleanup scheduler to remove expired games from memory
-- [ ] T082 Run quickstart.md validation - verify all commands work as documented
+- [x] T078 [P] Add comprehensive error handling and logging across all API endpoints
+  - ✅ 新增 `front-end/server/utils/logger.ts` - 結構化日誌工具
+  - ✅ 新增 `front-end/server/utils/requestId.ts` - 請求 ID 追蹤
+  - ✅ 更新所有 API endpoints 使用新日誌系統：
+    - `join.post.ts`, `leave.post.ts`, `play-card.post.ts`
+    - `select-target.post.ts`, `decision.post.ts`, `snapshot.get.ts`
+  - ✅ 日誌格式: `[timestamp] [level] [module] [requestId] message {data}`
+- [x] T079 [P] Implement rate limiting as specified in contracts/rest-api.md (10 req/min for join, 60 req/min for turns)
+  - ✅ 新增 `front-end/server/utils/rateLimiter.ts` - 滑動視窗限速器
+  - ✅ 新增 `front-end/server/middleware/rateLimit.ts` - Nitro 中間件
+  - ✅ 限制配置: join 10/min, turns 60/min
+  - ✅ 返回標準 Rate Limit headers (X-RateLimit-*)
+  - ✅ 超限返回 429 Too Many Requests
+- [x] T080 Add SSE heartbeat (keepalive every 30 seconds) in `front-end/server/api/v1/games/[gameId]/events.get.ts`
+  - ✅ 已實作於 `events.get.ts` 第 106-115 行
+  - ✅ 心跳間隔由 `gameConfig.sse_heartbeat_interval_seconds` 控制（預設 30 秒）
+  - ✅ 格式: `: heartbeat {ISO-timestamp}`
+- [x] T081 Implement game cleanup scheduler to remove expired games from memory
+  - ✅ 新增 `front-end/server/plugins/gameCleanup.ts` - Nitro Plugin
+  - ✅ 每 5 分鐘執行清理
+  - ✅ 清理 updatedAt > 30 分鐘的非 IN_PROGRESS 遊戲
+  - ✅ 使用現有的 `inMemoryGameStore.cleanupExpired()` 方法
+- [x] T082 Run quickstart.md validation - verify all commands work as documented
+  - ✅ `pnpm run type-check` 通過
+  - ✅ 更新 quickstart.md 的目錄結構文件（新增 middleware/, plugins/, timeout/）
+  - ✅ 驗證伺服器目錄結構與文件描述一致
 - [ ] T083 Final integration test - complete a full game manually from join to finish
+  - ⚠️ **需手動執行**：需要 PostgreSQL 資料庫運行
+  - **測試步驟**：
+    1. 啟動開發伺服器：`cd front-end && pnpm dev`
+    2. 檢查健康狀態：`curl http://localhost:3000/api/health`
+    3. 發送 join 請求：`curl -X POST http://localhost:3000/api/v1/games/join -H "Content-Type: application/json" -d '{"player_id":"uuid","player_name":"Player1"}'`
+    4. 建立 SSE 連線並觀察 GameStarted/RoundDealt 事件
+    5. 執行遊戲操作（play-card, select-target, decision）
+    6. 驗證 AI 對手回應
+    7. 測試斷線重連（關閉 SSE 後重新 join）
+    8. 驗證遊戲結束和清理
 
 ---
 

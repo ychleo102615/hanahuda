@@ -10,6 +10,8 @@
 
 import { z } from 'zod'
 import { container } from '~~/server/utils/container'
+import { createLogger } from '~~/server/utils/logger'
+import { initRequestId } from '~~/server/utils/requestId'
 
 /**
  * 請求 Body Schema
@@ -46,12 +48,16 @@ interface JoinGameResponse {
 }
 
 export default defineEventHandler(async (event): Promise<JoinGameResponse | ErrorResponse> => {
+  const requestId = initRequestId(event)
+  const logger = createLogger('API:join', requestId)
+
   try {
     // 1. 解析並驗證請求 Body
     const body = await readBody(event)
     const parseResult = JoinGameRequestSchema.safeParse(body)
 
     if (!parseResult.success) {
+      logger.warn('Validation failed', { errors: parseResult.error.flatten().fieldErrors })
       setResponseStatus(event, 400)
       return {
         error: {
@@ -64,6 +70,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
     }
 
     const { player_id, player_name, session_token } = parseResult.data
+    logger.info('Processing join request', { playerId: player_id, playerName: player_name, hasSessionToken: !!session_token })
 
     // 2. 從容器取得 JoinGameUseCase
     const useCase = container.joinGameUseCase
@@ -81,6 +88,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
     setResponseStatus(event, result.reconnected ? 200 : 201)
 
     // 5. 返回回應
+    logger.info('Join request completed', { gameId: result.gameId, reconnected: result.reconnected })
     return {
       data: {
         game_id: result.gameId,
@@ -91,7 +99,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
-    console.error('[POST /api/v1/games/join] Error:', error)
+    logger.error('Unexpected error', error)
 
     setResponseStatus(event, 500)
     return {

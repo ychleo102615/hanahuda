@@ -102,7 +102,13 @@ front-end/
 │   │   ├── persistence/
 │   │   ├── event-publisher/
 │   │   ├── opponent/
+│   │   ├── timeout/
 │   │   └── mappers/
+│   ├── middleware/
+│   │   └── rateLimit.ts
+│   ├── plugins/
+│   │   ├── opponent.ts
+│   │   └── gameCleanup.ts
 │   └── database/
 │       └── schema/
 ├── drizzle.config.ts

@@ -16,6 +16,8 @@ import {
   SessionValidationError,
   createSessionErrorResponse,
 } from '~~/server/utils/sessionValidation'
+import { createLogger } from '~~/server/utils/logger'
+import { initRequestId } from '~~/server/utils/requestId'
 
 /**
  * 錯誤回應型別
@@ -40,10 +42,14 @@ interface LeaveResponse {
 }
 
 export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorResponse> => {
+  const requestId = initRequestId(event)
+  const logger = createLogger('API:leave', requestId)
+
   try {
     // 1. 取得遊戲 ID
     const gameId = getRouterParam(event, 'gameId')
     if (!gameId) {
+      logger.warn('Missing game ID')
       setResponseStatus(event, 400)
       return {
         error: {
@@ -60,11 +66,14 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
       sessionContext = validateSession(event, gameId)
     } catch (err) {
       if (err instanceof SessionValidationError) {
+        logger.warn('Session validation failed', { code: err.code, gameId })
         setResponseStatus(event, err.statusCode)
         return createSessionErrorResponse(err)
       }
       throw err
     }
+
+    logger.info('Processing leave request', { gameId, playerId: sessionContext.playerId })
 
     // 3. 從容器取得 UseCase
     const useCase = container.leaveGameUseCase
@@ -76,6 +85,7 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
     })
 
     // 5. 返回成功回應
+    logger.info('Leave request completed', { gameId })
     setResponseStatus(event, 200)
     return {
       data: {
@@ -85,10 +95,9 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
-    console.error('[POST /api/v1/games/{gameId}/leave] Error:', error)
-
     // 處理 UseCase 錯誤
     if (error instanceof LeaveGameError) {
+      logger.warn('Leave game error', { code: error.code, message: error.message })
       const statusCode =
         error.code === 'GAME_NOT_FOUND'
           ? 404
@@ -105,6 +114,7 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
       }
     }
 
+    logger.error('Unexpected error', error)
     setResponseStatus(event, 500)
     return {
       error: {

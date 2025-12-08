@@ -11,6 +11,8 @@
 import { z } from 'zod'
 import { container } from '~~/server/utils/container'
 import type { GameSnapshotRestore } from '#shared/contracts'
+import { createLogger } from '~~/server/utils/logger'
+import { initRequestId } from '~~/server/utils/requestId'
 
 /**
  * 請求參數 Schema
@@ -46,12 +48,16 @@ interface SnapshotResponse {
 }
 
 export default defineEventHandler(async (event): Promise<SnapshotResponse | ErrorResponse> => {
+  const requestId = initRequestId(event)
+  const logger = createLogger('API:snapshot', requestId)
+
   try {
     // 1. 解析並驗證路由參數
     const params = getRouterParams(event)
     const paramsResult = RequestParamsSchema.safeParse(params)
 
     if (!paramsResult.success) {
+      logger.warn('Invalid gameId parameter')
       setResponseStatus(event, 400)
       return {
         error: {
@@ -69,6 +75,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponse | Erro
     const headersResult = RequestHeadersSchema.safeParse({ 'x-session-token': sessionToken })
 
     if (!headersResult.success) {
+      logger.warn('Missing or invalid session token', { gameId })
       setResponseStatus(event, 401)
       return {
         error: {
@@ -79,9 +86,12 @@ export default defineEventHandler(async (event): Promise<SnapshotResponse | Erro
       }
     }
 
+    logger.info('Processing snapshot request', { gameId })
+
     // 3. 從 gameStore 取得遊戲（驗證 session token）
     const game = container.gameStore.getBySessionToken(sessionToken!)
     if (!game) {
+      logger.warn('Invalid or expired session token', { gameId })
       setResponseStatus(event, 401)
       return {
         error: {
@@ -94,6 +104,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponse | Erro
 
     // 4. 驗證 gameId 匹配
     if (game.id !== gameId) {
+      logger.warn('Game ID mismatch', { requestedGameId: gameId, actualGameId: game.id })
       setResponseStatus(event, 404)
       return {
         error: {
@@ -106,6 +117,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponse | Erro
 
     // 5. 檢查遊戲狀態
     if (game.status === 'FINISHED') {
+      logger.warn('Game already finished', { gameId })
       setResponseStatus(event, 410)
       return {
         error: {
@@ -118,6 +130,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponse | Erro
 
     // 6. 若遊戲為 WAITING 狀態（尚未開始），無法建立快照
     if (game.status === 'WAITING') {
+      logger.warn('Game not started yet', { gameId })
       setResponseStatus(event, 409)
       return {
         error: {
@@ -131,13 +144,14 @@ export default defineEventHandler(async (event): Promise<SnapshotResponse | Erro
     // 7. 建立並回傳快照
     const snapshotEvent = container.eventMapper.toGameSnapshotRestoreEvent(game)
 
+    logger.info('Snapshot request completed', { gameId })
     setResponseStatus(event, 200)
     return {
       data: snapshotEvent,
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
-    console.error('[GET /api/v1/games/:gameId/snapshot] Error:', error)
+    logger.error('Unexpected error', error)
 
     setResponseStatus(event, 500)
     return {

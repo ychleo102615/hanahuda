@@ -16,6 +16,8 @@ import {
   SessionValidationError,
   createSessionErrorResponse,
 } from '~~/server/utils/sessionValidation'
+import { createLogger } from '~~/server/utils/logger'
+import { initRequestId } from '~~/server/utils/requestId'
 
 /**
  * 請求 Body Schema
@@ -48,10 +50,14 @@ interface PlayCardResponse {
 }
 
 export default defineEventHandler(async (event): Promise<PlayCardResponse | ErrorResponse> => {
+  const requestId = initRequestId(event)
+  const logger = createLogger('API:play-card', requestId)
+
   try {
     // 1. 取得遊戲 ID
     const gameId = getRouterParam(event, 'gameId')
     if (!gameId) {
+      logger.warn('Missing game ID')
       setResponseStatus(event, 400)
       return {
         error: {
@@ -68,6 +74,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
       sessionContext = validateSession(event, gameId)
     } catch (err) {
       if (err instanceof SessionValidationError) {
+        logger.warn('Session validation failed', { code: err.code, gameId })
         setResponseStatus(event, err.statusCode)
         return createSessionErrorResponse(err)
       }
@@ -79,6 +86,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
     const parseResult = PlayCardRequestSchema.safeParse(body)
 
     if (!parseResult.success) {
+      logger.warn('Validation failed', { errors: parseResult.error.flatten().fieldErrors })
       setResponseStatus(event, 400)
       return {
         error: {
@@ -91,6 +99,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
     }
 
     const { card_id, target_card_id } = parseResult.data
+    logger.info('Processing play-card request', { gameId, playerId: sessionContext.playerId, cardId: card_id, targetCardId: target_card_id })
 
     // 4. 從容器取得 UseCase
     const useCase = container.playHandCardUseCase
@@ -104,6 +113,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
     })
 
     // 6. 返回成功回應
+    logger.info('Play-card request completed', { gameId })
     setResponseStatus(event, 200)
     return {
       data: {
@@ -112,10 +122,9 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
-    console.error('[POST /api/v1/games/{gameId}/turns/play-card] Error:', error)
-
     // 處理 UseCase 錯誤
     if (error instanceof PlayHandCardError) {
+      logger.warn('Play card error', { code: error.code, message: error.message })
       const statusCode = error.code === 'GAME_NOT_FOUND' ? 404 : 409
       setResponseStatus(event, statusCode)
       return {
@@ -127,6 +136,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
       }
     }
 
+    logger.error('Unexpected error', error)
     setResponseStatus(event, 500)
     return {
       error: {

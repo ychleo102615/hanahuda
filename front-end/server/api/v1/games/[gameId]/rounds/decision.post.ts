@@ -16,6 +16,8 @@ import {
   SessionValidationError,
   createSessionErrorResponse,
 } from '~~/server/utils/sessionValidation'
+import { createLogger } from '~~/server/utils/logger'
+import { initRequestId } from '~~/server/utils/requestId'
 
 /**
  * 請求 Body Schema
@@ -47,10 +49,14 @@ interface DecisionResponse {
 }
 
 export default defineEventHandler(async (event): Promise<DecisionResponse | ErrorResponse> => {
+  const requestId = initRequestId(event)
+  const logger = createLogger('API:decision', requestId)
+
   try {
     // 1. 取得遊戲 ID
     const gameId = getRouterParam(event, 'gameId')
     if (!gameId) {
+      logger.warn('Missing game ID')
       setResponseStatus(event, 400)
       return {
         error: {
@@ -67,6 +73,7 @@ export default defineEventHandler(async (event): Promise<DecisionResponse | Erro
       sessionContext = validateSession(event, gameId)
     } catch (err) {
       if (err instanceof SessionValidationError) {
+        logger.warn('Session validation failed', { code: err.code, gameId })
         setResponseStatus(event, err.statusCode)
         return createSessionErrorResponse(err)
       }
@@ -78,6 +85,7 @@ export default defineEventHandler(async (event): Promise<DecisionResponse | Erro
     const parseResult = DecisionRequestSchema.safeParse(body)
 
     if (!parseResult.success) {
+      logger.warn('Validation failed', { errors: parseResult.error.flatten().fieldErrors })
       setResponseStatus(event, 400)
       return {
         error: {
@@ -90,6 +98,7 @@ export default defineEventHandler(async (event): Promise<DecisionResponse | Erro
     }
 
     const { decision } = parseResult.data
+    logger.info('Processing decision request', { gameId, playerId: sessionContext.playerId, decision })
 
     // 4. 從容器取得 UseCase
     const useCase = container.makeDecisionUseCase
@@ -102,6 +111,7 @@ export default defineEventHandler(async (event): Promise<DecisionResponse | Erro
     })
 
     // 6. 返回成功回應
+    logger.info('Decision request completed', { gameId, decision })
     setResponseStatus(event, 200)
     return {
       data: {
@@ -110,10 +120,9 @@ export default defineEventHandler(async (event): Promise<DecisionResponse | Erro
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
-    console.error('[POST /api/v1/games/{gameId}/rounds/decision] Error:', error)
-
     // 處理 UseCase 錯誤
     if (error instanceof MakeDecisionError) {
+      logger.warn('Make decision error', { code: error.code, message: error.message })
       const statusCode = error.code === 'GAME_NOT_FOUND' ? 404 : 409
       setResponseStatus(event, statusCode)
       return {
@@ -125,6 +134,7 @@ export default defineEventHandler(async (event): Promise<DecisionResponse | Erro
       }
     }
 
+    logger.error('Unexpected error', error)
     setResponseStatus(event, 500)
     return {
       error: {
