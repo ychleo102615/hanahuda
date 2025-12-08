@@ -52,6 +52,8 @@ import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
 import { MockEventEmitter } from '../mock/MockEventEmitter'
 import { EventRouter } from '../sse/EventRouter'
+import { GameApiClient } from '../api/GameApiClient'
+import { GameEventClient } from '../sse/GameEventClient'
 import { AnimationPortAdapter } from '../animation/AnimationPortAdapter'
 import { zoneRegistry } from '../animation/ZoneRegistry'
 import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
@@ -427,27 +429,51 @@ function registerInputPorts(container: DIContainer): void {
  *
  * @description
  * 註冊 GameApiClient 作為 SendCommandPort 的實作。
- *
- * TODO: Phase 3+ - 等待 GameApiClient 實作後啟用
+ * Nuxt 4 前後端同域，baseURL 使用空字串。
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function registerBackendAdapters(_container: DIContainer): void {
-  // Phase 2 暫時跳過 Backend Adapters 註冊
-  console.info('[DI] Phase 2: Skipping Backend Adapters registration (will be enabled in Phase 3+)')
+function registerBackendAdapters(container: DIContainer): void {
+  console.info('[DI] 註冊 Backend 模式 Adapters')
+
+  // Nuxt 同域，使用空字串作為 baseURL
+  const baseURL = ''
+
+  // SendCommandPort: GameApiClient
+  container.register(
+    TOKENS.SendCommandPort,
+    () => new GameApiClient(baseURL),
+    { singleton: true },
+  )
+
+  // EventRouter (共用)
+  container.register(
+    TOKENS.EventRouter,
+    () => new EventRouter(),
+    { singleton: true },
+  )
 }
 
 /**
  * 註冊 SSE 客戶端與事件路由
  *
  * @description
- * 註冊 EventRouter 與 GameEventClient，並綁定所有 SSE 事件處理器。
- *
- * TODO: Phase 3+ - 等待 SSE Client 實作後啟用
+ * 註冊 GameEventClient，用於接收伺服器推送的遊戲事件。
+ * 必須在 EventRouter 註冊後調用。
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function registerSSEClient(_container: DIContainer): void {
-  // Phase 2 暫時跳過 SSE Client 註冊
-  console.info('[DI] Phase 2: Skipping SSE Client registration (will be enabled in Phase 3+)')
+function registerSSEClient(container: DIContainer): void {
+  console.info('[DI] 註冊 SSE Client')
+
+  // Nuxt 同域，使用空字串作為 baseURL
+  const baseURL = ''
+
+  // GameEventClient
+  container.register(
+    TOKENS.GameEventClient,
+    () => {
+      const router = container.resolve(TOKENS.EventRouter) as EventRouter
+      return new GameEventClient(baseURL, router)
+    },
+    { singleton: true },
+  )
 }
 
 /**

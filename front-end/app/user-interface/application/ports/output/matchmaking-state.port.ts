@@ -46,6 +46,27 @@ export interface MatchmakingStatePort {
   setSessionToken(token: string | null): void
 
   /**
+   * 取得會話 Token
+   */
+  readonly sessionToken: string | null
+
+  /**
+   * 設定遊戲 ID
+   *
+   * @param gameId - 遊戲 ID，清除時傳入 null
+   *
+   * @description
+   * GameRequestJoin 成功後，伺服器返回 game_id。
+   * 保存此 ID 用於建立 SSE 連線。
+   */
+  setGameId(gameId: string | null): void
+
+  /**
+   * 取得遊戲 ID
+   */
+  readonly gameId: string | null
+
+  /**
    * 設定錯誤訊息
    *
    * @param message - 錯誤訊息，清除時傳入 null

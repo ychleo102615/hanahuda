@@ -26,6 +26,9 @@ interface MatchmakingState {
   /** 會話 Token（GameRequestJoin 成功後保存） */
   sessionToken: string | null
 
+  /** 遊戲 ID（GameRequestJoin 成功後保存，用於建立 SSE 連線） */
+  gameId: string | null
+
   /** 錯誤訊息 */
   errorMessage: string | null
 }
@@ -34,6 +37,7 @@ export const useMatchmakingStateStore = defineStore('matchmakingState', {
   state: (): MatchmakingState => ({
     status: 'idle',
     sessionToken: null,
+    gameId: null,
     errorMessage: null,
   }),
 
@@ -65,6 +69,10 @@ export const useMatchmakingStateStore = defineStore('matchmakingState', {
       this.sessionToken = token
     },
 
+    setGameId(gameId: string | null): void {
+      this.gameId = gameId
+    },
+
     setErrorMessage(message: string | null): void {
       this.errorMessage = message
     },
@@ -72,6 +80,7 @@ export const useMatchmakingStateStore = defineStore('matchmakingState', {
     clearSession(): void {
       this.status = 'idle'
       this.sessionToken = null
+      this.gameId = null
       this.errorMessage = null
     },
   },

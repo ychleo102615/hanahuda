@@ -24,6 +24,7 @@ definePageMeta({
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
 import { useDependency, useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
+import { useSSEConnection } from '~/user-interface/adapter/composables/useSSEConnection'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { StartGamePort } from '~/user-interface/application/ports/input'
 import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
@@ -37,8 +38,13 @@ const matchmakingStore = useMatchmakingStateStore()
 // Use Case 注入
 const startGameUseCase = useDependency<StartGamePort>(TOKENS.StartGamePort)
 
+// 遊戲模式
+const gameMode = sessionStorage.getItem('gameMode') || 'backend'
+
+// SSE 連線管理（Backend 模式）
+const { connect: connectSSE } = useSSEConnection()
+
 // Mock Event Emitter 注入（僅 Mock 模式）
-const gameMode = sessionStorage.getItem('gameMode') || 'mock'
 const mockEventEmitter = gameMode === 'mock'
   ? useOptionalDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
   : null
@@ -98,8 +104,20 @@ const handleFindMatch = async () => {
 
     console.info('[GameLobby] 遊戲啟動成功')
 
-    // 4. Mock 模式：啟動事件腳本
-    if (gameMode === 'mock' && mockEventEmitter) {
+    // 4. 根據模式建立連線
+    if (gameMode === 'backend') {
+      // Backend 模式：建立 SSE 連線
+      const gameId = matchmakingStore.gameId
+      const sessionToken = matchmakingStore.sessionToken
+
+      if (gameId && sessionToken) {
+        console.info('[GameLobby] 建立 SSE 連線', { gameId })
+        connectSSE(gameId, sessionToken)
+      } else {
+        console.warn('[GameLobby] 無法建立 SSE 連線：缺少 gameId 或 sessionToken')
+      }
+    } else if (gameMode === 'mock' && mockEventEmitter) {
+      // Mock 模式：啟動事件腳本
       console.info('[GameLobby] 啟動 Mock 事件腳本')
       mockEventEmitter.start()
     }

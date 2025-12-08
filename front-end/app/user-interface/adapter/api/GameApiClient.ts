@@ -141,7 +141,7 @@ export class GameApiClient implements SendCommandPort {
     const { gameId } = this.getGameContext()
 
     // 發送請求 (帶重試)
-    const url = `${this.baseURL}/api/v1/games/${gameId}/commands/play-hand-card`
+    const url = `${this.baseURL}/api/v1/games/${gameId}/turns/play-card`
     const body = {
       card_id: cardId,
       ...(matchTargetId && { match_target_id: matchTargetId }),
@@ -169,7 +169,7 @@ export class GameApiClient implements SendCommandPort {
     const { gameId } = this.getGameContext()
 
     // 發送請求 (帶重試)
-    const url = `${this.baseURL}/api/v1/games/${gameId}/commands/select-target`
+    const url = `${this.baseURL}/api/v1/games/${gameId}/turns/select-target`
     const body = {
       source_card_id: sourceCardId,
       target_card_id: targetCardId,
@@ -197,7 +197,7 @@ export class GameApiClient implements SendCommandPort {
     const { gameId } = this.getGameContext()
 
     // 發送請求 (帶重試)
-    const url = `${this.baseURL}/api/v1/games/${gameId}/commands/make-decision`
+    const url = `${this.baseURL}/api/v1/games/${gameId}/rounds/decision`
     const body = { decision }
 
     await this.postWithRetry(url, body)
