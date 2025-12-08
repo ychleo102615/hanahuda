@@ -37,7 +37,9 @@ import {
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
+import type { DisplayTimeoutPort } from '~~/server/application/ports/output/displayTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
+import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { DecisionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import {
@@ -64,7 +66,9 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: DecisionEventMapperPort,
     private readonly actionTimeoutManager?: ActionTimeoutPort,
-    private readonly autoActionUseCase?: AutoActionInputPort
+    private readonly autoActionUseCase?: AutoActionInputPort,
+    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
+    private readonly displayTimeoutManager?: DisplayTimeoutPort
   ) {}
 
   /**
@@ -161,9 +165,8 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       // 根據轉換結果決定下一步
       if (transitionResult.transitionType === 'NEXT_ROUND') {
         // 發送 RoundDealt 事件（延遲讓前端顯示結算畫面）
-        const displayTimeoutMs = gameConfig.display_timeout_seconds * 1000
         const firstPlayerId = game.currentRound?.activePlayerId
-        setTimeout(() => {
+        this.startDisplayTimeout(gameId, () => {
           const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
           this.eventPublisher.publishToGame(gameId, roundDealtEvent)
 
@@ -171,11 +174,34 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
           if (firstPlayerId) {
             this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
           }
-        }, displayTimeoutMs)
+        })
       } else {
-        // 遊戲結束 - 發送 GameFinished 事件
+        // 遊戲結束 - 記錄統計並發送 GameFinished 事件
         const winner = transitionResult.winner
         if (winner) {
+          // 取得勝者的 Koi-Koi 倍率
+          const winnerKoiStatus = existingGame.currentRound?.koiStatuses.find(
+            k => k.player_id === playerId
+          )
+          const winnerKoiMultiplier = winnerKoiStatus?.koi_multiplier ?? 1
+
+          // 記錄遊戲統計
+          if (this.recordGameStatsUseCase) {
+            try {
+              await this.recordGameStatsUseCase.execute({
+                gameId,
+                winnerId: winner.winnerId,
+                finalScores: winner.finalScores,
+                winnerYakuList: roundEndResult.yakuList,
+                winnerKoiMultiplier,
+                players: game.players,
+              })
+            } catch (error) {
+              console.error(`[MakeDecisionUseCase] Failed to record game stats:`, error)
+              // 統計記錄失敗不應影響遊戲結束流程
+            }
+          }
+
           const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
             winner.winnerId,
             winner.finalScores
@@ -208,6 +234,28 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     }
 
     return { player_multipliers: playerMultipliers }
+  }
+
+  /**
+   * 啟動顯示超時計時器
+   *
+   * 用於局結束後的延遲，讓前端顯示結算畫面後再推進遊戲。
+   *
+   * @param gameId - 遊戲 ID
+   * @param onTimeout - 超時回調函數
+   */
+  private startDisplayTimeout(gameId: string, onTimeout: () => void): void {
+    if (this.displayTimeoutManager) {
+      this.displayTimeoutManager.startDisplayTimeout(
+        gameId,
+        gameConfig.display_timeout_seconds,
+        onTimeout
+      )
+    } else {
+      // Fallback: 直接使用 setTimeout
+      const displayTimeoutMs = gameConfig.display_timeout_seconds * 1000
+      setTimeout(onTimeout, displayTimeoutMs)
+    }
   }
 
   /**

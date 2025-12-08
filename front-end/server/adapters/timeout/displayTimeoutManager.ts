@@ -8,6 +8,8 @@
  * @module server/adapters/timeout/displayTimeoutManager
  */
 
+import type { DisplayTimeoutPort } from '~~/server/application/ports/output/displayTimeoutPort'
+
 /**
  * 顯示超時管理器
  *
@@ -19,7 +21,7 @@
  * - Key 為 gameId 而非 gameId:playerId
  * - 無需緩衝時間（前端等待伺服器推進）
  */
-class DisplayTimeoutManager {
+class DisplayTimeoutManager implements DisplayTimeoutPort {
   private timers: Map<string, NodeJS.Timeout> = new Map()
 
   /**

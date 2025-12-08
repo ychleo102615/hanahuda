@@ -227,13 +227,19 @@
 
 ### Application Layer for US4
 
-- [x] T061 [US4] Create `front-end/server/application/use-cases/transitionRoundUseCase.ts` with display_timeout delay and next round initialization
+- [x] T061 [US4] ~~Create `front-end/server/application/use-cases/transitionRoundUseCase.ts`~~ **實作位置變更**
+  - ⚠️ **獨立 Use Case 未建立**：display_timeout delay 和 next round initialization 功能整合於 `makeDecisionUseCase.ts` 行 162-176
+  - ✅ 使用 `setTimeout` 延遲發送 `RoundDealt` 事件
+  - ✅ 延遲時間由 `gameConfig.display_timeout_seconds` 控制
 - [x] T062 [US4] Create `front-end/server/application/use-cases/leaveGameUseCase.ts` with early game termination handling
 
 ### Adapter Layer for US4
 
 - [x] T063 [US4] Extend `front-end/server/adapters/mappers/eventMapper.ts` with RoundScored, RoundDrawn, RoundEndedInstantly, GameFinished mapping
 - [x] T064 [US4] Create display timeout scheduler in `front-end/server/adapters/timeout/displayTimeoutManager.ts`
+  - ✅ 已建立 `DisplayTimeoutPort` 介面 (`ports/output/displayTimeoutPort.ts`)
+  - ✅ `displayTimeoutManager` 實作 `DisplayTimeoutPort`
+  - ✅ 已整合至 `makeDecisionUseCase.ts`，透過依賴注入使用
 
 ### API Layer for US4
 
@@ -335,13 +341,21 @@
 
 ### Application Layer for US6
 
-- [ ] T074 [P] [US6] Create `front-end/server/application/ports/output/playerStatsRepositoryPort.ts` with PlayerStatsRepository interface
-- [ ] T075 [US6] Create `front-end/server/application/use-cases/recordGameStatsUseCase.ts` with stats calculation and recording
+- [x] T074 [P] [US6] Create `front-end/server/application/ports/output/playerStatsRepositoryPort.ts` with PlayerStatsRepository interface
+- [x] T075 [US6] Create `front-end/server/application/use-cases/recordGameStatsUseCase.ts` with stats calculation and recording
+  - ✅ 新增 `front-end/server/application/ports/input/recordGameStatsInputPort.ts` Input Port
+  - ✅ 只記錄人類玩家統計，不記錄 AI 玩家
 
 ### Adapter Layer for US6
 
-- [ ] T076 [US6] Create `front-end/server/adapters/persistence/drizzlePlayerStatsRepository.ts` with PlayerStatsRepositoryPort implementation
-- [ ] T077 [US6] Integrate stats recording into game finish flow in `front-end/server/application/use-cases/transitionRoundUseCase.ts`
+- [x] T076 [US6] Create `front-end/server/adapters/persistence/drizzlePlayerStatsRepository.ts` with PlayerStatsRepositoryPort implementation
+  - ✅ 使用 PostgreSQL JSONB 合併役種計數
+  - ✅ 使用 SQL 原子性累加數值欄位
+- [x] T077 [US6] Integrate stats recording into game finish flow
+  - ⚠️ **實作位置變更**：整合至 `makeDecisionUseCase.ts` 和 `leaveGameUseCase.ts`（而非 transitionRoundUseCase.ts）
+  - ✅ `makeDecisionUseCase.ts` - 遊戲正常結束時記錄統計
+  - ✅ `leaveGameUseCase.ts` - 玩家離開/投降時記錄統計
+  - ✅ `container.ts` - 新增 recordGameStatsUseCase 依賴注入
 
 **Checkpoint**: User Story 6 complete - player statistics are recorded after each game
 
@@ -492,3 +506,18 @@ This provides:
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
 - All file paths are relative to repository root
 - Remember: Domain Layer has NO framework dependencies (pure TypeScript)
+
+### 實作差異記錄
+
+以下任務的實作位置與原始描述不同：
+
+| Task | 原始描述 | 實際實作 |
+|------|---------|---------|
+| T061 | `transitionRoundUseCase.ts` | 功能整合於 `makeDecisionUseCase.ts` |
+| T077 | 整合至 `transitionRoundUseCase.ts` | 整合至 `makeDecisionUseCase.ts` 和 `leaveGameUseCase.ts` |
+
+**原因**：
+- `transitionRoundUseCase.ts` 作為獨立 Use Case 的設計未被採用
+- Round 轉換邏輯直接在 `makeDecisionUseCase.ts` 的 `END_ROUND` 分支處理
+- 這是合理的簡化，因為 round transition 總是在 decision 後立即發生
+

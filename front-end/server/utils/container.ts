@@ -16,6 +16,7 @@
 // Adapters - Persistence
 import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
 import { gameRepository } from '~~/server/adapters/persistence/drizzleGameRepository'
+import { playerStatsRepository } from '~~/server/adapters/persistence/drizzlePlayerStatsRepository'
 
 // Adapters - Event Publisher
 import { internalEventBus } from '~~/server/adapters/event-publisher/internalEventBus'
@@ -37,6 +38,7 @@ import { SelectTargetUseCase } from '~~/server/application/use-cases/selectTarge
 import { MakeDecisionUseCase } from '~~/server/application/use-cases/makeDecisionUseCase'
 import { LeaveGameUseCase } from '~~/server/application/use-cases/leaveGameUseCase'
 import { AutoActionUseCase } from '~~/server/application/use-cases/autoActionUseCase'
+import { RecordGameStatsUseCase } from '~~/server/application/use-cases/recordGameStatsUseCase'
 
 // Input Port Types
 import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
@@ -45,6 +47,7 @@ import type { SelectTargetInputPort } from '~~/server/application/ports/input/se
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
 import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
+import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
 
 /**
  * 建立 SSEEventPublisher（需要 gameStore）
@@ -54,6 +57,13 @@ const sseEventPublisher = createSSEEventPublisher(inMemoryGameStore)
 /**
  * 建立 Use Cases（實作 Input Ports）
  */
+/**
+ * 建立 RecordGameStatsUseCase（無循環依賴）
+ */
+const recordGameStatsUseCase: RecordGameStatsInputPort = new RecordGameStatsUseCase(
+  playerStatsRepository
+)
+
 const joinGameUseCase: JoinGameInputPort = new JoinGameUseCase(
   gameRepository,
   sseEventPublisher,
@@ -66,7 +76,8 @@ const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(
   gameRepository,
   sseEventPublisher,
   inMemoryGameStore,
-  eventMapper
+  eventMapper,
+  recordGameStatsUseCase
 )
 
 /**
@@ -111,7 +122,9 @@ const makeDecisionUseCase: MakeDecisionInputPort = new MakeDecisionUseCase(
   inMemoryGameStore,
   eventMapper,
   actionTimeoutManager,
-  { execute: (input) => getAutoActionUseCase().execute(input) }
+  { execute: (input) => getAutoActionUseCase().execute(input) },
+  recordGameStatsUseCase,
+  displayTimeoutManager
 )
 
 // 建立 autoActionUseCase（使用帶超時的 Use Cases）
@@ -134,6 +147,7 @@ export const container = {
   // Adapters
   gameStore: inMemoryGameStore,
   gameRepository,
+  playerStatsRepository,
   sseEventPublisher,
   eventMapper,
   internalEventBus,
@@ -149,4 +163,5 @@ export const container = {
   makeDecisionUseCase,
   leaveGameUseCase,
   autoActionUseCase,
+  recordGameStatsUseCase,
 } as const

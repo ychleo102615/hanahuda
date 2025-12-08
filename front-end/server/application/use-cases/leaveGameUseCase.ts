@@ -15,6 +15,7 @@ import type { GameRepositoryPort } from '~~/server/application/ports/output/game
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { LeaveGameEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
 import {
   LeaveGameError,
   type LeaveGameInputPort,
@@ -36,7 +37,8 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
-    private readonly eventMapper: LeaveGameEventMapperPort
+    private readonly eventMapper: LeaveGameEventMapperPort,
+    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort
   ) {}
 
   /**
@@ -70,8 +72,25 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
     const transitionResult = transitionAfterPlayerLeave(existingGame, playerId)
     const game = transitionResult.game
 
-    // 5. 發送 GameFinished 事件（對手獲勝）
+    // 5. 發送 GameFinished 事件（對手獲勝）並記錄統計
     if (transitionResult.winner) {
+      // 記錄遊戲統計（玩家離開/投降，對手獲勝）
+      if (this.recordGameStatsUseCase) {
+        try {
+          await this.recordGameStatsUseCase.execute({
+            gameId,
+            winnerId: transitionResult.winner.winnerId,
+            finalScores: transitionResult.winner.finalScores,
+            winnerYakuList: [],  // 投降情況下無役種
+            winnerKoiMultiplier: 1,  // 投降情況下無 Koi-Koi 倍率
+            players: existingGame.players,
+          })
+        } catch (error) {
+          console.error(`[LeaveGameUseCase] Failed to record game stats:`, error)
+          // 統計記錄失敗不應影響遊戲結束流程
+        }
+      }
+
       const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
         transitionResult.winner.winnerId,
         transitionResult.winner.finalScores
