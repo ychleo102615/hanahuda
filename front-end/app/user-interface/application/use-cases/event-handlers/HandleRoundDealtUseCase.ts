@@ -82,8 +82,10 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
       },
     })
 
-    // 3. 動畫完成後更新 FlowStage
+    // 3. 動畫完成後更新遊戲狀態
+    // 遵循 Server 權威原則：使用 server 提供的 next_state 設定狀態
     this.gameState.setFlowStage(event.next_state.state_type)
+    this.gameState.setActivePlayer(event.next_state.active_player_id)
 
     // 4. 啟動操作倒數
     this.notification.startActionCountdown(event.action_timeout_seconds)

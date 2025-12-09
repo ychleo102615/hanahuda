@@ -82,8 +82,8 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
     // 0. 清除當前玩家的超時計時器
     this.actionTimeoutManager?.clearTimeout(`${gameId}:${playerId}`)
 
-    // 1. 取得遊戲狀態
-    const existingGame = await this.gameRepository.findById(gameId)
+    // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
+    const existingGame = this.gameStore.get(gameId)
     if (!existingGame) {
       throw new PlayHandCardError('GAME_NOT_FOUND', `Game not found: ${gameId}`)
     }

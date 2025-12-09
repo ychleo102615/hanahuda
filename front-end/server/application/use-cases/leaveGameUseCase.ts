@@ -51,8 +51,8 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
   async execute(input: LeaveGameInput): Promise<LeaveGameOutput> {
     const { gameId, playerId } = input
 
-    // 1. 取得遊戲狀態
-    const existingGame = await this.gameRepository.findById(gameId)
+    // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
+    const existingGame = this.gameStore.get(gameId)
     if (!existingGame) {
       throw new LeaveGameError('GAME_NOT_FOUND', `Game not found: ${gameId}`)
     }

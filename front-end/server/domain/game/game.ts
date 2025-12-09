@@ -214,15 +214,8 @@ export function startRound(game: Game): Game {
   const playerIds = game.players.map((p) => p.id)
   const dealResult = deal(shuffledDeck, playerIds)
 
-  // 先手是非莊家
-  const startingPlayerIndex = (dealerIndex + 1) % 2
-  const startingPlayer = game.players[startingPlayerIndex]
-
-  if (!startingPlayer) {
-    throw new Error(`Starting player not found at index ${startingPlayerIndex}`)
-  }
-
-  const startingPlayerId = startingPlayer.id
+  // 先手是莊家（符合標準 Koi-Koi 規則）
+  const startingPlayerId = dealerId
 
   const round = createRound({
     dealerId,
