@@ -18,7 +18,7 @@
  */
 
 // Game Initialization Input Ports
-export type { StartGamePort } from './start-game.port'
+export type { StartGamePort, StartGameRequest } from './start-game.port'
 
 // Player Operations Input Ports
 export type {

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hanafuda-postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: hanafuda
+    ports:
+      - "5432:5432"
+    volumes:
+      - hanafuda-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d hanafuda"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  hanafuda-postgres-data:

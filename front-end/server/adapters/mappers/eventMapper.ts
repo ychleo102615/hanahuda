@@ -8,7 +8,7 @@
  * @module server/adapters/mappers/eventMapper
  */
 
-import { randomUUID } from 'uncrypto'
+import { randomUUID } from 'crypto'
 import type { Game } from '~~/server/domain/game/game'
 import type { Player } from '~~/server/domain/game/player'
 import type { Round } from '~~/server/domain/round/round'

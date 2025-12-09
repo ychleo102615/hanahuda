@@ -15,7 +15,7 @@ export default defineNuxtConfig({
 
   typescript: {
     strict: true,
-    typeCheck: true,
+    typeCheck: process.env.NODE_ENV === 'production', // dev 模式停用，避免 vite-plugin-checker race condition
   },
 
   alias: {

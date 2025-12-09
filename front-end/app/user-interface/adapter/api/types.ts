@@ -7,6 +7,18 @@
  */
 
 /**
+ * joinGame API 請求
+ */
+export interface JoinGameRequest {
+  /** 玩家 ID (UUID) */
+  player_id: string
+  /** 玩家名稱 */
+  player_name: string
+  /** Session Token (可選,用於重連) */
+  session_token?: string
+}
+
+/**
  * joinGame API 回應
  */
 export interface JoinGameResponse {
@@ -16,8 +28,8 @@ export interface JoinGameResponse {
   session_token: string
   /** 玩家 ID */
   player_id: string
-  /** 遊戲快照 (重連時返回,首次加入為 null) */
-  snapshot: GameSnapshot | null
+  /** SSE 端點 */
+  sse_endpoint: string
 }
 
 /**

@@ -88,6 +88,11 @@ const handleBackToHome = () => {
   closePanel()
 }
 
+// 生成 UUID
+const generateUUID = (): string => {
+  return crypto.randomUUID()
+}
+
 // 開始配對
 const handleFindMatch = async () => {
   if (!canStartMatchmaking.value) return
@@ -99,8 +104,10 @@ const handleFindMatch = async () => {
     // 2. 啟動倒數計時器
     startCountdown()
 
-    // 3. 調用 StartGameUseCase
-    await startGameUseCase.execute()
+    // 3. 調用 StartGameUseCase（生成 playerId，使用預設名稱）
+    const playerId = sessionStorage.getItem('player_id') || generateUUID()
+    const playerName = 'Player' // 未來可由使用者輸入
+    await startGameUseCase.execute({ playerId, playerName })
 
     console.info('[GameLobby] 遊戲啟動成功')
 

@@ -26,23 +26,26 @@
  * ```
  */
 
-import type { JoinGameResponse } from '~/user-interface/adapter/api/types'
+import type { JoinGameRequest, JoinGameResponse } from '~/user-interface/adapter/api/types'
 
 export interface SendCommandPort {
   /**
    * 加入遊戲（配對或創建遊戲）
    *
-   * @param sessionToken - 可選的會話 Token（用於重連）
-   * @returns JoinGameResponse - 包含 game_id, session_token, player_id, snapshot
+   * @param request - 加入遊戲請求（包含 player_id, player_name, 可選 session_token）
+   * @returns JoinGameResponse - 包含 game_id, session_token, player_id, sse_endpoint
    * @throws 當網路錯誤或伺服器拒絕時拋出異常
    *
    * @example
    * ```typescript
-   * const response = await sendCommand.joinGame()
+   * const response = await sendCommand.joinGame({
+   *   player_id: 'uuid',
+   *   player_name: 'Player 1'
+   * })
    * console.log(response.session_token)
    * ```
    */
-  joinGame(sessionToken?: string): Promise<JoinGameResponse>
+  joinGame(request: JoinGameRequest): Promise<JoinGameResponse>
   /**
    * 離開遊戲
    *

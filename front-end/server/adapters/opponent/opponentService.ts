@@ -14,7 +14,7 @@
  * @module server/adapters/opponent/opponentService
  */
 
-import { randomUUID } from 'uncrypto'
+import { randomUUID } from 'crypto'
 import type { GameEvent, FlowState } from '#shared/contracts'
 import type { Game } from '~~/server/domain/game/game'
 import type { RoomCreatedPayload } from '~~/server/application/ports/output/internalEventPublisherPort'

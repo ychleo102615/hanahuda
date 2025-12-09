@@ -14,7 +14,7 @@
  */
 
 import type { SendCommandPort } from '~/user-interface/application/ports/output'
-import type { JoinGameResponse } from '../api/types'
+import type { JoinGameRequest, JoinGameResponse } from '../api/types'
 
 /**
  * 延遲函數 (模擬網路延遲)
@@ -32,18 +32,19 @@ export class MockApiClient implements SendCommandPort {
   /**
    * Mock joinGame
    *
+   * @param request - 加入遊戲請求
    * @returns 模擬的 JoinGameResponse
    */
-  async joinGame(sessionToken?: string): Promise<JoinGameResponse> {
+  async joinGame(request: JoinGameRequest): Promise<JoinGameResponse> {
     await delay(50)
 
-    console.info('[Mock API] joinGame', { sessionToken })
+    console.info('[Mock API] joinGame', { request })
 
     return {
       game_id: 'mock-game-123',
-      session_token: 'mock-token-456',
-      player_id: 'player-1',
-      snapshot: null,
+      session_token: request.session_token || 'mock-token-456',
+      player_id: request.player_id,
+      sse_endpoint: `/api/v1/games/mock-game-123/events`,
     }
   }
 

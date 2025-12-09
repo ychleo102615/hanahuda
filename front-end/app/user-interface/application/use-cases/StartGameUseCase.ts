@@ -24,7 +24,7 @@
  * ```
  */
 
-import type { StartGamePort } from '../ports/input'
+import type { StartGamePort, StartGameRequest } from '../ports/input'
 import type { SendCommandPort, MatchmakingStatePort } from '../ports/output'
 
 export class StartGameUseCase implements StartGamePort {
@@ -33,9 +33,13 @@ export class StartGameUseCase implements StartGamePort {
     private readonly matchmakingState: MatchmakingStatePort
   ) {}
 
-  async execute(sessionToken?: string): Promise<void> {
+  async execute(request: StartGameRequest): Promise<void> {
     // 1. 調用 joinGame API
-    const response = await this.sendCommand.joinGame(sessionToken)
+    const response = await this.sendCommand.joinGame({
+      player_id: request.playerId,
+      player_name: request.playerName,
+      session_token: request.sessionToken,
+    })
 
     // 2. 保存 session token 和 game id 到 store
     this.matchmakingState.setSessionToken(response.session_token)
@@ -44,16 +48,14 @@ export class StartGameUseCase implements StartGamePort {
     // 3. 保存到 sessionStorage（用於重連）
     sessionStorage.setItem('session_token', response.session_token)
     sessionStorage.setItem('game_id', response.game_id)
+    sessionStorage.setItem('player_id', response.player_id)
 
     // 4. 記錄日誌
     console.info('[StartGameUseCase] 遊戲啟動成功', {
       sessionToken: response.session_token,
       gameId: response.game_id,
       playerId: response.player_id,
-      hasSnapshot: response.snapshot !== null
+      sseEndpoint: response.sse_endpoint,
     })
-
-    // 注意：snapshot 的處理由 HandleGameStartedUseCase 負責
-    // 這裡只負責保存 session token 和 game id
   }
 }

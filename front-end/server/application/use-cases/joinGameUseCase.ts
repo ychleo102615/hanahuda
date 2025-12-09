@@ -13,7 +13,7 @@
  * @module server/application/use-cases/joinGameUseCase
  */
 
-import { randomUUID } from 'uncrypto'
+import { randomUUID } from 'crypto'
 import type { Game } from '~~/server/domain/game/game'
 import { createGame, addSecondPlayerAndStart, startRound } from '~~/server/domain/game/game'
 import { createPlayer } from '~~/server/domain/game/player'

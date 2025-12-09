@@ -117,6 +117,44 @@ front-end/
 
 ---
 
+## 3.5 Docker Compose 開發環境（推薦）
+
+如果你沒有本地 PostgreSQL，可以使用 Docker Compose 快速啟動：
+
+### 啟動 PostgreSQL
+
+```bash
+cd front-end
+pnpm db:up
+```
+
+### 驗證資料庫就緒
+
+```bash
+docker compose ps
+# 應該看到 hanafuda-postgres (healthy)
+```
+
+### 執行 Migration
+
+```bash
+pnpm db:migrate
+```
+
+### 停止資料庫
+
+```bash
+pnpm db:down
+```
+
+### 完全清除（包含資料）
+
+```bash
+docker compose down -v
+```
+
+---
+
 ## 4. 資料庫設置
 
 ### 4.1 環境變數

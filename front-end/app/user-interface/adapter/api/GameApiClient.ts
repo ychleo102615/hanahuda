@@ -28,14 +28,22 @@ import {
 import { useGameStateStore } from '../stores/gameState'
 
 /**
- * JoinGameResponse 介面
+ * JoinGameResponse 介面（後端回傳格式）
  */
 export interface JoinGameResponse {
   game_id: string
   session_token: string
   player_id: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  snapshot: any | null
+  sse_endpoint: string
+}
+
+/**
+ * JoinGameRequest 介面
+ */
+export interface JoinGameRequest {
+  player_id: string
+  player_name: string
+  session_token?: string
 }
 
 /**
@@ -78,20 +86,27 @@ export class GameApiClient implements SendCommandPort {
   /**
    * 加入遊戲
    *
-   * @param sessionToken - 會話 Token (可選,用於重連)
+   * @param request - 加入遊戲請求（包含 player_id, player_name, 可選 session_token）
    * @returns JoinGameResponse 物件
    * @throws {NetworkError} 網路連線失敗
    * @throws {ServerError} 伺服器錯誤
    * @throws {TimeoutError} 請求超時
    * @throws {ValidationError} 請求格式錯誤或遊戲不存在
    */
-  async joinGame(sessionToken?: string): Promise<JoinGameResponse> {
+  async joinGame(request: JoinGameRequest): Promise<JoinGameResponse> {
     const url = `${this.baseURL}/api/v1/games/join`
-    const body = sessionToken ? { session_token: sessionToken } : {}
+    const body: Record<string, string> = {
+      player_id: request.player_id,
+      player_name: request.player_name,
+    }
+    if (request.session_token) {
+      body.session_token = request.session_token
+    }
 
     // joinGame 不進行重試 (避免重複加入遊戲)
     const response = await this.post(url, body)
-    return response
+    // 後端包裝在 data 中
+    return response.data
   }
 
   /**
@@ -144,7 +159,7 @@ export class GameApiClient implements SendCommandPort {
     const url = `${this.baseURL}/api/v1/games/${gameId}/turns/play-card`
     const body = {
       card_id: cardId,
-      ...(matchTargetId && { match_target_id: matchTargetId }),
+      ...(matchTargetId && { target_card_id: matchTargetId }),
     }
 
     await this.postWithRetry(url, body)
