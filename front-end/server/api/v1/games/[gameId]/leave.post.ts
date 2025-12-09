@@ -15,6 +15,7 @@ import {
   validateSession,
   SessionValidationError,
   createSessionErrorResponse,
+  clearSessionCookie,
 } from '~~/server/utils/sessionValidation'
 import { createLogger } from '~~/server/utils/logger'
 import { initRequestId } from '~~/server/utils/requestId'
@@ -84,7 +85,11 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
       playerId: sessionContext.playerId,
     })
 
-    // 5. 返回成功回應
+    // 5. 清除 Session Cookie
+    clearSessionCookie(event)
+    logger.info('Session cookie cleared', { gameId })
+
+    // 6. 返回成功回應
     logger.info('Leave request completed', { gameId })
     setResponseStatus(event, 200)
     return {

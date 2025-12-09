@@ -7,7 +7,9 @@
  * 注意：遊戲模式（gameMode）不在此處理，由 DI Plugin 透過 runtimeConfig 統一管理。
  */
 
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
+import { useDependency } from '~/user-interface/adapter/composables/useDependency'
+import { TOKENS } from '~/user-interface/adapter/di/tokens'
+import type { SessionContextPort } from '~/user-interface/application/ports/output/session-context.port'
 
 export default defineNuxtRouteMiddleware((to, from) => {
   // Nuxt 4: 只在 client-side 執行
@@ -15,11 +17,12 @@ export default defineNuxtRouteMiddleware((to, from) => {
     return
   }
 
-  const gameState = useGameStateStore()
+  // 從 SessionContext 檢查是否有活躍的遊戲會話
+  const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
   console.info('[Middleware] 進入遊戲頁面', { from: from.path })
 
-  if (!gameState.gameId) {
+  if (!sessionContext.hasActiveSession()) {
     console.warn('[Middleware] 無遊戲會話，重定向至 /lobby')
     return navigateTo('/lobby')
   }

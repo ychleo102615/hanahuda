@@ -47,10 +47,12 @@ export interface GroupedDepository {
 
 /**
  * GameStateStore State 介面
+ *
+ * @note gameId 已移至 SessionContextPort 管理（單一真相來源）
  */
 export interface GameStateStoreState {
   // 遊戲上下文
-  gameId: string | null
+  // 注意：gameId 由 SessionContextPort 管理，不在此 store 中
   localPlayerId: string | null
   opponentPlayerId: string | null
   ruleset: Ruleset | null
@@ -104,7 +106,7 @@ export interface GameStateStoreActions extends UIStatePort {
 export const useGameStateStore = defineStore('gameState', {
   state: (): GameStateStoreState => ({
     // 遊戲上下文
-    gameId: null,
+    // 注意：gameId 由 SessionContextPort 管理，不在此 store 中
     localPlayerId: null,
     opponentPlayerId: null,
     ruleset: null,
@@ -218,12 +220,17 @@ export const useGameStateStore = defineStore('gameState', {
     /**
      * 初始化遊戲上下文（GameStarted 使用）
      *
-     * @param gameId - 遊戲 ID
+     * @param gameId - 遊戲 ID（由 SSE 事件傳入，但儲存於 SessionContext）
      * @param players - 玩家資訊列表
      * @param ruleset - 遊戲規則集
+     *
+     * @note gameId 參數已移至 SessionContextPort 管理，此處僅作為參數傳入但不儲存
      */
     initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void {
-      this.gameId = gameId
+      // gameId 由 SessionContextPort 管理，此處不再儲存
+      // 保留參數是為了與 GameStatePort 介面相容
+      void gameId // 明確標示未使用
+
       this.ruleset = ruleset
 
       // 辨識本地玩家（非 AI 玩家）
@@ -246,10 +253,14 @@ export const useGameStateStore = defineStore('gameState', {
      * 恢復完整遊戲狀態（GameSnapshotRestore 使用）
      *
      * @param snapshot - 完整的遊戲快照數據
+     *
+     * @note gameId 由 SessionContextPort 管理，此處不再儲存
      */
     restoreGameState(snapshot: GameSnapshotRestore): void {
       // 快照恢復：完全覆蓋所有狀態
-      this.gameId = snapshot.game_id
+      // gameId 由 SessionContextPort 管理，此處不再儲存
+      void snapshot.game_id // 明確標示未使用
+
       this.flowStage = snapshot.current_flow_stage
       this.activePlayerId = snapshot.active_player_id
 
@@ -296,7 +307,6 @@ export const useGameStateStore = defineStore('gameState', {
       })
 
       console.info('[GameStateStore] 快照恢復完成', {
-        gameId: this.gameId,
         flowStage: this.flowStage,
         fieldCards: this.fieldCards.length,
         myHandCards: this.myHandCards.length,
@@ -425,9 +435,11 @@ export const useGameStateStore = defineStore('gameState', {
 
     /**
      * 重置所有狀態（用於離開遊戲）
+     *
+     * @note gameId 由 SessionContextPort 清除，此處不處理
      */
     reset(): void {
-      this.gameId = null
+      // gameId 由 SessionContextPort 清除
       this.localPlayerId = null
       this.opponentPlayerId = null
       this.ruleset = null

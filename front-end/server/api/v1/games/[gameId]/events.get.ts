@@ -38,8 +38,6 @@ function formatHeartbeat(): string {
 
 export default defineEventHandler(async (event) => {
   const gameId = getRouterParam(event, 'gameId')
-  const query = getQuery(event)
-  const token = query.token as string | undefined
 
   // 1. 驗證參數
   if (!gameId) {
@@ -47,8 +45,11 @@ export default defineEventHandler(async (event) => {
     return { error: { code: 'MISSING_GAME_ID', message: 'Game ID is required' } }
   }
 
+  // 從 Cookie 讀取 session_token（HttpOnly Cookie 由瀏覽器自動傳送）
+  const token = getCookie(event, 'session_token')
+
   if (!token) {
-    setResponseStatus(event, 400)
+    setResponseStatus(event, 401)
     return { error: { code: 'MISSING_TOKEN', message: 'Session token is required' } }
   }
 

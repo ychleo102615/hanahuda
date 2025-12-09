@@ -12,6 +12,7 @@ import { z } from 'zod'
 import { container } from '~~/server/utils/container'
 import { createLogger } from '~~/server/utils/logger'
 import { initRequestId } from '~~/server/utils/requestId'
+import { setSessionCookie } from '~~/server/utils/sessionValidation'
 
 /**
  * 請求 Body Schema
@@ -36,11 +37,12 @@ interface ErrorResponse {
 
 /**
  * 成功回應型別
+ *
+ * @note session_token 不再包含在回應中，改為透過 HttpOnly Cookie 傳送
  */
 interface JoinGameResponse {
   data: {
     game_id: string
-    session_token: string
     player_id: string
     sse_endpoint: string
   }
@@ -82,17 +84,20 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
       sessionToken: session_token,
     })
 
-    // 4. 設定回應狀態碼
+    // 4. 設定 HttpOnly Cookie 存放 session_token
+    setSessionCookie(event, result.sessionToken)
+    logger.info('Session cookie set', { gameId: result.gameId })
+
+    // 5. 設定回應狀態碼
     // 201 Created: 新遊戲建立（WAITING 或 IN_PROGRESS）
     // 200 OK: 重連現有遊戲
     setResponseStatus(event, result.reconnected ? 200 : 201)
 
-    // 5. 返回回應
+    // 6. 返回回應（不含 session_token，已透過 Cookie 傳送）
     logger.info('Join request completed', { gameId: result.gameId, reconnected: result.reconnected })
     return {
       data: {
         game_id: result.gameId,
-        session_token: result.sessionToken,
         player_id: result.playerId,
         sse_endpoint: result.sseEndpoint,
       },

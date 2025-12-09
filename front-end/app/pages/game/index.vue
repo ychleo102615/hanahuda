@@ -95,7 +95,6 @@ onMounted(() => {
   // 遊戲已在 GameLobby 初始化，此處只負責呈現
   console.info('[GamePage] 遊戲頁面已載入', {
     gameMode,
-    gameId: gameState.gameId
   })
 })
 

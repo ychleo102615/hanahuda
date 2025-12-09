@@ -46,7 +46,8 @@ import { StartGameUseCase } from '../../application/use-cases/StartGameUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort } from '../../application/ports/output'
+import { createSessionContextAdapter } from '../session/SessionContextAdapter'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
@@ -240,6 +241,15 @@ function registerOutputPorts(container: DIContainer): void {
     { singleton: true },
   )
 
+  // SessionContextPort: 由 SessionContextAdapter 實作
+  // 管理非敏感的 session 識別資訊（gameId, playerId）
+  // session_token 由 HttpOnly Cookie 管理，不在此介面中
+  container.register(
+    TOKENS.SessionContextPort,
+    () => createSessionContextAdapter(),
+    { singleton: true },
+  )
+
   // SendCommandPort: 根據模式由不同的 Adapter 實作
   // 在 registerBackendAdapters / registerMockAdapters 中註冊
 }
@@ -267,10 +277,13 @@ function registerInputPorts(container: DIContainer): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
 
-  // 註冊 StartGamePort
+  // SessionContextPort: 管理 session 識別資訊
+  const sessionContextPort = container.resolve(TOKENS.SessionContextPort) as SessionContextPort
+
+  // 註冊 StartGamePort（注入 SessionContextPort）
   container.register(
     TOKENS.StartGamePort,
-    () => new StartGameUseCase(sendCommandPort, matchmakingStatePort),
+    () => new StartGameUseCase(sendCommandPort, matchmakingStatePort, sessionContextPort),
     { singleton: true }
   )
 
@@ -430,6 +443,7 @@ function registerInputPorts(container: DIContainer): void {
  * @description
  * 註冊 GameApiClient 作為 SendCommandPort 的實作。
  * Nuxt 4 前後端同域，baseURL 使用空字串。
+ * 注入 SessionContextPort 以取得 gameId, playerId。
  */
 function registerBackendAdapters(container: DIContainer): void {
   console.info('[DI] 註冊 Backend 模式 Adapters')
@@ -437,10 +451,13 @@ function registerBackendAdapters(container: DIContainer): void {
   // Nuxt 同域，使用空字串作為 baseURL
   const baseURL = ''
 
-  // SendCommandPort: GameApiClient
+  // SendCommandPort: GameApiClient（注入 SessionContextPort）
   container.register(
     TOKENS.SendCommandPort,
-    () => new GameApiClient(baseURL),
+    () => {
+      const sessionContext = container.resolve(TOKENS.SessionContextPort) as SessionContextPort
+      return new GameApiClient(baseURL, sessionContext)
+    },
     { singleton: true },
   )
 

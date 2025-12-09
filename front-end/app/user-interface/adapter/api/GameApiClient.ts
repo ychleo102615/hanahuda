@@ -16,23 +16,27 @@
  * - 超時處理 (預設 5 秒)
  * - 錯誤分類 (NetworkError, ServerError, TimeoutError, ValidationError)
  * - 友善錯誤訊息 (繁體中文)
+ * - session_token 由 HttpOnly Cookie 自動傳送，無需手動處理
+ *
+ * @module user-interface/adapter/api/GameApiClient
  */
 
 import type { SendCommandPort } from '../../application/ports/output/send-command.port'
+import type { SessionContextPort } from '../../application/ports/output/session-context.port'
 import {
   NetworkError,
   ServerError,
   TimeoutError,
   ValidationError,
 } from './errors'
-import { useGameStateStore } from '../stores/gameState'
 
 /**
  * JoinGameResponse 介面（後端回傳格式）
+ *
+ * @note session_token 不再包含在回應中，改為透過 HttpOnly Cookie 傳送
  */
 export interface JoinGameResponse {
   game_id: string
-  session_token: string
   player_id: string
   sse_endpoint: string
 }
@@ -73,13 +77,19 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * GameApiClient 類別
+ *
+ * @description
+ * 透過 DI 注入 SessionContextPort，用於取得 gameId, playerId。
+ * session_token 由 HttpOnly Cookie 自動傳送，無需手動處理。
  */
 export class GameApiClient implements SendCommandPort {
   private baseURL: string
   private timeout: number
+  private sessionContext: SessionContextPort
 
-  constructor(baseURL: string, options?: GameApiClientOptions) {
+  constructor(baseURL: string, sessionContext: SessionContextPort, options?: GameApiClientOptions) {
     this.baseURL = baseURL
+    this.sessionContext = sessionContext
     this.timeout = options?.timeout || 5000
   }
 
@@ -240,6 +250,8 @@ export class GameApiClient implements SendCommandPort {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
         signal: controller.signal,
+        // 讓瀏覽器自動附上 Cookie（包含 session_token）
+        credentials: 'same-origin',
       })
 
       clearTimeout(timeoutId)
@@ -360,13 +372,16 @@ export class GameApiClient implements SendCommandPort {
   /**
    * 取得遊戲上下文 (gameId, playerId)
    *
+   * @description
+   * 從 SessionContext 取得 session 識別資訊。
+   * session_token 由 HttpOnly Cookie 自動傳送，無需在此處理。
+   *
    * @returns 遊戲上下文
    * @throws {ValidationError} gameId 或 playerId 未初始化
    */
   private getGameContext(): { gameId: string; playerId: string } {
-    const store = useGameStateStore()
-    const gameId = store.gameId
-    const playerId = store.localPlayerId
+    const gameId = this.sessionContext.getGameId()
+    const playerId = this.sessionContext.getPlayerId()
 
     if (!gameId) {
       throw new ValidationError('遊戲尚未初始化')

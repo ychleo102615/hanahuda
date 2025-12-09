@@ -5,6 +5,8 @@
  * 管理 SSE 連線的建立、狀態同步與斷開。
  * 封裝 GameEventClient 的連線邏輯，並與 UIStateStore 的 connectionStatus 同步。
  *
+ * @note session_token 由 HttpOnly Cookie 自動傳送，無需手動傳遞
+ *
  * @example
  * ```typescript
  * import { useSSEConnection } from '~/user-interface/adapter/composables/useSSEConnection'
@@ -12,7 +14,7 @@
  * const { connect, disconnect, isConnected } = useSSEConnection()
  *
  * // 建立連線
- * connect(gameId, sessionToken)
+ * connect(gameId)
  *
  * // 離開遊戲時斷開連線
  * disconnect()
@@ -50,9 +52,10 @@ export function useSSEConnection() {
    * 建立 SSE 連線
    *
    * @param gameId - 遊戲 ID
-   * @param sessionToken - Session Token
+   *
+   * @note session_token 由 HttpOnly Cookie 自動傳送，無需手動傳遞
    */
-  function connect(gameId: string, sessionToken: string): void {
+  function connect(gameId: string): void {
     if (!gameEventClient) {
       console.warn('[useSSEConnection] GameEventClient 未註冊，跳過 SSE 連線（可能為 mock 模式）')
       return
@@ -82,8 +85,8 @@ export function useSSEConnection() {
       uiStore.showErrorMessage('無法連線到遊戲伺服器')
     })
 
-    // 建立連線
-    gameEventClient.connect(gameId, sessionToken)
+    // 建立連線（session_token 由 Cookie 自動傳送）
+    gameEventClient.connect(gameId)
   }
 
   /**

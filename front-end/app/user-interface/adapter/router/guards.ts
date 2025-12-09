@@ -14,7 +14,11 @@
  */
 
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
-import { useGameStateStore } from '../stores/gameState'
+import { SessionContextAdapter } from '../session/SessionContextAdapter'
+
+// 建立一個 SessionContext 實例用於路由守衛
+// 注意：這是為了測試用途，實際應由 DI 注入
+const sessionContext = new SessionContextAdapter()
 
 /**
  * 遊戲頁面守衛
@@ -41,11 +45,9 @@ export function gamePageGuard(
   from: RouteLocationNormalized,
   next: NavigationGuardNext
 ): void {
-  const gameState = useGameStateStore()
-
   console.info('[Router] 進入遊戲頁面', { from: from.path })
 
-  if (!gameState.gameId) {
+  if (!sessionContext.hasActiveSession()) {
     console.warn('[Router] 無遊戲會話，重定向至 /lobby')
     next({ name: 'lobby' })
     return
@@ -62,7 +64,7 @@ export function gamePageGuard(
  * 防止使用者在不適當的情況下進入大廳。
  *
  * 規則：
- * - 若 gameState 已初始化（game_id 存在），代表遊戲會話已建立
+ * - 若 SessionContext 有活躍的會話，代表遊戲會話已建立
  *   → 重定向至 /game（可能是重連或誤導航）
  * - 否則允許進入大廳
  *
@@ -85,12 +87,10 @@ export function lobbyPageGuard(
   from: RouteLocationNormalized,
   next: NavigationGuardNext
 ): void {
-  const gameState = useGameStateStore()
-
   // 若遊戲會話已建立，重定向至遊戲畫面
-  if (gameState.gameId) {
+  if (sessionContext.hasActiveSession()) {
     console.warn('[Router] 遊戲會話已存在，重定向至 /game', {
-      gameId: gameState.gameId,
+      gameId: sessionContext.getGameId(),
       from: from.path,
     })
     next({ name: 'game' })

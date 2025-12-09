@@ -20,7 +20,7 @@ import { useUIStateStore } from '../stores/uiState'
 import { useMatchmakingStateStore } from '../stores/matchmakingState'
 import { useDependency } from './useDependency'
 import { TOKENS } from '../di/tokens'
-import type { SendCommandPort, NotificationPort } from '../../application/ports/output'
+import type { SendCommandPort, NotificationPort, SessionContextPort } from '../../application/ports/output'
 import type { ActionPanelItem } from '~/components/ActionPanel.vue'
 
 export interface UseLeaveGameOptions {
@@ -38,6 +38,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   const matchmakingState = useMatchmakingStateStore()
   const gameApiClient = useDependency<SendCommandPort>(TOKENS.SendCommandPort)
   const notification = useDependency<NotificationPort>(TOKENS.NotificationPort)
+  const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
   // State
   const isActionPanelOpen = ref(false)
@@ -78,8 +79,8 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
       isConfirmDialogOpen.value = false
       isActionPanelOpen.value = false
 
-      // 取得 gameId
-      const gameId = gameState.gameId
+      // 從 SessionContext 取得 gameId
+      const gameId = sessionContext.getGameId()
       if (!gameId) {
         console.warn('[useLeaveGame] 無法退出遊戲：找不到 gameId')
         // 即使沒有 gameId，仍然清除本地狀態並導航回首頁
@@ -114,8 +115,9 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   }
 
   function clearLocalStateAndNavigate() {
-    // 清除 sessionStorage
-    sessionStorage.removeItem('session_token')
+    // 清除 SessionContext 中的 session 識別資訊
+    // 注意：session_token Cookie 已由後端 API 清除
+    sessionContext.clearIdentity()
 
     // 清理通知系統資源（倒數計時器等）
     notification.cleanup()

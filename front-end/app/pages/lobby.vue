@@ -115,14 +115,14 @@ const handleFindMatch = async () => {
     // 4. 根據模式建立連線
     if (gameMode === 'backend') {
       // Backend 模式：建立 SSE 連線
+      // session_token 由 HttpOnly Cookie 自動傳送，只需 gameId
       const gameId = matchmakingStore.gameId
-      const sessionToken = matchmakingStore.sessionToken
 
-      if (gameId && sessionToken) {
+      if (gameId) {
         console.info('[GameLobby] 建立 SSE 連線', { gameId })
-        connectSSE(gameId, sessionToken)
+        connectSSE(gameId)
       } else {
-        console.warn('[GameLobby] 無法建立 SSE 連線：缺少 gameId 或 sessionToken')
+        console.warn('[GameLobby] 無法建立 SSE 連線：缺少 gameId')
       }
     } else if (gameMode === 'mock' && mockEventEmitter) {
       // Mock 模式：啟動事件腳本

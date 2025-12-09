@@ -75,22 +75,25 @@ export class GameEventClient {
    * 建立 SSE 連線
    *
    * @param gameId - 遊戲 ID
-   * @param sessionToken - Session Token
+   *
+   * @note session_token 由 HttpOnly Cookie 自動傳送，無需手動傳遞
    *
    * @example
    * ```typescript
-   * client.connect('game-123', 'token-456')
+   * client.connect('game-123')
    * ```
    */
-  connect(gameId: string, sessionToken: string): void {
-    const url = `${this.baseURL}/api/v1/games/${gameId}/events?token=${sessionToken}`
+  connect(gameId: string): void {
+    // session_token 由 Cookie 自動傳送，不再需要 query parameter
+    const url = `${this.baseURL}/api/v1/games/${gameId}/events`
 
     try {
-      this.eventSource = new EventSource(url)
+      // EventSource 會自動包含同源 Cookie（包含 session_token）
+      this.eventSource = new EventSource(url, { withCredentials: true })
 
       // 連線建立成功
       this.eventSource.onopen = () => {
-        console.info('[SSE] 連線已建立', { gameId, sessionToken })
+        console.info('[SSE] 連線已建立', { gameId })
         this.reconnectAttempts = 0
         this.onConnectionEstablishedCallback?.()
       }
@@ -101,7 +104,7 @@ export class GameEventClient {
         this.eventSource?.close()
         this.eventSource = null
         this.onConnectionLostCallback?.()
-        void this.reconnect(gameId, sessionToken)
+        void this.reconnect(gameId)
       }
 
       // 註冊所有事件監聽器
@@ -188,10 +191,7 @@ export class GameEventClient {
    * 自動重連機制 (指數退避)
    * @private
    */
-  private async reconnect(
-    gameId: string,
-    sessionToken: string
-  ): Promise<void> {
+  private async reconnect(gameId: string): Promise<void> {
     if (this.reconnectAttempts >= this.maxAttempts) {
       console.error(
         `[SSE] 重連失敗，達到最大嘗試次數 (${this.maxAttempts})`
@@ -208,6 +208,6 @@ export class GameEventClient {
     )
 
     await sleep(delay)
-    this.connect(gameId, sessionToken)
+    this.connect(gameId)
   }
 }

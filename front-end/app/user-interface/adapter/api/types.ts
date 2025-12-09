@@ -20,12 +20,12 @@ export interface JoinGameRequest {
 
 /**
  * joinGame API 回應
+ *
+ * @note session_token 不再包含在回應中，改為透過 HttpOnly Cookie 傳送
  */
 export interface JoinGameResponse {
   /** 遊戲 ID */
   game_id: string
-  /** Session Token (用於 SSE 連線與重連) */
-  session_token: string
   /** 玩家 ID */
   player_id: string
   /** SSE 端點 */

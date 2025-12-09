@@ -13,6 +13,7 @@ export const TOKENS = {
   SendCommandPort: Symbol('SendCommandPort'),
   MatchmakingStatePort: Symbol('MatchmakingStatePort'),
   NavigationPort: Symbol('NavigationPort'),
+  SessionContextPort: Symbol('SessionContextPort'),
 
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
