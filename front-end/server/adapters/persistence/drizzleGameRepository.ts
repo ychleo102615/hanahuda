@@ -14,7 +14,7 @@ import { getDefaultRuleset, DEFAULT_TOTAL_ROUNDS } from '~~/server/domain/game/g
 import type { Player } from '~~/server/domain/game/player'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import { db } from '~~/server/utils/db'
-import { games, sessions, type NewGame, type NewSession } from '~~/server/database/schema'
+import { games, sessions, type NewGame } from '~~/server/database/schema'
 import { gameConfig } from '~~/server/utils/config'
 
 /**
@@ -48,13 +48,8 @@ export class DrizzleGameRepository implements GameRepositoryPort {
         },
       })
 
-    // 儲存會話（如果是新遊戲）
-    const existingSessions = await db.select().from(sessions).where(eq(sessions.gameId, game.id))
-
-    if (existingSessions.length === 0) {
-      const sessionRecord = this.toSessionRecord(game)
-      await db.insert(sessions).values(sessionRecord)
-    }
+    // 注意：Session 的建立由 UseCase 層透過 saveSession() 明確控制
+    // 不在此處自動建立，避免重複插入
   }
 
   /**
@@ -193,27 +188,6 @@ export class DrizzleGameRepository implements GameRepositoryPort {
       cumulativeScores: [...game.cumulativeScores],
       createdAt: game.createdAt,
       updatedAt: game.updatedAt,
-    }
-  }
-
-  /**
-   * 建立 Session Record
-   */
-  private toSessionRecord(game: Game): NewSession {
-    const player1 = game.players[0]
-    const expiresAt = new Date(Date.now() + gameConfig.session_timeout_ms)
-
-    if (!player1) {
-      throw new Error('Game must have at least one player')
-    }
-
-    return {
-      token: game.sessionToken,
-      gameId: game.id,
-      playerId: player1.id,
-      connectedAt: new Date(),
-      lastActivityAt: new Date(),
-      expiresAt,
     }
   }
 

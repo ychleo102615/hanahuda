@@ -31,6 +31,7 @@ import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEm
 import ActionPanel from '~/components/ActionPanel.vue'
 import TopInfoBar from '~/components/TopInfoBar.vue'
 import type { ActionPanelItem } from '~/components/ActionPanel.vue'
+import { useGameMode } from '~/user-interface/adapter/composables/useGameMode'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()
@@ -38,8 +39,8 @@ const matchmakingStore = useMatchmakingStateStore()
 // Use Case 注入
 const startGameUseCase = useDependency<StartGamePort>(TOKENS.StartGamePort)
 
-// 遊戲模式
-const gameMode = sessionStorage.getItem('gameMode') || 'backend'
+// 遊戲模式（從 runtimeConfig 取得，單一真相來源）
+const gameMode = useGameMode()
 
 // SSE 連線管理（Backend 模式）
 const { connect: connectSSE } = useSSEConnection()

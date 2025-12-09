@@ -36,6 +36,7 @@ import ConfirmDialog from '~/components/ConfirmDialog.vue'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
 import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
+import { useGameMode } from '~/user-interface/adapter/composables/useGameMode'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
@@ -86,8 +87,8 @@ const {
 
 // GamePage 不再直接調用業務 Port，由子組件負責
 
-// 初始化遊戲
-const gameMode = sessionStorage.getItem('gameMode') || 'mock'
+// 遊戲模式（從 runtimeConfig 取得，單一真相來源）
+const gameMode = useGameMode()
 
 onMounted(() => {
   // GamePage 不再負責初始化遊戲

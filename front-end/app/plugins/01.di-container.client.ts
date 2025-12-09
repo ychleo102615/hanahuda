@@ -23,9 +23,10 @@ export default defineNuxtPlugin({ dependsOn: ['pinia'], setup(nuxtApp) {
   // 從 nuxtApp 取得 Pinia 實例，明確傳遞給 DI registry
   const pinia = nuxtApp.$pinia as Pinia
 
-  // 從 sessionStorage 讀取遊戲模式（預設為 'backend'）
-  // 保留 sessionStorage 機制，允許開發時手動切換到 mock 模式測試
-  const gameMode: GameMode = (sessionStorage.getItem('gameMode') as GameMode) || 'backend'
+  // 從 Nuxt runtimeConfig 讀取遊戲模式（單一真相來源）
+  // 模式由 .env 中的 NUXT_PUBLIC_GAME_MODE 決定，預設為 'backend'
+  const config = useRuntimeConfig()
+  const gameMode = config.public.gameMode as GameMode
 
   console.info('[DI Plugin] Initializing DI container', { gameMode })
 

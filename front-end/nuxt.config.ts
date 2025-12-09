@@ -64,6 +64,13 @@ export default defineNuxtConfig({
 
   modules: ['@pinia/nuxt', '@vueuse/nuxt'],
 
+  runtimeConfig: {
+    // 公開變數（client 可用）
+    public: {
+      gameMode: 'backend', // 預設值，可被 NUXT_PUBLIC_GAME_MODE 覆蓋
+    },
+  },
+
   devServer: {
     port: 5173, // 保持與原 Vite 一致
   },
