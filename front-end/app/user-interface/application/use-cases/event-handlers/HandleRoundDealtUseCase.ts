@@ -47,6 +47,11 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
     this.gameState.setDealerId(event.dealer_id)
     const isPlayerDealer = event.dealer_id === localPlayerId
 
+    // 0. 等待頁面載入完成
+    // 這是為了確保 Zone 已經註冊，特別是在 Backend 模式下
+    // GameStarted 事件觸發導航後，RoundDealt 可能在頁面載入前就到達
+    await this.animation.waitForReady(['deck', 'field', 'player-hand', 'opponent-hand'])
+
     // 1. 先更新遊戲狀態（讓卡片元素在 DOM 中渲染）
     // 這樣動畫系統才能找到卡片元素
     this.gameState.updateFieldCards([...event.field])

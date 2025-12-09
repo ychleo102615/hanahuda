@@ -242,4 +242,25 @@ export interface AnimationPort {
    * ```
    */
   hideCards(cardIds: string[]): void
+
+  /**
+   * 等待動畫系統準備就緒
+   *
+   * @description
+   * 確保動畫系統已完全初始化（包括 Zone 註冊）。
+   * 用於 RoundDealt 等需要在頁面載入後執行的動畫。
+   *
+   * @param requiredZones - 需要等待的 Zone 名稱列表
+   * @param timeoutMs - 超時時間（毫秒），預設 3000ms
+   * @returns Promise，當所有指定 Zone 已註冊時 resolve
+   *
+   * @example
+   * ```typescript
+   * // 等待遊戲頁面的 Zone 準備就緒
+   * await animation.waitForReady(['deck', 'field', 'player-hand'])
+   * // 開始發牌動畫
+   * await animation.playDealAnimation(...)
+   * ```
+   */
+  waitForReady(requiredZones: string[], timeoutMs?: number): Promise<void>
 }

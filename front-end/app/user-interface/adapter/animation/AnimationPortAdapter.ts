@@ -775,5 +775,29 @@ export class AnimationPortAdapter implements AnimationPort {
     this.animationLayerStore.hideCards(cardIds)
     console.info('[AnimationPort] hideCards', { cardIds })
   }
+
+  async waitForReady(requiredZones: string[], timeoutMs = 3000): Promise<void> {
+    const intervalMs = 50
+    let waited = 0
+
+    console.info('[AnimationPort] waitForReady', { requiredZones, timeoutMs })
+
+    while (waited < timeoutMs) {
+      // 檢查所有必要的 zone 是否已註冊
+      const allReady = requiredZones.every(zone =>
+        this.registry.getPosition(zone as ZoneName) !== null
+      )
+
+      if (allReady) {
+        console.info('[AnimationPort] All zones ready', { requiredZones, waitedMs: waited })
+        return
+      }
+
+      await new Promise(resolve => setTimeout(resolve, intervalMs))
+      waited += intervalMs
+    }
+
+    console.warn('[AnimationPort] waitForReady timeout', { requiredZones, waited, timeoutMs })
+  }
 }
 

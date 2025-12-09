@@ -192,7 +192,7 @@ watch(() => props.enableShake, (shouldShake) => {
 <template>
   <div
     ref="cardRef"
-    :class="[containerClasses, { 'invisible': isHidden }]"
+    :class="[containerClasses, { 'opacity-0': isHidden }]"
     :data-card-id="isAnimationClone ? undefined : cardId"
     @click="handleClick"
     @mouseenter="handleMouseEnter"
