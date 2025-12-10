@@ -116,7 +116,11 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         }
 
         // 動畫完成後才移除場牌/手牌
-        this.removeFieldCard(matchedCard)
+        // TRIPLE_MATCH 時需要移除所有被捕獲的場牌，不只是 matched_card
+        const fieldCardsToRemove = result.capturedCards.filter(
+          id => id !== event.hand_card_play!.played_card
+        )
+        fieldCardsToRemove.forEach(cardId => this.removeFieldCard(cardId))
         this.removePlayedHandCard(event.hand_card_play.played_card, isOpponent)
 
         // 等待 TransitionGroup FLIP 動畫完成
@@ -194,8 +198,8 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         }
 
         // 動畫完成後才移除翻牌和場牌
-        this.removeFieldCard(result.playedCard)
-        this.removeFieldCard(result.matchedCard)
+        // TRIPLE_MATCH 時需要移除所有被捕獲的場牌，不只是 matched_card
+        result.capturedCards.forEach(cardId => this.removeFieldCard(cardId))
 
         // 等待 DOM 更新完成
         await new Promise(resolve => setTimeout(resolve, 50))
