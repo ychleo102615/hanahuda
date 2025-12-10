@@ -43,6 +43,19 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
   private async executeAsync(event: RoundDealtEvent): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
 
+    // === 重置上一局的狀態 ===
+    // 清空獲得區
+    this.gameState.updateDepositoryCards([], [])
+    // 清除翻牌選擇相關狀態
+    this.gameState.setPossibleTargetCardIds([])
+    this.gameState.setDrawnCard(null)
+    // 重置役種
+    this.gameState.updateYaku([], [])
+    // 重置 Koi-Koi 倍率
+    this.gameState.resetKoiKoiMultipliers()
+    // 重置牌堆數量（發牌動畫會逐張遞減）
+    this.gameState.updateDeckRemaining(24)
+
     // 記錄莊家 ID
     this.gameState.setDealerId(event.dealer_id)
     const isPlayerDealer = event.dealer_id === localPlayerId

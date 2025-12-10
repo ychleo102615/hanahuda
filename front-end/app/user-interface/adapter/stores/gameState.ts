@@ -465,6 +465,17 @@ export const useGameStateStore = defineStore('gameState', {
 
       console.info('[GameStateStore] 狀態已重置')
     },
+
+    /**
+     * 重置所有玩家的 Koi-Koi 倍率
+     *
+     * @description
+     * 新局開始時呼叫，將所有玩家的 Koi-Koi 倍率重置為初始值。
+     */
+    resetKoiKoiMultipliers(): void {
+      this.koiKoiMultipliers = {}
+      console.info('[GameStateStore] Koi-Koi 倍率已重置')
+    },
   },
 })
 

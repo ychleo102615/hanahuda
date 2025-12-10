@@ -521,6 +521,9 @@ export const useUIStateStore = defineStore('uiState', {
       this.handCardAwaitingConfirmation = null
       this.matchableFieldCards = []
       this.matchCount = 0
+      // 清除懸浮預覽狀態，避免殘留高亮
+      this.handCardHoverPreview = null
+      this.previewHighlightedTargets = []
       console.info('[UIStateStore] 退出手牌確認模式')
     },
 

@@ -124,5 +124,9 @@ export function createGameStatePortAdapter(): GameStatePort {
     getPossibleTargetCardIds(): string[] {
       return store.getPossibleTargetCardIds()
     },
+
+    resetKoiKoiMultipliers(): void {
+      store.resetKoiKoiMultipliers()
+    },
   }
 }

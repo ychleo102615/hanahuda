@@ -42,9 +42,14 @@ const selectMatchTargetPort = useDependency<SelectMatchTargetPort>(TOKENS.Select
 const playHandCardPort = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
 
 // 判斷卡片是否為懸浮預覽高亮（紫色框）
-// 只在懸浮且沒有進入確認模式時顯示
 function isPreviewHighlighted(cardId: string): boolean {
-  if (handCardConfirmationMode.value || fieldCardSelectionMode.value) {
+  // 場牌選擇模式（翻牌多重配對）時不顯示預覽高亮
+  if (fieldCardSelectionMode.value) {
+    return false
+  }
+  // 手牌確認模式時，若此卡片已在當前配對高亮中，不重複顯示預覽
+  // 這避免橙色/綠色框與紫色框重疊
+  if (handCardConfirmationMode.value && matchableFieldCards.value.includes(cardId)) {
     return false
   }
   return previewHighlightedTargets.value.includes(cardId)

@@ -385,4 +385,17 @@ export interface GameStatePort {
    * ```
    */
   getPossibleTargetCardIds(): string[]
+
+  /**
+   * 重置所有玩家的 Koi-Koi 倍率
+   *
+   * @description
+   * 新局開始時呼叫，將所有玩家的 Koi-Koi 倍率重置為初始值。
+   *
+   * @example
+   * ```typescript
+   * gameState.resetKoiKoiMultipliers()
+   * ```
+   */
+  resetKoiKoiMultipliers(): void
 }
