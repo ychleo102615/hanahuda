@@ -341,11 +341,27 @@ export class AnimationPortAdapter implements AnimationPort {
 
       if (handCardElement) {
         fromRect = handCardElement.getBoundingClientRect()
+      } else if (isOpponent) {
+        // 對手沒有真正手牌元素，使用手牌區中心作為 fallback（參考發牌動畫作法）
+        // 注意：必須在 cardElement 之前判斷，因為 cardElement 可能是場牌區的元素
+        const opponentHandPosition = this.registry.getPosition('opponent-hand')
+        if (opponentHandPosition) {
+          fromRect = new DOMRect(
+            opponentHandPosition.rect.x + opponentHandPosition.rect.width / 2 - cardWidth / 2,
+            opponentHandPosition.rect.y + opponentHandPosition.rect.height / 2 - cardHeight / 2,
+            cardWidth,
+            cardHeight
+          )
+        } else {
+          await sleep(ANIMATION_DURATION.CARD_TO_FIELD)
+          this._isAnimating = false
+          return
+        }
       } else if (cardElement) {
-        // Fallback: 使用之前找到的元素（可能在其他 zone）
+        // 玩家 Fallback: 使用之前找到的元素（可能在其他 zone）
         fromRect = cardElement.getBoundingClientRect()
       } else {
-        // 無法找到元素，跳過動畫
+        // 玩家無元素：等待時長
         await sleep(ANIMATION_DURATION.CARD_TO_FIELD)
         this._isAnimating = false
         return

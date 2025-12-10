@@ -317,10 +317,13 @@ export const useGameStateStore = defineStore('gameState', {
      * 設定當前流程階段
      *
      * @param stage - 流程階段
+     *
+     * @note 此方法僅更新 flowStage，不改變 activePlayerId。
+     *       activePlayerId 應由 GameStatePortAdapter.setActivePlayer 單獨管理。
      */
     setFlowStage(stage: FlowState): void {
       this.flowStage = stage
-      this.activePlayerId = this.localPlayerId // 假設設定流程階段時即為本地玩家回合
+      // 注意：不再自動設定 activePlayerId，避免覆蓋正確的活動玩家
     },
 
     /**

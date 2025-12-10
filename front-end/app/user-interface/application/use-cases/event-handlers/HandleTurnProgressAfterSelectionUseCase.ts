@@ -71,8 +71,8 @@ export class HandleTurnProgressAfterSelectionUseCase
     // === 階段 1：清除 UI 狀態（解決配對提示殘留問題）===
     // 提前更新 FlowStage 和清除 AWAITING_SELECTION 狀態
     // 這會觸發 PlayerHandZone watcher 退出場牌選擇模式，隱藏橙色框
+    // 注意：setActivePlayer 延後到動畫完成後才執行，避免 TopInfoBar 在動畫期間突然變化
     this.gameState.setFlowStage(event.next_state.state_type)
-    this.gameState.setActivePlayer(event.next_state.active_player_id)
     this.gameState.setDrawnCard(null)
     this.gameState.setPossibleTargetCardIds([])
 
@@ -160,12 +160,13 @@ export class HandleTurnProgressAfterSelectionUseCase
       // TODO: Post-MVP 實作役種特效動畫
     }
 
-    // FlowStage 和 AWAITING_SELECTION 狀態已在階段 1 更新
-
     // === 階段 6：清理動畫層 ===
     this.animation.clearHiddenCards()
 
-    // === 階段 7：啟動操作倒數 ===
+    // === 階段 7：更新活躍玩家（動畫完成後才切換，避免 TopInfoBar 在動畫期間變化）===
+    this.gameState.setActivePlayer(event.next_state.active_player_id)
+
+    // === 階段 8：啟動操作倒數 ===
     this.notification.startActionCountdown(event.action_timeout_seconds)
   }
 }

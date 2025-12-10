@@ -180,8 +180,9 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     this.gameState.setDrawnCard(event.drawn_card)
     this.gameState.setPossibleTargetCardIds([...event.possible_targets])
 
-    // === 階段 7：更新 FlowStage ===
+    // === 階段 7：更新 FlowStage 和 ActivePlayer ===
     this.gameState.setFlowStage('AWAITING_SELECTION')
+    this.gameState.setActivePlayer(event.player_id)
 
     // === 階段 8：清理動畫層 ===
     this.animation.clearHiddenCards()

@@ -15,13 +15,14 @@
  */
 
 import type { DecisionMadeEvent } from '#shared/contracts'
-import type { UIStatePort, NotificationPort } from '../../ports/output'
+import type { UIStatePort, NotificationPort, GameStatePort } from '../../ports/output'
 import type { HandleDecisionMadePort } from '../../ports/input'
 
 export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
   constructor(
     private readonly updateUIState: UIStatePort,
-    private readonly notification: NotificationPort
+    private readonly notification: NotificationPort,
+    private readonly gameState: GameStatePort
   ) {}
 
   execute(event: DecisionMadeEvent): void {
@@ -34,8 +35,9 @@ export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
     // 2. 顯示「繼續遊戲」訊息（可選，通過 animation 或 message）
     // 暫時省略，視 UI 需求而定
 
-    // 3. 更新 FlowStage（返回 AWAITING_HAND_PLAY）
+    // 3. 更新 FlowStage 和 ActivePlayer
     this.updateUIState.setFlowStage(event.next_state.state_type)
+    this.gameState.setActivePlayer(event.next_state.active_player_id)
 
     // 4. 啟動操作倒數
     this.notification.startActionCountdown(event.action_timeout_seconds)

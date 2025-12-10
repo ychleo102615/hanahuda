@@ -34,6 +34,10 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
     // 理由：卡片移動動畫應在前一個事件 (TurnCompleted) 中完成
     // DecisionRequired 事件觸發時，卡片操作已經完成
 
+    // 設置活躍玩家（DecisionRequiredEvent 沒有 next_state，需手動設置）
+    // event.player_id 是達成役種的玩家，即當前的活躍玩家
+    this.gameState.setActivePlayer(event.player_id)
+
     // 檢查是否為自己的回合
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isMyTurn = event.player_id === localPlayerId

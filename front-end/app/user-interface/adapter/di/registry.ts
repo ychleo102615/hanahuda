@@ -379,7 +379,8 @@ function registerInputPorts(container: DIContainer): void {
   // Phase 9: 加入 NotificationPort（倒數計時整合）
   container.register(
     TOKENS.HandleDecisionMadePort,
-    () => new HandleDecisionMadeUseCase(uiStatePort, notificationPort),
+    // 注入 GameStatePort 以設置 activePlayerId
+    () => new HandleDecisionMadeUseCase(uiStatePort, notificationPort, gameStatePort),
     { singleton: true }
   )
 
