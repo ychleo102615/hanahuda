@@ -23,6 +23,7 @@ import type { SelectTargetInputPort } from '~~/server/application/ports/input/se
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
 import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
+import { findMatchableTargets } from '~~/server/domain/services/matchingService'
 
 /**
  * AI 延遲設定（毫秒）
@@ -268,15 +269,16 @@ export class OpponentInstance {
   /**
    * 嘗試找到配對目標
    *
-   * @param cardId - 卡片 ID
+   * @description
+   * 使用 Domain 層的 matchingService 進行配對檢測，
+   * 確保與遊戲邏輯使用相同的卡片 ID 解析方式（MMTI 格式）。
+   *
+   * @param cardId - 卡片 ID（MMTI 格式）
    * @param field - 場上卡片
    * @returns 配對目標 ID（若有雙重配對則隨機選一張）
    */
   private findMatchingTarget(cardId: string, field: readonly string[]): string | undefined {
-    const month = this.getCardMonth(cardId)
-    if (!month) return undefined
-
-    const matches = field.filter((fieldCard) => this.getCardMonth(fieldCard) === month)
+    const matches = findMatchableTargets(cardId, field)
 
     if (matches.length === 0) {
       return undefined
@@ -286,20 +288,9 @@ export class OpponentInstance {
       return matches[0]
     }
 
-    // 雙重配對：隨機選一張
+    // DOUBLE_MATCH 或 TRIPLE_MATCH：隨機選一張
     const randomIndex = Math.floor(Math.random() * matches.length)
     return matches[randomIndex]
-  }
-
-  /**
-   * 從卡片 ID 中提取月份
-   *
-   * @param cardId - 卡片 ID（例如 "january_hikari"）
-   * @returns 月份字串
-   */
-  private getCardMonth(cardId: string): string | undefined {
-    const parts = cardId.split('_')
-    return parts.length > 0 ? parts[0] : undefined
   }
 
   /**

@@ -24,6 +24,7 @@ import {
   TANZAKU_CARDS,
   KASU_CARDS,
 } from '~~/server/domain/services/yakuDetectionService'
+import { findMatchableTargets } from '~~/server/domain/services/matchingService'
 import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
 import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
@@ -105,12 +106,16 @@ export class AutoActionUseCase implements AutoActionInputPort {
     // 選擇最低價值的卡片
     const cardToPlay = this.selectLowestValueCard([...hand])
 
-    console.log(`[AutoActionUseCase] Auto-playing card ${cardToPlay} for player ${playerId}`)
+    // 檢測配對並選擇目標（處理 DOUBLE_MATCH）
+    const targetCardId = this.findMatchingTarget(cardToPlay, game.currentRound.field)
+
+    console.log(`[AutoActionUseCase] Auto-playing card ${cardToPlay}${targetCardId ? ` -> ${targetCardId}` : ''} for player ${playerId}`)
 
     await this.playHandCardUseCase.execute({
       gameId,
       playerId,
       cardId: cardToPlay,
+      targetCardId,
     })
   }
 
@@ -206,5 +211,27 @@ export class AutoActionUseCase implements AutoActionInputPort {
     }
     // 未知類型，視為中等價值
     return CARD_VALUE_RANK.TANZAKU
+  }
+
+  /**
+   * 嘗試找到配對目標
+   *
+   * @description
+   * 使用 Domain 層的 matchingService 進行配對檢測，
+   * 採用保守策略：DOUBLE_MATCH 時選擇第一個目標。
+   *
+   * @param cardId - 卡片 ID（MMTI 格式）
+   * @param field - 場上卡片
+   * @returns 配對目標 ID
+   */
+  private findMatchingTarget(cardId: string, field: readonly string[]): string | undefined {
+    const matches = findMatchableTargets(cardId, field)
+
+    if (matches.length <= 1) {
+      return matches[0] // 無配對返回 undefined，單配對返回該目標
+    }
+
+    // DOUBLE_MATCH：選擇第一個目標（保守策略）
+    return matches[0]
   }
 }
