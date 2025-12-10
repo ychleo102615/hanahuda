@@ -8,7 +8,6 @@
  * @module server/application/use-cases/playHandCardUseCase
  */
 
-import type { Game } from '~~/server/domain/game/game'
 import type {
   GameEvent,
   TurnCompletedEvent,
@@ -25,7 +24,11 @@ import {
   getAiPlayer,
   getPlayerDepositoryFromGame,
   shouldEndRound,
+  type Game,
 } from '~~/server/domain/game/game'
+import {
+  transitionAfterRoundDraw,
+} from '~~/server/domain/services/roundTransitionService'
 import {
   playHandCard as domainPlayHandCard,
   advanceToNextPlayer,
@@ -39,6 +42,7 @@ import {
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
+import type { DisplayTimeoutPort } from '~~/server/application/ports/output/displayTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { TurnEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
@@ -66,7 +70,8 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: TurnEventMapperPort,
     private readonly actionTimeoutManager?: ActionTimeoutPort,
-    private readonly autoActionUseCase?: AutoActionInputPort
+    private readonly autoActionUseCase?: AutoActionInputPort,
+    private readonly displayTimeoutManager?: DisplayTimeoutPort
   ) {}
 
   /**
@@ -169,22 +174,42 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
         // 啟動超時（同一玩家需要決策）
         this.startTimeoutForPlayer(gameId, playerId, 'AWAITING_DECISION')
       } else {
-        // 無新役種，回合完成，換人
-        const updatedRound = advanceToNextPlayer(playResult.updatedRound)
-        game = updateRound(game, updatedRound)
+        // 無新役種，回合完成
+        // 先建立臨時遊戲狀態來檢查是否應該結束局
+        const tempGame = updateRound(game, playResult.updatedRound)
 
-        const event = this.eventMapper.toTurnCompletedEvent(
-          game,
-          playerId,
-          playResult.handCardPlay,
-          playResult.drawCardPlay
-        )
-        this.eventPublisher.publishToGame(gameId, event)
+        // 檢查是否應該結束局（手牌或牌堆耗盡）
+        if (shouldEndRound(tempGame)) {
+          // 先發送 TurnCompleted 事件（讓前端顯示最後一手的動畫）
+          // 使用 tempGame 因為需要正確的場牌狀態
+          const turnEvent = this.eventMapper.toTurnCompletedEvent(
+            tempGame,
+            playerId,
+            playResult.handCardPlay,
+            playResult.drawCardPlay!
+          )
+          this.eventPublisher.publishToGame(gameId, turnEvent)
 
-        // 啟動下一位玩家的超時
-        const nextPlayerId = game.currentRound?.activePlayerId
-        if (nextPlayerId) {
-          this.startTimeoutForPlayer(gameId, nextPlayerId, 'AWAITING_HAND_PLAY')
+          // 流局處理
+          game = await this.handleRoundDraw(gameId, tempGame)
+        } else {
+          // 正常換人
+          const updatedRound = advanceToNextPlayer(playResult.updatedRound)
+          game = updateRound(game, updatedRound)
+
+          const event = this.eventMapper.toTurnCompletedEvent(
+            game,
+            playerId,
+            playResult.handCardPlay,
+            playResult.drawCardPlay!
+          )
+          this.eventPublisher.publishToGame(gameId, event)
+
+          // 啟動下一位玩家的超時
+          const nextPlayerId = game.currentRound?.activePlayerId
+          if (nextPlayerId) {
+            this.startTimeoutForPlayer(gameId, nextPlayerId, 'AWAITING_HAND_PLAY')
+          }
         }
       }
     }
@@ -229,5 +254,77 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
         })
       }
     )
+  }
+
+  /**
+   * 處理流局（牌堆或手牌耗盡且無役種）
+   *
+   * @param gameId - 遊戲 ID
+   * @param game - 目前遊戲狀態
+   * @returns 更新後的遊戲狀態
+   */
+  private async handleRoundDraw(gameId: string, game: Game): Promise<Game> {
+    // 使用 Domain Service 處理流局轉換
+    const transitionResult = transitionAfterRoundDraw(game)
+    let updatedGame = transitionResult.game
+
+    // 發送 RoundDrawn 事件
+    const roundDrawnEvent = this.eventMapper.toRoundDrawnEvent(
+      updatedGame.cumulativeScores
+    )
+    this.eventPublisher.publishToGame(gameId, roundDrawnEvent)
+
+    // 根據轉換結果決定下一步
+    if (transitionResult.transitionType === 'NEXT_ROUND') {
+      // 延遲後發送 RoundDealt 事件（讓前端顯示流局畫面）
+      const firstPlayerId = updatedGame.currentRound?.activePlayerId
+      this.startDisplayTimeout(gameId, () => {
+        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(updatedGame)
+        this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+
+        // 啟動新回合第一位玩家的超時
+        if (firstPlayerId) {
+          this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
+        }
+      })
+    } else {
+      // 遊戲結束
+      const winner = transitionResult.winner
+      if (winner) {
+        const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
+          winner.winnerId,
+          winner.finalScores
+        )
+        this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
+      }
+    }
+
+    // 儲存更新（在此方法內儲存，因為 displayTimeout 回調需要正確狀態）
+    this.gameStore.set(updatedGame)
+    await this.gameRepository.save(updatedGame)
+
+    return updatedGame
+  }
+
+  /**
+   * 啟動顯示超時計時器
+   *
+   * 用於局結束後的延遲，讓前端顯示結算畫面後再推進遊戲。
+   *
+   * @param gameId - 遊戲 ID
+   * @param onTimeout - 超時回調函數
+   */
+  private startDisplayTimeout(gameId: string, onTimeout: () => void): void {
+    if (this.displayTimeoutManager) {
+      this.displayTimeoutManager.startDisplayTimeout(
+        gameId,
+        gameConfig.display_timeout_seconds,
+        onTimeout
+      )
+    } else {
+      // Fallback: 直接使用 setTimeout
+      const displayTimeoutMs = gameConfig.display_timeout_seconds * 1000
+      setTimeout(onTimeout, displayTimeoutMs)
+    }
   }
 }

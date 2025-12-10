@@ -14,6 +14,7 @@ import type { Game } from '~~/server/domain/game/game'
 import type {
   GameStartedEvent,
   RoundDealtEvent,
+  RoundDrawnEvent,
   GameSnapshotRestore,
   TurnCompletedEvent,
   SelectionRequiredEvent,
@@ -101,6 +102,21 @@ export interface TurnEventMapperPort extends EventMapperPort {
     drawCardPlay: CardPlay | null,
     yakuUpdate: YakuUpdate
   ): DecisionRequiredEvent
+
+  /**
+   * 轉換為 RoundDrawn 事件（流局）
+   */
+  toRoundDrawnEvent(
+    currentScores: readonly PlayerScore[]
+  ): RoundDrawnEvent
+
+  /**
+   * 轉換為 GameFinished 事件
+   */
+  toGameFinishedEvent(
+    winnerId: string | null,
+    finalScores: readonly PlayerScore[]
+  ): GameFinishedEvent
 }
 
 // ============================================================

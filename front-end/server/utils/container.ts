@@ -112,7 +112,8 @@ const playHandCardUseCase: PlayHandCardInputPort = new PlayHandCardUseCase(
   inMemoryGameStore,
   eventMapper,
   actionTimeoutManager,
-  { execute: (input) => getAutoActionUseCase().execute(input) }
+  { execute: (input) => getAutoActionUseCase().execute(input) },
+  displayTimeoutManager
 )
 
 const selectTargetUseCase: SelectTargetInputPort = new SelectTargetUseCase(
@@ -121,7 +122,8 @@ const selectTargetUseCase: SelectTargetInputPort = new SelectTargetUseCase(
   inMemoryGameStore,
   eventMapper,
   actionTimeoutManager,
-  { execute: (input) => getAutoActionUseCase().execute(input) }
+  { execute: (input) => getAutoActionUseCase().execute(input) },
+  displayTimeoutManager
 )
 
 const makeDecisionUseCase: MakeDecisionInputPort = new MakeDecisionUseCase(
