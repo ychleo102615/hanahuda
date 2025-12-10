@@ -135,11 +135,16 @@ function clearSelection() {
   uiState.exitHandCardConfirmationMode()
 }
 
-// 監聽回合變化，非玩家回合時退出確認模式
+// 監聽回合變化，非玩家回合時清除所有高亮狀態
 import { watch } from 'vue'
 watch(isMyTurn, (newIsMyTurn) => {
-  if (!newIsMyTurn && uiState.handCardConfirmationMode) {
-    uiState.exitHandCardConfirmationMode()
+  if (!newIsMyTurn) {
+    // 清除手牌確認模式
+    if (uiState.handCardConfirmationMode) {
+      uiState.exitHandCardConfirmationMode()
+    }
+    // 清除懸浮預覽高亮（解決游標停留時回合切換的問題）
+    uiState.clearHandCardHoverPreview()
   }
 })
 
