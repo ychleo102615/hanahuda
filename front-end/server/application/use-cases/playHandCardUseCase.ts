@@ -266,7 +266,7 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
   private async handleRoundDraw(gameId: string, game: Game): Promise<Game> {
     // 使用 Domain Service 處理流局轉換
     const transitionResult = transitionAfterRoundDraw(game)
-    let updatedGame = transitionResult.game
+    const updatedGame = transitionResult.game
 
     // 發送 RoundDrawn 事件
     const roundDrawnEvent = this.eventMapper.toRoundDrawnEvent(

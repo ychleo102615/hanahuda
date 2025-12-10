@@ -261,6 +261,28 @@ export const useGameStateStore = defineStore('gameState', {
       // gameId 由 SessionContextPort 管理，此處不再儲存
       void snapshot.game_id // 明確標示未使用
 
+      // 初始化 localPlayerId 和 opponentPlayerId（頁面重新整理後這些值為 null）
+      // 從 SessionContext 取得本地玩家 ID，然後從 snapshot.players 辨識對手
+      if (!this.localPlayerId && snapshot.players.length > 0) {
+        const sessionContext = container.resolve<{ getPlayerId: () => string | null }>(TOKENS.SessionContextPort)
+        const localId = sessionContext.getPlayerId()
+
+        if (localId) {
+          this.localPlayerId = localId
+          const opponent = snapshot.players.find((p) => p.player_id !== localId)
+          if (opponent) {
+            this.opponentPlayerId = opponent.player_id
+          }
+          console.info('[GameStateStore] Initialized player IDs from snapshot', {
+            localPlayerId: this.localPlayerId,
+            opponentPlayerId: this.opponentPlayerId,
+          })
+        }
+      }
+
+      // 更新規則集
+      this.ruleset = snapshot.ruleset
+
       this.flowStage = snapshot.current_flow_stage
       this.activePlayerId = snapshot.active_player_id
 

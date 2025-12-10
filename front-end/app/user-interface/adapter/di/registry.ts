@@ -43,10 +43,12 @@ import { HandleTurnErrorUseCase } from '../../application/use-cases/event-handle
 import { HandleReconnectionUseCase } from '../../application/use-cases/event-handlers/HandleReconnectionUseCase'
 import { HandleGameErrorUseCase } from '../../application/use-cases/event-handlers/HandleGameErrorUseCase'
 import { StartGameUseCase } from '../../application/use-cases/StartGameUseCase'
+import { TriggerStateRecoveryUseCase } from '../../application/use-cases/TriggerStateRecoveryUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ReconnectionPort } from '../../application/ports/output'
+import type { HandleReconnectionPort } from '../../application/ports/input'
 import { createSessionContextAdapter } from '../session/SessionContextAdapter'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import * as domain from '../../domain'
@@ -61,6 +63,7 @@ import { createNotificationPortAdapter } from '../notification/NotificationPortA
 import { createGameStatePortAdapter } from '../stores/GameStatePortAdapter'
 import { createNavigationPortAdapter } from '../router/NavigationPortAdapter'
 import { CountdownManager } from '../services/CountdownManager'
+import { ReconnectionService } from '../services/ReconnectionService'
 
 /**
  * 遊戲模式
@@ -436,6 +439,17 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
+  // 註冊 TriggerStateRecoveryPort（依賴 ReconnectionPort、HandleReconnectionPort）
+  container.register(
+    TOKENS.TriggerStateRecoveryPort,
+    () => {
+      const reconnectionPort = container.resolve(TOKENS.ReconnectionPort) as ReconnectionPort
+      const handleReconnectionPort = container.resolve(TOKENS.HandleGameSnapshotRestorePort) as HandleReconnectionPort
+      return new TriggerStateRecoveryUseCase(reconnectionPort, handleReconnectionPort, notificationPort)
+    },
+    { singleton: true }
+  )
+
   console.info('[DI] Registered Player Operations, US2, US3, and US4 event handlers')
 }
 
@@ -467,6 +481,16 @@ function registerBackendAdapters(container: DIContainer): void {
   container.register(
     TOKENS.EventRouter,
     () => new EventRouter(),
+    { singleton: true },
+  )
+
+  // ReconnectionPort: ReconnectionService（依賴 EventRouter）
+  container.register(
+    TOKENS.ReconnectionPort,
+    () => {
+      const eventRouter = container.resolve(TOKENS.EventRouter) as EventRouter
+      return new ReconnectionService(eventRouter)
+    },
     { singleton: true },
   )
 }
@@ -515,6 +539,16 @@ function registerMockAdapters(container: DIContainer): void {
   container.register(
     TOKENS.EventRouter,
     () => new EventRouter(),
+    { singleton: true },
+  )
+
+  // ReconnectionPort: ReconnectionService（依賴 EventRouter）
+  container.register(
+    TOKENS.ReconnectionPort,
+    () => {
+      const eventRouter = container.resolve(TOKENS.EventRouter) as EventRouter
+      return new ReconnectionService(eventRouter)
+    },
     { singleton: true },
   )
 }

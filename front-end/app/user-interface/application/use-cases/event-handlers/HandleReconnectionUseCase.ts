@@ -40,8 +40,8 @@ export class HandleReconnectionUseCase implements HandleReconnectionPort {
     // 1. 靜默恢復完整遊戲狀態（無動畫）
     this.updateUIState.restoreGameState(snapshot)
 
-    // 2. 顯示「連線已恢復」提示訊息
-    this.notification.showReconnectionMessage()
+    // 2. 顯示「連線已恢復」提示訊息（隱藏重連中狀態，顯示成功訊息）
+    this.notification.hideReconnectionMessage()
 
     // 3. 恢復操作倒數（如果有）
     this.notification.startActionCountdown(snapshot.action_timeout_seconds)

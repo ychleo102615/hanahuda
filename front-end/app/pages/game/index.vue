@@ -37,6 +37,8 @@ import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
 import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
 import { useGameMode } from '~/user-interface/adapter/composables/useGameMode'
+import { usePageVisibility } from '~/user-interface/adapter/composables/usePageVisibility'
+import { useGameReconnection } from '~/user-interface/adapter/composables/useGameReconnection'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
@@ -90,12 +92,22 @@ const {
 // 遊戲模式（從 runtimeConfig 取得，單一真相來源）
 const gameMode = useGameMode()
 
-onMounted(() => {
-  // GamePage 不再負責初始化遊戲
-  // 遊戲已在 GameLobby 初始化，此處只負責呈現
-  console.info('[GamePage] 遊戲頁面已載入', {
-    gameMode,
-  })
+// 頁面可見性監控：頁面恢復可見時觸發狀態恢復
+usePageVisibility()
+
+// 頁面重新整理後的重連功能
+const { reconnectIfNeeded } = useGameReconnection()
+
+onMounted(async () => {
+  console.info('[GamePage] 遊戲頁面已載入', { gameMode })
+
+  // 檢查是否需要重連（頁面重新整理的情況）
+  // 正常從 Lobby 進入時，SSE 已在 Lobby 建立，不需要重連
+  const result = await reconnectIfNeeded()
+  if (!result.success) {
+    console.error('[GamePage] 重連失敗，導向大廳', result.error)
+    navigateTo('/lobby')
+  }
 })
 
 onUnmounted(() => {

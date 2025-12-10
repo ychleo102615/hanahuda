@@ -71,29 +71,39 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
       }
     }
 
-    const { player_id, player_name, session_token } = parseResult.data
-    logger.info('Processing join request', { playerId: player_id, playerName: player_name, hasSessionToken: !!session_token })
+    const { player_id, player_name, session_token: bodySessionToken } = parseResult.data
 
-    // 2. 從容器取得 JoinGameUseCase
+    // 2. 從 Cookie 讀取 session_token（優先使用 Cookie，因為 HttpOnly Cookie 更安全）
+    const cookieSessionToken = getCookie(event, 'session_token')
+    const sessionToken = cookieSessionToken || bodySessionToken
+
+    logger.info('Processing join request', {
+      playerId: player_id,
+      playerName: player_name,
+      hasSessionToken: !!sessionToken,
+      source: cookieSessionToken ? 'cookie' : (bodySessionToken ? 'body' : 'none'),
+    })
+
+    // 3. 從容器取得 JoinGameUseCase
     const useCase = container.joinGameUseCase
 
-    // 3. 執行用例
+    // 4. 執行用例
     const result = await useCase.execute({
       playerId: player_id,
       playerName: player_name,
-      sessionToken: session_token,
+      sessionToken,
     })
 
-    // 4. 設定 HttpOnly Cookie 存放 session_token
+    // 5. 設定 HttpOnly Cookie 存放 session_token
     setSessionCookie(event, result.sessionToken)
     logger.info('Session cookie set', { gameId: result.gameId })
 
-    // 5. 設定回應狀態碼
+    // 6. 設定回應狀態碼
     // 201 Created: 新遊戲建立（WAITING 或 IN_PROGRESS）
     // 200 OK: 重連現有遊戲
     setResponseStatus(event, result.reconnected ? 200 : 201)
 
-    // 6. 返回回應（不含 session_token，已透過 Cookie 傳送）
+    // 7. 返回回應（不含 session_token，已透過 Cookie 傳送）
     logger.info('Join request completed', { gameId: result.gameId, reconnected: result.reconnected })
     return {
       data: {

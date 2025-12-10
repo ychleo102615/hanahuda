@@ -198,10 +198,10 @@ export interface NotificationPort {
   showSuccessMessage(message: string): void
 
   /**
-   * 顯示重連成功訊息
+   * 顯示正在重連訊息
    *
    * @description
-   * 重連成功後顯示的提示訊息。
+   * SSE 連線中斷時顯示的提示訊息。
    *
    * @example
    * ```typescript
@@ -209,6 +209,19 @@ export interface NotificationPort {
    * ```
    */
   showReconnectionMessage(): void
+
+  /**
+   * 隱藏重連訊息並顯示連線已恢復
+   *
+   * @description
+   * 重連成功後隱藏「正在重連」訊息，顯示短暫的「連線已恢復」提示。
+   *
+   * @example
+   * ```typescript
+   * notification.hideReconnectionMessage()
+   * ```
+   */
+  hideReconnectionMessage(): void
 
   // ===== 查詢 =====
 

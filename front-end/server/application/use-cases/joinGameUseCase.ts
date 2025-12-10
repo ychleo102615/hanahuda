@@ -67,7 +67,16 @@ export class JoinGameUseCase implements JoinGameInputPort {
     if (sessionToken) {
       const existingGame = this.gameStore.getBySessionToken(sessionToken)
       if (existingGame) {
-        return this.handleReconnection(existingGame, playerId, sessionToken)
+        // 驗證 playerId 是否屬於此遊戲
+        const isPlayer = existingGame.players.some((p) => p.id === playerId)
+        if (isPlayer) {
+          // playerId 匹配，執行重連
+          return this.handleReconnection(existingGame, playerId, sessionToken)
+        } else {
+          // playerId 不匹配，可能是新玩家使用舊 Cookie
+          // 繼續正常的加入遊戲流程
+          console.log(`[JoinGameUseCase] Player ${playerId} not in game ${existingGame.id}, treating as new join`)
+        }
       }
     }
 
@@ -102,23 +111,19 @@ export class JoinGameUseCase implements JoinGameInputPort {
   private handleReconnection(game: Game, playerId: string, sessionToken: string): JoinGameOutput {
     console.log(`[JoinGameUseCase] Reconnection for game ${game.id}, player ${playerId}`)
 
-    // 1. 驗證玩家是否屬於此遊戲
-    const isPlayer = game.players.some((p) => p.id === playerId)
-    if (!isPlayer) {
-      throw new Error(`Player ${playerId} is not part of game ${game.id}`)
-    }
+    // 注意：playerId 驗證已在 execute() 中完成
 
-    // 2. 檢查遊戲狀態
+    // 1. 檢查遊戲狀態
     if (game.status === 'FINISHED') {
       throw new Error(`Game ${game.id} has already finished`)
     }
 
-    // 3. 若遊戲 IN_PROGRESS → 排程發送 GameSnapshotRestore 事件
+    // 2. 若遊戲 IN_PROGRESS → 排程發送 GameSnapshotRestore 事件
     if (game.status === 'IN_PROGRESS') {
       this.scheduleSnapshotEvent(game, playerId)
     }
 
-    // 4. 若遊戲 WAITING → 僅回傳連線資訊（等待對手）
+    // 3. 若遊戲 WAITING → 僅回傳連線資訊（等待對手）
     // （不需額外處理，直接回傳）
 
     return {

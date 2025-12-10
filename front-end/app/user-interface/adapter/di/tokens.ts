@@ -14,12 +14,16 @@ export const TOKENS = {
   MatchmakingStatePort: Symbol('MatchmakingStatePort'),
   NavigationPort: Symbol('NavigationPort'),
   SessionContextPort: Symbol('SessionContextPort'),
+  ReconnectionPort: Symbol('ReconnectionPort'),
 
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
 
   // ===== Input Ports - Game Initialization =====
   StartGamePort: Symbol('StartGamePort'),
+
+  // ===== Input Ports - State Recovery =====
+  TriggerStateRecoveryPort: Symbol('TriggerStateRecoveryPort'),
 
   // ===== Input Ports - Player Operations (3 個) =====
   PlayHandCardPort: Symbol('PlayHandCardPort'),

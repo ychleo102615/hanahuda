@@ -283,11 +283,13 @@ export const useUIStateStore = defineStore('uiState', {
 
     /**
      * 顯示重連訊息
+     *
+     * @note 只設定 reconnecting 狀態，ReconnectionBanner 會自動顯示訊息。
+     *       不設定 infoMessage 避免重複顯示。
      */
     showReconnectionMessage(): void {
       this.reconnecting = true
-      this.infoMessage = '連線中斷，正在嘗試重連...'
-      console.info('[UIStateStore]', this.infoMessage)
+      console.info('[UIStateStore] Reconnecting...')
     },
 
     /**
@@ -295,12 +297,12 @@ export const useUIStateStore = defineStore('uiState', {
      */
     hideReconnectionMessage(): void {
       this.reconnecting = false
-      this.infoMessage = '連線已恢復'
+      this.infoMessage = 'Connection restored'
       console.info('[UIStateStore]', this.infoMessage)
 
       // 自動消失（3 秒後）
       setTimeout(() => {
-        if (this.infoMessage === '連線已恢復') {
+        if (this.infoMessage === 'Connection restored') {
           this.infoMessage = null
         }
       }, 3000)

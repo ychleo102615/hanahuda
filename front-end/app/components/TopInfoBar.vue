@@ -40,7 +40,7 @@ const emit = defineEmits<{
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
 
-const { myScore, opponentScore, isMyTurn, deckRemaining } = storeToRefs(gameState)
+const { myScore, opponentScore, isMyTurn, deckRemaining, localPlayerId, activePlayerId } = storeToRefs(gameState)
 const { connectionStatus, actionTimeoutRemaining } = storeToRefs(uiState)
 
 // 連線狀態顯示
@@ -126,6 +126,10 @@ const handleMenuClick = () => {
           </div>
           <div class="text-xs text-gray-400">
             Deck: {{ deckRemaining }}
+          </div>
+          <!-- Debug: Player IDs -->
+          <div class="text-xs text-gray-500 mt-1">
+            [DEBUG] local: {{ localPlayerId?.slice(-4) }} | active: {{ activePlayerId?.slice(-4) }}
           </div>
         </template>
         <!-- Lobby 模式：預設不顯示中間內容 -->

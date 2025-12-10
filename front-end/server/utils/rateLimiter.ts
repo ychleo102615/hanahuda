@@ -101,7 +101,7 @@ export function createRateLimiter(): RateLimiter {
   const requests = new Map<string, number[]>()
 
   // 自動清理計時器
-  let cleanupTimer: ReturnType<typeof setInterval> | null = null
+  const cleanupTimer: ReturnType<typeof setInterval> | null = null
 
   /**
    * 取得複合鍵

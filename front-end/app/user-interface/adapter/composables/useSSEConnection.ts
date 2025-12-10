@@ -5,6 +5,11 @@
  * 管理 SSE 連線的建立、狀態同步與斷開。
  * 封裝 GameEventClient 的連線邏輯，並與 UIStateStore 的 connectionStatus 同步。
  *
+ * 功能：
+ * - 建立和管理 SSE 連線
+ * - 區分首次連線與重連，重連時觸發狀態恢復
+ * - 與 UIStateStore 同步連線狀態
+ *
  * @note session_token 由 HttpOnly Cookie 自動傳送，無需手動傳遞
  *
  * @example
@@ -21,11 +26,12 @@
  * ```
  */
 
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useUIStateStore } from '../stores/uiState'
 import { useOptionalDependency } from './useDependency'
 import { TOKENS } from '../di/tokens'
 import type { GameEventClient } from '../sse/GameEventClient'
+import type { TriggerStateRecoveryPort } from '../../application/ports/input'
 
 /**
  * SSE 連線管理 Composable
@@ -37,6 +43,13 @@ export function useSSEConnection() {
 
   // 使用 optional dependency 因為在 mock 模式下可能不存在
   const gameEventClient = useOptionalDependency<GameEventClient>(TOKENS.GameEventClient)
+  const triggerStateRecovery = useOptionalDependency<TriggerStateRecoveryPort>(TOKENS.TriggerStateRecoveryPort)
+
+  // 區分首次連線與重連
+  const isFirstConnection = ref(true)
+
+  // 儲存當前 gameId 供重連使用
+  let currentGameId: string | null = null
 
   /**
    * 當前是否已連線
@@ -63,14 +76,32 @@ export function useSSEConnection() {
 
     console.info('[useSSEConnection] 建立 SSE 連線', { gameId })
 
+    // 儲存 gameId 供重連使用
+    currentGameId = gameId
+
     // 更新連線狀態為 connecting
     uiStore.setConnectionStatus('connecting')
 
     // 設定連線狀態回調
     gameEventClient.onConnectionEstablished(() => {
-      console.info('[useSSEConnection] SSE 連線已建立')
-      uiStore.setConnectionStatus('connected')
-      uiStore.hideReconnectionMessage()
+      if (isFirstConnection.value) {
+        // 首次連線：正常流程
+        console.info('[useSSEConnection] SSE 首次連線已建立')
+        isFirstConnection.value = false
+        uiStore.setConnectionStatus('connected')
+      } else {
+        // 重連：觸發狀態恢復流程
+        console.info('[useSSEConnection] SSE 重連成功，觸發狀態恢復')
+        uiStore.setConnectionStatus('connected')
+
+        // 觸發狀態恢復
+        if (triggerStateRecovery && currentGameId) {
+          void triggerStateRecovery.execute(currentGameId)
+        } else {
+          console.warn('[useSSEConnection] 無法觸發狀態恢復：缺少 TriggerStateRecoveryPort 或 gameId')
+          uiStore.hideReconnectionMessage()
+        }
+      }
     })
 
     gameEventClient.onConnectionLost(() => {

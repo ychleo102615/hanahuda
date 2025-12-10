@@ -21,12 +21,6 @@ const RequestParamsSchema = z.object({
   gameId: z.string().uuid('gameId must be a valid UUID'),
 })
 
-/**
- * 請求 Header Schema
- */
-const RequestHeadersSchema = z.object({
-  'x-session-token': z.string().uuid('x-session-token must be a valid UUID'),
-})
 
 /**
  * 錯誤回應型別
@@ -70,12 +64,11 @@ export default defineEventHandler(async (event): Promise<SnapshotResponse | Erro
 
     const { gameId } = paramsResult.data
 
-    // 2. 解析並驗證 session token
-    const sessionToken = getHeader(event, 'x-session-token')
-    const headersResult = RequestHeadersSchema.safeParse({ 'x-session-token': sessionToken })
+    // 2. 從 Cookie 讀取 session_token（HttpOnly Cookie 由瀏覽器自動傳送）
+    const sessionToken = getCookie(event, 'session_token')
 
-    if (!headersResult.success) {
-      logger.warn('Missing or invalid session token', { gameId })
+    if (!sessionToken) {
+      logger.warn('Missing session token cookie', { gameId })
       setResponseStatus(event, 401)
       return {
         error: {

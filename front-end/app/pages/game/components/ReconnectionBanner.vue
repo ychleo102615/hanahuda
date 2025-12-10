@@ -19,10 +19,10 @@ const isVisible = computed(() => {
 
 const statusMessage = computed(() => {
   if (uiStore.reconnecting) {
-    return '連線中斷，正在嘗試重連...'
+    return 'Connection lost, reconnecting...'
   }
   if (uiStore.connectionStatus === 'connecting') {
-    return '正在連線...'
+    return 'Connecting...'
   }
   return ''
 })

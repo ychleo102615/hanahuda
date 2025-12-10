@@ -25,6 +25,7 @@ export type { NotificationPort } from './notification.port'
 export type { MatchmakingStatePort, MatchmakingStatus } from './matchmaking-state.port'
 export type { NavigationPort } from './navigation.port'
 export { SessionContextPort, type SessionIdentity } from './session-context.port'
+export { ReconnectionPort } from './reconnection.port'
 
 // Legacy Output Ports
 export type { UIStatePort } from './ui-state.port'

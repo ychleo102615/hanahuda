@@ -87,6 +87,10 @@ export function createNotificationPortAdapter(
       store.showReconnectionMessage()
     },
 
+    hideReconnectionMessage(): void {
+      store.hideReconnectionMessage()
+    },
+
     // ===== 查詢 =====
     isModalVisible(): boolean {
       return (
