@@ -218,6 +218,9 @@ export class JoinGameUseCase implements JoinGameInputPort {
   ): Promise<JoinGameOutput> {
     const sessionToken = randomUUID()
 
+    console.log("trace")
+    console.trace()
+
     const secondPlayer = createPlayer({
       id: playerId,
       name: playerName,

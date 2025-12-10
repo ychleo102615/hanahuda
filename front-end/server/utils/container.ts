@@ -20,8 +20,7 @@ import { playerStatsRepository } from '~~/server/adapters/persistence/drizzlePla
 
 // Adapters - Event Publisher
 import { internalEventBus } from '~~/server/adapters/event-publisher/internalEventBus'
-import { opponentEventBus } from '~~/server/adapters/event-publisher/opponentEventBus'
-import { createSSEEventPublisher } from '~~/server/adapters/event-publisher/sseEventPublisher'
+import { createCompositeEventPublisher } from '~~/server/adapters/event-publisher/compositeEventPublisher'
 
 // Adapters - Mappers
 import { eventMapper } from '~~/server/adapters/mappers/eventMapper'
@@ -33,6 +32,7 @@ import { disconnectTimeoutManager } from '~~/server/adapters/timeout/disconnectT
 
 // Use Cases
 import { JoinGameUseCase } from '~~/server/application/use-cases/joinGameUseCase'
+import { JoinGameAsAiUseCase } from '~~/server/application/use-cases/joinGameAsAiUseCase'
 import { PlayHandCardUseCase } from '~~/server/application/use-cases/playHandCardUseCase'
 import { SelectTargetUseCase } from '~~/server/application/use-cases/selectTargetUseCase'
 import { MakeDecisionUseCase } from '~~/server/application/use-cases/makeDecisionUseCase'
@@ -42,6 +42,7 @@ import { RecordGameStatsUseCase } from '~~/server/application/use-cases/recordGa
 
 // Input Port Types
 import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
+import type { JoinGameAsAiInputPort } from '~~/server/application/ports/input/joinGameAsAiInputPort'
 import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
 import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
@@ -50,9 +51,9 @@ import type { AutoActionInputPort } from '~~/server/application/ports/input/auto
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
 
 /**
- * 建立 SSEEventPublisher（需要 gameStore）
+ * 建立 CompositeEventPublisher
  */
-const sseEventPublisher = createSSEEventPublisher(inMemoryGameStore)
+const compositeEventPublisher = createCompositeEventPublisher()
 
 /**
  * 建立 Use Cases（實作 Input Ports）
@@ -66,15 +67,22 @@ const recordGameStatsUseCase: RecordGameStatsInputPort = new RecordGameStatsUseC
 
 const joinGameUseCase: JoinGameInputPort = new JoinGameUseCase(
   gameRepository,
-  sseEventPublisher,
+  compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
   internalEventBus
 )
 
+const joinGameAsAiUseCase: JoinGameAsAiInputPort = new JoinGameAsAiUseCase(
+  gameRepository,
+  compositeEventPublisher,
+  inMemoryGameStore,
+  eventMapper
+)
+
 const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(
   gameRepository,
-  sseEventPublisher,
+  compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
   recordGameStatsUseCase
@@ -100,7 +108,7 @@ const getAutoActionUseCase = (): AutoActionInputPort => {
 // 建立帶有超時功能的 Use Cases
 const playHandCardUseCase: PlayHandCardInputPort = new PlayHandCardUseCase(
   gameRepository,
-  sseEventPublisher,
+  compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
   actionTimeoutManager,
@@ -109,7 +117,7 @@ const playHandCardUseCase: PlayHandCardInputPort = new PlayHandCardUseCase(
 
 const selectTargetUseCase: SelectTargetInputPort = new SelectTargetUseCase(
   gameRepository,
-  sseEventPublisher,
+  compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
   actionTimeoutManager,
@@ -118,7 +126,7 @@ const selectTargetUseCase: SelectTargetInputPort = new SelectTargetUseCase(
 
 const makeDecisionUseCase: MakeDecisionInputPort = new MakeDecisionUseCase(
   gameRepository,
-  sseEventPublisher,
+  compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
   actionTimeoutManager,
@@ -148,16 +156,16 @@ export const container = {
   gameStore: inMemoryGameStore,
   gameRepository,
   playerStatsRepository,
-  sseEventPublisher,
+  eventPublisher: compositeEventPublisher,
   eventMapper,
   internalEventBus,
-  opponentEventBus,
   actionTimeoutManager,
   displayTimeoutManager,
   disconnectTimeoutManager,
 
   // Use Cases (Input Ports)
   joinGameUseCase,
+  joinGameAsAiUseCase,
   playHandCardUseCase,
   selectTargetUseCase,
   makeDecisionUseCase,
