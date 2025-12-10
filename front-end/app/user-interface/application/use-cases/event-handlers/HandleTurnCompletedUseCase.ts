@@ -80,10 +80,13 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
 
     // === 階段 1：處理手牌操作 ===
     if (event.hand_card_play) {
-      const result = await this.processHandCardPlay(event.hand_card_play, isOpponent)
+      const matchedCard = event.hand_card_play.matched_card ?? undefined
+      const hasMatch = !!matchedCard
 
-      if (result.hasMatch && result.matchedCard) {
-        // 1a. 有配對：預先隱藏，更新獲得區，播放轉移動畫，最後移除場牌/手牌
+      if (hasMatch && matchedCard) {
+        // 1a. 有配對：播放動畫 → 更新獲得區 → 移除場牌/手牌
+        const result = await this.processHandCardPlay(event.hand_card_play, isOpponent)
+
         // 預先隱藏即將加入獲得區的卡片
         this.animation.hideCards(result.capturedCards)
 
@@ -98,7 +101,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         opponentDepository = updated.opponent
 
         // 等待 DOM 布局完成（讓獲得區新卡片完成渲染）
-        await new Promise(resolve => setTimeout(resolve, 0))
+        await new Promise(resolve => setTimeout(resolve, 50))
 
         // 播放轉移動畫（淡出 + 淡入，視覺上是卡片轉移到獲得區）
         const firstCapturedCard = result.capturedCards[0]
@@ -113,7 +116,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         }
 
         // 動畫完成後才移除場牌/手牌
-        this.removeFieldCard(result.matchedCard)
+        this.removeFieldCard(matchedCard)
         this.removePlayedHandCard(event.hand_card_play.played_card, isOpponent)
 
         // 等待 TransitionGroup FLIP 動畫完成
@@ -121,9 +124,28 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         // 額外增加 50ms buffer 確保動畫完全結束
         await new Promise(resolve => setTimeout(resolve, 350))
       } else {
-        // 1b. 無配對：移除手牌，立即加入場牌
+        // 1b. 無配對：先加入場牌 → 播放動畫 → 移除手牌
+        // 與 HandleSelectionRequiredUseCase 一致的流程：
+        // 動畫需要查找場牌區的目標位置，所以必須先加入場牌 DOM
+
+        // 1b.1 預先隱藏手牌（保留 DOM，只是 invisible）
+        this.animation.hideCards([event.hand_card_play.played_card])
+
+        // 1b.2 加入場牌 DOM（渲染時已是 invisible 狀態）
+        this.addCardsToField([event.hand_card_play.played_card])
+
+        // 1b.3 等待 DOM 布局完成
+        await new Promise(resolve => setTimeout(resolve, 50))
+
+        // 1b.4 播放動畫（場牌區已有卡片，可以找到正確目標位置）
+        await this.animation.playCardToFieldAnimation(
+          event.hand_card_play.played_card,
+          isOpponent,
+          undefined  // 無配對
+        )
+
+        // 1b.5 動畫完成後移除手牌 DOM
         this.removePlayedHandCard(event.hand_card_play.played_card, isOpponent)
-        this.addCardsToField([result.playedCard])
       }
     }
 
@@ -136,7 +158,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
       this.addCardsToField([event.draw_card_play.played_card])
 
       // 等待 DOM 布局完成
-      await new Promise(resolve => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 50))
 
       // 執行翻牌動畫
       const result = await this.processDrawCardPlay(event.draw_card_play)
@@ -157,7 +179,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         opponentDepository = updated.opponent
 
         // 等待 DOM 布局完成
-        await new Promise(resolve => setTimeout(resolve, 0))
+        await new Promise(resolve => setTimeout(resolve, 50))
 
         // 播放轉移動畫（淡出 + 淡入）
         const firstCapturedCard = result.capturedCards[0]
@@ -176,7 +198,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         this.removeFieldCard(result.matchedCard)
 
         // 等待 DOM 更新完成
-        await new Promise(resolve => setTimeout(resolve, 0))
+        await new Promise(resolve => setTimeout(resolve, 50))
       }
       // 2b. 無配對時不需要額外處理，動畫完成後卡片自然顯示在場牌區
     }

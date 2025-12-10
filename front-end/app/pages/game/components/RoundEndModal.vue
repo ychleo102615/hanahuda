@@ -19,8 +19,7 @@
       aria-modal="true"
       aria-labelledby="round-end-title"
       :style="{ zIndex: Z_INDEX.MODAL }"
-      @click.prevent
-      @keydown.esc.prevent
+      @click.self="handleClose"
     >
       <div
         class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all"
@@ -296,6 +295,13 @@ function getRoundEndReasonText(reason: string): string {
 function getPlayerName(playerId: string): string {
   const localPlayerId = gameState.getLocalPlayerId()
   return playerId === localPlayerId ? 'You' : 'Opponent'
+}
+
+/**
+ * 關閉 Modal（點擊外部時觸發）
+ */
+function handleClose(): void {
+  uiState.hideModal()
 }
 </script>
 

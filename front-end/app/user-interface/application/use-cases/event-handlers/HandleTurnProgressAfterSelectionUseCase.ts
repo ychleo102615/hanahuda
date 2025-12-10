@@ -114,7 +114,7 @@ export class HandleTurnProgressAfterSelectionUseCase
       }
 
       // 3.3 等待 DOM 布局完成（讓獲得區新卡片完成渲染）
-      await new Promise(resolve => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 50))
 
       // 3.4 播放轉移動畫（從配對點淡出 → 獲得區淡入）
       // playToDepositoryAnimation 會創建克隆卡片在 matchPosition 淡出，同時在獲得區淡入

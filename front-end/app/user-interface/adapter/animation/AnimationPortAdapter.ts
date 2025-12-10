@@ -390,7 +390,13 @@ export class AnimationPortAdapter implements AnimationPort {
       )
     } else {
       // 無配對：明確從場牌區查找
-      const fieldCardElement = this.registry.findCardInZone('field', cardId)
+      let fieldCardElement = this.registry.findCardInZone('field', cardId)
+
+      // 如果找不到，等待 DOM 更新後重試（Vue 響應式更新可能還在進行中）
+      if (!fieldCardElement) {
+        await waitForLayout(3)  // 等待 3 frames 確保 DOM 渲染完成
+        fieldCardElement = this.registry.findCardInZone('field', cardId)
+      }
 
       if (fieldCardElement) {
         // 找到場牌區的新增位置 → 飛到該位置

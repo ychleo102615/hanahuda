@@ -146,9 +146,11 @@ watch(isMyTurn, (newIsMyTurn) => {
 // 監聽 FlowStage 變化，處理 AWAITING_SELECTION 狀態
 // 當 HandleSelectionRequiredUseCase 設定 FlowStage 為 AWAITING_SELECTION 時，
 // 根據 possibleTargetCardIds 數量來決定 UI 行為
+// 注意：只有自己的回合才進入選擇模式
 const { flowStage, possibleTargetCardIds } = storeToRefs(gameState)
 watch(flowStage, (newStage, oldStage) => {
-  if (newStage === 'AWAITING_SELECTION' && possibleTargetCardIds.value.length > 0) {
+  // 只有自己的回合才進入選擇模式
+  if (newStage === 'AWAITING_SELECTION' && possibleTargetCardIds.value.length > 0 && isMyTurn.value) {
     // 進入場牌選擇模式
     const sourceCard = possibleTargetCardIds.value[0] ?? ''
     const highlightType = possibleTargetCardIds.value.length === 1 ? 'single' : 'multiple'

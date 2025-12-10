@@ -368,9 +368,10 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T068 [US3]: 註冊 DecisionRequired 事件處理器
+  // 加入 gameStatePort 以檢查是否為自己的回合
   container.register(
     TOKENS.HandleDecisionRequiredPort,
-    () => new HandleDecisionRequiredUseCase(uiStatePort, notificationPort, domainFacade),
+    () => new HandleDecisionRequiredUseCase(uiStatePort, notificationPort, domainFacade, gameStatePort),
     { singleton: true }
   )
 

@@ -82,8 +82,8 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
       const newFieldCards = [...currentFieldCards, handCardPlay.played_card]
       this.gameState.updateFieldCards(newFieldCards)
 
-      // 1.3 等待 DOM 布局完成
-      await new Promise(resolve => setTimeout(resolve, 0))
+      // 1.3 等待 DOM 布局完成（增加延遲確保 TransitionGroup 完成渲染）
+      await new Promise(resolve => setTimeout(resolve, 50))
 
       // 1.4 播放動畫（手牌 DOM 還在，可以找到正確起始位置）
       await this.animation.playCardToFieldAnimation(
@@ -121,7 +121,7 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
       }
 
       // 2.3 等待 DOM 布局完成
-      await new Promise(resolve => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 50))
 
       // 2.4 播放轉移動畫（卡片轉移到獲得區）
       const firstCapturedCard = capturedCards[0]
