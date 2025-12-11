@@ -13,12 +13,18 @@
  * ```
  */
 
+import type { OperationSessionManager } from '../abort'
+
 /**
  * 通用 Input Port 介面
+ *
+ * @description
+ * Input Port 的 execute 方法可選擇接受 AbortSignal 參數，
+ * 用於支援可取消操作。
  */
- 
+
 interface InputPort<T = unknown> {
-  execute(payload: T): void
+  execute(payload: T, signal?: AbortSignal): void | Promise<void>
 }
 
 /**
@@ -46,8 +52,24 @@ export class EventRouter {
    */
   private eventChain: Promise<void> = Promise.resolve()
 
+  /**
+   * OperationSessionManager 用於取得 AbortSignal
+   * @private
+   */
+  private operationSession: OperationSessionManager | null = null
+
   constructor() {
     this.handlers = new Map()
+  }
+
+  /**
+   * 設置 OperationSessionManager
+   *
+   * @description
+   * 由 DI 在註冊後設置，用於在 route() 時傳遞 AbortSignal 給 Use Case。
+   */
+  setOperationSession(session: OperationSessionManager): void {
+    this.operationSession = session
   }
 
   /**
@@ -80,6 +102,10 @@ export class EventRouter {
    * 事件會被加入 Promise 鏈中，確保前一個事件的 Use Case（包括動畫）
    * 完全執行完畢後才開始處理下一個事件。這避免了動畫衝突問題。
    *
+   * **AbortSignal 傳遞**：
+   * 若已設置 OperationSessionManager，會取得當前的 AbortSignal 傳遞給 Use Case，
+   * 讓 Use Case 可以響應取消操作。
+   *
    * @example
    * ```typescript
    * router.route('GameStarted', { game_id: '123', ... })
@@ -95,12 +121,15 @@ export class EventRouter {
       return
     }
 
+    // 取得當前的 AbortSignal（若已設置 OperationSessionManager）
+    const signal = this.operationSession?.getSignal()
+
     // 將事件加入處理鏈，等待前一個事件完成
     this.eventChain = this.eventChain
       .then(() => {
         console.info(`[EventRouter] Processing event: ${eventType}`)
-        // 調用 Use Case 執行（可能包含 async 動畫）
-        return port.execute(payload)
+        // 調用 Use Case 執行（可能包含 async 動畫），傳遞 AbortSignal
+        return port.execute(payload, signal)
       })
       .catch((error) => {
         // 捕獲錯誤，避免中斷事件鏈

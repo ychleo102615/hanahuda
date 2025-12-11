@@ -69,15 +69,18 @@ export interface CardGroup {
 
 /**
  * Animation Layer Store
+ *
+ * 取消機制說明：
+ * - 動畫取消由 OperationSessionManager 的 AbortSignal 控制
+ * - AnimationLayer.vue 使用 useAbortableMotion 監聽 AbortSignal
+ * - 當 operationSession.abortAll() 被呼叫時，所有動畫會自動中斷
+ * - 此 store 只負責管理動畫狀態，不再需要 cancel callback 機制
  */
 export const useAnimationLayerStore = defineStore('animationLayer', () => {
   // State
   const animatingCards = ref<AnimatingCard[]>([])
   const animatingGroups = ref<CardGroup[]>([])
   const hiddenCardIds = ref<Set<string>>(new Set())
-
-  // Cancel callbacks（由 AnimationLayer.vue 註冊，用於停止 @vueuse/motion 動畫）
-  const cancelCallbacks: (() => void)[] = []
 
   // Actions - 動畫卡片管理
   function addCard(card: AnimatingCard): void {
@@ -97,32 +100,18 @@ export const useAnimationLayerStore = defineStore('animationLayer', () => {
     animatingGroups.value = animatingGroups.value.filter(g => g.groupId !== groupId)
   }
 
+  /**
+   * 清除所有動畫狀態
+   *
+   * @description
+   * 清除 store 中的動畫資料和隱藏卡片狀態。
+   * 注意：實際的動畫中斷由 OperationSessionManager.abortAll() 處理，
+   * 此方法只負責清理 store 狀態。
+   */
   function clear(): void {
-    // 先呼叫所有 cancel callbacks，停止 @vueuse/motion 動畫
-    // 這會阻止動畫 Promise resolve，從而阻止 onComplete 被呼叫
-    cancelCallbacks.forEach(cb => {
-      try {
-        cb()
-      } catch (e) {
-        console.warn('[AnimationLayerStore] Cancel callback error:', e)
-      }
-    })
-
     animatingCards.value = []
     animatingGroups.value = []
     hiddenCardIds.value.clear()
-  }
-
-  // Cancel callback 註冊機制
-  function registerCancelCallback(callback: () => void): void {
-    cancelCallbacks.push(callback)
-  }
-
-  function unregisterCancelCallback(callback: () => void): void {
-    const index = cancelCallbacks.indexOf(callback)
-    if (index !== -1) {
-      cancelCallbacks.splice(index, 1)
-    }
   }
 
   // Actions - 卡片隱藏管理
@@ -154,9 +143,6 @@ export const useAnimationLayerStore = defineStore('animationLayer', () => {
     hideCards,
     showCard,
     isCardHidden,
-    // Actions - Cancel callback 註冊
-    registerCancelCallback,
-    unregisterCancelCallback,
   }
 })
 

@@ -15,7 +15,6 @@ export const TOKENS = {
   NavigationPort: Symbol('NavigationPort'),
   SessionContextPort: Symbol('SessionContextPort'),
   ReconnectionPort: Symbol('ReconnectionPort'),
-  DelayManagerPort: Symbol('DelayManagerPort'),
 
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
@@ -62,6 +61,7 @@ export const TOKENS = {
 
   // ===== Services =====
   CountdownManager: Symbol('CountdownManager'),
+  OperationSessionManager: Symbol('OperationSessionManager'),
 
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),

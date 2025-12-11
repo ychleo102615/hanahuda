@@ -32,7 +32,8 @@ import { useOptionalDependency } from './useDependency'
 import { TOKENS } from '../di/tokens'
 import type { GameEventClient } from '../sse/GameEventClient'
 import type { TriggerStateRecoveryPort } from '../../application/ports/input'
-import type { DelayManagerPort, ReconnectionPort } from '../../application/ports/output'
+import type { ReconnectionPort } from '../../application/ports/output'
+import type { OperationSessionManager } from '../abort'
 
 /**
  * SSE 連線管理 Composable
@@ -45,7 +46,7 @@ export function useSSEConnection() {
   // 使用 optional dependency 因為在 mock 模式下可能不存在
   const gameEventClient = useOptionalDependency<GameEventClient>(TOKENS.GameEventClient)
   const triggerStateRecovery = useOptionalDependency<TriggerStateRecoveryPort>(TOKENS.TriggerStateRecoveryPort)
-  const delayManager = useOptionalDependency<DelayManagerPort>(TOKENS.DelayManagerPort)
+  const operationSession = useOptionalDependency<OperationSessionManager>(TOKENS.OperationSessionManager)
   const reconnectionPort = useOptionalDependency<ReconnectionPort>(TOKENS.ReconnectionPort)
 
   // 區分首次連線與重連
@@ -103,11 +104,11 @@ export function useSSEConnection() {
         console.info('[useSSEConnection] SSE 重連成功，觸發狀態恢復')
         uiStore.setConnectionStatus('connected')
 
-        // 清理：取消 pending delays 和清空 event chain
+        // 清理：中斷進行中的操作和清空 event chain
         // 這些清理在 Use Case 執行前完成，確保舊的動畫和事件不會干擾
-        if (delayManager) {
-          delayManager.cancelAll()
-          console.info('[useSSEConnection] 已取消所有 pending delays')
+        if (operationSession) {
+          operationSession.abortAll()
+          console.info('[useSSEConnection] 已中斷所有進行中的操作')
         }
         if (reconnectionPort) {
           reconnectionPort.clearPendingEvents()

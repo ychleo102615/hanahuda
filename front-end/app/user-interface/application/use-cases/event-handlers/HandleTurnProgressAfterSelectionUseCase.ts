@@ -19,10 +19,11 @@
  */
 
 import type { TurnProgressAfterSelectionEvent } from '#shared/contracts'
-import type { GameStatePort, AnimationPort, NotificationPort, DelayManagerPort } from '../../ports/output'
-import { DelayAbortedError } from '../../ports/output'
+import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleTurnProgressAfterSelectionPort } from '../../ports/input'
+import { AbortOperationError } from '../../types'
+import { delay } from '../../../adapter/abort'
 
 export class HandleTurnProgressAfterSelectionUseCase
   implements HandleTurnProgressAfterSelectionPort
@@ -31,25 +32,24 @@ export class HandleTurnProgressAfterSelectionUseCase
     private readonly gameState: GameStatePort,
     private readonly animation: AnimationPort,
     private readonly domainFacade: DomainFacade,
-    private readonly notification: NotificationPort,
-    private readonly delayManager: DelayManagerPort
+    private readonly notification: NotificationPort
   ) {}
 
   /**
    * 執行選擇後回合進展事件處理
    */
-  execute(event: TurnProgressAfterSelectionEvent): Promise<void> {
-    return this.executeAsync(event)
+  execute(event: TurnProgressAfterSelectionEvent, signal?: AbortSignal): Promise<void> {
+    return this.executeAsync(event, signal)
   }
 
   /**
    * 非同步執行動畫和狀態更新
    */
-  private async executeAsync(event: TurnProgressAfterSelectionEvent): Promise<void> {
+  private async executeAsync(event: TurnProgressAfterSelectionEvent, signal?: AbortSignal): Promise<void> {
     try {
-      await this.executeAsyncCore(event)
+      await this.executeAsyncCore(event, signal)
     } catch (error) {
-      if (error instanceof DelayAbortedError) {
+      if (error instanceof AbortOperationError) {
         console.info('[HandleTurnProgressAfterSelectionUseCase] Aborted due to state recovery')
         return
       }
@@ -77,7 +77,7 @@ export class HandleTurnProgressAfterSelectionUseCase
    * 5. 更新其他狀態（牌堆數量、役種記錄）
    * 6. 清理動畫層
    */
-  private async executeAsyncCore(event: TurnProgressAfterSelectionEvent): Promise<void> {
+  private async executeAsyncCore(event: TurnProgressAfterSelectionEvent, signal?: AbortSignal): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
@@ -131,7 +131,7 @@ export class HandleTurnProgressAfterSelectionUseCase
       }
 
       // 3.3 等待 DOM 布局完成（讓獲得區新卡片完成渲染）
-      await this.delayManager.delay(50)
+      await delay(50, signal)
 
       // 3.4 播放轉移動畫（從配對點淡出 → 獲得區淡入）
       // playToDepositoryAnimation 會創建克隆卡片在 matchPosition 淡出，同時在獲得區淡入
@@ -156,7 +156,7 @@ export class HandleTurnProgressAfterSelectionUseCase
 
       // 3.6 等待 TransitionGroup FLIP 動畫完成（300ms + 50ms buffer = 350ms）
       // 讓剩餘場牌滑順地重新排列填補空位
-      await this.delayManager.delay(350)
+      await delay(350, signal)
 
       console.log('[HandleTurnProgressAfterSelection] 動畫完成，已移除場牌並更新獲得區')
     } else {

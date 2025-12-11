@@ -86,8 +86,9 @@ export interface HandleTurnCompletedPort {
    * 執行 TurnCompleted 事件處理
    *
    * @param event - TurnCompleted 事件
+   * @param signal - AbortSignal（可選），用於取消操作
    */
-  execute(event: TurnCompletedEvent): void | Promise<void>
+  execute(event: TurnCompletedEvent, signal?: AbortSignal): void | Promise<void>
 }
 
 /**
@@ -103,8 +104,9 @@ export interface HandleSelectionRequiredPort {
    * 執行 SelectionRequired 事件處理
    *
    * @param event - SelectionRequired 事件
+   * @param signal - AbortSignal（可選），用於取消操作
    */
-  execute(event: SelectionRequiredEvent): void | Promise<void>
+  execute(event: SelectionRequiredEvent, signal?: AbortSignal): void | Promise<void>
 }
 
 /**
@@ -120,8 +122,9 @@ export interface HandleTurnProgressAfterSelectionPort {
    * 執行 TurnProgressAfterSelection 事件處理
    *
    * @param event - TurnProgressAfterSelection 事件
+   * @param signal - AbortSignal（可選），用於取消操作
    */
-  execute(event: TurnProgressAfterSelectionEvent): void | Promise<void>
+  execute(event: TurnProgressAfterSelectionEvent, signal?: AbortSignal): void | Promise<void>
 }
 
 /**
@@ -137,8 +140,9 @@ export interface HandleDecisionRequiredPort {
    * 執行 DecisionRequired 事件處理
    *
    * @param event - DecisionRequired 事件
+   * @param signal - AbortSignal（可選），用於取消操作
    */
-  execute(event: DecisionRequiredEvent): void | Promise<void>
+  execute(event: DecisionRequiredEvent, signal?: AbortSignal): void | Promise<void>
 }
 
 /**

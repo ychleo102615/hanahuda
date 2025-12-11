@@ -32,10 +32,10 @@ import type {
   NavigationPort,
   AnimationPort,
   MatchmakingStatePort,
-  DelayManagerPort,
   SnapshotError,
 } from '../ports/output'
 import { HandleStateRecoveryPort } from '../ports/input/handle-state-recovery.port'
+import type { OperationSessionManager } from '../../adapter/abort'
 
 export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
   constructor(
@@ -44,7 +44,7 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
     private readonly navigation: NavigationPort,
     private readonly animationPort: AnimationPort,
     private readonly matchmakingState: MatchmakingStatePort,
-    private readonly delayManager: DelayManagerPort
+    private readonly operationSession: OperationSessionManager
   ) {
     super()
   }
@@ -62,9 +62,9 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
 
     // 1. 中斷所有進行中的 Use Cases
     // 原因：重連後的快照是權威狀態，進行中的操作已無意義
-    // 呼叫 cancelAll() 會讓所有 await delayManager.delay() 拋出 DelayAbortedError
+    // 呼叫 abortAll() 會讓所有 await delay(ms, signal) 拋出 AbortOperationError
     // 各 Use Case 的 try-catch 會捕獲此錯誤並靜默結束
-    this.delayManager.cancelAll()
+    this.operationSession.abortAll()
 
     // 2. 清除動畫層狀態
     this.animationPort.interrupt()

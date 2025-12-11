@@ -29,6 +29,3 @@ export { ReconnectionPort, type SnapshotResult, type SnapshotError } from './rec
 
 // Legacy Output Ports
 export type { UIStatePort } from './ui-state.port'
-
-// Delay Management
-export { DelayManagerPort, DelayAbortedError } from './delay-manager.port'

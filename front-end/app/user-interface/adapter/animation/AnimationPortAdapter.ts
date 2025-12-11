@@ -17,9 +17,9 @@ import type { CardType } from '../../domain/types'
 import { zoneRegistry, type ZoneRegistry } from './ZoneRegistry'
 import type { ZoneName } from './types'
 import type { AnimationLayerStore } from '../stores'
-import type { DelayManagerPort } from '../../application/ports/output/delay-manager.port'
-// DelayAbortedError 用於類型檢查（在 catch 中辨識）
-// 注意：不再在此處捕獲，讓錯誤自然傳遞到 Use Case
+import { delay, waitForLayout, type OperationSessionManager } from '../abort'
+// AbortOperationError 用於類型檢查（在 catch 中辨識）
+// 注意：不在此處捕獲，讓錯誤自然傳遞到 Use Case
 
 /**
  * 動畫時長常數 (ms)
@@ -71,21 +71,21 @@ export class AnimationPortAdapter implements AnimationPort {
   private _interrupted = false
   private registry: ZoneRegistry
   private animationLayerStore: AnimationLayerStore
-  private delayManager: DelayManagerPort
+  private operationSession: OperationSessionManager
 
   constructor(
     registry: ZoneRegistry,
     animationLayerStore: AnimationLayerStore,
-    delayManager: DelayManagerPort
+    operationSession: OperationSessionManager
   ) {
     this.registry = registry
     this.animationLayerStore = animationLayerStore
-    this.delayManager = delayManager
+    this.operationSession = operationSession
   }
 
   // ===== 動畫方法 =====
-  // 注意：所有動畫方法直接使用 delayManager.delay() 和 delayManager.waitForLayout()
-  // 當 cancelAll() 被呼叫時，DelayAbortedError 會自然傳遞到調用的 Use Case
+  // 注意：所有動畫方法使用 AbortableDelay 並傳入 signal
+  // 當 OperationSessionManager.abortAll() 被呼叫時，AbortOperationError 會自然傳遞到調用的 Use Case
   // Use Case 的 try-catch 會捕獲此錯誤並靜默結束，中斷後續邏輯執行
 
   async playDealAnimation(params: DealAnimationParams): Promise<void> {
@@ -118,7 +118,7 @@ export class AnimationPortAdapter implements AnimationPort {
     this.animationLayerStore?.hideCards(allCardIds)
 
     // 等待 DOM 渲染完成（兩個 frame 確保布局穩定）
-    await this.delayManager.waitForLayout(2)
+    await waitForLayout(2, this.operationSession.getSignal())
 
     try {
       // 花札發牌順序：4 輪手牌 → 場牌
@@ -157,7 +157,7 @@ export class AnimationPortAdapter implements AnimationPort {
                 if (cardElement && deckPosition && !this._interrupted) {
                   params.onCardDealt?.()
                   this.animateSingleDealCard(cardElement, deckPosition.rect)
-                  await this.delayManager.delay(ANIMATION_DURATION.DEAL_CARD)
+                  await delay(ANIMATION_DURATION.DEAL_CARD, this.operationSession.getSignal())
                 }
                 playerCardIndex++
               }
@@ -167,14 +167,14 @@ export class AnimationPortAdapter implements AnimationPort {
                 if (deckPosition && !this._interrupted) {
                   params.onCardDealt?.()
                   this.animateOpponentDealCard(opponentCardIndex, deckPosition.rect)
-                  await this.delayManager.delay(ANIMATION_DURATION.DEAL_CARD)
+                  await delay(ANIMATION_DURATION.DEAL_CARD, this.operationSession.getSignal())
                 }
                 opponentCardIndex++
               }
             }
 
             // 每張牌延遲
-            await this.delayManager.delay(ANIMATION_DURATION.DEAL_STAGGER)
+            await delay(ANIMATION_DURATION.DEAL_STAGGER, this.operationSession.getSignal())
           }
         }
       }
@@ -192,12 +192,12 @@ export class AnimationPortAdapter implements AnimationPort {
         if (cardElement && deckPosition && !this._interrupted) {
           params.onCardDealt?.()
           this.animateSingleDealCard(cardElement, deckPosition.rect)
-          await this.delayManager.delay(ANIMATION_DURATION.DEAL_CARD)
+          await delay(ANIMATION_DURATION.DEAL_CARD, this.operationSession.getSignal())
         }
 
         // 每張牌延遲（最後一張不需要）
         if (i < params.fieldCards.length - 1) {
-          await this.delayManager.delay(ANIMATION_DURATION.DEAL_STAGGER)
+          await delay(ANIMATION_DURATION.DEAL_STAGGER, this.operationSession.getSignal())
         }
       }
     } finally {
@@ -216,7 +216,7 @@ export class AnimationPortAdapter implements AnimationPort {
     fromRect: DOMRect
   ): Promise<void> {
     // 等待 DOM 布局完成
-    await this.delayManager.waitForLayout(3)
+    await waitForLayout(3, this.operationSession.getSignal())
 
     const cardId = cardElement.getAttribute('data-card-id')
     const cardRect = cardElement.getBoundingClientRect()
@@ -346,7 +346,7 @@ export class AnimationPortAdapter implements AnimationPort {
             cardHeight
           )
         } else {
-          await this.delayManager.delay(ANIMATION_DURATION.CARD_TO_FIELD)
+          await delay(ANIMATION_DURATION.CARD_TO_FIELD, this.operationSession.getSignal())
           this._isAnimating = false
           return
         }
@@ -355,7 +355,7 @@ export class AnimationPortAdapter implements AnimationPort {
         fromRect = cardElement.getBoundingClientRect()
       } else {
         // 玩家無元素：等待時長
-        await this.delayManager.delay(ANIMATION_DURATION.CARD_TO_FIELD)
+        await delay(ANIMATION_DURATION.CARD_TO_FIELD, this.operationSession.getSignal())
         this._isAnimating = false
         return
       }
@@ -375,13 +375,13 @@ export class AnimationPortAdapter implements AnimationPort {
         )
       } else {
         // 備用：等待時長
-        await this.delayManager.delay(ANIMATION_DURATION.CARD_TO_FIELD)
+        await delay(ANIMATION_DURATION.CARD_TO_FIELD, this.operationSession.getSignal())
         this._isAnimating = false
         return
       }
     } else {
       // 無元素且非對手：等待時長
-      await this.delayManager.delay(ANIMATION_DURATION.CARD_TO_FIELD)
+      await delay(ANIMATION_DURATION.CARD_TO_FIELD, this.operationSession.getSignal())
       this._isAnimating = false
       return
     }
@@ -403,7 +403,7 @@ export class AnimationPortAdapter implements AnimationPort {
 
       // 如果找不到，等待 DOM 更新後重試（Vue 響應式更新可能還在進行中）
       if (!fieldCardElement) {
-        await this.delayManager.waitForLayout(3)
+        await waitForLayout(3, this.operationSession.getSignal())
         fieldCardElement = this.registry.findCardInZone('field', cardId)
       }
 
@@ -522,7 +522,7 @@ export class AnimationPortAdapter implements AnimationPort {
 
       // 動畫完成後保持隱藏（等待 depository 動畫）
     } else {
-      await this.delayManager.delay(ANIMATION_DURATION.MATCH_EFFECT)
+      await delay(ANIMATION_DURATION.MATCH_EFFECT, this.operationSession.getSignal())
     }
 
     this._isAnimating = false
@@ -622,7 +622,7 @@ export class AnimationPortAdapter implements AnimationPort {
     }
 
     // === 階段 2：等待 DOM 布局完成 ===
-    await this.delayManager.waitForLayout(2)
+    await waitForLayout(2, this.operationSession.getSignal())
 
     if (this._interrupted) {
       this._isAnimating = false
@@ -717,7 +717,7 @@ export class AnimationPortAdapter implements AnimationPort {
         this.animationLayerStore.hideCards([cardId])
 
         // 等待 DOM 布局完成
-        await this.delayManager.waitForLayout(2)
+        await waitForLayout(2, this.operationSession.getSignal())
 
         // 取得目標位置
         const cardRect = cardElement.getBoundingClientRect()
@@ -737,7 +737,7 @@ export class AnimationPortAdapter implements AnimationPort {
       } else {
         // 無元素時等待時長
         if (!this._interrupted) {
-          await this.delayManager.delay(ANIMATION_DURATION.FLIP_FROM_DECK)
+          await delay(ANIMATION_DURATION.FLIP_FROM_DECK, this.operationSession.getSignal())
         }
       }
     } finally {
@@ -811,7 +811,7 @@ export class AnimationPortAdapter implements AnimationPort {
         return
       }
 
-      await this.delayManager.delay(intervalMs)
+      await delay(intervalMs, this.operationSession.getSignal())
       waited += intervalMs
     }
 

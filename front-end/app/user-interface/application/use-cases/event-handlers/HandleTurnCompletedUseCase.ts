@@ -18,10 +18,11 @@
  */
 
 import type { TurnCompletedEvent, CardPlay } from '#shared/contracts'
-import type { GameStatePort, AnimationPort, NotificationPort, DelayManagerPort } from '../../ports/output'
-import { DelayAbortedError } from '../../ports/output'
+import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { HandleTurnCompletedPort } from '../../ports/input'
 import type { DomainFacade } from '../../types/domain-facade'
+import { AbortOperationError } from '../../types'
+import { delay } from '../../../adapter/abort'
 
 /**
  * 卡片操作處理結果
@@ -44,15 +45,17 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
     private readonly gameState: GameStatePort,
     private readonly animation: AnimationPort,
     private readonly notification: NotificationPort,
-    private readonly domainFacade: DomainFacade,
-    private readonly delayManager: DelayManagerPort
+    private readonly domainFacade: DomainFacade
   ) {}
 
   /**
    * 執行回合完成事件處理
+   *
+   * @param event - 回合完成事件
+   * @param signal - AbortSignal（可選），用於取消操作
    */
-  execute(event: TurnCompletedEvent): Promise<void> {
-    return this.executeAsync(event)
+  execute(event: TurnCompletedEvent, signal?: AbortSignal): Promise<void> {
+    return this.executeAsync(event, signal)
   }
 
   /**
@@ -68,11 +71,11 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
    * 5. 啟動操作倒數
    * 6. 清理動畫層
    */
-  private async executeAsync(event: TurnCompletedEvent): Promise<void> {
+  private async executeAsync(event: TurnCompletedEvent, signal?: AbortSignal): Promise<void> {
     try {
-      await this.executeAsyncCore(event)
+      await this.executeAsyncCore(event, signal)
     } catch (error) {
-      if (error instanceof DelayAbortedError) {
+      if (error instanceof AbortOperationError) {
         console.info('[HandleTurnCompletedUseCase] Aborted due to state recovery')
         return
       }
@@ -83,7 +86,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
   /**
    * 核心執行邏輯（可被中斷）
    */
-  private async executeAsyncCore(event: TurnCompletedEvent): Promise<void> {
+  private async executeAsyncCore(event: TurnCompletedEvent, signal?: AbortSignal): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
@@ -118,7 +121,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         opponentDepository = updated.opponent
 
         // 等待 DOM 布局完成（讓獲得區新卡片完成渲染）
-        await this.delayManager.delay(50)
+        await delay(50, signal)
 
         // 播放轉移動畫（淡出 + 淡入，視覺上是卡片轉移到獲得區）
         const firstCapturedCard = result.capturedCards[0]
@@ -143,7 +146,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         // 等待 TransitionGroup FLIP 動畫完成
         // FieldZone 和 PlayerHandZone 的 FLIP 動畫時長為 300ms
         // 額外增加 50ms buffer 確保動畫完全結束
-        await this.delayManager.delay(350)
+        await delay(350, signal)
       } else {
         // 1b. 無配對：先加入場牌 → 播放動畫 → 移除手牌
         // 與 HandleSelectionRequiredUseCase 一致的流程：
@@ -156,7 +159,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         this.addCardsToField([event.hand_card_play.played_card])
 
         // 1b.3 等待 DOM 布局完成
-        await this.delayManager.delay(50)
+        await delay(50, signal)
 
         // 1b.4 播放動畫（場牌區已有卡片，可以找到正確目標位置）
         await this.animation.playCardToFieldAnimation(
@@ -179,7 +182,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
       this.addCardsToField([event.draw_card_play.played_card])
 
       // 等待 DOM 布局完成
-      await this.delayManager.delay(50)
+      await delay(50, signal)
 
       // 執行翻牌動畫
       const result = await this.processDrawCardPlay(event.draw_card_play)
@@ -200,7 +203,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         opponentDepository = updated.opponent
 
         // 等待 DOM 布局完成
-        await this.delayManager.delay(50)
+        await delay(50, signal)
 
         // 播放轉移動畫（淡出 + 淡入）
         const firstCapturedCard = result.capturedCards[0]
@@ -219,7 +222,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
         result.capturedCards.forEach(cardId => this.removeFieldCard(cardId))
 
         // 等待 DOM 更新完成
-        await this.delayManager.delay(50)
+        await delay(50, signal)
       }
       // 2b. 無配對時不需要額外處理，動畫完成後卡片自然顯示在場牌區
     }

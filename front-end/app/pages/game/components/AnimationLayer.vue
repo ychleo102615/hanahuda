@@ -5,15 +5,26 @@
  * @description
  * 渲染正在執行動畫的卡片，使用 fixed positioning 避免 overflow 裁切。
  * 透過 Teleport 將動畫層放到 body，確保在最上層。
+ *
+ * 取消機制：
+ * - 使用 OperationSessionManager 的 AbortSignal 實現統一取消
+ * - 當 operationSession.abortAll() 被呼叫時，所有動畫會自動中斷
+ * - 不再需要 cancel callback 機制
  */
 
-import { watch, ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useAnimationLayerStore } from '~/user-interface/adapter/stores'
 import CardComponent from './CardComponent.vue'
-import { useMotion } from '@vueuse/motion'
 import { Z_INDEX } from '~/constants'
+import { useAbortableMotion } from '~/user-interface/adapter/abort'
+import { container, TOKENS } from '~/user-interface/adapter/di'
+import type { OperationSessionManager } from '~/user-interface/adapter/abort'
+import { AbortOperationError } from '~/user-interface/application/types/abort'
 
 const store = useAnimationLayerStore()
+
+// 從 DI 獲取 OperationSessionManager
+const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
 
 // 追蹤已經開始動畫的卡片 ID
 const animatedCardIds = ref<Set<string>>(new Set())
@@ -27,33 +38,6 @@ const animatedGroupIds = ref<Set<string>>(new Set())
 // 追蹤每個組容器的 DOM 元素（不需要響應式）
 const groupRefs = new Map<string, HTMLElement>()
 
-// 追蹤所有動畫的 stop 函數，用於中斷時停止 @vueuse/motion 動畫
-const motionStops = new Map<string, () => void>()
-
-// 停止所有動畫的 cancel callback
-function cancelAllAnimations(): void {
-  console.info('[AnimationLayer] Cancelling all animations', { count: motionStops.size })
-  motionStops.forEach((stop, id) => {
-    try {
-      stop()
-    } catch (e) {
-      console.warn('[AnimationLayer] Failed to stop animation:', id, e)
-    }
-  })
-  motionStops.clear()
-  animatedCardIds.value.clear()
-  animatedGroupIds.value.clear()
-}
-
-// 註冊/取消註冊 cancel callback
-onMounted(() => {
-  store.registerCancelCallback(cancelAllAnimations)
-})
-
-onUnmounted(() => {
-  store.unregisterCancelCallback(cancelAllAnimations)
-})
-
 // 設置卡片 ref
 function setCardRef(cardId: string, el: HTMLElement | null) {
   if (el) {
@@ -66,7 +50,7 @@ function setCardRef(cardId: string, el: HTMLElement | null) {
 }
 
 // 為指定卡片開始動畫
-function startAnimationIfNeeded(cardId: string) {
+async function startAnimationIfNeeded(cardId: string) {
   // 如果已經在動畫中，跳過
   if (animatedCardIds.value.has(cardId)) return
 
@@ -85,7 +69,8 @@ function startAnimationIfNeeded(cardId: string) {
   el.style.transformOrigin = '0 0'
 
   // 根據效果類型執行不同動畫
-  let motionConfig: Parameters<typeof useMotion>[1]
+  type MotionConfig = Parameters<typeof useAbortableMotion>[1]
+  let motionConfig: MotionConfig
 
   if (effectType === 'pulse') {
     // 脈衝效果：原地縮放
@@ -159,19 +144,27 @@ function startAnimationIfNeeded(cardId: string) {
     }
   }
 
-  const { apply, stop } = useMotion(el, motionConfig)
+  // 使用 useAbortableMotion 支援 AbortSignal 取消
+  const signal = operationSession.getSignal()
+  const { apply } = useAbortableMotion(el, motionConfig, signal)
 
-  // 保存 stop 函數，用於中斷時停止動畫
-  motionStops.set(cardId, stop)
-
-  // 執行動畫並等待完成
-  apply('enter')?.then(() => {
-    // 動畫正常完成，清除 stop 函數
-    motionStops.delete(cardId)
+  try {
+    // 執行動畫並等待完成
+    await apply('enter')
+    // 動畫正常完成
     card.onComplete()
     store.removeCard(card.cardId)
     animatedCardIds.value.delete(cardId)
-  })
+  } catch (error) {
+    // 如果是 AbortOperationError，靜默忽略（動畫已被取消）
+    if (error instanceof AbortOperationError) {
+      console.info(`[AnimationLayer] Card animation aborted: ${cardId}`)
+      animatedCardIds.value.delete(cardId)
+      return
+    }
+    // 其他錯誤重新拋出
+    throw error
+  }
 }
 
 // 設置組容器 ref
@@ -186,7 +179,7 @@ function setGroupRef(groupId: string, el: HTMLElement | null) {
 }
 
 // 為指定組開始動畫
-function startGroupAnimation(groupId: string) {
+async function startGroupAnimation(groupId: string) {
   // 如果已經在動畫中，跳過
   if (animatedGroupIds.value.has(groupId)) return
 
@@ -202,7 +195,8 @@ function startGroupAnimation(groupId: string) {
   const effectType = group.groupEffectType
 
   // 根據效果類型執行不同動畫
-  let motionConfig: Parameters<typeof useMotion>[1]
+  type MotionConfig = Parameters<typeof useAbortableMotion>[1]
+  let motionConfig: MotionConfig
 
   if (effectType === 'pulse') {
     // 脈衝效果：原地縮放
@@ -256,19 +250,27 @@ function startGroupAnimation(groupId: string) {
     }
   }
 
-  const { apply, stop } = useMotion(el, motionConfig)
+  // 使用 useAbortableMotion 支援 AbortSignal 取消
+  const signal = operationSession.getSignal()
+  const { apply } = useAbortableMotion(el, motionConfig, signal)
 
-  // 保存 stop 函數，用於中斷時停止動畫
-  motionStops.set(groupId, stop)
-
-  // 執行動畫並等待完成
-  apply('enter')?.then(() => {
-    // 動畫正常完成，清除 stop 函數
-    motionStops.delete(groupId)
+  try {
+    // 執行動畫並等待完成
+    await apply('enter')
+    // 動畫正常完成
     group.onComplete()
     store.removeGroup(group.groupId)
     animatedGroupIds.value.delete(groupId)
-  })
+  } catch (error) {
+    // 如果是 AbortOperationError，靜默忽略（動畫已被取消）
+    if (error instanceof AbortOperationError) {
+      console.info(`[AnimationLayer] Group animation aborted: ${groupId}`)
+      animatedGroupIds.value.delete(groupId)
+      return
+    }
+    // 其他錯誤重新拋出
+    throw error
+  }
 }
 
 </script>

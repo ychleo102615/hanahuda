@@ -17,32 +17,32 @@
  */
 
 import type { SelectionRequiredEvent } from '#shared/contracts'
-import type { GameStatePort, AnimationPort, NotificationPort, DelayManagerPort } from '../../ports/output'
-import { DelayAbortedError } from '../../ports/output'
+import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleSelectionRequiredPort } from '../../ports/input'
+import { AbortOperationError } from '../../types'
+import { delay, waitForLayout } from '../../../adapter/abort'
 
 export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPort {
   constructor(
     private readonly gameState: GameStatePort,
     private readonly animation: AnimationPort,
     private readonly domainFacade: DomainFacade,
-    private readonly notification: NotificationPort,
-    private readonly delayManager: DelayManagerPort
+    private readonly notification: NotificationPort
   ) {}
 
-  execute(event: SelectionRequiredEvent): Promise<void> {
-    return this.executeAsync(event)
+  execute(event: SelectionRequiredEvent, signal?: AbortSignal): Promise<void> {
+    return this.executeAsync(event, signal)
   }
 
   /**
    * 非同步執行動畫和狀態更新
    */
-  private async executeAsync(event: SelectionRequiredEvent): Promise<void> {
+  private async executeAsync(event: SelectionRequiredEvent, signal?: AbortSignal): Promise<void> {
     try {
-      await this.executeAsyncCore(event)
+      await this.executeAsyncCore(event, signal)
     } catch (error) {
-      if (error instanceof DelayAbortedError) {
+      if (error instanceof AbortOperationError) {
         console.info('[HandleSelectionRequiredUseCase] Aborted due to state recovery')
         return
       }
@@ -63,7 +63,7 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
    * 7. 設定 AWAITING_SELECTION 狀態
    * 8. 清理動畫層
    */
-  private async executeAsyncCore(event: SelectionRequiredEvent): Promise<void> {
+  private async executeAsyncCore(event: SelectionRequiredEvent, signal?: AbortSignal): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
@@ -100,7 +100,7 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
       this.gameState.updateFieldCards(newFieldCards)
 
       // 1.3 等待 DOM 布局完成（增加延遲確保 TransitionGroup 完成渲染）
-      await this.delayManager.delay(50)
+      await delay(50, signal)
 
       // 1.4 播放動畫（手牌 DOM 還在，可以找到正確起始位置）
       await this.animation.playCardToFieldAnimation(
@@ -138,7 +138,7 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
       }
 
       // 2.3 等待 DOM 布局完成
-      await this.delayManager.delay(50)
+      await delay(50, signal)
 
       // 2.4 播放轉移動畫（卡片轉移到獲得區）
       const firstCapturedCard = capturedCards[0]
@@ -172,7 +172,7 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
       this.gameState.updateFieldCards(newFieldCards)
 
       // 3.3 等待 TransitionGroup FLIP 動畫完成
-      await this.delayManager.delay(350)
+      await delay(350, signal)
     }
     // 情況 2：手牌無配對時，已在階段 1 完成手牌移除和場牌加入
 
@@ -188,7 +188,7 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     }
 
     // 等待 DOM 布局完成
-    await this.delayManager.waitForLayout()
+    await waitForLayout(1, signal)
 
     // 播放翻牌動畫（從牌堆飛到場牌）
     await this.animation.playFlipFromDeckAnimation(event.drawn_card)

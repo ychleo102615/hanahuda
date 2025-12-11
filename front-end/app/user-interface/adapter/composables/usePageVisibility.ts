@@ -33,8 +33,9 @@ import { useOptionalDependency } from './useDependency'
 import { useUIStateStore } from '../stores/uiState'
 import { TOKENS } from '../di/tokens'
 import type { TriggerStateRecoveryPort } from '../../application/ports/input'
-import type { SessionContextPort, ReconnectionPort, DelayManagerPort } from '../../application/ports/output'
+import type { SessionContextPort, ReconnectionPort } from '../../application/ports/output'
 import type { GameEventClient } from '../sse/GameEventClient'
+import type { OperationSessionManager } from '../abort'
 
 /**
  * 頁面可見性監控 Composable
@@ -56,8 +57,8 @@ export function usePageVisibility() {
   const gameEventClient = useOptionalDependency<GameEventClient>(
     TOKENS.GameEventClient
   )
-  const delayManager = useOptionalDependency<DelayManagerPort>(
-    TOKENS.DelayManagerPort
+  const operationSession = useOptionalDependency<OperationSessionManager>(
+    TOKENS.OperationSessionManager
   )
   const reconnectionPort = useOptionalDependency<ReconnectionPort>(
     TOKENS.ReconnectionPort
@@ -113,10 +114,10 @@ export function usePageVisibility() {
       console.info('[usePageVisibility] SSE 已斷開')
     }
 
-    // 2. 取消所有 pending delays（中斷正在執行的 Use Cases）
-    if (delayManager) {
-      delayManager.cancelAll()
-      console.info('[usePageVisibility] 已取消所有 pending delays')
+    // 2. 中斷所有進行中的操作（透過 AbortController 取消 Use Cases）
+    if (operationSession) {
+      operationSession.abortAll()
+      console.info('[usePageVisibility] 已中斷所有進行中的操作')
     }
 
     // 3. 清空事件處理鏈（丟棄已排隊的事件）

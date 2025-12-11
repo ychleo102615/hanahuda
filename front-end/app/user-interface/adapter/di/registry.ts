@@ -47,7 +47,7 @@ import { HandleStateRecoveryUseCase } from '../../application/use-cases/HandleSt
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ReconnectionPort, DelayManagerPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ReconnectionPort } from '../../application/ports/output'
 import type { HandleStateRecoveryPort } from '../../application/ports/input'
 import { createSessionContextAdapter } from '../session/SessionContextAdapter'
 import type { DomainFacade } from '../../application/types/domain-facade'
@@ -64,7 +64,7 @@ import { createGameStatePortAdapter } from '../stores/GameStatePortAdapter'
 import { createNavigationPortAdapter } from '../router/NavigationPortAdapter'
 import { CountdownManager } from '../services/CountdownManager'
 import { ReconnectApiClient } from '../api/ReconnectApiClient'
-import { CancellableDelayManager } from '../delay/CancellableDelayManager'
+import { OperationSessionManager } from '../abort/OperationSessionManager'
 
 /**
  * 遊戲模式
@@ -167,6 +167,14 @@ function registerStores(container: DIContainer, pinia: Pinia): void {
     },
     { singleton: true },
   )
+
+  // 註冊 OperationSessionManager 為單例
+  // 管理全域的 AbortController，用於協調所有可取消操作
+  container.register(
+    TOKENS.OperationSessionManager,
+    () => new OperationSessionManager(),
+    { singleton: true },
+  )
 }
 
 /**
@@ -192,24 +200,16 @@ function registerOutputPorts(container: DIContainer): void {
     { singleton: true },
   )
 
-  // DelayManagerPort: 由 CancellableDelayManager 實作
-  // 統一管理所有延遲操作，支援集中式取消
-  // 注意：必須在 AnimationPort 之前註冊，因為 AnimationPort 依賴它
-  container.register(
-    TOKENS.DelayManagerPort,
-    () => new CancellableDelayManager(),
-    { singleton: true },
-  )
-
   // AnimationPort: 由 AnimationPortAdapter 實作
   // 從 container resolve 依賴，統一由 DI 管理
+  // Phase 10: 改用 OperationSessionManager 取代 DelayManagerPort
   container.register(
     TOKENS.AnimationPort,
     () => {
       const registry = container.resolve(TOKENS.ZoneRegistry) as typeof zoneRegistry
       const animationLayerStore = container.resolve(TOKENS.AnimationLayerStore) as ReturnType<typeof useAnimationLayerStore>
-      const delayManager = container.resolve(TOKENS.DelayManagerPort) as DelayManagerPort
-      return new AnimationPortAdapter(registry, animationLayerStore, delayManager)
+      const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
+      return new AnimationPortAdapter(registry, animationLayerStore, operationSession)
     },
     { singleton: true },
   )
@@ -286,7 +286,6 @@ function registerInputPorts(container: DIContainer): void {
   const notificationPort = container.resolve(TOKENS.NotificationPort) as NotificationPort
   const matchmakingStatePort = container.resolve(TOKENS.MatchmakingStatePort) as MatchmakingStatePort
   const navigationPort = container.resolve(TOKENS.NavigationPort) as NavigationPort
-  const delayManagerPort = container.resolve(TOKENS.DelayManagerPort) as DelayManagerPort
 
   // Game Initialization Use Cases
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -353,45 +352,44 @@ function registerInputPorts(container: DIContainer): void {
   // T050 [US2]: 註冊 TurnCompleted 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort（配對動畫整合）
   // Phase 9: 加入 NotificationPort（倒數計時整合）
-  // Phase 10: 加入 DelayManagerPort（可取消延遲）
+  // Phase 10: 改用 AbortableDelay（Use Case 內部 import delay）
   container.register(
     TOKENS.HandleTurnCompletedPort,
-    () => new HandleTurnCompletedUseCase(gameStatePort, animationPort, notificationPort, domainFacade, delayManagerPort),
+    () => new HandleTurnCompletedUseCase(gameStatePort, animationPort, notificationPort, domainFacade),
     { singleton: true }
   )
 
   // T051 [US2]: 註冊 SelectionRequired 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort + DomainFacade（場牌選擇 UI 架構重構）
   // Phase 9: 加入 NotificationPort（倒數計時整合）
-  // Phase 10: 加入 DelayManagerPort（可取消延遲）
+  // Phase 10: 改用 AbortableDelay（Use Case 內部 import delay）
   container.register(
     TOKENS.HandleSelectionRequiredPort,
-    () => new HandleSelectionRequiredUseCase(gameStatePort, animationPort, domainFacade, notificationPort, delayManagerPort),
+    () => new HandleSelectionRequiredUseCase(gameStatePort, animationPort, domainFacade, notificationPort),
     { singleton: true }
   )
 
   // T052 [US2]: 註冊 TurnProgressAfterSelection 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort（配對動畫整合）
   // Phase 9: 加入 NotificationPort（倒數計時整合）
-  // Phase 10: 加入 DelayManagerPort（可取消延遲）
+  // Phase 10: 改用 AbortableDelay（Use Case 內部 import delay）
   container.register(
     TOKENS.HandleTurnProgressAfterSelectionPort,
     () => new HandleTurnProgressAfterSelectionUseCase(
       gameStatePort,
       animationPort,
       domainFacade,
-      notificationPort,
-      delayManagerPort
+      notificationPort
     ),
     { singleton: true }
   )
 
   // T068 [US3]: 註冊 DecisionRequired 事件處理器
   // 加入 gameStatePort 以檢查是否為自己的回合，animationPort 以播放動畫
-  // Phase 10: 加入 DelayManagerPort（可取消延遲）
+  // Phase 10: 改用 AbortableDelay（Use Case 內部 import delay）
   container.register(
     TOKENS.HandleDecisionRequiredPort,
-    () => new HandleDecisionRequiredUseCase(uiStatePort, notificationPort, domainFacade, gameStatePort, animationPort, delayManagerPort),
+    () => new HandleDecisionRequiredUseCase(uiStatePort, notificationPort, domainFacade, gameStatePort, animationPort),
     { singleton: true }
   )
 
@@ -449,9 +447,13 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // 註冊 HandleStateRecoveryPort（統一處理快照恢復）
+  // Phase 10: 改用 OperationSessionManager 取代 DelayManagerPort
   container.register(
     TOKENS.HandleStateRecoveryPort,
-    () => new HandleStateRecoveryUseCase(uiStatePort, notificationPort, navigationPort, animationPort, matchmakingStatePort, delayManagerPort),
+    () => {
+      const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
+      return new HandleStateRecoveryUseCase(uiStatePort, notificationPort, navigationPort, animationPort, matchmakingStatePort, operationSession)
+    },
     { singleton: true }
   )
 
@@ -495,9 +497,15 @@ function registerBackendAdapters(container: DIContainer): void {
   )
 
   // EventRouter (共用)
+  // 設置 OperationSessionManager 以便傳遞 AbortSignal 給 Use Cases
   container.register(
     TOKENS.EventRouter,
-    () => new EventRouter(),
+    () => {
+      const router = new EventRouter()
+      const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
+      router.setOperationSession(operationSession)
+      return router
+    },
     { singleton: true },
   )
 
@@ -556,9 +564,15 @@ function registerMockAdapters(container: DIContainer): void {
   )
 
   // EventRouter (共用)
+  // 設置 OperationSessionManager 以便傳遞 AbortSignal 給 Use Cases
   container.register(
     TOKENS.EventRouter,
-    () => new EventRouter(),
+    () => {
+      const router = new EventRouter()
+      const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
+      router.setOperationSession(operationSession)
+      return router
+    },
     { singleton: true },
   )
 
