@@ -21,6 +21,7 @@ const JoinGameRequestSchema = z.object({
   player_id: z.string().uuid('player_id must be a valid UUID'),
   player_name: z.string().min(1, 'player_name is required').max(50, 'player_name must be at most 50 characters'),
   session_token: z.string().uuid('session_token must be a valid UUID').optional(),
+  game_id: z.string().uuid('game_id must be a valid UUID').optional(),
 })
 
 /**
@@ -40,7 +41,7 @@ interface ErrorResponse {
  *
  * @note session_token 不再包含在回應中，改為透過 HttpOnly Cookie 傳送
  */
-interface JoinGameResponse {
+interface JoinGameSuccessResponse {
   data: {
     game_id: string
     player_id: string
@@ -48,6 +49,34 @@ interface JoinGameResponse {
   }
   timestamp: string
 }
+
+/**
+ * 遊戲已結束回應型別
+ */
+interface JoinGameFinishedResponse {
+  data: {
+    status: 'game_finished'
+    game_id: string
+    winner_id: string | null
+    final_scores: Array<{ player_id: string; score: number }>
+    rounds_played: number
+    total_rounds: number
+  }
+  timestamp: string
+}
+
+/**
+ * 遊戲已過期回應型別
+ */
+interface JoinGameExpiredResponse {
+  data: {
+    status: 'game_expired'
+    game_id: string
+  }
+  timestamp: string
+}
+
+type JoinGameResponse = JoinGameSuccessResponse | JoinGameFinishedResponse | JoinGameExpiredResponse
 
 export default defineEventHandler(async (event): Promise<JoinGameResponse | ErrorResponse> => {
   const requestId = initRequestId(event)
@@ -71,7 +100,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
       }
     }
 
-    const { player_id, player_name, session_token: bodySessionToken } = parseResult.data
+    const { player_id, player_name, session_token: bodySessionToken, game_id } = parseResult.data
 
     // 2. 從 Cookie 讀取 session_token（優先使用 Cookie，因為 HttpOnly Cookie 更安全）
     const cookieSessionToken = getCookie(event, 'session_token')
@@ -81,6 +110,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
       playerId: player_id,
       playerName: player_name,
       hasSessionToken: !!sessionToken,
+      hasGameId: !!game_id,
       source: cookieSessionToken ? 'cookie' : (bodySessionToken ? 'body' : 'none'),
     })
 
@@ -92,26 +122,65 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
       playerId: player_id,
       playerName: player_name,
       sessionToken,
+      gameId: game_id,
     })
 
-    // 5. 設定 HttpOnly Cookie 存放 session_token
-    setSessionCookie(event, result.sessionToken)
-    logger.info('Session cookie set', { gameId: result.gameId })
+    // 5. 根據結果類型處理回應
+    switch (result.status) {
+      case 'success': {
+        // 5a. 成功加入/重連遊戲
+        // 設定 HttpOnly Cookie 存放 session_token
+        setSessionCookie(event, result.sessionToken)
+        logger.info('Session cookie set', { gameId: result.gameId })
 
-    // 6. 設定回應狀態碼
-    // 201 Created: 新遊戲建立（WAITING 或 IN_PROGRESS）
-    // 200 OK: 重連現有遊戲
-    setResponseStatus(event, result.reconnected ? 200 : 201)
+        // 設定回應狀態碼
+        // 201 Created: 新遊戲建立（WAITING 或 IN_PROGRESS）
+        // 200 OK: 重連現有遊戲
+        setResponseStatus(event, result.reconnected ? 200 : 201)
 
-    // 7. 返回回應（不含 session_token，已透過 Cookie 傳送）
-    logger.info('Join request completed', { gameId: result.gameId, reconnected: result.reconnected })
-    return {
-      data: {
-        game_id: result.gameId,
-        player_id: result.playerId,
-        sse_endpoint: result.sseEndpoint,
-      },
-      timestamp: new Date().toISOString(),
+        logger.info('Join request completed', { gameId: result.gameId, reconnected: result.reconnected })
+        return {
+          data: {
+            game_id: result.gameId,
+            player_id: result.playerId,
+            sse_endpoint: result.sseEndpoint,
+          },
+          timestamp: new Date().toISOString(),
+        }
+      }
+
+      case 'game_finished': {
+        // 5b. 遊戲已結束（從 DB 查到）
+        logger.info('Game already finished', { gameId: result.gameId, winnerId: result.winnerId })
+        setResponseStatus(event, 200)
+        return {
+          data: {
+            status: 'game_finished',
+            game_id: result.gameId,
+            winner_id: result.winnerId,
+            final_scores: result.finalScores.map((s) => ({
+              player_id: s.playerId,
+              score: s.score,
+            })),
+            rounds_played: result.roundsPlayed,
+            total_rounds: result.totalRounds,
+          },
+          timestamp: new Date().toISOString(),
+        }
+      }
+
+      case 'game_expired': {
+        // 5c. 遊戲已過期（在 DB 但不在記憶體）
+        logger.info('Game expired', { gameId: result.gameId })
+        setResponseStatus(event, 200)
+        return {
+          data: {
+            status: 'game_expired',
+            game_id: result.gameId,
+          },
+          timestamp: new Date().toISOString(),
+        }
+      }
     }
   } catch (error) {
     logger.error('Unexpected error', error)

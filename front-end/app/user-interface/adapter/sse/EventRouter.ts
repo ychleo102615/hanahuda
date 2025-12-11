@@ -32,6 +32,9 @@ interface InputPort<T = unknown> {
  * 為了防止動畫衝突（例如前一個事件的動畫還在播放，下一個事件就開始），
  * 使用 Promise 鏈確保事件依序處理。每個事件會等待前一個事件的 Use Case
  * 完全執行完畢（包括動畫）後才開始處理。
+ *
+ * **注意**：SSE 連線管理由 Adapter 層負責（usePageVisibility、useSSEConnection）。
+ * 在呼叫 clearEventChain() 前，SSE 應已斷開，因此不會有舊事件需要過濾。
  */
 export class EventRouter {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,17 +138,22 @@ export class EventRouter {
    * 清空事件處理鏈
    *
    * @description
-   * 用於緊急情況（如斷線重連）時，清空所有等待中的事件。
-   * 正在執行的事件會繼續完成，但後續排隊的事件會被丟棄。
+   * 用於狀態恢復時，重置 Promise chain，新事件將從乾淨的起點開始。
+   *
+   * **前置條件**：呼叫此方法前，SSE 連線應已斷開。
+   * 這由 Adapter 層（usePageVisibility、useSSEConnection）負責確保。
    *
    * @example
    * ```typescript
-   * router.clearEventChain()  // 清空排隊中的事件
+   * // 1. 先斷開 SSE
+   * gameEventClient.disconnect()
+   * // 2. 再清空事件鏈
+   * router.clearEventChain()
    * ```
    */
   clearEventChain(): void {
-    console.info('[EventRouter] Clearing event chain')
     this.eventChain = Promise.resolve()
+    console.info('[EventRouter] Clearing event chain')
   }
 
   /**

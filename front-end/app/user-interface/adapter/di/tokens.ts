@@ -15,6 +15,7 @@ export const TOKENS = {
   NavigationPort: Symbol('NavigationPort'),
   SessionContextPort: Symbol('SessionContextPort'),
   ReconnectionPort: Symbol('ReconnectionPort'),
+  DelayManagerPort: Symbol('DelayManagerPort'),
 
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
@@ -24,6 +25,7 @@ export const TOKENS = {
 
   // ===== Input Ports - State Recovery =====
   TriggerStateRecoveryPort: Symbol('TriggerStateRecoveryPort'),
+  HandleStateRecoveryPort: Symbol('HandleStateRecoveryPort'),
 
   // ===== Input Ports - Player Operations (3 個) =====
   PlayHandCardPort: Symbol('PlayHandCardPort'),
@@ -44,8 +46,6 @@ export const TOKENS = {
   HandleRoundDrawnPort: Symbol('HandleRoundDrawnPort'),
   HandleGameFinishedPort: Symbol('HandleGameFinishedPort'),
   HandleTurnErrorPort: Symbol('HandleTurnErrorPort'),
-  HandleGameSnapshotRestorePort: Symbol('HandleGameSnapshotRestorePort'),
-  HandleReconnectionPort: Symbol('HandleReconnectionPort'),
   HandleGameErrorPort: Symbol('HandleGameErrorPort'),
 
   // ===== Adapters =====

@@ -48,8 +48,8 @@ export type {
   HandleGameFinishedPort,
   HandleTurnErrorPort,
   HandleGameErrorPort,
-  HandleReconnectionPort,
 } from './event-handlers.port'
 
 // State Recovery Input Ports
 export { TriggerStateRecoveryPort } from './trigger-state-recovery.port'
+export { HandleStateRecoveryPort } from './handle-state-recovery.port'

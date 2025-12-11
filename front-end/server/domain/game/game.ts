@@ -283,6 +283,9 @@ import type {
   PlayerHand,
   PlayerDepository,
   KoiStatus as ContractKoiStatus,
+  SelectionContext,
+  DecisionContext,
+  ScoreMultipliers,
 } from '#shared/contracts'
 
 /**
@@ -609,6 +612,10 @@ export interface GameSnapshot {
   readonly active_player_id: string
   /** 各玩家的 Koi-Koi 狀態 */
   readonly koi_statuses: readonly ContractKoiStatus[]
+  /** AWAITING_SELECTION 時的選擇上下文（可選） */
+  readonly selection_context?: SelectionContext
+  /** AWAITING_DECISION 時的決策上下文（可選） */
+  readonly decision_context?: DecisionContext
 }
 
 /**
@@ -671,7 +678,31 @@ export function toSnapshot(game: Game): GameSnapshot | null {
     )
   )
 
-  return Object.freeze({
+  // 根據 flowState 建立上下文
+  let selection_context: SelectionContext | undefined
+  let decision_context: DecisionContext | undefined
+
+  if (round.flowState === 'AWAITING_SELECTION' && round.pendingSelection) {
+    selection_context = Object.freeze({
+      drawn_card: round.pendingSelection.drawnCard,
+      possible_targets: round.pendingSelection.possibleTargets,
+    })
+  }
+
+  if (round.flowState === 'AWAITING_DECISION' && round.pendingDecision) {
+    // 計算分數倍率
+    const player_multipliers: Record<string, number> = {}
+    for (const ks of round.koiStatuses) {
+      player_multipliers[ks.player_id] = ks.koi_multiplier
+    }
+
+    decision_context = Object.freeze({
+      all_active_yaku: round.pendingDecision.activeYaku,
+      current_multipliers: Object.freeze({ player_multipliers }),
+    })
+  }
+
+  const snapshot: GameSnapshot = {
     game_id: game.id,
     players,
     ruleset: game.ruleset,
@@ -683,5 +714,15 @@ export function toSnapshot(game: Game): GameSnapshot | null {
     current_flow_stage: round.flowState,
     active_player_id: round.activePlayerId,
     koi_statuses,
-  })
+  }
+
+  // 只在有值時加入可選欄位
+  if (selection_context) {
+    return Object.freeze({ ...snapshot, selection_context })
+  }
+  if (decision_context) {
+    return Object.freeze({ ...snapshot, decision_context })
+  }
+
+  return Object.freeze(snapshot)
 }

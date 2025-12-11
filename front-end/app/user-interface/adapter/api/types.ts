@@ -16,6 +16,8 @@ export interface JoinGameRequest {
   player_name: string
   /** Session Token (可選,用於重連) */
   session_token?: string
+  /** 遊戲 ID (可選,用於重連) - 若提供則為重連模式,會返回遊戲狀態 */
+  game_id?: string
 }
 
 /**

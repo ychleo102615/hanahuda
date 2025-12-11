@@ -328,6 +328,20 @@ export const useGameStateStore = defineStore('gameState', {
         this.koiKoiMultipliers[status.player_id] = status.koi_multiplier
       })
 
+      // 恢復 AWAITING_SELECTION 上下文（翻牌雙重配對時的狀態）
+      if (snapshot.selection_context) {
+        this.drawnCard = snapshot.selection_context.drawn_card
+        this.possibleTargetCardIds = [...snapshot.selection_context.possible_targets]
+        console.info('[GameStateStore] 恢復選擇上下文', {
+          drawnCard: this.drawnCard,
+          possibleTargets: this.possibleTargetCardIds,
+        })
+      } else {
+        // 清除選擇上下文（非 AWAITING_SELECTION 狀態）
+        this.drawnCard = null
+        this.possibleTargetCardIds = []
+      }
+
       console.info('[GameStateStore] 快照恢復完成', {
         flowStage: this.flowStage,
         fieldCards: this.fieldCards.length,
@@ -526,5 +540,6 @@ export function createUIStatePortAdapter(): UIStatePort {
     updateDeckRemaining: store.updateDeckRemaining.bind(store),
     updateKoiKoiMultiplier: store.updateKoiKoiMultiplier.bind(store),
     getLocalPlayerId: store.getLocalPlayerId.bind(store),
+    resetState: store.reset.bind(store),
   }
 }

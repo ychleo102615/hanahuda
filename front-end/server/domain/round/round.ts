@@ -8,7 +8,7 @@
  * @module server/domain/round/round
  */
 
-import type { FlowState, CardPlay } from '#shared/contracts'
+import type { FlowState, CardPlay, Yaku } from '#shared/contracts'
 import type { KoiStatus } from './koiStatus'
 import { createInitialKoiStatus, applyKoiKoi } from './koiStatus'
 import type { DealResult } from '../services/deckService'
@@ -37,6 +37,15 @@ export interface PendingSelection {
 }
 
 /**
+ * 等待 Koi-Koi 決策的狀態
+ *
+ * 當玩家形成役種時，需要決定是否 Koi-Koi
+ */
+export interface PendingDecision {
+  readonly activeYaku: readonly Yaku[]
+}
+
+/**
  * Round Entity
  *
  * 一局遊戲的完整狀態
@@ -58,6 +67,8 @@ export interface Round {
   readonly koiStatuses: readonly KoiStatus[]
   /** 等待配對選擇（若有） */
   readonly pendingSelection: PendingSelection | null
+  /** 等待 Koi-Koi 決策（若有） */
+  readonly pendingDecision: PendingDecision | null
 }
 
 /**
@@ -104,6 +115,7 @@ export function createRound(params: CreateRoundParams): Round {
     activePlayerId: startingPlayerId,
     koiStatuses: Object.freeze(koiStatuses),
     pendingSelection: null,
+    pendingDecision: null,
   })
 }
 
@@ -233,7 +245,7 @@ import {
   addToField,
   type MatchResult,
 } from '../services/matchingService'
-import type { CardSelection, Yaku, YakuUpdate, YakuSetting } from '#shared/contracts'
+import type { CardSelection, YakuUpdate, YakuSetting } from '#shared/contracts'
 
 /**
  * 打手牌結果
@@ -718,6 +730,7 @@ export function handleDecision(
       flowState: 'AWAITING_HAND_PLAY' as FlowState,
       activePlayerId: opponentId,
       koiStatuses: updatedKoiStatuses,
+      pendingDecision: null, // 清除決策狀態
     })
 
     return {
@@ -727,7 +740,7 @@ export function handleDecision(
     }
   } else {
     // END_ROUND - 局結束，由外部處理計分
-    // Round 狀態不變，外部會建立新局或結束遊戲
+    // Round 狀態不變（pendingDecision 保留，因為局即將結束）
     return {
       updatedRound: round,
       decision: 'END_ROUND',
@@ -759,12 +772,16 @@ export function advanceToNextPlayer(round: Round): Round {
  * 設定流程狀態為等待決策
  *
  * @param round - 目前局狀態
+ * @param activeYaku - 所有有效役種
  * @returns 更新後的 Round
  */
-export function setAwaitingDecision(round: Round): Round {
+export function setAwaitingDecision(round: Round, activeYaku: readonly Yaku[]): Round {
   return Object.freeze({
     ...round,
     flowState: 'AWAITING_DECISION' as FlowState,
+    pendingDecision: Object.freeze({
+      activeYaku,
+    }),
   })
 }
 

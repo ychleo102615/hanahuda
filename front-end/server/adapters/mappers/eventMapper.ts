@@ -509,17 +509,18 @@ export class EventMapper implements FullEventMapperPort {
    * 使用 Domain Layer 的 toSnapshot() 取得快照資料。
    *
    * @param game - 遊戲聚合根
+   * @param remainingSeconds - 操作剩餘秒數（可選，預設使用 config 值）
    * @returns GameSnapshotRestore 事件
    * @throws Error 如果遊戲無法建立快照（currentRound 為 null）
    */
-  toGameSnapshotRestoreEvent(game: Game): GameSnapshotRestore {
+  toGameSnapshotRestoreEvent(game: Game, remainingSeconds?: number): GameSnapshotRestore {
     const snapshot = toSnapshot(game)
 
     if (!snapshot) {
       throw new Error('Cannot create GameSnapshotRestore: unable to create snapshot (currentRound is null)')
     }
 
-    return {
+    const baseEvent: GameSnapshotRestore = {
       event_type: 'GameSnapshotRestore',
       event_id: createEventId(),
       timestamp: createTimestamp(),
@@ -551,8 +552,37 @@ export class EventMapper implements FullEventMapperPort {
         koi_multiplier: ks.koi_multiplier,
         times_continued: ks.times_continued,
       })),
-      action_timeout_seconds: gameConfig.action_timeout_seconds,
+      action_timeout_seconds: remainingSeconds ?? gameConfig.action_timeout_seconds,
     }
+
+    // 加入可選的上下文欄位
+    if (snapshot.selection_context) {
+      return {
+        ...baseEvent,
+        selection_context: {
+          drawn_card: snapshot.selection_context.drawn_card,
+          possible_targets: [...snapshot.selection_context.possible_targets],
+        },
+      }
+    }
+
+    if (snapshot.decision_context) {
+      return {
+        ...baseEvent,
+        decision_context: {
+          all_active_yaku: snapshot.decision_context.all_active_yaku.map(y => ({
+            yaku_type: y.yaku_type,
+            base_points: y.base_points,
+            contributing_cards: [...y.contributing_cards],
+          })),
+          current_multipliers: {
+            player_multipliers: { ...snapshot.decision_context.current_multipliers.player_multipliers },
+          },
+        },
+      }
+    }
+
+    return baseEvent
   }
 
   /**

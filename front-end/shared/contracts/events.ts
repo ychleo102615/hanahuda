@@ -301,6 +301,32 @@ export interface GameErrorEvent extends BaseEvent {
 }
 
 /**
+ * AWAITING_SELECTION 狀態的上下文
+ *
+ * @description
+ * 重連時恢復選擇面板所需的資訊
+ */
+export interface SelectionContext {
+  /** 翻出的卡片 */
+  readonly drawn_card: string
+  /** 可選配對目標 */
+  readonly possible_targets: ReadonlyArray<string>
+}
+
+/**
+ * AWAITING_DECISION 狀態的上下文
+ *
+ * @description
+ * 重連時恢復決策面板所需的資訊
+ */
+export interface DecisionContext {
+  /** 所有有效役種 */
+  readonly all_active_yaku: ReadonlyArray<Yaku>
+  /** 目前的分數倍率 */
+  readonly current_multipliers: ScoreMultipliers
+}
+
+/**
  * GameSnapshotRestore 快照
  *
  * 參考: doc/shared/protocol.md#GameSnapshotRestore
@@ -322,6 +348,10 @@ export interface GameSnapshotRestore extends BaseEvent {
   readonly active_player_id: string
   readonly koi_statuses: ReadonlyArray<KoiStatus>
   readonly action_timeout_seconds: number
+  /** AWAITING_SELECTION 時的選擇上下文（可選） */
+  readonly selection_context?: SelectionContext
+  /** AWAITING_DECISION 時的決策上下文（可選） */
+  readonly decision_context?: DecisionContext
 }
 
 /**

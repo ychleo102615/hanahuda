@@ -81,8 +81,8 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
   async execute(input: SelectTargetInput): Promise<SelectTargetOutput> {
     const { gameId, playerId, sourceCardId, targetCardId } = input
 
-    // 0. 清除當前玩家的超時計時器
-    this.actionTimeoutManager?.clearTimeout(`${gameId}:${playerId}`)
+    // 0. 清除當前遊戲的超時計時器
+    this.actionTimeoutManager?.clearTimeout(gameId)
 
     // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
     const existingGame = this.gameStore.get(gameId)
@@ -140,8 +140,8 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
 
     // 9. 判斷下一步並發佈事件
     if (newlyFormedYaku.length > 0) {
-      // 有新役種形成，進入決策階段
-      const updatedRound = setAwaitingDecision(selectResult.updatedRound)
+      // 有新役種形成，進入決策階段（傳遞 activeYaku 以支援重連恢復）
+      const updatedRound = setAwaitingDecision(selectResult.updatedRound, currentYaku)
       game = updateRound(game, updatedRound)
 
       const yakuUpdate: YakuUpdate = {
@@ -230,9 +230,8 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
       return
     }
 
-    const key = `${gameId}:${playerId}`
     this.actionTimeoutManager.startTimeout(
-      key,
+      gameId,
       gameConfig.action_timeout_seconds,
       () => {
         console.log(`[SelectTargetUseCase] Timeout for player ${playerId} in game ${gameId}, executing auto-action`)

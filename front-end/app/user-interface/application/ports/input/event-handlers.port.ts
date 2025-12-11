@@ -5,7 +5,7 @@
  * 由 Application Layer 定義並實作為 Use Cases，
  * 供 Adapter Layer（SSE Listener）呼叫。
  *
- * 包含 16 個事件處理器 Input Ports（對應 16 種 SSE 事件 + 快照恢復）：
+ * 包含 13 個事件處理器 Input Ports（對應 13 種 SSE 事件）：
  * - HandleGameStartedPort
  * - HandleRoundDealtPort
  * - HandleTurnCompletedPort
@@ -19,7 +19,8 @@
  * - HandleGameFinishedPort
  * - HandleTurnErrorPort
  * - HandleGameErrorPort
- * - HandleReconnectionPort (GameSnapshotRestore)
+ *
+ * 注意：GameSnapshotRestore 事件由 HandleStateRecoveryPort 處理（見 handle-state-recovery.port.ts）
  */
 
 import type {
@@ -36,7 +37,6 @@ import type {
   GameFinishedEvent,
   TurnErrorEvent,
   GameErrorEvent,
-  GameSnapshotRestore,
 } from '#shared/contracts'
 
 /**
@@ -265,19 +265,3 @@ export interface HandleGameErrorPort {
   execute(event: GameErrorEvent): void | Promise<void>
 }
 
-/**
- * HandleReconnectionPort - Input Port
- *
- * @description
- * 處理斷線重連的快照恢復。
- *
- * 實作: HandleReconnectionUseCase
- */
-export interface HandleReconnectionPort {
-  /**
-   * 執行快照恢復處理
-   *
-   * @param snapshot - 遊戲狀態快照
-   */
-  execute(snapshot: GameSnapshotRestore): void | Promise<void>
-}

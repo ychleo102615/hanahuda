@@ -139,3 +139,71 @@ export interface YakuScore {
   readonly yaku_type: string
   readonly base_points: number
 }
+
+// ============================================================================
+// Snapshot API 回應類型
+// ============================================================================
+
+/**
+ * Snapshot API 回應類型
+ *
+ * @description
+ * 用於區分 Snapshot API 的不同回應情況：
+ * - `snapshot`: 正常遊戲快照（記憶體中有進行中的遊戲）
+ * - `game_finished`: 遊戲已結束（從資料庫恢復結果）
+ * - `game_expired`: 遊戲已過期無法恢復（記憶體沒有，且 DB 記錄為進行中）
+ */
+export type SnapshotResponseType = 'snapshot' | 'game_finished' | 'game_expired'
+
+/**
+ * 遊戲已結束資訊
+ *
+ * @description
+ * 當玩家離開太久，遊戲已從記憶體清除，但 DB 有結束記錄時返回。
+ * 包含最終分數和勝者資訊，讓玩家可以查看結果。
+ */
+export interface GameFinishedInfo {
+  readonly game_id: string
+  readonly winner_id: string | null
+  readonly final_scores: ReadonlyArray<PlayerScore>
+  readonly rounds_played: number
+  readonly total_rounds: number
+}
+
+/**
+ * Snapshot API 回應（快照）
+ */
+export interface SnapshotApiResponseSnapshot {
+  readonly response_type: 'snapshot'
+  readonly data: import('./events').GameSnapshotRestore
+}
+
+/**
+ * Snapshot API 回應（遊戲已結束）
+ */
+export interface SnapshotApiResponseFinished {
+  readonly response_type: 'game_finished'
+  readonly data: GameFinishedInfo
+}
+
+/**
+ * Snapshot API 回應（遊戲已過期）
+ */
+export interface SnapshotApiResponseExpired {
+  readonly response_type: 'game_expired'
+  readonly data: null
+}
+
+/**
+ * Snapshot API 統一回應類型
+ *
+ * @description
+ * 前端根據 `response_type` 欄位決定處理方式：
+ * - `snapshot`: 呼叫 HandleReconnectionUseCase 恢復遊戲狀態
+ * - `game_finished`: 顯示遊戲結果畫面
+ * - `game_expired`: 顯示「遊戲已過期」訊息並導航回大廳
+ */
+export type SnapshotApiResponse =
+  | SnapshotApiResponseSnapshot
+  | SnapshotApiResponseFinished
+  | SnapshotApiResponseExpired

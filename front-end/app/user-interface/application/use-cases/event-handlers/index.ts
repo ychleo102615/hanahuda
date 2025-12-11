@@ -27,6 +27,5 @@ export { HandleRoundDrawnUseCase } from './HandleRoundDrawnUseCase'
 export { HandleRoundEndedInstantlyUseCase } from './HandleRoundEndedInstantlyUseCase'
 export { HandleGameFinishedUseCase } from './HandleGameFinishedUseCase'
 
-// Error & Reconnection Events
+// Error Events
 export { HandleTurnErrorUseCase } from './HandleTurnErrorUseCase'
-export { HandleReconnectionUseCase } from './HandleReconnectionUseCase'

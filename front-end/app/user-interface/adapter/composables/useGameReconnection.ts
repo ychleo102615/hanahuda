@@ -101,11 +101,12 @@ export function useGameReconnection() {
     console.info('[useGameReconnection] Reconnection needed', { gameId, playerId })
 
     try {
-      // 1. 呼叫 /join API（session_token 由 Cookie 自動帶上）
+      // 1. 呼叫 /join API（提供 game_id 表示重連模式，session_token 由 Cookie 自動帶上）
       // 後端會偵測到這是重連，並排程推送 GameSnapshotRestore 事件
       const response = await sendCommand.joinGame({
         player_id: playerId,
         player_name: 'Player', // 重連時名稱不重要，後端會使用原有名稱
+        game_id: gameId, // 提供 game_id 表示重連模式
       })
 
       console.info('[useGameReconnection] /join API success', {

@@ -48,6 +48,7 @@ export interface JoinGameRequest {
   player_id: string
   player_name: string
   session_token?: string
+  game_id?: string
 }
 
 /**
@@ -111,6 +112,9 @@ export class GameApiClient implements SendCommandPort {
     }
     if (request.session_token) {
       body.session_token = request.session_token
+    }
+    if (request.game_id) {
+      body.game_id = request.game_id
     }
 
     // joinGame 不進行重試 (避免重複加入遊戲)

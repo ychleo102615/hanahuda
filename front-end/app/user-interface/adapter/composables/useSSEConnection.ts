@@ -32,6 +32,7 @@ import { useOptionalDependency } from './useDependency'
 import { TOKENS } from '../di/tokens'
 import type { GameEventClient } from '../sse/GameEventClient'
 import type { TriggerStateRecoveryPort } from '../../application/ports/input'
+import type { DelayManagerPort, ReconnectionPort } from '../../application/ports/output'
 
 /**
  * SSE 連線管理 Composable
@@ -44,6 +45,8 @@ export function useSSEConnection() {
   // 使用 optional dependency 因為在 mock 模式下可能不存在
   const gameEventClient = useOptionalDependency<GameEventClient>(TOKENS.GameEventClient)
   const triggerStateRecovery = useOptionalDependency<TriggerStateRecoveryPort>(TOKENS.TriggerStateRecoveryPort)
+  const delayManager = useOptionalDependency<DelayManagerPort>(TOKENS.DelayManagerPort)
+  const reconnectionPort = useOptionalDependency<ReconnectionPort>(TOKENS.ReconnectionPort)
 
   // 區分首次連線與重連
   const isFirstConnection = ref(true)
@@ -89,10 +92,27 @@ export function useSSEConnection() {
         console.info('[useSSEConnection] SSE 首次連線已建立')
         isFirstConnection.value = false
         uiStore.setConnectionStatus('connected')
+      } else if (uiStore.skipNextSSERecovery) {
+        // 頁面恢復後的重連：狀態已由 usePageVisibility 恢復，跳過
+        console.info('[useSSEConnection] SSE 重連成功（狀態已恢復，跳過自動恢復）')
+        uiStore.setSkipNextSSERecovery(false)
+        uiStore.setConnectionStatus('connected')
+        uiStore.hideReconnectionMessage()
       } else {
-        // 重連：觸發狀態恢復流程
+        // 網路中斷後的重連：觸發狀態恢復流程
         console.info('[useSSEConnection] SSE 重連成功，觸發狀態恢復')
         uiStore.setConnectionStatus('connected')
+
+        // 清理：取消 pending delays 和清空 event chain
+        // 這些清理在 Use Case 執行前完成，確保舊的動畫和事件不會干擾
+        if (delayManager) {
+          delayManager.cancelAll()
+          console.info('[useSSEConnection] 已取消所有 pending delays')
+        }
+        if (reconnectionPort) {
+          reconnectionPort.clearPendingEvents()
+          console.info('[useSSEConnection] 已清空事件處理鏈')
+        }
 
         // 觸發狀態恢復
         if (triggerStateRecovery && currentGameId) {
@@ -133,8 +153,31 @@ export function useSSEConnection() {
     uiStore.setConnectionStatus('disconnected')
   }
 
+  /**
+   * 建立 SSE 連線，但跳過自動狀態恢復
+   *
+   * @param gameId - 遊戲 ID
+   *
+   * @description
+   * 用於頁面恢復可見後的重連場景。
+   * 此時狀態已由 usePageVisibility 恢復，不需要再觸發 TriggerStateRecoveryUseCase。
+   *
+   * @example
+   * ```typescript
+   * // 頁面恢復可見後
+   * await triggerStateRecovery.execute(gameId)
+   * sseConnection.connectWithoutRecovery(gameId)
+   * ```
+   */
+  function connectWithoutRecovery(gameId: string): void {
+    console.info('[useSSEConnection] 建立 SSE 連線（跳過自動狀態恢復）', { gameId })
+    uiStore.setSkipNextSSERecovery(true)
+    connect(gameId)
+  }
+
   return {
     connect,
+    connectWithoutRecovery,
     disconnect,
     isConnected,
     isConnecting,

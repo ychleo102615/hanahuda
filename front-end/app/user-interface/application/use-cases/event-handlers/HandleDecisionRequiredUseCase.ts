@@ -17,7 +17,8 @@
  */
 
 import type { DecisionRequiredEvent, CardPlay } from '#shared/contracts'
-import type { UIStatePort, NotificationPort, GameStatePort, AnimationPort } from '../../ports/output'
+import type { UIStatePort, NotificationPort, GameStatePort, AnimationPort, DelayManagerPort } from '../../ports/output'
+import { DelayAbortedError } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleDecisionRequiredPort } from '../../ports/input'
 
@@ -27,7 +28,8 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
     private readonly notification: NotificationPort,
     private readonly domainFacade: DomainFacade,
     private readonly gameState: GameStatePort,
-    private readonly animation: AnimationPort
+    private readonly animation: AnimationPort,
+    private readonly delayManager: DelayManagerPort
   ) {}
 
   execute(event: DecisionRequiredEvent): Promise<void> {
@@ -35,6 +37,21 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
   }
 
   private async executeAsync(event: DecisionRequiredEvent): Promise<void> {
+    try {
+      await this.executeAsyncCore(event)
+    } catch (error) {
+      if (error instanceof DelayAbortedError) {
+        console.info('[HandleDecisionRequiredUseCase] Aborted due to state recovery')
+        return
+      }
+      throw error
+    }
+  }
+
+  /**
+   * 核心執行邏輯（可被中斷）
+   */
+  private async executeAsyncCore(event: DecisionRequiredEvent): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
@@ -67,7 +84,7 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
         opponentDepository = updated.opponent
 
         // 等待 DOM 布局完成
-        await new Promise(resolve => setTimeout(resolve, 50))
+        await this.delayManager.delay(50)
 
         // 播放轉移動畫
         const firstCapturedCard = handCardPlay.captured_cards[0]
@@ -89,12 +106,12 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
         this.removePlayedHandCard(handCardPlay.played_card, isOpponent)
 
         // 等待 TransitionGroup FLIP 動畫完成
-        await new Promise(resolve => setTimeout(resolve, 350))
+        await this.delayManager.delay(350)
       } else {
         // 1b. 無配對：先加入場牌 → 播放動畫 → 移除手牌
         this.animation.hideCards([handCardPlay.played_card])
         this.addCardsToField([handCardPlay.played_card])
-        await new Promise(resolve => setTimeout(resolve, 50))
+        await this.delayManager.delay(50)
 
         await this.animation.playCardToFieldAnimation(
           handCardPlay.played_card,
@@ -114,7 +131,7 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
       // 預先隱藏翻牌
       this.animation.hideCards([drawCardPlay.played_card])
       this.addCardsToField([drawCardPlay.played_card])
-      await new Promise(resolve => setTimeout(resolve, 50))
+      await this.delayManager.delay(50)
 
       // 播放翻牌動畫
       await this.animation.playFlipFromDeckAnimation(drawCardPlay.played_card)
@@ -144,7 +161,7 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
         myDepository = updated.my
         opponentDepository = updated.opponent
 
-        await new Promise(resolve => setTimeout(resolve, 50))
+        await this.delayManager.delay(50)
 
         // 播放轉移動畫
         const firstCapturedCard = drawCardPlay.captured_cards[0]
@@ -161,7 +178,7 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
         // 移除場牌（TRIPLE_MATCH 時移除所有被捕獲的場牌）
         drawCardPlay.captured_cards.forEach(cardId => this.removeFieldCard(cardId))
 
-        await new Promise(resolve => setTimeout(resolve, 50))
+        await this.delayManager.delay(50)
       }
       // 無配對時翻牌保留在場上，不需要額外處理
     }

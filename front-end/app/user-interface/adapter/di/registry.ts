@@ -40,15 +40,15 @@ import { HandleRoundEndedInstantlyUseCase } from '../../application/use-cases/ev
 import { HandleRoundDrawnUseCase } from '../../application/use-cases/event-handlers/HandleRoundDrawnUseCase'
 import { HandleGameFinishedUseCase } from '../../application/use-cases/event-handlers/HandleGameFinishedUseCase'
 import { HandleTurnErrorUseCase } from '../../application/use-cases/event-handlers/HandleTurnErrorUseCase'
-import { HandleReconnectionUseCase } from '../../application/use-cases/event-handlers/HandleReconnectionUseCase'
 import { HandleGameErrorUseCase } from '../../application/use-cases/event-handlers/HandleGameErrorUseCase'
 import { StartGameUseCase } from '../../application/use-cases/StartGameUseCase'
 import { TriggerStateRecoveryUseCase } from '../../application/use-cases/TriggerStateRecoveryUseCase'
+import { HandleStateRecoveryUseCase } from '../../application/use-cases/HandleStateRecoveryUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ReconnectionPort } from '../../application/ports/output'
-import type { HandleReconnectionPort } from '../../application/ports/input'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ReconnectionPort, DelayManagerPort } from '../../application/ports/output'
+import type { HandleStateRecoveryPort } from '../../application/ports/input'
 import { createSessionContextAdapter } from '../session/SessionContextAdapter'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import * as domain from '../../domain'
@@ -63,7 +63,8 @@ import { createNotificationPortAdapter } from '../notification/NotificationPortA
 import { createGameStatePortAdapter } from '../stores/GameStatePortAdapter'
 import { createNavigationPortAdapter } from '../router/NavigationPortAdapter'
 import { CountdownManager } from '../services/CountdownManager'
-import { ReconnectionService } from '../services/ReconnectionService'
+import { ReconnectApiClient } from '../api/ReconnectApiClient'
+import { CancellableDelayManager } from '../delay/CancellableDelayManager'
 
 /**
  * 遊戲模式
@@ -191,6 +192,15 @@ function registerOutputPorts(container: DIContainer): void {
     { singleton: true },
   )
 
+  // DelayManagerPort: 由 CancellableDelayManager 實作
+  // 統一管理所有延遲操作，支援集中式取消
+  // 注意：必須在 AnimationPort 之前註冊，因為 AnimationPort 依賴它
+  container.register(
+    TOKENS.DelayManagerPort,
+    () => new CancellableDelayManager(),
+    { singleton: true },
+  )
+
   // AnimationPort: 由 AnimationPortAdapter 實作
   // 從 container resolve 依賴，統一由 DI 管理
   container.register(
@@ -198,7 +208,8 @@ function registerOutputPorts(container: DIContainer): void {
     () => {
       const registry = container.resolve(TOKENS.ZoneRegistry) as typeof zoneRegistry
       const animationLayerStore = container.resolve(TOKENS.AnimationLayerStore) as ReturnType<typeof useAnimationLayerStore>
-      return new AnimationPortAdapter(registry, animationLayerStore)
+      const delayManager = container.resolve(TOKENS.DelayManagerPort) as DelayManagerPort
+      return new AnimationPortAdapter(registry, animationLayerStore, delayManager)
     },
     { singleton: true },
   )
@@ -275,6 +286,7 @@ function registerInputPorts(container: DIContainer): void {
   const notificationPort = container.resolve(TOKENS.NotificationPort) as NotificationPort
   const matchmakingStatePort = container.resolve(TOKENS.MatchmakingStatePort) as MatchmakingStatePort
   const navigationPort = container.resolve(TOKENS.NavigationPort) as NavigationPort
+  const delayManagerPort = container.resolve(TOKENS.DelayManagerPort) as DelayManagerPort
 
   // Game Initialization Use Cases
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -341,40 +353,45 @@ function registerInputPorts(container: DIContainer): void {
   // T050 [US2]: 註冊 TurnCompleted 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort（配對動畫整合）
   // Phase 9: 加入 NotificationPort（倒數計時整合）
+  // Phase 10: 加入 DelayManagerPort（可取消延遲）
   container.register(
     TOKENS.HandleTurnCompletedPort,
-    () => new HandleTurnCompletedUseCase(gameStatePort, animationPort, notificationPort, domainFacade),
+    () => new HandleTurnCompletedUseCase(gameStatePort, animationPort, notificationPort, domainFacade, delayManagerPort),
     { singleton: true }
   )
 
   // T051 [US2]: 註冊 SelectionRequired 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort + DomainFacade（場牌選擇 UI 架構重構）
   // Phase 9: 加入 NotificationPort（倒數計時整合）
+  // Phase 10: 加入 DelayManagerPort（可取消延遲）
   container.register(
     TOKENS.HandleSelectionRequiredPort,
-    () => new HandleSelectionRequiredUseCase(gameStatePort, animationPort, domainFacade, notificationPort),
+    () => new HandleSelectionRequiredUseCase(gameStatePort, animationPort, domainFacade, notificationPort, delayManagerPort),
     { singleton: true }
   )
 
   // T052 [US2]: 註冊 TurnProgressAfterSelection 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort（配對動畫整合）
   // Phase 9: 加入 NotificationPort（倒數計時整合）
+  // Phase 10: 加入 DelayManagerPort（可取消延遲）
   container.register(
     TOKENS.HandleTurnProgressAfterSelectionPort,
     () => new HandleTurnProgressAfterSelectionUseCase(
       gameStatePort,
       animationPort,
       domainFacade,
-      notificationPort
+      notificationPort,
+      delayManagerPort
     ),
     { singleton: true }
   )
 
   // T068 [US3]: 註冊 DecisionRequired 事件處理器
   // 加入 gameStatePort 以檢查是否為自己的回合，animationPort 以播放動畫
+  // Phase 10: 加入 DelayManagerPort（可取消延遲）
   container.register(
     TOKENS.HandleDecisionRequiredPort,
-    () => new HandleDecisionRequiredUseCase(uiStatePort, notificationPort, domainFacade, gameStatePort, animationPort),
+    () => new HandleDecisionRequiredUseCase(uiStatePort, notificationPort, domainFacade, gameStatePort, animationPort, delayManagerPort),
     { singleton: true }
   )
 
@@ -424,14 +441,6 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  // T086 [US4]: 註冊 GameSnapshotRestore (Reconnection) 事件處理器
-  // Phase 8: 加入 AnimationPort 確保重連時清理動畫
-  container.register(
-    TOKENS.HandleGameSnapshotRestorePort,
-    () => new HandleReconnectionUseCase(uiStatePort, notificationPort, animationPort, matchmakingStatePort),
-    { singleton: true }
-  )
-
   // T019: 註冊 GameError 事件處理器
   container.register(
     TOKENS.HandleGameErrorPort,
@@ -439,13 +448,21 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  // 註冊 TriggerStateRecoveryPort（依賴 ReconnectionPort、HandleReconnectionPort）
+  // 註冊 HandleStateRecoveryPort（統一處理快照恢復）
+  container.register(
+    TOKENS.HandleStateRecoveryPort,
+    () => new HandleStateRecoveryUseCase(uiStatePort, notificationPort, navigationPort, animationPort, matchmakingStatePort, delayManagerPort),
+    { singleton: true }
+  )
+
+  // 註冊 TriggerStateRecoveryPort（依賴 ReconnectionPort、HandleStateRecoveryPort）
+  // 注意：清理操作（取消 delays、清空事件鏈）由 Adapter 層處理，Use Case 只負責業務邏輯
   container.register(
     TOKENS.TriggerStateRecoveryPort,
     () => {
       const reconnectionPort = container.resolve(TOKENS.ReconnectionPort) as ReconnectionPort
-      const handleReconnectionPort = container.resolve(TOKENS.HandleGameSnapshotRestorePort) as HandleReconnectionPort
-      return new TriggerStateRecoveryUseCase(reconnectionPort, handleReconnectionPort, notificationPort)
+      const handleStateRecoveryPort = container.resolve(TOKENS.HandleStateRecoveryPort) as HandleStateRecoveryPort
+      return new TriggerStateRecoveryUseCase(reconnectionPort, handleStateRecoveryPort)
     },
     { singleton: true }
   )
@@ -484,12 +501,12 @@ function registerBackendAdapters(container: DIContainer): void {
     { singleton: true },
   )
 
-  // ReconnectionPort: ReconnectionService（依賴 EventRouter）
+  // ReconnectionPort: ReconnectApiClient（依賴 EventRouter）
   container.register(
     TOKENS.ReconnectionPort,
     () => {
       const eventRouter = container.resolve(TOKENS.EventRouter) as EventRouter
-      return new ReconnectionService(eventRouter)
+      return new ReconnectApiClient(baseURL, eventRouter)
     },
     { singleton: true },
   )
@@ -528,6 +545,9 @@ function registerSSEClient(container: DIContainer): void {
 function registerMockAdapters(container: DIContainer): void {
   console.info('[DI] 註冊 Mock 模式 Adapters')
 
+  // Mock 模式也使用空字串作為 baseURL
+  const baseURL = ''
+
   // SendCommandPort: MockApiClient
   container.register(
     TOKENS.SendCommandPort,
@@ -542,12 +562,12 @@ function registerMockAdapters(container: DIContainer): void {
     { singleton: true },
   )
 
-  // ReconnectionPort: ReconnectionService（依賴 EventRouter）
+  // ReconnectionPort: ReconnectApiClient（依賴 EventRouter）
   container.register(
     TOKENS.ReconnectionPort,
     () => {
       const eventRouter = container.resolve(TOKENS.EventRouter) as EventRouter
-      return new ReconnectionService(eventRouter)
+      return new ReconnectApiClient(baseURL, eventRouter)
     },
     { singleton: true },
   )
@@ -607,20 +627,27 @@ function registerEventRoutes(container: DIContainer): void {
   router.register('DecisionRequired', decisionRequiredPort)
   router.register('DecisionMade', decisionMadePort)
 
-  // T081-T086 [US4]: 綁定 RoundScored、RoundEndedInstantly、RoundDrawn、GameFinished、TurnError、GameSnapshotRestore 事件
+  // T081-T086 [US4]: 綁定 RoundScored、RoundEndedInstantly、RoundDrawn、GameFinished、TurnError 事件
   const roundScoredPort = container.resolve(TOKENS.HandleRoundScoredPort) as { execute: (payload: unknown) => void }
   const roundEndedInstantlyPort = container.resolve(TOKENS.HandleRoundEndedInstantlyPort) as { execute: (payload: unknown) => void }
   const roundDrawnPort = container.resolve(TOKENS.HandleRoundDrawnPort) as { execute: (payload: unknown) => void }
   const gameFinishedPort = container.resolve(TOKENS.HandleGameFinishedPort) as { execute: (payload: unknown) => void }
   const turnErrorPort = container.resolve(TOKENS.HandleTurnErrorPort) as { execute: (payload: unknown) => void }
-  const gameSnapshotRestorePort = container.resolve(TOKENS.HandleGameSnapshotRestorePort) as { execute: (payload: unknown) => void }
 
   router.register('RoundScored', roundScoredPort)
   router.register('RoundEndedInstantly', roundEndedInstantlyPort)
   router.register('RoundDrawn', roundDrawnPort)
   router.register('GameFinished', gameFinishedPort)
   router.register('TurnError', turnErrorPort)
-  router.register('GameSnapshotRestore', gameSnapshotRestorePort)
+
+  // GameSnapshotRestore 事件：使用 HandleStateRecoveryPort.handleSnapshotRestore()
+  const handleStateRecoveryPort = container.resolve(TOKENS.HandleStateRecoveryPort) as HandleStateRecoveryPort
+  router.register('GameSnapshotRestore', {
+    execute: (payload: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      handleStateRecoveryPort.handleSnapshotRestore(payload as any)
+    },
+  })
 
   // T020: 綁定 GameError 事件
   const gameErrorPort = container.resolve(TOKENS.HandleGameErrorPort) as { execute: (payload: unknown) => void }

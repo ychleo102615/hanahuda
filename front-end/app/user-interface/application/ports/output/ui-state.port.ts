@@ -177,4 +177,27 @@ export interface UIStatePort {
    * ```
    */
   getLocalPlayerId(): string
+
+  /**
+   * 重置所有遊戲狀態
+   *
+   * @description
+   * 將所有遊戲狀態重置為初始值。
+   * 用於狀態恢復前確保乾淨的起始狀態，或離開遊戲時清理。
+   *
+   * 會重置的狀態包括：
+   * - 玩家 ID（localPlayerId, opponentPlayerId）
+   * - 流程狀態（flowStage, activePlayerId）
+   * - 牌面狀態（fieldCards, handCards, depositories）
+   * - 分數與役種
+   *
+   * @note gameId 由 SessionContextPort 管理，此處不處理
+   *
+   * @example
+   * ```typescript
+   * uiState.resetState()
+   * uiState.restoreGameState(snapshot) // 從乾淨狀態恢復
+   * ```
+   */
+  resetState(): void
 }

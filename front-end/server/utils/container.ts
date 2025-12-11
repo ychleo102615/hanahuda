@@ -70,7 +70,8 @@ const joinGameUseCase: JoinGameInputPort = new JoinGameUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
-  internalEventBus
+  internalEventBus,
+  actionTimeoutManager
 )
 
 const joinGameAsAiUseCase: JoinGameAsAiInputPort = new JoinGameAsAiUseCase(

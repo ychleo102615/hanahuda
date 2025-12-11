@@ -114,6 +114,10 @@ export interface UIStateStoreState {
   // 倒數計時
   actionTimeoutRemaining: number | null
   displayTimeoutRemaining: number | null
+
+  // SSE 重連控制
+  // 用於頁面恢復可見後的重連場景，此時狀態已恢復，不需要再觸發 TriggerStateRecoveryUseCase
+  skipNextSSERecovery: boolean
 }
 
 /**
@@ -205,6 +209,9 @@ export const useUIStateStore = defineStore('uiState', {
     // 倒數計時
     actionTimeoutRemaining: null,
     displayTimeoutRemaining: null,
+
+    // SSE 重連控制
+    skipNextSSERecovery: false,
   }),
 
   actions: {
@@ -501,7 +508,26 @@ export const useUIStateStore = defineStore('uiState', {
       this.actionTimeoutRemaining = null
       this.displayTimeoutRemaining = null
 
+      // SSE 重連控制
+      this.skipNextSSERecovery = false
+
       console.info('[UIStateStore] 狀態已重置')
+    },
+
+    /**
+     * 設定跳過下次 SSE 重連時的自動狀態恢復
+     *
+     * @param skip - 是否跳過
+     *
+     * @description
+     * 用於頁面恢復可見後的重連場景。
+     * usePageVisibility 會在觸發狀態恢復後設置此標誌，
+     * 然後重連 SSE。useSSEConnection 會檢查此標誌，
+     * 若為 true 則跳過自動狀態恢復。
+     */
+    setSkipNextSSERecovery(skip: boolean): void {
+      this.skipNextSSERecovery = skip
+      console.info('[UIStateStore] skipNextSSERecovery:', skip)
     },
 
     /**

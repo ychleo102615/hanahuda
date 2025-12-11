@@ -84,8 +84,8 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
   async execute(input: PlayHandCardInput): Promise<PlayHandCardOutput> {
     const { gameId, playerId, cardId, targetCardId } = input
 
-    // 0. 清除當前玩家的超時計時器
-    this.actionTimeoutManager?.clearTimeout(`${gameId}:${playerId}`)
+    // 0. 清除當前遊戲的超時計時器
+    this.actionTimeoutManager?.clearTimeout(gameId)
 
     // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
     const existingGame = this.gameStore.get(gameId)
@@ -153,8 +153,8 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
       const newlyFormedYaku = detectNewYaku(previousYaku, currentYaku)
 
       if (newlyFormedYaku.length > 0) {
-        // 有新役種形成，進入決策階段
-        const updatedRound = setAwaitingDecision(playResult.updatedRound)
+        // 有新役種形成，進入決策階段（傳遞 activeYaku 以支援重連恢復）
+        const updatedRound = setAwaitingDecision(playResult.updatedRound, currentYaku)
         game = updateRound(game, updatedRound)
 
         const yakuUpdate: YakuUpdate = {
@@ -239,9 +239,8 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
       return
     }
 
-    const key = `${gameId}:${playerId}`
     this.actionTimeoutManager.startTimeout(
-      key,
+      gameId,
       gameConfig.action_timeout_seconds,
       () => {
         console.log(`[PlayHandCardUseCase] Timeout for player ${playerId} in game ${gameId}, executing auto-action`)

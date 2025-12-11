@@ -35,6 +35,13 @@ export type {
   YakuSetting,
   SpecialRules,
   YakuScore,
+  // Snapshot API Response Types
+  SnapshotResponseType,
+  GameFinishedInfo,
+  SnapshotApiResponseSnapshot,
+  SnapshotApiResponseFinished,
+  SnapshotApiResponseExpired,
+  SnapshotApiResponse,
 } from './shared'
 
 // Commands
@@ -58,4 +65,7 @@ export type {
   GameErrorEvent,
   GameSnapshotRestore,
   GameEvent,
+  // Snapshot Context Types
+  SelectionContext,
+  DecisionContext,
 } from './events'

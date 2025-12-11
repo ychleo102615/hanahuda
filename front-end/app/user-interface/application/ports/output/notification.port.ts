@@ -198,6 +198,21 @@ export interface NotificationPort {
   showSuccessMessage(message: string): void
 
   /**
+   * 顯示資訊訊息
+   *
+   * @description
+   * 顯示資訊 Toast，用於一般性訊息（非錯誤、非成功）。
+   *
+   * @param message - 資訊訊息
+   *
+   * @example
+   * ```typescript
+   * notification.showInfoMessage('Game finished!')
+   * ```
+   */
+  showInfoMessage(message: string): void
+
+  /**
    * 顯示正在重連訊息
    *
    * @description

@@ -76,6 +76,9 @@ export const useAnimationLayerStore = defineStore('animationLayer', () => {
   const animatingGroups = ref<CardGroup[]>([])
   const hiddenCardIds = ref<Set<string>>(new Set())
 
+  // Cancel callbacks（由 AnimationLayer.vue 註冊，用於停止 @vueuse/motion 動畫）
+  const cancelCallbacks: (() => void)[] = []
+
   // Actions - 動畫卡片管理
   function addCard(card: AnimatingCard): void {
     animatingCards.value.push(card)
@@ -95,9 +98,31 @@ export const useAnimationLayerStore = defineStore('animationLayer', () => {
   }
 
   function clear(): void {
+    // 先呼叫所有 cancel callbacks，停止 @vueuse/motion 動畫
+    // 這會阻止動畫 Promise resolve，從而阻止 onComplete 被呼叫
+    cancelCallbacks.forEach(cb => {
+      try {
+        cb()
+      } catch (e) {
+        console.warn('[AnimationLayerStore] Cancel callback error:', e)
+      }
+    })
+
     animatingCards.value = []
     animatingGroups.value = []
     hiddenCardIds.value.clear()
+  }
+
+  // Cancel callback 註冊機制
+  function registerCancelCallback(callback: () => void): void {
+    cancelCallbacks.push(callback)
+  }
+
+  function unregisterCancelCallback(callback: () => void): void {
+    const index = cancelCallbacks.indexOf(callback)
+    if (index !== -1) {
+      cancelCallbacks.splice(index, 1)
+    }
   }
 
   // Actions - 卡片隱藏管理
@@ -129,6 +154,9 @@ export const useAnimationLayerStore = defineStore('animationLayer', () => {
     hideCards,
     showCard,
     isCardHidden,
+    // Actions - Cancel callback 註冊
+    registerCancelCallback,
+    unregisterCancelCallback,
   }
 })
 

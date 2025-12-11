@@ -7,7 +7,7 @@
  * 透過 Teleport 將動畫層放到 body，確保在最上層。
  */
 
-import { watch, ref } from 'vue'
+import { watch, ref, onMounted, onUnmounted } from 'vue'
 import { useAnimationLayerStore } from '~/user-interface/adapter/stores'
 import CardComponent from './CardComponent.vue'
 import { useMotion } from '@vueuse/motion'
@@ -26,6 +26,33 @@ const animatedGroupIds = ref<Set<string>>(new Set())
 
 // 追蹤每個組容器的 DOM 元素（不需要響應式）
 const groupRefs = new Map<string, HTMLElement>()
+
+// 追蹤所有動畫的 stop 函數，用於中斷時停止 @vueuse/motion 動畫
+const motionStops = new Map<string, () => void>()
+
+// 停止所有動畫的 cancel callback
+function cancelAllAnimations(): void {
+  console.info('[AnimationLayer] Cancelling all animations', { count: motionStops.size })
+  motionStops.forEach((stop, id) => {
+    try {
+      stop()
+    } catch (e) {
+      console.warn('[AnimationLayer] Failed to stop animation:', id, e)
+    }
+  })
+  motionStops.clear()
+  animatedCardIds.value.clear()
+  animatedGroupIds.value.clear()
+}
+
+// 註冊/取消註冊 cancel callback
+onMounted(() => {
+  store.registerCancelCallback(cancelAllAnimations)
+})
+
+onUnmounted(() => {
+  store.unregisterCancelCallback(cancelAllAnimations)
+})
 
 // 設置卡片 ref
 function setCardRef(cardId: string, el: HTMLElement | null) {
@@ -132,10 +159,15 @@ function startAnimationIfNeeded(cardId: string) {
     }
   }
 
-  const { apply } = useMotion(el, motionConfig)
+  const { apply, stop } = useMotion(el, motionConfig)
+
+  // 保存 stop 函數，用於中斷時停止動畫
+  motionStops.set(cardId, stop)
 
   // 執行動畫並等待完成
   apply('enter')?.then(() => {
+    // 動畫正常完成，清除 stop 函數
+    motionStops.delete(cardId)
     card.onComplete()
     store.removeCard(card.cardId)
     animatedCardIds.value.delete(cardId)
@@ -224,10 +256,15 @@ function startGroupAnimation(groupId: string) {
     }
   }
 
-  const { apply } = useMotion(el, motionConfig)
+  const { apply, stop } = useMotion(el, motionConfig)
+
+  // 保存 stop 函數，用於中斷時停止動畫
+  motionStops.set(groupId, stop)
 
   // 執行動畫並等待完成
   apply('enter')?.then(() => {
+    // 動畫正常完成，清除 stop 函數
+    motionStops.delete(groupId)
     group.onComplete()
     store.removeGroup(group.groupId)
     animatedGroupIds.value.delete(groupId)

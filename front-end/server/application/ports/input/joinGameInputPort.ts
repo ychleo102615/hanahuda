@@ -22,12 +22,24 @@ export interface JoinGameInput {
   readonly playerName: string
   /** 會話 Token（用於重連） */
   readonly sessionToken?: string
+  /** 遊戲 ID（用於重連模式） - 若提供則為重連模式，會返回遊戲狀態 */
+  readonly gameId?: string
 }
 
 /**
- * 加入遊戲輸出結果
+ * 玩家分數
  */
-export interface JoinGameOutput {
+export interface JoinGamePlayerScore {
+  readonly playerId: string
+  readonly score: number
+}
+
+/**
+ * 加入遊戲成功輸出
+ */
+export interface JoinGameSuccessOutput {
+  /** 結果類型 */
+  readonly status: 'success'
   /** 遊戲 ID */
   readonly gameId: string
   /** 會話 Token（該玩家的獨立 Token） */
@@ -39,6 +51,42 @@ export interface JoinGameOutput {
   /** 是否為重連 */
   readonly reconnected: boolean
 }
+
+/**
+ * 加入遊戲失敗 - 遊戲已結束
+ */
+export interface JoinGameFinishedOutput {
+  /** 結果類型 */
+  readonly status: 'game_finished'
+  /** 遊戲 ID */
+  readonly gameId: string
+  /** 勝者 ID（平局時為 null） */
+  readonly winnerId: string | null
+  /** 最終分數 */
+  readonly finalScores: readonly JoinGamePlayerScore[]
+  /** 已玩回合數 */
+  readonly roundsPlayed: number
+  /** 總回合數 */
+  readonly totalRounds: number
+}
+
+/**
+ * 加入遊戲失敗 - 遊戲已過期
+ */
+export interface JoinGameExpiredOutput {
+  /** 結果類型 */
+  readonly status: 'game_expired'
+  /** 遊戲 ID */
+  readonly gameId: string
+}
+
+/**
+ * 加入遊戲輸出結果（聯合類型）
+ */
+export type JoinGameOutput =
+  | JoinGameSuccessOutput
+  | JoinGameFinishedOutput
+  | JoinGameExpiredOutput
 
 // ============================================================
 // Input Port

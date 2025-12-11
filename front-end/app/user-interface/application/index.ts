@@ -108,7 +108,7 @@ export type {
   MakeKoiKoiDecisionPort,
   MakeKoiKoiDecisionInput,
   MakeKoiKoiDecisionOutput,
-  // Input Ports - Event Handlers (15)
+  // Input Ports - Event Handlers (13)
   HandleGameStartedPort,
   HandleRoundDealtPort,
   HandleTurnCompletedPort,
@@ -121,7 +121,7 @@ export type {
   HandleRoundEndedInstantlyPort,
   HandleGameFinishedPort,
   HandleTurnErrorPort,
-  HandleReconnectionPort,
+  HandleGameErrorPort,
 } from './ports'
 
 // ============================================================================
@@ -146,4 +146,3 @@ export { HandleRoundDrawnUseCase } from './use-cases/event-handlers'
 export { HandleRoundEndedInstantlyUseCase } from './use-cases/event-handlers'
 export { HandleGameFinishedUseCase } from './use-cases/event-handlers'
 export { HandleTurnErrorUseCase } from './use-cases/event-handlers'
-export { HandleReconnectionUseCase } from './use-cases/event-handlers'

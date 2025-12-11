@@ -19,7 +19,8 @@
  */
 
 import type { TurnProgressAfterSelectionEvent } from '#shared/contracts'
-import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
+import type { GameStatePort, AnimationPort, NotificationPort, DelayManagerPort } from '../../ports/output'
+import { DelayAbortedError } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleTurnProgressAfterSelectionPort } from '../../ports/input'
 
@@ -30,7 +31,8 @@ export class HandleTurnProgressAfterSelectionUseCase
     private readonly gameState: GameStatePort,
     private readonly animation: AnimationPort,
     private readonly domainFacade: DomainFacade,
-    private readonly notification: NotificationPort
+    private readonly notification: NotificationPort,
+    private readonly delayManager: DelayManagerPort
   ) {}
 
   /**
@@ -42,6 +44,21 @@ export class HandleTurnProgressAfterSelectionUseCase
 
   /**
    * 非同步執行動畫和狀態更新
+   */
+  private async executeAsync(event: TurnProgressAfterSelectionEvent): Promise<void> {
+    try {
+      await this.executeAsyncCore(event)
+    } catch (error) {
+      if (error instanceof DelayAbortedError) {
+        console.info('[HandleTurnProgressAfterSelectionUseCase] Aborted due to state recovery')
+        return
+      }
+      throw error
+    }
+  }
+
+  /**
+   * 核心執行邏輯（可被中斷）
    *
    * 關鍵設計：
    * 1. 提前更新 FlowStage → 觸發 watcher 清除橙色框（問題 1 解決）
@@ -60,7 +77,7 @@ export class HandleTurnProgressAfterSelectionUseCase
    * 5. 更新其他狀態（牌堆數量、役種記錄）
    * 6. 清理動畫層
    */
-  private async executeAsync(event: TurnProgressAfterSelectionEvent): Promise<void> {
+  private async executeAsyncCore(event: TurnProgressAfterSelectionEvent): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
@@ -114,7 +131,7 @@ export class HandleTurnProgressAfterSelectionUseCase
       }
 
       // 3.3 等待 DOM 布局完成（讓獲得區新卡片完成渲染）
-      await new Promise(resolve => setTimeout(resolve, 50))
+      await this.delayManager.delay(50)
 
       // 3.4 播放轉移動畫（從配對點淡出 → 獲得區淡入）
       // playToDepositoryAnimation 會創建克隆卡片在 matchPosition 淡出，同時在獲得區淡入
@@ -139,7 +156,7 @@ export class HandleTurnProgressAfterSelectionUseCase
 
       // 3.6 等待 TransitionGroup FLIP 動畫完成（300ms + 50ms buffer = 350ms）
       // 讓剩餘場牌滑順地重新排列填補空位
-      await new Promise(resolve => setTimeout(resolve, 350))
+      await this.delayManager.delay(350)
 
       console.log('[HandleTurnProgressAfterSelection] 動畫完成，已移除場牌並更新獲得區')
     } else {

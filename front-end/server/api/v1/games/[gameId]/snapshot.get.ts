@@ -5,12 +5,17 @@
  * 取得遊戲快照 API 端點。
  * 用於斷線重連時，客戶端可主動請求完整遊戲狀態。
  *
+ * 回應類型：
+ * - `snapshot`: 正常遊戲快照（記憶體中有進行中的遊戲）
+ * - `game_finished`: 遊戲已結束（從資料庫恢復結果）
+ * - `game_expired`: 遊戲已過期無法恢復
+ *
  * 參考: specs/008-nuxt-backend-server/contracts/rest-api.md
  */
 
 import { z } from 'zod'
 import { container } from '~~/server/utils/container'
-import type { GameSnapshotRestore } from '#shared/contracts'
+import type { SnapshotApiResponse } from '#shared/contracts'
 import { createLogger } from '~~/server/utils/logger'
 import { initRequestId } from '~~/server/utils/requestId'
 
@@ -34,14 +39,37 @@ interface ErrorResponse {
 }
 
 /**
- * 成功回應型別
+ * 成功回應型別（含 timestamp wrapper）
  */
-interface SnapshotResponse {
-  data: GameSnapshotRestore
+interface SnapshotResponseWrapper {
+  data: SnapshotApiResponse
   timestamp: string
 }
 
-export default defineEventHandler(async (event): Promise<SnapshotResponse | ErrorResponse> => {
+/**
+ * 決定勝者
+ *
+ * @param cumulativeScores - 累計分數陣列（PlayerScore 格式）
+ * @returns 勝者 ID，平局時返回 null
+ */
+function determineWinner(
+  cumulativeScores: readonly { player_id: string; score: number }[]
+): string | null {
+  if (cumulativeScores.length < 2) {
+    return null
+  }
+
+  const score0 = cumulativeScores[0]?.score ?? 0
+  const score1 = cumulativeScores[1]?.score ?? 0
+
+  if (score0 === score1) {
+    return null // 平局
+  }
+
+  return score0 > score1 ? cumulativeScores[0]!.player_id : cumulativeScores[1]!.player_id
+}
+
+export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper | ErrorResponse> => {
   const requestId = initRequestId(event)
   const logger = createLogger('API:snapshot', requestId)
 
@@ -81,23 +109,81 @@ export default defineEventHandler(async (event): Promise<SnapshotResponse | Erro
 
     logger.info('Processing snapshot request', { gameId })
 
-    // 3. 從 gameStore 取得遊戲（驗證 session token）
+    // 3. 嘗試從 gameStore（記憶體）取得遊戲
     const game = container.gameStore.getBySessionToken(sessionToken!)
-    if (!game) {
-      logger.warn('Invalid or expired session token', { gameId })
-      setResponseStatus(event, 401)
+
+    // 4. 如果記憶體有遊戲 → 正常流程
+    if (game) {
+      // 4.1. 驗證 gameId 匹配
+      if (game.id !== gameId) {
+        logger.warn('Game ID mismatch', { requestedGameId: gameId, actualGameId: game.id })
+        setResponseStatus(event, 404)
+        return {
+          error: {
+            code: 'GAME_NOT_FOUND',
+            message: 'Game not found',
+          },
+          timestamp: new Date().toISOString(),
+        }
+      }
+
+      // 4.2. 檢查遊戲狀態 - FINISHED
+      if (game.status === 'FINISHED') {
+        logger.info('Game already finished (in memory)', { gameId })
+        setResponseStatus(event, 200)
+        return {
+          data: {
+            response_type: 'game_finished',
+            data: {
+              game_id: game.id,
+              winner_id: determineWinner(game.cumulativeScores),
+              final_scores: [...game.cumulativeScores],
+              rounds_played: game.roundsPlayed,
+              total_rounds: game.totalRounds,
+            },
+          },
+          timestamp: new Date().toISOString(),
+        }
+      }
+
+      // 4.3. 檢查遊戲狀態 - WAITING
+      if (game.status === 'WAITING') {
+        logger.warn('Game not started yet', { gameId })
+        setResponseStatus(event, 409)
+        return {
+          error: {
+            code: 'GAME_NOT_STARTED',
+            message: 'Game has not started yet',
+          },
+          timestamp: new Date().toISOString(),
+        }
+      }
+
+      // 4.4. 正常進行中的遊戲 → 返回快照
+      const remainingSeconds = container.actionTimeoutManager.getRemainingSeconds(gameId)
+      const snapshotEvent = container.eventMapper.toGameSnapshotRestoreEvent(
+        game,
+        remainingSeconds ?? undefined
+      )
+
+      logger.info('Snapshot request completed', { gameId, remainingSeconds })
+      setResponseStatus(event, 200)
       return {
-        error: {
-          code: 'SESSION_INVALID',
-          message: 'Session token is invalid or expired',
+        data: {
+          response_type: 'snapshot',
+          data: snapshotEvent,
         },
         timestamp: new Date().toISOString(),
       }
     }
 
-    // 4. 驗證 gameId 匹配
-    if (game.id !== gameId) {
-      logger.warn('Game ID mismatch', { requestedGameId: gameId, actualGameId: game.id })
+    // 5. 記憶體沒有遊戲 → 查詢資料庫
+    logger.info('Game not in memory, querying database', { gameId })
+    const dbGame = await container.gameRepository.findById(gameId)
+
+    if (!dbGame) {
+      // 5.1. 資料庫也沒有 → 404
+      logger.warn('Game not found in database', { gameId })
       setResponseStatus(event, 404)
       return {
         error: {
@@ -108,39 +194,33 @@ export default defineEventHandler(async (event): Promise<SnapshotResponse | Erro
       }
     }
 
-    // 5. 檢查遊戲狀態
-    if (game.status === 'FINISHED') {
-      logger.warn('Game already finished', { gameId })
-      setResponseStatus(event, 410)
+    // 5.2. 資料庫有遊戲且已結束 → 返回遊戲結果
+    if (dbGame.status === 'FINISHED') {
+      logger.info('Game finished (from database)', { gameId })
+      setResponseStatus(event, 200)
       return {
-        error: {
-          code: 'GAME_FINISHED',
-          message: 'Game has already finished',
+        data: {
+          response_type: 'game_finished',
+          data: {
+            game_id: dbGame.id,
+            winner_id: determineWinner(dbGame.cumulativeScores),
+            final_scores: [...dbGame.cumulativeScores],
+            rounds_played: dbGame.roundsPlayed,
+            total_rounds: dbGame.totalRounds,
+          },
         },
         timestamp: new Date().toISOString(),
       }
     }
 
-    // 6. 若遊戲為 WAITING 狀態（尚未開始），無法建立快照
-    if (game.status === 'WAITING') {
-      logger.warn('Game not started yet', { gameId })
-      setResponseStatus(event, 409)
-      return {
-        error: {
-          code: 'GAME_NOT_STARTED',
-          message: 'Game has not started yet',
-        },
-        timestamp: new Date().toISOString(),
-      }
-    }
-
-    // 7. 建立並回傳快照
-    const snapshotEvent = container.eventMapper.toGameSnapshotRestoreEvent(game)
-
-    logger.info('Snapshot request completed', { gameId })
+    // 5.3. 資料庫有遊戲但未結束 → 遊戲已過期（無法恢復完整狀態）
+    logger.info('Game expired (in database but not in memory)', { gameId, status: dbGame.status })
     setResponseStatus(event, 200)
     return {
-      data: snapshotEvent,
+      data: {
+        response_type: 'game_expired',
+        data: null,
+      },
       timestamp: new Date().toISOString(),
     }
   } catch (error) {

@@ -73,7 +73,7 @@ export function createNotificationPortAdapter(
     showSuccessMessage(message: string): void {
       // 使用 infoMessage 顯示成功訊息
       store.infoMessage = message
-      console.info('[NotificationPort] 成功訊息:', message)
+      console.info('[NotificationPort] Success message:', message)
 
       // 自動消失（3 秒後）
       setTimeout(() => {
@@ -81,6 +81,19 @@ export function createNotificationPortAdapter(
           store.infoMessage = null
         }
       }, 3000)
+    },
+
+    showInfoMessage(message: string): void {
+      // 使用 infoMessage 顯示資訊訊息
+      store.infoMessage = message
+      console.info('[NotificationPort] Info message:', message)
+
+      // 自動消失（5 秒後，資訊訊息顯示較長）
+      setTimeout(() => {
+        if (store.infoMessage === message) {
+          store.infoMessage = null
+        }
+      }, 5000)
     },
 
     showReconnectionMessage(): void {

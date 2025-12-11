@@ -81,8 +81,8 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
   async execute(input: MakeDecisionInput): Promise<MakeDecisionOutput> {
     const { gameId, playerId, decision } = input
 
-    // 0. 清除當前玩家的超時計時器
-    this.actionTimeoutManager?.clearTimeout(`${gameId}:${playerId}`)
+    // 0. 清除當前遊戲的超時計時器
+    this.actionTimeoutManager?.clearTimeout(gameId)
 
     // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
     const existingGame = this.gameStore.get(gameId)
@@ -274,9 +274,8 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       return
     }
 
-    const key = `${gameId}:${playerId}`
     this.actionTimeoutManager.startTimeout(
-      key,
+      gameId,
       gameConfig.action_timeout_seconds,
       () => {
         console.log(`[MakeDecisionUseCase] Timeout for player ${playerId} in game ${gameId}, executing auto-action`)

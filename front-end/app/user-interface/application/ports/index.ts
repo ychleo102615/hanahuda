@@ -35,7 +35,7 @@ export type {
   MakeKoiKoiDecisionPort,
   MakeKoiKoiDecisionInput,
   MakeKoiKoiDecisionOutput,
-  // Event Handlers (15 個)
+  // Event Handlers (13 個)
   HandleGameStartedPort,
   HandleRoundDealtPort,
   HandleTurnCompletedPort,
@@ -48,7 +48,7 @@ export type {
   HandleRoundEndedInstantlyPort,
   HandleGameFinishedPort,
   HandleTurnErrorPort,
-  HandleReconnectionPort,
+  HandleGameErrorPort,
 } from './input'
 
 // Output Ports

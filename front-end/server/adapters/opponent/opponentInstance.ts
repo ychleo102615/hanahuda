@@ -112,10 +112,9 @@ export class OpponentInstance {
    * 排程打手牌操作
    */
   private scheduleHandPlay(): void {
-    const key = `${this.gameId}:${this.playerId}:handPlay`
     const delay = this.getActionDelay()
 
-    this.deps.actionTimeoutManager.scheduleAction(key, delay, async () => {
+    this.deps.actionTimeoutManager.scheduleAction(this.gameId, delay, async () => {
       if (this.isDisposed) return
 
       try {
@@ -158,10 +157,9 @@ export class OpponentInstance {
    * 排程選擇配對目標操作
    */
   private scheduleSelectTarget(event: GameEvent): void {
-    const key = `${this.gameId}:${this.playerId}:selectTarget`
     const delay = this.getActionDelay()
 
-    this.deps.actionTimeoutManager.scheduleAction(key, delay, async () => {
+    this.deps.actionTimeoutManager.scheduleAction(this.gameId, delay, async () => {
       if (this.isDisposed) return
 
       try {
@@ -203,10 +201,9 @@ export class OpponentInstance {
    * 排程 Koi-Koi 決策操作
    */
   private scheduleDecision(): void {
-    const key = `${this.gameId}:${this.playerId}:decision`
     const delay = this.getActionDelay()
 
-    this.deps.actionTimeoutManager.scheduleAction(key, delay, async () => {
+    this.deps.actionTimeoutManager.scheduleAction(this.gameId, delay, async () => {
       if (this.isDisposed) return
 
       try {

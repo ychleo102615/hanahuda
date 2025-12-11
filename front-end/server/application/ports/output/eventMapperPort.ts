@@ -55,8 +55,11 @@ export interface EventMapperPort {
 
   /**
    * 轉換為 GameSnapshotRestore 事件
+   *
+   * @param game - 遊戲聚合根
+   * @param remainingSeconds - 操作剩餘秒數（可選，預設使用 config 值）
    */
-  toGameSnapshotRestoreEvent(game: Game): GameSnapshotRestore
+  toGameSnapshotRestoreEvent(game: Game, remainingSeconds?: number): GameSnapshotRestore
 }
 
 // ============================================================
