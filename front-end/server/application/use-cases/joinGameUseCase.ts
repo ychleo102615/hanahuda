@@ -23,7 +23,7 @@ import type { EventPublisherPort } from '~~/server/application/ports/output/even
 import type { InternalEventPublisherPort } from '~~/server/application/ports/output/internalEventPublisherPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { EventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
-import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
+import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type {
   JoinGameInputPort,
@@ -56,7 +56,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: EventMapperPort,
     private readonly internalEventPublisher: InternalEventPublisherPort,
-    private readonly actionTimeout: ActionTimeoutPort,
+    private readonly gameTimeoutManager: GameTimeoutPort,
     private readonly autoActionUseCase?: AutoActionInputPort
   ) {}
 
@@ -255,7 +255,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
         }
 
         // 取得剩餘超時秒數
-        const remainingSeconds = this.actionTimeout.getRemainingSeconds(game.id)
+        const remainingSeconds = this.gameTimeoutManager.getRemainingSeconds(game.id)
 
         // 建立並發送 GameSnapshotRestore 事件（使用剩餘時間）
         const snapshotEvent = this.eventMapper.toGameSnapshotRestoreEvent(
@@ -430,7 +430,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       return
     }
 
-    this.actionTimeout.startTimeout(
+    this.gameTimeoutManager.startTimeout(
       gameId,
       gameConfig.action_timeout_seconds,
       () => {

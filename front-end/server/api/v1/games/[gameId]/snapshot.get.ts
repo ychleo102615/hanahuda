@@ -160,7 +160,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
       }
 
       // 4.4. 正常進行中的遊戲 → 返回快照
-      const remainingSeconds = container.actionTimeoutManager.getRemainingSeconds(gameId)
+      const remainingSeconds = container.gameTimeoutManager.getRemainingSeconds(gameId)
       const snapshotEvent = container.eventMapper.toGameSnapshotRestoreEvent(
         game,
         remainingSeconds ?? undefined

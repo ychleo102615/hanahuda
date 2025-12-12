@@ -11,7 +11,6 @@
 import type { GameEvent } from '#shared/contracts'
 import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
 import { connectionStore } from '~~/server/adapters/event-publisher/connectionStore'
-import { disconnectTimeoutManager } from '~~/server/adapters/timeout/disconnectTimeoutManager'
 import { container } from '~~/server/utils/container'
 import { gameConfig } from '~~/server/utils/config'
 
@@ -102,7 +101,7 @@ export default defineEventHandler(async (event) => {
       console.log(`[SSE] Player ${playerId} connected to game ${gameId}`)
 
       // 清除斷線超時（重連時）
-      disconnectTimeoutManager.clearDisconnectTimeout(gameId, playerId)
+      container.gameTimeoutManager.clearDisconnectTimeout(gameId, playerId)
 
       // 心跳計時器
       const heartbeatInterval = setInterval(() => {
@@ -125,7 +124,7 @@ export default defineEventHandler(async (event) => {
         // 啟動斷線超時（若超時未重連，對手獲勝）
         const currentGame = inMemoryGameStore.get(gameId)
         if (currentGame && currentGame.status === 'IN_PROGRESS') {
-          disconnectTimeoutManager.startDisconnectTimeout(
+          container.gameTimeoutManager.startDisconnectTimeout(
             gameId,
             playerId,
             async () => {

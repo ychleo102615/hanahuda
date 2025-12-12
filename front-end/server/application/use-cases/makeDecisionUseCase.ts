@@ -36,8 +36,7 @@ import {
 } from '~~/server/domain/services/roundTransitionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
-import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
-import type { DisplayTimeoutPort } from '~~/server/application/ports/output/displayTimeoutPort'
+import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
@@ -65,10 +64,9 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: DecisionEventMapperPort,
-    private readonly actionTimeoutManager?: ActionTimeoutPort,
+    private readonly gameTimeoutManager?: GameTimeoutPort,
     private readonly autoActionUseCase?: AutoActionInputPort,
-    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
-    private readonly displayTimeoutManager?: DisplayTimeoutPort
+    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort
   ) {}
 
   /**
@@ -82,7 +80,7 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     const { gameId, playerId, decision } = input
 
     // 0. 清除當前遊戲的超時計時器
-    this.actionTimeoutManager?.clearTimeout(gameId)
+    this.gameTimeoutManager?.clearTimeout(gameId)
 
     // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
     const existingGame = this.gameStore.get(gameId)
@@ -245,8 +243,8 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
    * @param onTimeout - 超時回調函數
    */
   private startDisplayTimeout(gameId: string, onTimeout: () => void): void {
-    if (this.displayTimeoutManager) {
-      this.displayTimeoutManager.startDisplayTimeout(
+    if (this.gameTimeoutManager) {
+      this.gameTimeoutManager.startTimeout(
         gameId,
         gameConfig.display_timeout_seconds,
         onTimeout
@@ -270,11 +268,11 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     playerId: string,
     flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
   ): void {
-    if (!this.actionTimeoutManager || !this.autoActionUseCase) {
+    if (!this.gameTimeoutManager || !this.autoActionUseCase) {
       return
     }
 
-    this.actionTimeoutManager.startTimeout(
+    this.gameTimeoutManager.startTimeout(
       gameId,
       gameConfig.action_timeout_seconds,
       () => {

@@ -26,9 +26,7 @@ import { createCompositeEventPublisher } from '~~/server/adapters/event-publishe
 import { eventMapper } from '~~/server/adapters/mappers/eventMapper'
 
 // Adapters - Timeout
-import { actionTimeoutManager } from '~~/server/adapters/timeout/actionTimeoutManager'
-import { displayTimeoutManager } from '~~/server/adapters/timeout/displayTimeoutManager'
-import { disconnectTimeoutManager } from '~~/server/adapters/timeout/disconnectTimeoutManager'
+import { gameTimeoutManager } from '~~/server/adapters/timeout/gameTimeoutManager'
 
 // Use Cases
 import { JoinGameUseCase } from '~~/server/application/use-cases/joinGameUseCase'
@@ -71,7 +69,7 @@ const joinGameUseCase: JoinGameInputPort = new JoinGameUseCase(
   inMemoryGameStore,
   eventMapper,
   internalEventBus,
-  actionTimeoutManager,
+  gameTimeoutManager,
   { execute: (input) => getAutoActionUseCase().execute(input) }
 )
 
@@ -80,7 +78,7 @@ const joinGameAsAiUseCase: JoinGameAsAiInputPort = new JoinGameAsAiUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
-  actionTimeoutManager,
+  gameTimeoutManager,
   { execute: (input) => getAutoActionUseCase().execute(input) }
 )
 
@@ -115,9 +113,8 @@ const playHandCardUseCase: PlayHandCardInputPort = new PlayHandCardUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
-  actionTimeoutManager,
-  { execute: (input) => getAutoActionUseCase().execute(input) },
-  displayTimeoutManager
+  gameTimeoutManager,
+  { execute: (input) => getAutoActionUseCase().execute(input) }
 )
 
 const selectTargetUseCase: SelectTargetInputPort = new SelectTargetUseCase(
@@ -125,9 +122,8 @@ const selectTargetUseCase: SelectTargetInputPort = new SelectTargetUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
-  actionTimeoutManager,
-  { execute: (input) => getAutoActionUseCase().execute(input) },
-  displayTimeoutManager
+  gameTimeoutManager,
+  { execute: (input) => getAutoActionUseCase().execute(input) }
 )
 
 const makeDecisionUseCase: MakeDecisionInputPort = new MakeDecisionUseCase(
@@ -135,10 +131,9 @@ const makeDecisionUseCase: MakeDecisionInputPort = new MakeDecisionUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
-  actionTimeoutManager,
+  gameTimeoutManager,
   { execute: (input) => getAutoActionUseCase().execute(input) },
-  recordGameStatsUseCase,
-  displayTimeoutManager
+  recordGameStatsUseCase
 )
 
 // 建立 autoActionUseCase（使用帶超時的 Use Cases）
@@ -165,9 +160,7 @@ export const container = {
   eventPublisher: compositeEventPublisher,
   eventMapper,
   internalEventBus,
-  actionTimeoutManager,
-  displayTimeoutManager,
-  disconnectTimeoutManager,
+  gameTimeoutManager,
 
   // Use Cases (Input Ports)
   joinGameUseCase,

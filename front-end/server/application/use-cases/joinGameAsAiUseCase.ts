@@ -21,7 +21,7 @@ import type { GameRepositoryPort } from '~~/server/application/ports/output/game
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { EventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
-import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
+import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import {
   JoinGameAsAiInputPort,
@@ -48,7 +48,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: EventMapperPort,
-    private readonly actionTimeout?: ActionTimeoutPort,
+    private readonly gameTimeoutManager?: GameTimeoutPort,
     private readonly autoActionUseCase?: AutoActionInputPort
   ) {
     super()
@@ -185,11 +185,11 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
     playerId: string,
     flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
   ): void {
-    if (!this.actionTimeout || !this.autoActionUseCase) {
+    if (!this.gameTimeoutManager || !this.autoActionUseCase) {
       return
     }
 
-    this.actionTimeout.startTimeout(
+    this.gameTimeoutManager.startTimeout(
       gameId,
       gameConfig.action_timeout_seconds,
       () => {
