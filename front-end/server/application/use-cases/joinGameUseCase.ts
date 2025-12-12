@@ -15,9 +15,10 @@
 
 import { randomUUID } from 'crypto'
 import type { Game } from '~~/server/domain/game/game'
-import { createGame, addSecondPlayerAndStart, startRound } from '~~/server/domain/game/game'
+import { createGame, addSecondPlayerAndStart, startRound, getDefaultRuleset } from '~~/server/domain/game/game'
 import { createPlayer } from '~~/server/domain/game/player'
 import { detectTeshi, detectKuttsuki } from '~~/server/domain/round/round'
+import type { RoomTypeId } from '#shared/constants/roomTypes'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { InternalEventPublisherPort } from '~~/server/application/ports/output/internalEventPublisherPort'
@@ -67,7 +68,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * @returns 遊戲資訊
    */
   async execute(input: JoinGameInput): Promise<JoinGameOutput> {
-    const { playerId, playerName, sessionToken, gameId } = input
+    const { playerId, playerName, sessionToken, gameId, roomType } = input
 
     // 1. 重連模式：如果提供了 gameId，明確表示要重連特定遊戲
     if (gameId) {
@@ -86,7 +87,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       return this.joinExistingGame(waitingGame, playerId, playerName)
     } else {
       // 3b. 建立新遊戲（WAITING 狀態）
-      return this.createNewGame(playerId, playerName)
+      return this.createNewGame(playerId, playerName, roomType)
     }
   }
 
@@ -278,8 +279,16 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * 建立新遊戲（WAITING 狀態）
    *
    * 不發牌、不開始遊戲，等待第二位玩家加入。
+   *
+   * @param playerId - 玩家 ID
+   * @param playerName - 玩家名稱
+   * @param roomType - 房間類型（可選，預設從 config 取得）
    */
-  private async createNewGame(playerId: string, playerName: string): Promise<JoinGameSuccessOutput> {
+  private async createNewGame(
+    playerId: string,
+    playerName: string,
+    roomType?: RoomTypeId
+  ): Promise<JoinGameSuccessOutput> {
     const gameId = randomUUID()
     const sessionToken = randomUUID()
 
@@ -289,10 +298,15 @@ export class JoinGameUseCase implements JoinGameInputPort {
       isAi: false,
     })
 
+    // 取得規則集：優先使用傳入的 roomType，否則使用 config 預設值
+    const effectiveRoomType = roomType ?? gameConfig.default_room_type
+    const ruleset = getDefaultRuleset(effectiveRoomType)
+
     const game = createGame({
       id: gameId,
       sessionToken, // Game 的 sessionToken 為第一位玩家的 token
       player: humanPlayer,
+      ruleset,
     })
 
     // 儲存到記憶體和資料庫

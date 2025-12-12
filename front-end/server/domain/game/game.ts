@@ -9,7 +9,12 @@
  * @module server/domain/game/game
  */
 
-import type { Ruleset, PlayerScore, YakuSetting, SpecialRules } from '#shared/contracts'
+import type { Ruleset, PlayerScore } from '#shared/contracts'
+import {
+  type RoomTypeId,
+  getRuleset,
+  DEFAULT_ROOM_TYPE_ID,
+} from '#shared/constants/roomTypes'
 import type { Player } from './player'
 import { createAiPlayer } from './player'
 import type { Round } from '../round/round'
@@ -52,49 +57,14 @@ export interface Game {
 }
 
 /**
- * 預設役種設定
- */
-const DEFAULT_YAKU_SETTINGS: YakuSetting[] = [
-  { yaku_type: 'GOKO', base_points: 15, enabled: true },
-  { yaku_type: 'SHIKO', base_points: 8, enabled: true },
-  { yaku_type: 'AME_SHIKO', base_points: 7, enabled: true },
-  { yaku_type: 'SANKO', base_points: 6, enabled: true },
-  { yaku_type: 'TSUKIMI_ZAKE', base_points: 5, enabled: true },
-  { yaku_type: 'HANAMI_ZAKE', base_points: 5, enabled: true },
-  { yaku_type: 'INO_SHIKA_CHO', base_points: 5, enabled: true },
-  { yaku_type: 'TANE', base_points: 1, enabled: true },
-  { yaku_type: 'AKATAN_AOTAN', base_points: 10, enabled: true },
-  { yaku_type: 'AKATAN', base_points: 5, enabled: true },
-  { yaku_type: 'AOTAN', base_points: 5, enabled: true },
-  { yaku_type: 'TANZAKU', base_points: 1, enabled: true },
-  { yaku_type: 'KASU', base_points: 1, enabled: true },
-]
-
-/**
- * 預設特殊規則
- */
-const DEFAULT_SPECIAL_RULES: SpecialRules = {
-  teshi_enabled: true,
-  field_kuttsuki_enabled: true,
-}
-
-/**
  * 取得預設規則集
  *
- * @returns 預設的遊戲規則集
+ * @param roomTypeId - 房間類型 ID（可選，預設為 DEFAULT_ROOM_TYPE_ID）
+ * @returns 對應房間類型的規則集
  */
-export function getDefaultRuleset(): Ruleset {
-  return Object.freeze({
-    target_score: 50,
-    yaku_settings: Object.freeze(DEFAULT_YAKU_SETTINGS),
-    special_rules: Object.freeze(DEFAULT_SPECIAL_RULES),
-  })
+export function getDefaultRuleset(roomTypeId: RoomTypeId = DEFAULT_ROOM_TYPE_ID): Ruleset {
+  return getRuleset(roomTypeId)
 }
-
-/**
- * 預設總局數
- */
-export const DEFAULT_TOTAL_ROUNDS = 12
 
 /**
  * 建立遊戲參數
@@ -104,7 +74,6 @@ export interface CreateGameParams {
   readonly sessionToken: string
   readonly player: Player
   readonly ruleset?: Ruleset
-  readonly totalRounds?: number
 }
 
 /**
@@ -116,7 +85,7 @@ export interface CreateGameParams {
  * @returns 新建立的遊戲
  */
 export function createGame(params: CreateGameParams): Game {
-  const { id, sessionToken, player, ruleset = getDefaultRuleset(), totalRounds = DEFAULT_TOTAL_ROUNDS } = params
+  const { id, sessionToken, player, ruleset = getDefaultRuleset() } = params
 
   const now = new Date()
 
@@ -127,7 +96,7 @@ export function createGame(params: CreateGameParams): Game {
     ruleset,
     cumulativeScores: Object.freeze([{ player_id: player.id, score: 0 }]),
     roundsPlayed: 0,
-    totalRounds,
+    totalRounds: ruleset.total_rounds,
     currentRound: null,
     status: 'WAITING' as GameStatus,
     createdAt: now,

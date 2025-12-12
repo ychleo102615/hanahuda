@@ -41,6 +41,7 @@ export interface BaseEvent {
  *
  * @description
  * 遊戲初始化完成，包含玩家資訊和遊戲規則集。
+ * total_rounds 已包含在 ruleset 中。
  */
 export interface GameStartedEvent extends BaseEvent {
   readonly event_type: 'GameStarted'
@@ -57,9 +58,11 @@ export interface GameStartedEvent extends BaseEvent {
  *
  * @description
  * 發牌完成，包含場牌、手牌和牌堆剩餘數量。
+ * total_rounds 可從 GameStarted 事件的 ruleset 取得。
  */
 export interface RoundDealtEvent extends BaseEvent {
   readonly event_type: 'RoundDealt'
+  readonly current_round: number
   readonly dealer_id: string
   readonly field: ReadonlyArray<string>
   readonly hands: ReadonlyArray<PlayerHand>

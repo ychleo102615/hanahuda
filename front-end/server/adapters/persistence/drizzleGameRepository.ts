@@ -10,7 +10,7 @@
 
 import { eq } from 'drizzle-orm'
 import type { Game, GameStatus } from '~~/server/domain/game/game'
-import { getDefaultRuleset, DEFAULT_TOTAL_ROUNDS } from '~~/server/domain/game/game'
+import { getDefaultRuleset } from '~~/server/domain/game/game'
 import type { Player } from '~~/server/domain/game/player'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import { db } from '~~/server/utils/db'
@@ -215,11 +215,18 @@ export class DrizzleGameRepository implements GameRepositoryPort {
       })
     }
 
+    // 使用預設 ruleset，但覆寫 total_rounds 以匹配 DB 記錄
+    const baseRuleset = getDefaultRuleset()
+    const ruleset = Object.freeze({
+      ...baseRuleset,
+      total_rounds: record.totalRounds,
+    })
+
     return Object.freeze({
       id: record.id,
       sessionToken: record.sessionToken,
       players: Object.freeze(players),
-      ruleset: getDefaultRuleset(), // DB 不儲存 ruleset，使用預設值
+      ruleset,
       cumulativeScores: Object.freeze(record.cumulativeScores ?? []),
       roundsPlayed: record.roundsPlayed,
       totalRounds: record.totalRounds,

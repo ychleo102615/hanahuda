@@ -8,6 +8,8 @@
  * @module server/application/ports/input/joinGameInputPort
  */
 
+import type { RoomTypeId } from '#shared/constants/roomTypes'
+
 // ============================================================
 // DTOs
 // ============================================================
@@ -24,6 +26,8 @@ export interface JoinGameInput {
   readonly sessionToken?: string
   /** 遊戲 ID（用於重連模式） - 若提供則為重連模式，會返回遊戲狀態 */
   readonly gameId?: string
+  /** 房間類型（用於建立新遊戲） */
+  readonly roomType?: RoomTypeId
 }
 
 /**

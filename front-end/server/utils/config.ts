@@ -7,6 +7,12 @@
  * 參考: specs/008-nuxt-backend-server/quickstart.md
  */
 
+import {
+  type RoomTypeId,
+  DEFAULT_ROOM_TYPE_ID,
+  isValidRoomTypeId,
+} from '#shared/constants/roomTypes'
+
 /**
  * 遊戲設定介面
  */
@@ -37,6 +43,9 @@ export interface GameConfig {
 
   /** 會話過期時間（毫秒） */
   readonly session_timeout_ms: number
+
+  /** 預設房間類型 */
+  readonly default_room_type: RoomTypeId
 }
 
 /**
@@ -60,6 +69,23 @@ function parseEnvNumber(key: string, defaultValue: number): number {
 }
 
 /**
+ * 解析房間類型環境變數
+ *
+ * @returns 有效的房間類型 ID
+ */
+function parseRoomType(): RoomTypeId {
+  const value = process.env.DEFAULT_ROOM_TYPE
+  if (value === undefined || value === '') {
+    return DEFAULT_ROOM_TYPE_ID
+  }
+  if (isValidRoomTypeId(value)) {
+    return value
+  }
+  console.warn(`Invalid DEFAULT_ROOM_TYPE: "${value}", using default: ${DEFAULT_ROOM_TYPE_ID}`)
+  return DEFAULT_ROOM_TYPE_ID
+}
+
+/**
  * 遊戲設定實例
  *
  * @description
@@ -72,6 +98,7 @@ function parseEnvNumber(key: string, defaultValue: number): number {
  * - OPPONENT_ANIMATION_DELAY_MS: 假玩家動畫延遲（預設 3000）
  * - OPPONENT_THINKING_MIN_MS: 假玩家思考下限（預設 1500）
  * - OPPONENT_THINKING_MAX_MS: 假玩家思考上限（預設 3000）
+ * - DEFAULT_ROOM_TYPE: 預設房間類型（預設 QUICK）
  */
 export const gameConfig: GameConfig = {
   action_timeout_seconds: parseEnvNumber('ACTION_TIMEOUT_SECONDS', 15),
@@ -83,6 +110,7 @@ export const gameConfig: GameConfig = {
   sse_heartbeat_interval_seconds: 30,
   timeout_buffer_seconds: 3,
   session_timeout_ms: parseEnvNumber('SESSION_TIMEOUT_MS', 24 * 60 * 60 * 1000), // 24 hours
+  default_room_type: parseRoomType(),
 }
 
 /**

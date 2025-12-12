@@ -109,6 +109,7 @@ export class EventMapper implements FullEventMapperPort {
       event_type: 'RoundDealt',
       event_id: createEventId(),
       timestamp: createTimestamp(),
+      current_round: game.roundsPlayed + 1,
       dealer_id: round.dealerId,
       field: [...round.field],
       hands,

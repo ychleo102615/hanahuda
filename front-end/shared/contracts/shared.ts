@@ -106,6 +106,7 @@ export interface KoiStatus {
  * 遊戲規則集
  */
 export interface Ruleset {
+  readonly total_rounds: number
   readonly target_score: number
   readonly yaku_settings: ReadonlyArray<YakuSetting>
   readonly special_rules: SpecialRules
