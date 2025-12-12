@@ -194,7 +194,90 @@ async function startGroupAnimation(groupId: string) {
 
   const effectType = group.groupEffectType
 
-  // 根據效果類型執行不同動畫
+  // 使用 useAbortableMotion 支援 AbortSignal 取消
+  const signal = operationSession.getSignal()
+
+  try {
+    // pulseToFadeOut 需要特殊處理：先 pulse 後 fadeOut，無縫銜接
+    if (effectType === 'pulseToFadeOut') {
+      await executePulseToFadeOut(el, signal)
+    } else {
+      await executeSimpleGroupAnimation(el, effectType, signal)
+    }
+
+    // 動畫正常完成
+    group.onComplete()
+    store.removeGroup(group.groupId)
+    animatedGroupIds.value.delete(groupId)
+  } catch (error) {
+    // 如果是 AbortOperationError，靜默忽略（動畫已被取消）
+    if (error instanceof AbortOperationError) {
+      console.info(`[AnimationLayer] Group animation aborted: ${groupId}`)
+      animatedGroupIds.value.delete(groupId)
+      return
+    }
+    // 其他錯誤重新拋出
+    throw error
+  }
+}
+
+/**
+ * 執行 pulse → fadeOut 連續動畫（無縫銜接）
+ *
+ * @description
+ * 解決配對動畫閃爍問題：pulse 完成後直接過渡到 fadeOut，
+ * 不移除 group 再創建新 group，完全避免空窗期。
+ */
+async function executePulseToFadeOut(el: HTMLElement, signal: AbortSignal) {
+  type MotionConfig = Parameters<typeof useAbortableMotion>[1]
+
+  // Phase 1: Pulse 動畫
+  const pulseConfig: MotionConfig = {
+    initial: {
+      scale: 1,
+      opacity: 1,
+    },
+    enter: {
+      scale: [1, 1.15, 1],
+      opacity: 1,
+      transition: {
+        duration: 300,
+        ease: 'easeInOut',
+      },
+    },
+  }
+
+  const { apply: applyPulse } = useAbortableMotion(el, pulseConfig, signal)
+  await applyPulse('enter')
+
+  // Phase 2: FadeOut 動畫（無縫銜接）
+  const fadeOutConfig: MotionConfig = {
+    initial: {
+      scale: 1,
+      opacity: 1,
+    },
+    enter: {
+      scale: 1,
+      opacity: 0,
+      transition: {
+        duration: 250,
+        ease: 'easeOut',
+      },
+    },
+  }
+
+  const { apply: applyFadeOut } = useAbortableMotion(el, fadeOutConfig, signal)
+  await applyFadeOut('enter')
+}
+
+/**
+ * 執行簡單的組動畫（單一效果）
+ */
+async function executeSimpleGroupAnimation(
+  el: HTMLElement,
+  effectType: 'pulse' | 'fadeOut' | 'fadeIn',
+  signal: AbortSignal
+) {
   type MotionConfig = Parameters<typeof useAbortableMotion>[1]
   let motionConfig: MotionConfig
 
@@ -250,27 +333,8 @@ async function startGroupAnimation(groupId: string) {
     }
   }
 
-  // 使用 useAbortableMotion 支援 AbortSignal 取消
-  const signal = operationSession.getSignal()
   const { apply } = useAbortableMotion(el, motionConfig, signal)
-
-  try {
-    // 執行動畫並等待完成
-    await apply('enter')
-    // 動畫正常完成
-    group.onComplete()
-    store.removeGroup(group.groupId)
-    animatedGroupIds.value.delete(groupId)
-  } catch (error) {
-    // 如果是 AbortOperationError，靜默忽略（動畫已被取消）
-    if (error instanceof AbortOperationError) {
-      console.info(`[AnimationLayer] Group animation aborted: ${groupId}`)
-      animatedGroupIds.value.delete(groupId)
-      return
-    }
-    // 其他錯誤重新拋出
-    throw error
-  }
+  await apply('enter')
 }
 
 </script>

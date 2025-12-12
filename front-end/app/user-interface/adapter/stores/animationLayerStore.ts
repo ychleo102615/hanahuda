@@ -21,8 +21,13 @@ export type CardEffectType =
 
 /**
  * 組級效果類型（用於多張卡片整體動畫）
+ *
+ * - fadeOut: 淡出消失
+ * - fadeIn: 淡入出現
+ * - pulse: 脈衝縮放效果
+ * - pulseToFadeOut: 脈衝後直接淡出（無縫銜接，解決閃爍問題）
  */
-export type GroupEffectType = 'fadeOut' | 'fadeIn' | 'pulse'
+export type GroupEffectType = 'fadeOut' | 'fadeIn' | 'pulse' | 'pulseToFadeOut'
 
 /**
  * 動畫卡片資料

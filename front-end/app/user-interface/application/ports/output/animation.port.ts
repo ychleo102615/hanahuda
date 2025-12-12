@@ -39,6 +39,104 @@
 
 import type { CardType } from '../../../domain/types'
 
+// ========================================
+// 卡片操作動畫介面（高階 API）
+// ========================================
+
+/**
+ * 卡片操作動畫參數（用於 playCardPlaySequence）
+ *
+ * @description
+ * 封裝手牌操作的完整資訊，Adapter 根據 matchedCard 是否存在
+ * 自動選擇有配對/無配對的動畫流程。
+ */
+export interface CardPlayAnimationParams {
+  /** 打出的卡片 ID */
+  readonly playedCard: string
+  /** 配對的場牌 ID（null 表示無配對） */
+  readonly matchedCard: string | null
+  /** 被捕獲的卡片列表（配對成功時） */
+  readonly capturedCards: readonly string[]
+  /** 是否為對手操作 */
+  readonly isOpponent: boolean
+  /** 卡片類型（用於決定獲得區分組） */
+  readonly targetCardType: CardType
+}
+
+/**
+ * 卡片操作動畫結果
+ *
+ * @description
+ * 包含動畫執行後的資訊，供 Use Case 後續處理使用。
+ */
+export interface CardPlayAnimationResult {
+  /** 是否有配對 */
+  readonly hasMatch: boolean
+  /** 配對位置（用於後續動畫，如翻牌配對） */
+  readonly matchPosition: { x: number; y: number } | null
+}
+
+/**
+ * 翻牌動畫參數（用於 playDrawCardSequence）
+ *
+ * @description
+ * 封裝翻牌操作的完整資訊，包含從牌堆翻牌和可能的配對。
+ */
+export interface DrawCardAnimationParams {
+  /** 翻出的卡片 ID */
+  readonly drawnCard: string
+  /** 配對的場牌 ID（null 表示無配對） */
+  readonly matchedCard: string | null
+  /** 被捕獲的卡片列表 */
+  readonly capturedCards: readonly string[]
+  /** 是否為對手操作 */
+  readonly isOpponent: boolean
+  /** 卡片類型 */
+  readonly targetCardType: CardType
+}
+
+/**
+ * 卡片操作狀態更新回調
+ *
+ * @description
+ * 由 Use Case 提供，AnimationPortAdapter 在適當時機調用。
+ * 這些回調負責更新 GameState，確保動畫和狀態更新的正確順序。
+ *
+ * 設計原則：
+ * - Adapter 負責動畫時序編排
+ * - Use Case 負責狀態更新邏輯
+ * - 透過回調機制解耦兩者
+ */
+export interface CardPlayStateCallbacks {
+  /**
+   * 更新獲得區（在 fadeIn 動畫前調用）
+   * @param capturedCards - 被捕獲的卡片 ID 列表
+   */
+  readonly onUpdateDepository: (capturedCards: string[]) => void
+
+  /**
+   * 移除場牌（在動畫完成後調用）
+   * @param cardIds - 要移除的場牌 ID 列表
+   */
+  readonly onRemoveFieldCards: (cardIds: string[]) => void
+
+  /**
+   * 移除手牌（在動畫完成後調用）
+   * @param cardId - 要移除的手牌 ID
+   */
+  readonly onRemoveHandCard: (cardId: string) => void
+
+  /**
+   * 新增場牌（無配對時，在動畫前調用）
+   * @param cardIds - 要新增的場牌 ID 列表
+   */
+  readonly onAddFieldCards: (cardIds: string[]) => void
+}
+
+// ========================================
+// 發牌動畫介面
+// ========================================
+
 /**
  * 發牌動畫參數
  *
@@ -263,4 +361,82 @@ export interface AnimationPort {
    * ```
    */
   waitForReady(requiredZones: string[], timeoutMs?: number): Promise<void>
+
+  // ========================================
+  // 高階動畫方法（封裝完整動畫序列）
+  // ========================================
+
+  /**
+   * 播放完整的手牌操作動畫序列
+   *
+   * @description
+   * 根據 CardPlayAnimationParams 自動判斷並執行：
+   * - 有配對：手牌飛向場牌 → pulse → fadeOut + fadeIn（獲得區）
+   * - 無配對：手牌飛向場牌新位置
+   *
+   * 此方法封裝完整的動畫時序，包含：
+   * 1. 動畫前的 hideCards 預處理
+   * 2. 動畫執行
+   * 3. 動畫間的無縫銜接（解決閃爍問題）
+   * 4. 在適當時機調用 callbacks 更新狀態
+   *
+   * @param params - 卡片操作參數
+   * @param callbacks - 狀態更新回調（由 Use Case 提供）
+   * @returns 動畫結果（包含配對位置等資訊）
+   *
+   * @example
+   * ```typescript
+   * const result = await animation.playCardPlaySequence(
+   *   {
+   *     playedCard: '0101',
+   *     matchedCard: '0102',
+   *     capturedCards: ['0101', '0102'],
+   *     isOpponent: false,
+   *     targetCardType: 'BRIGHT',
+   *   },
+   *   {
+   *     onUpdateDepository: (cards) => gameState.updateDepositoryCards(...),
+   *     onRemoveFieldCards: (ids) => gameState.updateFieldCards(...),
+   *     onRemoveHandCard: (id) => gameState.updateHandCards(...),
+   *     onAddFieldCards: (ids) => gameState.updateFieldCards(...),
+   *   }
+   * )
+   * ```
+   */
+  playCardPlaySequence(
+    params: CardPlayAnimationParams,
+    callbacks: CardPlayStateCallbacks
+  ): Promise<CardPlayAnimationResult>
+
+  /**
+   * 播放完整的翻牌動畫序列
+   *
+   * @description
+   * 執行翻牌階段的動畫：
+   * 1. 從牌堆翻出卡片
+   * 2. 如有配對：飛向配對目標 → pulse → fadeOut + fadeIn
+   * 3. 如無配對：卡片留在場上
+   *
+   * @param params - 翻牌參數
+   * @param callbacks - 狀態更新回調
+   * @returns 動畫結果
+   *
+   * @example
+   * ```typescript
+   * await animation.playDrawCardSequence(
+   *   {
+   *     drawnCard: '0501',
+   *     matchedCard: '0502',
+   *     capturedCards: ['0501', '0502'],
+   *     isOpponent: false,
+   *     targetCardType: 'ANIMAL',
+   *   },
+   *   callbacks
+   * )
+   * ```
+   */
+  playDrawCardSequence(
+    params: DrawCardAnimationParams,
+    callbacks: CardPlayStateCallbacks
+  ): Promise<CardPlayAnimationResult>
 }
