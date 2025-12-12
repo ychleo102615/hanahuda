@@ -200,7 +200,7 @@ async function startGroupAnimation(groupId: string) {
   try {
     // pulseToFadeOut 需要特殊處理：先 pulse 後 fadeOut，無縫銜接
     if (effectType === 'pulseToFadeOut') {
-      await executePulseToFadeOut(el, signal)
+      await executePulseToFadeOut(el, signal, group.onPulseComplete)
     } else {
       await executeSimpleGroupAnimation(el, effectType, signal)
     }
@@ -227,8 +227,15 @@ async function startGroupAnimation(groupId: string) {
  * @description
  * 解決配對動畫閃爍問題：pulse 完成後直接過渡到 fadeOut，
  * 不移除 group 再創建新 group，完全避免空窗期。
+ *
+ * @param onPulseComplete - pulse 完成後、fadeOut 開始前的回調，
+ *                          用於同步更新獲得區 DOM 並啟動 fadeIn 動畫
  */
-async function executePulseToFadeOut(el: HTMLElement, signal: AbortSignal) {
+async function executePulseToFadeOut(
+  el: HTMLElement,
+  signal: AbortSignal,
+  onPulseComplete?: () => void
+) {
   type MotionConfig = Parameters<typeof useAbortableMotion>[1]
 
   // Phase 1: Pulse 動畫
@@ -250,7 +257,10 @@ async function executePulseToFadeOut(el: HTMLElement, signal: AbortSignal) {
   const { apply: applyPulse } = useAbortableMotion(el, pulseConfig, signal)
   await applyPulse('enter')
 
-  // Phase 2: FadeOut 動畫（無縫銜接）
+  // Pulse 完成，通知調用者（此時開始更新獲得區並啟動 fadeIn）
+  onPulseComplete?.()
+
+  // Phase 2: FadeOut 動畫（與獲得區 fadeIn 同步）
   const fadeOutConfig: MotionConfig = {
     initial: {
       scale: 1,

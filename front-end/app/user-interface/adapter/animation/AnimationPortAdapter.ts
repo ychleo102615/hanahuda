@@ -949,7 +949,8 @@ export class AnimationPortAdapter implements AnimationPort {
    *
    * @description
    * 使用 pulseToFadeOut 效果實現無縫動畫銜接，解決閃爍問題。
-   * 同時在淡出過程中更新獲得區 DOM 並播放淡入動畫。
+   * 在 pulse 完成後、fadeOut 開始時同步更新獲得區 DOM 並播放淡入動畫，
+   * 確保 fadeOut 與 fadeIn 同時執行，語意正確（場牌淡出 = 獲得區淡入）。
    *
    * @private
    */
@@ -981,8 +982,15 @@ export class AnimationPortAdapter implements AnimationPort {
       fieldRect.height
     )
 
-    // 4. 創建 pulseToFadeOut 動畫組
-    // 使用單一 group 執行 pulse → fadeOut，完全避免閃爍
+    // 4. 準備 fadeIn 動畫的 deferred promise
+    // fadeIn 動畫會在 onPulseComplete 回調中創建
+    let fadeInResolve: () => void
+    const fadeInPromise = new Promise<void>(resolve => {
+      fadeInResolve = resolve
+    })
+
+    // 5. 創建 pulseToFadeOut 動畫組
+    // 使用 onPulseComplete 回調在正確時機更新獲得區
     const pulseToFadeOutPromise = new Promise<void>(resolve => {
       this.animationLayerStore.addGroup({
         groupId: `match-fade-${Date.now()}`,
@@ -1003,77 +1011,104 @@ export class AnimationPortAdapter implements AnimationPort {
         groupEffectType: 'pulseToFadeOut',
         onComplete: resolve,
         boundingBox: calculateBoundingBox([fieldRect, handRect]),
+        // pulse 完成後、fadeOut 開始前的回調
+        onPulseComplete: () => {
+          this.startDepositoryFadeIn(
+            capturedCards,
+            isOpponent,
+            callbacks,
+            fadeInResolve
+          )
+        },
       })
     })
 
-    // 5. 在 pulseToFadeOut 動畫期間，準備獲得區
-    // 預先隱藏即將出現在獲得區的卡片
-    this.animationLayerStore.hideCards([...capturedCards])
-
-    // 更新獲得區 DOM
-    callbacks.onUpdateDepository([...capturedCards])
-
-    // 等待 DOM 布局
-    await delay(50, this.operationSession.getSignal())
-
-    // 6. 查詢獲得區目標位置並創建淡入動畫
-    const depositoryContainer = document.querySelector(
-      isOpponent ? '.opponent-depository-zone' : '.player-depository-zone'
-    )
-
-    const cardPositions: { cardId: string; rect: DOMRect }[] = []
-    capturedCards.forEach(cardId => {
-      const cardElement = depositoryContainer?.querySelector(
-        `[data-card-id="${cardId}"]`
-      ) as HTMLElement | null
-      if (cardElement) {
-        cardPositions.push({
-          cardId,
-          rect: cardElement.getBoundingClientRect(),
-        })
-      }
-    })
-
-    // 創建淡入動畫組（與 pulseToFadeOut 並行）
-    let fadeInPromise: Promise<void> = Promise.resolve()
-    if (cardPositions.length > 0) {
-      const fadeInGroupCards = cardPositions.map(({ cardId, rect }) => ({
-        cardId: `${cardId}-fadeIn`,
-        renderCardId: cardId,
-        fromRect: rect,
-        toRect: rect,
-        onComplete: () => {},
-      }))
-
-      const fadeInRects = cardPositions.map(p => p.rect)
-      fadeInPromise = new Promise<void>(resolve => {
-        this.animationLayerStore.addGroup({
-          groupId: `fadeIn-${Date.now()}`,
-          cards: fadeInGroupCards,
-          groupEffectType: 'fadeIn',
-          onComplete: resolve,
-          boundingBox: calculateBoundingBox(fadeInRects),
-        })
-      })
-    }
-
-    // 7. 等待所有動畫完成
+    // 6. 等待所有動畫完成
     await Promise.all([pulseToFadeOutPromise, fadeInPromise])
 
-    // 8. 顯示獲得區的真實卡片
+    // 7. 顯示獲得區的真實卡片
     capturedCards.forEach(cardId => {
       this.animationLayerStore.showCard(cardId)
     })
 
-    // 9. 移除場牌和手牌 DOM
+    // 8. 移除場牌和手牌 DOM
     const fieldCardsToRemove = capturedCards.filter(id => id !== handCardId)
     callbacks.onRemoveFieldCards(fieldCardsToRemove)
     callbacks.onRemoveHandCard(handCardId)
 
-    // 10. 等待 FLIP 動畫
+    // 9. 等待 FLIP 動畫
     await delay(350, this.operationSession.getSignal())
 
     return matchPosition
+  }
+
+  /**
+   * 啟動獲得區淡入動畫
+   *
+   * @description
+   * 在 pulse 完成後、fadeOut 開始時調用。
+   * 更新獲得區 DOM 並創建 fadeIn 動畫，與 fadeOut 同步執行。
+   *
+   * @private
+   */
+  private startDepositoryFadeIn(
+    capturedCards: string[],
+    isOpponent: boolean,
+    callbacks: CardPlayStateCallbacks,
+    onComplete: () => void
+  ): void {
+    // 1. 預先隱藏即將出現在獲得區的卡片
+    this.animationLayerStore.hideCards([...capturedCards])
+
+    // 2. 更新獲得區 DOM
+    callbacks.onUpdateDepository([...capturedCards])
+
+    // 3. 使用 requestAnimationFrame 等待 DOM 布局後創建 fadeIn 動畫
+    // 注意：這裡不能用 await，因為 onPulseComplete 是同步回調
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // 4. 查詢獲得區目標位置
+        const depositoryContainer = document.querySelector(
+          isOpponent ? '.opponent-depository-zone' : '.player-depository-zone'
+        )
+
+        const cardPositions: { cardId: string; rect: DOMRect }[] = []
+        capturedCards.forEach(cardId => {
+          const cardElement = depositoryContainer?.querySelector(
+            `[data-card-id="${cardId}"]`
+          ) as HTMLElement | null
+          if (cardElement) {
+            cardPositions.push({
+              cardId,
+              rect: cardElement.getBoundingClientRect(),
+            })
+          }
+        })
+
+        // 5. 創建淡入動畫組
+        if (cardPositions.length > 0) {
+          const fadeInGroupCards = cardPositions.map(({ cardId, rect }) => ({
+            cardId: `${cardId}-fadeIn`,
+            renderCardId: cardId,
+            fromRect: rect,
+            toRect: rect,
+            onComplete: () => {},
+          }))
+
+          const fadeInRects = cardPositions.map(p => p.rect)
+          this.animationLayerStore.addGroup({
+            groupId: `fadeIn-${Date.now()}`,
+            cards: fadeInGroupCards,
+            groupEffectType: 'fadeIn',
+            onComplete,
+            boundingBox: calculateBoundingBox(fadeInRects),
+          })
+        } else {
+          // 沒有卡片需要淡入，直接完成
+          onComplete()
+        }
+      })
+    })
   }
 }
 

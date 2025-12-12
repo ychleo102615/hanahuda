@@ -70,6 +70,15 @@ export interface CardGroup {
   onComplete: () => void
   /** 包圍盒：所有卡片的最小外接矩形 */
   boundingBox: DOMRect
+  /**
+   * pulse 階段完成回調（僅用於 pulseToFadeOut 效果）
+   *
+   * @description
+   * 在 pulse 動畫完成後、fadeOut 動畫開始前調用。
+   * 用於讓 adapter 在正確時機更新獲得區 DOM，
+   * 使 fadeOut 與 fadeIn 同步開始。
+   */
+  onPulseComplete?: () => void
 }
 
 /**
