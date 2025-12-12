@@ -2,8 +2,13 @@
  * GameEventClient - SSE 客戶端
  *
  * @description
- * 使用原生 EventSource API 建立 SSE 連線,接收遊戲事件並路由到對應的 Input Port。
- * 包含自動重連機制 (指數退避,最多 5 次)。
+ * 使用原生 EventSource API 建立 SSE 連線，接收遊戲事件並路由到對應的 Input Port。
+ * 包含自動重連機制（指數退避，最多 5 次）。
+ *
+ * SSE-First Architecture:
+ * - 連線即觸發 join/reconnect（由後端處理）
+ * - 第一個事件永遠是 InitialState
+ * - 前端根據 response_type 決定顯示邏輯
  *
  * 參考契約: specs/004-ui-adapter-layer/contracts/sse-client.md
  *
@@ -11,16 +16,29 @@
  * ```typescript
  * const router = new EventRouter()
  * const client = new GameEventClient('http://localhost:8080', router)
- * client.connect('game-123', 'token-456')
+ * client.connect({ playerId: 'player-1', playerName: 'Alice' })
  * ```
  */
 
 import { EventRouter } from './EventRouter'
 
 /**
+ * SSE 連線參數
+ */
+export interface SSEConnectionParams {
+  /** 玩家 ID */
+  playerId: string
+  /** 玩家名稱 */
+  playerName: string
+  /** 遊戲 ID（可選，有值表示重連） */
+  gameId?: string | null
+}
+
+/**
  * SSE 支援的事件類型
  */
 const SSE_EVENT_TYPES = [
+  'InitialState',
   'GameStarted',
   'RoundDealt',
   'TurnCompleted',
@@ -62,6 +80,9 @@ export class GameEventClient {
   private onConnectionLostCallback?: () => void
   private onConnectionFailedCallback?: () => void
 
+  // 保存連線參數用於重連
+  private lastConnectionParams: SSEConnectionParams | null = null
+
   /**
    * @param baseURL - API 伺服器基礎 URL
    * @param eventRouter - 事件路由器實例
@@ -72,20 +93,38 @@ export class GameEventClient {
   }
 
   /**
-   * 建立 SSE 連線
+   * 建立 SSE 連線（SSE-First Architecture）
    *
-   * @param gameId - 遊戲 ID
+   * @param params - 連線參數
+   *
+   * @description
+   * 連線到統一的 SSE 端點。後端會自動處理 join/reconnect 邏輯，
+   * 並推送 InitialState 作為第一個事件。
    *
    * @note session_token 由 HttpOnly Cookie 自動傳送，無需手動傳遞
    *
    * @example
    * ```typescript
-   * client.connect('game-123')
+   * // 新遊戲
+   * client.connect({ playerId: 'player-1', playerName: 'Alice' })
+   *
+   * // 重連
+   * client.connect({ playerId: 'player-1', playerName: 'Alice', gameId: 'game-123' })
    * ```
    */
-  connect(gameId: string): void {
-    // session_token 由 Cookie 自動傳送，不再需要 query parameter
-    const url = `${this.baseURL}/api/v1/games/${gameId}/events`
+  connect(params: SSEConnectionParams): void {
+    // 保存參數用於重連
+    this.lastConnectionParams = params
+
+    // 構建 URL
+    const queryParams = new URLSearchParams({
+      player_id: params.playerId,
+      player_name: params.playerName,
+    })
+    if (params.gameId) {
+      queryParams.set('game_id', params.gameId)
+    }
+    const url = `${this.baseURL}/api/v1/games/connect?${queryParams.toString()}`
 
     try {
       // EventSource 會自動包含同源 Cookie（包含 session_token）
@@ -93,7 +132,11 @@ export class GameEventClient {
 
       // 連線建立成功
       this.eventSource.onopen = () => {
-        console.info('[SSE] 連線已建立', { gameId })
+        console.info('[SSE] 連線已建立', {
+          playerId: params.playerId,
+          playerName: params.playerName,
+          gameId: params.gameId ?? 'new-game',
+        })
         this.reconnectAttempts = 0
         this.onConnectionEstablishedCallback?.()
       }
@@ -104,7 +147,7 @@ export class GameEventClient {
         this.eventSource?.close()
         this.eventSource = null
         this.onConnectionLostCallback?.()
-        void this.reconnect(gameId)
+        void this.reconnect()
       }
 
       // 註冊所有事件監聽器
@@ -188,10 +231,16 @@ export class GameEventClient {
   }
 
   /**
-   * 自動重連機制 (指數退避)
+   * 自動重連機制（指數退避）
    * @private
    */
-  private async reconnect(gameId: string): Promise<void> {
+  private async reconnect(): Promise<void> {
+    if (!this.lastConnectionParams) {
+      console.error('[SSE] 無法重連：缺少連線參數')
+      this.onConnectionFailedCallback?.()
+      return
+    }
+
     if (this.reconnectAttempts >= this.maxAttempts) {
       console.error(
         `[SSE] 重連失敗，達到最大嘗試次數 (${this.maxAttempts})`
@@ -208,6 +257,6 @@ export class GameEventClient {
     )
 
     await sleep(delay)
-    this.connect(gameId)
+    this.connect(this.lastConnectionParams)
   }
 }

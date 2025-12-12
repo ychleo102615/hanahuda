@@ -104,6 +104,15 @@ export function createNotificationPortAdapter(
       store.hideReconnectionMessage()
     },
 
+    // ===== 等待訊息 =====
+    showWaitingMessage(timeoutSeconds: number): void {
+      store.showWaitingMessage(timeoutSeconds)
+    },
+
+    hideWaitingMessage(): void {
+      store.hideWaitingMessage()
+    },
+
     // ===== 查詢 =====
     isModalVisible(): boolean {
       return (

@@ -95,6 +95,10 @@ export interface UIStateStoreState {
   connectionStatus: ConnectionStatus
   reconnecting: boolean
 
+  // 等待對手狀態
+  waitingForOpponent: boolean
+  waitingTimeoutSeconds: number | null
+
   // 手牌確認模式（兩次點擊）
   handCardConfirmationMode: boolean
   handCardAwaitingConfirmation: string | null
@@ -128,6 +132,7 @@ export interface UIStateStoreActions {
   showDecisionModal(currentYaku: YakuScore[], currentScore: number, potentialScore?: number): void
   showErrorMessage(message: string): void
   showReconnectionMessage(): void
+  showWaitingMessage(timeoutSeconds: number): void
   showGameFinishedModal(winnerId: string | null, finalScores: PlayerScore[], isPlayerWinner: boolean): void
   showRoundDrawnModal(currentTotalScores: PlayerScore[]): void
   showRoundScoredModal(winnerId: string, yakuList: ReadonlyArray<Yaku>, baseScore: number, finalScore: number, multipliers: ScoreMultipliers, updatedTotalScores: PlayerScore[]): void
@@ -141,6 +146,7 @@ export interface UIStateStoreActions {
   hideRoundEndedInstantlyModal(): void
   hideModal(): void
   hideReconnectionMessage(): void
+  hideWaitingMessage(): void
   setConnectionStatus(status: ConnectionStatus): void
   reset(): void
 
@@ -189,6 +195,10 @@ export const useUIStateStore = defineStore('uiState', {
     // 連線狀態
     connectionStatus: 'disconnected',
     reconnecting: false,
+
+    // 等待對手狀態
+    waitingForOpponent: false,
+    waitingTimeoutSeconds: null,
 
     // 手牌確認模式
     handCardConfirmationMode: false,
@@ -313,6 +323,26 @@ export const useUIStateStore = defineStore('uiState', {
           this.infoMessage = null
         }
       }, 3000)
+    },
+
+    /**
+     * 顯示等待對手訊息
+     *
+     * @param timeoutSeconds - 等待超時秒數
+     */
+    showWaitingMessage(timeoutSeconds: number): void {
+      this.waitingForOpponent = true
+      this.waitingTimeoutSeconds = timeoutSeconds
+      console.info('[UIStateStore] Waiting for opponent...', { timeoutSeconds })
+    },
+
+    /**
+     * 隱藏等待對手訊息
+     */
+    hideWaitingMessage(): void {
+      this.waitingForOpponent = false
+      this.waitingTimeoutSeconds = null
+      console.info('[UIStateStore] Stopped waiting for opponent')
     },
 
     /**

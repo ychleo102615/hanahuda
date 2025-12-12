@@ -50,6 +50,9 @@ export type {
   HandleGameErrorPort,
 } from './event-handlers.port'
 
-// State Recovery Input Ports
+// InitialState Handler Input Port (SSE-First Architecture)
+export { HandleInitialStatePort } from './handle-initial-state.port'
+
+// State Recovery Input Ports (Deprecated - to be removed after migration)
 export { TriggerStateRecoveryPort } from './trigger-state-recovery.port'
 export { HandleStateRecoveryPort } from './handle-state-recovery.port'

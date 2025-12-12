@@ -30,7 +30,7 @@ import { computed, ref } from 'vue'
 import { useUIStateStore } from '../stores/uiState'
 import { useOptionalDependency } from './useDependency'
 import { TOKENS } from '../di/tokens'
-import type { GameEventClient } from '../sse/GameEventClient'
+import type { GameEventClient, SSEConnectionParams } from '../sse/GameEventClient'
 import type { TriggerStateRecoveryPort } from '../../application/ports/input'
 import type { ReconnectionPort } from '../../application/ports/output'
 import type { OperationSessionManager } from '../abort'
@@ -52,8 +52,8 @@ export function useSSEConnection() {
   // 區分首次連線與重連
   const isFirstConnection = ref(true)
 
-  // 儲存當前 gameId 供重連使用
-  let currentGameId: string | null = null
+  // 儲存當前連線參數供重連使用
+  let currentParams: SSEConnectionParams | null = null
 
   /**
    * 當前是否已連線
@@ -66,22 +66,22 @@ export function useSSEConnection() {
   const isConnecting = computed(() => uiStore.connectionStatus === 'connecting')
 
   /**
-   * 建立 SSE 連線
+   * 建立 SSE 連線（SSE-First Architecture）
    *
-   * @param gameId - 遊戲 ID
+   * @param params - 連線參數
    *
    * @note session_token 由 HttpOnly Cookie 自動傳送，無需手動傳遞
    */
-  function connect(gameId: string): void {
+  function connect(params: SSEConnectionParams): void {
     if (!gameEventClient) {
       console.warn('[useSSEConnection] GameEventClient 未註冊，跳過 SSE 連線（可能為 mock 模式）')
       return
     }
 
-    console.info('[useSSEConnection] 建立 SSE 連線', { gameId })
+    console.info('[useSSEConnection] 建立 SSE 連線', params)
 
-    // 儲存 gameId 供重連使用
-    currentGameId = gameId
+    // 儲存連線參數供重連使用
+    currentParams = params
 
     // 更新連線狀態為 connecting
     uiStore.setConnectionStatus('connecting')
@@ -116,8 +116,8 @@ export function useSSEConnection() {
         }
 
         // 觸發狀態恢復
-        if (triggerStateRecovery && currentGameId) {
-          void triggerStateRecovery.execute(currentGameId)
+        if (triggerStateRecovery && currentParams?.gameId) {
+          void triggerStateRecovery.execute(currentParams.gameId)
         } else {
           console.warn('[useSSEConnection] 無法觸發狀態恢復：缺少 TriggerStateRecoveryPort 或 gameId')
           uiStore.hideReconnectionMessage()
@@ -138,7 +138,7 @@ export function useSSEConnection() {
     })
 
     // 建立連線（session_token 由 Cookie 自動傳送）
-    gameEventClient.connect(gameId)
+    gameEventClient.connect(params)
   }
 
   /**
@@ -157,23 +157,18 @@ export function useSSEConnection() {
   /**
    * 建立 SSE 連線，但跳過自動狀態恢復
    *
-   * @param gameId - 遊戲 ID
+   * @param params - 連線參數
    *
    * @description
    * 用於頁面恢復可見後的重連場景。
    * 此時狀態已由 usePageVisibility 恢復，不需要再觸發 TriggerStateRecoveryUseCase。
    *
-   * @example
-   * ```typescript
-   * // 頁面恢復可見後
-   * await triggerStateRecovery.execute(gameId)
-   * sseConnection.connectWithoutRecovery(gameId)
-   * ```
+   * @deprecated SSE-First 架構中，狀態恢復由後端透過 InitialState 事件處理
    */
-  function connectWithoutRecovery(gameId: string): void {
-    console.info('[useSSEConnection] 建立 SSE 連線（跳過自動狀態恢復）', { gameId })
+  function connectWithoutRecovery(params: SSEConnectionParams): void {
+    console.info('[useSSEConnection] 建立 SSE 連線（跳過自動狀態恢復）', params)
     uiStore.setSkipNextSSERecovery(true)
-    connect(gameId)
+    connect(params)
   }
 
   return {

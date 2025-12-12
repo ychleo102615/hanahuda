@@ -258,6 +258,36 @@ export interface NotificationPort {
    */
   isModalVisible(): boolean
 
+  // ===== 等待訊息 =====
+
+  /**
+   * 顯示等待對手訊息
+   *
+   * @description
+   * 遊戲建立後等待對手加入時顯示的提示訊息。
+   *
+   * @param timeoutSeconds - 等待超時秒數
+   *
+   * @example
+   * ```typescript
+   * notification.showWaitingMessage(120) // 等待 120 秒
+   * ```
+   */
+  showWaitingMessage(timeoutSeconds: number): void
+
+  /**
+   * 隱藏等待對手訊息
+   *
+   * @description
+   * 對手已加入或超時時隱藏等待訊息。
+   *
+   * @example
+   * ```typescript
+   * notification.hideWaitingMessage()
+   * ```
+   */
+  hideWaitingMessage(): void
+
   // ===== 倒數計時 =====
 
   /**

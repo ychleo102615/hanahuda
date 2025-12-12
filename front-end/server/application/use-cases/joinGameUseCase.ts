@@ -31,6 +31,9 @@ import type {
   JoinGameInput,
   JoinGameOutput,
   JoinGameSuccessOutput,
+  JoinGameWaitingOutput,
+  JoinGameStartedOutput,
+  JoinGameSnapshotOutput,
 } from '~~/server/application/ports/input/joinGameInputPort'
 import { gameConfig } from '~~/server/utils/config'
 
@@ -72,7 +75,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
     // 1. 重連模式：如果提供了 gameId，明確表示要重連特定遊戲
     if (gameId) {
-      return this.handleReconnectionMode(gameId, playerId, sessionToken)
+      return this.handleReconnectionMode(gameId, playerId, playerName, sessionToken)
     }
 
     // 2. 新遊戲模式：沒有提供 gameId，開始新遊戲
@@ -100,12 +103,14 @@ export class JoinGameUseCase implements JoinGameInputPort {
    *
    * @param gameId - 要重連的遊戲 ID
    * @param playerId - 玩家 ID
+   * @param playerName - 玩家名稱
    * @param sessionToken - 會話 Token
    * @returns 加入遊戲結果
    */
   private async handleReconnectionMode(
     gameId: string,
     playerId: string,
+    playerName: string,
     sessionToken?: string
   ): Promise<JoinGameOutput> {
     console.log(`[JoinGameUseCase] Reconnection mode for game ${gameId}, player ${playerId}`)
@@ -128,7 +133,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
         return { status: 'game_expired', gameId }
       }
 
-      return this.handleReconnection(memoryGame, playerId, token)
+      return this.handleReconnection(memoryGame, playerId, playerName, token)
     }
 
     // 2. 記憶體沒有，查資料庫
@@ -172,44 +177,56 @@ export class JoinGameUseCase implements JoinGameInputPort {
   /**
    * 處理重連
    *
-   * @description
-   * 1. 驗證玩家是否屬於此遊戲
-   * 2. 檢查遊戲狀態
-   * 3. 若遊戲 IN_PROGRESS → 排程發送 GameSnapshotRestore 事件
-   * 4. 若遊戲 WAITING → 僅回傳連線資訊（等待對手）
-   * 5. 若遊戲 FINISHED → 拋出錯誤
+   * SSE-First 架構：
+   * - 若遊戲 IN_PROGRESS → 返回 snapshot（包含完整遊戲狀態）
+   * - 若遊戲 WAITING → 返回 game_waiting（等待對手）
+   * - 若遊戲 FINISHED → 不應該到達這裡（已在 handleReconnectionMode 處理）
    *
    * @param game - 遊戲
    * @param playerId - 玩家 ID
+   * @param playerName - 玩家名稱
    * @param sessionToken - 會話 Token
    * @returns 加入遊戲結果
-   * @throws Error 如果遊戲已結束
    */
-  private handleReconnection(game: Game, playerId: string, sessionToken: string): JoinGameSuccessOutput {
+  private handleReconnection(
+    game: Game,
+    playerId: string,
+    playerName: string,
+    sessionToken: string
+  ): JoinGameSnapshotOutput | JoinGameWaitingOutput {
     console.log(`[JoinGameUseCase] Reconnection for game ${game.id}, player ${playerId}`)
 
-    // 注意：playerId 驗證已在 execute() 中完成
-
-    // 1. 檢查遊戲狀態
-    if (game.status === 'FINISHED') {
-      throw new Error(`Game ${game.id} has already finished`)
+    // 1. 若遊戲 WAITING → 返回 game_waiting（等待對手）
+    if (game.status === 'WAITING') {
+      console.log(`[JoinGameUseCase] Game ${game.id} is WAITING, returning game_waiting`)
+      return {
+        status: 'game_waiting',
+        gameId: game.id,
+        sessionToken,
+        playerId,
+        playerName,
+        timeoutSeconds: gameConfig.action_timeout_seconds,
+      }
     }
 
-    // 2. 若遊戲 IN_PROGRESS → 排程發送 GameSnapshotRestore 事件
-    if (game.status === 'IN_PROGRESS') {
-      this.scheduleSnapshotEvent(game, playerId)
-    }
+    // 2. 若遊戲 IN_PROGRESS → 返回 snapshot
+    // 取得剩餘超時秒數
+    const remainingSeconds = this.gameTimeoutManager.getRemainingSeconds(game.id)
 
-    // 3. 若遊戲 WAITING → 僅回傳連線資訊（等待對手）
-    // （不需額外處理，直接回傳）
+    // 建立遊戲快照
+    const snapshot = this.eventMapper.toGameSnapshotRestoreEvent(
+      game,
+      remainingSeconds ?? undefined
+    )
+
+    console.log(`[JoinGameUseCase] Returning snapshot for game ${game.id}, remaining: ${remainingSeconds}s`)
 
     return {
-      status: 'success',
+      status: 'snapshot',
       gameId: game.id,
       sessionToken,
       playerId,
-      sseEndpoint: `/api/v1/games/${game.id}/events`,
-      reconnected: true,
+      snapshot,
     }
   }
 
@@ -236,49 +253,12 @@ export class JoinGameUseCase implements JoinGameInputPort {
     return null // 平局
   }
 
-  /**
-   * 排程發送 GameSnapshotRestore 事件
-   *
-   * @description
-   * 延遲發送，給 SSE 連線建立時間。
-   *
-   * @param game - 遊戲
-   * @param playerId - 重連的玩家 ID
-   */
-  private scheduleSnapshotEvent(game: Game, playerId: string): void {
-    setTimeout(() => {
-      try {
-        // 從記憶體取得最新的遊戲狀態（因為可能在延遲期間有更新）
-        const currentGame = this.gameStore.get(game.id)
-        if (!currentGame || currentGame.status !== 'IN_PROGRESS') {
-          console.log(`[JoinGameUseCase] Game ${game.id} is no longer in progress, skipping snapshot`)
-          return
-        }
-
-        // 取得剩餘超時秒數
-        const remainingSeconds = this.gameTimeoutManager.getRemainingSeconds(game.id)
-
-        // 建立並發送 GameSnapshotRestore 事件（使用剩餘時間）
-        const snapshotEvent = this.eventMapper.toGameSnapshotRestoreEvent(
-          currentGame,
-          remainingSeconds ?? undefined
-        )
-        this.eventPublisher.publishToPlayer(game.id, playerId, snapshotEvent)
-
-        console.log(`[JoinGameUseCase] GameSnapshotRestore event sent to player ${playerId} for game ${game.id}, remaining: ${remainingSeconds}s`)
-      } catch (error) {
-        console.error(
-          `[JoinGameUseCase] Failed to send GameSnapshotRestore for game ${game.id}:`,
-          error
-        )
-      }
-    }, INITIAL_EVENT_DELAY_MS)
-  }
 
   /**
    * 建立新遊戲（WAITING 狀態）
    *
    * 不發牌、不開始遊戲，等待第二位玩家加入。
+   * SSE-First 架構：返回 game_waiting 狀態。
    *
    * @param playerId - 玩家 ID
    * @param playerName - 玩家名稱
@@ -288,7 +268,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
     playerId: string,
     playerName: string,
     roomType?: RoomTypeId
-  ): Promise<JoinGameSuccessOutput> {
+  ): Promise<JoinGameWaitingOutput> {
     const gameId = randomUUID()
     const sessionToken = randomUUID()
 
@@ -322,13 +302,14 @@ export class JoinGameUseCase implements JoinGameInputPort {
       waitingPlayerId: playerId,
     })
 
+    // SSE-First: 返回 game_waiting 狀態（前端顯示等待畫面）
     return {
-      status: 'success',
+      status: 'game_waiting',
       gameId: game.id,
       sessionToken,
       playerId,
-      sseEndpoint: `/api/v1/games/${game.id}/events`,
-      reconnected: false,
+      playerName,
+      timeoutSeconds: gameConfig.action_timeout_seconds,
     }
   }
 
@@ -336,12 +317,16 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * 加入現有遊戲（成為 Player 2）
    *
    * 將遊戲狀態改為 IN_PROGRESS，發牌，並推送初始事件。
+   * SSE-First 架構：返回 game_started 狀態。
+   *
+   * 注意：scheduleInitialEvents 仍會執行，發送 GameStarted 和 RoundDealt 給所有玩家。
+   * InitialState 只是告訴當前連線的玩家初始狀態，GameStarted/RoundDealt 是廣播事件。
    */
   private async joinExistingGame(
     waitingGame: Game,
     playerId: string,
     playerName: string
-  ): Promise<JoinGameSuccessOutput> {
+  ): Promise<JoinGameStartedOutput> {
     const sessionToken = randomUUID()
 
     const secondPlayer = createPlayer({
@@ -384,15 +369,25 @@ export class JoinGameUseCase implements JoinGameInputPort {
     )
 
     // 排程初始事件（延遲讓客戶端建立 SSE 連線）
+    // GameStarted 和 RoundDealt 會廣播給所有玩家
     this.scheduleInitialEvents(game)
 
+    // SSE-First: 返回 game_started 狀態
     return {
-      status: 'success',
+      status: 'game_started',
       gameId: game.id,
       sessionToken,
       playerId,
-      sseEndpoint: `/api/v1/games/${game.id}/events`,
-      reconnected: false,
+      players: game.players.map(p => ({
+        playerId: p.id,
+        playerName: p.name,
+        isAi: p.isAi,
+      })),
+      ruleset: {
+        totalRounds: game.ruleset.total_rounds,
+        targetScore: game.ruleset.target_score,
+      },
+      startingPlayerId: game.currentRound?.activePlayerId ?? game.players[0]?.id ?? '',
     }
   }
 

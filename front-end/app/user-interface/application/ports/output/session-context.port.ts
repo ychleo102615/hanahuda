@@ -42,6 +42,17 @@ export abstract class SessionContextPort {
   abstract getGameId(): string | null
 
   /**
+   * 設定遊戲 ID
+   *
+   * @param gameId - 遊戲 ID，傳入 null 可清除
+   *
+   * @description
+   * 用於 SSE 連線後收到 InitialState 時設定遊戲 ID，
+   * 或遊戲結束/過期時清除遊戲 ID。
+   */
+  abstract setGameId(gameId: string | null): void
+
+  /**
    * 取得玩家 ID
    *
    * @returns 玩家 ID，若無則返回 null

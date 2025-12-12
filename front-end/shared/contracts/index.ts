@@ -42,6 +42,10 @@ export type {
   SnapshotApiResponseFinished,
   SnapshotApiResponseExpired,
   SnapshotApiResponse,
+  // InitialState Types (SSE-First)
+  InitialStateResponseType,
+  GameWaitingData,
+  GameStartedData,
 } from './shared'
 
 // Commands
@@ -50,6 +54,10 @@ export type { TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision } from './co
 // Events
 export type {
   BaseEvent,
+  // InitialState (SSE-First)
+  InitialStateData,
+  InitialStateEvent,
+  // Game Events
   GameStartedEvent,
   RoundDealtEvent,
   TurnCompletedEvent,

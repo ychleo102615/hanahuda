@@ -124,8 +124,12 @@ export function useGameReconnection() {
       // 3. 建立連線（根據遊戲模式）
       if (gameMode === 'backend') {
         // Backend 模式：建立 SSE 連線
-        // 後端會在 SSE 連線建立後推送 GameSnapshotRestore 事件
-        connectSSE(response.game_id)
+        // 後端會在 SSE 連線建立後推送 InitialState 事件（SSE-First Architecture）
+        connectSSE({
+          playerId: response.player_id,
+          playerName: 'Player', // 重連時使用預設名稱
+          gameId: response.game_id,
+        })
         console.info('[useGameReconnection] SSE connection established')
       } else if (gameMode === 'mock' && mockEventEmitter) {
         // Mock 模式：啟動事件腳本

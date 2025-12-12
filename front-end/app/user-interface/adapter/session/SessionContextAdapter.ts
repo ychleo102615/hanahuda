@@ -43,6 +43,23 @@ export class SessionContextAdapter extends SessionContextPort {
   }
 
   /**
+   * 設定遊戲 ID
+   *
+   * @param gameId - 遊戲 ID，傳入 null 可清除
+   */
+  setGameId(gameId: string | null): void {
+    if (typeof window === 'undefined') {
+      console.warn('[SessionContextAdapter] Cannot set gameId on server-side')
+      return
+    }
+    if (gameId === null) {
+      sessionStorage.removeItem(STORAGE_KEYS.gameId)
+    } else {
+      sessionStorage.setItem(STORAGE_KEYS.gameId, gameId)
+    }
+  }
+
+  /**
    * 取得玩家 ID
    *
    * @returns 玩家 ID，若無則返回 null

@@ -126,9 +126,29 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
     })
 
     // 5. 根據結果類型處理回應
+    // 注意：此端點為過渡期支援，新架構請使用 GET /api/v1/games/connect
     switch (result.status) {
+      // SSE-First 新狀態（將 game_waiting 和 game_started 映射到舊格式）
+      case 'game_waiting':
+      case 'game_started':
+      case 'snapshot': {
+        // 設定 HttpOnly Cookie 存放 session_token
+        setSessionCookie(event, result.sessionToken)
+        logger.info('Session cookie set', { gameId: result.gameId, status: result.status })
+
+        setResponseStatus(event, 201)
+        return {
+          data: {
+            game_id: result.gameId,
+            player_id: result.playerId,
+            sse_endpoint: `/api/v1/games/connect?player_id=${result.playerId}&player_name=Player&game_id=${result.gameId}`,
+          },
+          timestamp: new Date().toISOString(),
+        }
+      }
+
       case 'success': {
-        // 5a. 成功加入/重連遊戲
+        // 5a. 舊版成功加入/重連遊戲（向後兼容）
         // 設定 HttpOnly Cookie 存放 session_token
         setSessionCookie(event, result.sessionToken)
         logger.info('Session cookie set', { gameId: result.gameId })
@@ -180,6 +200,12 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
           },
           timestamp: new Date().toISOString(),
         }
+      }
+
+      default: {
+        // 確保窮舉檢查
+        const _exhaustiveCheck: never = result
+        throw new Error(`Unexpected status: ${(_exhaustiveCheck as { status: string }).status}`)
       }
     }
   } catch (error) {

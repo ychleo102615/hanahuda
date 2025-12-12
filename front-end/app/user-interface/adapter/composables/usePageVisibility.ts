@@ -34,7 +34,7 @@ import { useUIStateStore } from '../stores/uiState'
 import { TOKENS } from '../di/tokens'
 import type { TriggerStateRecoveryPort } from '../../application/ports/input'
 import type { SessionContextPort, ReconnectionPort } from '../../application/ports/output'
-import type { GameEventClient } from '../sse/GameEventClient'
+import type { GameEventClient, SSEConnectionParams } from '../sse/GameEventClient'
 import type { OperationSessionManager } from '../abort'
 
 /**
@@ -137,9 +137,19 @@ export function usePageVisibility() {
 
     // 5. 重新建立 SSE 連線（跳過自動狀態恢復）
     if (gameEventClient) {
-      uiStore.setSkipNextSSERecovery(true)
-      gameEventClient.connect(gameId)
-      console.info('[usePageVisibility] SSE 已重新連線（跳過自動狀態恢復）')
+      const playerId = sessionContext?.getPlayerId()
+      if (playerId) {
+        const params: SSEConnectionParams = {
+          playerId,
+          playerName: 'Player', // 重連時使用預設名稱
+          gameId,
+        }
+        uiStore.setSkipNextSSERecovery(true)
+        gameEventClient.connect(params)
+        console.info('[usePageVisibility] SSE 已重新連線（跳過自動狀態恢復）')
+      } else {
+        console.warn('[usePageVisibility] 無法重連：缺少 playerId')
+      }
     }
 
     console.info('[usePageVisibility] 狀態恢復流程完成')

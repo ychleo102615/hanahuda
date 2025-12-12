@@ -21,6 +21,10 @@ import type {
   ScoreMultipliers,
   KoiStatus,
   Ruleset,
+  InitialStateResponseType,
+  GameWaitingData,
+  GameStartedData,
+  GameFinishedInfo,
 } from './shared'
 import type { FlowState } from './flow-state'
 import type { ErrorCode, GameErrorCode, SuggestedAction, RoundEndReason } from './errors'
@@ -357,10 +361,60 @@ export interface GameSnapshotRestore extends BaseEvent {
   readonly decision_context?: DecisionContext
 }
 
+// ============================================================================
+// InitialState 事件（SSE-First 架構）
+// ============================================================================
+
+/**
+ * InitialState 事件的資料型別（根據 response_type 不同）
+ */
+export type InitialStateData =
+  | GameWaitingData
+  | GameStartedData
+  | GameSnapshotRestore
+  | GameFinishedInfo
+  | null
+
+/**
+ * InitialState 事件
+ *
+ * @description
+ * SSE 連線後第一個推送的事件，包含完整的初始狀態。
+ * 統一處理新遊戲加入和斷線重連的情境。
+ *
+ * 前端根據 response_type 決定處理方式：
+ * - `game_waiting`: 顯示等待對手畫面
+ * - `game_started`: 設定初始狀態，準備接收 RoundDealt
+ * - `snapshot`: 恢復進行中的遊戲狀態（無動畫）
+ * - `game_finished`: 顯示遊戲結果，導航回大廳
+ * - `game_expired`: 顯示錯誤訊息，導航回大廳
+ */
+export interface InitialStateEvent extends BaseEvent {
+  readonly event_type: 'InitialState'
+  /** 回應類型，決定 data 的型別 */
+  readonly response_type: InitialStateResponseType
+  /** 遊戲 ID */
+  readonly game_id: string
+  /** 玩家 ID（發出此請求的玩家） */
+  readonly player_id: string
+  /**
+   * 事件資料
+   *
+   * 根據 response_type 的不同：
+   * - game_waiting: GameWaitingData
+   * - game_started: GameStartedData
+   * - snapshot: GameSnapshotRestore
+   * - game_finished: GameFinishedInfo
+   * - game_expired: null
+   */
+  readonly data: InitialStateData
+}
+
 /**
  * 所有遊戲事件的聯合型別
  */
 export type GameEvent =
+  | InitialStateEvent
   | GameStartedEvent
   | RoundDealtEvent
   | TurnCompletedEvent

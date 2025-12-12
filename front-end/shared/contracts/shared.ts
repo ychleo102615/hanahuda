@@ -208,3 +208,61 @@ export type SnapshotApiResponse =
   | SnapshotApiResponseSnapshot
   | SnapshotApiResponseFinished
   | SnapshotApiResponseExpired
+
+// ============================================================================
+// InitialState 相關類型（SSE-First 架構）
+// ============================================================================
+
+/**
+ * InitialState 回應類型
+ *
+ * @description
+ * SSE 連線後第一個事件的類型，用於區分不同情境：
+ * - `game_waiting`: 新遊戲，等待對手加入
+ * - `game_started`: 新遊戲，對手已加入，遊戲開始
+ * - `snapshot`: 重連，恢復進行中的遊戲狀態
+ * - `game_finished`: 重連，遊戲已結束
+ * - `game_expired`: 重連，遊戲已過期
+ */
+export type InitialStateResponseType =
+  | 'game_waiting'
+  | 'game_started'
+  | 'snapshot'
+  | 'game_finished'
+  | 'game_expired'
+
+/**
+ * 等待對手加入的資料
+ *
+ * @description
+ * 當玩家加入新遊戲但對手尚未加入時返回。
+ * 前端顯示等待畫面，等待後續 GameStarted 事件。
+ */
+export interface GameWaitingData {
+  /** 遊戲 ID */
+  readonly game_id: string
+  /** 玩家 ID */
+  readonly player_id: string
+  /** 玩家名稱 */
+  readonly player_name: string
+  /** 配對超時秒數 */
+  readonly timeout_seconds: number
+}
+
+/**
+ * 遊戲開始的資料
+ *
+ * @description
+ * 當雙方玩家都加入後，遊戲開始。
+ * 此資料結構與 GameStartedEvent 保持一致（不含 event_id, timestamp）。
+ */
+export interface GameStartedData {
+  /** 遊戲 ID */
+  readonly game_id: string
+  /** 玩家列表 */
+  readonly players: ReadonlyArray<PlayerInfo>
+  /** 遊戲規則集 */
+  readonly ruleset: Ruleset
+  /** 先手玩家 ID */
+  readonly starting_player_id: string
+}
