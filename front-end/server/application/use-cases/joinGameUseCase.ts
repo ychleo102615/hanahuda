@@ -24,12 +24,14 @@ import type { InternalEventPublisherPort } from '~~/server/application/ports/out
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { EventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
+import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type {
   JoinGameInputPort,
   JoinGameInput,
   JoinGameOutput,
   JoinGameSuccessOutput,
 } from '~~/server/application/ports/input/joinGameInputPort'
+import { gameConfig } from '~~/server/utils/config'
 
 /**
  * 初始事件延遲（毫秒）
@@ -54,7 +56,8 @@ export class JoinGameUseCase implements JoinGameInputPort {
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: EventMapperPort,
     private readonly internalEventPublisher: InternalEventPublisherPort,
-    private readonly actionTimeout: ActionTimeoutPort
+    private readonly actionTimeout: ActionTimeoutPort,
+    private readonly autoActionUseCase?: AutoActionInputPort
   ) {}
 
   /**
@@ -395,6 +398,12 @@ export class JoinGameUseCase implements JoinGameInputPort {
         const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
         this.eventPublisher.publishToGame(game.id, roundDealtEvent)
 
+        // 啟動第一位玩家的操作超時計時器
+        const firstPlayerId = game.currentRound?.activePlayerId
+        if (firstPlayerId) {
+          this.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
+        }
+
         console.log(`[JoinGameUseCase] Initial events published for game ${game.id}`)
       } catch (error) {
         console.error(
@@ -403,5 +412,37 @@ export class JoinGameUseCase implements JoinGameInputPort {
         )
       }
     }, INITIAL_EVENT_DELAY_MS)
+  }
+
+  /**
+   * 為玩家啟動操作超時計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param flowState - 目前流程狀態
+   */
+  private startTimeoutForPlayer(
+    gameId: string,
+    playerId: string,
+    flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
+  ): void {
+    if (!this.autoActionUseCase) {
+      return
+    }
+
+    this.actionTimeout.startTimeout(
+      gameId,
+      gameConfig.action_timeout_seconds,
+      () => {
+        console.log(`[JoinGameUseCase] Timeout for player ${playerId} in game ${gameId}, executing auto-action`)
+        this.autoActionUseCase!.execute({
+          gameId,
+          playerId,
+          currentFlowState: flowState,
+        }).catch((error) => {
+          console.error(`[JoinGameUseCase] Auto-action failed:`, error)
+        })
+      }
+    )
   }
 }

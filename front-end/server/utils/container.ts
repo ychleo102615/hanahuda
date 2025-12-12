@@ -71,14 +71,17 @@ const joinGameUseCase: JoinGameInputPort = new JoinGameUseCase(
   inMemoryGameStore,
   eventMapper,
   internalEventBus,
-  actionTimeoutManager
+  actionTimeoutManager,
+  { execute: (input) => getAutoActionUseCase().execute(input) }
 )
 
 const joinGameAsAiUseCase: JoinGameAsAiInputPort = new JoinGameAsAiUseCase(
   gameRepository,
   compositeEventPublisher,
   inMemoryGameStore,
-  eventMapper
+  eventMapper,
+  actionTimeoutManager,
+  { execute: (input) => getAutoActionUseCase().execute(input) }
 )
 
 const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(

@@ -21,11 +21,14 @@ import type { GameRepositoryPort } from '~~/server/application/ports/output/game
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { EventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
+import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import {
   JoinGameAsAiInputPort,
   type JoinGameAsAiInput,
   type JoinGameAsAiOutput,
 } from '~~/server/application/ports/input/joinGameAsAiInputPort'
+import { gameConfig } from '~~/server/utils/config'
 
 /**
  * 初始事件延遲（毫秒）
@@ -44,7 +47,9 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
-    private readonly eventMapper: EventMapperPort
+    private readonly eventMapper: EventMapperPort,
+    private readonly actionTimeout?: ActionTimeoutPort,
+    private readonly autoActionUseCase?: AutoActionInputPort
   ) {
     super()
   }
@@ -152,6 +157,12 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
         const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
         this.eventPublisher.publishToGame(game.id, roundDealtEvent)
 
+        // 啟動第一位玩家的操作超時計時器
+        const firstPlayerId = game.currentRound?.activePlayerId
+        if (firstPlayerId) {
+          this.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
+        }
+
         console.log(`[JoinGameAsAiUseCase] Initial events published for game ${game.id}`)
       } catch (error) {
         console.error(
@@ -160,5 +171,37 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
         )
       }
     }, INITIAL_EVENT_DELAY_MS)
+  }
+
+  /**
+   * 為玩家啟動操作超時計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param flowState - 目前流程狀態
+   */
+  private startTimeoutForPlayer(
+    gameId: string,
+    playerId: string,
+    flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
+  ): void {
+    if (!this.actionTimeout || !this.autoActionUseCase) {
+      return
+    }
+
+    this.actionTimeout.startTimeout(
+      gameId,
+      gameConfig.action_timeout_seconds,
+      () => {
+        console.log(`[JoinGameAsAiUseCase] Timeout for player ${playerId} in game ${gameId}, executing auto-action`)
+        this.autoActionUseCase!.execute({
+          gameId,
+          playerId,
+          currentFlowState: flowState,
+        }).catch((error) => {
+          console.error(`[JoinGameAsAiUseCase] Auto-action failed:`, error)
+        })
+      }
+    )
   }
 }
