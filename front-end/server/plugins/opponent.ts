@@ -22,13 +22,13 @@ import { container } from '~~/server/utils/container'
 
 export default defineNitroPlugin(() => {
   // 建立 OpponentRegistry（注入依賴）
+  // 注意：不再需要注入 actionTimeoutManager，Opponent BC 使用內部的 aiActionScheduler
   const opponentRegistry = new OpponentRegistry({
     internalEventBus: container.internalEventBus,
     joinGameAsAi: container.joinGameAsAiUseCase,
     playHandCard: container.playHandCardUseCase,
     selectTarget: container.selectTargetUseCase,
     makeDecision: container.makeDecisionUseCase,
-    actionTimeoutManager: container.actionTimeoutManager,
     gameStore: container.gameStore,
   })
 

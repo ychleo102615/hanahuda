@@ -21,9 +21,9 @@ import type { AiStrategyType } from '~~/server/application/ports/input/joinGameA
 import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
 import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
-import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import { findMatchableTargets } from '~~/server/domain/services/matchingService'
+import { aiActionScheduler } from './aiActionScheduler'
 
 /**
  * AI 延遲設定（毫秒）
@@ -39,12 +39,15 @@ const AI_DELAYS = {
 
 /**
  * OpponentInstance 依賴
+ *
+ * @description
+ * 只依賴 Input Ports 和 GameStore。
+ * 計時器使用 Opponent BC 內部的 aiActionScheduler。
  */
 export interface OpponentInstanceDependencies {
   readonly playHandCard: PlayHandCardInputPort
   readonly selectTarget: SelectTargetInputPort
   readonly makeDecision: MakeDecisionInputPort
-  readonly actionTimeoutManager: ActionTimeoutPort
   readonly gameStore: GameStorePort
 }
 
@@ -74,6 +77,9 @@ export class OpponentInstance {
    * 這是 OpponentInstance 的核心方法。
    * 遵循 Tell, Don't Ask 原則：自己判斷是否該行動。
    *
+   * 注意：有些事件（如 SelectionRequired、DecisionRequired）沒有 next_state，
+   * 需要直接從事件的 player_id 判斷是否輪到 AI。
+   *
    * @param event - 遊戲事件
    */
   handleEvent(event: GameEvent): void {
@@ -82,9 +88,32 @@ export class OpponentInstance {
       return
     }
 
-    // 只處理有 next_state 的事件
+    // 特殊事件處理：SelectionRequired 和 DecisionRequired 沒有 next_state
+    // 需要直接從 player_id 判斷是否輪到 AI
+    if (event.event_type === 'SelectionRequired') {
+      if (event.player_id === this.playerId) {
+        console.log(
+          `[OpponentInstance] AI turn: AWAITING_SELECTION for player ${this.playerId} in game ${this.gameId}`
+        )
+        this.scheduleSelectTarget(event)
+      }
+      return
+    }
+
+    if (event.event_type === 'DecisionRequired') {
+      if (event.player_id === this.playerId) {
+        console.log(
+          `[OpponentInstance] AI turn: AWAITING_DECISION for player ${this.playerId} in game ${this.gameId}`
+        )
+        this.scheduleDecision()
+      }
+      return
+    }
+
+    // 標準事件處理：需要有 next_state 的事件
+    if (!('next_state' in event) || !event.next_state) return
+
     const nextState = event.next_state
-    if (!nextState) return
 
     // 只處理輪到自己的事件（Tell, Don't Ask）
     const nextPlayerId = nextState.active_player_id
@@ -100,10 +129,14 @@ export class OpponentInstance {
         this.scheduleHandPlay()
         break
       case 'AWAITING_SELECTION':
-        this.scheduleSelectTarget(event)
+        // 這是從其他事件（如 TurnCompleted）轉換而來的情況
+        // 實際上不應該發生，因為 SelectionRequired 會直接觸發
+        console.warn(`[OpponentInstance] Unexpected AWAITING_SELECTION from next_state`)
         break
       case 'AWAITING_DECISION':
-        this.scheduleDecision()
+        // 這是從其他事件轉換而來的情況
+        // 實際上不應該發生，因為 DecisionRequired 會直接觸發
+        console.warn(`[OpponentInstance] Unexpected AWAITING_DECISION from next_state`)
         break
     }
   }
@@ -114,7 +147,7 @@ export class OpponentInstance {
   private scheduleHandPlay(): void {
     const delay = this.getActionDelay()
 
-    this.deps.actionTimeoutManager.scheduleAction(this.gameId, delay, async () => {
+    aiActionScheduler.schedule(this.gameId, delay, async () => {
       if (this.isDisposed) return
 
       try {
@@ -159,7 +192,7 @@ export class OpponentInstance {
   private scheduleSelectTarget(event: GameEvent): void {
     const delay = this.getActionDelay()
 
-    this.deps.actionTimeoutManager.scheduleAction(this.gameId, delay, async () => {
+    aiActionScheduler.schedule(this.gameId, delay, async () => {
       if (this.isDisposed) return
 
       try {
@@ -203,7 +236,7 @@ export class OpponentInstance {
   private scheduleDecision(): void {
     const delay = this.getActionDelay()
 
-    this.deps.actionTimeoutManager.scheduleAction(this.gameId, delay, async () => {
+    aiActionScheduler.schedule(this.gameId, delay, async () => {
       if (this.isDisposed) return
 
       try {
@@ -312,7 +345,7 @@ export class OpponentInstance {
     if (this.isDisposed) return
 
     this.isDisposed = true
-    this.deps.actionTimeoutManager.clearAllForGame(this.gameId)
+    aiActionScheduler.cancel(this.gameId)
     console.log(`[OpponentInstance] Disposed for game ${this.gameId}`)
   }
 

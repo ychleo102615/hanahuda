@@ -2,9 +2,12 @@
  * ActionTimeoutPort - Output Port
  *
  * @description
- * 操作超時管理 Port。
- * Application Layer 透過此 Port 管理遊戲的操作超時。
+ * 操作超時管理 Port（CoreGame BC 專用）。
+ * Application Layer 透過此 Port 管理玩家的操作超時。
  * 每個遊戲同時只會有一個計時器（回合制）。
+ *
+ * 注意：AI 的延遲操作由 Opponent BC 內部的 aiActionScheduler 處理，
+ * 不使用此 Port。
  *
  * @module server/application/ports/output/actionTimeoutPort
  */
@@ -28,15 +31,6 @@ export interface ActionTimeoutPort {
    * @param gameId 遊戲 ID
    */
   clearTimeout(gameId: string): void
-
-  /**
-   * 排程延遲執行
-   *
-   * @param gameId 遊戲 ID
-   * @param delayMs 延遲毫秒數
-   * @param callback 回調函數
-   */
-  scheduleAction(gameId: string, delayMs: number, callback: () => void): void
 
   /**
    * 取得指定遊戲的剩餘超時秒數

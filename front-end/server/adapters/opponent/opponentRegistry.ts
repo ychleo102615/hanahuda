@@ -23,7 +23,6 @@ import type { JoinGameAsAiInputPort, AiStrategyType } from '~~/server/applicatio
 import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
 import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
 import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
-import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import { opponentStore } from './opponentStore'
 import { OpponentInstance, type OpponentInstanceDependencies } from './opponentInstance'
@@ -48,6 +47,10 @@ interface InternalEventBusLike {
 
 /**
  * OpponentRegistry 依賴
+ *
+ * @description
+ * 只依賴 Input Ports 和 GameStore。
+ * 計時器由 Opponent BC 內部的 aiActionScheduler 處理。
  */
 export interface OpponentRegistryDependencies {
   readonly internalEventBus: InternalEventBusLike
@@ -55,7 +58,6 @@ export interface OpponentRegistryDependencies {
   readonly playHandCard: PlayHandCardInputPort
   readonly selectTarget: SelectTargetInputPort
   readonly makeDecision: MakeDecisionInputPort
-  readonly actionTimeoutManager: ActionTimeoutPort
   readonly gameStore: GameStorePort
 }
 
@@ -133,7 +135,6 @@ export class OpponentRegistry {
       playHandCard: this.deps.playHandCard,
       selectTarget: this.deps.selectTarget,
       makeDecision: this.deps.makeDecision,
-      actionTimeoutManager: this.deps.actionTimeoutManager,
       gameStore: this.deps.gameStore,
     }
 

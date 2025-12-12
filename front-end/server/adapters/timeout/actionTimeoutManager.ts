@@ -2,14 +2,18 @@
  * Action Timeout Manager
  *
  * @description
- * 操作超時管理器，管理遊戲的操作超時計時。
+ * 操作超時管理器，管理玩家的操作超時計時（CoreGame BC 專用）。
  * 每個遊戲同時只會有一個操作超時計時器（回合制）。
  *
  * 職責：
- * - 管理遊戲層級的操作超時
+ * - 管理遊戲層級的操作超時（玩家超時自動操作）
  * - 追蹤計時器開始時間，用於計算剩餘秒數（斷線重連使用）
- * - 排程延遲執行（AI 操作延遲）
+ *
+ * 注意：AI 的延遲操作由 Opponent BC 內部的 aiActionScheduler 處理，
+ * 不使用此管理器。
  */
+
+import type { ActionTimeoutPort } from '~~/server/application/ports/output/actionTimeoutPort'
 
 /**
  * 伺服器端超時緩衝秒數
@@ -39,7 +43,7 @@ interface TimerInfo {
  * 管理遊戲的操作超時計時。
  * 以 gameId 作為 key，每個遊戲最多一個計時器。
  */
-class ActionTimeoutManager {
+class ActionTimeoutManager implements ActionTimeoutPort {
   private timers: Map<string, TimerInfo> = new Map()
 
   /**
@@ -81,25 +85,6 @@ class ActionTimeoutManager {
       this.timers.delete(gameId)
       console.log(`[ActionTimeoutManager] Cleared timeout for game ${gameId}`)
     }
-  }
-
-  /**
-   * 排程延遲執行
-   *
-   * @param gameId 遊戲 ID
-   * @param delayMs 延遲毫秒數
-   * @param callback 回調函數
-   */
-  scheduleAction(gameId: string, delayMs: number, callback: () => void): void {
-    this.clearTimeout(gameId)
-    const timerId = setTimeout(callback, delayMs)
-    // scheduleAction 不用於玩家操作超時，startedAt/totalSeconds 設為 0
-    this.timers.set(gameId, {
-      timerId,
-      startedAt: 0,
-      totalSeconds: 0,
-    })
-    console.log(`[ActionTimeoutManager] Scheduled action for game ${gameId}: ${delayMs}ms`)
   }
 
   /**
