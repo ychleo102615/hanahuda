@@ -81,10 +81,22 @@ export interface GameStateStoreState {
 }
 
 /**
+ * 回合狀態類型
+ *
+ * @description
+ * 用於區分三種回合狀態：
+ * - 'my-turn': 玩家回合
+ * - 'opponent-turn': 對手回合
+ * - 'none': 無活躍玩家（例如遊戲尚未開始、回合切換中、遊戲結束等）
+ */
+export type TurnStatus = 'my-turn' | 'opponent-turn' | 'none'
+
+/**
  * GameStateStore Getters 介面
  */
 export interface GameStateStoreGetters {
   isMyTurn: boolean // 是否為玩家回合
+  turnStatus: TurnStatus // 回合狀態（三態）
   currentFlowStage: FlowState | null // 當前流程階段
   myKoiKoiMultiplier: number // 玩家 Koi-Koi 倍率
   opponentKoiKoiMultiplier: number // 對手 Koi-Koi 倍率
@@ -140,6 +152,21 @@ export const useGameStateStore = defineStore('gameState', {
      */
     isMyTurn(): boolean {
       return this.activePlayerId === this.localPlayerId
+    },
+
+    /**
+     * 回合狀態（三態）
+     *
+     * @returns 'my-turn' | 'opponent-turn' | 'none'
+     */
+    turnStatus(): TurnStatus {
+      if (this.activePlayerId === null) {
+        return 'none'
+      }
+      if (this.activePlayerId === this.localPlayerId) {
+        return 'my-turn'
+      }
+      return 'opponent-turn'
     },
 
     /**

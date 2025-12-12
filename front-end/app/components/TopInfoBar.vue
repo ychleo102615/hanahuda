@@ -40,7 +40,7 @@ const emit = defineEmits<{
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
 
-const { myScore, opponentScore, isMyTurn, deckRemaining, localPlayerId, activePlayerId } = storeToRefs(gameState)
+const { myScore, opponentScore, turnStatus, deckRemaining, localPlayerId, activePlayerId } = storeToRefs(gameState)
 const { connectionStatus, actionTimeoutRemaining } = storeToRefs(uiState)
 
 // 連線狀態顯示
@@ -72,7 +72,14 @@ const connectionStatusClass = computed(() => {
 
 // 回合提示
 const turnText = computed(() => {
-  return isMyTurn.value ? 'Your Turn' : "Opponent's Turn"
+  switch (turnStatus.value) {
+    case 'my-turn':
+      return 'Your Turn'
+    case 'opponent-turn':
+      return "Opponent's Turn"
+    case 'none':
+      return '' // 無活躍玩家時不顯示文字
+  }
 })
 
 // 倒數顯示樣式（低於 5 秒警示）
@@ -113,7 +120,11 @@ const handleMenuClick = () => {
       <slot name="center">
         <!-- Game 模式：回合資訊 -->
         <template v-if="variant === 'game'">
-          <div class="text-sm font-medium" :class="{ 'text-yellow-400': isMyTurn }">
+          <div
+            v-if="turnText"
+            class="text-sm font-medium"
+            :class="{ 'text-yellow-400': turnStatus === 'my-turn' }"
+          >
             {{ turnText }}
           </div>
           <!-- Countdown Display -->
