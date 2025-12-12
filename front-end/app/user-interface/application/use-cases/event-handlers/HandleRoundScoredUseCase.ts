@@ -18,10 +18,11 @@ export class HandleRoundScoredUseCase implements HandleRoundScoredPort {
     // TODO: Post-MVP 實作分數更新動畫
     // 當前直接更新分數，視覺效果由 UI 層的 Pinia store 反應式更新處理
 
-    // 1. 更新分數
-    const player1Score = event.updated_total_scores.find((s) => s.player_id === 'player-1')?.score || 0
-    const player2Score = event.updated_total_scores.find((s) => s.player_id === 'player-2')?.score || 0
-    this.updateUIState.updateScores(player1Score, player2Score)
+    // 1. 更新分數（使用動態 player_id，而非硬編碼）
+    const localPlayerId = this.updateUIState.getLocalPlayerId()
+    const myScore = event.updated_total_scores.find((s) => s.player_id === localPlayerId)?.score ?? 0
+    const opponentScore = event.updated_total_scores.find((s) => s.player_id !== localPlayerId)?.score ?? 0
+    this.updateUIState.updateScores(myScore, opponentScore)
 
     // 2. 顯示回合計分面板
     this.notification.showRoundScoredModal(

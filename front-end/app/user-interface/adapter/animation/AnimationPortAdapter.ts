@@ -24,6 +24,7 @@ import type { CardType } from '../../domain/types'
 import { zoneRegistry, type ZoneRegistry } from './ZoneRegistry'
 import type { ZoneName } from './types'
 import type { AnimationLayerStore } from '../stores'
+import type { useUIStateStore } from '../stores/uiState'
 import { delay, waitForLayout, type OperationSessionManager } from '../abort'
 // AbortOperationError 用於類型檢查（在 catch 中辨識）
 // 注意：不在此處捕獲，讓錯誤自然傳遞到 Use Case
@@ -79,15 +80,18 @@ export class AnimationPortAdapter implements AnimationPort {
   private registry: ZoneRegistry
   private animationLayerStore: AnimationLayerStore
   private operationSession: OperationSessionManager
+  private uiStateStore: ReturnType<typeof useUIStateStore>
 
   constructor(
     registry: ZoneRegistry,
     animationLayerStore: AnimationLayerStore,
-    operationSession: OperationSessionManager
+    operationSession: OperationSessionManager,
+    uiStateStore: ReturnType<typeof useUIStateStore>
   ) {
     this.registry = registry
     this.animationLayerStore = animationLayerStore
     this.operationSession = operationSession
+    this.uiStateStore = uiStateStore
   }
 
   // ===== 動畫方法 =====
@@ -841,6 +845,12 @@ export class AnimationPortAdapter implements AnimationPort {
     const { playedCard, matchedCard, capturedCards, isOpponent, targetCardType } = params
     const hasMatch = matchedCard !== null
 
+    // 在整個序列期間保持 _isAnimating = true，避免子動畫之間的空隙導致 isAnimating() 返回 false
+    this._isAnimating = true
+
+    // 動畫開始前清除懸浮預覽高亮，確保出牌後場牌不再顯示高亮提示
+    this.uiStateStore.clearHandCardHoverPreview()
+
     console.info('[AnimationPort] playCardPlaySequence', {
       playedCard,
       matchedCard,
@@ -849,41 +859,46 @@ export class AnimationPortAdapter implements AnimationPort {
       isOpponent,
     })
 
-    if (hasMatch) {
-      // === 有配對流程 ===
-      // 1. 手牌飛向配對場牌
-      await this.playCardToFieldAnimation(playedCard, isOpponent, matchedCard)
+    try {
+      if (hasMatch) {
+        // === 有配對流程 ===
+        // 1. 手牌飛向配對場牌
+        await this.playCardToFieldAnimation(playedCard, isOpponent, matchedCard)
+        this._isAnimating = true // 子動畫結束會設為 false，重新設為 true
 
-      // 2. 執行配對動畫（pulse → fadeOut）並同時更新獲得區
-      const matchPosition = await this.playMatchAndDepositorySequence(
-        playedCard,
-        matchedCard,
-        [...capturedCards],
-        targetCardType,
-        isOpponent,
-        callbacks,
-        false // 手牌：從手牌區移除
-      )
+        // 2. 執行配對動畫（pulse → fadeOut）並同時更新獲得區
+        const matchPosition = await this.playMatchAndDepositorySequence(
+          playedCard,
+          matchedCard,
+          [...capturedCards],
+          targetCardType,
+          isOpponent,
+          callbacks,
+          false // 手牌：從手牌區移除
+        )
 
-      return { hasMatch: true, matchPosition }
-    } else {
-      // === 無配對流程 ===
-      // 1. 預先隱藏手牌
-      this.hideCards([playedCard])
+        return { hasMatch: true, matchPosition }
+      } else {
+        // === 無配對流程 ===
+        // 1. 預先隱藏手牌
+        this.hideCards([playedCard])
 
-      // 2. 新增場牌 DOM
-      callbacks.onAddFieldCards([playedCard])
+        // 2. 新增場牌 DOM
+        callbacks.onAddFieldCards([playedCard])
 
-      // 3. 等待 DOM 布局
-      await delay(50, this.operationSession.getSignal())
+        // 3. 等待 DOM 布局
+        await delay(50, this.operationSession.getSignal())
 
-      // 4. 播放動畫
-      await this.playCardToFieldAnimation(playedCard, isOpponent, undefined)
+        // 4. 播放動畫
+        await this.playCardToFieldAnimation(playedCard, isOpponent, undefined)
 
-      // 5. 移除手牌 DOM
-      callbacks.onRemoveHandCard(playedCard)
+        // 5. 移除手牌 DOM
+        callbacks.onRemoveHandCard(playedCard)
 
-      return { hasMatch: false, matchPosition: null }
+        return { hasMatch: false, matchPosition: null }
+      }
+    } finally {
+      this._isAnimating = false
     }
   }
 
@@ -900,6 +915,12 @@ export class AnimationPortAdapter implements AnimationPort {
     const { drawnCard, matchedCard, capturedCards, isOpponent, targetCardType } = params
     const hasMatch = matchedCard !== null
 
+    // 在整個序列期間保持 _isAnimating = true，避免子動畫之間的空隙導致 isAnimating() 返回 false
+    this._isAnimating = true
+
+    // 動畫開始前清除懸浮預覽高亮，確保翻牌時場牌不再顯示高亮提示
+    this.uiStateStore.clearHandCardHoverPreview()
+
     console.info('[AnimationPort] playDrawCardSequence', {
       drawnCard,
       matchedCard,
@@ -908,41 +929,47 @@ export class AnimationPortAdapter implements AnimationPort {
       isOpponent,
     })
 
-    // 1. 預先隱藏翻牌（會在場牌區渲染）
-    this.hideCards([drawnCard])
+    try {
+      // 1. 預先隱藏翻牌（會在場牌區渲染）
+      this.hideCards([drawnCard])
 
-    // 2. 新增場牌 DOM（翻牌總是先加入場牌）
-    callbacks.onAddFieldCards([drawnCard])
+      // 2. 新增場牌 DOM（翻牌總是先加入場牌）
+      callbacks.onAddFieldCards([drawnCard])
 
-    // 3. 等待 DOM 布局
-    await delay(50, this.operationSession.getSignal())
+      // 3. 等待 DOM 布局
+      await delay(50, this.operationSession.getSignal())
 
-    // 4. 播放翻牌動畫
-    await this.playFlipFromDeckAnimation(drawnCard)
+      // 4. 播放翻牌動畫
+      await this.playFlipFromDeckAnimation(drawnCard)
+      this._isAnimating = true // 子動畫結束會設為 false，重新設為 true
 
-    if (hasMatch) {
-      // === 有配對流程 ===
-      // 5. 翻牌飛向配對目標
-      await this.playCardToFieldAnimation(drawnCard, isOpponent, matchedCard)
+      if (hasMatch) {
+        // === 有配對流程 ===
+        // 5. 翻牌飛向配對目標
+        await this.playCardToFieldAnimation(drawnCard, isOpponent, matchedCard)
+        this._isAnimating = true // 子動畫結束會設為 false，重新設為 true
 
-      // 6. 執行配對動畫（pulse → fadeOut）並同時更新獲得區
-      const matchPosition = await this.playMatchAndDepositorySequence(
-        drawnCard,
-        matchedCard,
-        [...capturedCards],
-        targetCardType,
-        isOpponent,
-        callbacks,
-        true // 翻牌：從場牌區移除（包括翻出的牌本身）
-      )
+        // 6. 執行配對動畫（pulse → fadeOut）並同時更新獲得區
+        const matchPosition = await this.playMatchAndDepositorySequence(
+          drawnCard,
+          matchedCard,
+          [...capturedCards],
+          targetCardType,
+          isOpponent,
+          callbacks,
+          true // 翻牌：從場牌區移除（包括翻出的牌本身）
+        )
 
-      return { hasMatch: true, matchPosition }
-    } else {
-      // === 無配對流程 ===
-      // 翻牌已在場上，不需要額外處理
-      // 但需要從「新增的場牌」中移除（因為它現在是正式的場牌了）
-      // 注意：這裡不調用 onRemoveFieldCards，因為牌應該留在場上
-      return { hasMatch: false, matchPosition: null }
+        return { hasMatch: true, matchPosition }
+      } else {
+        // === 無配對流程 ===
+        // 翻牌已在場上，不需要額外處理
+        // 但需要從「新增的場牌」中移除（因為它現在是正式的場牌了）
+        // 注意：這裡不調用 onRemoveFieldCards，因為牌應該留在場上
+        return { hasMatch: false, matchPosition: null }
+      }
+    } finally {
+      this._isAnimating = false
     }
   }
 

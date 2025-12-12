@@ -102,6 +102,10 @@ function handleMouseEnter(cardId: string) {
   if (!isMyTurn.value) return
   if (animationPort.isAnimating()) return
 
+  // 只有在等待出手牌階段才顯示懸浮高亮
+  // 出牌後進入其他階段（AWAITING_DECK_DRAW、AWAITING_SELECTION 等）時不顯示
+  if (flowStage.value !== 'AWAITING_HAND_PLAY') return
+
   // 如果是已選中的手牌，不顯示預覽高亮
   if (handCardAwaitingConfirmation.value === cardId) {
     return

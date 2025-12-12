@@ -209,7 +209,8 @@ function registerOutputPorts(container: DIContainer): void {
       const registry = container.resolve(TOKENS.ZoneRegistry) as typeof zoneRegistry
       const animationLayerStore = container.resolve(TOKENS.AnimationLayerStore) as ReturnType<typeof useAnimationLayerStore>
       const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
-      return new AnimationPortAdapter(registry, animationLayerStore, operationSession)
+      const uiState = container.resolve(TOKENS.UIStateStore) as ReturnType<typeof useUIStateStore>
+      return new AnimationPortAdapter(registry, animationLayerStore, operationSession, uiState)
     },
     { singleton: true },
   )
