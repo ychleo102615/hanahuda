@@ -861,7 +861,8 @@ export class AnimationPortAdapter implements AnimationPort {
         [...capturedCards],
         targetCardType,
         isOpponent,
-        callbacks
+        callbacks,
+        false // 手牌：從手牌區移除
       )
 
       return { hasMatch: true, matchPosition }
@@ -931,7 +932,8 @@ export class AnimationPortAdapter implements AnimationPort {
         [...capturedCards],
         targetCardType,
         isOpponent,
-        callbacks
+        callbacks,
+        true // 翻牌：從場牌區移除（包括翻出的牌本身）
       )
 
       return { hasMatch: true, matchPosition }
@@ -952,15 +954,20 @@ export class AnimationPortAdapter implements AnimationPort {
    * 在 pulse 完成後、fadeOut 開始時同步更新獲得區 DOM 並播放淡入動畫，
    * 確保 fadeOut 與 fadeIn 同時執行，語意正確（場牌淡出 = 獲得區淡入）。
    *
+   * @param playedCardId - 打出或翻出的牌
+   * @param fieldCardId - 被配對的場牌
+   * @param isDrawnCard - 是否為翻牌（影響移除邏輯：翻牌從場牌區移除，手牌從手牌區移除）
+   *
    * @private
    */
   private async playMatchAndDepositorySequence(
-    handCardId: string,
+    playedCardId: string,
     fieldCardId: string,
     capturedCards: string[],
     targetType: CardType,
     isOpponent: boolean,
-    callbacks: CardPlayStateCallbacks
+    callbacks: CardPlayStateCallbacks,
+    isDrawnCard: boolean
   ): Promise<{ x: number; y: number } | null> {
     // 1. 獲取場牌位置
     const fieldCardElement = this.registry.findCard(fieldCardId, 'field')
@@ -974,8 +981,8 @@ export class AnimationPortAdapter implements AnimationPort {
     // 2. 隱藏原始卡片（手牌已被 playCardToFieldAnimation 隱藏）
     this.animationLayerStore.hideCards([fieldCardId])
 
-    // 3. 計算手牌偏移位置
-    const handRect = new DOMRect(
+    // 3. 計算打出牌的偏移位置
+    const playedCardRect = new DOMRect(
       fieldRect.x + CARD_OFFSET.X,
       fieldRect.y + CARD_OFFSET.Y,
       fieldRect.width,
@@ -1002,15 +1009,15 @@ export class AnimationPortAdapter implements AnimationPort {
             onComplete: () => {},
           },
           {
-            cardId: handCardId,
-            fromRect: handRect,
-            toRect: handRect,
+            cardId: playedCardId,
+            fromRect: playedCardRect,
+            toRect: playedCardRect,
             onComplete: () => {},
           },
         ],
         groupEffectType: 'pulseToFadeOut',
         onComplete: resolve,
-        boundingBox: calculateBoundingBox([fieldRect, handRect]),
+        boundingBox: calculateBoundingBox([fieldRect, playedCardRect]),
         // pulse 完成後、fadeOut 開始前的回調
         onPulseComplete: () => {
           this.startDepositoryFadeIn(
@@ -1032,9 +1039,15 @@ export class AnimationPortAdapter implements AnimationPort {
     })
 
     // 8. 移除場牌和手牌 DOM
-    const fieldCardsToRemove = capturedCards.filter(id => id !== handCardId)
-    callbacks.onRemoveFieldCards(fieldCardsToRemove)
-    callbacks.onRemoveHandCard(handCardId)
+    if (isDrawnCard) {
+      // 翻牌情況：所有 capturedCards 都在場牌區（包括翻出的牌）
+      callbacks.onRemoveFieldCards([...capturedCards])
+    } else {
+      // 手牌情況：手牌從手牌區移除，其他從場牌區移除
+      const fieldCardsToRemove = capturedCards.filter(id => id !== playedCardId)
+      callbacks.onRemoveFieldCards(fieldCardsToRemove)
+      callbacks.onRemoveHandCard(playedCardId)
+    }
 
     // 9. 等待 FLIP 動畫
     await delay(350, this.operationSession.getSignal())
