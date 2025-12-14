@@ -108,9 +108,13 @@ export interface TurnEventMapperPort extends EventMapperPort {
 
   /**
    * 轉換為 RoundDrawn 事件（流局）
+   *
+   * @param currentScores - 目前累積分數
+   * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
    */
   toRoundDrawnEvent(
-    currentScores: readonly PlayerScore[]
+    currentScores: readonly PlayerScore[],
+    displayTimeoutSeconds?: number
   ): RoundDrawnEvent
 
   /**
@@ -170,6 +174,8 @@ export interface DecisionEventMapperPort extends EventMapperPort {
 
   /**
    * 轉換為 RoundScored 事件
+   *
+   * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
    */
   toRoundScoredEvent(
     game: Game,
@@ -178,7 +184,8 @@ export interface DecisionEventMapperPort extends EventMapperPort {
     baseScore: number,
     finalScore: number,
     multipliers: ScoreMultipliers,
-    updatedScores: readonly PlayerScore[]
+    updatedScores: readonly PlayerScore[],
+    displayTimeoutSeconds?: number
   ): RoundScoredEvent
 
   /**

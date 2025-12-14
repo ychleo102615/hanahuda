@@ -120,11 +120,15 @@
 import { Z_INDEX } from '~/constants'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useRouter } from 'vue-router'
+import { useDependency } from '~/user-interface/adapter/composables/useDependency'
+import type { StartGamePort } from '~/user-interface/application/ports/input'
+import { TOKENS } from '~/user-interface/adapter/di/tokens'
 
 const uiStateStore = useUIStateStore()
 const gameStateStore = useGameStateStore()
-const router = useRouter()
+
+// DI 注入
+const startGameUseCase = useDependency<StartGamePort>(TOKENS.StartGamePort)
 
 /**
  * 取得玩家名稱
@@ -147,14 +151,12 @@ function handleClose(): void {
 
 /**
  * 開始新遊戲
+ *
+ * 使用 StartGameUseCase 重置狀態並重新建立 SSE 連線。
  */
 function handleNewGame(): void {
   uiStateStore.hideGameFinishedModal()
-  // 重置遊戲狀態
-  gameStateStore.$reset()
-  uiStateStore.reset()
-  // 導航回首頁
-  router.push('/')
+  startGameUseCase.execute({ isNewGame: true })
 }
 </script>
 

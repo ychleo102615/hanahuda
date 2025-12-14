@@ -47,6 +47,8 @@ function handleCardClick(cardId: string) {
   // 前置條件檢查
   if (!isMyTurn.value) return
   if (animationPort.isAnimating()) return
+  // 只有在等待出手牌階段才允許出牌
+  if (flowStage.value !== 'AWAITING_HAND_PLAY') return
 
   // 第一次點擊：進入確認模式
   if (handCardAwaitingConfirmation.value !== cardId) {

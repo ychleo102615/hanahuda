@@ -117,7 +117,7 @@ watch(
       >
         <!-- 遮罩 -->
         <div
-          class="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
+          class="absolute inset-0 bg-black/50 transition-opacity"
           @click="handleCancel"
         />
 

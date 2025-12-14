@@ -148,6 +148,12 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       )
       game = transitionResult.game
 
+      // 根據轉換結果決定 displayTimeoutSeconds
+      const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
+      const displayTimeoutSeconds = isNextRound
+        ? gameConfig.display_timeout_seconds
+        : undefined
+
       // 發送 RoundScored 事件
       const roundScoredEvent = this.eventMapper.toRoundScoredEvent(
         game,
@@ -156,12 +162,13 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
         roundEndResult.baseScore,
         roundEndResult.finalScore,
         multipliers,
-        game.cumulativeScores
+        game.cumulativeScores,
+        displayTimeoutSeconds
       )
       this.eventPublisher.publishToGame(gameId, roundScoredEvent)
 
       // 根據轉換結果決定下一步
-      if (transitionResult.transitionType === 'NEXT_ROUND') {
+      if (isNextRound) {
         // 發送 RoundDealt 事件（延遲讓前端顯示結算畫面）
         const firstPlayerId = game.currentRound?.activePlayerId
         this.startDisplayTimeout(gameId, () => {

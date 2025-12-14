@@ -128,5 +128,9 @@ export function createGameStatePortAdapter(): GameStatePort {
     resetKoiKoiMultipliers(): void {
       store.resetKoiKoiMultipliers()
     },
+
+    reset(): void {
+      store.$reset()
+    },
   }
 }

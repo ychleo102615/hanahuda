@@ -66,6 +66,8 @@ import { CountdownManager } from '../services/CountdownManager'
 import { OperationSessionManager } from '../abort/OperationSessionManager'
 import { SSEConnectionManager } from '../sse/SSEConnectionManager'
 import { RoomApiClient } from '../api/RoomApiClient'
+import { createGameConnectionPortAdapter } from '../connection/GameConnectionPortAdapter'
+import type { GameConnectionPort } from '../../application/ports/output'
 
 /**
  * 遊戲模式
@@ -102,11 +104,10 @@ export function registerDependencies(container: DIContainer, mode: GameMode, pin
   registerEventRoutes(container)
 
   // 6. 根據模式初始化事件發射器 (必須在事件路由之後)
-  if (mode === 'backend') {
-    registerSSEClient(container)
-  } else if (mode === 'mock') {
+  if (mode === 'mock') {
     initializeMockEventEmitter(container)
   }
+  // Backend 模式的 SSE 相關元件已在 registerBackendAdapters 中註冊
 }
 
 /**
@@ -289,17 +290,26 @@ function registerInputPorts(container: DIContainer): void {
   const matchmakingStatePort = container.resolve(TOKENS.MatchmakingStatePort) as MatchmakingStatePort
   const navigationPort = container.resolve(TOKENS.NavigationPort) as NavigationPort
 
-  // Game Initialization Use Cases
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
-
   // SessionContextPort: 管理 session 識別資訊
   const sessionContextPort = container.resolve(TOKENS.SessionContextPort) as SessionContextPort
 
-  // 註冊 StartGamePort（注入 SessionContextPort）
+  // SendCommandPort: 用於玩家操作 Use Cases
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
+
+  // 註冊 StartGamePort（SSE-First Architecture）
+  // 依賴 GameConnectionPort、SessionContextPort、GameStatePort、NotificationPort
   container.register(
     TOKENS.StartGamePort,
-    () => new StartGameUseCase(sendCommandPort, matchmakingStatePort, sessionContextPort),
+    () => {
+      const gameConnectionPort = container.resolve(TOKENS.GameConnectionPort) as GameConnectionPort
+      return new StartGameUseCase(
+        gameConnectionPort,
+        sessionContextPort,
+        gameStatePort,
+        notificationPort,
+      )
+    },
     { singleton: true }
   )
 
@@ -487,6 +497,11 @@ function registerInputPorts(container: DIContainer): void {
  * 註冊 GameApiClient 作為 SendCommandPort 的實作。
  * Nuxt 4 前後端同域，baseURL 使用空字串。
  * 注入 SessionContextPort 以取得 gameId, playerId。
+ *
+ * 同時註冊 SSE 相關元件：
+ * - GameEventClient
+ * - SSEConnectionManager
+ * - GameConnectionPort
  */
 function registerBackendAdapters(container: DIContainer): void {
   console.info('[DI] 註冊 Backend 模式 Adapters')
@@ -523,20 +538,6 @@ function registerBackendAdapters(container: DIContainer): void {
     },
     { singleton: true },
   )
-}
-
-/**
- * 註冊 SSE 客戶端與連線管理器
- *
- * @description
- * 註冊 GameEventClient 和 SSEConnectionManager。
- * 必須在 EventRouter 和 UIStateStore 註冊後調用。
- */
-function registerSSEClient(container: DIContainer): void {
-  console.info('[DI] 註冊 SSE Client 和 SSEConnectionManager')
-
-  // Nuxt 同域，使用空字串作為 baseURL
-  const baseURL = ''
 
   // GameEventClient
   container.register(
@@ -558,7 +559,18 @@ function registerSSEClient(container: DIContainer): void {
     },
     { singleton: true },
   )
+
+  // GameConnectionPort: 包裝 SSEConnectionManager
+  container.register(
+    TOKENS.GameConnectionPort,
+    () => {
+      const sseConnectionManager = container.resolve(TOKENS.SSEConnectionManager) as SSEConnectionManager
+      return createGameConnectionPortAdapter(sseConnectionManager)
+    },
+    { singleton: true },
+  )
 }
+
 
 /**
  * 註冊 Mock 模式的 Adapters

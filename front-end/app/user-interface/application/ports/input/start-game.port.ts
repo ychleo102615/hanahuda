@@ -1,53 +1,65 @@
 /**
- * StartGameRequest - 啟動遊戲請求參數
- */
-export interface StartGameRequest {
-  /** 玩家 ID (UUID) */
-  playerId: string
-  /** 玩家名稱 */
-  playerName: string
-  /** 可選的會話 Token（用於重連） */
-  sessionToken?: string
-}
-
-/**
  * StartGamePort - Input Port
  *
  * @description
- * 啟動遊戲（加入配對或創建遊戲會話）的 Use Case 介面。
- * 由 GameLobby 等 UI 元件調用。
+ * 啟動遊戲連線的 Use Case 介面。
+ * 由 Game Page 和 GameFinishedModal 調用。
  *
- * 使用於：
- * - GameLobby.vue
+ * SSE-First Architecture：
+ * - 連線建立後，後端透過 InitialState 事件決定遊戲狀態
+ * - playerId、playerName、roomTypeId 從 SessionContext 取得
+ * - 調用者只需表達業務意圖（是否新遊戲）
  *
  * @example
  * ```typescript
- * // 在 Vue 元件中使用
- * const startGameUseCase = useDependency<StartGamePort>(TOKENS.StartGamePort)
+ * // Game Page - 進入遊戲頁面時
+ * startGameUseCase.execute()
  *
- * try {
- *   await startGameUseCase.execute({ playerId: 'uuid', playerName: 'Player 1' })
- * } catch (error) {
- *   console.error('Failed to start game:', error)
- * }
+ * // GameFinishedModal - 開始新遊戲
+ * startGameUseCase.execute({ isNewGame: true })
  * ```
+ */
+
+/**
+ * StartGameOptions - 啟動遊戲選項
+ */
+export interface StartGameOptions {
+  /**
+   * 是否開始新遊戲
+   *
+   * @description
+   * 設為 true 時會清除 SessionContext 中的 gameId，
+   * 讓後端知道這是新遊戲請求而非重連。
+   *
+   * @default false
+   */
+  isNewGame?: boolean
+}
+
+/**
+ * StartGamePort 介面
  */
 export interface StartGamePort {
   /**
    * 執行遊戲啟動流程
    *
-   * @param request - 啟動遊戲請求（包含 playerId, playerName, 可選 sessionToken）
-   * @returns Promise<void>
-   * @throws 當 API 調用失敗時拋出異常
+   * @description
+   * 1. 如果 isNewGame 為 true，清除 gameId
+   * 2. 重置遊戲狀態和 UI 狀態
+   * 3. 斷開現有連線（如果有）
+   * 4. 建立新的遊戲連線
+   *
+   * @param options - 啟動選項
+   * @throws Error 當 SessionContext 中沒有 playerId 時
    *
    * @example
    * ```typescript
-   * try {
-   *   await startGameUseCase.execute({ playerId: 'uuid', playerName: 'Player 1' })
-   * } catch (error) {
-   *   console.error('Failed to start game:', error)
-   * }
+   * // 進入遊戲頁面（可能是新遊戲或重連）
+   * startGameUseCase.execute()
+   *
+   * // 明確開始新遊戲
+   * startGameUseCase.execute({ isNewGame: true })
    * ```
    */
-  execute(request: StartGameRequest): Promise<void>
+  execute(options?: StartGameOptions): void
 }

@@ -26,5 +26,8 @@ export type { MatchmakingStatePort, MatchmakingStatus } from './matchmaking-stat
 export type { NavigationPort } from './navigation.port'
 export { SessionContextPort, type SessionIdentity } from './session-context.port'
 
+// Game Connection
+export { GameConnectionPort, type GameConnectionParams } from './game-connection.port'
+
 // Legacy Output Ports
 export type { UIStatePort } from './ui-state.port'

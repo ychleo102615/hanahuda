@@ -23,8 +23,8 @@ import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 import { useDependency, useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
 import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
-import type { SessionContextPort } from '~/user-interface/application/ports/output'
-import type { SSEConnectionManager } from '~/user-interface/adapter/sse/SSEConnectionManager'
+import type { SessionContextPort, GameConnectionPort } from '~/user-interface/application/ports/output'
+import type { StartGamePort } from '~/user-interface/application/ports/input'
 import TopInfoBar from '~/components/TopInfoBar.vue'
 import FieldZone from './components/FieldZone.vue'
 import PlayerHandZone from './components/PlayerHandZone.vue'
@@ -56,11 +56,16 @@ const { infoMessage, connectionStatus } = storeToRefs(uiState)
 
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
-
-// SSE 連線管理（僅 Backend 模式）
 const gameMode = useGameMode()
-const sseConnectionManager = gameMode === 'backend'
-  ? useOptionalDependency<SSEConnectionManager>(TOKENS.SSEConnectionManager)
+
+// StartGameUseCase（Backend 模式）
+const startGameUseCase = gameMode === 'backend'
+  ? useOptionalDependency<StartGamePort>(TOKENS.StartGamePort)
+  : null
+
+// GameConnectionPort（用於 onUnmounted 斷開連線）
+const gameConnection = gameMode === 'backend'
+  ? useOptionalDependency<GameConnectionPort>(TOKENS.GameConnectionPort)
   : null
 
 // Mock Event Emitter 注入（僅 Mock 模式）
@@ -111,30 +116,20 @@ const {
 onMounted(() => {
   console.info('[GamePage] 遊戲頁面已載入', { gameMode })
 
-  // 取得 player 資訊
+  // 檢查是否有 playerId
   const playerId = sessionContext.getPlayerId()
-  const playerName = sessionContext.getPlayerName() || 'Player'
-  const gameId = sessionContext.getGameId()
-  const roomTypeId = sessionContext.getRoomTypeId()
-
   if (!playerId) {
     console.error('[GamePage] 無 playerId，導向大廳')
     navigateTo('/lobby')
     return
   }
 
-  console.info('[GamePage] 建立連線', { playerId, playerName, gameId, roomTypeId })
-
   // 根據模式建立連線
-  if (gameMode === 'backend' && sseConnectionManager) {
-    // Backend 模式：建立 SSE 連線
-    // 後端會推送 InitialState 事件決定顯示內容
-    sseConnectionManager.connect({
-      playerId,
-      playerName,
-      gameId: gameId ?? undefined,
-      roomTypeId: roomTypeId ?? undefined,
-    })
+  if (gameMode === 'backend' && startGameUseCase) {
+    // Backend 模式：使用 StartGameUseCase 建立 SSE 連線
+    // UseCase 會從 SessionContext 取得所有必要資訊
+    console.info('[GamePage] 使用 StartGameUseCase 建立連線')
+    startGameUseCase.execute()
   } else if (gameMode === 'mock' && mockEventEmitter) {
     // Mock 模式：啟動事件腳本
     console.info('[GamePage] 啟動 Mock 事件腳本')
@@ -143,10 +138,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  // 斷開 SSE 連線（Backend 模式）
-  if (sseConnectionManager) {
-    console.info('[GamePage] 斷開 SSE 連線')
-    sseConnectionManager.disconnect()
+  // 斷開連線（Backend 模式）
+  if (gameConnection) {
+    console.info('[GamePage] 斷開遊戲連線')
+    gameConnection.disconnect()
   }
 
   // 重置 Mock 事件發射器（Mock 模式）

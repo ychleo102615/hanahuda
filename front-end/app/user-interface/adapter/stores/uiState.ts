@@ -118,6 +118,9 @@ export interface UIStateStoreState {
   // 倒數計時
   actionTimeoutRemaining: number | null
   displayTimeoutRemaining: number | null
+
+  // 待處理的遊戲結束資料（最後一回合緩存用）
+  pendingGameFinishedData: GameFinishedData | null
 }
 
 /**
@@ -215,6 +218,9 @@ export const useUIStateStore = defineStore('uiState', {
     // 倒數計時
     actionTimeoutRemaining: null,
     displayTimeoutRemaining: null,
+
+    // 待處理的遊戲結束資料
+    pendingGameFinishedData: null,
   }),
 
   actions: {
@@ -487,6 +493,28 @@ export const useUIStateStore = defineStore('uiState', {
     },
 
     /**
+     * 設定待處理的遊戲結束資料
+     *
+     * @description
+     * 當 GameFinished 事件到達時，如果有回合結束面板正在顯示，
+     * 會將資料緩存在此，等待玩家關閉回合面板後再顯示遊戲結束面板。
+     *
+     * @param data - 遊戲結束資料
+     */
+    setPendingGameFinished(data: GameFinishedData): void {
+      this.pendingGameFinishedData = { ...data, finalScores: [...data.finalScores] }
+      console.info('[UIStateStore] 設定待處理的遊戲結束資料', this.pendingGameFinishedData)
+    },
+
+    /**
+     * 清除待處理的遊戲結束資料
+     */
+    clearPendingGameFinished(): void {
+      this.pendingGameFinishedData = null
+      console.info('[UIStateStore] 清除待處理的遊戲結束資料')
+    },
+
+    /**
      * 重置所有狀態（用於離開遊戲或重連後）
      */
     reset(): void {
@@ -530,6 +558,9 @@ export const useUIStateStore = defineStore('uiState', {
       // 倒數計時（只重置 state，interval 由 useCountdown 管理）
       this.actionTimeoutRemaining = null
       this.displayTimeoutRemaining = null
+
+      // 待處理的遊戲結束資料
+      this.pendingGameFinishedData = null
 
       console.info('[UIStateStore] 狀態已重置')
     },

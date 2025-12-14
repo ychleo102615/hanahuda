@@ -124,6 +124,18 @@ export function createNotificationPortAdapter(
       )
     },
 
+    isRoundEndModalVisible(): boolean {
+      return (
+        store.roundScoredModalVisible ||
+        store.roundDrawnModalVisible ||
+        store.roundEndedInstantlyModalVisible
+      )
+    },
+
+    setPendingGameFinished(data: { winnerId: string | null; finalScores: PlayerScore[]; isPlayerWinner: boolean }): void {
+      store.setPendingGameFinished(data)
+    },
+
     // ===== 倒數計時 =====
     startActionCountdown(seconds: number): void {
       countdown.cleanup()

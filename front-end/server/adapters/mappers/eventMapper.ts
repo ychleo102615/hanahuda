@@ -390,6 +390,7 @@ export class EventMapper implements FullEventMapperPort {
    * @param finalScore - 最終分數
    * @param multipliers - 倍率資訊
    * @param updatedScores - 更新後的分數
+   * @param displayTimeoutSeconds - 後端倒數秒數（無值時不包含此欄位）
    * @returns RoundScoredEvent
    */
   toRoundScoredEvent(
@@ -399,10 +400,11 @@ export class EventMapper implements FullEventMapperPort {
     baseScore: number,
     finalScore: number,
     multipliers: ScoreMultipliers,
-    updatedScores: readonly PlayerScore[]
+    updatedScores: readonly PlayerScore[],
+    displayTimeoutSeconds?: number
   ): RoundScoredEvent {
-    return {
-      event_type: 'RoundScored',
+    const baseEvent = {
+      event_type: 'RoundScored' as const,
       event_id: createEventId(),
       timestamp: createTimestamp(),
       winner_id: winnerId,
@@ -420,29 +422,39 @@ export class EventMapper implements FullEventMapperPort {
         player_id: s.player_id,
         score: s.score,
       })),
-      display_timeout_seconds: gameConfig.display_timeout_seconds,
     }
+
+    if (displayTimeoutSeconds !== undefined) {
+      return { ...baseEvent, display_timeout_seconds: displayTimeoutSeconds }
+    }
+    return baseEvent
   }
 
   /**
    * 將平局結果轉換為 RoundDrawnEvent
    *
    * @param currentScores - 目前累積分數
+   * @param displayTimeoutSeconds - 後端倒數秒數（無值時不包含此欄位）
    * @returns RoundDrawnEvent
    */
   toRoundDrawnEvent(
-    currentScores: readonly PlayerScore[]
+    currentScores: readonly PlayerScore[],
+    displayTimeoutSeconds?: number
   ): RoundDrawnEvent {
-    return {
-      event_type: 'RoundDrawn',
+    const baseEvent = {
+      event_type: 'RoundDrawn' as const,
       event_id: createEventId(),
       timestamp: createTimestamp(),
       current_total_scores: currentScores.map(s => ({
         player_id: s.player_id,
         score: s.score,
       })),
-      display_timeout_seconds: gameConfig.display_timeout_seconds,
     }
+
+    if (displayTimeoutSeconds !== undefined) {
+      return { ...baseEvent, display_timeout_seconds: displayTimeoutSeconds }
+    }
+    return baseEvent
   }
 
   /**
@@ -452,16 +464,18 @@ export class EventMapper implements FullEventMapperPort {
    * @param winnerId - 勝者 ID（平局時為 null）
    * @param awardedPoints - 獎勵/懲罰分數
    * @param updatedScores - 更新後的分數
+   * @param displayTimeoutSeconds - 後端倒數秒數（無值時不包含此欄位）
    * @returns RoundEndedInstantlyEvent
    */
   toRoundEndedInstantlyEvent(
     reason: RoundEndReason,
     winnerId: string | null,
     awardedPoints: number,
-    updatedScores: readonly PlayerScore[]
+    updatedScores: readonly PlayerScore[],
+    displayTimeoutSeconds?: number
   ): RoundEndedInstantlyEvent {
-    return {
-      event_type: 'RoundEndedInstantly',
+    const baseEvent = {
+      event_type: 'RoundEndedInstantly' as const,
       event_id: createEventId(),
       timestamp: createTimestamp(),
       reason,
@@ -471,8 +485,12 @@ export class EventMapper implements FullEventMapperPort {
         player_id: s.player_id,
         score: s.score,
       })),
-      display_timeout_seconds: gameConfig.display_timeout_seconds,
     }
+
+    if (displayTimeoutSeconds !== undefined) {
+      return { ...baseEvent, display_timeout_seconds: displayTimeoutSeconds }
+    }
+    return baseEvent
   }
 
   /**

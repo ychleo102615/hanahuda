@@ -2,68 +2,92 @@
  * StartGameUseCase - Use Case
  *
  * @description
- * 處理遊戲啟動流程：調用 joinGame API 並保存 session 識別資訊。
+ * 啟動遊戲連線流程：重置狀態並建立 SSE 連線。
+ *
+ * SSE-First Architecture：
+ * - 連線建立後，後端透過 InitialState 事件決定遊戲狀態
+ * - 所有必要資訊從 SessionContextPort 取得
+ * - 調用者只需表達業務意圖（是否新遊戲）
  *
  * 業務流程：
- * 1. 調用 SendCommandPort.joinGame() 發送配對請求
- * 2. 保存 gameId 到 MatchmakingStatePort（用於 SSE 連線）
- * 3. 保存識別資訊（gameId, playerId）到 SessionContextPort
- * 4. 記錄日誌
- *
- * 安全性設計：
- * - session_token 由後端透過 HttpOnly Cookie 設定，前端不處理
- * - 僅非敏感的識別資訊（gameId, playerId）存放在 sessionStorage
+ * 1. 如果 isNewGame 為 true，清除 SessionContext 中的 gameId
+ * 2. 重置遊戲狀態和 UI 狀態
+ * 3. 斷開現有連線（如果有）
+ * 4. 建立新的遊戲連線
  *
  * 依賴的 Output Ports：
- * - SendCommandPort: 發送 joinGame 命令
- * - MatchmakingStatePort: 管理配對狀態
- * - SessionContextPort: 管理 session 識別資訊
+ * - GameConnectionPort: 管理 SSE 連線
+ * - SessionContextPort: 管理會話資訊
+ * - GameStatePort: 管理遊戲狀態
+ * - NotificationPort: 管理 UI 通知狀態
  *
  * @example
  * ```typescript
- * const startGameUseCase = new StartGameUseCase(
- *   sendCommandPort,
- *   matchmakingStatePort,
- *   sessionContextPort
- * )
- * await startGameUseCase.execute({ playerId, playerName })
+ * // 進入遊戲頁面
+ * startGameUseCase.execute()
+ *
+ * // 開始新遊戲
+ * startGameUseCase.execute({ isNewGame: true })
  * ```
  */
 
-import type { StartGamePort, StartGameRequest } from '../ports/input'
-import type { SendCommandPort, MatchmakingStatePort } from '../ports/output'
-import type { SessionContextPort } from '../ports/output/session-context.port'
+import type { StartGamePort, StartGameOptions } from '../ports/input'
+import type {
+  GameConnectionPort,
+  SessionContextPort,
+  GameStatePort,
+  NotificationPort,
+} from '../ports/output'
 
 export class StartGameUseCase implements StartGamePort {
   constructor(
-    private readonly sendCommand: SendCommandPort,
-    private readonly matchmakingState: MatchmakingStatePort,
-    private readonly sessionContext: SessionContextPort
+    private readonly gameConnection: GameConnectionPort,
+    private readonly sessionContext: SessionContextPort,
+    private readonly gameState: GameStatePort,
+    private readonly notification: NotificationPort,
   ) {}
 
-  async execute(request: StartGameRequest): Promise<void> {
-    // 1. 調用 joinGame API
-    // 注意：session_token 由後端透過 Set-Cookie 設定，回應不包含 token
-    const response = await this.sendCommand.joinGame({
-      player_id: request.playerId,
-      player_name: request.playerName,
+  execute(options?: StartGameOptions): void {
+    const isNewGame = options?.isNewGame ?? false
+
+    // 從 SessionContext 取得必要資訊
+    const playerId = this.sessionContext.getPlayerId()
+    const playerName = this.sessionContext.getPlayerName() || 'Player'
+    const roomTypeId = this.sessionContext.getRoomTypeId()
+
+    if (!playerId) {
+      console.error('[StartGameUseCase] 無 playerId，無法啟動遊戲')
+      throw new Error('No player ID found in session')
+    }
+
+    console.info('[StartGameUseCase] 啟動遊戲連線', {
+      playerId,
+      playerName,
+      roomTypeId,
+      isNewGame,
     })
 
-    // 2. 保存 gameId 到 MatchmakingStatePort（用於 SSE 連線）
-    this.matchmakingState.setGameId(response.game_id)
+    // 1. 新遊戲：清除 gameId
+    if (isNewGame) {
+      this.sessionContext.setGameId(null)
+    }
 
-    // 3. 保存識別資訊到 SessionContextPort（用於重連）
-    // session_token 由 HttpOnly Cookie 管理，不在此處理
-    this.sessionContext.setIdentity({
-      gameId: response.game_id,
-      playerId: response.player_id,
-    })
+    // 2. 重置狀態
+    this.gameState.reset()
+    this.notification.cleanup()
 
-    // 4. 記錄日誌（不再記錄 session_token）
-    console.info('[StartGameUseCase] 遊戲啟動成功', {
-      gameId: response.game_id,
-      playerId: response.player_id,
-      sseEndpoint: response.sse_endpoint,
+    // 3. 斷開現有連線
+    if (this.gameConnection.isConnected()) {
+      this.gameConnection.disconnect()
+    }
+
+    // 4. 建立新連線
+    const gameId = this.sessionContext.getGameId()
+    this.gameConnection.connect({
+      playerId,
+      playerName,
+      gameId: gameId ?? undefined,
+      roomTypeId: roomTypeId ?? undefined,
     })
   }
 }

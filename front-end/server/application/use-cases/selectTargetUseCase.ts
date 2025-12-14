@@ -256,14 +256,21 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
     const transitionResult = transitionAfterRoundDraw(game)
     const updatedGame = transitionResult.game
 
+    // 根據轉換結果決定 displayTimeoutSeconds
+    const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
+    const displayTimeoutSeconds = isNextRound
+      ? gameConfig.display_timeout_seconds
+      : undefined
+
     // 發送 RoundDrawn 事件
     const roundDrawnEvent = this.eventMapper.toRoundDrawnEvent(
-      updatedGame.cumulativeScores
+      updatedGame.cumulativeScores,
+      displayTimeoutSeconds
     )
     this.eventPublisher.publishToGame(gameId, roundDrawnEvent)
 
     // 根據轉換結果決定下一步
-    if (transitionResult.transitionType === 'NEXT_ROUND') {
+    if (isNextRound) {
       // 延遲後發送 RoundDealt 事件（讓前端顯示流局畫面）
       const firstPlayerId = updatedGame.currentRound?.activePlayerId
       this.startDisplayTimeout(gameId, () => {

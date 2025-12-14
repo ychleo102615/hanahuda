@@ -13,10 +13,12 @@ export class HandleRoundDrawnUseCase implements HandleRoundDrawnPort {
     // 顯示平局訊息
     this.notification.showRoundDrawnModal([...event.current_total_scores])
 
-    // 啟動顯示倒數（用於回合結束面板自動關閉）
-    // 倒數結束時自動關閉面板
-    this.notification.startDisplayCountdown(event.display_timeout_seconds, () => {
-      this.notification.hideModal()
-    })
+    // 啟動顯示倒數（若有值，倒數結束時自動關閉面板）
+    // 無值時表示最後一回合，面板需手動關閉
+    if (event.display_timeout_seconds !== undefined) {
+      this.notification.startDisplayCountdown(event.display_timeout_seconds, () => {
+        this.notification.hideModal()
+      })
+    }
   }
 }

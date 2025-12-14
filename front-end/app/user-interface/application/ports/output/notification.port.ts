@@ -258,6 +258,44 @@ export interface NotificationPort {
    */
   isModalVisible(): boolean
 
+  /**
+   * 查詢是否有回合結束面板顯示中
+   *
+   * @description
+   * 用於判斷 GameFinished 事件是否需要緩存等待。
+   * 回合結束面板包括：RoundScored、RoundDrawn、RoundEndedInstantly。
+   *
+   * @returns 是否有回合結束面板顯示中
+   *
+   * @example
+   * ```typescript
+   * if (notification.isRoundEndModalVisible()) {
+   *   // 緩存 GameFinished 事件，等待玩家關閉回合面板
+   * }
+   * ```
+   */
+  isRoundEndModalVisible(): boolean
+
+  /**
+   * 設定待處理的遊戲結束資料
+   *
+   * @description
+   * 當 GameFinished 事件到達時，如果有回合結束面板正在顯示，
+   * 會將資料緩存，等待玩家關閉回合面板後再顯示遊戲結束面板。
+   *
+   * @param data - 遊戲結束資料
+   *
+   * @example
+   * ```typescript
+   * notification.setPendingGameFinished({
+   *   winnerId: 'player-1',
+   *   finalScores: [{ player_id: 'player-1', score: 50 }],
+   *   isPlayerWinner: true
+   * })
+   * ```
+   */
+  setPendingGameFinished(data: { winnerId: string | null; finalScores: PlayerScore[]; isPlayerWinner: boolean }): void
+
   // ===== 等待訊息 =====
 
   /**

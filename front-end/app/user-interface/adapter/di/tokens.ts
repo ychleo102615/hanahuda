@@ -14,6 +14,7 @@ export const TOKENS = {
   MatchmakingStatePort: Symbol('MatchmakingStatePort'),
   NavigationPort: Symbol('NavigationPort'),
   SessionContextPort: Symbol('SessionContextPort'),
+  GameConnectionPort: Symbol('GameConnectionPort'),
 
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),

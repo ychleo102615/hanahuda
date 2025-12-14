@@ -398,4 +398,18 @@ export interface GameStatePort {
    * ```
    */
   resetKoiKoiMultipliers(): void
+
+  /**
+   * 重置所有遊戲狀態
+   *
+   * @description
+   * 將所有遊戲狀態重置為初始值。
+   * 用於開始新遊戲或離開遊戲時清理狀態。
+   *
+   * @example
+   * ```typescript
+   * gameState.reset()
+   * ```
+   */
+  reset(): void
 }

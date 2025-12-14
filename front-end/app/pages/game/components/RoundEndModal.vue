@@ -151,23 +151,41 @@
           </div>
         </div>
 
-        <!-- Footer: Countdown Display -->
+        <!-- Footer: Countdown Display or Continue Button -->
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <div class="flex items-center justify-center gap-2 text-gray-700">
-            <span class="text-sm font-medium">Next round in:</span>
-            <span
-              :class="[
-                'text-2xl font-bold tabular-nums',
-                countdownWarningClass,
-              ]"
-            >
-              {{ displayCountdown }}
-            </span>
-            <span class="text-sm">s</span>
-          </div>
-          <p class="text-xs text-gray-500 text-center mt-2">
-            Please wait for the countdown to finish
-          </p>
+          <!-- 有倒數時顯示倒數 -->
+          <template v-if="displayTimeoutRemaining !== null">
+            <div class="flex items-center justify-center gap-2 text-gray-700">
+              <span class="text-sm font-medium">Next round in:</span>
+              <span
+                :class="[
+                  'text-2xl font-bold tabular-nums',
+                  countdownWarningClass,
+                ]"
+              >
+                {{ displayCountdown }}
+              </span>
+              <span class="text-sm">s</span>
+            </div>
+            <p class="text-xs text-gray-500 text-center mt-2">
+              Please wait for the countdown to finish
+            </p>
+          </template>
+          <!-- 有待處理的遊戲結束資料時顯示 Continue 按鈕 -->
+          <template v-else-if="pendingGameFinishedData">
+            <div class="flex flex-col items-center gap-2">
+              <button
+                type="button"
+                class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                @click="handleContinue"
+              >
+                Continue
+              </button>
+              <p class="text-xs text-gray-500 text-center">
+                Click to view game results
+              </p>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -191,6 +209,7 @@ const {
   roundEndedInstantlyModalVisible,
   roundScoredModalData,
   roundEndedInstantlyModalData,
+  pendingGameFinishedData,
 } = storeToRefs(uiState)
 
 /**
@@ -205,9 +224,13 @@ const panelType = computed<'roundScored' | 'roundEndedInstantly' | 'roundDrawn' 
 
 /**
  * 是否應該顯示彈窗
+ * 有倒數或有待處理的遊戲結束資料時都顯示
  */
 const shouldShowPanel = computed(() => {
-  return panelType.value !== null && displayTimeoutRemaining.value !== null
+  return panelType.value !== null && (
+    displayTimeoutRemaining.value !== null ||
+    pendingGameFinishedData.value !== null
+  )
 })
 
 /**
@@ -298,10 +321,34 @@ function getPlayerName(playerId: string): string {
 }
 
 /**
+ * 繼續按鈕處理（最後一回合關閉回合面板後顯示遊戲結果）
+ */
+function handleContinue(): void {
+  // 1. 關閉回合面板
+  uiState.hideModal()
+
+  // 2. 顯示緩存的 GameFinishedModal
+  if (pendingGameFinishedData.value) {
+    const data = pendingGameFinishedData.value
+    uiState.showGameFinishedModal(
+      data.winnerId,
+      data.finalScores,
+      data.isPlayerWinner,
+    )
+    uiState.clearPendingGameFinished()
+  }
+}
+
+/**
  * 關閉 Modal（點擊外部時觸發）
  */
 function handleClose(): void {
-  uiState.hideModal()
+  // 如果有待處理的遊戲結束資料，使用 handleContinue 處理
+  if (pendingGameFinishedData.value) {
+    handleContinue()
+  } else {
+    uiState.hideModal()
+  }
 }
 </script>
 
