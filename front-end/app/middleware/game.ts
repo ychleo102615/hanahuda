@@ -22,8 +22,10 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   console.info('[Middleware] 進入遊戲頁面', { from: from.path })
 
-  if (!sessionContext.hasActiveSession()) {
-    console.warn('[Middleware] 無遊戲會話，重定向至 /lobby')
+  // SSE-First 架構：檢查是否有房間選擇資訊（playerId + roomTypeId）
+  // 而非 hasActiveSession()（playerId + gameId），因為 gameId 要等 SSE 連線後才會有
+  if (!sessionContext.hasRoomSelection()) {
+    console.warn('[Middleware] 無房間選擇資訊，重定向至 /lobby')
     return navigateTo('/lobby')
   }
 

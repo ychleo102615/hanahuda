@@ -48,6 +48,7 @@ const ConnectQuerySchema = z.object({
   player_id: z.string().uuid('player_id must be a valid UUID'),
   player_name: z.string().min(1, 'player_name is required').max(50, 'player_name must be at most 50 characters'),
   game_id: z.string().uuid('game_id must be a valid UUID').optional(),
+  room_type: z.enum(['QUICK', 'STANDARD', 'MARATHON']).optional(),
 })
 
 /**
@@ -107,7 +108,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const { player_id: playerId, player_name: playerName, game_id: gameId } = parseResult.data
+  const { player_id: playerId, player_name: playerName, game_id: gameId, room_type: roomType } = parseResult.data
 
   // 2. 從 Cookie 讀取 session_token
   const sessionToken = getCookie(event, SESSION_COOKIE_NAME)
@@ -116,6 +117,7 @@ export default defineEventHandler(async (event) => {
     playerId,
     playerName,
     hasGameId: !!gameId,
+    roomType: roomType ?? 'default',
     hasSessionToken: !!sessionToken,
   })
 
@@ -126,6 +128,7 @@ export default defineEventHandler(async (event) => {
     playerName,
     sessionToken,
     gameId,
+    roomType,
   })
 
   logger.info('JoinGameUseCase result', { status: result.status })

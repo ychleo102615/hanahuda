@@ -39,7 +39,7 @@ interface InputPort<T = unknown> {
  * 使用 Promise 鏈確保事件依序處理。每個事件會等待前一個事件的 Use Case
  * 完全執行完畢（包括動畫）後才開始處理。
  *
- * **注意**：SSE 連線管理由 Adapter 層負責（usePageVisibility、useSSEConnection）。
+ * **注意**：SSE 連線管理由 Adapter 層負責（SSEConnectionManager）。
  * 在呼叫 clearEventChain() 前，SSE 應已斷開，因此不會有舊事件需要過濾。
  */
 export class EventRouter {
@@ -170,7 +170,7 @@ export class EventRouter {
    * 用於狀態恢復時，重置 Promise chain，新事件將從乾淨的起點開始。
    *
    * **前置條件**：呼叫此方法前，SSE 連線應已斷開。
-   * 這由 Adapter 層（usePageVisibility、useSSEConnection）負責確保。
+   * 這由 Adapter 層（SSEConnectionManager）負責確保。
    *
    * @example
    * ```typescript

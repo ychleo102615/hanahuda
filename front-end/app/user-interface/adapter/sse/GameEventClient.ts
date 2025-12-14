@@ -32,6 +32,8 @@ export interface SSEConnectionParams {
   playerName: string
   /** 遊戲 ID（可選，有值表示重連） */
   gameId?: string | null
+  /** 房間類型 ID（可選，新遊戲時指定） */
+  roomTypeId?: string | null
 }
 
 /**
@@ -123,6 +125,9 @@ export class GameEventClient {
     })
     if (params.gameId) {
       queryParams.set('game_id', params.gameId)
+    }
+    if (params.roomTypeId) {
+      queryParams.set('room_type', params.roomTypeId)
     }
     const url = `${this.baseURL}/api/v1/games/connect?${queryParams.toString()}`
 

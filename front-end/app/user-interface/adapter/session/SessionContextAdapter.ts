@@ -21,6 +21,8 @@ import { SessionContextPort, type SessionIdentity } from '../../application/port
 const STORAGE_KEYS = {
   gameId: 'game_id',
   playerId: 'player_id',
+  playerName: 'player_name',
+  roomTypeId: 'room_type_id',
 } as const
 
 /**
@@ -72,17 +74,37 @@ export class SessionContextAdapter extends SessionContextPort {
   }
 
   /**
+   * 取得玩家名稱
+   *
+   * @returns 玩家名稱，若無則返回 null
+   */
+  getPlayerName(): string | null {
+    if (typeof window === 'undefined') {
+      return null
+    }
+    return sessionStorage.getItem(STORAGE_KEYS.playerName)
+  }
+
+  /**
    * 設定會話識別資訊
    *
-   * @param identity - 會話識別資訊（gameId, playerId）
+   * @param identity - 會話識別資訊（playerId 必填，playerName、gameId、roomTypeId 可選）
    */
   setIdentity(identity: SessionIdentity): void {
     if (typeof window === 'undefined') {
       console.warn('[SessionContextAdapter] Cannot set identity on server-side')
       return
     }
-    sessionStorage.setItem(STORAGE_KEYS.gameId, identity.gameId)
     sessionStorage.setItem(STORAGE_KEYS.playerId, identity.playerId)
+    if (identity.playerName !== undefined) {
+      sessionStorage.setItem(STORAGE_KEYS.playerName, identity.playerName)
+    }
+    if (identity.gameId !== undefined) {
+      sessionStorage.setItem(STORAGE_KEYS.gameId, identity.gameId)
+    }
+    if (identity.roomTypeId !== undefined) {
+      sessionStorage.setItem(STORAGE_KEYS.roomTypeId, identity.roomTypeId)
+    }
   }
 
   /**
@@ -99,6 +121,8 @@ export class SessionContextAdapter extends SessionContextPort {
     }
     sessionStorage.removeItem(STORAGE_KEYS.gameId)
     sessionStorage.removeItem(STORAGE_KEYS.playerId)
+    sessionStorage.removeItem(STORAGE_KEYS.playerName)
+    sessionStorage.removeItem(STORAGE_KEYS.roomTypeId)
   }
 
   /**
@@ -108,6 +132,44 @@ export class SessionContextAdapter extends SessionContextPort {
    */
   hasActiveSession(): boolean {
     return this.getGameId() !== null && this.getPlayerId() !== null
+  }
+
+  /**
+   * 取得房間類型 ID
+   *
+   * @returns 房間類型 ID，若無則返回 null
+   */
+  getRoomTypeId(): string | null {
+    if (typeof window === 'undefined') {
+      return null
+    }
+    return sessionStorage.getItem(STORAGE_KEYS.roomTypeId)
+  }
+
+  /**
+   * 設定房間類型 ID
+   *
+   * @param roomTypeId - 房間類型 ID，傳入 null 可清除
+   */
+  setRoomTypeId(roomTypeId: string | null): void {
+    if (typeof window === 'undefined') {
+      console.warn('[SessionContextAdapter] Cannot set roomTypeId on server-side')
+      return
+    }
+    if (roomTypeId === null) {
+      sessionStorage.removeItem(STORAGE_KEYS.roomTypeId)
+    } else {
+      sessionStorage.setItem(STORAGE_KEYS.roomTypeId, roomTypeId)
+    }
+  }
+
+  /**
+   * 檢查是否有房間選擇資訊
+   *
+   * @returns 是否有 playerId 和 roomTypeId
+   */
+  hasRoomSelection(): boolean {
+    return this.getPlayerId() !== null && this.getRoomTypeId() !== null
   }
 }
 

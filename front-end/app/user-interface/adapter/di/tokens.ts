@@ -65,6 +65,8 @@ export const TOKENS = {
   // ===== Services =====
   CountdownManager: Symbol('CountdownManager'),
   OperationSessionManager: Symbol('OperationSessionManager'),
+  SSEConnectionManager: Symbol('SSEConnectionManager'),
+  RoomApiClient: Symbol('RoomApiClient'),
 
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),

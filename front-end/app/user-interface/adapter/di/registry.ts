@@ -66,6 +66,8 @@ import { createNavigationPortAdapter } from '../router/NavigationPortAdapter'
 import { CountdownManager } from '../services/CountdownManager'
 import { ReconnectApiClient } from '../api/ReconnectApiClient'
 import { OperationSessionManager } from '../abort/OperationSessionManager'
+import { SSEConnectionManager } from '../sse/SSEConnectionManager'
+import { RoomApiClient } from '../api/RoomApiClient'
 
 /**
  * 遊戲模式
@@ -516,6 +518,13 @@ function registerBackendAdapters(container: DIContainer): void {
     { singleton: true },
   )
 
+  // RoomApiClient: 取得房間類型列表
+  container.register(
+    TOKENS.RoomApiClient,
+    () => new RoomApiClient(baseURL),
+    { singleton: true },
+  )
+
   // EventRouter (共用)
   // 設置 OperationSessionManager 以便傳遞 AbortSignal 給 Use Cases
   container.register(
@@ -541,14 +550,14 @@ function registerBackendAdapters(container: DIContainer): void {
 }
 
 /**
- * 註冊 SSE 客戶端與事件路由
+ * 註冊 SSE 客戶端與連線管理器
  *
  * @description
- * 註冊 GameEventClient，用於接收伺服器推送的遊戲事件。
- * 必須在 EventRouter 註冊後調用。
+ * 註冊 GameEventClient 和 SSEConnectionManager。
+ * 必須在 EventRouter 和 UIStateStore 註冊後調用。
  */
 function registerSSEClient(container: DIContainer): void {
-  console.info('[DI] 註冊 SSE Client')
+  console.info('[DI] 註冊 SSE Client 和 SSEConnectionManager')
 
   // Nuxt 同域，使用空字串作為 baseURL
   const baseURL = ''
@@ -559,6 +568,17 @@ function registerSSEClient(container: DIContainer): void {
     () => {
       const router = container.resolve(TOKENS.EventRouter) as EventRouter
       return new GameEventClient(baseURL, router)
+    },
+    { singleton: true },
+  )
+
+  // SSEConnectionManager: 協調 GameEventClient 與 UIStateStore
+  container.register(
+    TOKENS.SSEConnectionManager,
+    () => {
+      const gameEventClient = container.resolve(TOKENS.GameEventClient) as GameEventClient
+      const uiStateStore = container.resolve(TOKENS.UIStateStore) as ReturnType<typeof useUIStateStore>
+      return new SSEConnectionManager(gameEventClient, uiStateStore)
     },
     { singleton: true },
   )
@@ -580,6 +600,13 @@ function registerMockAdapters(container: DIContainer): void {
   container.register(
     TOKENS.SendCommandPort,
     () => new MockApiClient(),
+    { singleton: true },
+  )
+
+  // RoomApiClient: 取得房間類型列表
+  container.register(
+    TOKENS.RoomApiClient,
+    () => new RoomApiClient(baseURL),
     { singleton: true },
   )
 

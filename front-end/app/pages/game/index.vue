@@ -5,6 +5,11 @@
  * @description
  * 遊戲介面固定 Viewport 設計（100vh × 100vw，無垂直滾動）。
  * 整合所有遊戲區域組件。
+ *
+ * SSE-First Architecture:
+ * - 頁面載入時建立 SSE 連線
+ * - 後端推送 InitialState 事件決定顯示內容
+ * - 重連由 SSEConnectionManager 自動處理
  */
 
 // Nuxt 4: 定義頁面 middleware
@@ -12,12 +17,14 @@ definePageMeta({
   middleware: 'game',
 })
 
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
-import { useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
+import { useDependency, useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
 import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
+import type { SessionContextPort } from '~/user-interface/application/ports/output'
+import type { SSEConnectionManager } from '~/user-interface/adapter/sse/SSEConnectionManager'
 import TopInfoBar from '~/components/TopInfoBar.vue'
 import FieldZone from './components/FieldZone.vue'
 import PlayerHandZone from './components/PlayerHandZone.vue'
@@ -37,8 +44,6 @@ import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
 import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
 import { useGameMode } from '~/user-interface/adapter/composables/useGameMode'
-import { usePageVisibility } from '~/user-interface/adapter/composables/usePageVisibility'
-import { useGameReconnection } from '~/user-interface/adapter/composables/useGameReconnection'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
@@ -46,8 +51,22 @@ const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
 
-const { opponentHandCount, fieldCards } = storeToRefs(gameState)
-const { infoMessage, handCardConfirmationMode, handCardAwaitingConfirmation, connectionStatus } = storeToRefs(uiState)
+const { opponentHandCount } = storeToRefs(gameState)
+const { infoMessage, connectionStatus } = storeToRefs(uiState)
+
+// DI 注入
+const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
+
+// SSE 連線管理（僅 Backend 模式）
+const gameMode = useGameMode()
+const sseConnectionManager = gameMode === 'backend'
+  ? useOptionalDependency<SSEConnectionManager>(TOKENS.SSEConnectionManager)
+  : null
+
+// Mock Event Emitter 注入（僅 Mock 模式）
+const mockEventEmitter = gameMode === 'mock'
+  ? useOptionalDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
+  : null
 
 // 連線狀態顯示
 const connectionStatusText = computed(() => {
@@ -89,31 +108,48 @@ const {
 
 // GamePage 不再直接調用業務 Port，由子組件負責
 
-// 遊戲模式（從 runtimeConfig 取得，單一真相來源）
-const gameMode = useGameMode()
-
-// 頁面可見性監控：頁面恢復可見時觸發狀態恢復
-usePageVisibility()
-
-// 頁面重新整理後的重連功能
-const { reconnectIfNeeded } = useGameReconnection()
-
-onMounted(async () => {
+onMounted(() => {
   console.info('[GamePage] 遊戲頁面已載入', { gameMode })
 
-  // 檢查是否需要重連（頁面重新整理的情況）
-  // 正常從 Lobby 進入時，SSE 已在 Lobby 建立，不需要重連
-  const result = await reconnectIfNeeded()
-  if (!result.success) {
-    console.error('[GamePage] 重連失敗，導向大廳', result.error)
+  // 取得 player 資訊
+  const playerId = sessionContext.getPlayerId()
+  const playerName = sessionContext.getPlayerName() || 'Player'
+  const gameId = sessionContext.getGameId()
+  const roomTypeId = sessionContext.getRoomTypeId()
+
+  if (!playerId) {
+    console.error('[GamePage] 無 playerId，導向大廳')
     navigateTo('/lobby')
+    return
+  }
+
+  console.info('[GamePage] 建立連線', { playerId, playerName, gameId, roomTypeId })
+
+  // 根據模式建立連線
+  if (gameMode === 'backend' && sseConnectionManager) {
+    // Backend 模式：建立 SSE 連線
+    // 後端會推送 InitialState 事件決定顯示內容
+    sseConnectionManager.connect({
+      playerId,
+      playerName,
+      gameId: gameId ?? undefined,
+      roomTypeId: roomTypeId ?? undefined,
+    })
+  } else if (gameMode === 'mock' && mockEventEmitter) {
+    // Mock 模式：啟動事件腳本
+    console.info('[GamePage] 啟動 Mock 事件腳本')
+    mockEventEmitter.start()
   }
 })
 
 onUnmounted(() => {
-  // 透過 Container 的 useOptionalDependency 自動判斷是否有註冊 MockEventEmitter
-  // 只有在 Mock 模式下，registry.ts 才會註冊此依賴
-  const mockEventEmitter = useOptionalDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
+  // 斷開 SSE 連線（Backend 模式）
+  if (sseConnectionManager) {
+    console.info('[GamePage] 斷開 SSE 連線')
+    sseConnectionManager.disconnect()
+  }
+
+  // 重置 Mock 事件發射器（Mock 模式）
   if (mockEventEmitter) {
     console.info('[GamePage] 重置 Mock 事件發射器')
     mockEventEmitter.reset()
