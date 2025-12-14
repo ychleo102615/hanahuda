@@ -28,4 +28,3 @@ export * from './event-handlers'
 
 // 匯出獨立 Use Cases
 export { StartGameUseCase } from './StartGameUseCase'
-export { TriggerStateRecoveryUseCase } from './TriggerStateRecoveryUseCase'

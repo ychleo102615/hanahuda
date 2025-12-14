@@ -14,7 +14,6 @@ export const TOKENS = {
   MatchmakingStatePort: Symbol('MatchmakingStatePort'),
   NavigationPort: Symbol('NavigationPort'),
   SessionContextPort: Symbol('SessionContextPort'),
-  ReconnectionPort: Symbol('ReconnectionPort'),
 
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
@@ -25,8 +24,7 @@ export const TOKENS = {
   // ===== Input Ports - InitialState Handler (SSE-First) =====
   HandleInitialStatePort: Symbol('HandleInitialStatePort'),
 
-  // ===== Input Ports - State Recovery (Deprecated) =====
-  TriggerStateRecoveryPort: Symbol('TriggerStateRecoveryPort'),
+  // ===== Input Ports - State Recovery =====
   HandleStateRecoveryPort: Symbol('HandleStateRecoveryPort'),
 
   // ===== Input Ports - Player Operations (3 個) =====

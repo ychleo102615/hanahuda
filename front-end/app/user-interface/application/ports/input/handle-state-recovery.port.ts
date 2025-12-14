@@ -41,7 +41,11 @@
  */
 
 import type { GameSnapshotRestore, GameFinishedInfo } from '#shared/contracts'
-import type { SnapshotError } from '../output'
+
+/**
+ * 快照獲取錯誤類型
+ */
+export type SnapshotError = 'network_error' | 'timeout' | 'server_error' | 'not_found'
 
 /**
  * HandleStateRecoveryPort - Input Port

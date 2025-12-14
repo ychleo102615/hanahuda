@@ -53,6 +53,5 @@ export type {
 // InitialState Handler Input Port (SSE-First Architecture)
 export { HandleInitialStatePort } from './handle-initial-state.port'
 
-// State Recovery Input Ports (Deprecated - to be removed after migration)
-export { TriggerStateRecoveryPort } from './trigger-state-recovery.port'
+// State Recovery Input Port (for SSE GameSnapshotRestore event)
 export { HandleStateRecoveryPort } from './handle-state-recovery.port'

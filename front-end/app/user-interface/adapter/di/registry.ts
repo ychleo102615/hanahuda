@@ -43,12 +43,11 @@ import { HandleTurnErrorUseCase } from '../../application/use-cases/event-handle
 import { HandleGameErrorUseCase } from '../../application/use-cases/event-handlers/HandleGameErrorUseCase'
 import { HandleInitialStateUseCase } from '../../application/use-cases/HandleInitialStateUseCase'
 import { StartGameUseCase } from '../../application/use-cases/StartGameUseCase'
-import { TriggerStateRecoveryUseCase } from '../../application/use-cases/TriggerStateRecoveryUseCase'
 import { HandleStateRecoveryUseCase } from '../../application/use-cases/HandleStateRecoveryUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ReconnectionPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort } from '../../application/ports/output'
 import type { HandleStateRecoveryPort } from '../../application/ports/input'
 import { createSessionContextAdapter } from '../session/SessionContextAdapter'
 import type { DomainFacade } from '../../application/types/domain-facade'
@@ -64,7 +63,6 @@ import { createNotificationPortAdapter } from '../notification/NotificationPortA
 import { createGameStatePortAdapter } from '../stores/GameStatePortAdapter'
 import { createNavigationPortAdapter } from '../router/NavigationPortAdapter'
 import { CountdownManager } from '../services/CountdownManager'
-import { ReconnectApiClient } from '../api/ReconnectApiClient'
 import { OperationSessionManager } from '../abort/OperationSessionManager'
 import { SSEConnectionManager } from '../sse/SSEConnectionManager'
 import { RoomApiClient } from '../api/RoomApiClient'
@@ -479,18 +477,6 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  // 註冊 TriggerStateRecoveryPort（依賴 ReconnectionPort、HandleStateRecoveryPort）
-  // 注意：清理操作（取消 delays、清空事件鏈）由 Adapter 層處理，Use Case 只負責業務邏輯
-  container.register(
-    TOKENS.TriggerStateRecoveryPort,
-    () => {
-      const reconnectionPort = container.resolve(TOKENS.ReconnectionPort) as ReconnectionPort
-      const handleStateRecoveryPort = container.resolve(TOKENS.HandleStateRecoveryPort) as HandleStateRecoveryPort
-      return new TriggerStateRecoveryUseCase(reconnectionPort, handleStateRecoveryPort)
-    },
-    { singleton: true }
-  )
-
   console.info('[DI] Registered Player Operations, US2, US3, and US4 event handlers')
 }
 
@@ -534,16 +520,6 @@ function registerBackendAdapters(container: DIContainer): void {
       const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
       router.setOperationSession(operationSession)
       return router
-    },
-    { singleton: true },
-  )
-
-  // ReconnectionPort: ReconnectApiClient（依賴 EventRouter）
-  container.register(
-    TOKENS.ReconnectionPort,
-    () => {
-      const eventRouter = container.resolve(TOKENS.EventRouter) as EventRouter
-      return new ReconnectApiClient(baseURL, eventRouter)
     },
     { singleton: true },
   )
@@ -619,16 +595,6 @@ function registerMockAdapters(container: DIContainer): void {
       const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
       router.setOperationSession(operationSession)
       return router
-    },
-    { singleton: true },
-  )
-
-  // ReconnectionPort: ReconnectApiClient（依賴 EventRouter）
-  container.register(
-    TOKENS.ReconnectionPort,
-    () => {
-      const eventRouter = container.resolve(TOKENS.EventRouter) as EventRouter
-      return new ReconnectApiClient(baseURL, eventRouter)
     },
     { singleton: true },
   )

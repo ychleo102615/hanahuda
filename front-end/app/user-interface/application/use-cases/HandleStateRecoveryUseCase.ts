@@ -32,9 +32,8 @@ import type {
   NavigationPort,
   AnimationPort,
   MatchmakingStatePort,
-  SnapshotError,
 } from '../ports/output'
-import { HandleStateRecoveryPort } from '../ports/input/handle-state-recovery.port'
+import { HandleStateRecoveryPort, type SnapshotError } from '../ports/input/handle-state-recovery.port'
 import type { OperationSessionManager } from '../../adapter/abort'
 
 export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
