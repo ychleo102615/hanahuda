@@ -14,7 +14,7 @@
  */
 
 import type { GameStartedEvent } from '#shared/contracts'
-import type { UIStatePort, GameStatePort, MatchmakingStatePort, NavigationPort } from '../../ports/output'
+import type { UIStatePort, GameStatePort, MatchmakingStatePort, NavigationPort, NotificationPort } from '../../ports/output'
 import type { HandleGameStartedPort } from '../../ports/input'
 
 export class HandleGameStartedUseCase implements HandleGameStartedPort {
@@ -22,24 +22,28 @@ export class HandleGameStartedUseCase implements HandleGameStartedPort {
     private readonly updateUIState: UIStatePort,
     private readonly gameState: GameStatePort,
     private readonly matchmakingState: MatchmakingStatePort,
-    private readonly navigationPort: NavigationPort
+    private readonly navigationPort: NavigationPort,
+    private readonly notification: NotificationPort
   ) {}
 
   execute(event: GameStartedEvent): void {
-    // 1. 初始化遊戲上下文（game_id, players, ruleset）
+    // 1. 隱藏等待訊息（玩家 A 在等待時收到 GameStarted 事件）
+    this.notification.hideWaitingMessage()
+
+    // 2. 初始化遊戲上下文（game_id, players, ruleset）
     this.updateUIState.initializeGameContext(
       event.game_id,
       [...event.players], // Convert readonly array to mutable
       event.ruleset
     )
 
-    // 2. 設置初始牌堆數量（48 張）
+    // 3. 設置初始牌堆數量（48 張）
     this.gameState.updateDeckRemaining(48)
 
-    // 3. 清除配對狀態（配對已成功，進入遊戲）
+    // 4. 清除配對狀態（配對已成功，進入遊戲）
     this.matchmakingState.clearSession()
 
-    // 4. 導航至遊戲頁面
+    // 5. 導航至遊戲頁面
     this.navigationPort.navigateToGame()
   }
 }

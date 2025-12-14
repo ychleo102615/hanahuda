@@ -55,6 +55,8 @@ export interface GameStateStoreState {
   // 注意：gameId 由 SessionContextPort 管理，不在此 store 中
   localPlayerId: string | null
   opponentPlayerId: string | null
+  localPlayerName: string | null
+  opponentPlayerName: string | null
   ruleset: Ruleset | null
 
   // 流程狀態
@@ -121,6 +123,8 @@ export const useGameStateStore = defineStore('gameState', {
     // 注意：gameId 由 SessionContextPort 管理，不在此 store 中
     localPlayerId: null,
     opponentPlayerId: null,
+    localPlayerName: null,
+    opponentPlayerName: null,
     ruleset: null,
 
     // 流程狀態
@@ -268,11 +272,13 @@ export const useGameStateStore = defineStore('gameState', {
       }
 
       this.localPlayerId = localPlayer.player_id
+      this.localPlayerName = localPlayer.player_name
 
       // 辨識對手
       const opponent = players.find((p) => p.player_id !== this.localPlayerId)
       if (opponent) {
         this.opponentPlayerId = opponent.player_id
+        this.opponentPlayerName = opponent.player_name
       }
     },
 
@@ -296,13 +302,21 @@ export const useGameStateStore = defineStore('gameState', {
 
         if (localId) {
           this.localPlayerId = localId
+          const localPlayer = snapshot.players.find((p) => p.player_id === localId)
+          if (localPlayer) {
+            this.localPlayerName = localPlayer.player_name
+          }
+
           const opponent = snapshot.players.find((p) => p.player_id !== localId)
           if (opponent) {
             this.opponentPlayerId = opponent.player_id
+            this.opponentPlayerName = opponent.player_name
           }
           console.info('[GameStateStore] Initialized player IDs from snapshot', {
             localPlayerId: this.localPlayerId,
+            localPlayerName: this.localPlayerName,
             opponentPlayerId: this.opponentPlayerId,
+            opponentPlayerName: this.opponentPlayerName,
           })
         }
       }
@@ -384,7 +398,7 @@ export const useGameStateStore = defineStore('gameState', {
      * @note 此方法僅更新 flowStage，不改變 activePlayerId。
      *       activePlayerId 應由 GameStatePortAdapter.setActivePlayer 單獨管理。
      */
-    setFlowStage(stage: FlowState): void {
+    setFlowStage(stage: FlowState | null): void {
       this.flowStage = stage
       // 注意：不再自動設定 activePlayerId，避免覆蓋正確的活動玩家
     },
@@ -508,6 +522,8 @@ export const useGameStateStore = defineStore('gameState', {
       // gameId 由 SessionContextPort 清除
       this.localPlayerId = null
       this.opponentPlayerId = null
+      this.localPlayerName = null
+      this.opponentPlayerName = null
       this.ruleset = null
 
       this.flowStage = null

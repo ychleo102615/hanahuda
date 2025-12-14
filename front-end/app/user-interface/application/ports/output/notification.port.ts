@@ -326,6 +326,24 @@ export interface NotificationPort {
    */
   hideWaitingMessage(): void
 
+  /**
+   * 設置發牌動畫狀態
+   *
+   * @description
+   * 發牌動畫開始時設為 true，結束時設為 false。
+   * 用於 TopInfoBar 顯示 "Dealing..." 狀態。
+   *
+   * @param inProgress - 是否正在發牌
+   *
+   * @example
+   * ```typescript
+   * notification.setDealingInProgress(true)
+   * // ... 發牌動畫 ...
+   * notification.setDealingInProgress(false)
+   * ```
+   */
+  setDealingInProgress(inProgress: boolean): void
+
   // ===== 倒數計時 =====
 
   /**

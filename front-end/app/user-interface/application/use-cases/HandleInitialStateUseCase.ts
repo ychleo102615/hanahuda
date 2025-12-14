@@ -176,8 +176,9 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     // 5. 靜默恢復完整遊戲狀態（無動畫）
     this.updateUIState.restoreGameState(snapshot)
 
-    // 6. 隱藏重連訊息
+    // 6. 隱藏重連訊息和等待訊息
     this.notification.hideReconnectionMessage()
+    this.notification.hideWaitingMessage()
 
     // 7. 根據 flow_stage 恢復 UI 面板
     this.restoreUIPanel(snapshot)

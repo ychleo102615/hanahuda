@@ -64,6 +64,22 @@ export interface RoundEndedInstantlyData {
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected'
 
 /**
+ * Toast 類型
+ */
+export type ToastType = 'info' | 'success' | 'error' | 'loading'
+
+/**
+ * Toast 資料
+ */
+export interface ToastData {
+  id: string
+  type: ToastType
+  message: string
+  duration: number | null // null = persistent (won't auto-dismiss)
+  dismissible: boolean
+}
+
+/**
  * UIStateStore State 介面
  */
 export interface UIStateStoreState {
@@ -99,6 +115,9 @@ export interface UIStateStoreState {
   waitingForOpponent: boolean
   waitingTimeoutSeconds: number | null
 
+  // 發牌動畫狀態
+  dealingInProgress: boolean
+
   // 手牌確認模式（兩次點擊）
   handCardConfirmationMode: boolean
   handCardAwaitingConfirmation: string | null
@@ -121,6 +140,9 @@ export interface UIStateStoreState {
 
   // 待處理的遊戲結束資料（最後一回合緩存用）
   pendingGameFinishedData: GameFinishedData | null
+
+  // 統一 Toast 系統
+  activeToasts: ToastData[]
 }
 
 /**
@@ -160,6 +182,12 @@ export interface UIStateStoreActions {
   // 場牌選擇模式管理
   enterFieldCardSelectionMode(sourceCard: string, selectableTargets: string[], highlightType: 'single' | 'multiple'): void
   exitFieldCardSelectionMode(): void
+
+  // 統一 Toast 系統
+  addToast(toast: Omit<ToastData, 'id'>): string
+  removeToast(id: string): void
+  removeToastByType(type: ToastType): void
+  clearAllToasts(): void
 }
 
 /**
@@ -199,6 +227,9 @@ export const useUIStateStore = defineStore('uiState', {
     waitingForOpponent: false,
     waitingTimeoutSeconds: null,
 
+    // 發牌動畫狀態
+    dealingInProgress: false,
+
     // 手牌確認模式
     handCardConfirmationMode: false,
     handCardAwaitingConfirmation: null,
@@ -221,6 +252,9 @@ export const useUIStateStore = defineStore('uiState', {
 
     // 待處理的遊戲結束資料
     pendingGameFinishedData: null,
+
+    // 統一 Toast 系統
+    activeToasts: [],
   }),
 
   actions: {
@@ -342,6 +376,16 @@ export const useUIStateStore = defineStore('uiState', {
       this.waitingForOpponent = false
       this.waitingTimeoutSeconds = null
       console.info('[UIStateStore] Stopped waiting for opponent')
+    },
+
+    /**
+     * 設置發牌動畫狀態
+     *
+     * @param inProgress - 是否正在發牌
+     */
+    setDealingInProgress(inProgress: boolean): void {
+      this.dealingInProgress = inProgress
+      console.info('[UIStateStore] Dealing in progress:', inProgress)
     },
 
     /**
@@ -562,6 +606,9 @@ export const useUIStateStore = defineStore('uiState', {
       // 待處理的遊戲結束資料
       this.pendingGameFinishedData = null
 
+      // 統一 Toast 系統
+      this.activeToasts = []
+
       console.info('[UIStateStore] 狀態已重置')
     },
 
@@ -631,6 +678,67 @@ export const useUIStateStore = defineStore('uiState', {
       this.fieldCardHighlightType = null
       this.fieldCardSourceCard = null
       console.info('[UIStateStore] 退出場牌選擇模式')
+    },
+
+    // ========================================
+    // 統一 Toast 系統
+    // ========================================
+
+    /**
+     * 添加 Toast
+     *
+     * @param toast - Toast 資料（不含 id）
+     * @returns 生成的 Toast ID
+     */
+    addToast(toast: Omit<ToastData, 'id'>): string {
+      const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      const newToast: ToastData = { ...toast, id }
+      this.activeToasts.push(newToast)
+      console.info('[UIStateStore] Added toast:', newToast)
+
+      // 設定自動移除計時器
+      if (toast.duration !== null) {
+        setTimeout(() => {
+          this.removeToast(id)
+        }, toast.duration)
+      }
+
+      return id
+    },
+
+    /**
+     * 移除指定 Toast
+     *
+     * @param id - Toast ID
+     */
+    removeToast(id: string): void {
+      const index = this.activeToasts.findIndex((t) => t.id === id)
+      if (index !== -1) {
+        this.activeToasts.splice(index, 1)
+        console.info('[UIStateStore] Removed toast:', id)
+      }
+    },
+
+    /**
+     * 移除指定類型的所有 Toast
+     *
+     * @param type - Toast 類型
+     */
+    removeToastByType(type: ToastType): void {
+      const initialLength = this.activeToasts.length
+      this.activeToasts = this.activeToasts.filter((t) => t.type !== type)
+      const removedCount = initialLength - this.activeToasts.length
+      if (removedCount > 0) {
+        console.info('[UIStateStore] Removed toasts by type:', type, 'count:', removedCount)
+      }
+    },
+
+    /**
+     * 清除所有 Toast
+     */
+    clearAllToasts(): void {
+      this.activeToasts = []
+      console.info('[UIStateStore] Cleared all toasts')
     },
   },
 })

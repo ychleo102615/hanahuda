@@ -36,6 +36,9 @@ export class HandleGameErrorUseCase implements HandleGameErrorPort {
   ) {}
 
   execute(event: GameErrorEvent): void {
+    // 0. 清理：停止倒數計時
+    this.notification.cleanup()
+
     // 1. 顯示錯誤通知
     this.notification.showErrorMessage(event.message)
 

@@ -99,14 +99,15 @@ export interface GameStatePort {
   /**
    * 設定當前流程階段
    *
-   * @param stage - 流程階段
+   * @param stage - 流程階段（null 表示回合結束）
    *
    * @example
    * ```typescript
    * gameState.setFlowStage('AWAITING_HAND_PLAY')
+   * gameState.setFlowStage(null) // 回合結束
    * ```
    */
-  setFlowStage(stage: FlowState): void
+  setFlowStage(stage: FlowState | null): void
 
   /**
    * 設定當前活動玩家

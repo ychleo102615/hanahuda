@@ -3,16 +3,21 @@
  */
 
 import type { RoundEndedInstantlyEvent } from '#shared/contracts'
-import type { UIStatePort, NotificationPort } from '../../ports/output'
+import type { UIStatePort, NotificationPort, GameStatePort } from '../../ports/output'
 import type { HandleRoundEndedInstantlyPort } from '../../ports/input'
 
 export class HandleRoundEndedInstantlyUseCase implements HandleRoundEndedInstantlyPort {
   constructor(
     private readonly updateUIState: UIStatePort,
-    private readonly notification: NotificationPort
+    private readonly notification: NotificationPort,
+    private readonly gameState: GameStatePort
   ) {}
 
   execute(event: RoundEndedInstantlyEvent): void {
+    // 0. 清理：停止倒數計時、清除流程階段
+    this.notification.cleanup()
+    this.gameState.setFlowStage(null)
+
     // 1. 更新分數
     const player1Score = event.updated_total_scores.find((s) => s.player_id === 'player-1')?.score || 0
     const player2Score = event.updated_total_scores.find((s) => s.player_id === 'player-2')?.score || 0

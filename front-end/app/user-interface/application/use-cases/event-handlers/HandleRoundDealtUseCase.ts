@@ -82,7 +82,10 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
       this.gameState.updateOpponentHandCount(opponentHand.cards.length)
     }
 
-    // 2. 播放發牌動畫（T059/T061/T062）
+    // 2. 標記發牌動畫開始
+    this.notification.setDealingInProgress(true)
+
+    // 3. 播放發牌動畫（T059/T061/T062）
     // 每張牌發完後更新牌堆數量，配合視覺效果
     await this.animation.playDealAnimation({
       fieldCards: [...event.field],
@@ -95,7 +98,10 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
       },
     })
 
-    // 3. 動畫完成後更新遊戲狀態
+    // 4. 標記發牌動畫結束
+    this.notification.setDealingInProgress(false)
+
+    // 5. 動畫完成後更新遊戲狀態
     // 遵循 Server 權威原則：使用 server 提供的 next_state 設定狀態
     this.gameState.setFlowStage(event.next_state.state_type)
     this.gameState.setActivePlayer(event.next_state.active_player_id)

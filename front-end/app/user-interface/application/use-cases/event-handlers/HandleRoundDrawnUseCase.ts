@@ -3,13 +3,20 @@
  */
 
 import type { RoundDrawnEvent } from '#shared/contracts'
-import type { NotificationPort } from '../../ports/output'
+import type { NotificationPort, GameStatePort } from '../../ports/output'
 import type { HandleRoundDrawnPort } from '../../ports/input'
 
 export class HandleRoundDrawnUseCase implements HandleRoundDrawnPort {
-  constructor(private readonly notification: NotificationPort) {}
+  constructor(
+    private readonly notification: NotificationPort,
+    private readonly gameState: GameStatePort
+  ) {}
 
   execute(event: RoundDrawnEvent): void {
+    // 0. 清理：停止倒數計時、清除流程階段
+    this.notification.cleanup()
+    this.gameState.setFlowStage(null)
+
     // 顯示平局訊息
     this.notification.showRoundDrawnModal([...event.current_total_scores])
 

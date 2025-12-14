@@ -348,7 +348,7 @@ function registerInputPorts(container: DIContainer): void {
   // T030 [US1]: 註冊 GameStarted 事件處理器
   container.register(
     TOKENS.HandleGameStartedPort,
-    () => new HandleGameStartedUseCase(uiStatePort, gameStatePort, matchmakingStatePort, navigationPort),
+    () => new HandleGameStartedUseCase(uiStatePort, gameStatePort, matchmakingStatePort, navigationPort, notificationPort),
     { singleton: true }
   )
 
@@ -418,7 +418,7 @@ function registerInputPorts(container: DIContainer): void {
   // Phase 9: 加入 NotificationPort（倒數計時整合）
   container.register(
     TOKENS.HandleRoundScoredPort,
-    () => new HandleRoundScoredUseCase(uiStatePort, domainFacade, notificationPort),
+    () => new HandleRoundScoredUseCase(uiStatePort, domainFacade, notificationPort, gameStatePort),
     { singleton: true }
   )
 
@@ -426,14 +426,14 @@ function registerInputPorts(container: DIContainer): void {
   // Phase 9: 加入 NotificationPort（倒數計時整合）
   container.register(
     TOKENS.HandleRoundEndedInstantlyPort,
-    () => new HandleRoundEndedInstantlyUseCase(uiStatePort, notificationPort),
+    () => new HandleRoundEndedInstantlyUseCase(uiStatePort, notificationPort, gameStatePort),
     { singleton: true }
   )
 
   // T083 [US4]: 註冊 RoundDrawn 事件處理器
   container.register(
     TOKENS.HandleRoundDrawnPort,
-    () => new HandleRoundDrawnUseCase(notificationPort),
+    () => new HandleRoundDrawnUseCase(notificationPort, gameStatePort),
     { singleton: true }
   )
 

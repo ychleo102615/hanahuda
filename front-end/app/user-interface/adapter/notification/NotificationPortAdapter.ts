@@ -65,43 +65,63 @@ export function createNotificationPortAdapter(
       store.hideModal()
     },
 
-    // ===== Toast =====
+    // ===== Toast (Unified Toast System) =====
     showErrorMessage(message: string): void {
-      store.showErrorMessage(message)
+      store.addToast({
+        type: 'error',
+        message,
+        duration: 5000,
+        dismissible: true,
+      })
+      console.info('[NotificationPort] Error message:', message)
     },
 
     showSuccessMessage(message: string): void {
-      // 使用 infoMessage 顯示成功訊息
-      store.infoMessage = message
+      store.addToast({
+        type: 'success',
+        message,
+        duration: 3000,
+        dismissible: false,
+      })
       console.info('[NotificationPort] Success message:', message)
-
-      // 自動消失（3 秒後）
-      setTimeout(() => {
-        if (store.infoMessage === message) {
-          store.infoMessage = null
-        }
-      }, 3000)
     },
 
     showInfoMessage(message: string): void {
-      // 使用 infoMessage 顯示資訊訊息
-      store.infoMessage = message
+      store.addToast({
+        type: 'info',
+        message,
+        duration: 5000,
+        dismissible: false,
+      })
       console.info('[NotificationPort] Info message:', message)
-
-      // 自動消失（5 秒後，資訊訊息顯示較長）
-      setTimeout(() => {
-        if (store.infoMessage === message) {
-          store.infoMessage = null
-        }
-      }, 5000)
     },
 
     showReconnectionMessage(): void {
-      store.showReconnectionMessage()
+      // Remove any existing loading toast first
+      store.removeToastByType('loading')
+      // Add persistent loading toast
+      store.addToast({
+        type: 'loading',
+        message: 'Connection lost, reconnecting...',
+        duration: null, // Persistent until manually removed
+        dismissible: false,
+      })
+      store.reconnecting = true
+      console.info('[NotificationPort] Reconnecting...')
     },
 
     hideReconnectionMessage(): void {
-      store.hideReconnectionMessage()
+      // Remove loading toast
+      store.removeToastByType('loading')
+      store.reconnecting = false
+      // Show success toast
+      store.addToast({
+        type: 'success',
+        message: 'Connection restored',
+        duration: 3000,
+        dismissible: false,
+      })
+      console.info('[NotificationPort] Connection restored')
     },
 
     // ===== 等待訊息 =====
@@ -111,6 +131,10 @@ export function createNotificationPortAdapter(
 
     hideWaitingMessage(): void {
       store.hideWaitingMessage()
+    },
+
+    setDealingInProgress(inProgress: boolean): void {
+      store.setDealingInProgress(inProgress)
     },
 
     // ===== 查詢 =====

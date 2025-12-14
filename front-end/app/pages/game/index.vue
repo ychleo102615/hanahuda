@@ -32,11 +32,10 @@ import OpponentDepositoryZone from './components/OpponentDepositoryZone.vue'
 import PlayerDepositoryZone from './components/PlayerDepositoryZone.vue'
 import DeckZone from './components/DeckZone.vue'
 import DecisionModal from './components/DecisionModal.vue'
-import ErrorToast from './components/ErrorToast.vue'
 import GameFinishedModal from './components/GameFinishedModal.vue'
 import RoundEndModal from './components/RoundEndModal.vue'
-import ReconnectionBanner from './components/ReconnectionBanner.vue'
 import AnimationLayer from './components/AnimationLayer.vue'
+import UnifiedToast from '~/components/UnifiedToast.vue'
 import ConfirmationHint from './components/ConfirmationHint.vue'
 import ActionPanel from '~/components/ActionPanel.vue'
 import ConfirmDialog from '~/components/ConfirmDialog.vue'
@@ -52,7 +51,7 @@ const gameState = useGameStateStore()
 const uiState = useUIStateStore()
 
 const { opponentHandCount } = storeToRefs(gameState)
-const { infoMessage, connectionStatus } = storeToRefs(uiState)
+const { connectionStatus } = storeToRefs(uiState)
 
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
@@ -235,21 +234,8 @@ function handleFieldCardClick(cardId: string) {
       Opponent Hand: {{ opponentHandCount }}
     </div>
 
-    <!-- T088-T090 [US4]: Error Toast -->
-    <ErrorToast />
-
-    <!-- 資訊訊息 Toast -->
-    <Transition name="fade">
-      <div
-        v-if="infoMessage"
-        class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg"
-      >
-        {{ infoMessage }}
-      </div>
-    </Transition>
-
-    <!-- T109-T111 [US5]: Reconnection Banner -->
-    <ReconnectionBanner />
+    <!-- Unified Toast Notification -->
+    <UnifiedToast />
 
     <!-- T072-T076 [US3]: Koi-Koi Decision Modal -->
     <DecisionModal />
