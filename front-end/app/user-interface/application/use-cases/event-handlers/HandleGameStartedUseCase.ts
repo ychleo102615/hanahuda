@@ -37,8 +37,8 @@ export class HandleGameStartedUseCase implements HandleGameStartedPort {
       event.ruleset
     )
 
-    // 3. 設置初始牌堆數量（48 張）
-    this.gameState.updateDeckRemaining(48)
+    // 3. 設置初始牌堆數量（從 ruleset 取得）
+    this.gameState.updateDeckRemaining(event.ruleset.total_deck_cards)
 
     // 4. 清除配對狀態（配對已成功，進入遊戲）
     this.matchmakingState.clearSession()

@@ -388,6 +388,23 @@ export interface GameStatePort {
   getPossibleTargetCardIds(): string[]
 
   /**
+   * 取得遊戲規則集
+   *
+   * @description
+   * 取得當前遊戲的規則設定。此方法應在遊戲上下文初始化後調用
+   * （即 initializeGameContext 或 restoreGameState 之後）。
+   *
+   * @returns 遊戲規則集
+   *
+   * @example
+   * ```typescript
+   * const ruleset = gameState.getRuleset()
+   * const totalDeckCards = ruleset.total_deck_cards
+   * ```
+   */
+  getRuleset(): Ruleset
+
+  /**
    * 重置所有玩家的 Koi-Koi 倍率
    *
    * @description

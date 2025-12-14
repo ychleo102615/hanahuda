@@ -25,6 +25,7 @@ import type {
   GameSnapshotRestore,
   YakuScore,
 } from '#shared/contracts'
+import { DEFAULT_TOTAL_DECK_CARDS } from '#shared/constants/roomTypes'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import { container } from '../di/container'
 import { TOKENS } from '../di/tokens'
@@ -138,7 +139,7 @@ export const useGameStateStore = defineStore('gameState', {
     opponentHandCount: 0,
     myDepository: [],
     opponentDepository: [],
-    deckRemaining: 24,
+    deckRemaining: DEFAULT_TOTAL_DECK_CARDS,
     possibleTargetCardIds: [],
     drawnCard: null,
 
@@ -535,7 +536,7 @@ export const useGameStateStore = defineStore('gameState', {
       this.opponentHandCount = 0
       this.myDepository = []
       this.opponentDepository = []
-      this.deckRemaining = 24
+      this.deckRemaining = DEFAULT_TOTAL_DECK_CARDS
       this.possibleTargetCardIds = []
       this.drawnCard = null
 

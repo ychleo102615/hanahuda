@@ -110,6 +110,8 @@ export interface Ruleset {
   readonly target_score: number
   readonly yaku_settings: ReadonlyArray<YakuSetting>
   readonly special_rules: SpecialRules
+  /** 牌堆總數量（標準花札為 48）*/
+  readonly total_deck_cards: number
 }
 
 /**

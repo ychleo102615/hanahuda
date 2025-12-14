@@ -125,6 +125,12 @@ export function createGameStatePortAdapter(): GameStatePort {
       return store.getPossibleTargetCardIds()
     },
 
+    getRuleset(): Ruleset {
+      // 此方法只應在遊戲上下文初始化後調用
+      // initializeGameContext() 或 restoreGameState() 會確保 ruleset 被設定
+      return store.ruleset as Ruleset
+    },
+
     resetKoiKoiMultipliers(): void {
       store.resetKoiKoiMultipliers()
     },

@@ -182,6 +182,7 @@ export default defineEventHandler(async (event) => {
           target_score: result.ruleset.targetScore,
           yaku_settings: [],
           special_rules: { teshi_enabled: true, field_kuttsuki_enabled: true },
+          total_deck_cards: 48,
         },
         starting_player_id: result.startingPlayerId,
       }

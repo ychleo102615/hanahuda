@@ -53,8 +53,9 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
     this.gameState.updateYaku([], [])
     // 重置 Koi-Koi 倍率
     this.gameState.resetKoiKoiMultipliers()
-    // 重置牌堆數量（發牌動畫會逐張遞減）
-    this.gameState.updateDeckRemaining(24)
+    // 重置牌堆數量（從 ruleset 取得總牌數，發牌動畫會逐張遞減）
+    const totalDeckCards = this.gameState.getRuleset().total_deck_cards
+    this.gameState.updateDeckRemaining(totalDeckCards)
 
     // 記錄莊家 ID
     this.gameState.setDealerId(event.dealer_id)

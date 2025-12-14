@@ -238,8 +238,17 @@ export function createMockGameStatePort(): GameStatePort {
     getDepositoryCards: vi.fn().mockReturnValue([]),
     getDeckRemaining: vi.fn().mockReturnValue(48),
     getDealerId: vi.fn().mockReturnValue(null),
-    drawnCard: null,
-    possibleTargetCardIds: [],
+    getDrawnCard: vi.fn().mockReturnValue(null),
+    getPossibleTargetCardIds: vi.fn().mockReturnValue([]),
+    getRuleset: vi.fn().mockReturnValue({
+      total_rounds: 2,
+      target_score: 50,
+      yaku_settings: [],
+      special_rules: { teshi_enabled: true, field_kuttsuki_enabled: true },
+      total_deck_cards: 48,
+    }),
+    resetKoiKoiMultipliers: vi.fn(),
+    reset: vi.fn(),
   }
 }
 

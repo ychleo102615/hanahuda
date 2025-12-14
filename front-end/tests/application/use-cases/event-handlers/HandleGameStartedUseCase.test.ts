@@ -54,6 +54,7 @@ describe('HandleGameStartedUseCase', () => {
           { player_id: 'player-2', player_name: 'Bob', is_ai: true },
         ],
         ruleset: {
+          total_rounds: 2,
           target_score: 50,
           yaku_settings: [
             { yaku_type: 'GOKO', base_points: 15, enabled: true },
@@ -63,6 +64,7 @@ describe('HandleGameStartedUseCase', () => {
             teshi_enabled: true,
             field_kuttsuki_enabled: true,
           },
+          total_deck_cards: 48,
         },
         starting_player_id: 'player-1',
       }
@@ -78,6 +80,7 @@ describe('HandleGameStartedUseCase', () => {
           { player_id: 'player-2', player_name: 'Bob', is_ai: true },
         ],
         {
+          total_rounds: 2,
           target_score: 50,
           yaku_settings: [
             { yaku_type: 'GOKO', base_points: 15, enabled: true },
@@ -87,6 +90,7 @@ describe('HandleGameStartedUseCase', () => {
             teshi_enabled: true,
             field_kuttsuki_enabled: true,
           },
+          total_deck_cards: 48,
         }
       )
     })
@@ -103,12 +107,14 @@ describe('HandleGameStartedUseCase', () => {
           { player_id: 'p2', player_name: 'AI Opponent', is_ai: true },
         ],
         ruleset: {
+          total_rounds: 2,
           target_score: 100,
           yaku_settings: [],
           special_rules: {
             teshi_enabled: false,
             field_kuttsuki_enabled: false,
           },
+          total_deck_cards: 48,
         },
         starting_player_id: 'p1',
       }
@@ -125,6 +131,7 @@ describe('HandleGameStartedUseCase', () => {
         ],
         expect.objectContaining({
           target_score: 100,
+          total_deck_cards: 48,
         })
       )
     })
@@ -174,12 +181,14 @@ describe('HandleGameStartedUseCase', () => {
           { player_id: 'ai-2', player_name: 'AI 2', is_ai: true },
         ],
         ruleset: {
+          total_rounds: 2,
           target_score: 50,
           yaku_settings: [],
           special_rules: {
             teshi_enabled: true,
             field_kuttsuki_enabled: true,
           },
+          total_deck_cards: 48,
         },
         starting_player_id: 'ai-1',
       }
@@ -200,12 +209,14 @@ describe('HandleGameStartedUseCase', () => {
           { player_id: 'p2', player_name: 'AI', is_ai: true },
         ],
         ruleset: {
+          total_rounds: 2,
           target_score: 50,
           yaku_settings: [],
           special_rules: {
             teshi_enabled: true,
             field_kuttsuki_enabled: true,
           },
+          total_deck_cards: 48,
         },
         starting_player_id: 'p1',
       }
