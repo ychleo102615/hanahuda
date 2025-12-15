@@ -298,16 +298,19 @@ function registerInputPorts(container: DIContainer): void {
   const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
 
   // 註冊 StartGamePort（SSE-First Architecture）
-  // 依賴 GameConnectionPort、SessionContextPort、GameStatePort、NotificationPort
+  // 依賴 GameConnectionPort、SessionContextPort、GameStatePort、NotificationPort、AnimationPort、OperationSessionManager
   container.register(
     TOKENS.StartGamePort,
     () => {
       const gameConnectionPort = container.resolve(TOKENS.GameConnectionPort) as GameConnectionPort
+      const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
       return new StartGameUseCase(
         gameConnectionPort,
         sessionContextPort,
         gameStatePort,
         notificationPort,
+        animationPort,
+        operationSession,
       )
     },
     { singleton: true }

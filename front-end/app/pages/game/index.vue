@@ -43,6 +43,7 @@ import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
 import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
 import { useGameMode } from '~/user-interface/adapter/composables/useGameMode'
+import { usePageVisibility } from '~/user-interface/adapter/composables/usePageVisibility'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
@@ -56,6 +57,9 @@ const { connectionStatus } = storeToRefs(uiState)
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const gameMode = useGameMode()
+
+// 頁面可見性監控（自動重連）
+usePageVisibility()
 
 // StartGameUseCase（Backend 模式）
 const startGameUseCase = gameMode === 'backend'

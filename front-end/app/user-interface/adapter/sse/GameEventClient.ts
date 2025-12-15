@@ -166,6 +166,9 @@ export class GameEventClient {
   /**
    * 斷開 SSE 連線
    *
+   * @description
+   * 斷開連線時會同時清空事件處理鏈，確保舊事件不會繼續處理。
+   *
    * @example
    * ```typescript
    * client.disconnect()
@@ -177,6 +180,8 @@ export class GameEventClient {
       this.eventSource = null
       console.info('[SSE] 連線已斷開')
     }
+    // 清空事件處理鏈，防止舊事件繼續處理
+    this.eventRouter.clearEventChain()
   }
 
   /**
