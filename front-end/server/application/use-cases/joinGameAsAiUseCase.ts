@@ -16,7 +16,7 @@
 import type { Game } from '~~/server/domain/game/game'
 import { addSecondPlayerAndStart, startRound } from '~~/server/domain/game/game'
 import { createPlayer } from '~~/server/domain/game/player'
-import { detectTeshi, detectKuttsuki } from '~~/server/domain/round/round'
+import { detectTeshi, detectKuttsuki } from '~~/server/domain/round'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'

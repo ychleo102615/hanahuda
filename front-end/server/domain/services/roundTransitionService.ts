@@ -10,7 +10,6 @@
  */
 
 import type { PlayerScore } from '#shared/contracts'
-import type { Game } from '../game/game'
 import {
   canContinue,
   startRound,
@@ -18,8 +17,9 @@ import {
   finishRoundDraw,
   finishGame,
   calculateWinner,
+  type Game,
   type GameWinnerResult,
-} from '../game/game'
+} from '../game'
 
 /**
  * 局轉換類型

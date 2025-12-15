@@ -25,13 +25,13 @@ import {
   getPlayerDepositoryFromGame,
   shouldEndRound,
   type Game,
-} from '~~/server/domain/game/game'
+} from '~~/server/domain/game'
 import {
   playHandCard as domainPlayHandCard,
   advanceToNextPlayer,
   setAwaitingDecision,
   getPlayerDepository,
-} from '~~/server/domain/round/round'
+} from '~~/server/domain/round'
 import {
   detectYaku,
   detectNewYaku,

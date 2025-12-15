@@ -9,9 +9,9 @@
  */
 
 import { randomUUID } from 'crypto'
-import type { Game } from '~~/server/domain/game/game'
-import type { Player } from '~~/server/domain/game/player'
-import type { Round } from '~~/server/domain/round/round'
+import type { Game, Player } from '~~/server/domain/game'
+import { toSnapshot } from '~~/server/domain/game'
+import type { Round } from '~~/server/domain/round'
 import type {
   GameStartedEvent,
   RoundDealtEvent,
@@ -40,7 +40,6 @@ import type {
   PlayerScore,
   KoiStatus,
 } from '#shared/contracts'
-import { toSnapshot } from '~~/server/domain/game/game'
 import { toPlayerInfo, toPlayerInfoList, createNextState, toScoreMultipliers } from './dtos'
 import { gameConfig } from '~~/server/utils/config'
 import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'

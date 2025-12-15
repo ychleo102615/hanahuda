@@ -14,7 +14,7 @@
 // Domain Layer imports
 import type { Player } from '~~/server/domain/game/player'
 import type { Game, GameStatus } from '~~/server/domain/game/game'
-import type { Round, PlayerRoundState, PendingSelection } from '~~/server/domain/round/round'
+import type { Round, PlayerRoundState, PendingSelection } from '~~/server/domain/round'
 import type { KoiStatus } from '~~/server/domain/round/koiStatus'
 
 // Application Layer Port

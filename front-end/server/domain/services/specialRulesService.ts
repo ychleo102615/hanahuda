@@ -9,8 +9,8 @@
  */
 
 import type { SpecialRules } from '#shared/contracts'
-import type { Round } from '../round/round'
-import { detectTeshi, detectKuttsuki, getPlayerHand } from '../round/round'
+import type { Round } from '../round'
+import { detectTeshi, detectKuttsuki, getPlayerHand } from '../round'
 
 /**
  * 特殊規則觸發類型

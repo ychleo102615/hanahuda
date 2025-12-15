@@ -17,7 +17,7 @@
 
 import type { FlowState } from '#shared/contracts'
 import type { Game } from '~~/server/domain/game/game'
-import { getPlayerHand } from '~~/server/domain/round/round'
+import { getPlayerHand } from '~~/server/domain/round'
 import {
   HIKARI_CARDS,
   TANE_CARDS,

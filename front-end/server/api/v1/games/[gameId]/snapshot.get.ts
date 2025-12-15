@@ -18,7 +18,7 @@ import { container } from '~~/server/utils/container'
 import type { SnapshotApiResponse } from '#shared/contracts'
 import { createLogger } from '~~/server/utils/logger'
 import { initRequestId } from '~~/server/utils/requestId'
-import { determineWinner } from '~~/server/domain/game/game'
+import { determineWinner } from '~~/server/domain/game'
 
 /**
  * 請求參數 Schema

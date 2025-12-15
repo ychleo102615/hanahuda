@@ -9,7 +9,13 @@
  * @module server/application/use-cases/makeDecisionUseCase
  */
 
-import type { Game } from '~~/server/domain/game/game'
+import {
+  updateRound,
+  getCurrentFlowState,
+  isPlayerTurn,
+  shouldEndRound,
+  type Game,
+} from '~~/server/domain/game'
 import type {
   DecisionMadeEvent,
   RoundScoredEvent,
@@ -20,15 +26,9 @@ import type {
   PlayerScore,
 } from '#shared/contracts'
 import {
-  updateRound,
-  getCurrentFlowState,
-  isPlayerTurn,
-  shouldEndRound,
-} from '~~/server/domain/game/game'
-import {
   handleDecision as domainHandleDecision,
   calculateRoundEndResult,
-} from '~~/server/domain/round/round'
+} from '~~/server/domain/round'
 import {
   transitionAfterRoundScored,
 } from '~~/server/domain/services/roundTransitionService'

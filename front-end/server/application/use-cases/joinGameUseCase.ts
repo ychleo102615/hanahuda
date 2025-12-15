@@ -14,10 +14,16 @@
  */
 
 import { randomUUID } from 'crypto'
-import type { Game } from '~~/server/domain/game/game'
-import { createGame, addSecondPlayerAndStart, startRound, getDefaultRuleset, determineWinner } from '~~/server/domain/game/game'
-import { createPlayer } from '~~/server/domain/game/player'
-import { detectTeshi, detectKuttsuki } from '~~/server/domain/round/round'
+import {
+  createGame,
+  addSecondPlayerAndStart,
+  startRound,
+  getDefaultRuleset,
+  determineWinner,
+  createPlayer,
+  type Game,
+} from '~~/server/domain/game'
+import { detectTeshi, detectKuttsuki } from '~~/server/domain/round'
 import type { RoomTypeId } from '#shared/constants/roomTypes'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
