@@ -189,6 +189,20 @@ export interface DecisionEventMapperPort extends EventMapperPort {
   ): RoundScoredEvent
 
   /**
+   * 轉換為 RoundDrawn 事件（流局）
+   *
+   * @description
+   * 當玩家選擇 KOI_KOI 但雙方手牌都空了，需要發送流局事件。
+   *
+   * @param currentScores - 目前累積分數
+   * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
+   */
+  toRoundDrawnEvent(
+    currentScores: readonly PlayerScore[],
+    displayTimeoutSeconds?: number
+  ): RoundDrawnEvent
+
+  /**
    * 轉換為 GameFinished 事件
    */
   toGameFinishedEvent(

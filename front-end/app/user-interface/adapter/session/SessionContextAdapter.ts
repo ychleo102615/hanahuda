@@ -23,6 +23,7 @@ const STORAGE_KEYS = {
   playerId: 'player_id',
   playerName: 'player_name',
   roomTypeId: 'room_type_id',
+  gameFinished: 'game_finished',
 } as const
 
 /**
@@ -123,6 +124,7 @@ export class SessionContextAdapter extends SessionContextPort {
     sessionStorage.removeItem(STORAGE_KEYS.playerId)
     sessionStorage.removeItem(STORAGE_KEYS.playerName)
     sessionStorage.removeItem(STORAGE_KEYS.roomTypeId)
+    sessionStorage.removeItem(STORAGE_KEYS.gameFinished)
   }
 
   /**
@@ -170,6 +172,35 @@ export class SessionContextAdapter extends SessionContextPort {
    */
   hasRoomSelection(): boolean {
     return this.getPlayerId() !== null && this.getRoomTypeId() !== null
+  }
+
+  /**
+   * 設定遊戲是否已結束
+   *
+   * @param finished - 遊戲是否已結束
+   */
+  setGameFinished(finished: boolean): void {
+    if (typeof window === 'undefined') {
+      console.warn('[SessionContextAdapter] Cannot set gameFinished on server-side')
+      return
+    }
+    if (finished) {
+      sessionStorage.setItem(STORAGE_KEYS.gameFinished, 'true')
+    } else {
+      sessionStorage.removeItem(STORAGE_KEYS.gameFinished)
+    }
+  }
+
+  /**
+   * 檢查遊戲是否已結束
+   *
+   * @returns 遊戲是否已結束
+   */
+  isGameFinished(): boolean {
+    if (typeof window === 'undefined') {
+      return false
+    }
+    return sessionStorage.getItem(STORAGE_KEYS.gameFinished) === 'true'
   }
 }
 

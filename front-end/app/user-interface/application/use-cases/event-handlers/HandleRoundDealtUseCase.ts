@@ -44,6 +44,13 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
     const localPlayerId = this.gameState.getLocalPlayerId()
 
     // === 重置上一局的狀態 ===
+    // 清理通知系統（停止倒數計時）並隱藏可能還在顯示的面板
+    this.notification.cleanup()
+    this.notification.hideModal()
+
+    // 清除動畫層的隱藏卡片狀態（上一局殘留的）
+    this.animation.clearHiddenCards()
+
     // 清空獲得區
     this.gameState.updateDepositoryCards([], [])
     // 清除翻牌選擇相關狀態

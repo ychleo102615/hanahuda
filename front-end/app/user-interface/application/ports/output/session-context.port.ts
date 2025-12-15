@@ -116,4 +116,24 @@ export abstract class SessionContextPort {
    * 新遊戲時只有 playerId 和 roomTypeId，gameId 要等 SSE 連線後才會設定。
    */
   abstract hasRoomSelection(): boolean
+
+  /**
+   * 設定遊戲是否已結束
+   *
+   * @param finished - 遊戲是否已結束
+   *
+   * @description
+   * 用於標記遊戲已結束，避免在遊戲結束後發送不必要的離開指令。
+   */
+  abstract setGameFinished(finished: boolean): void
+
+  /**
+   * 檢查遊戲是否已結束
+   *
+   * @returns 遊戲是否已結束
+   *
+   * @description
+   * 用於在離開遊戲前檢查是否需要發送離開指令。
+   */
+  abstract isGameFinished(): boolean
 }

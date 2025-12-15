@@ -88,6 +88,13 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
         return
       }
 
+      // 檢查遊戲是否已結束 - 若已結束，跳過 API 調用
+      if (sessionContext.isGameFinished()) {
+        console.info('[useLeaveGame] 遊戲已結束，跳過 leaveGame API')
+        clearLocalStateAndNavigate()
+        return
+      }
+
       // 調用 leaveGame API
       if (gameApiClient) {
         try {

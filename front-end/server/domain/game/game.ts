@@ -440,7 +440,7 @@ export function isDeckEmpty(game: Game): boolean {
 }
 
 /**
- * 檢查是否有玩家手牌已空（局結束條件之一）
+ * 檢查是否有玩家手牌已空
  *
  * @param game - 遊戲
  * @returns 是否有玩家手牌已空
@@ -453,13 +453,29 @@ export function hasPlayerWithEmptyHand(game: Game): boolean {
 }
 
 /**
+ * 檢查是否雙方玩家手牌都已空
+ *
+ * @param game - 遊戲
+ * @returns 是否雙方手牌都為空
+ */
+export function haveBothPlayersEmptyHand(game: Game): boolean {
+  if (!game.currentRound) {
+    return false
+  }
+  return game.currentRound.playerStates.every((ps) => ps.hand.length === 0)
+}
+
+/**
  * 檢查是否應該結束局
+ *
+ * 花札規則：只有雙方手牌都打完時才結束局。
+ * 標準規則下牌堆不會空（24張 - 16次翻牌 = 剩8張）。
  *
  * @param game - 遊戲
  * @returns 是否應該結束局
  */
 export function shouldEndRound(game: Game): boolean {
-  return isDeckEmpty(game) || hasPlayerWithEmptyHand(game)
+  return haveBothPlayersEmptyHand(game)
 }
 
 /**

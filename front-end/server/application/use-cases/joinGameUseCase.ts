@@ -292,7 +292,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 儲存到記憶體和資料庫
     this.gameStore.set(game)
     await this.gameRepository.save(game)
-    await this.gameRepository.saveSession(gameId, playerId, sessionToken)
 
     console.log(`[JoinGameUseCase] Created new WAITING game ${gameId} for player ${playerName}`)
 
@@ -362,7 +361,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     this.gameStore.set(game)
     this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
     await this.gameRepository.save(game)
-    await this.gameRepository.saveSession(game.id, playerId, sessionToken)
 
     console.log(
       `[JoinGameUseCase] Player ${playerName} joined game ${game.id}, game is now IN_PROGRESS`

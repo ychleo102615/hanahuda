@@ -14,8 +14,7 @@ import { getDefaultRuleset } from '~~/server/domain/game/game'
 import type { Player } from '~~/server/domain/game/player'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import { db } from '~~/server/utils/db'
-import { games, sessions, type NewGame } from '~~/server/database/schema'
-import { gameConfig } from '~~/server/utils/config'
+import { games, type NewGame } from '~~/server/database/schema'
 
 /**
  * DrizzleGameRepository
@@ -122,7 +121,6 @@ export class DrizzleGameRepository implements GameRepositoryPort {
    * 刪除遊戲
    */
   async delete(gameId: string): Promise<void> {
-    // Sessions 會因為 CASCADE 被自動刪除
     await db.delete(games).where(eq(games.id, gameId))
   }
 
@@ -141,26 +139,6 @@ export class DrizzleGameRepository implements GameRepositoryPort {
 
     const record = results[0]
     return record ? this.toDomainModel(record) : null
-  }
-
-  /**
-   * 儲存玩家會話
-   *
-   * 為玩家建立獨立的 session_token。
-   */
-  async saveSession(gameId: string, playerId: string, sessionToken: string): Promise<void> {
-    const expiresAt = new Date(Date.now() + gameConfig.session_timeout_ms)
-
-    await db.insert(sessions).values({
-      token: sessionToken,
-      gameId,
-      playerId,
-      connectedAt: new Date(),
-      lastActivityAt: new Date(),
-      expiresAt,
-    })
-
-    console.log(`[DrizzleGameRepository] Saved session ${sessionToken} for player ${playerId} in game ${gameId}`)
   }
 
   /**

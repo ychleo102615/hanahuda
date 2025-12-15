@@ -110,6 +110,15 @@ export class OpponentInstance {
       return
     }
 
+    // 終止事件處理：當回合或遊戲結束時，取消已排程的 AI 操作
+    if (this.isTerminalEvent(event.event_type)) {
+      console.log(
+        `[OpponentInstance] Terminal event ${event.event_type} received, cancelling scheduled actions for game ${this.gameId}`
+      )
+      aiActionScheduler.cancel(this.gameId)
+      return
+    }
+
     // 標準事件處理：需要有 next_state 的事件
     if (!('next_state' in event) || !event.next_state) return
 
@@ -291,9 +300,9 @@ export class OpponentInstance {
    * @returns 決策
    */
   private selectDecision(): 'KOI_KOI' | 'END_ROUND' {
-    // 目前所有策略都選擇 END_ROUND（MVP）
+    // [測試用] 永遠選擇 KOI_KOI，方便測試平局狀態
     // TODO: 未來可根據 strategyType 和遊戲狀態實作不同策略
-    return 'END_ROUND'
+    return 'KOI_KOI'
   }
 
   /**
@@ -333,6 +342,27 @@ export class OpponentInstance {
       AI_DELAYS.THINKING_MIN_MS +
       Math.random() * (AI_DELAYS.THINKING_MAX_MS - AI_DELAYS.THINKING_MIN_MS)
     return AI_DELAYS.ANIMATION_MS + thinkingDelay
+  }
+
+  /**
+   * 判斷是否為終止事件
+   *
+   * @description
+   * 終止事件表示回合或遊戲結束，AI 不需要再執行任何操作。
+   * 收到這些事件時應取消所有已排程的操作。
+   *
+   * @param eventType - 事件類型
+   * @returns 是否為終止事件
+   */
+  private isTerminalEvent(eventType: string): boolean {
+    const terminalEvents = [
+      'RoundDrawn', // 平局
+      'RoundEndedInstantly', // 立即結束（Teshi、場牌流局）
+      'RoundScored', // 計分結束（玩家選擇 END_ROUND）
+      'GameFinished', // 遊戲結束
+    ] as const
+
+    return terminalEvents.includes(eventType as (typeof terminalEvents)[number])
   }
 
   /**

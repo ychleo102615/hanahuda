@@ -24,6 +24,7 @@ import {
   getCurrentFlowState,
   isPlayerTurn,
   getAiPlayer,
+  shouldEndRound,
 } from '~~/server/domain/game/game'
 import {
   handleDecision as domainHandleDecision,
@@ -33,6 +34,7 @@ import {
 } from '~~/server/domain/round/round'
 import {
   transitionAfterRoundScored,
+  transitionAfterRoundDraw,
 } from '~~/server/domain/services/roundTransitionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
@@ -123,10 +125,17 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       )
       this.eventPublisher.publishToGame(gameId, event)
 
-      // 啟動下一位玩家的超時（KOI_KOI 後換人）
-      const nextPlayerId = game.currentRound?.activePlayerId
-      if (nextPlayerId) {
-        this.startTimeoutForPlayer(gameId, nextPlayerId, 'AWAITING_HAND_PLAY')
+      // 檢查是否應該結束局（KOI_KOI 後可能無法繼續，例如雙方手牌都空了）
+      if (shouldEndRound(game)) {
+        // 即使選擇 KOI_KOI，如果無法繼續，也要進入流局處理
+        console.log(`[MakeDecisionUseCase] KOI_KOI but round should end, handling round draw`)
+        game = await this.handleRoundDraw(gameId, game)
+      } else {
+        // 啟動下一位玩家的超時（KOI_KOI 後換人）
+        const nextPlayerId = game.currentRound?.activePlayerId
+        if (nextPlayerId) {
+          this.startTimeoutForPlayer(gameId, nextPlayerId, 'AWAITING_HAND_PLAY')
+        }
       }
     } else {
       // 5b. END_ROUND: 結束局並計分
@@ -239,6 +248,63 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     }
 
     return { player_multipliers: playerMultipliers }
+  }
+
+  /**
+   * 處理流局
+   *
+   * @description
+   * 當 KOI_KOI 後發現無法繼續（雙方手牌都空了）時呼叫。
+   * 使用 Domain Service 處理流局轉換並發送對應事件。
+   *
+   * @param gameId - 遊戲 ID
+   * @param game - 目前遊戲狀態
+   * @returns 更新後的遊戲狀態
+   */
+  private async handleRoundDraw(gameId: string, game: Game): Promise<Game> {
+    // 使用 Domain Service 處理流局轉換
+    const transitionResult = transitionAfterRoundDraw(game)
+    const updatedGame = transitionResult.game
+
+    // 根據轉換結果決定 displayTimeoutSeconds
+    const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
+    const displayTimeoutSeconds = isNextRound
+      ? gameConfig.display_timeout_seconds
+      : undefined
+
+    // 發送 RoundDrawn 事件
+    const roundDrawnEvent = this.eventMapper.toRoundDrawnEvent(
+      updatedGame.cumulativeScores,
+      displayTimeoutSeconds
+    )
+    this.eventPublisher.publishToGame(gameId, roundDrawnEvent)
+
+    // 根據轉換結果決定下一步
+    if (isNextRound) {
+      // 延遲後發送 RoundDealt 事件（讓前端顯示流局畫面）
+      const firstPlayerId = updatedGame.currentRound?.activePlayerId
+      this.startDisplayTimeout(gameId, () => {
+        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(updatedGame)
+        this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+
+        // 啟動新回合第一位玩家的超時
+        if (firstPlayerId) {
+          this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
+        }
+      })
+    } else {
+      // 遊戲結束
+      const winner = transitionResult.winner
+      if (winner) {
+        const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
+          winner.winnerId,
+          winner.finalScores
+        )
+        this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
+      }
+    }
+
+    return updatedGame
   }
 
   /**
