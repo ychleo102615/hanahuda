@@ -150,7 +150,7 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
       const event = this.eventMapper.toDecisionRequiredEvent(
         game,
         playerId,
-        pending.handCardPlay, // 使用之前儲存的手牌操作
+        null, // SelectionRequired 已傳遞過 hand_card_play，不重複
         selectResult.drawCardPlay,
         yakuUpdate
       )
