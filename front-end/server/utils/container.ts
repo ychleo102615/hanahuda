@@ -38,6 +38,9 @@ import { LeaveGameUseCase } from '~~/server/application/use-cases/leaveGameUseCa
 import { AutoActionUseCase } from '~~/server/application/use-cases/autoActionUseCase'
 import { RecordGameStatsUseCase } from '~~/server/application/use-cases/recordGameStatsUseCase'
 
+// Application Services
+import { TurnFlowService } from '~~/server/application/services/turnFlowService'
+
 // Input Port Types
 import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
 import type { JoinGameAsAiInputPort } from '~~/server/application/ports/input/joinGameAsAiInputPort'
@@ -63,25 +66,6 @@ const recordGameStatsUseCase: RecordGameStatsInputPort = new RecordGameStatsUseC
   playerStatsRepository
 )
 
-const joinGameUseCase: JoinGameInputPort = new JoinGameUseCase(
-  gameRepository,
-  compositeEventPublisher,
-  inMemoryGameStore,
-  eventMapper,
-  internalEventBus,
-  gameTimeoutManager,
-  { execute: (input) => getAutoActionUseCase().execute(input) }
-)
-
-const joinGameAsAiUseCase: JoinGameAsAiInputPort = new JoinGameAsAiUseCase(
-  gameRepository,
-  compositeEventPublisher,
-  inMemoryGameStore,
-  eventMapper,
-  gameTimeoutManager,
-  { execute: (input) => getAutoActionUseCase().execute(input) }
-)
-
 const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(
   gameRepository,
   compositeEventPublisher,
@@ -93,50 +77,56 @@ const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(
 /**
  * 解決循環依賴：
  * - autoActionUseCase 需要 playHandCardUseCase, selectTargetUseCase, makeDecisionUseCase
- * - 這些 Use Cases 需要 autoActionUseCase 來設定超時回調
+ * - turnFlowService 需要 autoActionUseCase
+ * - 這些 Use Cases 需要 turnFlowService 來設定超時回調
  *
- * 解決方案：使用 Proxy 模式延遲取得依賴
+ * 解決方案：使用 Setter Injection
  */
 
-// 延遲取得 autoActionUseCase 的 holder
-let _autoActionUseCase: AutoActionInputPort | null = null
-const getAutoActionUseCase = (): AutoActionInputPort => {
-  if (!_autoActionUseCase) {
-    throw new Error('AutoActionUseCase not initialized yet')
-  }
-  return _autoActionUseCase
-}
-
-// 建立帶有超時功能的 Use Cases
-const playHandCardUseCase: PlayHandCardInputPort = new PlayHandCardUseCase(
+// 1. 建立 Use Cases（不含 turnFlowService）
+const playHandCardUseCase = new PlayHandCardUseCase(
   gameRepository,
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
-  gameTimeoutManager,
-  { execute: (input) => getAutoActionUseCase().execute(input) }
+  gameTimeoutManager
 )
 
-const selectTargetUseCase: SelectTargetInputPort = new SelectTargetUseCase(
+const selectTargetUseCase = new SelectTargetUseCase(
   gameRepository,
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
-  gameTimeoutManager,
-  { execute: (input) => getAutoActionUseCase().execute(input) }
+  gameTimeoutManager
 )
 
-const makeDecisionUseCase: MakeDecisionInputPort = new MakeDecisionUseCase(
+const makeDecisionUseCase = new MakeDecisionUseCase(
   gameRepository,
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
   gameTimeoutManager,
-  { execute: (input) => getAutoActionUseCase().execute(input) },
   recordGameStatsUseCase
 )
 
-// 建立 autoActionUseCase（使用帶超時的 Use Cases）
+const joinGameUseCase = new JoinGameUseCase(
+  gameRepository,
+  compositeEventPublisher,
+  inMemoryGameStore,
+  eventMapper,
+  internalEventBus,
+  gameTimeoutManager
+)
+
+const joinGameAsAiUseCase = new JoinGameAsAiUseCase(
+  gameRepository,
+  compositeEventPublisher,
+  inMemoryGameStore,
+  eventMapper,
+  gameTimeoutManager
+)
+
+// 2. 建立 AutoActionUseCase
 const autoActionUseCase: AutoActionInputPort = new AutoActionUseCase(
   inMemoryGameStore,
   playHandCardUseCase,
@@ -144,8 +134,22 @@ const autoActionUseCase: AutoActionInputPort = new AutoActionUseCase(
   makeDecisionUseCase
 )
 
-// 初始化 holder
-_autoActionUseCase = autoActionUseCase
+// 3. 建立 TurnFlowService
+const turnFlowService = new TurnFlowService(
+  gameTimeoutManager,
+  autoActionUseCase,
+  inMemoryGameStore,
+  gameRepository,
+  compositeEventPublisher,
+  eventMapper
+)
+
+// 4. 注入 TurnFlowService 到需要它的 Use Cases
+playHandCardUseCase.setTurnFlowService(turnFlowService)
+selectTargetUseCase.setTurnFlowService(turnFlowService)
+makeDecisionUseCase.setTurnFlowService(turnFlowService)
+joinGameUseCase.setTurnFlowService(turnFlowService)
+joinGameAsAiUseCase.setTurnFlowService(turnFlowService)
 
 /**
  * 容器匯出
@@ -171,4 +175,7 @@ export const container = {
   leaveGameUseCase,
   autoActionUseCase,
   recordGameStatsUseCase,
+
+  // Application Services
+  turnFlowService,
 } as const

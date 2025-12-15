@@ -19,13 +19,9 @@ import {
   updateRound,
   getCurrentFlowState,
   isPlayerTurn,
-  getAiPlayer,
   shouldEndRound,
   type Game,
 } from '~~/server/domain/game/game'
-import {
-  transitionAfterRoundDraw,
-} from '~~/server/domain/services/roundTransitionService'
 import {
   selectTarget as domainSelectTarget,
   advanceToNextPlayer,
@@ -39,16 +35,15 @@ import {
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
-import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { SelectionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import {
   SelectTargetError,
   type SelectTargetInputPort,
   type SelectTargetInput,
   type SelectTargetOutput,
 } from '~~/server/application/ports/input/selectTargetInputPort'
-import { gameConfig } from '~~/server/utils/config'
 
 // Re-export for backwards compatibility
 export { SelectTargetError } from '~~/server/application/ports/input/selectTargetInputPort'
@@ -60,14 +55,22 @@ export type { SelectionEventMapperPort } from '~~/server/application/ports/outpu
  * 處理玩家選擇配對目標的完整流程。
  */
 export class SelectTargetUseCase implements SelectTargetInputPort {
+  private turnFlowService?: TurnFlowService
+
   constructor(
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: SelectionEventMapperPort,
-    private readonly gameTimeoutManager?: GameTimeoutPort,
-    private readonly autoActionUseCase?: AutoActionInputPort
+    private readonly gameTimeoutManager?: GameTimeoutPort
   ) {}
+
+  /**
+   * 設定 TurnFlowService（用於解決循環依賴）
+   */
+  setTurnFlowService(service: TurnFlowService): void {
+    this.turnFlowService = service
+  }
 
   /**
    * 執行選擇配對目標用例
@@ -157,7 +160,7 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
       this.eventPublisher.publishToGame(gameId, event)
 
       // 啟動超時（同一玩家需要決策）
-      this.startTimeoutForPlayer(gameId, playerId, 'AWAITING_DECISION')
+      this.turnFlowService?.startTimeoutForPlayer(gameId, playerId, 'AWAITING_DECISION')
     } else {
       // 無新役種，回合完成
       const yakuUpdate: YakuUpdate | null = currentYaku.length > 0
@@ -180,7 +183,9 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
         this.eventPublisher.publishToGame(gameId, progressEvent)
 
         // 流局處理
-        game = await this.handleRoundDraw(gameId, tempGame)
+        if (this.turnFlowService) {
+          game = await this.turnFlowService.handleRoundDraw(gameId, tempGame)
+        }
       } else {
         // 正常換人
         const updatedRound = advanceToNextPlayer(selectResult.updatedRound)
@@ -198,7 +203,7 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
         // 啟動下一位玩家的超時
         const nextPlayerId = game.currentRound?.activePlayerId
         if (nextPlayerId) {
-          this.startTimeoutForPlayer(gameId, nextPlayerId, 'AWAITING_HAND_PLAY')
+          this.turnFlowService?.startTimeoutForPlayer(gameId, nextPlayerId, 'AWAITING_HAND_PLAY')
         }
       }
     }
@@ -210,116 +215,5 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
     console.log(`[SelectTargetUseCase] Player ${playerId} selected target ${targetCardId}`)
 
     return { success: true }
-  }
-
-  /**
-   * 為玩家啟動操作超時計時器
-   *
-   * @param gameId - 遊戲 ID
-   * @param playerId - 玩家 ID
-   * @param flowState - 目前流程狀態
-   */
-  private startTimeoutForPlayer(
-    gameId: string,
-    playerId: string,
-    flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
-  ): void {
-    if (!this.gameTimeoutManager || !this.autoActionUseCase) {
-      return
-    }
-
-    this.gameTimeoutManager.startTimeout(
-      gameId,
-      gameConfig.action_timeout_seconds,
-      () => {
-        console.log(`[SelectTargetUseCase] Timeout for player ${playerId} in game ${gameId}, executing auto-action`)
-        this.autoActionUseCase!.execute({
-          gameId,
-          playerId,
-          currentFlowState: flowState,
-        }).catch((error) => {
-          console.error(`[SelectTargetUseCase] Auto-action failed:`, error)
-        })
-      }
-    )
-  }
-
-  /**
-   * 處理流局（牌堆或手牌耗盡且無役種）
-   *
-   * @param gameId - 遊戲 ID
-   * @param game - 目前遊戲狀態
-   * @returns 更新後的遊戲狀態
-   */
-  private async handleRoundDraw(gameId: string, game: Game): Promise<Game> {
-    // 使用 Domain Service 處理流局轉換
-    const transitionResult = transitionAfterRoundDraw(game)
-    const updatedGame = transitionResult.game
-
-    // 根據轉換結果決定 displayTimeoutSeconds
-    const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
-    const displayTimeoutSeconds = isNextRound
-      ? gameConfig.display_timeout_seconds
-      : undefined
-
-    // 發送 RoundDrawn 事件
-    const roundDrawnEvent = this.eventMapper.toRoundDrawnEvent(
-      updatedGame.cumulativeScores,
-      displayTimeoutSeconds
-    )
-    this.eventPublisher.publishToGame(gameId, roundDrawnEvent)
-
-    // 根據轉換結果決定下一步
-    if (isNextRound) {
-      // 延遲後發送 RoundDealt 事件（讓前端顯示流局畫面）
-      const firstPlayerId = updatedGame.currentRound?.activePlayerId
-      this.startDisplayTimeout(gameId, () => {
-        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(updatedGame)
-        this.eventPublisher.publishToGame(gameId, roundDealtEvent)
-
-        // 啟動新回合第一位玩家的超時
-        if (firstPlayerId) {
-          this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
-        }
-      })
-    } else {
-      // 遊戲結束
-      const winner = transitionResult.winner
-      if (winner) {
-        const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
-          winner.winnerId,
-          winner.finalScores
-        )
-        this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
-      }
-    }
-
-    // 儲存更新（在此方法內儲存，因為 displayTimeout 回調需要正確狀態）
-    this.gameStore.set(updatedGame)
-    await this.gameRepository.save(updatedGame)
-
-    return updatedGame
-  }
-
-  /**
-   * 啟動顯示超時計時器
-   *
-   * 用於局結束後的延遲，讓前端顯示結算畫面後再推進遊戲。
-   *
-   * @param gameId - 遊戲 ID
-   * @param onTimeout - 超時回調函數
-   */
-  private startDisplayTimeout(gameId: string, onTimeout: () => void): void {
-    if (this.gameTimeoutManager) {
-      this.gameTimeoutManager.startTimeout(
-        gameId,
-        gameConfig.display_timeout_seconds,
-        onTimeout
-      )
-    } else {
-      // Fallback: 直接使用 setTimeout
-      const displayTimeoutMs = gameConfig.display_timeout_seconds * 1000
-      setTimeout(onTimeout, displayTimeoutMs)
-    }
   }
 }

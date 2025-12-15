@@ -22,13 +22,12 @@ import type { EventPublisherPort } from '~~/server/application/ports/output/even
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { EventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
-import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
+import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import {
   JoinGameAsAiInputPort,
   type JoinGameAsAiInput,
   type JoinGameAsAiOutput,
 } from '~~/server/application/ports/input/joinGameAsAiInputPort'
-import { gameConfig } from '~~/server/utils/config'
 
 /**
  * 初始事件延遲（毫秒）
@@ -43,15 +42,23 @@ const INITIAL_EVENT_DELAY_MS = 100
  * 處理 AI 對手加入遊戲的完整流程。
  */
 export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
+  private turnFlowService?: TurnFlowService
+
   constructor(
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: EventMapperPort,
-    private readonly gameTimeoutManager?: GameTimeoutPort,
-    private readonly autoActionUseCase?: AutoActionInputPort
+    private readonly gameTimeoutManager?: GameTimeoutPort
   ) {
     super()
+  }
+
+  /**
+   * 設定 TurnFlowService（用於解決循環依賴）
+   */
+  setTurnFlowService(service: TurnFlowService): void {
+    this.turnFlowService = service
   }
 
   /**
@@ -160,7 +167,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
         // 啟動第一位玩家的操作超時計時器
         const firstPlayerId = game.currentRound?.activePlayerId
         if (firstPlayerId) {
-          this.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
+          this.turnFlowService?.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
         }
 
         console.log(`[JoinGameAsAiUseCase] Initial events published for game ${game.id}`)
@@ -171,37 +178,5 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
         )
       }
     }, INITIAL_EVENT_DELAY_MS)
-  }
-
-  /**
-   * 為玩家啟動操作超時計時器
-   *
-   * @param gameId - 遊戲 ID
-   * @param playerId - 玩家 ID
-   * @param flowState - 目前流程狀態
-   */
-  private startTimeoutForPlayer(
-    gameId: string,
-    playerId: string,
-    flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
-  ): void {
-    if (!this.gameTimeoutManager || !this.autoActionUseCase) {
-      return
-    }
-
-    this.gameTimeoutManager.startTimeout(
-      gameId,
-      gameConfig.action_timeout_seconds,
-      () => {
-        console.log(`[JoinGameAsAiUseCase] Timeout for player ${playerId} in game ${gameId}, executing auto-action`)
-        this.autoActionUseCase!.execute({
-          gameId,
-          playerId,
-          currentFlowState: flowState,
-        }).catch((error) => {
-          console.error(`[JoinGameAsAiUseCase] Auto-action failed:`, error)
-        })
-      }
-    )
   }
 }

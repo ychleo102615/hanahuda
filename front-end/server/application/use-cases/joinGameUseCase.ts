@@ -25,7 +25,7 @@ import type { InternalEventPublisherPort } from '~~/server/application/ports/out
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { EventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
-import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
+import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import type {
   JoinGameInputPort,
   JoinGameInput,
@@ -54,15 +54,23 @@ const INITIAL_EVENT_DELAY_MS = 100
  * - 加入現有遊戲時 → 發布 GameStarted SSE 事件
  */
 export class JoinGameUseCase implements JoinGameInputPort {
+  private turnFlowService?: TurnFlowService
+
   constructor(
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: EventMapperPort,
     private readonly internalEventPublisher: InternalEventPublisherPort,
-    private readonly gameTimeoutManager: GameTimeoutPort,
-    private readonly autoActionUseCase?: AutoActionInputPort
+    private readonly gameTimeoutManager: GameTimeoutPort
   ) {}
+
+  /**
+   * 設定 TurnFlowService（用於解決循環依賴）
+   */
+  setTurnFlowService(service: TurnFlowService): void {
+    this.turnFlowService = service
+  }
 
   /**
    * 執行加入遊戲用例
@@ -408,7 +416,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
         // 啟動第一位玩家的操作超時計時器
         const firstPlayerId = game.currentRound?.activePlayerId
         if (firstPlayerId) {
-          this.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
+          this.turnFlowService?.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
         }
 
         console.log(`[JoinGameUseCase] Initial events published for game ${game.id}`)
@@ -419,37 +427,5 @@ export class JoinGameUseCase implements JoinGameInputPort {
         )
       }
     }, INITIAL_EVENT_DELAY_MS)
-  }
-
-  /**
-   * 為玩家啟動操作超時計時器
-   *
-   * @param gameId - 遊戲 ID
-   * @param playerId - 玩家 ID
-   * @param flowState - 目前流程狀態
-   */
-  private startTimeoutForPlayer(
-    gameId: string,
-    playerId: string,
-    flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
-  ): void {
-    if (!this.autoActionUseCase) {
-      return
-    }
-
-    this.gameTimeoutManager.startTimeout(
-      gameId,
-      gameConfig.action_timeout_seconds,
-      () => {
-        console.log(`[JoinGameUseCase] Timeout for player ${playerId} in game ${gameId}, executing auto-action`)
-        this.autoActionUseCase!.execute({
-          gameId,
-          playerId,
-          currentFlowState: flowState,
-        }).catch((error) => {
-          console.error(`[JoinGameUseCase] Auto-action failed:`, error)
-        })
-      }
-    )
   }
 }
