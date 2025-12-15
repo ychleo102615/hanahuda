@@ -18,6 +18,7 @@ import { container } from '~~/server/utils/container'
 import type { SnapshotApiResponse } from '#shared/contracts'
 import { createLogger } from '~~/server/utils/logger'
 import { initRequestId } from '~~/server/utils/requestId'
+import { determineWinner } from '~~/server/domain/game/game'
 
 /**
  * 請求參數 Schema
@@ -44,29 +45,6 @@ interface ErrorResponse {
 interface SnapshotResponseWrapper {
   data: SnapshotApiResponse
   timestamp: string
-}
-
-/**
- * 決定勝者
- *
- * @param cumulativeScores - 累計分數陣列（PlayerScore 格式）
- * @returns 勝者 ID，平局時返回 null
- */
-function determineWinner(
-  cumulativeScores: readonly { player_id: string; score: number }[]
-): string | null {
-  if (cumulativeScores.length < 2) {
-    return null
-  }
-
-  const score0 = cumulativeScores[0]?.score ?? 0
-  const score1 = cumulativeScores[1]?.score ?? 0
-
-  if (score0 === score1) {
-    return null // 平局
-  }
-
-  return score0 > score1 ? cumulativeScores[0]!.player_id : cumulativeScores[1]!.player_id
 }
 
 export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper | ErrorResponse> => {
@@ -136,7 +114,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
             response_type: 'game_finished',
             data: {
               game_id: game.id,
-              winner_id: determineWinner(game.cumulativeScores),
+              winner_id: determineWinner(game),
               final_scores: [...game.cumulativeScores],
               rounds_played: game.roundsPlayed,
               total_rounds: game.totalRounds,
@@ -203,7 +181,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
           response_type: 'game_finished',
           data: {
             game_id: dbGame.id,
-            winner_id: determineWinner(dbGame.cumulativeScores),
+            winner_id: determineWinner(dbGame),
             final_scores: [...dbGame.cumulativeScores],
             rounds_played: dbGame.roundsPlayed,
             total_rounds: dbGame.totalRounds,

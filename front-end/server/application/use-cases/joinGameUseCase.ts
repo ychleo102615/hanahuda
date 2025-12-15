@@ -15,7 +15,7 @@
 
 import { randomUUID } from 'crypto'
 import type { Game } from '~~/server/domain/game/game'
-import { createGame, addSecondPlayerAndStart, startRound, getDefaultRuleset } from '~~/server/domain/game/game'
+import { createGame, addSecondPlayerAndStart, startRound, getDefaultRuleset, determineWinner } from '~~/server/domain/game/game'
 import { createPlayer } from '~~/server/domain/game/player'
 import { detectTeshi, detectKuttsuki } from '~~/server/domain/round/round'
 import type { RoomTypeId } from '#shared/constants/roomTypes'
@@ -154,7 +154,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 3. 根據遊戲狀態返回結果
     if (dbGame.status === 'FINISHED') {
       console.log(`[JoinGameUseCase] Game ${gameId} already finished`)
-      const winnerId = this.determineWinner(dbGame)
+      const winnerId = determineWinner(dbGame)
       return {
         status: 'game_finished',
         gameId: dbGame.id,
@@ -237,30 +237,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
       snapshot,
     }
   }
-
-  /**
-   * 根據最終分數判斷勝者
-   *
-   * @param game - 遊戲
-   * @returns 勝者 ID（平局時為 null）
-   */
-  private determineWinner(game: Game): string | null {
-    if (game.cumulativeScores.length !== 2) {
-      return null
-    }
-    const score1 = game.cumulativeScores[0]
-    const score2 = game.cumulativeScores[1]
-    if (!score1 || !score2) {
-      return null
-    }
-    if (score1.score > score2.score) {
-      return score1.player_id
-    } else if (score2.score > score1.score) {
-      return score2.player_id
-    }
-    return null // 平局
-  }
-
 
   /**
    * 建立新遊戲（WAITING 狀態）
