@@ -327,8 +327,8 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 加入遊戲並開始
     let game = addSecondPlayerAndStart(waitingGame, secondPlayer)
 
-    // 發牌並開始第一局
-    game = startRound(game)
+    // 發牌並開始第一局（可使用測試牌組）
+    game = startRound(game, gameConfig.use_test_deck)
 
     // 檢查 Teshi/Kuttsuki
     if (game.currentRound) {

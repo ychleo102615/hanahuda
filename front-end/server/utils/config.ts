@@ -46,6 +46,9 @@ export interface GameConfig {
 
   /** 預設房間類型 */
   readonly default_room_type: RoomTypeId
+
+  /** 使用測試牌組（用於測試 TRIPLE_MATCH 等場景） */
+  readonly use_test_deck: boolean
 }
 
 /**
@@ -111,6 +114,7 @@ export const gameConfig: GameConfig = {
   timeout_buffer_seconds: 3,
   session_timeout_ms: parseEnvNumber('SESSION_TIMEOUT_MS', 24 * 60 * 60 * 1000), // 24 hours
   default_room_type: parseRoomType(),
+  use_test_deck: process.env.USE_TEST_DECK === 'true',
 }
 
 /**

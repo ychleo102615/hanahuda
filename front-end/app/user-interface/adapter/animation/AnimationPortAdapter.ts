@@ -996,7 +996,10 @@ export class AnimationPortAdapter implements AnimationPort {
     callbacks: CardPlayStateCallbacks,
     isDrawnCard: boolean
   ): Promise<{ x: number; y: number } | null> {
-    // 1. 獲取場牌位置
+    // 1. 判斷是否為 TRIPLE_MATCH（4 張牌）
+    const isTripleMatch = capturedCards.length === 4
+
+    // 2. 獲取主要配對場牌位置
     const fieldCardElement = this.registry.findCard(fieldCardId, 'field')
     if (!fieldCardElement) {
       console.warn('[AnimationPort] playMatchAndDepositorySequence: field card not found', { fieldCardId })
@@ -1005,10 +1008,27 @@ export class AnimationPortAdapter implements AnimationPort {
     const fieldRect = fieldCardElement.getBoundingClientRect()
     const matchPosition = { x: fieldRect.x, y: fieldRect.y }
 
-    // 2. 隱藏原始卡片（手牌已被 playCardToFieldAnimation 隱藏）
-    this.animationLayerStore.hideCards([fieldCardId])
+    // 3. 獲取額外場牌及其位置（TRIPLE_MATCH 時）
+    const additionalFieldCardIds = isTripleMatch
+      ? capturedCards.filter(id => id !== playedCardId && id !== fieldCardId)
+      : []
 
-    // 3. 計算打出牌的偏移位置
+    // 收集額外場牌及其位置（只保留找得到元素的）
+    const additionalCardsWithRects: Array<{ cardId: string; rect: DOMRect }> = []
+    for (const cardId of additionalFieldCardIds) {
+      const element = this.registry.findCard(cardId, 'field')
+      if (element) {
+        additionalCardsWithRects.push({ cardId, rect: element.getBoundingClientRect() })
+      } else {
+        console.warn('[AnimationPort] playMatchAndDepositorySequence: additional field card not found', { cardId })
+      }
+    }
+
+    // 4. 隱藏所有相關場牌（手牌已被 playCardToFieldAnimation 隱藏）
+    const additionalFieldCards = additionalCardsWithRects.map(c => c.cardId)
+    this.animationLayerStore.hideCards([fieldCardId, ...additionalFieldCards])
+
+    // 5. 計算打出牌的偏移位置
     const playedCardRect = new DOMRect(
       fieldRect.x + CARD_OFFSET.X,
       fieldRect.y + CARD_OFFSET.Y,
@@ -1016,35 +1036,48 @@ export class AnimationPortAdapter implements AnimationPort {
       fieldRect.height
     )
 
-    // 4. 準備 fadeIn 動畫的 deferred promise
+    // 6. 準備 fadeIn 動畫的 deferred promise
     // fadeIn 動畫會在 onPulseComplete 回調中創建
     let fadeInResolve: () => void
     const fadeInPromise = new Promise<void>(resolve => {
       fadeInResolve = resolve
     })
 
-    // 5. 創建 pulseToFadeOut 動畫組
+    // 7. 構建動畫卡片列表
+    const animationCards = [
+      {
+        cardId: fieldCardId,
+        fromRect: fieldRect,
+        toRect: fieldRect,
+        onComplete: () => {},
+      },
+      {
+        cardId: playedCardId,
+        fromRect: playedCardRect,
+        toRect: playedCardRect,
+        onComplete: () => {},
+      },
+      // TRIPLE_MATCH 時加入額外的場牌
+      ...additionalCardsWithRects.map(({ cardId, rect }) => ({
+        cardId,
+        fromRect: rect,
+        toRect: rect,
+        onComplete: () => {},
+      })),
+    ]
+
+    const additionalRects = additionalCardsWithRects.map(c => c.rect)
+    const allRects = [fieldRect, playedCardRect, ...additionalRects]
+
+    // 8. 創建 pulseToFadeOut 動畫組
     // 使用 onPulseComplete 回調在正確時機更新獲得區
     const pulseToFadeOutPromise = new Promise<void>(resolve => {
       this.animationLayerStore.addGroup({
         groupId: `match-fade-${Date.now()}`,
-        cards: [
-          {
-            cardId: fieldCardId,
-            fromRect: fieldRect,
-            toRect: fieldRect,
-            onComplete: () => {},
-          },
-          {
-            cardId: playedCardId,
-            fromRect: playedCardRect,
-            toRect: playedCardRect,
-            onComplete: () => {},
-          },
-        ],
+        cards: animationCards,
         groupEffectType: 'pulseToFadeOut',
         onComplete: resolve,
-        boundingBox: calculateBoundingBox([fieldRect, playedCardRect]),
+        boundingBox: calculateBoundingBox(allRects),
         // pulse 完成後、fadeOut 開始前的回調
         onPulseComplete: () => {
           this.startDepositoryFadeIn(
@@ -1057,15 +1090,15 @@ export class AnimationPortAdapter implements AnimationPort {
       })
     })
 
-    // 6. 等待所有動畫完成
+    // 9. 等待所有動畫完成
     await Promise.all([pulseToFadeOutPromise, fadeInPromise])
 
-    // 7. 顯示獲得區的真實卡片
+    // 10. 顯示獲得區的真實卡片
     capturedCards.forEach(cardId => {
       this.animationLayerStore.showCard(cardId)
     })
 
-    // 8. 移除場牌和手牌 DOM
+    // 11. 移除場牌和手牌 DOM
     if (isDrawnCard) {
       // 翻牌情況：所有 capturedCards 都在場牌區（包括翻出的牌）
       callbacks.onRemoveFieldCards([...capturedCards])
@@ -1076,7 +1109,7 @@ export class AnimationPortAdapter implements AnimationPort {
       callbacks.onRemoveHandCard(playedCardId)
     }
 
-    // 9. 等待 FLIP 動畫
+    // 12. 等待 FLIP 動畫
     await delay(350, this.operationSession.getSignal())
 
     return matchPosition

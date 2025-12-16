@@ -117,8 +117,8 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
     }
 
     // 沒有指定 targetCardId，根據配對數量自動處理
-    if (matchableCards.length === 0) {
-      // 無配對：發送命令（無 target）
+    if (matchableCards.length === 0 || matchableCards.length === 3) {
+      // 無配對或三重配對：發送命令（無 target）
       this.sendCommandPort.playHandCard(input.cardId, undefined)
 
       return {
@@ -142,17 +142,10 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
         },
       }
     } else {
-      // 多重配對：在新架構中，手牌多重配對通過「兩次點擊確認模式」處理
-      // UI 層（PlayerHandZone）會進入 handCardConfirmationMode，玩家點擊場牌確認配對
-      // 此分支不應該被執行到，因為 UI 層已經處理了配對選擇
-      const possibleTargetIds = matchableCards.map((card) => card.card_id)
-
+      // 雙重配對：UI 層應該已處理，不應該進入此分支
       return {
-        success: true,
-        value: {
-          needSelection: true,
-          possibleTargets: possibleTargetIds,
-        },
+        success: false,
+        error: 'DOUBLE_MATCH_REQUIRES_TARGET',
       }
     }
   }

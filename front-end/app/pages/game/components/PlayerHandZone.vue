@@ -84,8 +84,8 @@ function handleCardClick(cardId: string) {
   const matchableCards = domainFacade.findMatchableCards(handCard, fieldCardObjects)
   const matchableCardIds = matchableCards.map(card => card.card_id)
 
-  if (matchableCardIds.length === 0 || matchableCardIds.length === 1) {
-    // 無配對或單一配對：直接執行
+  if (matchableCardIds.length !== 2) {
+    // 非雙重配對：直接執行（無配對、單一配對、三重配對）
     playHandCardPort.execute({
       cardId,
       handCards: myHandCards.value,
@@ -93,9 +93,8 @@ function handleCardClick(cardId: string) {
     })
     uiState.exitHandCardConfirmationMode()
   } else {
-    // 多張配對：觸發震動，不執行任何操作
-    // 震動動畫通過 CardComponent 的 enableShake prop 觸發
-    console.info('[PlayerHandZone] Multiple matches, please click field card')
+    // 雙重配對：必須選擇配對目標
+    console.info('[PlayerHandZone] Double match, please click field card')
   }
 }
 

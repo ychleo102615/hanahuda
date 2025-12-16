@@ -28,6 +28,7 @@ import {
   type JoinGameAsAiInput,
   type JoinGameAsAiOutput,
 } from '~~/server/application/ports/input/joinGameAsAiInputPort'
+import { gameConfig } from '~~/server/utils/config'
 
 /**
  * 初始事件延遲（毫秒）
@@ -103,8 +104,8 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
     // 3. 加入遊戲並開始
     let game = addSecondPlayerAndStart(waitingGame, aiPlayer)
 
-    // 4. 發牌並開始第一局
-    game = startRound(game)
+    // 4. 發牌並開始第一局（可使用測試牌組）
+    game = startRound(game, gameConfig.use_test_deck)
 
     // 5. 檢查 Teshi/Kuttsuki（診斷用）
     this.logSpecialConditions(game)

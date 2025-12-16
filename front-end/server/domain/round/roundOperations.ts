@@ -257,7 +257,11 @@ export function playHandCard(
     case 'TRIPLE_MATCH':
       // 三重配對，捕獲全部
       capturedCards = executeCaptureFromMatch(cardId, null, handMatchResult)
-      const matchedCard = handMatchResult.targets[0]
+      // 優先使用用戶指定的目標牌，否則使用預設 targets[0]
+      const matchedCard =
+        handTargetCardId && handMatchResult.targets.includes(handTargetCardId)
+          ? handTargetCardId
+          : handMatchResult.targets[0]
       handCardPlay = {
         played_card: cardId,
         matched_card: matchedCard ?? null,

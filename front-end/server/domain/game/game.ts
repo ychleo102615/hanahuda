@@ -161,9 +161,10 @@ export function addAiOpponentAndStart(game: Game, aiPlayer: Player): Game {
  * 洗牌、發牌，建立新的 Round
  *
  * @param game - 進行中的遊戲
+ * @param useTestDeck - 是否使用測試牌組（預設 false）
  * @returns 更新後的遊戲（包含新的 currentRound）
  */
-export function startRound(game: Game): Game {
+export function startRound(game: Game, useTestDeck = false): Game {
   if (game.status !== 'IN_PROGRESS') {
     throw new Error(`Cannot start round for game with status: ${game.status}`)
   }
@@ -183,7 +184,7 @@ export function startRound(game: Game): Game {
   const dealerId = dealer.id
 
   // 洗牌並發牌
-  const shuffledDeck = createShuffledDeck()
+  const shuffledDeck = createShuffledDeck(useTestDeck)
   const playerIds = game.players.map((p) => p.id)
   const dealResult = deal(shuffledDeck, playerIds)
 
