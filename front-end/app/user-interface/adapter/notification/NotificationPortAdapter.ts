@@ -182,5 +182,18 @@ export function createNotificationPortAdapter(
     cleanup(): void {
       countdown.cleanup()
     },
+
+    // ===== 對手 Koi-Koi 公告 =====
+    showKoiKoiAnnouncement(): void {
+      store.showKoiKoiAnnouncement()
+      // 2 秒後自動隱藏
+      setTimeout(() => {
+        store.hideKoiKoiAnnouncement()
+      }, 2000)
+    },
+
+    hideKoiKoiAnnouncement(): void {
+      store.hideKoiKoiAnnouncement()
+    },
   }
 }

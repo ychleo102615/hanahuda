@@ -35,6 +35,7 @@ import DecisionModal from './components/DecisionModal.vue'
 import GameFinishedModal from './components/GameFinishedModal.vue'
 import RoundEndModal from './components/RoundEndModal.vue'
 import AnimationLayer from './components/AnimationLayer.vue'
+import KoiKoiAnnouncement from './components/KoiKoiAnnouncement.vue'
 import UnifiedToast from '~/components/UnifiedToast.vue'
 import ConfirmationHint from './components/ConfirmationHint.vue'
 import ActionPanel from '~/components/ActionPanel.vue'
@@ -51,7 +52,7 @@ const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
 
-const { opponentHandCount } = storeToRefs(gameState)
+// opponentHandCount 已移至 TopInfoBar 顯示
 const { connectionStatus } = storeToRefs(uiState)
 
 // DI 注入
@@ -189,6 +190,15 @@ function handleFieldCardClick(cardId: string) {
             <div class="text-center">
               <div class="text-xs text-gray-400">You</div>
               <div class="text-xl font-bold">{{ gameState.myScore }}</div>
+              <!-- Koi-Koi 資訊（固定高度防止 layout shift） -->
+              <div class="h-4 flex items-center justify-center">
+                <span
+                  v-if="gameState.myKoiKoiMultiplier > 1"
+                  class="text-xs text-amber-400"
+                >
+                  KK ×{{ gameState.myKoiKoiCount }} ({{ gameState.myKoiKoiMultiplier }}x)
+                </span>
+              </div>
             </div>
             <div class="text-xs" :class="connectionStatusClass">
               {{ connectionStatusText }}
@@ -242,11 +252,6 @@ function handleFieldCardClick(cardId: string) {
       <PlayerHandZone />
     </section>
 
-    <!-- Opponent hand count indicator -->
-    <div class="fixed top-20 left-4 bg-black/70 text-white px-3 py-1 rounded text-sm">
-      Opponent Hand: {{ opponentHandCount }}
-    </div>
-
     <!-- Unified Toast Notification -->
     <UnifiedToast />
 
@@ -261,6 +266,9 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- 動畫層：跨容器動畫支援 -->
     <AnimationLayer />
+
+    <!-- 對手 Koi-Koi 公告動畫 -->
+    <KoiKoiAnnouncement />
 
     <!-- 底部提示：兩次點擊確認模式 -->
     <ConfirmationHint />

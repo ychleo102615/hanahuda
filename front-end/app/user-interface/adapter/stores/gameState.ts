@@ -106,6 +106,8 @@ export interface GameStateStoreGetters {
   currentFlowStage: FlowState | null // 當前流程階段
   myKoiKoiMultiplier: number // 玩家 Koi-Koi 倍率
   opponentKoiKoiMultiplier: number // 對手 Koi-Koi 倍率
+  myKoiKoiCount: number // 玩家 Koi-Koi 次數
+  opponentKoiKoiCount: number // 對手 Koi-Koi 次數
   groupedMyDepository: GroupedDepository // 玩家獲得區分組
   groupedOpponentDepository: GroupedDepository // 對手獲得區分組
   visualLayers: number // 牌堆視覺堆疊層數 (1-4)
@@ -201,6 +203,27 @@ export const useGameStateStore = defineStore('gameState', {
     opponentKoiKoiMultiplier(): number {
       if (!this.opponentPlayerId) return 1
       return this.koiKoiMultipliers[this.opponentPlayerId] || 1
+    },
+
+    /**
+     * 玩家 Koi-Koi 次數
+     *
+     * 從倍率計算：次數 = log2(multiplier)
+     * 例如：倍率 1 → 次數 0，倍率 2 → 次數 1，倍率 4 → 次數 2
+     */
+    myKoiKoiCount(): number {
+      const multiplier = this.myKoiKoiMultiplier
+      return multiplier > 1 ? Math.log2(multiplier) : 0
+    },
+
+    /**
+     * 對手 Koi-Koi 次數
+     *
+     * 從倍率計算：次數 = log2(multiplier)
+     */
+    opponentKoiKoiCount(): number {
+      const multiplier = this.opponentKoiKoiMultiplier
+      return multiplier > 1 ? Math.log2(multiplier) : 0
     },
 
     /**

@@ -32,8 +32,11 @@ export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
       this.updateUIState.updateKoiKoiMultiplier(event.player_id, multiplier)
     }
 
-    // 2. 顯示「繼續遊戲」訊息（可選，通過 animation 或 message）
-    // 暫時省略，視 UI 需求而定
+    // 2. 若為對手選擇 KOI_KOI，顯示動畫提示
+    const localPlayerId = this.gameState.getLocalPlayerId()
+    if (event.decision === 'KOI_KOI' && event.player_id !== localPlayerId) {
+      this.notification.showKoiKoiAnnouncement()
+    }
 
     // 3. 更新 FlowStage 和 ActivePlayer
     this.updateUIState.setFlowStage(event.next_state.state_type)

@@ -143,6 +143,9 @@ export interface UIStateStoreState {
 
   // 統一 Toast 系統
   activeToasts: ToastData[]
+
+  // 對手 Koi-Koi 公告動畫
+  koiKoiAnnouncementVisible: boolean
 }
 
 /**
@@ -188,6 +191,10 @@ export interface UIStateStoreActions {
   removeToast(id: string): void
   removeToastByType(type: ToastType): void
   clearAllToasts(): void
+
+  // 對手 Koi-Koi 公告動畫
+  showKoiKoiAnnouncement(): void
+  hideKoiKoiAnnouncement(): void
 }
 
 /**
@@ -255,6 +262,9 @@ export const useUIStateStore = defineStore('uiState', {
 
     // 統一 Toast 系統
     activeToasts: [],
+
+    // 對手 Koi-Koi 公告動畫
+    koiKoiAnnouncementVisible: false,
   }),
 
   actions: {
@@ -609,6 +619,9 @@ export const useUIStateStore = defineStore('uiState', {
       // 統一 Toast 系統
       this.activeToasts = []
 
+      // 對手 Koi-Koi 公告動畫
+      this.koiKoiAnnouncementVisible = false
+
       console.info('[UIStateStore] 狀態已重置')
     },
 
@@ -739,6 +752,29 @@ export const useUIStateStore = defineStore('uiState', {
     clearAllToasts(): void {
       this.activeToasts = []
       console.info('[UIStateStore] Cleared all toasts')
+    },
+
+    // ========================================
+    // 對手 Koi-Koi 公告動畫
+    // ========================================
+
+    /**
+     * 顯示對手 Koi-Koi 公告動畫
+     *
+     * @description
+     * 當對手選擇 Koi-Koi 時，在畫面中央顯示「Koi-Koi!」動畫提示。
+     */
+    showKoiKoiAnnouncement(): void {
+      this.koiKoiAnnouncementVisible = true
+      console.info('[UIStateStore] 顯示對手 Koi-Koi 公告動畫')
+    },
+
+    /**
+     * 隱藏對手 Koi-Koi 公告動畫
+     */
+    hideKoiKoiAnnouncement(): void {
+      this.koiKoiAnnouncementVisible = false
+      console.info('[UIStateStore] 隱藏對手 Koi-Koi 公告動畫')
     },
   },
 })

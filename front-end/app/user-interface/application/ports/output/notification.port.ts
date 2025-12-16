@@ -409,7 +409,7 @@ export interface NotificationPort {
    * 清理所有資源
    *
    * @description
-   * 離開遊戲時調用，清理所有 interval 和監聽器。
+   * 離開遊戲時調用，清理所有 interval 和監聯器。
    *
    * @example
    * ```typescript
@@ -417,4 +417,33 @@ export interface NotificationPort {
    * ```
    */
   cleanup(): void
+
+  // ===== 對手 Koi-Koi 公告 =====
+
+  /**
+   * 顯示對手 Koi-Koi 公告動畫
+   *
+   * @description
+   * 當對手選擇 Koi-Koi 時，在畫面中央顯示「Koi-Koi!」動畫提示。
+   * 動畫會在指定時間後自動隱藏。
+   *
+   * @example
+   * ```typescript
+   * notification.showKoiKoiAnnouncement()
+   * ```
+   */
+  showKoiKoiAnnouncement(): void
+
+  /**
+   * 隱藏對手 Koi-Koi 公告動畫
+   *
+   * @description
+   * 手動隱藏公告動畫（通常由自動計時器處理）。
+   *
+   * @example
+   * ```typescript
+   * notification.hideKoiKoiAnnouncement()
+   * ```
+   */
+  hideKoiKoiAnnouncement(): void
 }

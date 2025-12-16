@@ -40,7 +40,19 @@ const emit = defineEmits<{
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
 
-const { myScore, opponentScore, turnStatus, localPlayerName, opponentPlayerName, currentFlowStage } = storeToRefs(gameState)
+const {
+  myScore,
+  opponentScore,
+  turnStatus,
+  localPlayerName,
+  opponentPlayerName,
+  currentFlowStage,
+  opponentHandCount,
+  myKoiKoiMultiplier,
+  opponentKoiKoiMultiplier,
+  myKoiKoiCount,
+  opponentKoiKoiCount,
+} = storeToRefs(gameState)
 const { connectionStatus, actionTimeoutRemaining, waitingForOpponent, reconnecting, gameFinishedModalVisible, dealingInProgress } = storeToRefs(uiState)
 
 // 連線狀態顯示
@@ -100,8 +112,13 @@ const statusText = computed(() => {
 })
 
 // 狀態文字是否為自己回合（用於高亮樣式）
+// 排除發牌中等中立狀態，避免「Dealing...」等訊息被黃色高亮
 const isMyTurnStatus = computed(() => {
-  return turnStatus.value === 'my-turn' && !waitingForOpponent.value && !reconnecting.value && !gameFinishedModalVisible.value
+  return turnStatus.value === 'my-turn'
+    && !waitingForOpponent.value
+    && !reconnecting.value
+    && !gameFinishedModalVisible.value
+    && !dealingInProgress.value
 })
 
 // 倒數顯示樣式（低於 5 秒警示）
@@ -123,11 +140,28 @@ const handleMenuClick = () => {
     <!-- Left Section -->
     <div class="flex items-center gap-4">
       <slot name="left">
-        <!-- Game 模式：對手分數 -->
+        <!-- Game 模式：對手區域（兩欄並排） -->
         <template v-if="variant === 'game'">
-          <div class="text-center">
-            <div class="text-xs text-gray-400">{{ opponentPlayerName || 'Opponent' }}</div>
-            <div class="text-xl font-bold">{{ opponentScore }}</div>
+          <div class="flex items-center gap-4">
+            <!-- 分數欄 -->
+            <div class="text-center">
+              <div class="text-xs text-gray-400">{{ opponentPlayerName || 'Opponent' }}</div>
+              <div class="text-xl font-bold">{{ opponentScore }}</div>
+              <!-- Koi-Koi 資訊（固定高度防止 layout shift） -->
+              <div class="h-4 flex items-center justify-center">
+                <span
+                  v-if="opponentKoiKoiMultiplier > 1"
+                  class="text-xs text-amber-400"
+                >
+                  KK ×{{ opponentKoiKoiCount }} ({{ opponentKoiKoiMultiplier }}x)
+                </span>
+              </div>
+            </div>
+            <!-- 手牌數欄 -->
+            <div class="flex flex-col items-center gap-1 text-gray-300" title="Opponent hand count">
+              <span class="text-sm text-gray-400 font-medium">Cards left</span>
+              <span class="text-sm font-medium">{{ opponentHandCount }}</span>
+            </div>
           </div>
         </template>
         <!-- Lobby 模式：標題 -->
@@ -173,6 +207,15 @@ const handleMenuClick = () => {
           <div class="text-center">
             <div class="text-xs text-gray-400">{{ localPlayerName || 'You' }}</div>
             <div class="text-xl font-bold">{{ myScore }}</div>
+            <!-- Koi-Koi 資訊（固定高度防止 layout shift） -->
+            <div class="h-4 flex items-center justify-center">
+              <span
+                v-if="myKoiKoiMultiplier > 1"
+                class="text-xs text-amber-400"
+              >
+                KK ×{{ myKoiKoiCount }} ({{ myKoiKoiMultiplier }}x)
+              </span>
+            </div>
           </div>
           <div class="text-xs" :class="connectionStatusClass">
             {{ connectionStatusText }}
