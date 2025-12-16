@@ -50,6 +50,9 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
    * 核心執行邏輯（可被中斷）
    */
   private async executeAsyncCore(event: DecisionRequiredEvent, signal?: AbortSignal): Promise<void> {
+    // 記錄動畫開始時間（用於計算動畫耗時）
+    const startTS = new Date()
+
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
@@ -116,7 +119,10 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
         [...event.yaku_update.all_active_yaku],
         finalScore
       )
-      this.notification.startDisplayCountdown(event.action_timeout_seconds)
+      // 啟動操作倒數（扣除動畫耗時）
+      const currentTS = new Date()
+      const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
+      this.notification.startDisplayCountdown(event.action_timeout_seconds - dt)
     }
 
     // === 階段 6：更新 FlowStage ===

@@ -78,6 +78,9 @@ export class HandleTurnProgressAfterSelectionUseCase
    * 6. 清理動畫層
    */
   private async executeAsyncCore(event: TurnProgressAfterSelectionEvent, signal?: AbortSignal): Promise<void> {
+    // 記錄動畫開始時間（用於計算動畫耗時）
+    const startTS = new Date()
+
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
@@ -183,7 +186,9 @@ export class HandleTurnProgressAfterSelectionUseCase
     // === 階段 7：更新活躍玩家（動畫完成後才切換，避免 TopInfoBar 在動畫期間變化）===
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // === 階段 8：啟動操作倒數 ===
-    this.notification.startActionCountdown(event.action_timeout_seconds)
+    // === 階段 8：啟動操作倒數（扣除動畫耗時）===
+    const currentTS = new Date()
+    const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
+    this.notification.startActionCountdown(event.action_timeout_seconds - dt)
   }
 }

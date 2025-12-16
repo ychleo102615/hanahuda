@@ -53,6 +53,9 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
    * 核心執行邏輯（可被中斷）
    */
   private async executeAsyncCore(event: SelectionRequiredEvent, signal?: AbortSignal): Promise<void> {
+    // 記錄動畫開始時間（用於計算動畫耗時）
+    const startTS = new Date()
+
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
@@ -105,8 +108,10 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     // === 階段 5：清理動畫層 ===
     this.animation.clearHiddenCards()
 
-    // === 階段 6：啟動操作倒數 ===
-    this.notification.startActionCountdown(event.action_timeout_seconds)
+    // === 階段 6：啟動操作倒數（扣除動畫耗時）===
+    const currentTS = new Date()
+    const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
+    this.notification.startActionCountdown(event.action_timeout_seconds - dt)
   }
 
   /**
