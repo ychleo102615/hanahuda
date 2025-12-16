@@ -430,4 +430,20 @@ export interface GameStatePort {
    * ```
    */
   reset(): void
+
+  /**
+   * 設定遊戲結束標記
+   *
+   * @param ended - 遊戲是否結束
+   *
+   * @description
+   * 用於標記遊戲已結束，觸發 UI 響應式更新（如 Restart Game 按鈕啟用）。
+   *
+   * @example
+   * ```typescript
+   * gameState.setGameEnded(true) // 遊戲結束
+   * gameState.setGameEnded(false) // 重新開始遊戲
+   * ```
+   */
+  setGameEnded(ended: boolean): void
 }

@@ -13,8 +13,9 @@
  * const leaveGame = useLeaveGame({ requireConfirmation: false })
  */
 
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../stores/gameState'
 import { useUIStateStore } from '../stores/uiState'
 import { useMatchmakingStateStore } from '../stores/matchmakingState'
@@ -26,6 +27,8 @@ import type { ActionPanelItem } from '~/components/ActionPanel.vue'
 export interface UseLeaveGameOptions {
   /** 是否需要確認對話框（預設: false） */
   requireConfirmation?: boolean
+  /** 重新開始遊戲的回調函數（若提供則顯示 Restart Game 按鈕） */
+  onRestartGame?: () => void
 }
 
 export function useLeaveGame(options: UseLeaveGameOptions = {}) {
@@ -40,19 +43,42 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   const notification = useDependency<NotificationPort>(TOKENS.NotificationPort)
   const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
+  // 響應式狀態（用於 Restart Game 按鈕）
+  const { gameEnded } = storeToRefs(gameState)
+
   // State
   const isActionPanelOpen = ref(false)
   const isConfirmDialogOpen = ref(false)
 
-  // Menu Items
-  const menuItems: ActionPanelItem[] = [
-    {
+  // Menu Items (computed for dynamic disabled state)
+  const menuItems = computed<ActionPanelItem[]>(() => {
+    const isFinished = gameEnded.value
+    const items: ActionPanelItem[] = []
+
+    // Restart Game (only shown if onRestartGame callback provided)
+    if (options.onRestartGame) {
+      items.push({
+        id: 'restart-game',
+        label: 'Restart Game',
+        icon: '🔄',
+        onClick: () => {
+          isActionPanelOpen.value = false
+          options.onRestartGame?.()
+        },
+        disabled: !isFinished,
+      })
+    }
+
+    // Leave Game
+    items.push({
       id: 'leave-game',
       label: 'Leave Game',
       icon: '🚪',
       onClick: handleLeaveGameClick,
-    },
-  ]
+    })
+
+    return items
+  })
 
   // Handlers
   function toggleActionPanel() {
@@ -64,6 +90,12 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   }
 
   function handleLeaveGameClick() {
+    // 遊戲已結束時，跳過確認對話框
+    if (gameEnded.value) {
+      handleLeaveGameConfirm()
+      return
+    }
+
     if (requireConfirmation) {
       // 顯示確認對話框
       isConfirmDialogOpen.value = true
@@ -79,18 +111,18 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
       isConfirmDialogOpen.value = false
       isActionPanelOpen.value = false
 
+      // 檢查遊戲是否已結束 - 若已結束，跳過 API 調用
+      if (gameEnded.value || sessionContext.isGameFinished()) {
+        console.info('[useLeaveGame] 遊戲已結束，跳過 leaveGame API')
+        clearLocalStateAndNavigate()
+        return
+      }
+
       // 從 SessionContext 取得 gameId
       const gameId = sessionContext.getGameId()
       if (!gameId) {
         console.warn('[useLeaveGame] 無法退出遊戲：找不到 gameId')
         // 即使沒有 gameId，仍然清除本地狀態並導航回首頁
-        clearLocalStateAndNavigate()
-        return
-      }
-
-      // 檢查遊戲是否已結束 - 若已結束，跳過 API 調用
-      if (sessionContext.isGameFinished()) {
-        console.info('[useLeaveGame] 遊戲已結束，跳過 leaveGame API')
         clearLocalStateAndNavigate()
         return
       }

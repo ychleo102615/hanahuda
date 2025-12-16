@@ -29,5 +29,12 @@ export default defineNuxtRouteMiddleware((to, from) => {
     return navigateTo('/lobby')
   }
 
+  // 如果遊戲已結束，清除 session 並返回大廳
+  if (sessionContext.isGameFinished()) {
+    console.info('[Middleware] 遊戲已結束，清除 session 並重定向至 /lobby')
+    sessionContext.clearIdentity()
+    return navigateTo('/lobby')
+  }
+
   // gameMode 由 DI Plugin 透過 runtimeConfig 取得，不在此處理
 })

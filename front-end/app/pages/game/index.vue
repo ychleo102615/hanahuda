@@ -103,6 +103,12 @@ const connectionStatusClass = computed(() => {
   }
 })
 
+// Restart Game 處理函數
+function handleRestartGame() {
+  if (!startGameUseCase) return
+  startGameUseCase.execute({ isNewGame: true })
+}
+
 // T043 [US3]: Leave Game 功能
 const {
   isActionPanelOpen,
@@ -112,7 +118,10 @@ const {
   closeActionPanel,
   handleLeaveGameConfirm,
   handleLeaveGameCancel,
-} = useLeaveGame({ requireConfirmation: true })
+} = useLeaveGame({
+  requireConfirmation: true,
+  onRestartGame: handleRestartGame,
+})
 
 // GamePage 不再直接調用業務 Port，由子組件負責
 

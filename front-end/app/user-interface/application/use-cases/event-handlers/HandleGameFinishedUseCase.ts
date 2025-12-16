@@ -11,7 +11,7 @@
  */
 
 import type { GameFinishedEvent } from '#shared/contracts'
-import type { NotificationPort, UIStatePort, SessionContextPort } from '../../ports/output'
+import type { NotificationPort, UIStatePort, SessionContextPort, GameStatePort } from '../../ports/output'
 import type { HandleGameFinishedPort } from '../../ports/input'
 
 export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
@@ -19,12 +19,14 @@ export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
     private readonly notification: NotificationPort,
     private readonly updateUIState: UIStatePort,
     private readonly sessionContext: SessionContextPort,
+    private readonly gameState: GameStatePort,
   ) {}
 
   execute(event: GameFinishedEvent): void {
     // 1. 標記遊戲已結束並清除 gameId（防止重連帶舊 ID）
     this.sessionContext.setGameFinished(true)
     this.sessionContext.setGameId(null)
+    this.gameState.setGameEnded(true)
 
     // 2. 取得當前玩家 ID
     const currentPlayerId = this.updateUIState.getLocalPlayerId()

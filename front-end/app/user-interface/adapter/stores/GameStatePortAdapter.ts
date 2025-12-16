@@ -138,5 +138,9 @@ export function createGameStatePortAdapter(): GameStatePort {
     reset(): void {
       store.$reset()
     },
+
+    setGameEnded(ended: boolean): void {
+      store.setGameEnded(ended)
+    },
   }
 }

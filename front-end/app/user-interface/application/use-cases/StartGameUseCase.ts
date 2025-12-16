@@ -79,9 +79,10 @@ export class StartGameUseCase implements StartGamePort {
       isNewGame,
     })
 
-    // 1. 新遊戲：清除 gameId
+    // 1. 新遊戲：清除 gameId 和遊戲結束標記
     if (isNewGame) {
       this.sessionContext.setGameId(null)
+      this.sessionContext.setGameFinished(false)
     }
 
     // 2. **首先**斷開現有連線（停止接收舊事件 + 清空事件鏈）

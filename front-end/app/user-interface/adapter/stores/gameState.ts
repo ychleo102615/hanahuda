@@ -81,6 +81,9 @@ export interface GameStateStoreState {
   myYaku: YakuScore[]
   opponentYaku: YakuScore[]
   koiKoiMultipliers: Record<string, number>
+
+  // 遊戲結束標記（用於 UI 響應式更新）
+  gameEnded: boolean
 }
 
 /**
@@ -149,6 +152,9 @@ export const useGameStateStore = defineStore('gameState', {
     myYaku: [],
     opponentYaku: [],
     koiKoiMultipliers: {},
+
+    // 遊戲結束標記
+    gameEnded: false,
   }),
 
   getters: {
@@ -546,6 +552,9 @@ export const useGameStateStore = defineStore('gameState', {
       this.opponentYaku = []
       this.koiKoiMultipliers = {}
 
+      // 遊戲結束標記
+      this.gameEnded = false
+
       console.info('[GameStateStore] 狀態已重置')
     },
 
@@ -558,6 +567,16 @@ export const useGameStateStore = defineStore('gameState', {
     resetKoiKoiMultipliers(): void {
       this.koiKoiMultipliers = {}
       console.info('[GameStateStore] Koi-Koi 倍率已重置')
+    },
+
+    /**
+     * 設定遊戲結束標記
+     *
+     * @param ended - 遊戲是否結束
+     */
+    setGameEnded(ended: boolean): void {
+      this.gameEnded = ended
+      console.info('[GameStateStore] 遊戲結束標記:', ended)
     },
   },
 })

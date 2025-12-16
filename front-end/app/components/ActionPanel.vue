@@ -29,6 +29,8 @@ export interface ActionPanelItem {
   label: string
   icon?: string
   onClick: () => void
+  /** 是否禁用此選項 */
+  disabled?: boolean
 }
 
 interface Props {
@@ -92,6 +94,7 @@ const handleClose = () => {
 
 // 點擊選單項目
 const handleItemClick = (item: ActionPanelItem) => {
+  if (item.disabled) return
   item.onClick()
 }
 </script>
@@ -152,14 +155,18 @@ const handleItemClick = (item: ActionPanelItem) => {
               <li v-for="item in items" :key="item.id">
                 <button
                   data-testid="menu-item"
-                  class="w-full text-left px-4 py-3 rounded-lg hover:bg-primary-50 transition-colors flex items-center space-x-3"
+                  class="w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center space-x-3"
+                  :class="item.disabled
+                    ? 'cursor-not-allowed opacity-50'
+                    : 'hover:bg-primary-50 cursor-pointer'"
+                  :disabled="item.disabled"
                   @click="handleItemClick(item)"
                 >
                   <!-- Icon (如果有) -->
                   <span v-if="item.icon" class="text-xl">{{ item.icon }}</span>
 
                   <!-- Label -->
-                  <span class="text-base font-medium text-gray-900">{{ item.label }}</span>
+                  <span class="text-base font-medium" :class="item.disabled ? 'text-gray-400' : 'text-gray-900'">{{ item.label }}</span>
                 </button>
               </li>
             </ul>

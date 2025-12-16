@@ -443,7 +443,7 @@ function registerInputPorts(container: DIContainer): void {
   // T084 [US4]: 註冊 GameFinished 事件處理器
   container.register(
     TOKENS.HandleGameFinishedPort,
-    () => new HandleGameFinishedUseCase(notificationPort, uiStatePort, sessionContextPort),
+    () => new HandleGameFinishedUseCase(notificationPort, uiStatePort, sessionContextPort, gameStatePort),
     { singleton: true }
   )
 
