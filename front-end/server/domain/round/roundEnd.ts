@@ -10,7 +10,7 @@
 
 import type { Yaku, YakuSetting } from '#shared/contracts'
 import type { Round } from './round'
-import { getPlayerDepository, getPlayerKoiStatus } from './roundQueries'
+import { getPlayerDepository } from './roundQueries'
 import { detectYaku } from '../services/yakuDetectionService'
 import { calculateScoreFromYaku } from '../services/scoringService'
 import type { SpecialRuleResult } from '../services/specialRulesService'
@@ -27,8 +27,10 @@ export interface RoundEndResult {
   readonly baseScore: number
   /** 最終分數 */
   readonly finalScore: number
-  /** Koi-Koi 倍率 */
+  /** Koi-Koi 倍率（1 或 2） */
   readonly koiMultiplier: number
+  /** 是否有任一玩家宣告過 Koi-Koi（與 koiMultiplier 對應） */
+  readonly koiKoiApplied: boolean
   /** 是否觸發 7 點翻倍 */
   readonly isDoubled: boolean
   /** 是否為平局 */
@@ -56,11 +58,8 @@ export function calculateRoundEndResult(
   // 檢測役種
   const yakuList = detectYaku(depository, yakuSettings)
 
-  // 取得 Koi-Koi 狀態
-  const koiStatus = getPlayerKoiStatus(round, winnerId)
-
-  // 計算分數
-  const scoreResult = calculateScoreFromYaku(yakuList, koiStatus)
+  // 計算分數（傳入所有玩家的 KoiStatus，判斷是否有人宣告過 Koi-Koi）
+  const scoreResult = calculateScoreFromYaku(yakuList, round.koiStatuses)
 
   return {
     winnerId,
@@ -68,6 +67,7 @@ export function calculateRoundEndResult(
     baseScore: scoreResult.baseScore,
     finalScore: scoreResult.finalScore,
     koiMultiplier: scoreResult.koiMultiplier,
+    koiKoiApplied: scoreResult.koiKoiApplied,
     isDoubled: scoreResult.isDoubled,
     isDraw: false,
     specialRuleTriggered: null,
@@ -86,6 +86,7 @@ export function calculateRoundDrawResult(): RoundEndResult {
     baseScore: 0,
     finalScore: 0,
     koiMultiplier: 1,
+    koiKoiApplied: false,
     isDoubled: false,
     isDraw: true,
     specialRuleTriggered: null,
@@ -107,6 +108,7 @@ export function calculateSpecialRuleEndResult(
     baseScore: specialRuleResult.awardedPoints,
     finalScore: specialRuleResult.awardedPoints,
     koiMultiplier: 1,
+    koiKoiApplied: false,
     isDoubled: false,
     isDraw: specialRuleResult.winnerId === null,
     specialRuleTriggered: specialRuleResult.type,

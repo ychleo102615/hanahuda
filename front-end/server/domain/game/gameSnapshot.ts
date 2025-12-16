@@ -129,15 +129,18 @@ export function toSnapshot(game: Game): GameSnapshot | null {
   }
 
   if (round.flowState === 'AWAITING_DECISION' && round.pendingDecision) {
-    // 計算分數倍率
+    // 計算分數倍率（新規則：全局共享，只要有人宣告過 Koi-Koi 就 ×2）
+    const koi_koi_applied = round.koiStatuses.some(ks => ks.times_continued > 0)
+    const multiplier = koi_koi_applied ? 2 : 1
+
     const player_multipliers: Record<string, number> = {}
     for (const ks of round.koiStatuses) {
-      player_multipliers[ks.player_id] = ks.koi_multiplier
+      player_multipliers[ks.player_id] = multiplier
     }
 
     decision_context = Object.freeze({
       all_active_yaku: round.pendingDecision.activeYaku,
-      current_multipliers: Object.freeze({ player_multipliers }),
+      current_multipliers: Object.freeze({ player_multipliers, koi_koi_applied }),
     })
   }
 

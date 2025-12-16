@@ -26,8 +26,10 @@ const DOUBLE_SCORE_THRESHOLD = 7
 export interface ScoreCalculationResult {
   /** 基礎分數（役種點數總和） */
   readonly baseScore: number
-  /** Koi-Koi 倍率 */
+  /** Koi-Koi 倍率（1 或 2，取決於是否有人宣告過 Koi-Koi） */
   readonly koiMultiplier: number
+  /** 是否有任一玩家宣告過 Koi-Koi */
+  readonly koiKoiApplied: boolean
   /** 是否觸發 7 點翻倍 */
   readonly isDoubled: boolean
   /** 最終分數 */
@@ -49,45 +51,47 @@ export function calculateBaseScore(yakuList: readonly Yaku[]): number {
  *
  * 套用 Koi-Koi 計分規則：
  * 1. 基礎分數 = 所有役種點數總和
- * 2. 套用 Koi-Koi 倍率（每次喊 Koi-Koi 倍率 +1）
+ * 2. 若有任一方宣告過 Koi-Koi，分數 ×2（全局共享，無論宣告幾次都只加倍一次）
  * 3. 若基礎分數 >= 7，最終分數再翻倍
  *
  * @param baseScore - 基礎分數
- * @param koiMultiplier - Koi-Koi 倍率（預設 1）
+ * @param anyoneCalledKoiKoi - 是否有任一玩家宣告過 Koi-Koi
  * @returns 計分結果
  */
 export function calculateFinalScore(
   baseScore: number,
-  koiMultiplier: number = 1
+  anyoneCalledKoiKoi: boolean = false
 ): ScoreCalculationResult {
+  const koiKoiMultiplier = anyoneCalledKoiKoi ? 2 : 1
   const isDoubled = baseScore >= DOUBLE_SCORE_THRESHOLD
   const doubleMultiplier = isDoubled ? 2 : 1
-  const finalScore = baseScore * koiMultiplier * doubleMultiplier
+  const finalScore = baseScore * koiKoiMultiplier * doubleMultiplier
 
   return Object.freeze({
     baseScore,
-    koiMultiplier,
+    koiMultiplier: koiKoiMultiplier,
+    koiKoiApplied: anyoneCalledKoiKoi,
     isDoubled,
     finalScore,
   })
 }
 
 /**
- * 從 KoiStatus 計算最終分數
+ * 從 KoiStatuses 計算最終分數
  *
- * 便利方法，整合 KoiStatus 取得倍率。
+ * 便利方法，整合所有玩家的 KoiStatus 判斷是否有人宣告過 Koi-Koi。
  *
  * @param yakuList - 成立的役種列表
- * @param koiStatus - 玩家的 Koi-Koi 狀態（可選）
+ * @param koiStatuses - 所有玩家的 Koi-Koi 狀態列表
  * @returns 計分結果
  */
 export function calculateScoreFromYaku(
   yakuList: readonly Yaku[],
-  koiStatus: KoiStatus | null | undefined
+  koiStatuses: readonly KoiStatus[]
 ): ScoreCalculationResult {
   const baseScore = calculateBaseScore(yakuList)
-  const koiMultiplier = koiStatus?.koi_multiplier ?? 1
-  return calculateFinalScore(baseScore, koiMultiplier)
+  const anyoneCalled = koiStatuses.some(status => status.times_continued > 0)
+  return calculateFinalScore(baseScore, anyoneCalled)
 }
 
 /**

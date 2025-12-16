@@ -37,7 +37,6 @@ describe('HandleReconnectionUseCase', () => {
       ],
       ruleset: {
         total_rounds: 2,
-        target_score: 50,
         yaku_settings: [],
         special_rules: { teshi_enabled: true, field_kuttsuki_enabled: true },
         total_deck_cards: 48,

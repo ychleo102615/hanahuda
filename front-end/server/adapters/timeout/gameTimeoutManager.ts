@@ -37,9 +37,19 @@ interface GameTimerInfo {
 }
 
 /**
- * 斷線計時器 Key 格式: gameId:playerId
+ * 計時器 Key 格式: gameId:playerId
  */
-type DisconnectTimerKey = string
+type TimerKey = string
+
+/**
+ * 閒置計時器資訊
+ */
+interface IdleTimerInfo {
+  /** setTimeout ID */
+  timerId: NodeJS.Timeout
+  /** 超時回調函數（用於重置時重新啟動） */
+  onTimeout: () => void
+}
 
 /**
  * 遊戲計時器管理器
@@ -52,7 +62,10 @@ class GameTimeoutManager extends GameTimeoutPort {
   private gameTimers: Map<string, GameTimerInfo> = new Map()
 
   /** 斷線計時器（每個玩家獨立） */
-  private disconnectTimers: Map<DisconnectTimerKey, NodeJS.Timeout> = new Map()
+  private disconnectTimers: Map<TimerKey, NodeJS.Timeout> = new Map()
+
+  /** 閒置計時器（每個玩家獨立） */
+  private idleTimers: Map<TimerKey, IdleTimerInfo> = new Map()
 
   // ============================================================
   // 遊戲計時器（Action 和 Display 統一）
@@ -186,6 +199,99 @@ class GameTimeoutManager extends GameTimeoutPort {
   }
 
   // ============================================================
+  // 閒置計時器
+  // ============================================================
+
+  /**
+   * 啟動閒置計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param onTimeout - 超時回調函數
+   */
+  startIdleTimeout(gameId: string, playerId: string, onTimeout: () => void): void {
+    const key = this.getTimerKey(gameId, playerId)
+    this.clearIdleTimeout(gameId, playerId)
+
+    const timer = setTimeout(onTimeout, gameConfig.disconnect_timeout_seconds * 1000)
+    this.idleTimers.set(key, {
+      timerId: timer,
+      onTimeout,
+    })
+
+    console.log(
+      `[GameTimeoutManager] Started idle timeout for ${key}: ${gameConfig.disconnect_timeout_seconds}s`
+    )
+  }
+
+  /**
+   * 重置閒置計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   */
+  resetIdleTimeout(gameId: string, playerId: string): void {
+    const key = this.getTimerKey(gameId, playerId)
+    const timerInfo = this.idleTimers.get(key)
+    if (timerInfo) {
+      clearTimeout(timerInfo.timerId)
+      const newTimer = setTimeout(timerInfo.onTimeout, gameConfig.disconnect_timeout_seconds * 1000)
+      this.idleTimers.set(key, {
+        timerId: newTimer,
+        onTimeout: timerInfo.onTimeout,
+      })
+      console.log(`[GameTimeoutManager] Reset idle timeout for ${key}`)
+    }
+  }
+
+  /**
+   * 清除指定玩家的閒置計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   */
+  clearIdleTimeout(gameId: string, playerId: string): void {
+    const key = this.getTimerKey(gameId, playerId)
+    const timerInfo = this.idleTimers.get(key)
+    if (timerInfo) {
+      clearTimeout(timerInfo.timerId)
+      this.idleTimers.delete(key)
+      console.log(`[GameTimeoutManager] Cleared idle timeout for ${key}`)
+    }
+  }
+
+  /**
+   * 清除遊戲的所有閒置計時器
+   *
+   * @param gameId - 遊戲 ID
+   */
+  clearAllIdleTimeouts(gameId: string): void {
+    const prefix = `${gameId}:`
+    for (const key of this.idleTimers.keys()) {
+      if (key.startsWith(prefix)) {
+        const timerInfo = this.idleTimers.get(key)
+        if (timerInfo) {
+          clearTimeout(timerInfo.timerId)
+          this.idleTimers.delete(key)
+        }
+      }
+    }
+    console.log(`[GameTimeoutManager] Cleared all idle timeouts for game ${gameId}`)
+  }
+
+  /**
+   * 檢查指定玩家是否有閒置計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @returns 是否有閒置計時器
+   */
+  hasIdleTimeout(gameId: string, playerId: string): boolean {
+    const key = this.getTimerKey(gameId, playerId)
+    return this.idleTimers.has(key)
+  }
+
+  // ============================================================
   // 遊戲層級清理
   // ============================================================
 
@@ -197,6 +303,7 @@ class GameTimeoutManager extends GameTimeoutPort {
   clearAllForGame(gameId: string): void {
     this.clearTimeout(gameId)
     this.clearAllDisconnectTimeouts(gameId)
+    this.clearAllIdleTimeouts(gameId)
     console.log(`[GameTimeoutManager] Cleared all timers for game ${gameId}`)
   }
 
@@ -205,14 +312,26 @@ class GameTimeoutManager extends GameTimeoutPort {
   // ============================================================
 
   /**
-   * 產生斷線計時器的 key
+   * 產生計時器的 key
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
    * @returns key 字串
    */
-  private getDisconnectKey(gameId: string, playerId: string): DisconnectTimerKey {
+  private getTimerKey(gameId: string, playerId: string): TimerKey {
     return `${gameId}:${playerId}`
+  }
+
+  /**
+   * 產生斷線計時器的 key
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @returns key 字串
+   * @deprecated 使用 getTimerKey 替代
+   */
+  private getDisconnectKey(gameId: string, playerId: string): TimerKey {
+    return this.getTimerKey(gameId, playerId)
   }
 }
 

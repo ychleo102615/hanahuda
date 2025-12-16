@@ -53,11 +53,6 @@ export const DEFAULT_SPECIAL_RULES: SpecialRules = Object.freeze({
 })
 
 /**
- * 預設目標分數
- */
-export const DEFAULT_TARGET_SCORE = 50
-
-/**
  * 預設牌堆總數（標準花札 48 張）
  */
 export const DEFAULT_TOTAL_DECK_CARDS = 48
@@ -71,7 +66,6 @@ export const DEFAULT_TOTAL_DECK_CARDS = 48
 function createRuleset(totalRounds: number): Ruleset {
   return Object.freeze({
     total_rounds: totalRounds,
-    target_score: DEFAULT_TARGET_SCORE,
     yaku_settings: DEFAULT_YAKU_SETTINGS,
     special_rules: DEFAULT_SPECIAL_RULES,
     total_deck_cards: DEFAULT_TOTAL_DECK_CARDS,

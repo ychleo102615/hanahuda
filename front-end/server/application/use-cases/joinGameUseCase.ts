@@ -373,7 +373,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
       })),
       ruleset: {
         totalRounds: game.ruleset.total_rounds,
-        targetScore: game.ruleset.target_score,
       },
       startingPlayerId: game.currentRound?.activePlayerId ?? game.players[0]?.id ?? '',
     }

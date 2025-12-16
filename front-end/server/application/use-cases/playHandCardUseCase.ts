@@ -91,10 +91,15 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
    * @throws PlayHandCardError 如果操作無效
    */
   async execute(input: PlayHandCardInput): Promise<PlayHandCardOutput> {
-    const { gameId, playerId, cardId, targetCardId } = input
+    const { gameId, playerId, cardId, targetCardId, isAutoAction } = input
 
     // 0. 清除當前遊戲的超時計時器
     this.gameTimeoutManager?.clearTimeout(gameId)
+
+    // 0.1 若為玩家主動操作，重置閒置計時器
+    if (!isAutoAction) {
+      this.gameTimeoutManager?.resetIdleTimeout(gameId, playerId)
+    }
 
     // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
     const existingGame = this.gameStore.get(gameId)
@@ -251,6 +256,9 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
             // 遊戲結束
             const winner = transitionResult.winner
             if (winner) {
+              // 清除遊戲的所有計時器
+              this.gameTimeoutManager?.clearAllForGame(gameId)
+
               const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
                 winner.winnerId,
                 winner.finalScores
@@ -313,17 +321,26 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
 
   /**
    * 建立倍率資訊
+   *
+   * 新規則：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享）。
    */
   private buildMultipliers(game: Game): ScoreMultipliers {
     if (!game.currentRound) {
-      return { player_multipliers: {} }
+      return { player_multipliers: {}, koi_koi_applied: false }
     }
 
+    // 檢查是否有任一玩家宣告過 Koi-Koi
+    const koiKoiApplied = game.currentRound.koiStatuses.some(
+      status => status.times_continued > 0
+    )
+    const multiplier = koiKoiApplied ? 2 : 1
+
+    // 所有玩家使用相同的倍率
     const playerMultipliers: Record<string, number> = {}
     for (const koiStatus of game.currentRound.koiStatuses) {
-      playerMultipliers[koiStatus.player_id] = koiStatus.koi_multiplier
+      playerMultipliers[koiStatus.player_id] = multiplier
     }
 
-    return { player_multipliers: playerMultipliers }
+    return { player_multipliers: playerMultipliers, koi_koi_applied: koiKoiApplied }
   }
 }

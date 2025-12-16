@@ -17,7 +17,6 @@ interface RoomTypeResponse {
   name: string
   description: string
   rounds: number
-  targetScore: number
 }
 
 export default defineEventHandler((): { data: RoomTypeResponse[] } => {
@@ -26,7 +25,6 @@ export default defineEventHandler((): { data: RoomTypeResponse[] } => {
     name: config.name,
     description: config.description,
     rounds: config.ruleset.total_rounds,
-    targetScore: config.ruleset.target_score,
   }))
 
   return { data: rooms }

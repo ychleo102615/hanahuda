@@ -71,6 +71,7 @@ const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
+  gameTimeoutManager,
   recordGameStatsUseCase
 )
 
@@ -150,6 +151,9 @@ selectTargetUseCase.setTurnFlowService(turnFlowService)
 makeDecisionUseCase.setTurnFlowService(turnFlowService)
 joinGameUseCase.setTurnFlowService(turnFlowService)
 joinGameAsAiUseCase.setTurnFlowService(turnFlowService)
+
+// 5. 注入 LeaveGameUseCase 到 TurnFlowService（用於閒置踢出）
+turnFlowService.setLeaveGameUseCase(leaveGameUseCase)
 
 /**
  * 容器匯出

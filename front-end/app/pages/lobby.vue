@@ -173,9 +173,8 @@ const handleRetry = () => {
               </p>
 
               <!-- 房間規格 -->
-              <div class="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-600/50">
+              <div class="text-xs text-gray-500 pt-4 border-t border-gray-600/50">
                 <span>{{ room.rounds }} rounds</span>
-                <span>Target: {{ room.targetScore }} pts</span>
               </div>
             </button>
           </div>

@@ -85,7 +85,6 @@ export interface JoinGameStartedOutput {
   /** 遊戲規則集 */
   readonly ruleset: {
     totalRounds: number
-    targetScore: number
   }
   /** 先手玩家 ID */
   readonly startingPlayerId: string

@@ -55,7 +55,6 @@ describe('HandleGameStartedUseCase', () => {
         ],
         ruleset: {
           total_rounds: 2,
-          target_score: 50,
           yaku_settings: [
             { yaku_type: 'GOKO', base_points: 15, enabled: true },
             { yaku_type: 'SHIKO', base_points: 10, enabled: true },
@@ -81,7 +80,6 @@ describe('HandleGameStartedUseCase', () => {
         ],
         {
           total_rounds: 2,
-          target_score: 50,
           yaku_settings: [
             { yaku_type: 'GOKO', base_points: 15, enabled: true },
             { yaku_type: 'SHIKO', base_points: 10, enabled: true },
@@ -108,7 +106,6 @@ describe('HandleGameStartedUseCase', () => {
         ],
         ruleset: {
           total_rounds: 2,
-          target_score: 100,
           yaku_settings: [],
           special_rules: {
             teshi_enabled: false,
@@ -130,7 +127,7 @@ describe('HandleGameStartedUseCase', () => {
           { player_id: 'p2', player_name: 'AI Opponent', is_ai: true },
         ],
         expect.objectContaining({
-          target_score: 100,
+          total_rounds: 2,
           total_deck_cards: 48,
         })
       )
@@ -182,7 +179,6 @@ describe('HandleGameStartedUseCase', () => {
         ],
         ruleset: {
           total_rounds: 2,
-          target_score: 50,
           yaku_settings: [],
           special_rules: {
             teshi_enabled: true,
@@ -210,7 +206,6 @@ describe('HandleGameStartedUseCase', () => {
         ],
         ruleset: {
           total_rounds: 2,
-          target_score: 50,
           yaku_settings: [],
           special_rules: {
             teshi_enabled: true,

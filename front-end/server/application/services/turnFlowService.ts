@@ -13,6 +13,7 @@
 import type { Game } from '~~/server/domain/game/game'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
+import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
@@ -26,6 +27,8 @@ import { gameConfig } from '~~/server/utils/config'
  * 回合流程服務，封裝共用的計時與流局處理邏輯。
  */
 export class TurnFlowService {
+  private leaveGameUseCase?: LeaveGameInputPort
+
   constructor(
     private readonly gameTimeoutManager: GameTimeoutPort,
     private readonly autoActionUseCase: AutoActionInputPort,
@@ -36,13 +39,26 @@ export class TurnFlowService {
   ) {}
 
   /**
+   * 設定 LeaveGameUseCase（用於解決循環依賴）
+   */
+  setLeaveGameUseCase(useCase: LeaveGameInputPort): void {
+    this.leaveGameUseCase = useCase
+  }
+
+  /**
    * 為玩家啟動操作超時計時器
+   *
+   * @description
+   * 同時啟動兩種計時器：
+   * 1. 操作超時（15秒）：超時後代行
+   * 2. 閒置超時（60秒）：持續無主動操作後踢出遊戲
    */
   startTimeoutForPlayer(
     gameId: string,
     playerId: string,
     flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
   ): void {
+    // 啟動操作超時計時器（15秒後代行）
     this.gameTimeoutManager.startTimeout(
       gameId,
       gameConfig.action_timeout_seconds,
@@ -57,6 +73,62 @@ export class TurnFlowService {
         })
       }
     )
+
+    // 啟動閒置超時計時器（60秒無主動操作後踢出）
+    // 只在回合開始時啟動，若已有計時器則保持原狀（因為代行不重置閒置計時器）
+    this.startIdleTimeoutIfNeeded(gameId, playerId)
+  }
+
+  /**
+   * 啟動閒置超時計時器（若尚未啟動）
+   *
+   * @description
+   * 閒置計時器在玩家首次進入回合時啟動，
+   * 只有玩家「主動」操作時才會重置。
+   * 代行操作不會重置閒置計時器。
+   * 若已有計時器則不重新啟動，確保持續代行會累積到 60 秒。
+   */
+  private startIdleTimeoutIfNeeded(gameId: string, playerId: string): void {
+    // 檢查遊戲是否仍然存在
+    const game = this.gameStore.get(gameId)
+    if (!game || game.status === 'FINISHED') {
+      return
+    }
+
+    // 檢查玩家是否為 AI（AI 不需要閒置計時）
+    const player = game.players.find(p => p.id === playerId)
+    if (player?.isAi) {
+      return
+    }
+
+    // 若已有閒置計時器，不重新啟動（讓計時器繼續倒數）
+    if (this.gameTimeoutManager.hasIdleTimeout(gameId, playerId)) {
+      return
+    }
+
+    // 只在沒有計時器時才啟動
+    this.gameTimeoutManager.startIdleTimeout(
+      gameId,
+      playerId,
+      () => {
+        console.log(`[TurnFlowService] Idle timeout for player ${playerId} in game ${gameId}, kicking player`)
+        this.kickIdlePlayer(gameId, playerId)
+      }
+    )
+  }
+
+  /**
+   * 踢出閒置玩家
+   */
+  private kickIdlePlayer(gameId: string, playerId: string): void {
+    if (!this.leaveGameUseCase) {
+      console.error(`[TurnFlowService] LeaveGameUseCase not set, cannot kick idle player`)
+      return
+    }
+
+    this.leaveGameUseCase.execute({ gameId, playerId }).catch((error) => {
+      console.error(`[TurnFlowService] Failed to kick idle player:`, error)
+    })
   }
 
   /**
@@ -108,6 +180,9 @@ export class TurnFlowService {
       // 遊戲結束
       const winner = transitionResult.winner
       if (winner) {
+        // 清除遊戲的所有計時器
+        this.gameTimeoutManager.clearAllForGame(gameId)
+
         const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
           winner.winnerId,
           winner.finalScores

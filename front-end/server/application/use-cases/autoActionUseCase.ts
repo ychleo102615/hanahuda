@@ -116,6 +116,7 @@ export class AutoActionUseCase implements AutoActionInputPort {
       playerId,
       cardId: cardToPlay,
       targetCardId,
+      isAutoAction: true,
     })
   }
 
@@ -148,6 +149,7 @@ export class AutoActionUseCase implements AutoActionInputPort {
       playerId,
       sourceCardId: pendingSelection.drawnCard,
       targetCardId: targetCard,
+      isAutoAction: true,
     })
   }
 
@@ -163,6 +165,7 @@ export class AutoActionUseCase implements AutoActionInputPort {
       gameId,
       playerId,
       decision: 'END_ROUND',
+      isAutoAction: true,
     })
   }
 

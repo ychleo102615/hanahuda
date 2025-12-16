@@ -13,6 +13,7 @@ import type { GameFinishedEvent, PlayerScore } from '#shared/contracts'
 import { transitionAfterPlayerLeave } from '~~/server/domain/services/roundTransitionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
+import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { LeaveGameEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
@@ -38,6 +39,7 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: LeaveGameEventMapperPort,
+    private readonly gameTimeoutManager?: GameTimeoutPort,
     private readonly recordGameStatsUseCase?: RecordGameStatsInputPort
   ) {}
 
@@ -74,6 +76,9 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
 
     // 5. 發送 GameFinished 事件（對手獲勝）並記錄統計
     if (transitionResult.winner) {
+      // 清除遊戲的所有計時器
+      this.gameTimeoutManager?.clearAllForGame(gameId)
+
       // 記錄遊戲統計（玩家離開/投降，對手獲勝）
       if (this.recordGameStatsUseCase) {
         try {

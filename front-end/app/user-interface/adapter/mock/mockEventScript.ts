@@ -49,7 +49,7 @@ export const mockEventScript: MockEventItem[] = [
         { player_id: 'player-2', player_name: 'AI Opponent', is_ai: true },
       ],
       ruleset: {
-        target_score: 7,
+        total_rounds: 2,
         yaku_settings: [
           { yaku_type: 'GOKO', base_points: 10, enabled: true },
           { yaku_type: 'SHIKO', base_points: 8, enabled: true },
@@ -68,6 +68,7 @@ export const mockEventScript: MockEventItem[] = [
           teshi_enabled: true,
           field_kuttsuki_enabled: true,
         },
+        total_deck_cards: 48,
       },
       starting_player_id: 'player-1',
     },

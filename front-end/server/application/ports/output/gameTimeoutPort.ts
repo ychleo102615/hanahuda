@@ -98,6 +98,59 @@ export abstract class GameTimeoutPort {
   abstract hasDisconnectTimeout(gameId: string, playerId: string): boolean
 
   // ============================================================
+  // 閒置計時器（Idle Timeout）
+  // ============================================================
+
+  /**
+   * 啟動閒置計時器
+   *
+   * @description
+   * 追蹤玩家的整體活躍度。
+   * 若玩家持續超過 60 秒沒有主動操作（被代行不算主動操作），則視為閒置。
+   * 每個玩家獨立的閒置計時器。
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param onTimeout - 超時回調函數
+   */
+  abstract startIdleTimeout(gameId: string, playerId: string, onTimeout: () => void): void
+
+  /**
+   * 重置閒置計時器
+   *
+   * @description
+   * 玩家有主動操作時呼叫，重新開始 60 秒倒數。
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   */
+  abstract resetIdleTimeout(gameId: string, playerId: string): void
+
+  /**
+   * 清除指定玩家的閒置計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   */
+  abstract clearIdleTimeout(gameId: string, playerId: string): void
+
+  /**
+   * 清除遊戲的所有閒置計時器
+   *
+   * @param gameId - 遊戲 ID
+   */
+  abstract clearAllIdleTimeouts(gameId: string): void
+
+  /**
+   * 檢查指定玩家是否有閒置計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @returns 是否有閒置計時器
+   */
+  abstract hasIdleTimeout(gameId: string, playerId: string): boolean
+
+  // ============================================================
   // 遊戲層級清理
   // ============================================================
 
@@ -105,7 +158,7 @@ export abstract class GameTimeoutPort {
    * 清除指定遊戲的所有計時器
    *
    * @description
-   * 包含遊戲計時器和所有斷線計時器。
+   * 包含遊戲計時器、斷線計時器和閒置計時器。
    * 用於遊戲結束時的資源清理。
    *
    * @param gameId - 遊戲 ID

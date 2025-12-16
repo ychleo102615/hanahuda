@@ -369,6 +369,7 @@ export class EventMapper implements FullEventMapperPort {
       decision,
       updated_multipliers: {
         player_multipliers: { ...multipliers.player_multipliers },
+        koi_koi_applied: multipliers.koi_koi_applied,
       },
       next_state: nextState,
       action_timeout_seconds: gameConfig.action_timeout_seconds,
@@ -416,6 +417,7 @@ export class EventMapper implements FullEventMapperPort {
       final_score: finalScore,
       multipliers: {
         player_multipliers: { ...multipliers.player_multipliers },
+        koi_koi_applied: multipliers.koi_koi_applied,
       },
       updated_total_scores: updatedScores.map(s => ({
         player_id: s.player_id,
@@ -595,6 +597,7 @@ export class EventMapper implements FullEventMapperPort {
           })),
           current_multipliers: {
             player_multipliers: { ...snapshot.decision_context.current_multipliers.player_multipliers },
+            koi_koi_applied: snapshot.decision_context.current_multipliers.koi_koi_applied,
           },
         },
       }

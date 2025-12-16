@@ -20,8 +20,6 @@ export interface RoomType {
   description: string
   /** 回合數 */
   rounds: number
-  /** 目標分數 */
-  targetScore: number
 }
 
 /**

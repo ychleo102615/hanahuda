@@ -74,3 +74,17 @@ export function getMultiplier(status: KoiStatus): number {
 export function hasCalledKoiKoi(status: KoiStatus): boolean {
   return status.times_continued > 0
 }
+
+/**
+ * 檢查是否有任一玩家宣告過 Koi-Koi
+ *
+ * @description
+ * 根據新的計分規則，只要有任一方宣告過 Koi-Koi，
+ * 最終分數就會加倍（×2），不論宣告幾次都只加倍一次。
+ *
+ * @param koiStatuses - 所有玩家的 KoiStatus 列表
+ * @returns 是否有任一玩家宣告過 Koi-Koi
+ */
+export function anyKoiKoiCalled(koiStatuses: readonly KoiStatus[]): boolean {
+  return koiStatuses.some(status => status.times_continued > 0)
+}

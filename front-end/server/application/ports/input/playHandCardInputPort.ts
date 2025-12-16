@@ -24,6 +24,8 @@ export interface PlayHandCardInput {
   readonly cardId: string
   /** 配對目標（雙重配對時必須指定） */
   readonly targetCardId?: string
+  /** 是否為自動操作（代行），用於判斷是否重置閒置計時器 */
+  readonly isAutoAction?: boolean
 }
 
 /**

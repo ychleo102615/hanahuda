@@ -120,7 +120,6 @@ describe('Reconnection Flow - Integration Test', () => {
       ],
       ruleset: {
         total_rounds: 2,
-        target_score: 7,
         yaku_settings: [],
         special_rules: { teshi_enabled: true, field_kuttsuki_enabled: true },
         total_deck_cards: 48,
@@ -255,7 +254,6 @@ describe('Reconnection Flow - Integration Test', () => {
       ],
       ruleset: {
         total_rounds: 2,
-        target_score: 7,
         yaku_settings: [],
         special_rules: { teshi_enabled: true, field_kuttsuki_enabled: true },
         total_deck_cards: 48,

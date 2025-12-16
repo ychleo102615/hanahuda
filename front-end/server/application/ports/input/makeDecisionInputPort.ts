@@ -22,6 +22,8 @@ export interface MakeDecisionInput {
   readonly playerId: string
   /** 決策 */
   readonly decision: 'KOI_KOI' | 'END_ROUND'
+  /** 是否為自動操作（代行），用於判斷是否重置閒置計時器 */
+  readonly isAutoAction?: boolean
 }
 
 /**

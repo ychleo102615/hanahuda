@@ -24,6 +24,8 @@ export interface SelectTargetInput {
   readonly sourceCardId: string
   /** 選擇的配對目標 */
   readonly targetCardId: string
+  /** 是否為自動操作（代行），用於判斷是否重置閒置計時器 */
+  readonly isAutoAction?: boolean
 }
 
 /**
