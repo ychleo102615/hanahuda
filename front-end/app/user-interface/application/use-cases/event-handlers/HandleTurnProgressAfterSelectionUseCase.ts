@@ -24,6 +24,7 @@ import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleTurnProgressAfterSelectionPort } from '../../ports/input'
 import { AbortOperationError } from '../../types'
 import { delay } from '../../../adapter/abort'
+import { getYakuInfo } from '../../../domain/yaku-info'
 
 export class HandleTurnProgressAfterSelectionUseCase
   implements HandleTurnProgressAfterSelectionPort
@@ -173,11 +174,29 @@ export class HandleTurnProgressAfterSelectionUseCase
     // === 階段 5：更新其他狀態 ===
     this.gameState.updateDeckRemaining(event.deck_remaining)
 
-    // 若有新役種形成，記錄（役種特效動畫為 Post-MVP）
+    // 若有新役種形成且為對手，同時顯示所有新形成的役種
     if (event.yaku_update && event.yaku_update.newly_formed_yaku.length > 0) {
       console.info('[HandleTurnProgressAfterSelection] Yaku formed:',
         event.yaku_update.newly_formed_yaku.map(y => y.yaku_type))
-      // TODO: Post-MVP 實作役種特效動畫
+
+      if (isOpponent) {
+        const yakuList = event.yaku_update.newly_formed_yaku
+          .map(yaku => {
+            const yakuInfo = getYakuInfo(yaku.yaku_type)
+            if (!yakuInfo) return null
+            return {
+              yakuType: yaku.yaku_type,
+              yakuName: yakuInfo.name,
+              yakuNameJa: yakuInfo.nameJa,
+              category: yakuInfo.category,
+            }
+          })
+          .filter((item): item is NonNullable<typeof item> => item !== null)
+
+        if (yakuList.length > 0) {
+          this.notification.showOpponentYakuAnnouncement(yakuList)
+        }
+      }
     }
 
     // === 階段 6：清理動畫層 ===

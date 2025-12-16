@@ -17,6 +17,7 @@
 
 import { defineStore } from 'pinia'
 import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers, RoundEndReason } from '#shared/contracts'
+import type { YakuCategory } from '~/constants/announcement-styles'
 
 /**
  * 決策 Modal 資料
@@ -77,6 +78,32 @@ export interface ToastData {
   message: string
   duration: number | null // null = persistent (won't auto-dismiss)
   dismissible: boolean
+}
+
+/**
+ * 公告類型
+ */
+export type AnnouncementType = 'koikoi' | 'yaku'
+
+/**
+ * 役種顯示資訊
+ */
+export interface YakuDisplayInfo {
+  yakuType: string
+  yakuName: string
+  yakuNameJa: string
+  category: YakuCategory
+}
+
+/**
+ * 公告資料
+ */
+export interface AnnouncementData {
+  id: string
+  type: AnnouncementType
+  /** 多役種顯示（同時顯示所有新形成的役種） */
+  yakuList?: YakuDisplayInfo[]
+  duration: number
 }
 
 /**
@@ -144,8 +171,9 @@ export interface UIStateStoreState {
   // 統一 Toast 系統
   activeToasts: ToastData[]
 
-  // 對手 Koi-Koi 公告動畫
-  koiKoiAnnouncementVisible: boolean
+  // 遊戲公告佇列系統
+  announcementQueue: AnnouncementData[]
+  currentAnnouncement: AnnouncementData | null
 }
 
 /**
@@ -192,9 +220,11 @@ export interface UIStateStoreActions {
   removeToastByType(type: ToastType): void
   clearAllToasts(): void
 
-  // 對手 Koi-Koi 公告動畫
-  showKoiKoiAnnouncement(): void
-  hideKoiKoiAnnouncement(): void
+  // 遊戲公告佇列系統
+  queueAnnouncement(announcement: Omit<AnnouncementData, 'id'>): void
+  processNextAnnouncement(): void
+  clearCurrentAnnouncement(): void
+  clearAllAnnouncements(): void
 }
 
 /**
@@ -263,8 +293,9 @@ export const useUIStateStore = defineStore('uiState', {
     // 統一 Toast 系統
     activeToasts: [],
 
-    // 對手 Koi-Koi 公告動畫
-    koiKoiAnnouncementVisible: false,
+    // 遊戲公告佇列系統
+    announcementQueue: [],
+    currentAnnouncement: null,
   }),
 
   actions: {
@@ -619,8 +650,9 @@ export const useUIStateStore = defineStore('uiState', {
       // 統一 Toast 系統
       this.activeToasts = []
 
-      // 對手 Koi-Koi 公告動畫
-      this.koiKoiAnnouncementVisible = false
+      // 遊戲公告佇列系統
+      this.announcementQueue = []
+      this.currentAnnouncement = null
 
       console.info('[UIStateStore] 狀態已重置')
     },
@@ -755,26 +787,64 @@ export const useUIStateStore = defineStore('uiState', {
     },
 
     // ========================================
-    // 對手 Koi-Koi 公告動畫
+    // 遊戲公告佇列系統
     // ========================================
 
     /**
-     * 顯示對手 Koi-Koi 公告動畫
+     * 將公告加入佇列
      *
      * @description
-     * 當對手選擇 Koi-Koi 時，在畫面中央顯示「Koi-Koi!」動畫提示。
+     * 若沒有正在播放的公告，會立即開始播放。
+     * 否則加入佇列等待。
+     *
+     * @param announcement - 公告資料（不含 id）
      */
-    showKoiKoiAnnouncement(): void {
-      this.koiKoiAnnouncementVisible = true
-      console.info('[UIStateStore] 顯示對手 Koi-Koi 公告動畫')
+    queueAnnouncement(announcement: Omit<AnnouncementData, 'id'>): void {
+      const id = `announcement-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      const newAnnouncement: AnnouncementData = { ...announcement, id }
+      this.announcementQueue.push(newAnnouncement)
+      console.info('[UIStateStore] Queued announcement:', newAnnouncement)
+
+      // 如果沒有正在播放的公告，立即播放
+      if (!this.currentAnnouncement) {
+        this.processNextAnnouncement()
+      }
     },
 
     /**
-     * 隱藏對手 Koi-Koi 公告動畫
+     * 處理下一個公告
+     *
+     * @description
+     * 從佇列取出下一個公告開始播放。
+     * 若佇列為空則清除當前公告。
      */
-    hideKoiKoiAnnouncement(): void {
-      this.koiKoiAnnouncementVisible = false
-      console.info('[UIStateStore] 隱藏對手 Koi-Koi 公告動畫')
+    processNextAnnouncement(): void {
+      if (this.announcementQueue.length === 0) {
+        this.currentAnnouncement = null
+        return
+      }
+
+      const next = this.announcementQueue.shift()
+      if (next) {
+        this.currentAnnouncement = next
+        console.info('[UIStateStore] Playing announcement:', next)
+      }
+    },
+
+    /**
+     * 清除當前公告
+     */
+    clearCurrentAnnouncement(): void {
+      this.currentAnnouncement = null
+    },
+
+    /**
+     * 清除所有公告
+     */
+    clearAllAnnouncements(): void {
+      this.announcementQueue = []
+      this.currentAnnouncement = null
+      console.info('[UIStateStore] Cleared all announcements')
     },
   },
 })

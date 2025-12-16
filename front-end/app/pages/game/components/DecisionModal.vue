@@ -19,6 +19,7 @@ import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
 import { useDependency } from '~/user-interface/adapter/composables/useDependency'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { MakeKoiKoiDecisionPort } from '~/user-interface/application/ports/input'
+import { getYakuInfo } from '~/user-interface/domain/yaku-info'
 
 const uiState = useUIStateStore()
 const gameState = useGameStateStore()
@@ -34,6 +35,27 @@ const countdownClass = computed(() => {
     return 'text-red-500'
   }
   return 'text-gray-800'
+})
+
+// 將 yaku_type 轉換為可讀的名稱
+interface DisplayYaku {
+  yakuType: string
+  name: string
+  nameJa: string
+  basePoints: number
+}
+
+const displayYakuList = computed<DisplayYaku[]>(() => {
+  if (!decisionModalData.value) return []
+  return decisionModalData.value.currentYaku.map((yaku) => {
+    const info = getYakuInfo(yaku.yaku_type)
+    return {
+      yakuType: yaku.yaku_type,
+      name: info?.name ?? yaku.yaku_type,
+      nameJa: info?.nameJa ?? '',
+      basePoints: yaku.base_points,
+    }
+  })
 })
 
 // T076 [US3]: Handle Koi-Koi decision
@@ -99,12 +121,15 @@ function handleEndRound() {
           <!-- T075 [US3]: Display yaku information -->
           <div class="mb-6 space-y-2">
             <div
-              v-for="yaku in decisionModalData.currentYaku"
-              :key="yaku.yaku_type"
+              v-for="yaku in displayYakuList"
+              :key="yaku.yakuType"
               class="flex items-center justify-between rounded bg-yellow-50 px-4 py-2"
             >
-              <span class="font-medium text-gray-800">{{ yaku.yaku_type }}</span>
-              <span class="text-yellow-700">{{ yaku.base_points }} pts</span>
+              <div class="flex flex-col">
+                <span class="font-medium text-gray-800">{{ yaku.name }}</span>
+                <span v-if="yaku.nameJa" class="text-sm text-gray-500">{{ yaku.nameJa }}</span>
+              </div>
+              <span class="text-yellow-700 font-semibold">{{ yaku.basePoints }} pts</span>
             </div>
           </div>
 

@@ -20,6 +20,7 @@ import type { CardPlayStateCallbacks } from '../../ports/output/animation.port'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleDecisionRequiredPort } from '../../ports/input'
 import { AbortOperationError } from '../../types'
+import { getYakuInfo } from '../../../domain/yaku-info'
 
 export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort {
   constructor(
@@ -123,6 +124,26 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
       const currentTS = new Date()
       const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
       this.notification.startDisplayCountdown(event.action_timeout_seconds - dt)
+    } else {
+      // === 對手獲得役種：同時顯示所有新形成的役種 ===
+      const yakuList = event.yaku_update.newly_formed_yaku
+        .map(yaku => {
+          const yakuInfo = getYakuInfo(yaku.yaku_type)
+          if (!yakuInfo) return null
+          return {
+            yakuType: yaku.yaku_type,
+            yakuName: yakuInfo.name,
+            yakuNameJa: yakuInfo.nameJa,
+            category: yakuInfo.category,
+          }
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+
+      if (yakuList.length > 0) {
+        this.notification.showOpponentYakuAnnouncement(yakuList)
+      }
+      console.info('[HandleDecisionRequiredUseCase] Opponent yaku formed:',
+        event.yaku_update.newly_formed_yaku.map(y => y.yaku_type))
     }
 
     // === 階段 6：更新 FlowStage ===

@@ -35,7 +35,7 @@ import DecisionModal from './components/DecisionModal.vue'
 import GameFinishedModal from './components/GameFinishedModal.vue'
 import RoundEndModal from './components/RoundEndModal.vue'
 import AnimationLayer from './components/AnimationLayer.vue'
-import KoiKoiAnnouncement from './components/KoiKoiAnnouncement.vue'
+import GameAnnouncement from './components/GameAnnouncement.vue'
 import UnifiedToast from '~/components/UnifiedToast.vue'
 import ConfirmationHint from './components/ConfirmationHint.vue'
 import ActionPanel from '~/components/ActionPanel.vue'
@@ -267,8 +267,8 @@ function handleFieldCardClick(cardId: string) {
     <!-- 動畫層：跨容器動畫支援 -->
     <AnimationLayer />
 
-    <!-- 對手 Koi-Koi 公告動畫 -->
-    <KoiKoiAnnouncement />
+    <!-- 遊戲公告動畫（Koi-Koi、役種） -->
+    <GameAnnouncement />
 
     <!-- 底部提示：兩次點擊確認模式 -->
     <ConfirmationHint />

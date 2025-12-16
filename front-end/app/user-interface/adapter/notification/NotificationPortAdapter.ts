@@ -14,6 +14,7 @@ import type { NotificationPort } from '../../application/ports/output/notificati
 import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers, RoundEndReason } from '#shared/contracts'
 import { useUIStateStore } from '../stores/uiState'
 import type { CountdownManager } from '../services/CountdownManager'
+import type { YakuCategory } from '~/constants/announcement-styles'
 
 /**
  * 建立 NotificationPort Adapter
@@ -183,17 +184,37 @@ export function createNotificationPortAdapter(
       countdown.cleanup()
     },
 
-    // ===== 對手 Koi-Koi 公告 =====
+    // ===== 遊戲公告系統 =====
     showKoiKoiAnnouncement(): void {
-      store.showKoiKoiAnnouncement()
-      // 2 秒後自動隱藏
-      setTimeout(() => {
-        store.hideKoiKoiAnnouncement()
-      }, 2000)
+      store.queueAnnouncement({
+        type: 'koikoi',
+        duration: 1800, // 1.8 秒
+      })
     },
 
     hideKoiKoiAnnouncement(): void {
-      store.hideKoiKoiAnnouncement()
+      // No-op: 由佇列系統自動管理
+    },
+
+    showOpponentYakuAnnouncement(
+      yakuList: ReadonlyArray<{
+        yakuType: string
+        yakuName: string
+        yakuNameJa: string
+        category: string
+      }>
+    ): void {
+      if (yakuList.length === 0) return
+      store.queueAnnouncement({
+        type: 'yaku',
+        yakuList: yakuList.map(y => ({
+          yakuType: y.yakuType,
+          yakuName: y.yakuName,
+          yakuNameJa: y.yakuNameJa,
+          category: y.category as YakuCategory,
+        })),
+        duration: 2200, // 2.2 秒
+      })
     },
   }
 }

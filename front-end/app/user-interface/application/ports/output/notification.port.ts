@@ -418,14 +418,14 @@ export interface NotificationPort {
    */
   cleanup(): void
 
-  // ===== 對手 Koi-Koi 公告 =====
+  // ===== 遊戲公告系統 =====
 
   /**
    * 顯示對手 Koi-Koi 公告動畫
    *
    * @description
    * 當對手選擇 Koi-Koi 時，在畫面中央顯示「Koi-Koi!」動畫提示。
-   * 動畫會在指定時間後自動隱藏。
+   * 公告會加入佇列，依序播放後自動隱藏。
    *
    * @example
    * ```typescript
@@ -438,12 +438,35 @@ export interface NotificationPort {
    * 隱藏對手 Koi-Koi 公告動畫
    *
    * @description
-   * 手動隱藏公告動畫（通常由自動計時器處理）。
+   * 保留用於向後相容，實際上由佇列系統自動管理。
+   *
+   * @deprecated 由公告佇列系統自動管理，此方法為 no-op
+   */
+  hideKoiKoiAnnouncement(): void
+
+  /**
+   * 顯示對手役種公告動畫
+   *
+   * @description
+   * 當對手形成役種時，在畫面中央同時顯示所有新形成的役種名稱（含日文）。
+   * 公告會加入佇列，依序播放後自動隱藏。
+   *
+   * @param yakuList - 新形成的役種列表
    *
    * @example
    * ```typescript
-   * notification.hideKoiKoiAnnouncement()
+   * notification.showOpponentYakuAnnouncement([
+   *   { yakuType: 'GOKO', yakuName: 'Five Brights', yakuNameJa: '五光', category: 'hikari' },
+   *   { yakuType: 'HANAMI_ZAKE', yakuName: 'Cherry Blossom Viewing', yakuNameJa: '花見酒', category: 'tane' }
+   * ])
    * ```
    */
-  hideKoiKoiAnnouncement(): void
+  showOpponentYakuAnnouncement(
+    yakuList: ReadonlyArray<{
+      yakuType: string
+      yakuName: string
+      yakuNameJa: string
+      category: string
+    }>
+  ): void
 }

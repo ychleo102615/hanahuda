@@ -30,6 +30,9 @@ export const Z_INDEX = {
   /** Modal 對話框 */
   MODAL: 1100,
 
+  /** 遊戲公告（Koi-Koi、役種） */
+  ANNOUNCEMENT: 1150,
+
   /** 側邊面板（ActionPanel 內容） */
   PANEL: 1200,
 
