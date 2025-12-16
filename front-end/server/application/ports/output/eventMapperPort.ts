@@ -118,6 +118,25 @@ export interface TurnEventMapperPort extends EventMapperPort {
   ): RoundDrawnEvent
 
   /**
+   * 轉換為 RoundScored 事件
+   *
+   * @description
+   * 當最後一手牌形成役種時，直接結算（無 Koi-Koi 選擇）。
+   *
+   * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
+   */
+  toRoundScoredEvent(
+    game: Game,
+    winnerId: string,
+    yakuList: readonly Yaku[],
+    baseScore: number,
+    finalScore: number,
+    multipliers: ScoreMultipliers,
+    updatedScores: readonly PlayerScore[],
+    displayTimeoutSeconds?: number
+  ): RoundScoredEvent
+
+  /**
    * 轉換為 GameFinished 事件
    */
   toGameFinishedEvent(

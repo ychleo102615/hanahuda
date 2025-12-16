@@ -25,6 +25,7 @@ export {
   getOpponentId,
   isActivePlayer,
   getPlayerKoiStatus,
+  canPlayerKoiKoi,
 } from './roundQueries'
 
 // 狀態偵測

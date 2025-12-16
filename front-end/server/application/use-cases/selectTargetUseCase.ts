@@ -14,6 +14,7 @@ import type {
   CardSelection,
   CardPlay,
   YakuUpdate,
+  ScoreMultipliers,
 } from '#shared/contracts'
 import {
   updateRound,
@@ -27,7 +28,13 @@ import {
   advanceToNextPlayer,
   setAwaitingDecision,
   getPlayerDepository,
+  canPlayerKoiKoi,
+  calculateRoundEndResult,
 } from '~~/server/domain/round'
+import {
+  transitionAfterRoundScored,
+} from '~~/server/domain/services/roundTransitionService'
+import { gameConfig } from '~~/server/utils/config'
 import {
   detectYaku,
   detectNewYaku,
@@ -141,26 +148,109 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
 
     // 9. 判斷下一步並發佈事件
     if (newlyFormedYaku.length > 0) {
-      // 有新役種形成，進入決策階段（傳遞 activeYaku 以支援重連恢復）
-      const updatedRound = setAwaitingDecision(selectResult.updatedRound, currentYaku)
-      game = updateRound(game, updatedRound)
+      // 檢查玩家是否還能選擇 Koi-Koi（手牌是否已空）
+      const canKoiKoiResult = canPlayerKoiKoi(selectResult.updatedRound, playerId)
 
-      const yakuUpdate: YakuUpdate = {
-        newly_formed_yaku: [...newlyFormedYaku],
-        all_active_yaku: [...currentYaku],
+      if (canKoiKoiResult) {
+        // 有新役種形成且還有手牌，進入決策階段（傳遞 activeYaku 以支援重連恢復）
+        const updatedRound = setAwaitingDecision(selectResult.updatedRound, currentYaku)
+        game = updateRound(game, updatedRound)
+
+        const yakuUpdate: YakuUpdate = {
+          newly_formed_yaku: [...newlyFormedYaku],
+          all_active_yaku: [...currentYaku],
+        }
+
+        const event = this.eventMapper.toDecisionRequiredEvent(
+          game,
+          playerId,
+          null, // SelectionRequired 已傳遞過 hand_card_play，不重複
+          selectResult.drawCardPlay,
+          yakuUpdate
+        )
+        this.eventPublisher.publishToGame(gameId, event)
+
+        // 啟動超時（同一玩家需要決策）
+        this.turnFlowService?.startTimeoutForPlayer(gameId, playerId, 'AWAITING_DECISION')
+      } else {
+        // 最後一手牌形成役種，無法 Koi-Koi，直接結算
+        // 先發送 TurnProgressAfterSelection 事件（讓前端顯示最後一手的動畫）
+        const yakuUpdate: YakuUpdate = {
+          newly_formed_yaku: [...newlyFormedYaku],
+          all_active_yaku: [...currentYaku],
+        }
+
+        const progressEvent = this.eventMapper.toTurnProgressAfterSelectionEvent(
+          game,
+          playerId,
+          selectResult.selection,
+          selectResult.drawCardPlay,
+          yakuUpdate
+        )
+        this.eventPublisher.publishToGame(gameId, progressEvent)
+
+        // 計算局結束結果
+        const roundEndResult = calculateRoundEndResult(
+          selectResult.updatedRound,
+          playerId,
+          game.ruleset.yaku_settings
+        )
+
+        // 建立倍率資訊
+        const multipliers = this.buildMultipliers(existingGame)
+
+        // 處理局轉換
+        const transitionResult = transitionAfterRoundScored(
+          game,
+          playerId,
+          roundEndResult.finalScore
+        )
+        game = transitionResult.game
+
+        // 根據轉換結果決定 displayTimeoutSeconds
+        const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
+        const displayTimeoutSeconds = isNextRound
+          ? gameConfig.display_timeout_seconds
+          : undefined
+
+        // 發送 RoundScored 事件
+        const roundScoredEvent = this.eventMapper.toRoundScoredEvent(
+          game,
+          playerId,
+          roundEndResult.yakuList,
+          roundEndResult.baseScore,
+          roundEndResult.finalScore,
+          multipliers,
+          game.cumulativeScores,
+          displayTimeoutSeconds
+        )
+        this.eventPublisher.publishToGame(gameId, roundScoredEvent)
+
+        // 根據轉換結果決定下一步
+        if (isNextRound) {
+          // 發送 RoundDealt 事件（延遲讓前端顯示結算畫面）
+          const firstPlayerId = game.currentRound?.activePlayerId
+          this.turnFlowService?.startDisplayTimeout(gameId, () => {
+            const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
+            this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+
+            // 啟動新回合第一位玩家的超時
+            if (firstPlayerId) {
+              this.turnFlowService?.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
+            }
+          })
+        } else {
+          // 遊戲結束
+          const winner = transitionResult.winner
+          if (winner) {
+            const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
+              winner.winnerId,
+              winner.finalScores
+            )
+            this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
+          }
+        }
       }
-
-      const event = this.eventMapper.toDecisionRequiredEvent(
-        game,
-        playerId,
-        null, // SelectionRequired 已傳遞過 hand_card_play，不重複
-        selectResult.drawCardPlay,
-        yakuUpdate
-      )
-      this.eventPublisher.publishToGame(gameId, event)
-
-      // 啟動超時（同一玩家需要決策）
-      this.turnFlowService?.startTimeoutForPlayer(gameId, playerId, 'AWAITING_DECISION')
     } else {
       // 無新役種，回合完成
       const yakuUpdate: YakuUpdate | null = currentYaku.length > 0
@@ -215,5 +305,21 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
     console.log(`[SelectTargetUseCase] Player ${playerId} selected target ${targetCardId}`)
 
     return { success: true }
+  }
+
+  /**
+   * 建立倍率資訊
+   */
+  private buildMultipliers(game: Game): ScoreMultipliers {
+    if (!game.currentRound) {
+      return { player_multipliers: {} }
+    }
+
+    const playerMultipliers: Record<string, number> = {}
+    for (const koiStatus of game.currentRound.koiStatuses) {
+      playerMultipliers[koiStatus.player_id] = koiStatus.koi_multiplier
+    }
+
+    return { player_multipliers: playerMultipliers }
   }
 }

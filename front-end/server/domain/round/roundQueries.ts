@@ -68,3 +68,19 @@ export function isActivePlayer(round: Round, playerId: string): boolean {
 export function getPlayerKoiStatus(round: Round, playerId: string): KoiStatus | null {
   return round.koiStatuses.find((ks) => ks.player_id === playerId) ?? null
 }
+
+/**
+ * 檢查玩家是否可以選擇 Koi-Koi
+ *
+ * @description
+ * 根據 Koi-Koi 規則，當玩家打完最後一張手牌後，
+ * 即使形成役種也不能選擇 Koi-Koi（因為無法繼續遊戲）。
+ *
+ * @param round - 局狀態
+ * @param playerId - 玩家 ID
+ * @returns 是否可以選擇 Koi-Koi
+ */
+export function canPlayerKoiKoi(round: Round, playerId: string): boolean {
+  const hand = getPlayerHand(round, playerId)
+  return hand.length > 0
+}
