@@ -174,18 +174,35 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
         ? gameConfig.display_timeout_seconds
         : undefined
 
-      // 發送 RoundScored 事件
-      const roundScoredEvent = this.eventMapper.toRoundScoredEvent(
-        game,
-        playerId,
-        roundEndResult.yakuList,
-        roundEndResult.baseScore,
-        roundEndResult.finalScore,
+      // 檢查是否需要確認繼續遊戲
+      const requireConfirmation = this.turnFlowService?.handleRoundEndConfirmation(gameId, game) ?? false
+
+      // 發送 RoundEnded 事件（reason: SCORED）
+      const scoringData = {
+        winner_id: playerId,
+        yaku_list: roundEndResult.yakuList,
+        base_score: roundEndResult.baseScore,
+        final_score: roundEndResult.finalScore,
         multipliers,
+      }
+      const roundEndedEvent = this.eventMapper.toRoundEndedEvent(
+        'SCORED',
         game.cumulativeScores,
-        displayTimeoutSeconds
+        scoringData,
+        undefined,
+        displayTimeoutSeconds,
+        requireConfirmation
       )
-      this.eventPublisher.publishToGame(gameId, roundScoredEvent)
+      this.eventPublisher.publishToGame(gameId, roundEndedEvent)
+
+      // 檢查是否有斷線/離開玩家（Phase 5: 回合結束時檢查）
+      if (this.turnFlowService?.checkAndHandleDisconnectedPlayers(gameId, game)) {
+        // 已處理遊戲結束，儲存後直接返回
+        this.gameStore.set(game)
+        await this.gameRepository.save(game)
+        console.log(`[MakeDecisionUseCase] Game ended due to disconnected player`)
+        return { success: true }
+      }
 
       // 根據轉換結果決定下一步
       if (isNextRound) {
@@ -232,7 +249,8 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
 
           const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
             winner.winnerId,
-            winner.finalScores
+            winner.finalScores,
+            'NORMAL'
           )
           this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
         }

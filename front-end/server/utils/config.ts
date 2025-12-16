@@ -26,6 +26,12 @@ export interface GameConfig {
   /** 斷線超時（秒） */
   readonly disconnect_timeout_seconds: number
 
+  /** 斷線玩家的代行超時（秒） */
+  readonly disconnected_action_timeout_seconds: number
+
+  /** 確認繼續遊戲的超時（秒） - 閒置玩家在回合結束時需確認 */
+  readonly continue_confirmation_timeout_seconds: number
+
   /** 假玩家動畫模擬延遲（毫秒） */
   readonly opponent_animation_delay_ms: number
 
@@ -107,6 +113,8 @@ export const gameConfig: GameConfig = {
   action_timeout_seconds: parseEnvNumber('ACTION_TIMEOUT_SECONDS', 15),
   display_timeout_seconds: parseEnvNumber('DISPLAY_TIMEOUT_SECONDS', 5),
   disconnect_timeout_seconds: parseEnvNumber('DISCONNECT_TIMEOUT_SECONDS', 60),
+  disconnected_action_timeout_seconds: parseEnvNumber('DISCONNECTED_ACTION_TIMEOUT_SECONDS', 3),
+  continue_confirmation_timeout_seconds: parseEnvNumber('CONTINUE_CONFIRMATION_TIMEOUT_SECONDS', 7),
   opponent_animation_delay_ms: parseEnvNumber('OPPONENT_ANIMATION_DELAY_MS', 3000),
   opponent_thinking_min_ms: parseEnvNumber('OPPONENT_THINKING_MIN_MS', 1500),
   opponent_thinking_max_ms: parseEnvNumber('OPPONENT_THINKING_MAX_MS', 3000),

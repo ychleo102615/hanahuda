@@ -27,7 +27,7 @@ import type {
   GameFinishedInfo,
 } from './shared'
 import type { FlowState } from './flow-state'
-import type { ErrorCode, GameErrorCode, SuggestedAction, RoundEndReason } from './errors'
+import type { ErrorCode, GameErrorCode, SuggestedAction, RoundEndReason, GameEndedReason } from './errors'
 
 /**
  * 基礎事件介面
@@ -237,6 +237,56 @@ export interface RoundEndedInstantlyEvent extends BaseEvent {
   readonly display_timeout_seconds?: number
 }
 
+// ============================================================================
+// RoundEnded 統一事件（取代 RoundScored, RoundDrawn, RoundEndedInstantly）
+// ============================================================================
+
+/**
+ * 計分資料（僅當 reason === 'SCORED' 時有值）
+ */
+export interface RoundScoringData {
+  readonly winner_id: string
+  readonly yaku_list: ReadonlyArray<Yaku>
+  readonly base_score: number
+  readonly final_score: number
+  readonly multipliers: ScoreMultipliers
+}
+
+/**
+ * 特殊結束資料（僅當 reason 為 INSTANT_* 時有值）
+ */
+export interface RoundInstantEndData {
+  readonly winner_id: string | null
+  readonly awarded_points: number
+}
+
+/**
+ * RoundEnded 統一事件
+ *
+ * @description
+ * 統一的回合結束事件，取代 RoundScoredEvent、RoundDrawnEvent、RoundEndedInstantlyEvent。
+ * 根據 reason 欄位區分不同的結束類型，並提供對應的資料。
+ *
+ * display_timeout_seconds:
+ * - 有值時：後端會在此秒數後自動推進到下一局
+ * - 無值時：這是最後一回合，玩家需手動關閉面板
+ */
+export interface RoundEndedEvent extends BaseEvent {
+  readonly event_type: 'RoundEnded'
+  /** 回合結束原因 */
+  readonly reason: RoundEndReason
+  /** 更新後的累積分數（所有情況都有） */
+  readonly updated_total_scores: ReadonlyArray<PlayerScore>
+  /** 計分資料（僅當 reason === 'SCORED' 時有值） */
+  readonly scoring_data?: RoundScoringData
+  /** 特殊結束資料（僅當 reason 為 INSTANT_* 時有值） */
+  readonly instant_data?: RoundInstantEndData
+  /** 後端倒數秒數（僅非最後回合時提供） */
+  readonly display_timeout_seconds?: number
+  /** 是否需要確認繼續遊戲（閒置超時後設為 true） */
+  readonly require_continue_confirmation: boolean
+}
+
 /**
  * GameFinished 事件
  *
@@ -250,6 +300,8 @@ export interface GameFinishedEvent extends BaseEvent {
   /** 勝者 ID（平局時為 null） */
   readonly winner_id: string | null
   readonly final_scores: ReadonlyArray<PlayerScore>
+  /** 遊戲結束原因 */
+  readonly reason: GameEndedReason
 }
 
 /**
@@ -440,6 +492,7 @@ export type GameEvent =
   | RoundScoredEvent
   | RoundDrawnEvent
   | RoundEndedInstantlyEvent
+  | RoundEndedEvent
   | GameFinishedEvent
   | TurnErrorEvent
   | GameErrorEvent

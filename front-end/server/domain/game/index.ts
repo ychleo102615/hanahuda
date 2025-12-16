@@ -54,6 +54,29 @@ export {
 export type { GameSnapshot } from './gameSnapshot'
 export { toSnapshot } from './gameSnapshot'
 
+// 玩家連線狀態管理
+export {
+  markPlayerDisconnected,
+  markPlayerLeft,
+  markPlayerReconnected,
+  isPlayerDisconnectedOrLeft,
+  getPlayerConnectionStatus,
+  hasDisconnectedOrLeftPlayers,
+  setRequireContinueConfirmation,
+  clearRequireContinueConfirmation,
+  isConfirmationRequired,
+} from './playerConnection'
+
 // Player 相關（re-export from player）
 export type { Player } from './player'
 export { createPlayer, createAiPlayer } from './player'
+
+// 不變量檢查
+export { InvariantViolation } from './gameInvariants'
+export {
+  assertRoundCardInvariants,
+  assertFlowStateConsistency,
+  assertRoundInvariants,
+  assertGameStateConsistency,
+  assertGameInvariants,
+} from './gameInvariants'

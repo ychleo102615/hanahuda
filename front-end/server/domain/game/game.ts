@@ -14,7 +14,7 @@
  * @module server/domain/game/game
  */
 
-import type { Ruleset, PlayerScore } from '#shared/contracts'
+import type { Ruleset, PlayerScore, PlayerConnectionInfo } from '#shared/contracts'
 import {
   type RoomTypeId,
   getRuleset,
@@ -54,6 +54,10 @@ export interface Game {
   readonly currentRound: Round | null
   /** 遊戲狀態 */
   readonly status: GameStatus
+  /** 各玩家連線狀態 */
+  readonly playerConnectionStatuses: readonly PlayerConnectionInfo[]
+  /** 需要確認繼續遊戲的玩家 ID 列表（閒置超時後需確認） */
+  readonly pendingContinueConfirmations: readonly string[]
   /** 建立時間 */
   readonly createdAt: Date
   /** 更新時間 */
@@ -103,6 +107,8 @@ export function createGame(params: CreateGameParams): Game {
     totalRounds: ruleset.total_rounds,
     currentRound: null,
     status: 'WAITING' as GameStatus,
+    playerConnectionStatuses: Object.freeze([{ player_id: player.id, status: 'CONNECTED' as const }]),
+    pendingContinueConfirmations: Object.freeze([]),
     createdAt: now,
     updatedAt: now,
   })
@@ -131,6 +137,10 @@ export function addSecondPlayerAndStart(game: Game, player: Player): Game {
     ...game,
     players: Object.freeze([...game.players, player]),
     cumulativeScores: Object.freeze([...game.cumulativeScores, { player_id: player.id, score: 0 }]),
+    playerConnectionStatuses: Object.freeze([
+      ...game.playerConnectionStatuses,
+      { player_id: player.id, status: 'CONNECTED' as const },
+    ]),
     status: 'IN_PROGRESS' as GameStatus,
     updatedAt: new Date(),
   })

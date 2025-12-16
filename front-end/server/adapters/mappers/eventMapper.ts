@@ -23,10 +23,14 @@ import type {
   RoundScoredEvent,
   RoundDrawnEvent,
   RoundEndedInstantlyEvent,
+  RoundEndedEvent,
+  RoundScoringData,
+  RoundInstantEndData,
   GameFinishedEvent,
   GameSnapshotRestore,
   GameErrorEvent,
   RoundEndReason,
+  GameEndedReason,
   GameErrorCode,
   SuggestedAction,
   PlayerInfo,
@@ -495,15 +499,69 @@ export class EventMapper implements FullEventMapperPort {
   }
 
   /**
+   * 將回合結束轉換為統一的 RoundEndedEvent
+   *
+   * @description
+   * 統一的回合結束事件，取代 RoundScoredEvent、RoundDrawnEvent、RoundEndedInstantlyEvent。
+   *
+   * @param reason - 回合結束原因
+   * @param updatedScores - 更新後的累積分數
+   * @param scoringData - 計分資料（僅當 reason === 'SCORED' 時需要）
+   * @param instantData - 特殊結束資料（僅當 reason 為 INSTANT_* 時需要）
+   * @param displayTimeoutSeconds - 後端倒數秒數（無值時不包含此欄位）
+   * @param requireContinueConfirmation - 是否需要確認繼續遊戲
+   * @returns RoundEndedEvent
+   */
+  toRoundEndedEvent(
+    reason: RoundEndReason,
+    updatedScores: readonly PlayerScore[],
+    scoringData?: RoundScoringData,
+    instantData?: RoundInstantEndData,
+    displayTimeoutSeconds?: number,
+    requireContinueConfirmation = false
+  ): RoundEndedEvent {
+    const baseEvent: RoundEndedEvent = {
+      event_type: 'RoundEnded',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      reason,
+      updated_total_scores: updatedScores.map(s => ({
+        player_id: s.player_id,
+        score: s.score,
+      })),
+      require_continue_confirmation: requireContinueConfirmation,
+    }
+
+    // 根據 reason 決定要包含哪些資料
+    let event = baseEvent
+
+    if (scoringData) {
+      event = { ...event, scoring_data: scoringData }
+    }
+
+    if (instantData) {
+      event = { ...event, instant_data: instantData }
+    }
+
+    if (displayTimeoutSeconds !== undefined) {
+      event = { ...event, display_timeout_seconds: displayTimeoutSeconds }
+    }
+
+    return event
+  }
+
+  /**
    * 將遊戲結束轉換為 GameFinishedEvent
    *
    * @param winnerId - 勝者 ID（平局時為 null）
    * @param finalScores - 最終分數
+   * @param reason - 遊戲結束原因
    * @returns GameFinishedEvent
    */
   toGameFinishedEvent(
     winnerId: string | null,
-    finalScores: readonly PlayerScore[]
+    finalScores: readonly PlayerScore[],
+    reason: GameEndedReason
   ): GameFinishedEvent {
     return {
       event_type: 'GameFinished',
@@ -514,6 +572,7 @@ export class EventMapper implements FullEventMapperPort {
         player_id: s.player_id,
         score: s.score,
       })),
+      reason,
     }
   }
 

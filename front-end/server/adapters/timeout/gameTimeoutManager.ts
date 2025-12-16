@@ -52,6 +52,14 @@ interface IdleTimerInfo {
 }
 
 /**
+ * 確認繼續計時器資訊
+ */
+interface ConfirmationTimerInfo {
+  /** setTimeout ID */
+  timerId: NodeJS.Timeout
+}
+
+/**
  * 遊戲計時器管理器
  *
  * @description
@@ -66,6 +74,9 @@ class GameTimeoutManager extends GameTimeoutPort {
 
   /** 閒置計時器（每個玩家獨立） */
   private idleTimers: Map<TimerKey, IdleTimerInfo> = new Map()
+
+  /** 確認繼續計時器（每個玩家獨立） */
+  private confirmationTimers: Map<TimerKey, ConfirmationTimerInfo> = new Map()
 
   // ============================================================
   // 遊戲計時器（Action 和 Display 統一）
@@ -292,6 +303,76 @@ class GameTimeoutManager extends GameTimeoutPort {
   }
 
   // ============================================================
+  // 確認繼續計時器
+  // ============================================================
+
+  /**
+   * 啟動確認繼續計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param onTimeout - 超時回調函數
+   */
+  startContinueConfirmationTimeout(gameId: string, playerId: string, onTimeout: () => void): void {
+    const key = this.getTimerKey(gameId, playerId)
+    this.clearContinueConfirmationTimeout(gameId, playerId)
+
+    const timer = setTimeout(onTimeout, gameConfig.continue_confirmation_timeout_seconds * 1000)
+    this.confirmationTimers.set(key, { timerId: timer })
+
+    console.log(
+      `[GameTimeoutManager] Started confirmation timeout for ${key}: ${gameConfig.continue_confirmation_timeout_seconds}s`
+    )
+  }
+
+  /**
+   * 清除指定玩家的確認繼續計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   */
+  clearContinueConfirmationTimeout(gameId: string, playerId: string): void {
+    const key = this.getTimerKey(gameId, playerId)
+    const timerInfo = this.confirmationTimers.get(key)
+    if (timerInfo) {
+      clearTimeout(timerInfo.timerId)
+      this.confirmationTimers.delete(key)
+      console.log(`[GameTimeoutManager] Cleared confirmation timeout for ${key}`)
+    }
+  }
+
+  /**
+   * 清除遊戲的所有確認繼續計時器
+   *
+   * @param gameId - 遊戲 ID
+   */
+  clearAllContinueConfirmationTimeouts(gameId: string): void {
+    const prefix = `${gameId}:`
+    for (const key of this.confirmationTimers.keys()) {
+      if (key.startsWith(prefix)) {
+        const timerInfo = this.confirmationTimers.get(key)
+        if (timerInfo) {
+          clearTimeout(timerInfo.timerId)
+          this.confirmationTimers.delete(key)
+        }
+      }
+    }
+    console.log(`[GameTimeoutManager] Cleared all confirmation timeouts for game ${gameId}`)
+  }
+
+  /**
+   * 檢查指定玩家是否有確認繼續計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @returns 是否有確認繼續計時器
+   */
+  hasContinueConfirmationTimeout(gameId: string, playerId: string): boolean {
+    const key = this.getTimerKey(gameId, playerId)
+    return this.confirmationTimers.has(key)
+  }
+
+  // ============================================================
   // 遊戲層級清理
   // ============================================================
 
@@ -304,6 +385,7 @@ class GameTimeoutManager extends GameTimeoutPort {
     this.clearTimeout(gameId)
     this.clearAllDisconnectTimeouts(gameId)
     this.clearAllIdleTimeouts(gameId)
+    this.clearAllContinueConfirmationTimeouts(gameId)
     console.log(`[GameTimeoutManager] Cleared all timers for game ${gameId}`)
   }
 

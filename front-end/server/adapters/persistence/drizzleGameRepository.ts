@@ -200,6 +200,12 @@ export class DrizzleGameRepository implements GameRepositoryPort {
       total_rounds: record.totalRounds,
     })
 
+    // 初始化玩家連線狀態（從 DB 恢復時預設為 CONNECTED）
+    const playerConnectionStatuses = players.map(p => ({
+      player_id: p.id,
+      status: 'CONNECTED' as const,
+    }))
+
     return Object.freeze({
       id: record.id,
       sessionToken: record.sessionToken,
@@ -210,6 +216,8 @@ export class DrizzleGameRepository implements GameRepositoryPort {
       totalRounds: record.totalRounds,
       currentRound: null, // DB 不儲存 currentRound，由記憶體 Store 管理
       status: record.status,
+      playerConnectionStatuses: Object.freeze(playerConnectionStatuses),
+      pendingContinueConfirmations: Object.freeze([]),
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     })

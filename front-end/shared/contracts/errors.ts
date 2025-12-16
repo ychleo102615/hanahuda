@@ -33,16 +33,34 @@ export type GameErrorCode =
 export type SuggestedAction = 'RETRY_MATCHMAKING' | 'RETURN_HOME' | 'RECONNECT'
 
 /**
- * 局結束原因類型
+ * 回合結束原因類型
  *
- * 參考: doc/shared/protocol.md#RoundEndedInstantly
+ * 參考: doc/shared/protocol.md#RoundEnded
  *
  * @description
- * - TESHI: 手役（發牌後立即形成的特殊役種）
- * - FIELD_KUTTSUKI: 場牌四張同月（場札流局）
- * - NO_YAKU: 無人形成役種，牌堆耗盡
+ * - SCORED: 計分結束（有勝者、役種、分數）
+ * - DRAWN: 流局（牌堆耗盡，無人形成役種）
+ * - INSTANT_TESHI: 手役（發牌後立即形成的特殊役種）
+ * - INSTANT_FIELD_KUTTSUKI: 場牌四張同月（場札流局）
  */
-export type RoundEndReason = 'TESHI' | 'FIELD_KUTTSUKI' | 'NO_YAKU'
+export type RoundEndReason =
+  | 'SCORED'
+  | 'DRAWN'
+  | 'INSTANT_TESHI'
+  | 'INSTANT_FIELD_KUTTSUKI'
+
+/**
+ * 遊戲結束原因類型
+ *
+ * @description
+ * - NORMAL: 正常結束（回合打完或達到結束條件）
+ * - PLAYER_DISCONNECTED: 斷線玩家完成當前回合後
+ * - PLAYER_IDLE_TIMEOUT: 閒置玩家在確認提示超時後
+ */
+export type GameEndedReason =
+  | 'NORMAL'
+  | 'PLAYER_DISCONNECTED'
+  | 'PLAYER_IDLE_TIMEOUT'
 
 /**
  * 錯誤訊息映射表

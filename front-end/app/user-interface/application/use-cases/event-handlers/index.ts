@@ -21,10 +21,14 @@ export { HandleTurnProgressAfterSelectionUseCase } from './HandleTurnProgressAft
 export { HandleDecisionRequiredUseCase } from './HandleDecisionRequiredUseCase'
 export { HandleDecisionMadeUseCase } from './HandleDecisionMadeUseCase'
 
-// Round Ending Events
+// Round Ending Events (舊事件 - 向後兼容)
 export { HandleRoundScoredUseCase } from './HandleRoundScoredUseCase'
 export { HandleRoundDrawnUseCase } from './HandleRoundDrawnUseCase'
 export { HandleRoundEndedInstantlyUseCase } from './HandleRoundEndedInstantlyUseCase'
+
+// Round Ending Events (新統一事件)
+export { HandleRoundEndedUseCase } from './HandleRoundEndedUseCase'
+
 export { HandleGameFinishedUseCase } from './HandleGameFinishedUseCase'
 
 // Error Events

@@ -356,9 +356,7 @@ export class OpponentInstance {
    */
   private isTerminalEvent(eventType: string): boolean {
     const terminalEvents = [
-      'RoundDrawn', // 平局
-      'RoundEndedInstantly', // 立即結束（Teshi、場牌流局）
-      'RoundScored', // 計分結束（玩家選擇 END_ROUND）
+      'RoundEnded', // 統一的回合結束事件（取代 RoundScored、RoundDrawn、RoundEndedInstantly）
       'GameFinished', // 遊戲結束
     ] as const
 

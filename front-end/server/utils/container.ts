@@ -37,6 +37,7 @@ import { MakeDecisionUseCase } from '~~/server/application/use-cases/makeDecisio
 import { LeaveGameUseCase } from '~~/server/application/use-cases/leaveGameUseCase'
 import { AutoActionUseCase } from '~~/server/application/use-cases/autoActionUseCase'
 import { RecordGameStatsUseCase } from '~~/server/application/use-cases/recordGameStatsUseCase'
+import { ConfirmContinueUseCase } from '~~/server/application/use-cases/confirmContinueUseCase'
 
 // Application Services
 import { TurnFlowService } from '~~/server/application/services/turnFlowService'
@@ -50,6 +51,7 @@ import type { MakeDecisionInputPort } from '~~/server/application/ports/input/ma
 import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
+import type { ConfirmContinueInputPort } from '~~/server/application/ports/input/confirmContinueInputPort'
 
 /**
  * 建立 CompositeEventPublisher
@@ -155,6 +157,12 @@ joinGameAsAiUseCase.setTurnFlowService(turnFlowService)
 // 5. 注入 LeaveGameUseCase 到 TurnFlowService（用於閒置踢出）
 turnFlowService.setLeaveGameUseCase(leaveGameUseCase)
 
+// 6. 建立 ConfirmContinueUseCase（依賴 turnFlowService）
+const confirmContinueUseCase: ConfirmContinueInputPort = new ConfirmContinueUseCase(
+  inMemoryGameStore,
+  turnFlowService
+)
+
 /**
  * 容器匯出
  *
@@ -179,6 +187,7 @@ export const container = {
   leaveGameUseCase,
   autoActionUseCase,
   recordGameStatsUseCase,
+  confirmContinueUseCase,
 
   // Application Services
   turnFlowService,

@@ -15,12 +15,14 @@ export type { FlowState } from './flow-state'
 export { FlowState as FlowStateEnum } from './flow-state'
 
 // Errors
-export type { ErrorCode, GameErrorCode, SuggestedAction, RoundEndReason } from './errors'
+export type { ErrorCode, GameErrorCode, SuggestedAction, RoundEndReason, GameEndedReason } from './errors'
 export { ERROR_MESSAGES, GAME_ERROR_MESSAGES, RECONNECTION_RETRY } from './errors'
 
 // Shared Data Structures
 export type {
   PlayerInfo,
+  PlayerConnectionStatus,
+  PlayerConnectionInfo,
   PlayerHand,
   PlayerDepository,
   PlayerScore,
@@ -68,6 +70,10 @@ export type {
   RoundScoredEvent,
   RoundDrawnEvent,
   RoundEndedInstantlyEvent,
+  // RoundEnded (統一回合結束事件)
+  RoundScoringData,
+  RoundInstantEndData,
+  RoundEndedEvent,
   GameFinishedEvent,
   TurnErrorEvent,
   GameErrorEvent,

@@ -45,6 +45,7 @@ export type {
   HandleRoundScoredPort,
   HandleRoundDrawnPort,
   HandleRoundEndedInstantlyPort,
+  HandleRoundEndedPort,
   HandleGameFinishedPort,
   HandleTurnErrorPort,
   HandleGameErrorPort,

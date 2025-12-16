@@ -34,6 +34,7 @@ import type {
   RoundScoredEvent,
   RoundDrawnEvent,
   RoundEndedInstantlyEvent,
+  RoundEndedEvent,
   GameFinishedEvent,
   TurnErrorEvent,
   GameErrorEvent,
@@ -267,5 +268,23 @@ export interface HandleGameErrorPort {
    * @param event - GameError 事件
    */
   execute(event: GameErrorEvent): void | Promise<void>
+}
+
+/**
+ * HandleRoundEndedPort - Input Port
+ *
+ * @description
+ * 處理 RoundEnded 統一事件（取代 RoundScored、RoundDrawn、RoundEndedInstantly）。
+ * 根據 event.reason 決定顯示哪種 Modal。
+ *
+ * 實作: HandleRoundEndedUseCase
+ */
+export interface HandleRoundEndedPort {
+  /**
+   * 執行 RoundEnded 事件處理
+   *
+   * @param event - RoundEnded 事件
+   */
+  execute(event: RoundEndedEvent): void | Promise<void>
 }
 

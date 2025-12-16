@@ -45,6 +45,7 @@ export const TOKENS = {
   HandleRoundScoredPort: Symbol('HandleRoundScoredPort'),
   HandleRoundEndedInstantlyPort: Symbol('HandleRoundEndedInstantlyPort'),
   HandleRoundDrawnPort: Symbol('HandleRoundDrawnPort'),
+  HandleRoundEndedPort: Symbol('HandleRoundEndedPort'),
   HandleGameFinishedPort: Symbol('HandleGameFinishedPort'),
   HandleTurnErrorPort: Symbol('HandleTurnErrorPort'),
   HandleGameErrorPort: Symbol('HandleGameErrorPort'),

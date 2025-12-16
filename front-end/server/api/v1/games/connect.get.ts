@@ -40,6 +40,11 @@ import { gameConfig } from '~~/server/utils/config'
 import { setSessionCookie, SESSION_COOKIE_NAME } from '~~/server/utils/sessionValidation'
 import { createLogger } from '~~/server/utils/logger'
 import { initRequestId } from '~~/server/utils/requestId'
+import {
+  markPlayerDisconnected,
+  markPlayerReconnected,
+  getPlayerConnectionStatus,
+} from '~~/server/domain/game/playerConnection'
 
 /**
  * Query Parameters Schema
@@ -296,6 +301,20 @@ export default defineEventHandler(async (event) => {
       // 清除斷線超時（重連時）
       container.gameTimeoutManager.clearDisconnectTimeout(effectiveGameId, playerId)
 
+      // 重連處理：若玩家之前是 DISCONNECTED 狀態，標記為重新連線
+      const currentGame = container.gameStore.get(effectiveGameId)
+      if (currentGame) {
+        const connectionStatus = getPlayerConnectionStatus(currentGame, playerId)
+        if (connectionStatus === 'DISCONNECTED') {
+          const reconnectedGame = markPlayerReconnected(currentGame, playerId)
+          container.gameStore.set(reconnectedGame)
+          container.gameRepository.save(reconnectedGame).catch(error => {
+            logger.error('Failed to save reconnected game state', error)
+          })
+          logger.info('Player reconnected and marked as CONNECTED', { gameId: effectiveGameId, playerId })
+        }
+      }
+
       // 心跳計時器
       const heartbeatInterval = setInterval(() => {
         try {
@@ -314,20 +333,47 @@ export default defineEventHandler(async (event) => {
         controller.close()
         logger.info('Player disconnected', { gameId: effectiveGameId, playerId })
 
-        // 啟動斷線超時（若超時未重連，對手獲勝）
-        const currentGame = container.gameStore.get(effectiveGameId)
-        if (currentGame && currentGame.status === 'IN_PROGRESS') {
+        // 新邏輯（Phase 5）：標記玩家為 DISCONNECTED，不立即結束遊戲
+        // 遊戲繼續進行（由系統代行，3秒超時），回合結束時檢查並決定是否結束遊戲
+        const disconnectGame = container.gameStore.get(effectiveGameId)
+        if (disconnectGame && disconnectGame.status === 'IN_PROGRESS') {
+          // 檢查玩家是否已經是 LEFT 狀態（已主動離開）
+          const status = getPlayerConnectionStatus(disconnectGame, playerId)
+          if (status !== 'LEFT') {
+            // 標記為 DISCONNECTED
+            const disconnectedGame = markPlayerDisconnected(disconnectGame, playerId)
+            container.gameStore.set(disconnectedGame)
+            container.gameRepository.save(disconnectedGame).catch(error => {
+              logger.error('Failed to save disconnected game state', error)
+            })
+            logger.info('Player marked as DISCONNECTED, game continues with accelerated auto-action', {
+              gameId: effectiveGameId,
+              playerId,
+            })
+          }
+
+          // 啟動斷線超時計時器（用於在沒有活動的情況下的保護機制）
+          // 若玩家在超時前重連，計時器會被清除
           container.gameTimeoutManager.startDisconnectTimeout(
             effectiveGameId,
             playerId,
             async () => {
-              logger.info('Player disconnect timeout', { gameId: effectiveGameId, playerId })
+              logger.info('Player disconnect timeout reached', { gameId: effectiveGameId, playerId })
+              // 斷線超時後，若遊戲仍在進行且玩家仍斷線，標記為 LEFT
+              // 這是一個保護機制，正常情況下回合結束時就會處理
               try {
-                await container.leaveGameUseCase.execute({
-                  gameId: effectiveGameId,
-                  playerId,
-                })
-                logger.info('Game ended due to disconnect timeout', { gameId: effectiveGameId })
+                const timeoutGame = container.gameStore.get(effectiveGameId)
+                if (timeoutGame && timeoutGame.status === 'IN_PROGRESS') {
+                  const currentStatus = getPlayerConnectionStatus(timeoutGame, playerId)
+                  if (currentStatus === 'DISCONNECTED') {
+                    // 呼叫 leaveGameUseCase 標記為 LEFT
+                    await container.leaveGameUseCase.execute({
+                      gameId: effectiveGameId,
+                      playerId,
+                    })
+                    logger.info('Disconnected player marked as LEFT after timeout', { gameId: effectiveGameId })
+                  }
+                }
               } catch (error) {
                 logger.error('Failed to handle disconnect timeout', error)
               }

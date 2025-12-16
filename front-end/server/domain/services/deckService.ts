@@ -8,11 +8,11 @@
  * @module server/domain/services/deckService
  */
 
-import { ALL_CARD_IDS, TOTAL_DECK_SIZE } from '../card/cardConstants'
+import { ALL_CARD_IDS, TOTAL_DECK_SIZE, ALL_CARD_IDS_SET } from '../card/cardConstants'
 import { DEAL_CONFIG } from '../card/dealConfig'
 
 // Re-export 維持向後相容
-export { ALL_CARD_IDS, TOTAL_DECK_SIZE } from '../card/cardConstants'
+export { ALL_CARD_IDS, TOTAL_DECK_SIZE, ALL_CARD_IDS_SET } from '../card/cardConstants'
 export { DEAL_CONFIG } from '../card/dealConfig'
 
 /**
@@ -227,9 +227,9 @@ export function isValidDeck(deck: readonly string[]): boolean {
     return false // 有重複的卡片
   }
 
-  // 檢查是否所有卡片都是有效的
+  // 檢查是否所有卡片都是有效的（使用 Set 做 O(1) 查詢）
   for (const cardId of deck) {
-    if (!ALL_CARD_IDS.includes(cardId)) {
+    if (!ALL_CARD_IDS_SET.has(cardId)) {
       return false
     }
   }

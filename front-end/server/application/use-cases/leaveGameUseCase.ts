@@ -2,21 +2,24 @@
  * LeaveGameUseCase - Application Layer
  *
  * @description
- * 處理玩家提前離開遊戲的用例。
- * 當玩家離開時，對手獲勝，遊戲立即結束。
+ * 處理玩家離開遊戲的用例。
+ *
+ * 新邏輯（Phase 5 重構）：
+ * - 玩家離開時不立即結束遊戲
+ * - 標記玩家為 LEFT 狀態
+ * - 遊戲繼續由系統代行該玩家（加速模式，3 秒超時）
+ * - 回合結束時檢查，若有 LEFT/DISCONNECTED 玩家則發送 GameEnded
  *
  * @module server/application/use-cases/leaveGameUseCase
  */
 
-import type { Game } from '~~/server/domain/game/game'
-import type { GameFinishedEvent, PlayerScore } from '#shared/contracts'
-import { transitionAfterPlayerLeave } from '~~/server/domain/services/roundTransitionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { LeaveGameEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
+import { markPlayerLeft, getPlayerConnectionStatus } from '~~/server/domain/game/playerConnection'
 import {
   LeaveGameError,
   type LeaveGameInputPort,
@@ -31,7 +34,12 @@ export type { LeaveGameEventMapperPort } from '~~/server/application/ports/outpu
 /**
  * LeaveGameUseCase
  *
- * 處理玩家提前離開遊戲的完整流程。
+ * 處理玩家離開遊戲的完整流程。
+ *
+ * 新邏輯（Phase 5 重構）：
+ * - 不立即結束遊戲
+ * - 標記玩家為 LEFT 狀態
+ * - 遊戲繼續由系統代行
  */
 export class LeaveGameUseCase implements LeaveGameInputPort {
   constructor(
@@ -70,49 +78,30 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
       throw new LeaveGameError('PLAYER_NOT_IN_GAME', `Player not in game: ${playerId}`)
     }
 
-    // 4. 使用 Domain Service 處理玩家離開
-    const transitionResult = transitionAfterPlayerLeave(existingGame, playerId)
-    const game = transitionResult.game
-
-    // 5. 發送 GameFinished 事件（對手獲勝）並記錄統計
-    if (transitionResult.winner) {
-      // 清除遊戲的所有計時器
-      this.gameTimeoutManager?.clearAllForGame(gameId)
-
-      // 記錄遊戲統計（玩家離開/投降，對手獲勝）
-      if (this.recordGameStatsUseCase) {
-        try {
-          await this.recordGameStatsUseCase.execute({
-            gameId,
-            winnerId: transitionResult.winner.winnerId,
-            finalScores: transitionResult.winner.finalScores,
-            winnerYakuList: [],  // 投降情況下無役種
-            winnerKoiMultiplier: 1,  // 投降情況下無 Koi-Koi 倍率
-            players: existingGame.players,
-          })
-        } catch (error) {
-          console.error(`[LeaveGameUseCase] Failed to record game stats:`, error)
-          // 統計記錄失敗不應影響遊戲結束流程
-        }
+    // 4. 檢查玩家是否已經離開
+    const currentStatus = getPlayerConnectionStatus(existingGame, playerId)
+    if (currentStatus === 'LEFT') {
+      // 玩家已經離開，不需要重複處理
+      console.log(`[LeaveGameUseCase] Player ${playerId} already left game ${gameId}`)
+      return {
+        success: true,
+        leftAt: new Date().toISOString(),
       }
-
-      const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
-        transitionResult.winner.winnerId,
-        transitionResult.winner.finalScores
-      )
-      this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
     }
 
-    // 6. 儲存更新
-    this.gameStore.set(game)
-    await this.gameRepository.save(game)
+    // 5. 標記玩家為 LEFT 狀態（不結束遊戲）
+    const updatedGame = markPlayerLeft(existingGame, playerId)
 
-    // 7. 清除遊戲會話（延遲執行，讓事件先發送完畢）
-    setTimeout(() => {
-      this.gameStore.delete(gameId)
-    }, 1000)
+    // 6. 清除該玩家的閒置計時器和確認超時計時器
+    // 因為 LEFT 玩家不需要再追蹤閒置狀態
+    this.gameTimeoutManager?.clearIdleTimeout(gameId, playerId)
+    this.gameTimeoutManager?.clearContinueConfirmationTimeout(gameId, playerId)
 
-    console.log(`[LeaveGameUseCase] Player ${playerId} left game ${gameId}`)
+    // 7. 儲存更新
+    this.gameStore.set(updatedGame)
+    await this.gameRepository.save(updatedGame)
+
+    console.log(`[LeaveGameUseCase] Player ${playerId} marked as LEFT in game ${gameId}, game continues with auto-action`)
 
     return {
       success: true,

@@ -20,6 +20,24 @@ export interface PlayerInfo {
 }
 
 /**
+ * 玩家連線狀態
+ *
+ * @description
+ * - CONNECTED: 正常連線
+ * - DISCONNECTED: 斷線中（仍在遊戲中，由 AI 代行）
+ * - LEFT: 已離開（主動離開，由 AI 代行）
+ */
+export type PlayerConnectionStatus = 'CONNECTED' | 'DISCONNECTED' | 'LEFT'
+
+/**
+ * 玩家連線資訊
+ */
+export interface PlayerConnectionInfo {
+  readonly player_id: string
+  readonly status: PlayerConnectionStatus
+}
+
+/**
  * 玩家手牌
  */
 export interface PlayerHand {

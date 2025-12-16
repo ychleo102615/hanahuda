@@ -52,6 +52,7 @@ const SSE_EVENT_TYPES = [
   'RoundScored',
   'RoundEndedInstantly',
   'RoundDrawn',
+  'RoundEnded',
   'GameFinished',
   'TurnError',
   'GameSnapshotRestore',

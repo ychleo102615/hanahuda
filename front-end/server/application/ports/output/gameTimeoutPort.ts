@@ -151,6 +151,52 @@ export abstract class GameTimeoutPort {
   abstract hasIdleTimeout(gameId: string, playerId: string): boolean
 
   // ============================================================
+  // 確認繼續計時器（Continue Confirmation Timeout）
+  // ============================================================
+
+  /**
+   * 啟動確認繼續計時器
+   *
+   * @description
+   * 當玩家閒置超過 60 秒後，回合結束時需要確認繼續遊戲。
+   * 若玩家在 7 秒內未確認，則視為放棄，踢出遊戲。
+   * 每個玩家獨立的確認計時器。
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param onTimeout - 超時回調函數
+   */
+  abstract startContinueConfirmationTimeout(
+    gameId: string,
+    playerId: string,
+    onTimeout: () => void
+  ): void
+
+  /**
+   * 清除指定玩家的確認繼續計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   */
+  abstract clearContinueConfirmationTimeout(gameId: string, playerId: string): void
+
+  /**
+   * 清除遊戲的所有確認繼續計時器
+   *
+   * @param gameId - 遊戲 ID
+   */
+  abstract clearAllContinueConfirmationTimeouts(gameId: string): void
+
+  /**
+   * 檢查指定玩家是否有確認繼續計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @returns 是否有確認繼續計時器
+   */
+  abstract hasContinueConfirmationTimeout(gameId: string, playerId: string): boolean
+
+  // ============================================================
   // 遊戲層級清理
   // ============================================================
 
@@ -158,7 +204,7 @@ export abstract class GameTimeoutPort {
    * 清除指定遊戲的所有計時器
    *
    * @description
-   * 包含遊戲計時器、斷線計時器和閒置計時器。
+   * 包含遊戲計時器、斷線計時器、閒置計時器和確認繼續計時器。
    * 用於遊戲結束時的資源清理。
    *
    * @param gameId - 遊戲 ID

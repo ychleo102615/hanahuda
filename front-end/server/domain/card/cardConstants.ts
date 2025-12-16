@@ -94,3 +94,8 @@ export const ALL_CARD_IDS: readonly string[] = Object.freeze([
  * 牌組總數量
  */
 export const TOTAL_DECK_SIZE = ALL_CARD_IDS.length
+
+/**
+ * 所有卡片 ID 的 Set（用於 O(1) 查詢）
+ */
+export const ALL_CARD_IDS_SET: ReadonlySet<string> = Object.freeze(new Set(ALL_CARD_IDS))

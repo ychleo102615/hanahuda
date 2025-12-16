@@ -22,6 +22,9 @@ import type {
   DecisionRequiredEvent,
   DecisionMadeEvent,
   RoundScoredEvent,
+  RoundEndedEvent,
+  RoundScoringData,
+  RoundInstantEndData,
   GameFinishedEvent,
   CardPlay,
   CardSelection,
@@ -30,6 +33,7 @@ import type {
   Yaku,
   PlayerScore,
 } from '#shared/contracts'
+import type { RoundEndReason, GameEndedReason } from '#shared/contracts/errors'
 
 // ============================================================
 // Base EventMapperPort
@@ -124,6 +128,7 @@ export interface TurnEventMapperPort extends EventMapperPort {
    * 當最後一手牌形成役種時，直接結算（無 Koi-Koi 選擇）。
    *
    * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
+   * @deprecated 使用 toRoundEndedEvent 替代
    */
   toRoundScoredEvent(
     game: Game,
@@ -137,11 +142,38 @@ export interface TurnEventMapperPort extends EventMapperPort {
   ): RoundScoredEvent
 
   /**
+   * 轉換為 RoundEnded 統一事件
+   *
+   * @description
+   * 統一的回合結束事件，取代 RoundScoredEvent、RoundDrawnEvent、RoundEndedInstantlyEvent。
+   *
+   * @param reason - 回合結束原因
+   * @param updatedScores - 更新後的累積分數
+   * @param scoringData - 計分資料（僅當 reason === 'SCORED' 時需要）
+   * @param instantData - 特殊結束資料（僅當 reason 為 INSTANT_* 時需要）
+   * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
+   * @param requireContinueConfirmation - 是否需要確認繼續遊戲
+   */
+  toRoundEndedEvent(
+    reason: RoundEndReason,
+    updatedScores: readonly PlayerScore[],
+    scoringData?: RoundScoringData,
+    instantData?: RoundInstantEndData,
+    displayTimeoutSeconds?: number,
+    requireContinueConfirmation?: boolean
+  ): RoundEndedEvent
+
+  /**
    * 轉換為 GameFinished 事件
+   *
+   * @param winnerId - 勝者 ID（平局時為 null）
+   * @param finalScores - 最終分數
+   * @param reason - 遊戲結束原因
    */
   toGameFinishedEvent(
     winnerId: string | null,
-    finalScores: readonly PlayerScore[]
+    finalScores: readonly PlayerScore[],
+    reason: GameEndedReason
   ): GameFinishedEvent
 }
 
@@ -195,6 +227,7 @@ export interface DecisionEventMapperPort extends EventMapperPort {
    * 轉換為 RoundScored 事件
    *
    * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
+   * @deprecated 使用 toRoundEndedEvent 替代
    */
   toRoundScoredEvent(
     game: Game,
@@ -215,6 +248,7 @@ export interface DecisionEventMapperPort extends EventMapperPort {
    *
    * @param currentScores - 目前累積分數
    * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
+   * @deprecated 使用 toRoundEndedEvent 替代
    */
   toRoundDrawnEvent(
     currentScores: readonly PlayerScore[],
@@ -222,11 +256,31 @@ export interface DecisionEventMapperPort extends EventMapperPort {
   ): RoundDrawnEvent
 
   /**
+   * 轉換為 RoundEnded 統一事件
+   *
+   * @description
+   * 統一的回合結束事件，取代 RoundScoredEvent、RoundDrawnEvent、RoundEndedInstantlyEvent。
+   */
+  toRoundEndedEvent(
+    reason: RoundEndReason,
+    updatedScores: readonly PlayerScore[],
+    scoringData?: RoundScoringData,
+    instantData?: RoundInstantEndData,
+    displayTimeoutSeconds?: number,
+    requireContinueConfirmation?: boolean
+  ): RoundEndedEvent
+
+  /**
    * 轉換為 GameFinished 事件
+   *
+   * @param winnerId - 勝者 ID（平局時為 null）
+   * @param finalScores - 最終分數
+   * @param reason - 遊戲結束原因
    */
   toGameFinishedEvent(
     winnerId: string | null,
-    finalScores: readonly PlayerScore[]
+    finalScores: readonly PlayerScore[],
+    reason: GameEndedReason
   ): GameFinishedEvent
 }
 
@@ -243,10 +297,15 @@ export interface DecisionEventMapperPort extends EventMapperPort {
 export interface LeaveGameEventMapperPort {
   /**
    * 轉換為 GameFinished 事件
+   *
+   * @param winnerId - 勝者 ID（平局時為 null）
+   * @param finalScores - 最終分數
+   * @param reason - 遊戲結束原因
    */
   toGameFinishedEvent(
     winnerId: string | null,
-    finalScores: readonly PlayerScore[]
+    finalScores: readonly PlayerScore[],
+    reason: GameEndedReason
   ): GameFinishedEvent
 }
 
