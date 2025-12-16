@@ -41,6 +41,9 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
    * 非同步執行動畫和狀態更新
    */
   private async executeAsync(event: RoundDealtEvent): Promise<void> {
+    // 記錄動畫開始時間（用於計算動畫耗時）
+    const startTS = new Date()
+
     const localPlayerId = this.gameState.getLocalPlayerId()
 
     // === 重置上一局的狀態 ===
@@ -114,7 +117,9 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
     this.gameState.setFlowStage(event.next_state.state_type)
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // 4. 啟動操作倒數
-    this.notification.startActionCountdown(event.action_timeout_seconds)
+    // 4. 啟動操作倒數（扣除動畫耗時）
+    const currentTS = new Date()
+    const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
+    this.notification.startActionCountdown(event.action_timeout_seconds - dt)
   }
 }
