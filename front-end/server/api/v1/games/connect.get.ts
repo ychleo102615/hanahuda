@@ -45,11 +45,7 @@ import {
   markPlayerReconnected,
   getPlayerConnectionStatus,
 } from '~~/server/domain/game/playerConnection'
-import {
-  HTTP_BAD_REQUEST,
-  HTTP_GONE,
-  HTTP_INTERNAL_SERVER_ERROR,
-} from '#shared/constants'
+import { HTTP_BAD_REQUEST } from '#shared/constants'
 
 /**
  * Query Parameters Schema
@@ -143,22 +139,7 @@ export default defineEventHandler(async (event) => {
 
   logger.info('JoinGameUseCase result', { status: result.status })
 
-  // 4. 根據結果決定處理方式
-  // 對於非成功狀態（game_expired），返回錯誤而非 SSE
-  if (result.status === 'game_expired') {
-    logger.info('Game expired', { gameId: result.gameId })
-    setResponseStatus(event, HTTP_GONE)
-    return {
-      error: {
-        code: 'GAME_EXPIRED',
-        message: 'Game has expired',
-        game_id: result.gameId,
-      },
-      timestamp: new Date().toISOString(),
-    }
-  }
-
-  // 5. 建立 InitialState 事件資料
+  // 4. 建立 InitialState 事件資料
   let initialStateEvent: InitialStateEvent
   let effectiveGameId: string
   let effectiveSessionToken: string
@@ -229,21 +210,21 @@ export default defineEventHandler(async (event) => {
       break
     }
 
+    case 'game_expired': {
+      effectiveGameId = result.gameId
+      effectiveSessionToken = sessionToken || ''
+      // game_expired 不需要 data，前端只需要 response_type 即可處理
+      initialStateEvent = buildInitialStateEvent('game_expired', result.gameId, playerId, null)
+      logger.info('Game expired, sending InitialState event', { gameId: result.gameId })
+      break
+    }
+
     // 舊版相容（不應該到達這裡，但保留以防萬一）
     case 'success': {
-      effectiveGameId = result.gameId
-      effectiveSessionToken = result.sessionToken
       // 舊版 success 沒有足夠資訊建立 InitialState
-      // 這是過渡期的相容處理
-      logger.warn('Legacy success status encountered, this should not happen')
-      setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
-      return {
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Unexpected legacy status',
-        },
-        timestamp: new Date().toISOString(),
-      }
+      // 這是過渡期的相容處理，不應該出現在 SSE 端點
+      logger.warn('Legacy success status encountered in SSE endpoint, this should not happen')
+      throw new Error('Legacy success status is not supported in SSE endpoint')
     }
 
     default: {
@@ -283,8 +264,9 @@ export default defineEventHandler(async (event) => {
         logger.error('Failed to send InitialState', error)
       }
 
-      // 對於 game_finished，不需要建立持久連線
-      if (initialStateEvent.response_type === 'game_finished') {
+      // 對於 game_finished 或 game_expired，不需要建立持久連線
+      if (initialStateEvent.response_type === 'game_finished' ||
+          initialStateEvent.response_type === 'game_expired') {
         controller.close()
         return
       }
