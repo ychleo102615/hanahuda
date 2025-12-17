@@ -99,6 +99,9 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       throw new MakeDecisionError('GAME_NOT_FOUND', `Game not found: ${gameId}`)
     }
 
+    // 樂觀鎖：記住讀取時的版本
+    const oldVersion = existingGame.currentRound?.version
+
     let game = existingGame
 
     // 2. 驗證玩家回合
@@ -198,6 +201,11 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       // 檢查是否有斷線/離開玩家（Phase 5: 回合結束時檢查）
       if (this.turnFlowService?.checkAndHandleDisconnectedPlayers(gameId, game)) {
         // 已處理遊戲結束，儲存後直接返回
+        // 樂觀鎖檢查
+        const currentGame = this.gameStore.get(gameId)
+        if (currentGame?.currentRound?.version !== oldVersion) {
+          throw new MakeDecisionError('VERSION_CONFLICT', 'Concurrent modification detected')
+        }
         this.gameStore.set(game)
         await this.gameRepository.save(game)
         console.log(`[MakeDecisionUseCase] Game ended due to disconnected player`)
@@ -258,6 +266,11 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     }
 
     // 6. 儲存更新
+    // 樂觀鎖檢查
+    const currentGame = this.gameStore.get(gameId)
+    if (currentGame?.currentRound?.version !== oldVersion) {
+      throw new MakeDecisionError('VERSION_CONFLICT', 'Concurrent modification detected')
+    }
     this.gameStore.set(game)
     await this.gameRepository.save(game)
 

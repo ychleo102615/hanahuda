@@ -71,12 +71,3 @@ export {
 export type { Player } from './player'
 export { createPlayer, createAiPlayer } from './player'
 
-// 不變量檢查
-export { InvariantViolation } from './gameInvariants'
-export {
-  assertRoundCardInvariants,
-  assertFlowStateConsistency,
-  assertRoundInvariants,
-  assertGameStateConsistency,
-  assertGameInvariants,
-} from './gameInvariants'

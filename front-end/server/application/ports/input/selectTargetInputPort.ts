@@ -48,6 +48,7 @@ export type SelectTargetErrorCode =
   | 'INVALID_STATE'
   | 'INVALID_SELECTION'
   | 'GAME_NOT_FOUND'
+  | 'VERSION_CONFLICT'
 
 /**
  * 選擇配對目標錯誤

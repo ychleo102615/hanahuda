@@ -291,6 +291,7 @@ export function playHandCard(
       field: updatedField,
       deck: Object.freeze([]),
       playerStates: updatedPlayerStates,
+      version: round.version + 1,
       // flowState 維持，由外部判斷局結束
     })
     return {
@@ -384,6 +385,7 @@ export function playHandCard(
           handCardPlay,
         })
       : null,
+    version: round.version + 1,
   })
 
   return {
@@ -458,6 +460,7 @@ export function selectTarget(
     playerStates: updatedPlayerStates,
     flowState: 'AWAITING_HAND_PLAY' as FlowState, // 暫時設定，外部會根據役種判定調整
     pendingSelection: null,
+    version: round.version + 1,
   })
 
   return {
@@ -513,6 +516,7 @@ export function handleDecision(
       activePlayerId: opponentId,
       koiStatuses: updatedKoiStatuses,
       pendingDecision: null, // 清除決策狀態
+      version: round.version + 1,
     })
 
     return {

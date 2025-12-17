@@ -45,6 +45,7 @@ export type MakeDecisionErrorCode =
   | 'WRONG_PLAYER'
   | 'INVALID_STATE'
   | 'GAME_NOT_FOUND'
+  | 'VERSION_CONFLICT'
 
 /**
  * 決策錯誤

@@ -49,6 +49,7 @@ export type PlayHandCardErrorCode =
   | 'INVALID_CARD'
   | 'INVALID_TARGET'
   | 'GAME_NOT_FOUND'
+  | 'VERSION_CONFLICT'
 
 /**
  * 打手牌錯誤
