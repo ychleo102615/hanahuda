@@ -197,6 +197,56 @@ export abstract class GameTimeoutPort {
   abstract hasContinueConfirmationTimeout(gameId: string, playerId: string): boolean
 
   // ============================================================
+  // 加速代行計時器（斷線/離開玩家專用）
+  // ============================================================
+
+  /**
+   * 啟動加速代行計時器
+   *
+   * @description
+   * 斷線或離開玩家專用的加速計時器（3秒）。
+   * 與操作計時器獨立，用於確保遊戲在玩家斷線時仍能流暢進行。
+   * 當玩家重連時應清除此計時器，讓操作計時器繼續倒數。
+   *
+   * 語意分離：
+   * - 操作計時器（15秒）：代表玩家標準操作時間
+   * - 加速代行計時器（3秒）：斷線玩家的快速處理，會搶先觸發
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @param onTimeout - 超時回調函數
+   */
+  abstract startAcceleratedTimeout(
+    gameId: string,
+    playerId: string,
+    onTimeout: () => void
+  ): void
+
+  /**
+   * 清除指定玩家的加速代行計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   */
+  abstract clearAcceleratedTimeout(gameId: string, playerId: string): void
+
+  /**
+   * 清除遊戲的所有加速代行計時器
+   *
+   * @param gameId - 遊戲 ID
+   */
+  abstract clearAllAcceleratedTimeouts(gameId: string): void
+
+  /**
+   * 檢查指定玩家是否有加速代行計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param playerId - 玩家 ID
+   * @returns 是否有加速代行計時器
+   */
+  abstract hasAcceleratedTimeout(gameId: string, playerId: string): boolean
+
+  // ============================================================
   // 遊戲層級清理
   // ============================================================
 
@@ -204,7 +254,7 @@ export abstract class GameTimeoutPort {
    * 清除指定遊戲的所有計時器
    *
    * @description
-   * 包含遊戲計時器、斷線計時器、閒置計時器和確認繼續計時器。
+   * 包含遊戲計時器、斷線計時器、閒置計時器、確認繼續計時器和加速代行計時器。
    * 用於遊戲結束時的資源清理。
    *
    * @param gameId - 遊戲 ID

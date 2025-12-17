@@ -298,6 +298,10 @@ export default defineEventHandler(async (event) => {
           container.gameRepository.save(reconnectedGame).catch(error => {
             logger.error('Failed to save reconnected game state', error)
           })
+
+          // 處理重連計時器邏輯：清除加速計時器，保留操作計時器繼續倒數
+          container.turnFlowService.handlePlayerReconnected(effectiveGameId, playerId)
+
           logger.info('Player reconnected and marked as CONNECTED', { gameId: effectiveGameId, playerId })
         }
       }
