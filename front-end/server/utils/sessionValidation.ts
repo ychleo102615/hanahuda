@@ -18,6 +18,11 @@ import { getCookie, setCookie, deleteCookie } from 'h3'
 import type { Game } from '~~/server/domain/game/game'
 import type { Player } from '~~/server/domain/game/player'
 import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
+import {
+  HTTP_UNAUTHORIZED,
+  HTTP_FORBIDDEN,
+  HTTP_INTERNAL_SERVER_ERROR,
+} from '#shared/constants'
 
 /**
  * Session Cookie 名稱
@@ -87,7 +92,7 @@ export function validateSession(event: H3Event, gameId: string): SessionContext 
   if (!token) {
     throw new SessionValidationError(
       'MISSING_TOKEN',
-      401,
+      HTTP_UNAUTHORIZED,
       'Session token is required (via Cookie or X-Session-Token header)'
     )
   }
@@ -98,7 +103,7 @@ export function validateSession(event: H3Event, gameId: string): SessionContext 
   if (!game) {
     throw new SessionValidationError(
       'INVALID_SESSION',
-      401,
+      HTTP_UNAUTHORIZED,
       'Invalid or expired session token'
     )
   }
@@ -107,7 +112,7 @@ export function validateSession(event: H3Event, gameId: string): SessionContext 
   if (game.id !== gameId) {
     throw new SessionValidationError(
       'GAME_MISMATCH',
-      403,
+      HTTP_FORBIDDEN,
       'Session token does not match game ID'
     )
   }
@@ -117,7 +122,7 @@ export function validateSession(event: H3Event, gameId: string): SessionContext 
   if (!humanPlayer) {
     throw new SessionValidationError(
       'PLAYER_NOT_FOUND',
-      500,
+      HTTP_INTERNAL_SERVER_ERROR,
       'No human player found in game'
     )
   }

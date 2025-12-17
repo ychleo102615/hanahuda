@@ -19,6 +19,14 @@ import type { SnapshotApiResponse } from '#shared/contracts'
 import { createLogger } from '~~/server/utils/logger'
 import { initRequestId } from '~~/server/utils/requestId'
 import { determineWinner } from '~~/server/domain/game'
+import {
+  HTTP_OK,
+  HTTP_BAD_REQUEST,
+  HTTP_UNAUTHORIZED,
+  HTTP_NOT_FOUND,
+  HTTP_CONFLICT,
+  HTTP_INTERNAL_SERVER_ERROR,
+} from '#shared/constants'
 
 /**
  * 請求參數 Schema
@@ -58,7 +66,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
 
     if (!paramsResult.success) {
       logger.warn('Invalid gameId parameter')
-      setResponseStatus(event, 400)
+      setResponseStatus(event, HTTP_BAD_REQUEST)
       return {
         error: {
           code: 'VALIDATION_ERROR',
@@ -75,7 +83,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
 
     if (!sessionToken) {
       logger.warn('Missing session token cookie', { gameId })
-      setResponseStatus(event, 401)
+      setResponseStatus(event, HTTP_UNAUTHORIZED)
       return {
         error: {
           code: 'UNAUTHORIZED',
@@ -95,7 +103,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
       // 4.1. 驗證 gameId 匹配
       if (game.id !== gameId) {
         logger.warn('Game ID mismatch', { requestedGameId: gameId, actualGameId: game.id })
-        setResponseStatus(event, 404)
+        setResponseStatus(event, HTTP_NOT_FOUND)
         return {
           error: {
             code: 'GAME_NOT_FOUND',
@@ -108,7 +116,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
       // 4.2. 檢查遊戲狀態 - FINISHED
       if (game.status === 'FINISHED') {
         logger.info('Game already finished (in memory)', { gameId })
-        setResponseStatus(event, 200)
+        setResponseStatus(event, HTTP_OK)
         return {
           data: {
             response_type: 'game_finished',
@@ -127,7 +135,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
       // 4.3. 檢查遊戲狀態 - WAITING
       if (game.status === 'WAITING') {
         logger.warn('Game not started yet', { gameId })
-        setResponseStatus(event, 409)
+        setResponseStatus(event, HTTP_CONFLICT)
         return {
           error: {
             code: 'GAME_NOT_STARTED',
@@ -145,7 +153,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
       )
 
       logger.info('Snapshot request completed', { gameId, remainingSeconds })
-      setResponseStatus(event, 200)
+      setResponseStatus(event, HTTP_OK)
       return {
         data: {
           response_type: 'snapshot',
@@ -162,7 +170,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
     if (!dbGame) {
       // 5.1. 資料庫也沒有 → 404
       logger.warn('Game not found in database', { gameId })
-      setResponseStatus(event, 404)
+      setResponseStatus(event, HTTP_NOT_FOUND)
       return {
         error: {
           code: 'GAME_NOT_FOUND',
@@ -175,7 +183,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
     // 5.2. 資料庫有遊戲且已結束 → 返回遊戲結果
     if (dbGame.status === 'FINISHED') {
       logger.info('Game finished (from database)', { gameId })
-      setResponseStatus(event, 200)
+      setResponseStatus(event, HTTP_OK)
       return {
         data: {
           response_type: 'game_finished',
@@ -193,7 +201,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
 
     // 5.3. 資料庫有遊戲但未結束 → 遊戲已過期（無法恢復完整狀態）
     logger.info('Game expired (in database but not in memory)', { gameId, status: dbGame.status })
-    setResponseStatus(event, 200)
+    setResponseStatus(event, HTTP_OK)
     return {
       data: {
         response_type: 'game_expired',
@@ -204,7 +212,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
   } catch (error) {
     logger.error('Unexpected error', error)
 
-    setResponseStatus(event, 500)
+    setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
     return {
       error: {
         code: 'INTERNAL_ERROR',

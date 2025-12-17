@@ -13,6 +13,12 @@ import { container } from '~~/server/utils/container'
 import { createLogger } from '~~/server/utils/logger'
 import { initRequestId } from '~~/server/utils/requestId'
 import { setSessionCookie } from '~~/server/utils/sessionValidation'
+import {
+  HTTP_OK,
+  HTTP_CREATED,
+  HTTP_BAD_REQUEST,
+  HTTP_INTERNAL_SERVER_ERROR,
+} from '#shared/constants'
 
 /**
  * 請求 Body Schema
@@ -89,7 +95,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
 
     if (!parseResult.success) {
       logger.warn('Validation failed', { errors: parseResult.error.flatten().fieldErrors })
-      setResponseStatus(event, 400)
+      setResponseStatus(event, HTTP_BAD_REQUEST)
       return {
         error: {
           code: 'VALIDATION_ERROR',
@@ -136,7 +142,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
         setSessionCookie(event, result.sessionToken)
         logger.info('Session cookie set', { gameId: result.gameId, status: result.status })
 
-        setResponseStatus(event, 201)
+        setResponseStatus(event, HTTP_CREATED)
         return {
           data: {
             game_id: result.gameId,
@@ -156,7 +162,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
         // 設定回應狀態碼
         // 201 Created: 新遊戲建立（WAITING 或 IN_PROGRESS）
         // 200 OK: 重連現有遊戲
-        setResponseStatus(event, result.reconnected ? 200 : 201)
+        setResponseStatus(event, result.reconnected ? HTTP_OK : HTTP_CREATED)
 
         logger.info('Join request completed', { gameId: result.gameId, reconnected: result.reconnected })
         return {
@@ -172,7 +178,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
       case 'game_finished': {
         // 5b. 遊戲已結束（從 DB 查到）
         logger.info('Game already finished', { gameId: result.gameId, winnerId: result.winnerId })
-        setResponseStatus(event, 200)
+        setResponseStatus(event, HTTP_OK)
         return {
           data: {
             status: 'game_finished',
@@ -192,7 +198,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
       case 'game_expired': {
         // 5c. 遊戲已過期（在 DB 但不在記憶體）
         logger.info('Game expired', { gameId: result.gameId })
-        setResponseStatus(event, 200)
+        setResponseStatus(event, HTTP_OK)
         return {
           data: {
             status: 'game_expired',
@@ -211,7 +217,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
   } catch (error) {
     logger.error('Unexpected error', error)
 
-    setResponseStatus(event, 500)
+    setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
     return {
       error: {
         code: 'INTERNAL_ERROR',

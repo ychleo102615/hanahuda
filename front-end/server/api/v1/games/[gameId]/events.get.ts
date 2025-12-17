@@ -13,6 +13,12 @@ import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameSt
 import { connectionStore } from '~~/server/adapters/event-publisher/connectionStore'
 import { container } from '~~/server/utils/container'
 import { gameConfig } from '~~/server/utils/config'
+import {
+  HTTP_BAD_REQUEST,
+  HTTP_UNAUTHORIZED,
+  HTTP_FORBIDDEN,
+  HTTP_INTERNAL_SERVER_ERROR,
+} from '#shared/constants'
 
 /**
  * SSE 事件格式化
@@ -40,7 +46,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. 驗證參數
   if (!gameId) {
-    setResponseStatus(event, 400)
+    setResponseStatus(event, HTTP_BAD_REQUEST)
     return { error: { code: 'MISSING_GAME_ID', message: 'Game ID is required' } }
   }
 
@@ -48,7 +54,7 @@ export default defineEventHandler(async (event) => {
   const token = getCookie(event, 'session_token')
 
   if (!token) {
-    setResponseStatus(event, 401)
+    setResponseStatus(event, HTTP_UNAUTHORIZED)
     return { error: { code: 'MISSING_TOKEN', message: 'Session token is required' } }
   }
 
@@ -56,19 +62,19 @@ export default defineEventHandler(async (event) => {
   const game = inMemoryGameStore.getBySessionToken(token)
 
   if (!game) {
-    setResponseStatus(event, 401)
+    setResponseStatus(event, HTTP_UNAUTHORIZED)
     return { error: { code: 'INVALID_SESSION', message: 'Invalid or expired session token' } }
   }
 
   if (game.id !== gameId) {
-    setResponseStatus(event, 403)
+    setResponseStatus(event, HTTP_FORBIDDEN)
     return { error: { code: 'GAME_MISMATCH', message: 'Session token does not match game ID' } }
   }
 
   // 3. 取得玩家 ID（從會話驗證）
   const humanPlayer = game.players.find((player) => !player.isAi)
   if (!humanPlayer) {
-    setResponseStatus(event, 500)
+    setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
     return { error: { code: 'NO_HUMAN_PLAYER', message: 'No human player found in game' } }
   }
   const playerId = humanPlayer.id

@@ -14,6 +14,7 @@
 import { rateLimiter } from '~~/server/utils/rateLimiter'
 import { createLogger } from '~~/server/utils/logger'
 import { getRequestId } from '~~/server/utils/requestId'
+import { HTTP_TOO_MANY_REQUESTS } from '#shared/constants'
 
 const logger = createLogger('Middleware:RateLimit')
 
@@ -102,7 +103,7 @@ export default defineEventHandler((event) => {
     })
 
     setHeader(event, 'Retry-After', String(result.retryAfter))
-    setResponseStatus(event, 429)
+    setResponseStatus(event, HTTP_TOO_MANY_REQUESTS)
 
     return {
       error: {

@@ -45,6 +45,11 @@ import {
   markPlayerReconnected,
   getPlayerConnectionStatus,
 } from '~~/server/domain/game/playerConnection'
+import {
+  HTTP_BAD_REQUEST,
+  HTTP_GONE,
+  HTTP_INTERNAL_SERVER_ERROR,
+} from '#shared/constants'
 
 /**
  * Query Parameters Schema
@@ -102,7 +107,7 @@ export default defineEventHandler(async (event) => {
 
   if (!parseResult.success) {
     logger.warn('Validation failed', { errors: parseResult.error.flatten().fieldErrors })
-    setResponseStatus(event, 400)
+    setResponseStatus(event, HTTP_BAD_REQUEST)
     return {
       error: {
         code: 'VALIDATION_ERROR',
@@ -142,7 +147,7 @@ export default defineEventHandler(async (event) => {
   // 對於非成功狀態（game_expired），返回錯誤而非 SSE
   if (result.status === 'game_expired') {
     logger.info('Game expired', { gameId: result.gameId })
-    setResponseStatus(event, 410) // Gone
+    setResponseStatus(event, HTTP_GONE)
     return {
       error: {
         code: 'GAME_EXPIRED',
@@ -231,7 +236,7 @@ export default defineEventHandler(async (event) => {
       // 舊版 success 沒有足夠資訊建立 InitialState
       // 這是過渡期的相容處理
       logger.warn('Legacy success status encountered, this should not happen')
-      setResponseStatus(event, 500)
+      setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
       return {
         error: {
           code: 'INTERNAL_ERROR',

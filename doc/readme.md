@@ -11,6 +11,7 @@
 - [遊戲規則](./shared/game-rules.md) - 花札卡片、役種、計分規則
 - [通訊協議](./shared/protocol.md) - 前後端交互規格（命令與事件）
 - [數據契約](./shared/data-contracts.md) - 前後端共用的數據結構
+- [HTTP 狀態碼](./shared/http-status-codes.md) - API 回應狀態碼與錯誤代碼定義
 
 ### 前端架構
 - [前端架構總覽](./frontend/architecture.md) - 前端技術棧與 BC 劃分

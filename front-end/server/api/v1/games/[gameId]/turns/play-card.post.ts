@@ -18,6 +18,13 @@ import {
 } from '~~/server/utils/sessionValidation'
 import { createLogger } from '~~/server/utils/logger'
 import { initRequestId } from '~~/server/utils/requestId'
+import {
+  HTTP_OK,
+  HTTP_BAD_REQUEST,
+  HTTP_NOT_FOUND,
+  HTTP_CONFLICT,
+  HTTP_INTERNAL_SERVER_ERROR,
+} from '#shared/constants'
 
 /**
  * 請求 Body Schema
@@ -58,7 +65,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
     const gameId = getRouterParam(event, 'gameId')
     if (!gameId) {
       logger.warn('Missing game ID')
-      setResponseStatus(event, 400)
+      setResponseStatus(event, HTTP_BAD_REQUEST)
       return {
         error: {
           code: 'MISSING_GAME_ID',
@@ -87,7 +94,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
 
     if (!parseResult.success) {
       logger.warn('Validation failed', { errors: parseResult.error.flatten().fieldErrors })
-      setResponseStatus(event, 400)
+      setResponseStatus(event, HTTP_BAD_REQUEST)
       return {
         error: {
           code: 'VALIDATION_ERROR',
@@ -114,7 +121,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
 
     // 6. 返回成功回應
     logger.info('Play-card request completed', { gameId })
-    setResponseStatus(event, 200)
+    setResponseStatus(event, HTTP_OK)
     return {
       data: {
         accepted: true,
@@ -125,7 +132,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
     // 處理 UseCase 錯誤
     if (error instanceof PlayHandCardError) {
       logger.warn('Play card error', { code: error.code, message: error.message })
-      const statusCode = error.code === 'GAME_NOT_FOUND' ? 404 : 409
+      const statusCode = error.code === 'GAME_NOT_FOUND' ? HTTP_NOT_FOUND : HTTP_CONFLICT
       setResponseStatus(event, statusCode)
       return {
         error: {
@@ -137,7 +144,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
     }
 
     logger.error('Unexpected error', error)
-    setResponseStatus(event, 500)
+    setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
     return {
       error: {
         code: 'INTERNAL_ERROR',
