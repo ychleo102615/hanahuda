@@ -10,7 +10,8 @@
  * @module server/application/services/turnFlowService
  */
 
-import type { Game } from '~~/server/domain/game/game'
+import { type Game, finishGame } from '~~/server/domain/game/game'
+import type { ScoreMultipliers } from '#shared/contracts'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
@@ -337,16 +338,16 @@ export class TurnFlowService {
    * 檢查並處理斷線/離開玩家（在回合結束時呼叫）
    *
    * @description
-   * 若有玩家斷線或離開，發送 GameEnded 事件並結束遊戲。
+   * 若有玩家斷線或離開，結束遊戲並發送 GameFinished 事件。
    * 連線中的玩家為勝者。
    *
    * @param gameId - 遊戲 ID
    * @param game - 遊戲狀態
-   * @returns 是否有斷線/離開玩家（已處理遊戲結束）
+   * @returns 若有斷線玩家，返回更新為 FINISHED 的遊戲；否則返回 null
    */
-  checkAndHandleDisconnectedPlayers(gameId: string, game: Game): boolean {
+  checkAndHandleDisconnectedPlayers(gameId: string, game: Game): Game | null {
     if (!hasDisconnectedOrLeftPlayers(game)) {
-      return false
+      return null
     }
 
     console.log(`[TurnFlowService] Found disconnected/left players in game ${gameId}, ending game`)
@@ -355,24 +356,25 @@ export class TurnFlowService {
     const connectedPlayer = game.players.find(
       p => !isPlayerDisconnectedOrLeft(game, p.id)
     )
+    const winnerId = connectedPlayer?.id ?? undefined
+
+    // 使用 Domain 函數結束遊戲，更新狀態為 FINISHED
+    const finishedGame = finishGame(game, winnerId)
 
     // 清除遊戲的所有計時器
     this.gameTimeoutManager.clearAllForGame(gameId)
 
     // 發送 GameFinished 事件
-    const winnerId = connectedPlayer?.id ?? null
-    const finalScores = game.cumulativeScores
-
     const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
-      winnerId,
-      finalScores,
+      winnerId ?? null,
+      finishedGame.cumulativeScores,
       'PLAYER_DISCONNECTED'
     )
     this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
 
     console.log(`[TurnFlowService] Game ${gameId} ended due to disconnected player, winner: ${winnerId ?? 'none'}`)
 
-    return true
+    return finishedGame
   }
 
   /**
@@ -404,11 +406,12 @@ export class TurnFlowService {
     this.eventPublisher.publishToGame(gameId, roundEndedEvent)
 
     // 檢查是否有斷線/離開玩家（Phase 5: 回合結束時檢查）
-    if (this.checkAndHandleDisconnectedPlayers(gameId, updatedGame)) {
-      // 已處理遊戲結束，儲存後直接返回
-      this.gameStore.set(updatedGame)
-      await this.gameRepository.save(updatedGame)
-      return updatedGame
+    const finishedGame = this.checkAndHandleDisconnectedPlayers(gameId, updatedGame)
+    if (finishedGame) {
+      // 已處理遊戲結束，從記憶體移除並儲存到 DB
+      this.gameStore.delete(gameId)
+      await this.gameRepository.save(finishedGame)
+      return finishedGame
     }
 
     // 根據轉換結果決定下一步
@@ -445,5 +448,34 @@ export class TurnFlowService {
     await this.gameRepository.save(updatedGame)
 
     return updatedGame
+  }
+
+  /**
+   * 建立倍率資訊
+   *
+   * @description
+   * 新規則：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享）。
+   *
+   * @param game - 遊戲狀態
+   * @returns 倍率資訊
+   */
+  buildMultipliers(game: Game): ScoreMultipliers {
+    if (!game.currentRound) {
+      return { player_multipliers: {}, koi_koi_applied: false }
+    }
+
+    // 檢查是否有任一玩家宣告過 Koi-Koi
+    const koiKoiApplied = game.currentRound.koiStatuses.some(
+      status => status.times_continued > 0
+    )
+    const multiplier = koiKoiApplied ? 2 : 1
+
+    // 所有玩家使用相同的倍率
+    const playerMultipliers: Record<string, number> = {}
+    for (const koiStatus of game.currentRound.koiStatuses) {
+      playerMultipliers[koiStatus.player_id] = multiplier
+    }
+
+    return { player_multipliers: playerMultipliers, koi_koi_applied: koiKoiApplied }
   }
 }

@@ -21,7 +21,6 @@ import type {
   RoundScoredEvent,
   RoundDealtEvent,
   GameFinishedEvent,
-  ScoreMultipliers,
   Yaku,
   PlayerScore,
 } from '#shared/contracts'
@@ -126,8 +125,8 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       // 5a. KOI_KOI: 繼續遊戲
       game = updateRound(game, decisionResult.updatedRound)
 
-      // 建立倍率資訊
-      const multipliers = this.buildMultipliers(game)
+      // 建立倍率資訊（使用 TurnFlowService 的共用方法）
+      const multipliers = this.turnFlowService!.buildMultipliers(game)
 
       const event = this.eventMapper.toDecisionMadeEvent(
         game,
@@ -160,8 +159,8 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
         game.ruleset.yaku_settings
       )
 
-      // 建立倍率資訊（使用更新前的遊戲取得倍率）
-      const multipliers = this.buildMultipliers(existingGame)
+      // 建立倍率資訊（使用 TurnFlowService 的共用方法，傳入更新前的遊戲取得倍率）
+      const multipliers = this.turnFlowService!.buildMultipliers(existingGame)
 
       // 使用 Domain Service 處理局轉換
       const transitionResult = transitionAfterRoundScored(
@@ -199,14 +198,16 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       this.eventPublisher.publishToGame(gameId, roundEndedEvent)
 
       // 檢查是否有斷線/離開玩家（Phase 5: 回合結束時檢查）
-      if (this.turnFlowService?.checkAndHandleDisconnectedPlayers(gameId, game)) {
-        // 已處理遊戲結束，儲存後直接返回
+      const finishedGame = this.turnFlowService?.checkAndHandleDisconnectedPlayers(gameId, game)
+      if (finishedGame) {
+        // 已處理遊戲結束，從記憶體移除並儲存到 DB
+        game = finishedGame
         // 樂觀鎖檢查
         const currentGame = this.gameStore.get(gameId)
         if (currentGame?.currentRound?.version !== oldVersion) {
           throw new MakeDecisionError('VERSION_CONFLICT', 'Concurrent modification detected')
         }
-        this.gameStore.set(game)
+        this.gameStore.delete(gameId)
         await this.gameRepository.save(game)
         console.log(`[MakeDecisionUseCase] Game ended due to disconnected player`)
         return { success: true }
@@ -271,36 +272,16 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     if (currentGame?.currentRound?.version !== oldVersion) {
       throw new MakeDecisionError('VERSION_CONFLICT', 'Concurrent modification detected')
     }
-    this.gameStore.set(game)
     await this.gameRepository.save(game)
+    if (game.status === 'FINISHED') {
+      // 遊戲結束，從記憶體移除
+      this.gameStore.delete(gameId)
+    } else {
+      this.gameStore.set(game)
+    }
 
     console.log(`[MakeDecisionUseCase] Player ${playerId} decided: ${decision}`)
 
     return { success: true }
-  }
-
-  /**
-   * 建立倍率資訊
-   *
-   * 新規則：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享）。
-   */
-  private buildMultipliers(game: Game): ScoreMultipliers {
-    if (!game.currentRound) {
-      return { player_multipliers: {}, koi_koi_applied: false }
-    }
-
-    // 檢查是否有任一玩家宣告過 Koi-Koi
-    const koiKoiApplied = game.currentRound.koiStatuses.some(
-      status => status.times_continued > 0
-    )
-    const multiplier = koiKoiApplied ? 2 : 1
-
-    // 所有玩家使用相同的倍率
-    const playerMultipliers: Record<string, number> = {}
-    for (const koiStatus of game.currentRound.koiStatuses) {
-      playerMultipliers[koiStatus.player_id] = multiplier
-    }
-
-    return { player_multipliers: playerMultipliers, koi_koi_applied: koiKoiApplied }
   }
 }

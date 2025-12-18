@@ -14,7 +14,6 @@ import type {
   CardSelection,
   CardPlay,
   YakuUpdate,
-  ScoreMultipliers,
 } from '#shared/contracts'
 import {
   updateRound,
@@ -204,8 +203,8 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
           game.ruleset.yaku_settings
         )
 
-        // 建立倍率資訊
-        const multipliers = this.buildMultipliers(existingGame)
+        // 建立倍率資訊（使用 TurnFlowService 的共用方法）
+        const multipliers = this.turnFlowService!.buildMultipliers(existingGame)
 
         // 處理局轉換
         const transitionResult = transitionAfterRoundScored(
@@ -243,15 +242,17 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
         this.eventPublisher.publishToGame(gameId, roundEndedEvent)
 
         // 檢查是否有斷線/離開玩家（Phase 5: 回合結束時檢查）
-        if (this.turnFlowService?.checkAndHandleDisconnectedPlayers(gameId, game)) {
-          // 已處理遊戲結束，儲存後直接返回
+        const finishedGame = this.turnFlowService?.checkAndHandleDisconnectedPlayers(gameId, game)
+        if (finishedGame) {
+          // 已處理遊戲結束，儲存到 DB 後從記憶體移除
+          game = finishedGame
           // 樂觀鎖檢查
           const currentGame = this.gameStore.get(gameId)
           if (currentGame?.currentRound?.version !== oldVersion) {
             throw new SelectTargetError('VERSION_CONFLICT', 'Concurrent modification detected')
           }
-          this.gameStore.set(game)
           await this.gameRepository.save(game)
+          this.gameStore.delete(gameId)
           console.log(`[SelectTargetUseCase] Game ended due to disconnected player`)
           return { success: true }
         }
@@ -344,30 +345,5 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
     console.log(`[SelectTargetUseCase] Player ${playerId} selected target ${targetCardId}`)
 
     return { success: true }
-  }
-
-  /**
-   * 建立倍率資訊
-   *
-   * 新規則：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享）。
-   */
-  private buildMultipliers(game: Game): ScoreMultipliers {
-    if (!game.currentRound) {
-      return { player_multipliers: {}, koi_koi_applied: false }
-    }
-
-    // 檢查是否有任一玩家宣告過 Koi-Koi
-    const koiKoiApplied = game.currentRound.koiStatuses.some(
-      status => status.times_continued > 0
-    )
-    const multiplier = koiKoiApplied ? 2 : 1
-
-    // 所有玩家使用相同的倍率
-    const playerMultipliers: Record<string, number> = {}
-    for (const koiStatus of game.currentRound.koiStatuses) {
-      playerMultipliers[koiStatus.player_id] = multiplier
-    }
-
-    return { player_multipliers: playerMultipliers, koi_koi_applied: koiKoiApplied }
   }
 }
