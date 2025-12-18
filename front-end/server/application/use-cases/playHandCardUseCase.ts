@@ -265,34 +265,8 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
             return { success: true }
           }
 
-          // 根據轉換結果決定下一步
-          if (isNextRound) {
-            // 發送 RoundDealt 事件（延遲讓前端顯示結算畫面）
-            const firstPlayerId = game.currentRound?.activePlayerId
-            this.turnFlowService?.startDisplayTimeout(gameId, () => {
-              const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
-              this.eventPublisher.publishToGame(gameId, roundDealtEvent)
-
-              // 啟動新回合第一位玩家的超時
-              if (firstPlayerId) {
-                this.turnFlowService?.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
-              }
-            })
-          } else {
-            // 遊戲結束
-            const winner = transitionResult.winner
-            if (winner) {
-              // 清除遊戲的所有計時器
-              this.gameTimeoutManager?.clearAllForGame(gameId)
-
-              const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
-                winner.winnerId,
-                winner.finalScores,
-                'NORMAL'
-              )
-              this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
-            }
-          }
+          // 根據轉換結果決定下一步（使用 TurnFlowService 的共用方法）
+          this.turnFlowService?.handleRoundTransitionResult(gameId, game, transitionResult)
         }
       } else {
         // 無新役種，回合完成

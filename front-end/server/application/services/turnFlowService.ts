@@ -19,7 +19,10 @@ import type { GameStorePort } from '~~/server/application/ports/output/gameStore
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { TurnEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
-import { transitionAfterRoundDraw } from '~~/server/domain/services/roundTransitionService'
+import {
+  transitionAfterRoundDraw,
+  type RoundTransitionResult,
+} from '~~/server/domain/services/roundTransitionService'
 import {
   setRequireContinueConfirmation,
   clearRequireContinueConfirmation,
@@ -477,5 +480,51 @@ export class TurnFlowService {
     }
 
     return { player_multipliers: playerMultipliers, koi_koi_applied: koiKoiApplied }
+  }
+
+  /**
+   * 處理回合轉換結果
+   *
+   * @description
+   * 根據 transitionResult 決定下一步：
+   * - NEXT_ROUND：延遲發送 RoundDealt 事件，啟動玩家超時
+   * - GAME_FINISHED：清除計時器，發送 GameFinished 事件
+   *
+   * @param gameId - 遊戲 ID
+   * @param game - 遊戲狀態（已完成轉換）
+   * @param transitionResult - 轉換結果
+   */
+  handleRoundTransitionResult(
+    gameId: string,
+    game: Game,
+    transitionResult: RoundTransitionResult
+  ): void {
+    if (transitionResult.transitionType === 'NEXT_ROUND') {
+      // 延遲發送 RoundDealt 事件（讓前端顯示結算畫面）
+      const firstPlayerId = game.currentRound?.activePlayerId
+      this.startDisplayTimeout(gameId, () => {
+        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
+        this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+
+        // 啟動新回合第一位玩家的超時
+        if (firstPlayerId) {
+          this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
+        }
+      })
+    } else {
+      // 遊戲結束
+      const winner = transitionResult.winner
+      if (winner) {
+        // 清除遊戲的所有計時器
+        this.gameTimeoutManager.clearAllForGame(gameId)
+
+        const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
+          winner.winnerId,
+          winner.finalScores,
+          'NORMAL'
+        )
+        this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
+      }
+    }
   }
 }

@@ -213,26 +213,10 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
         return { success: true }
       }
 
-      // 根據轉換結果決定下一步
-      if (isNextRound) {
-        // 發送 RoundDealt 事件（延遲讓前端顯示結算畫面）
-        const firstPlayerId = game.currentRound?.activePlayerId
-        this.turnFlowService?.startDisplayTimeout(gameId, () => {
-          const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
-          this.eventPublisher.publishToGame(gameId, roundDealtEvent)
-
-          // 啟動新回合第一位玩家的超時
-          if (firstPlayerId) {
-            this.turnFlowService?.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
-          }
-        })
-      } else {
-        // 遊戲結束 - 記錄統計並發送 GameFinished 事件
+      // 遊戲結束時記錄統計（MakeDecisionUseCase 特有）
+      if (transitionResult.transitionType === 'GAME_FINISHED') {
         const winner = transitionResult.winner
-        if (winner) {
-          // 清除遊戲的所有計時器
-          this.gameTimeoutManager?.clearAllForGame(gameId)
-
+        if (winner && this.recordGameStatsUseCase) {
           // 取得勝者的 Koi-Koi 倍率
           const winnerKoiStatus = existingGame.currentRound?.koiStatuses.find(
             k => k.player_id === playerId
@@ -240,30 +224,24 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
           const winnerKoiMultiplier = winnerKoiStatus?.koi_multiplier ?? 1
 
           // 記錄遊戲統計
-          if (this.recordGameStatsUseCase) {
-            try {
-              await this.recordGameStatsUseCase.execute({
-                gameId,
-                winnerId: winner.winnerId,
-                finalScores: winner.finalScores,
-                winnerYakuList: roundEndResult.yakuList,
-                winnerKoiMultiplier,
-                players: game.players,
-              })
-            } catch (error) {
-              console.error(`[MakeDecisionUseCase] Failed to record game stats:`, error)
-              // 統計記錄失敗不應影響遊戲結束流程
-            }
+          try {
+            await this.recordGameStatsUseCase.execute({
+              gameId,
+              winnerId: winner.winnerId,
+              finalScores: winner.finalScores,
+              winnerYakuList: roundEndResult.yakuList,
+              winnerKoiMultiplier,
+              players: game.players,
+            })
+          } catch (error) {
+            console.error(`[MakeDecisionUseCase] Failed to record game stats:`, error)
+            // 統計記錄失敗不應影響遊戲結束流程
           }
-
-          const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
-            winner.winnerId,
-            winner.finalScores,
-            'NORMAL'
-          )
-          this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
         }
       }
+
+      // 根據轉換結果決定下一步（使用 TurnFlowService 的共用方法）
+      this.turnFlowService?.handleRoundTransitionResult(gameId, game, transitionResult)
     }
 
     // 6. 儲存更新
