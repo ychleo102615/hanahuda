@@ -33,7 +33,6 @@ import {
 import {
   transitionAfterRoundScored,
 } from '~~/server/domain/services/roundTransitionService'
-import { gameConfig } from '~~/server/utils/config'
 import {
   detectYaku,
   detectNewYaku,
@@ -214,16 +213,7 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
         )
         game = transitionResult.game
 
-        // 根據轉換結果決定 displayTimeoutSeconds
-        const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
-        const displayTimeoutSeconds = isNextRound
-          ? gameConfig.display_timeout_seconds
-          : undefined
-
-        // 檢查是否需要確認繼續遊戲
-        const requireConfirmation = this.turnFlowService?.handleRoundEndConfirmation(gameId, game) ?? false
-
-        // 發送 RoundEnded 事件（reason: SCORED）
+        // 使用 TurnFlowService 的共用方法處理回合結束
         const scoringData = {
           winner_id: playerId,
           yaku_list: roundEndResult.yakuList,
@@ -231,34 +221,17 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
           final_score: roundEndResult.finalScore,
           multipliers,
         }
-        const roundEndedEvent = this.eventMapper.toRoundEndedEvent(
-          'SCORED',
-          game.cumulativeScores,
-          scoringData,
-          undefined,
-          displayTimeoutSeconds,
-          requireConfirmation
+        const gameEnded = await this.turnFlowService?.handleScoredRoundEnd(
+          gameId,
+          game,
+          transitionResult,
+          scoringData
         )
-        this.eventPublisher.publishToGame(gameId, roundEndedEvent)
-
-        // 檢查是否有斷線/離開玩家（Phase 5: 回合結束時檢查）
-        const finishedGame = this.turnFlowService?.checkAndHandleDisconnectedPlayers(gameId, game)
-        if (finishedGame) {
-          // 已處理遊戲結束，儲存到 DB 後從記憶體移除
-          game = finishedGame
-          // 樂觀鎖檢查
-          const currentGame = this.gameStore.get(gameId)
-          if (currentGame?.currentRound?.version !== oldVersion) {
-            throw new SelectTargetError('VERSION_CONFLICT', 'Concurrent modification detected')
-          }
-          await this.gameRepository.save(game)
-          this.gameStore.delete(gameId)
-          console.log(`[SelectTargetUseCase] Game ended due to disconnected player`)
+        if (gameEnded) {
+          // 已在 endGame() 中處理儲存和記憶體移除
+          console.log(`[SelectTargetUseCase] Game ended`)
           return { success: true }
         }
-
-        // 根據轉換結果決定下一步（使用 TurnFlowService 的共用方法）
-        this.turnFlowService?.handleRoundTransitionResult(gameId, game, transitionResult)
       }
     } else {
       // 無新役種，回合完成

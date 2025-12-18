@@ -11,10 +11,9 @@
  */
 
 import { type Game, finishGame } from '~~/server/domain/game/game'
-import type { ScoreMultipliers } from '#shared/contracts'
+import type { ScoreMultipliers, RoundScoringData, PlayerScore, GameEndedReason } from '#shared/contracts'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
-import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
@@ -38,8 +37,6 @@ import { gameConfig } from '~~/server/utils/config'
  * 回合流程服務，封裝共用的計時與流局處理邏輯。
  */
 export class TurnFlowService {
-  private leaveGameUseCase?: LeaveGameInputPort
-
   constructor(
     private readonly gameTimeoutManager: GameTimeoutPort,
     private readonly autoActionUseCase: AutoActionInputPort,
@@ -50,22 +47,15 @@ export class TurnFlowService {
   ) {}
 
   /**
-   * 設定 LeaveGameUseCase（用於解決循環依賴）
-   */
-  setLeaveGameUseCase(useCase: LeaveGameInputPort): void {
-    this.leaveGameUseCase = useCase
-  }
-
-  /**
    * 為玩家啟動操作超時計時器
    *
    * @description
    * 計時器語意分離：
    * - **操作計時器**：永遠 15 秒，代表玩家標準操作時間
-   * - **加速代行計時器**：3 秒，僅用於斷線/離開玩家（會搶先觸發）
+   * - **加速代行計時器**：3 秒，用於斷線/離開/閒置玩家（會搶先觸發）
    *
-   * 斷線玩家會同時有兩個計時器，3 秒計時器先到期觸發代行。
-   * 玩家重連時清除加速計時器，保留操作計時器繼續倒數。
+   * 需要加速的玩家會同時有兩個計時器，3 秒計時器先到期觸發代行。
+   * 玩家重連或確認繼續後清除加速計時器，保留操作計時器繼續倒數。
    */
   startTimeoutForPlayer(
     gameId: string,
@@ -73,9 +63,13 @@ export class TurnFlowService {
     flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
   ): void {
     const game = this.gameStore.get(gameId)
-    const isDisconnected = game ? isPlayerDisconnectedOrLeft(game, playerId) : false
 
-    console.log(`[TurnFlowService] Starting timeout for player ${playerId} (disconnected/left: ${isDisconnected})`)
+    // 判斷是否需要加速代行：斷線/離開 或 閒置（需要確認）
+    const isDisconnected = game ? isPlayerDisconnectedOrLeft(game, playerId) : false
+    const isIdle = game ? isConfirmationRequired(game, playerId) : false
+    const shouldAccelerate = isDisconnected || isIdle
+
+    console.log(`[TurnFlowService] Starting timeout for player ${playerId} (disconnected/left: ${isDisconnected}, idle: ${isIdle})`)
 
     // 永遠啟動 15 秒操作計時器
     this.gameTimeoutManager.startTimeout(
@@ -93,13 +87,13 @@ export class TurnFlowService {
       }
     )
 
-    // 若斷線/離開，額外啟動 3 秒加速計時器（會搶先觸發）
-    if (isDisconnected) {
+    // 若需要加速（斷線/離開/閒置），額外啟動 3 秒加速計時器（會搶先觸發）
+    if (shouldAccelerate) {
       this.gameTimeoutManager.startAcceleratedTimeout(
         gameId,
         playerId,
         () => {
-          console.log(`[TurnFlowService] Accelerated timeout for disconnected player ${playerId}`)
+          console.log(`[TurnFlowService] Accelerated timeout for player ${playerId} (disconnected: ${isDisconnected}, idle: ${isIdle})`)
           // 先清除 15 秒計時器，避免重複觸發
           this.gameTimeoutManager.clearTimeout(gameId)
           this.autoActionUseCase.execute({
@@ -254,20 +248,6 @@ export class TurnFlowService {
   }
 
   /**
-   * 踢出閒置玩家（確認超時後呼叫）
-   */
-  kickIdlePlayer(gameId: string, playerId: string): void {
-    if (!this.leaveGameUseCase) {
-      console.error(`[TurnFlowService] LeaveGameUseCase not set, cannot kick idle player`)
-      return
-    }
-
-    this.leaveGameUseCase.execute({ gameId, playerId }).catch((error) => {
-      console.error(`[TurnFlowService] Failed to kick idle player:`, error)
-    })
-  }
-
-  /**
    * 啟動顯示超時計時器
    */
   startDisplayTimeout(gameId: string, onTimeout: () => void): void {
@@ -302,8 +282,8 @@ export class TurnFlowService {
         gameId,
         playerId,
         () => {
-          console.log(`[TurnFlowService] Confirmation timeout for player ${playerId} in game ${gameId}, kicking player`)
-          this.kickIdlePlayer(gameId, playerId)
+          console.log(`[TurnFlowService] Confirmation timeout for player ${playerId} in game ${gameId}, ending game`)
+          this.endGameDueToIdlePlayer(gameId, playerId)
         }
       )
     }
@@ -316,6 +296,7 @@ export class TurnFlowService {
    *
    * @description
    * 清除確認超時計時器，清除 Domain 狀態中的確認需求。
+   * 若所有玩家都已確認，啟動下一回合流程。
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
@@ -325,16 +306,113 @@ export class TurnFlowService {
     this.gameTimeoutManager.clearContinueConfirmationTimeout(gameId, playerId)
 
     // 清除 Domain 狀態中的確認需求
-    const game = this.gameStore.get(gameId)
+    let game = this.gameStore.get(gameId)
     if (game && isConfirmationRequired(game, playerId)) {
       const updatedGame = clearRequireContinueConfirmation(game, playerId)
       this.gameStore.set(updatedGame)
       await this.gameRepository.save(updatedGame)
+      game = updatedGame
       console.log(`[TurnFlowService] Player ${playerId} confirmed continue in game ${gameId}`)
     }
 
     // 重置閒置計時器（確認後重新開始計時）
     this.gameTimeoutManager.clearIdleTimeout(gameId, playerId)
+
+    // 清除加速代行計時器（確認後不再需要加速）
+    this.gameTimeoutManager.clearAcceleratedTimeout(gameId, playerId)
+
+    // 檢查所有玩家是否都已確認
+    if (game && game.pendingContinueConfirmations.length === 0) {
+      console.log(`[TurnFlowService] All players confirmed, continuing to next round`)
+
+      // 啟動 display timeout，進入下一回合
+      const firstPlayerId = game.currentRound?.activePlayerId
+      this.startDisplayTimeout(gameId, () => {
+        const currentGame = this.gameStore.get(gameId)
+        if (!currentGame || currentGame.status === 'FINISHED') {
+          return
+        }
+
+        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(currentGame)
+        this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+
+        if (firstPlayerId) {
+          this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
+        }
+      })
+    }
+  }
+
+  /**
+   * 結束遊戲（共用核心邏輯）
+   *
+   * @description
+   * 統一處理遊戲結束的所有邏輯：
+   * 1. 使用 Domain 函數設定遊戲為 FINISHED
+   * 2. 清除所有計時器
+   * 3. 發送 GameFinished 事件
+   * 4. 從記憶體移除
+   * 5. 發送事件（DB 成功後才通知前端）
+   *
+   * @param gameId - 遊戲 ID
+   * @param winnerId - 勝者 ID（可選，若無則視為平局）
+   * @param reason - 結束原因
+   */
+  private async endGame(
+    gameId: string,
+    winnerId: string | undefined,
+    reason: GameEndedReason
+  ): Promise<void> {
+    const game = this.gameStore.get(gameId)
+    if (!game) {
+      console.warn(`[TurnFlowService] Game ${gameId} not found, cannot end game`)
+      return
+    }
+
+    // 使用 Domain 函數結束遊戲
+    const finishedGame = finishGame(game, winnerId)
+
+    // 1. 先寫 DB（確保持久化成功）
+    await this.gameRepository.save(finishedGame)
+
+    // 2. 清除計時器
+    this.gameTimeoutManager.clearAllForGame(gameId)
+
+    // 3. 從記憶體移除
+    this.gameStore.delete(gameId)
+
+    // 4. 最後發送事件（DB 成功後才通知前端）
+    const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
+      winnerId ?? null,
+      finishedGame.cumulativeScores,
+      reason
+    )
+    this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
+
+    console.log(`[TurnFlowService] Game ${gameId} ended, reason: ${reason}, winner: ${winnerId ?? 'none'}`)
+  }
+
+  /**
+   * 因閒置玩家未確認而結束遊戲
+   *
+   * @param gameId - 遊戲 ID
+   * @param idlePlayerId - 閒置玩家 ID
+   */
+  async endGameDueToIdlePlayer(gameId: string, idlePlayerId: string): Promise<void> {
+    try {
+      const game = this.gameStore.get(gameId)
+      if (!game) {
+        console.warn(`[TurnFlowService] Game ${gameId} not found, cannot end game`)
+        return
+      }
+
+      const otherPlayer = game.players.find(p => p.id !== idlePlayerId)
+      const winnerId = otherPlayer?.id
+
+      await this.endGame(gameId, winnerId, 'PLAYER_IDLE_TIMEOUT')
+    } catch (error) {
+      console.error(`[TurnFlowService] Failed to end game due to idle player:`, error)
+    }
   }
 
   /**
@@ -346,11 +424,11 @@ export class TurnFlowService {
    *
    * @param gameId - 遊戲 ID
    * @param game - 遊戲狀態
-   * @returns 若有斷線玩家，返回更新為 FINISHED 的遊戲；否則返回 null
+   * @returns 若有斷線玩家，返回 true；否則返回 false
    */
-  checkAndHandleDisconnectedPlayers(gameId: string, game: Game): Game | null {
+  async checkAndHandleDisconnectedPlayers(gameId: string, game: Game): Promise<boolean> {
     if (!hasDisconnectedOrLeftPlayers(game)) {
-      return null
+      return false
     }
 
     console.log(`[TurnFlowService] Found disconnected/left players in game ${gameId}, ending game`)
@@ -359,25 +437,10 @@ export class TurnFlowService {
     const connectedPlayer = game.players.find(
       p => !isPlayerDisconnectedOrLeft(game, p.id)
     )
-    const winnerId = connectedPlayer?.id ?? undefined
+    const winnerId = connectedPlayer?.id
 
-    // 使用 Domain 函數結束遊戲，更新狀態為 FINISHED
-    const finishedGame = finishGame(game, winnerId)
-
-    // 清除遊戲的所有計時器
-    this.gameTimeoutManager.clearAllForGame(gameId)
-
-    // 發送 GameFinished 事件
-    const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
-      winnerId ?? null,
-      finishedGame.cumulativeScores,
-      'PLAYER_DISCONNECTED'
-    )
-    this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
-
-    console.log(`[TurnFlowService] Game ${gameId} ended due to disconnected player, winner: ${winnerId ?? 'none'}`)
-
-    return finishedGame
+    await this.endGame(gameId, winnerId, 'PLAYER_DISCONNECTED')
+    return true
   }
 
   /**
@@ -409,17 +472,19 @@ export class TurnFlowService {
     this.eventPublisher.publishToGame(gameId, roundEndedEvent)
 
     // 檢查是否有斷線/離開玩家（Phase 5: 回合結束時檢查）
-    const finishedGame = this.checkAndHandleDisconnectedPlayers(gameId, updatedGame)
-    if (finishedGame) {
-      // 已處理遊戲結束，從記憶體移除並儲存到 DB
-      this.gameStore.delete(gameId)
-      await this.gameRepository.save(finishedGame)
-      return finishedGame
+    const gameEnded = await this.checkAndHandleDisconnectedPlayers(gameId, updatedGame)
+    if (gameEnded) {
+      // 已在 endGame() 中處理儲存和記憶體移除
+      return updatedGame
     }
 
-    // 根據轉換結果決定下一步
-    if (isNextRound) {
-      // 延遲後發送 RoundDealt 事件（讓前端顯示流局畫面）
+    // 根據確認需求和轉換結果決定下一步
+    if (requireConfirmation) {
+      // 需要確認：不啟動 display timeout
+      // 等待玩家確認後由 handlePlayerConfirmContinue() 繼續流程
+      console.log(`[TurnFlowService] Waiting for player confirmation before next round (draw)`)
+    } else if (isNextRound) {
+      // 不需要確認且有下一局：啟動 display timeout
       const firstPlayerId = updatedGame.currentRound?.activePlayerId
       this.startDisplayTimeout(gameId, () => {
         const roundDealtEvent = this.eventMapper.toRoundDealtEvent(updatedGame)
@@ -434,19 +499,14 @@ export class TurnFlowService {
       // 遊戲結束
       const winner = transitionResult.winner
       if (winner) {
-        // 清除遊戲的所有計時器
-        this.gameTimeoutManager.clearAllForGame(gameId)
-
-        const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
-          winner.winnerId,
-          winner.finalScores,
-          'NORMAL'
-        )
-        this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
+        // 先將更新寫入 gameStore，讓 endGame() 能取得最新狀態
+        this.gameStore.set(updatedGame)
+        await this.endGame(gameId, winner.winnerId ?? undefined, 'NORMAL')
+        return updatedGame
       }
     }
 
-    // 儲存更新
+    // 儲存更新（遊戲繼續的情況）
     this.gameStore.set(updatedGame)
     await this.gameRepository.save(updatedGame)
 
@@ -526,5 +586,85 @@ export class TurnFlowService {
         this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
       }
     }
+  }
+
+  /**
+   * 處理計分回合結束（SCORED）
+   *
+   * @description
+   * 統一處理回合結束後的所有邏輯：
+   * 1. 檢查並啟動確認計時器
+   * 2. 發送 RoundEnded 事件
+   * 3. 檢查斷線玩家
+   * 4. 根據確認需求決定是否啟動 display timeout
+   *
+   * @param gameId - 遊戲 ID
+   * @param game - 遊戲狀態（已完成轉換）
+   * @param transitionResult - 轉換結果
+   * @param scoringData - 計分資料
+   * @returns 若遊戲已結束，返回 true；否則返回 false
+   */
+  async handleScoredRoundEnd(
+    gameId: string,
+    game: Game,
+    transitionResult: RoundTransitionResult,
+    scoringData: RoundScoringData
+  ): Promise<boolean> {
+    // 1. 計算 displayTimeoutSeconds
+    const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
+    const displayTimeoutSeconds = isNextRound
+      ? gameConfig.display_timeout_seconds
+      : undefined
+
+    // 2. 檢查是否需要確認繼續遊戲（會啟動 7 秒確認計時器）
+    const requireConfirmation = this.handleRoundEndConfirmation(gameId, game)
+
+    // 3. 發送 RoundEnded 事件
+    const roundEndedEvent = this.eventMapper.toRoundEndedEvent(
+      'SCORED',
+      game.cumulativeScores,
+      scoringData,
+      undefined,
+      displayTimeoutSeconds,
+      requireConfirmation
+    )
+    this.eventPublisher.publishToGame(gameId, roundEndedEvent)
+
+    // 4. 檢查是否有斷線/離開玩家
+    const gameEndedByDisconnect = await this.checkAndHandleDisconnectedPlayers(gameId, game)
+    if (gameEndedByDisconnect) {
+      return true  // 遊戲已結束
+    }
+
+    // 5. 根據確認需求決定下一步
+    if (requireConfirmation) {
+      // 需要確認：不啟動 display timeout
+      // 等待玩家確認後由 handlePlayerConfirmContinue() 繼續流程
+      console.log(`[TurnFlowService] Waiting for player confirmation before next round`)
+    } else {
+      // 不需要確認：根據 transitionResult 決定下一步
+      if (transitionResult.transitionType === 'NEXT_ROUND') {
+        // 繼續下一回合
+        const firstPlayerId = game.currentRound?.activePlayerId
+        this.startDisplayTimeout(gameId, () => {
+          const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
+          this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+          if (firstPlayerId) {
+            this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
+          }
+        })
+      } else {
+        // 遊戲結束
+        const winner = transitionResult.winner
+        if (winner) {
+          // 先將更新寫入 gameStore，讓 endGame() 能取得最新狀態
+          this.gameStore.set(game)
+          await this.endGame(gameId, winner.winnerId ?? undefined, 'NORMAL')
+          return true  // 遊戲已結束
+        }
+      }
+    }
+
+    return false  // 遊戲繼續
   }
 }

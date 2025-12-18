@@ -154,10 +154,7 @@ makeDecisionUseCase.setTurnFlowService(turnFlowService)
 joinGameUseCase.setTurnFlowService(turnFlowService)
 joinGameAsAiUseCase.setTurnFlowService(turnFlowService)
 
-// 5. 注入 LeaveGameUseCase 到 TurnFlowService（用於閒置踢出）
-turnFlowService.setLeaveGameUseCase(leaveGameUseCase)
-
-// 6. 建立 ConfirmContinueUseCase（依賴 turnFlowService）
+// 5. 建立 ConfirmContinueUseCase（依賴 turnFlowService）
 const confirmContinueUseCase: ConfirmContinueInputPort = new ConfirmContinueUseCase(
   inMemoryGameStore,
   turnFlowService

@@ -44,7 +44,6 @@ import {
   type MakeDecisionInput,
   type MakeDecisionOutput,
 } from '~~/server/application/ports/input/makeDecisionInputPort'
-import { gameConfig } from '~~/server/utils/config'
 
 // Re-export for backwards compatibility
 export { MakeDecisionError } from '~~/server/application/ports/input/makeDecisionInputPort'
@@ -170,50 +169,7 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       )
       game = transitionResult.game
 
-      // 根據轉換結果決定 displayTimeoutSeconds
-      const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
-      const displayTimeoutSeconds = isNextRound
-        ? gameConfig.display_timeout_seconds
-        : undefined
-
-      // 檢查是否需要確認繼續遊戲
-      const requireConfirmation = this.turnFlowService?.handleRoundEndConfirmation(gameId, game) ?? false
-
-      // 發送 RoundEnded 事件（reason: SCORED）
-      const scoringData = {
-        winner_id: playerId,
-        yaku_list: roundEndResult.yakuList,
-        base_score: roundEndResult.baseScore,
-        final_score: roundEndResult.finalScore,
-        multipliers,
-      }
-      const roundEndedEvent = this.eventMapper.toRoundEndedEvent(
-        'SCORED',
-        game.cumulativeScores,
-        scoringData,
-        undefined,
-        displayTimeoutSeconds,
-        requireConfirmation
-      )
-      this.eventPublisher.publishToGame(gameId, roundEndedEvent)
-
-      // 檢查是否有斷線/離開玩家（Phase 5: 回合結束時檢查）
-      const finishedGame = this.turnFlowService?.checkAndHandleDisconnectedPlayers(gameId, game)
-      if (finishedGame) {
-        // 已處理遊戲結束，從記憶體移除並儲存到 DB
-        game = finishedGame
-        // 樂觀鎖檢查
-        const currentGame = this.gameStore.get(gameId)
-        if (currentGame?.currentRound?.version !== oldVersion) {
-          throw new MakeDecisionError('VERSION_CONFLICT', 'Concurrent modification detected')
-        }
-        this.gameStore.delete(gameId)
-        await this.gameRepository.save(game)
-        console.log(`[MakeDecisionUseCase] Game ended due to disconnected player`)
-        return { success: true }
-      }
-
-      // 遊戲結束時記錄統計（MakeDecisionUseCase 特有）
+      // 遊戲結束時記錄統計（MakeDecisionUseCase 特有，需在 handleScoredRoundEnd 前執行）
       if (transitionResult.transitionType === 'GAME_FINISHED') {
         const winner = transitionResult.winner
         if (winner && this.recordGameStatsUseCase) {
@@ -240,8 +196,25 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
         }
       }
 
-      // 根據轉換結果決定下一步（使用 TurnFlowService 的共用方法）
-      this.turnFlowService?.handleRoundTransitionResult(gameId, game, transitionResult)
+      // 使用 TurnFlowService 的共用方法處理回合結束
+      const scoringData = {
+        winner_id: playerId,
+        yaku_list: roundEndResult.yakuList,
+        base_score: roundEndResult.baseScore,
+        final_score: roundEndResult.finalScore,
+        multipliers,
+      }
+      const gameEnded = await this.turnFlowService?.handleScoredRoundEnd(
+        gameId,
+        game,
+        transitionResult,
+        scoringData
+      )
+      if (gameEnded) {
+        // 已在 endGame() 中處理儲存和記憶體移除
+        console.log(`[MakeDecisionUseCase] Game ended`)
+        return { success: true }
+      }
     }
 
     // 6. 儲存更新
