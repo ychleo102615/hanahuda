@@ -314,17 +314,23 @@ class GameTimeoutManager extends GameTimeoutPort {
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
+   * @param totalSeconds - 總超時秒數（= displayTimeout + confirmTimeout）
    * @param onTimeout - 超時回調函數
    */
-  startContinueConfirmationTimeout(gameId: string, playerId: string, onTimeout: () => void): void {
+  startContinueConfirmationTimeout(
+    gameId: string,
+    playerId: string,
+    totalSeconds: number,
+    onTimeout: () => void
+  ): void {
     const key = this.getTimerKey(gameId, playerId)
     this.clearContinueConfirmationTimeout(gameId, playerId)
 
-    const timer = setTimeout(onTimeout, gameConfig.continue_confirmation_timeout_seconds * 1000)
+    const timer = setTimeout(onTimeout, totalSeconds * 1000)
     this.confirmationTimers.set(key, { timerId: timer })
 
     console.log(
-      `[GameTimeoutManager] Started confirmation timeout for ${key}: ${gameConfig.continue_confirmation_timeout_seconds}s`
+      `[GameTimeoutManager] Started confirmation timeout for ${key}: ${totalSeconds}s`
     )
   }
 
@@ -383,8 +389,11 @@ class GameTimeoutManager extends GameTimeoutPort {
    * 啟動加速代行計時器
    *
    * @description
-   * 斷線或離開玩家專用的加速計時器（3秒）。
+   * 斷線或離開玩家專用的加速計時器。
    * 與操作計時器獨立，會搶先觸發以加速遊戲進行。
+   *
+   * 計時器時間 = 代行超時(3秒) + 出牌動畫時間
+   * 原因：前端需要先播放完動畫，才能執行代行操作。
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
@@ -394,11 +403,14 @@ class GameTimeoutManager extends GameTimeoutPort {
     const key = this.getTimerKey(gameId, playerId)
     this.clearAcceleratedTimeout(gameId, playerId)
 
-    const timer = setTimeout(onTimeout, gameConfig.disconnected_action_timeout_seconds * 1000)
+    // 代行超時 + 動畫時間（讓前端有時間播放動畫）
+    const totalTimeoutMs = gameConfig.disconnected_action_timeout_seconds * 1000 + gameConfig.card_play_animation_ms
+    const timer = setTimeout(onTimeout, totalTimeoutMs)
     this.acceleratedTimers.set(key, timer)
 
+    const totalSeconds = totalTimeoutMs / 1000
     console.log(
-      `[GameTimeoutManager] Started accelerated timeout for ${key}: ${gameConfig.disconnected_action_timeout_seconds}s`
+      `[GameTimeoutManager] Started accelerated timeout for ${key}: ${totalSeconds}s (${gameConfig.disconnected_action_timeout_seconds}s + ${gameConfig.card_play_animation_ms}ms animation)`
     )
   }
 

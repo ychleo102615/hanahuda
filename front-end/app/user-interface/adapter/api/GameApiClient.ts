@@ -233,6 +233,29 @@ export class GameApiClient implements SendCommandPort {
   }
 
   /**
+   * 確認繼續遊戲
+   *
+   * @description
+   * 當玩家因閒置而需要確認繼續遊戲時，調用此方法。
+   * 若超時未確認，遊戲將自動結束。
+   *
+   * @throws {ValidationError} gameId 未初始化
+   * @throws {NetworkError} 網路連線失敗
+   * @throws {ServerError} 伺服器錯誤
+   * @throws {TimeoutError} 請求超時
+   */
+  async confirmContinue(): Promise<void> {
+    // 取得 gameId
+    const { gameId } = this.getGameContext()
+
+    // 發送請求 (帶重試)
+    const url = `${this.baseURL}/api/v1/games/${gameId}/confirm-continue`
+    const body = {}
+
+    await this.postWithRetry(url, body)
+  }
+
+  /**
    * 發送 POST 請求 (帶超時處理)
    *
    * @param url - 請求 URL

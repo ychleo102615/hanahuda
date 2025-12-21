@@ -86,9 +86,9 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     // 0. 清除當前遊戲的超時計時器
     this.gameTimeoutManager?.clearTimeout(gameId)
 
-    // 0.1 若為玩家主動操作，重置閒置計時器
+    // 0.1 若為玩家主動操作，處理閒置相關邏輯
     if (!isAutoAction) {
-      this.gameTimeoutManager?.resetIdleTimeout(gameId, playerId)
+      await this.turnFlowService?.handlePlayerActiveOperation(gameId, playerId)
     }
 
     // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）

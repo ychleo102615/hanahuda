@@ -67,6 +67,8 @@ export interface PlayerScore {
 export interface NextState {
   readonly state_type: FlowState
   readonly active_player_id: string
+  /** 下一個玩家是否處於加速代行模式（斷線/離開/閒置） */
+  readonly is_accelerated: boolean
 }
 
 /**

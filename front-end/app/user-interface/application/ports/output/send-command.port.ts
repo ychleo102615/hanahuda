@@ -99,4 +99,20 @@ export interface SendCommandPort {
    * ```
    */
   makeDecision(decision: 'KOI_KOI' | 'END_ROUND'): Promise<void>
+
+  /**
+   * 發送確認繼續遊戲命令
+   *
+   * @description
+   * 當玩家因閒置而需要確認繼續遊戲時，調用此方法。
+   * 若超時未確認，遊戲將自動結束。
+   *
+   * @throws 當網路錯誤或伺服器拒絕時拋出異常
+   *
+   * @example
+   * ```typescript
+   * await sendCommand.confirmContinue()
+   * ```
+   */
+  confirmContinue(): Promise<void>
 }

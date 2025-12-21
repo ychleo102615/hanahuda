@@ -444,7 +444,7 @@ function registerInputPorts(container: DIContainer): void {
   // 註冊 RoundEnded 事件處理器（統一處理 SCORED / DRAWN / INSTANT_*）
   container.register(
     TOKENS.HandleRoundEndedPort,
-    () => new HandleRoundEndedUseCase(uiStatePort, notificationPort, gameStatePort),
+    () => new HandleRoundEndedUseCase(uiStatePort, notificationPort, gameStatePort, sendCommandPort),
     { singleton: true }
   )
 

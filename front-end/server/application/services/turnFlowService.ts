@@ -208,12 +208,13 @@ export class TurnFlowService {
   }
 
   /**
-   * 玩家主動操作時呼叫 - 重置閒置計時器並清除確認需求
+   * 玩家主動操作時呼叫 - 重置閒置計時器、清除加速計時器、清除確認需求
    *
    * @description
    * 當玩家主動執行操作（非被代行）時呼叫此方法。
    * 1. 重置閒置計時器
-   * 2. 清除確認繼續遊戲的需求（若有）
+   * 2. 清除加速代行計時器（若有）
+   * 3. 清除確認繼續遊戲的需求（若有）
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
@@ -221,6 +222,9 @@ export class TurnFlowService {
   async handlePlayerActiveOperation(gameId: string, playerId: string): Promise<void> {
     // 重置閒置計時器
     this.gameTimeoutManager.resetIdleTimeout(gameId, playerId)
+
+    // 清除加速代行計時器（玩家主動操作，不再需要加速代行）
+    this.gameTimeoutManager.clearAcceleratedTimeout(gameId, playerId)
 
     // 清除確認需求（若有）
     const game = this.gameStore.get(gameId)
@@ -249,11 +253,15 @@ export class TurnFlowService {
 
   /**
    * 啟動顯示超時計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param seconds - 超時秒數
+   * @param onTimeout - 超時回調函數
    */
-  startDisplayTimeout(gameId: string, onTimeout: () => void): void {
+  startDisplayTimeout(gameId: string, seconds: number, onTimeout: () => void): void {
     this.gameTimeoutManager.startTimeout(
       gameId,
-      gameConfig.display_timeout_seconds,
+      seconds,
       onTimeout
     )
   }
@@ -265,22 +273,40 @@ export class TurnFlowService {
    * 檢查是否有玩家需要確認繼續遊戲，
    * 若有則啟動確認超時計時器。
    *
+   * 計時器總時間 = displayTimeoutSeconds + confirmation_buffer_seconds
+   * 這樣可以讓前端先顯示 Modal，再等待玩家確認。
+   *
    * @param gameId - 遊戲 ID
-   * @param game - 遊戲狀態
+   * @param _game - 遊戲狀態（未使用，從 gameStore 讀取最新狀態）
+   * @param displayTimeoutSeconds - Modal 顯示秒數（預設 0）
    * @returns 是否有玩家需要確認
    */
-  handleRoundEndConfirmation(gameId: string, game: Game): boolean {
-    const playersNeedingConfirmation = game.pendingContinueConfirmations
+  handleRoundEndConfirmation(
+    gameId: string,
+    _game: Game,
+    displayTimeoutSeconds: number = 0
+  ): boolean {
+    // 從 gameStore 讀取最新狀態，確保閒置標記不被遺漏
+    const latestGame = this.gameStore.get(gameId)
+    if (!latestGame) {
+      return false
+    }
+
+    const playersNeedingConfirmation = latestGame.pendingContinueConfirmations
 
     if (playersNeedingConfirmation.length === 0) {
       return false
     }
+
+    // 總確認時間 = 顯示時間 + 額外緩衝
+    const totalConfirmSeconds = displayTimeoutSeconds + gameConfig.confirmation_buffer_seconds
 
     // 為每個需要確認的玩家啟動確認超時計時器
     for (const playerId of playersNeedingConfirmation) {
       this.gameTimeoutManager.startContinueConfirmationTimeout(
         gameId,
         playerId,
+        totalConfirmSeconds,
         () => {
           console.log(`[TurnFlowService] Confirmation timeout for player ${playerId} in game ${gameId}, ending game`)
           this.endGameDueToIdlePlayer(gameId, playerId)
@@ -327,7 +353,7 @@ export class TurnFlowService {
 
       // 啟動 display timeout，進入下一回合
       const firstPlayerId = game.currentRound?.activePlayerId
-      this.startDisplayTimeout(gameId, () => {
+      this.startDisplayTimeout(gameId, gameConfig.display_timeout_seconds, () => {
         const currentGame = this.gameStore.get(gameId)
         if (!currentGame || currentGame.status === 'FINISHED') {
           return
@@ -457,8 +483,8 @@ export class TurnFlowService {
       ? gameConfig.display_timeout_seconds
       : undefined
 
-    // 檢查是否需要確認繼續遊戲
-    const requireConfirmation = this.handleRoundEndConfirmation(gameId, updatedGame)
+    // 檢查是否需要確認繼續遊戲（計時器總時間 = displayTimeout + confirmTimeout）
+    const requireConfirmation = this.handleRoundEndConfirmation(gameId, updatedGame, displayTimeoutSeconds ?? 0)
 
     // 發送 RoundEnded 事件（reason: DRAWN）
     const roundEndedEvent = this.eventMapper.toRoundEndedEvent(
@@ -486,7 +512,7 @@ export class TurnFlowService {
     } else if (isNextRound) {
       // 不需要確認且有下一局：啟動 display timeout
       const firstPlayerId = updatedGame.currentRound?.activePlayerId
-      this.startDisplayTimeout(gameId, () => {
+      this.startDisplayTimeout(gameId, displayTimeoutSeconds!, () => {
         const roundDealtEvent = this.eventMapper.toRoundDealtEvent(updatedGame)
         this.eventPublisher.publishToGame(gameId, roundDealtEvent)
 
@@ -553,16 +579,18 @@ export class TurnFlowService {
    * @param gameId - 遊戲 ID
    * @param game - 遊戲狀態（已完成轉換）
    * @param transitionResult - 轉換結果
+   * @param displayTimeoutSeconds - 顯示超時秒數
    */
   handleRoundTransitionResult(
     gameId: string,
     game: Game,
-    transitionResult: RoundTransitionResult
+    transitionResult: RoundTransitionResult,
+    displayTimeoutSeconds: number
   ): void {
     if (transitionResult.transitionType === 'NEXT_ROUND') {
       // 延遲發送 RoundDealt 事件（讓前端顯示結算畫面）
       const firstPlayerId = game.currentRound?.activePlayerId
-      this.startDisplayTimeout(gameId, () => {
+      this.startDisplayTimeout(gameId, displayTimeoutSeconds, () => {
         const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
         this.eventPublisher.publishToGame(gameId, roundDealtEvent)
 
@@ -602,22 +630,29 @@ export class TurnFlowService {
    * @param game - 遊戲狀態（已完成轉換）
    * @param transitionResult - 轉換結果
    * @param scoringData - 計分資料
+   * @param includeAnimationDelay - 是否包含動畫延遲（用於「最後一手形成役種」情況，
+   *                                前端需要先播放 TurnCompleted 動畫）
    * @returns 若遊戲已結束，返回 true；否則返回 false
    */
   async handleScoredRoundEnd(
     gameId: string,
     game: Game,
     transitionResult: RoundTransitionResult,
-    scoringData: RoundScoringData
+    scoringData: RoundScoringData,
+    includeAnimationDelay: boolean = false
   ): Promise<boolean> {
     // 1. 計算 displayTimeoutSeconds
     const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
+    // 若需要包含動畫延遲，將 card_play_animation_ms 轉換為秒並加到 timeout
+    const animationDelaySeconds = includeAnimationDelay
+      ? Math.ceil(gameConfig.card_play_animation_ms / 1000)
+      : 0
     const displayTimeoutSeconds = isNextRound
-      ? gameConfig.display_timeout_seconds
+      ? gameConfig.display_timeout_seconds + animationDelaySeconds
       : undefined
 
-    // 2. 檢查是否需要確認繼續遊戲（會啟動 7 秒確認計時器）
-    const requireConfirmation = this.handleRoundEndConfirmation(gameId, game)
+    // 2. 檢查是否需要確認繼續遊戲（計時器總時間 = displayTimeout + confirmTimeout）
+    const requireConfirmation = this.handleRoundEndConfirmation(gameId, game, displayTimeoutSeconds ?? 0)
 
     // 3. 發送 RoundEnded 事件
     const roundEndedEvent = this.eventMapper.toRoundEndedEvent(
@@ -646,7 +681,7 @@ export class TurnFlowService {
       if (transitionResult.transitionType === 'NEXT_ROUND') {
         // 繼續下一回合
         const firstPlayerId = game.currentRound?.activePlayerId
-        this.startDisplayTimeout(gameId, () => {
+        this.startDisplayTimeout(gameId, displayTimeoutSeconds!, () => {
           const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
           this.eventPublisher.publishToGame(gameId, roundDealtEvent)
           if (firstPlayerId) {

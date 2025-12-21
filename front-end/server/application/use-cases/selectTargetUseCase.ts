@@ -90,9 +90,9 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
     // 0. 清除當前遊戲的超時計時器
     this.gameTimeoutManager?.clearTimeout(gameId)
 
-    // 0.1 若為玩家主動操作，重置閒置計時器
+    // 0.1 若為玩家主動操作，處理閒置相關邏輯
     if (!isAutoAction) {
-      this.gameTimeoutManager?.resetIdleTimeout(gameId, playerId)
+      await this.turnFlowService?.handlePlayerActiveOperation(gameId, playerId)
     }
 
     // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
@@ -214,6 +214,7 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
         game = transitionResult.game
 
         // 使用 TurnFlowService 的共用方法處理回合結束
+        // 傳入 includeAnimationDelay=true，因為前端需要先播放 TurnProgressAfterSelection 動畫
         const scoringData = {
           winner_id: playerId,
           yaku_list: roundEndResult.yakuList,
@@ -225,7 +226,8 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
           gameId,
           game,
           transitionResult,
-          scoringData
+          scoringData,
+          true // includeAnimationDelay: 最後一手形成役種，需等待動畫
         )
         if (gameEnded) {
           // 已在 endGame() 中處理儲存和記憶體移除

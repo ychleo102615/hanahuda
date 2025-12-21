@@ -94,4 +94,15 @@ export class MockApiClient implements SendCommandPort {
 
     // Mock 不執行任何操作,事件由 MockEventEmitter 推送
   }
+
+  /**
+   * Mock confirmContinue
+   */
+  async confirmContinue(): Promise<void> {
+    await delay(50)
+
+    console.info('[Mock API] confirmContinue')
+
+    // Mock 不執行任何操作,事件由 MockEventEmitter 推送
+  }
 }

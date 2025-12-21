@@ -174,6 +174,11 @@ export interface UIStateStoreState {
   // 遊戲公告佇列系統
   announcementQueue: AnnouncementData[]
   currentAnnouncement: AnnouncementData | null
+
+  // 確認繼續遊戲
+  continueConfirmationVisible: boolean
+  continueConfirmationTimeoutSeconds: number | null
+  continueConfirmationCallback: (() => void) | null
 }
 
 /**
@@ -225,6 +230,10 @@ export interface UIStateStoreActions {
   processNextAnnouncement(): void
   clearCurrentAnnouncement(): void
   clearAllAnnouncements(): void
+
+  // 確認繼續遊戲
+  showContinueConfirmation(timeoutSeconds: number, onConfirm: () => void): void
+  hideContinueConfirmation(): void
 }
 
 /**
@@ -296,6 +305,11 @@ export const useUIStateStore = defineStore('uiState', {
     // 遊戲公告佇列系統
     announcementQueue: [],
     currentAnnouncement: null,
+
+    // 確認繼續遊戲
+    continueConfirmationVisible: false,
+    continueConfirmationTimeoutSeconds: null,
+    continueConfirmationCallback: null,
   }),
 
   actions: {
@@ -845,6 +859,31 @@ export const useUIStateStore = defineStore('uiState', {
       this.announcementQueue = []
       this.currentAnnouncement = null
       console.info('[UIStateStore] Cleared all announcements')
+    },
+
+    // ===== 確認繼續遊戲 =====
+
+    /**
+     * 顯示確認繼續遊戲介面
+     *
+     * @param timeoutSeconds - 確認超時秒數
+     * @param onConfirm - 玩家點擊確認時的回調
+     */
+    showContinueConfirmation(timeoutSeconds: number, onConfirm: () => void): void {
+      this.continueConfirmationVisible = true
+      this.continueConfirmationTimeoutSeconds = timeoutSeconds
+      this.continueConfirmationCallback = onConfirm
+      console.info('[UIStateStore] 顯示確認繼續遊戲介面', { timeoutSeconds })
+    },
+
+    /**
+     * 隱藏確認繼續遊戲介面
+     */
+    hideContinueConfirmation(): void {
+      this.continueConfirmationVisible = false
+      this.continueConfirmationTimeoutSeconds = null
+      this.continueConfirmationCallback = null
+      console.info('[UIStateStore] 隱藏確認繼續遊戲介面')
     },
   },
 })

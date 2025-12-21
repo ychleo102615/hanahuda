@@ -29,11 +29,11 @@ export interface GameConfig {
   /** 斷線玩家的代行超時（秒） */
   readonly disconnected_action_timeout_seconds: number
 
-  /** 確認繼續遊戲的超時（秒） - 閒置玩家在回合結束時需確認 */
-  readonly continue_confirmation_timeout_seconds: number
+  /** 確認繼續遊戲的額外緩衝（秒） - 在 displayTimeout 基礎上額外給予的確認時間 */
+  readonly confirmation_buffer_seconds: number
 
-  /** 假玩家動畫模擬延遲（毫秒） */
-  readonly opponent_animation_delay_ms: number
+  /** 出牌表演時間（毫秒）- 前端播放出牌動畫所需時間 */
+  readonly card_play_animation_ms: number
 
   /** 假玩家思考時間下限（毫秒） */
   readonly opponent_thinking_min_ms: number
@@ -104,7 +104,7 @@ function parseRoomType(): RoomTypeId {
  * - ACTION_TIMEOUT_SECONDS: 玩家操作超時（預設 15）
  * - DISPLAY_TIMEOUT_SECONDS: 結果畫面顯示時間（預設 5）
  * - DISCONNECT_TIMEOUT_SECONDS: 斷線超時（預設 60）
- * - OPPONENT_ANIMATION_DELAY_MS: 假玩家動畫延遲（預設 3000）
+ * - CARD_PLAY_ANIMATION_MS: 出牌表演時間（預設 3000）
  * - OPPONENT_THINKING_MIN_MS: 假玩家思考下限（預設 1500）
  * - OPPONENT_THINKING_MAX_MS: 假玩家思考上限（預設 3000）
  * - DEFAULT_ROOM_TYPE: 預設房間類型（預設 QUICK）
@@ -114,8 +114,8 @@ export const gameConfig: GameConfig = {
   display_timeout_seconds: parseEnvNumber('DISPLAY_TIMEOUT_SECONDS', 5),
   disconnect_timeout_seconds: parseEnvNumber('DISCONNECT_TIMEOUT_SECONDS', 60),
   disconnected_action_timeout_seconds: parseEnvNumber('DISCONNECTED_ACTION_TIMEOUT_SECONDS', 3),
-  continue_confirmation_timeout_seconds: parseEnvNumber('CONTINUE_CONFIRMATION_TIMEOUT_SECONDS', 7),
-  opponent_animation_delay_ms: parseEnvNumber('OPPONENT_ANIMATION_DELAY_MS', 3000),
+  confirmation_buffer_seconds: parseEnvNumber('CONFIRMATION_BUFFER_SECONDS', 2),
+  card_play_animation_ms: parseEnvNumber('CARD_PLAY_ANIMATION_MS', 3000),
   opponent_thinking_min_ms: parseEnvNumber('OPPONENT_THINKING_MIN_MS', 1500),
   opponent_thinking_max_ms: parseEnvNumber('OPPONENT_THINKING_MAX_MS', 3000),
   sse_heartbeat_interval_seconds: 30,
@@ -142,7 +142,7 @@ export function getRandomOpponentThinkingTime(): number {
  * @returns 總延遲時間（毫秒）
  */
 export function getOpponentTotalDelay(): number {
-  return gameConfig.opponent_animation_delay_ms + getRandomOpponentThinkingTime()
+  return gameConfig.card_play_animation_ms + getRandomOpponentThinkingTime()
 }
 
 /**

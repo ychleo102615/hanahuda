@@ -41,12 +41,18 @@ export function toScoreMultipliers(koiStatuses: readonly KoiStatus[]): ScoreMult
  *
  * @param stateType - 流程狀態
  * @param activePlayerId - 目前行動玩家 ID
+ * @param isAccelerated - 下一個玩家是否處於加速代行模式（斷線/離開/閒置）
  * @returns NextState 物件
  */
-export function createNextState(stateType: FlowState, activePlayerId: string): NextState {
+export function createNextState(
+  stateType: FlowState,
+  activePlayerId: string,
+  isAccelerated: boolean = false
+): NextState {
   return {
     state_type: stateType,
     active_player_id: activePlayerId,
+    is_accelerated: isAccelerated,
   }
 }
 

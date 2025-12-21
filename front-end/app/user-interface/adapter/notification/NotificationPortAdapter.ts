@@ -216,5 +216,14 @@ export function createNotificationPortAdapter(
         duration: 2200, // 2.2 秒
       })
     },
+
+    // ===== 確認繼續遊戲 =====
+    showContinueConfirmation(timeoutSeconds: number, onConfirm: () => void): void {
+      store.showContinueConfirmation(timeoutSeconds, onConfirm)
+    },
+
+    hideContinueConfirmation(): void {
+      store.hideContinueConfirmation()
+    },
   }
 }

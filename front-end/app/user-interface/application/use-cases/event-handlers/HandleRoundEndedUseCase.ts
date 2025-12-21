@@ -7,14 +7,15 @@
  */
 
 import type { RoundEndedEvent } from '#shared/contracts'
-import type { UIStatePort, NotificationPort, GameStatePort } from '../../ports/output'
+import type { UIStatePort, NotificationPort, GameStatePort, SendCommandPort } from '../../ports/output'
 import type { HandleRoundEndedPort } from '../../ports/input'
 
 export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
   constructor(
     private readonly updateUIState: UIStatePort,
     private readonly notification: NotificationPort,
-    private readonly gameState: GameStatePort
+    private readonly gameState: GameStatePort,
+    private readonly sendCommand: SendCommandPort
   ) {}
 
   execute(event: RoundEndedEvent): void {
@@ -61,10 +62,23 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
     }
 
     // 3. 處理確認繼續遊戲的需求
-    // TODO: Phase 4 實作 - 若 require_continue_confirmation 為 true，顯示確認按鈕
+    // 確認倒數使用 display_timeout_seconds（伺服器已計算好適當的時間）
     if (event.require_continue_confirmation) {
-      // TODO: 顯示確認繼續遊戲按鈕，啟動倒數
-      console.log('[HandleRoundEndedUseCase] Confirmation required - not yet implemented')
+      const confirmTimeout = event.display_timeout_seconds ?? 5 // fallback 5 秒
+      this.notification.showContinueConfirmation(
+        confirmTimeout,
+        () => {
+          // 玩家點擊確認按鈕時發送確認命令
+          this.sendCommand.confirmContinue().then(() => {
+            this.notification.hideContinueConfirmation()
+            console.log('[HandleRoundEndedUseCase] Confirmation sent successfully')
+          }).catch((error) => {
+            console.error('[HandleRoundEndedUseCase] Failed to send confirmation:', error)
+            this.notification.showErrorMessage('Failed to confirm. Please try again.')
+          })
+        }
+      )
+      console.log('[HandleRoundEndedUseCase] Confirmation required, showing confirmation UI')
     }
 
     // 4. 啟動顯示倒數（若有值，倒數結束時自動關閉面板）

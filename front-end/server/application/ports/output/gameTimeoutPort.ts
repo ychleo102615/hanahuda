@@ -159,16 +159,18 @@ export abstract class GameTimeoutPort {
    *
    * @description
    * 當玩家閒置超過 60 秒後，回合結束時需要確認繼續遊戲。
-   * 若玩家在 7 秒內未確認，則視為放棄，踢出遊戲。
+   * 若玩家在指定時間內未確認，則視為放棄，結束遊戲。
    * 每個玩家獨立的確認計時器。
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
+   * @param totalSeconds - 總超時秒數（= displayTimeout + confirmTimeout）
    * @param onTimeout - 超時回調函數
    */
   abstract startContinueConfirmationTimeout(
     gameId: string,
     playerId: string,
+    totalSeconds: number,
     onTimeout: () => void
   ): void
 
