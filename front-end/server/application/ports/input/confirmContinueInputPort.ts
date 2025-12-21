@@ -23,6 +23,8 @@ export interface ConfirmContinueInput {
   readonly gameId: string
   /** 確認的玩家 ID */
   readonly playerId: string
+  /** 玩家決策：繼續遊戲或離開 */
+  readonly decision: 'CONTINUE' | 'LEAVE'
 }
 
 /**

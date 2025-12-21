@@ -477,19 +477,19 @@ export interface NotificationPort {
    *
    * @description
    * 當玩家因閒置而需要確認繼續遊戲時顯示。
-   * 包含倒數計時，玩家需在時間內點擊確認按鈕。
+   * 包含倒數計時，玩家可選擇繼續遊戲或離開。
    *
    * @param timeoutSeconds - 確認超時秒數
-   * @param onConfirm - 玩家點擊確認時的回調
+   * @param onDecision - 玩家選擇後的回調，傳入決策類型
    *
    * @example
    * ```typescript
-   * notification.showContinueConfirmation(7, async () => {
-   *   await sendCommand.confirmContinue()
+   * notification.showContinueConfirmation(7, async (decision) => {
+   *   await sendCommand.confirmContinue(decision)
    * })
    * ```
    */
-  showContinueConfirmation(timeoutSeconds: number, onConfirm: () => void): void
+  showContinueConfirmation(timeoutSeconds: number, onDecision: (decision: 'CONTINUE' | 'LEAVE') => void): void
 
   /**
    * 隱藏確認繼續遊戲介面

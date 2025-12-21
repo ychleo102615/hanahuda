@@ -107,12 +107,14 @@ export interface SendCommandPort {
    * 當玩家因閒置而需要確認繼續遊戲時，調用此方法。
    * 若超時未確認，遊戲將自動結束。
    *
+   * @param decision - 玩家決策：繼續遊戲或離開
    * @throws 當網路錯誤或伺服器拒絕時拋出異常
    *
    * @example
    * ```typescript
-   * await sendCommand.confirmContinue()
+   * await sendCommand.confirmContinue('CONTINUE') // 確認繼續
+   * await sendCommand.confirmContinue('LEAVE') // 選擇離開
    * ```
    */
-  confirmContinue(): Promise<void>
+  confirmContinue(decision: 'CONTINUE' | 'LEAVE'): Promise<void>
 }

@@ -50,28 +50,17 @@ export class TurnFlowService {
    * 為玩家啟動操作超時計時器
    *
    * @description
-   * 計時器語意分離：
-   * - **操作計時器**：永遠 15 秒，代表玩家標準操作時間
-   * - **加速代行計時器**：3 秒，用於斷線/離開/閒置玩家（會搶先觸發）
-   *
-   * 需要加速的玩家會同時有兩個計時器，3 秒計時器先到期觸發代行。
-   * 玩家重連或確認繼續後清除加速計時器，保留操作計時器繼續倒數。
+   * 啟動 15 秒操作計時器，超時後執行代行（隨機選牌）。
+   * 同時啟動閒置計時器（60 秒無主動操作後標記需確認）。
    */
   startTimeoutForPlayer(
     gameId: string,
     playerId: string,
     flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
   ): void {
-    const game = this.gameStore.get(gameId)
+    console.log(`[TurnFlowService] Starting timeout for player ${playerId}`)
 
-    // 判斷是否需要加速代行：斷線/離開 或 閒置（需要確認）
-    const isDisconnected = game ? isPlayerDisconnectedOrLeft(game, playerId) : false
-    const isIdle = game ? isConfirmationRequired(game, playerId) : false
-    const shouldAccelerate = isDisconnected || isIdle
-
-    console.log(`[TurnFlowService] Starting timeout for player ${playerId} (disconnected/left: ${isDisconnected}, idle: ${isIdle})`)
-
-    // 永遠啟動 15 秒操作計時器
+    // 啟動 15 秒操作計時器
     this.gameTimeoutManager.startTimeout(
       gameId,
       gameConfig.action_timeout_seconds,
@@ -87,28 +76,8 @@ export class TurnFlowService {
       }
     )
 
-    // 若需要加速（斷線/離開/閒置），額外啟動 3 秒加速計時器（會搶先觸發）
-    if (shouldAccelerate) {
-      this.gameTimeoutManager.startAcceleratedTimeout(
-        gameId,
-        playerId,
-        () => {
-          console.log(`[TurnFlowService] Accelerated timeout for player ${playerId} (disconnected: ${isDisconnected}, idle: ${isIdle})`)
-          // 先清除 15 秒計時器，避免重複觸發
-          this.gameTimeoutManager.clearTimeout(gameId)
-          this.autoActionUseCase.execute({
-            gameId,
-            playerId,
-            currentFlowState: flowState,
-          }).catch((error) => {
-            console.error(`[TurnFlowService] Auto-action failed:`, error)
-          })
-        }
-      )
-    } else {
-      // 正常玩家啟動閒置計時器（60秒無主動操作後標記需確認）
-      this.startIdleTimeoutIfNeeded(gameId, playerId)
-    }
+    // 啟動閒置計時器（60 秒無主動操作後標記需確認）
+    this.startIdleTimeoutIfNeeded(gameId, playerId)
   }
 
   /**
@@ -116,9 +85,8 @@ export class TurnFlowService {
    *
    * @description
    * 當玩家重連時：
-   * 1. 清除加速代行計時器（若存在）
-   * 2. 操作計時器繼續倒數（玩家獲得剩餘時間）
-   * 3. 啟動閒置計時器（若尚未啟動）
+   * 1. 操作計時器繼續倒數（玩家獲得剩餘時間）
+   * 2. 啟動閒置計時器（若尚未啟動）
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
@@ -128,9 +96,6 @@ export class TurnFlowService {
     if (!game || !game.currentRound || game.status !== 'IN_PROGRESS') {
       return
     }
-
-    // 清除加速代行計時器
-    this.gameTimeoutManager.clearAcceleratedTimeout(gameId, playerId)
 
     // 檢查是否輪到此玩家
     if (game.currentRound.activePlayerId !== playerId) {
@@ -208,13 +173,12 @@ export class TurnFlowService {
   }
 
   /**
-   * 玩家主動操作時呼叫 - 重置閒置計時器、清除加速計時器、清除確認需求
+   * 玩家主動操作時呼叫 - 重置閒置計時器、清除確認需求
    *
    * @description
    * 當玩家主動執行操作（非被代行）時呼叫此方法。
    * 1. 重置閒置計時器
-   * 2. 清除加速代行計時器（若有）
-   * 3. 清除確認繼續遊戲的需求（若有）
+   * 2. 清除確認繼續遊戲的需求（若有）
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
@@ -222,9 +186,6 @@ export class TurnFlowService {
   async handlePlayerActiveOperation(gameId: string, playerId: string): Promise<void> {
     // 重置閒置計時器
     this.gameTimeoutManager.resetIdleTimeout(gameId, playerId)
-
-    // 清除加速代行計時器（玩家主動操作，不再需要加速代行）
-    this.gameTimeoutManager.clearAcceleratedTimeout(gameId, playerId)
 
     // 清除確認需求（若有）
     const game = this.gameStore.get(gameId)
@@ -343,9 +304,6 @@ export class TurnFlowService {
 
     // 重置閒置計時器（確認後重新開始計時）
     this.gameTimeoutManager.clearIdleTimeout(gameId, playerId)
-
-    // 清除加速代行計時器（確認後不再需要加速）
-    this.gameTimeoutManager.clearAcceleratedTimeout(gameId, playerId)
 
     // 檢查所有玩家是否都已確認
     if (game && game.pendingContinueConfirmations.length === 0) {

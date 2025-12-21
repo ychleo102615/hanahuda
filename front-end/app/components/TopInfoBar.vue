@@ -50,8 +50,6 @@ const {
   opponentHandCount,
   myKoiKoiMultiplier,
   opponentKoiKoiMultiplier,
-  myKoiKoiCount,
-  opponentKoiKoiCount,
 } = storeToRefs(gameState)
 const { connectionStatus, actionTimeoutRemaining, waitingForOpponent, reconnecting, gameFinishedModalVisible, dealingInProgress } = storeToRefs(uiState)
 
@@ -147,13 +145,13 @@ const handleMenuClick = () => {
             <div class="text-center">
               <div class="text-xs text-gray-400">{{ opponentPlayerName || 'Opponent' }}</div>
               <div class="text-xl font-bold">{{ opponentScore }}</div>
-              <!-- Koi-Koi 資訊（固定高度防止 layout shift） -->
+              <!-- 狀態列（固定高度防止 layout shift）：Koi-Koi 資訊 -->
               <div class="h-4 flex items-center justify-center">
                 <span
                   v-if="opponentKoiKoiMultiplier > 1"
                   class="text-xs text-amber-400"
                 >
-                  KK ×{{ opponentKoiKoiCount }} ({{ opponentKoiKoiMultiplier }}x)
+                  koikoi
                 </span>
               </div>
             </div>
@@ -207,13 +205,13 @@ const handleMenuClick = () => {
           <div class="text-center">
             <div class="text-xs text-gray-400">{{ localPlayerName || 'You' }}</div>
             <div class="text-xl font-bold">{{ myScore }}</div>
-            <!-- Koi-Koi 資訊（固定高度防止 layout shift） -->
+            <!-- 狀態列（固定高度防止 layout shift）：Koi-Koi 資訊 -->
             <div class="h-4 flex items-center justify-center">
               <span
                 v-if="myKoiKoiMultiplier > 1"
                 class="text-xs text-amber-400"
               >
-                KK ×{{ myKoiKoiCount }} ({{ myKoiKoiMultiplier }}x)
+                koikoi
               </span>
             </div>
           </div>

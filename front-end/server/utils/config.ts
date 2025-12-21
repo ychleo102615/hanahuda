@@ -112,7 +112,7 @@ function parseRoomType(): RoomTypeId {
 export const gameConfig: GameConfig = {
   action_timeout_seconds: parseEnvNumber('ACTION_TIMEOUT_SECONDS', 15),
   display_timeout_seconds: parseEnvNumber('DISPLAY_TIMEOUT_SECONDS', 5),
-  disconnect_timeout_seconds: parseEnvNumber('DISCONNECT_TIMEOUT_SECONDS', 60),
+  disconnect_timeout_seconds: parseEnvNumber('DISCONNECT_TIMEOUT_SECONDS', 30),
   disconnected_action_timeout_seconds: parseEnvNumber('DISCONNECTED_ACTION_TIMEOUT_SECONDS', 3),
   confirmation_buffer_seconds: parseEnvNumber('CONFIRMATION_BUFFER_SECONDS', 2),
   card_play_animation_ms: parseEnvNumber('CARD_PLAY_ANIMATION_MS', 3000),

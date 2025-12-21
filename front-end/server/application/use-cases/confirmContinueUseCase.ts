@@ -40,7 +40,7 @@ export class ConfirmContinueUseCase implements ConfirmContinueInputPort {
    * @throws ConfirmContinueError
    */
   async execute(input: ConfirmContinueInput): Promise<ConfirmContinueOutput> {
-    const { gameId, playerId } = input
+    const { gameId, playerId, decision } = input
 
     // 1. 取得遊戲
     const game = this.gameStore.get(gameId)
@@ -67,10 +67,16 @@ export class ConfirmContinueUseCase implements ConfirmContinueInputPort {
       )
     }
 
-    // 5. 處理確認繼續遊戲
-    await this.turnFlowService.handlePlayerConfirmContinue(gameId, playerId)
-
-    console.log(`[ConfirmContinueUseCase] Player ${playerId} confirmed continue in game ${gameId}`)
+    // 5. 處理玩家決策
+    if (decision === 'LEAVE') {
+      // 玩家選擇離開，結束遊戲
+      console.log(`[ConfirmContinueUseCase] Player ${playerId} chose to leave game ${gameId}`)
+      await this.turnFlowService.endGameDueToIdlePlayer(gameId, playerId)
+    } else {
+      // 玩家選擇繼續
+      console.log(`[ConfirmContinueUseCase] Player ${playerId} confirmed continue in game ${gameId}`)
+      await this.turnFlowService.handlePlayerConfirmContinue(gameId, playerId)
+    }
 
     return {
       success: true,

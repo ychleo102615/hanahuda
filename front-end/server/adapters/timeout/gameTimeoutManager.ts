@@ -78,9 +78,6 @@ class GameTimeoutManager extends GameTimeoutPort {
   /** 確認繼續計時器（每個玩家獨立） */
   private confirmationTimers: Map<TimerKey, ConfirmationTimerInfo> = new Map()
 
-  /** 加速代行計時器（每個玩家獨立，用於斷線/離開玩家） */
-  private acceleratedTimers: Map<TimerKey, NodeJS.Timeout> = new Map()
-
   // ============================================================
   // 遊戲計時器（Action 和 Display 統一）
   // ============================================================
@@ -382,86 +379,6 @@ class GameTimeoutManager extends GameTimeoutPort {
   }
 
   // ============================================================
-  // 加速代行計時器（斷線/離開玩家專用）
-  // ============================================================
-
-  /**
-   * 啟動加速代行計時器
-   *
-   * @description
-   * 斷線或離開玩家專用的加速計時器。
-   * 與操作計時器獨立，會搶先觸發以加速遊戲進行。
-   *
-   * 計時器時間 = 代行超時(3秒) + 出牌動畫時間
-   * 原因：前端需要先播放完動畫，才能執行代行操作。
-   *
-   * @param gameId - 遊戲 ID
-   * @param playerId - 玩家 ID
-   * @param onTimeout - 超時回調函數
-   */
-  startAcceleratedTimeout(gameId: string, playerId: string, onTimeout: () => void): void {
-    const key = this.getTimerKey(gameId, playerId)
-    this.clearAcceleratedTimeout(gameId, playerId)
-
-    // 代行超時 + 動畫時間（讓前端有時間播放動畫）
-    const totalTimeoutMs = gameConfig.disconnected_action_timeout_seconds * 1000 + gameConfig.card_play_animation_ms
-    const timer = setTimeout(onTimeout, totalTimeoutMs)
-    this.acceleratedTimers.set(key, timer)
-
-    const totalSeconds = totalTimeoutMs / 1000
-    console.log(
-      `[GameTimeoutManager] Started accelerated timeout for ${key}: ${totalSeconds}s (${gameConfig.disconnected_action_timeout_seconds}s + ${gameConfig.card_play_animation_ms}ms animation)`
-    )
-  }
-
-  /**
-   * 清除指定玩家的加速代行計時器
-   *
-   * @param gameId - 遊戲 ID
-   * @param playerId - 玩家 ID
-   */
-  clearAcceleratedTimeout(gameId: string, playerId: string): void {
-    const key = this.getTimerKey(gameId, playerId)
-    const timer = this.acceleratedTimers.get(key)
-    if (timer) {
-      clearTimeout(timer)
-      this.acceleratedTimers.delete(key)
-      console.log(`[GameTimeoutManager] Cleared accelerated timeout for ${key}`)
-    }
-  }
-
-  /**
-   * 清除遊戲的所有加速代行計時器
-   *
-   * @param gameId - 遊戲 ID
-   */
-  clearAllAcceleratedTimeouts(gameId: string): void {
-    const prefix = `${gameId}:`
-    for (const key of this.acceleratedTimers.keys()) {
-      if (key.startsWith(prefix)) {
-        const timer = this.acceleratedTimers.get(key)
-        if (timer) {
-          clearTimeout(timer)
-          this.acceleratedTimers.delete(key)
-        }
-      }
-    }
-    console.log(`[GameTimeoutManager] Cleared all accelerated timeouts for game ${gameId}`)
-  }
-
-  /**
-   * 檢查指定玩家是否有加速代行計時器
-   *
-   * @param gameId - 遊戲 ID
-   * @param playerId - 玩家 ID
-   * @returns 是否有加速代行計時器
-   */
-  hasAcceleratedTimeout(gameId: string, playerId: string): boolean {
-    const key = this.getTimerKey(gameId, playerId)
-    return this.acceleratedTimers.has(key)
-  }
-
-  // ============================================================
   // 遊戲層級清理
   // ============================================================
 
@@ -475,7 +392,6 @@ class GameTimeoutManager extends GameTimeoutPort {
     this.clearAllDisconnectTimeouts(gameId)
     this.clearAllIdleTimeouts(gameId)
     this.clearAllContinueConfirmationTimeouts(gameId)
-    this.clearAllAcceleratedTimeouts(gameId)
     console.log(`[GameTimeoutManager] Cleared all timers for game ${gameId}`)
   }
 

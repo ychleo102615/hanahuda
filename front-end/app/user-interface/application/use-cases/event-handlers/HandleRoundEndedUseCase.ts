@@ -67,11 +67,11 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
       const confirmTimeout = event.display_timeout_seconds ?? 5 // fallback 5 秒
       this.notification.showContinueConfirmation(
         confirmTimeout,
-        () => {
-          // 玩家點擊確認按鈕時發送確認命令
-          this.sendCommand.confirmContinue().then(() => {
+        (decision: 'CONTINUE' | 'LEAVE') => {
+          // 玩家點擊確認按鈕時發送確認命令（含決策）
+          this.sendCommand.confirmContinue(decision).then(() => {
             this.notification.hideContinueConfirmation()
-            console.log('[HandleRoundEndedUseCase] Confirmation sent successfully')
+            console.log(`[HandleRoundEndedUseCase] Confirmation sent successfully: ${decision}`)
           }).catch((error) => {
             console.error('[HandleRoundEndedUseCase] Failed to send confirmation:', error)
             this.notification.showErrorMessage('Failed to confirm. Please try again.')

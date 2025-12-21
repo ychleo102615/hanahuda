@@ -178,7 +178,7 @@ export interface UIStateStoreState {
   // 確認繼續遊戲
   continueConfirmationVisible: boolean
   continueConfirmationTimeoutSeconds: number | null
-  continueConfirmationCallback: (() => void) | null
+  continueConfirmationCallback: ((decision: 'CONTINUE' | 'LEAVE') => void) | null
 }
 
 /**
@@ -232,7 +232,7 @@ export interface UIStateStoreActions {
   clearAllAnnouncements(): void
 
   // 確認繼續遊戲
-  showContinueConfirmation(timeoutSeconds: number, onConfirm: () => void): void
+  showContinueConfirmation(timeoutSeconds: number, onDecision: (decision: 'CONTINUE' | 'LEAVE') => void): void
   hideContinueConfirmation(): void
 }
 
@@ -867,12 +867,12 @@ export const useUIStateStore = defineStore('uiState', {
      * 顯示確認繼續遊戲介面
      *
      * @param timeoutSeconds - 確認超時秒數
-     * @param onConfirm - 玩家點擊確認時的回調
+     * @param onDecision - 玩家選擇後的回調，傳入決策類型
      */
-    showContinueConfirmation(timeoutSeconds: number, onConfirm: () => void): void {
+    showContinueConfirmation(timeoutSeconds: number, onDecision: (decision: 'CONTINUE' | 'LEAVE') => void): void {
       this.continueConfirmationVisible = true
       this.continueConfirmationTimeoutSeconds = timeoutSeconds
-      this.continueConfirmationCallback = onConfirm
+      this.continueConfirmationCallback = onDecision
       console.info('[UIStateStore] 顯示確認繼續遊戲介面', { timeoutSeconds })
     },
 

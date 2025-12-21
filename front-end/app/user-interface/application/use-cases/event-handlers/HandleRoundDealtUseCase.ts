@@ -117,7 +117,7 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
     this.gameState.setFlowStage(event.next_state.state_type)
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // 4. 啟動操作倒數（扣除動畫耗時）
+    // 6. 啟動操作倒數（扣除動畫耗時）
     const currentTS = new Date()
     const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
     this.notification.startActionCountdown(event.action_timeout_seconds - dt)

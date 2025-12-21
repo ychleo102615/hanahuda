@@ -218,8 +218,8 @@ export function createNotificationPortAdapter(
     },
 
     // ===== 確認繼續遊戲 =====
-    showContinueConfirmation(timeoutSeconds: number, onConfirm: () => void): void {
-      store.showContinueConfirmation(timeoutSeconds, onConfirm)
+    showContinueConfirmation(timeoutSeconds: number, onDecision: (decision: 'CONTINUE' | 'LEAVE') => void): void {
+      store.showContinueConfirmation(timeoutSeconds, onDecision)
     },
 
     hideContinueConfirmation(): void {

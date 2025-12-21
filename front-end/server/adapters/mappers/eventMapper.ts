@@ -11,10 +11,6 @@
 import { randomUUID } from 'crypto'
 import type { Game, Player } from '~~/server/domain/game'
 import { toSnapshot } from '~~/server/domain/game'
-import {
-  isPlayerDisconnectedOrLeft,
-  isConfirmationRequired,
-} from '~~/server/domain/game/playerConnection'
 import type { Round } from '~~/server/domain/round'
 import type {
   GameStartedEvent,
@@ -67,40 +63,6 @@ function createEventId(): string {
 }
 
 /**
- * 檢查玩家是否處於加速代行模式
- *
- * @description
- * 玩家處於加速代行模式的條件：
- * - 斷線或離開
- * - 閒置（需要確認繼續遊戲）
- *
- * @param game - 遊戲狀態
- * @param playerId - 玩家 ID
- * @returns 是否處於加速代行模式
- */
-function isPlayerAccelerated(game: Game, playerId: string): boolean {
-  return isPlayerDisconnectedOrLeft(game, playerId) || isConfirmationRequired(game, playerId)
-}
-
-/**
- * 計算操作超時秒數
- *
- * @description
- * 代行模式下需要額外的動畫時間，讓前端播放完出牌動畫後再執行代行操作。
- *
- * @param isAccelerated - 是否處於加速代行模式
- * @returns 操作超時秒數
- */
-function getActionTimeoutSeconds(isAccelerated: boolean): number {
-  if (isAccelerated) {
-    // 代行模式需要額外的出牌動畫時間
-    const animationDelaySeconds = Math.ceil(gameConfig.card_play_animation_ms / 1000)
-    return gameConfig.action_timeout_seconds + animationDelaySeconds
-  }
-  return gameConfig.action_timeout_seconds
-}
-
-/**
  * EventMapper
  *
  * 提供 Domain → SSE Event 的轉換方法。
@@ -144,8 +106,7 @@ export class EventMapper implements FullEventMapperPort {
 
     const round = game.currentRound
     const hands = this.toPlayerHands(round)
-    const isAccelerated = isPlayerAccelerated(game, round.activePlayerId)
-    const nextState = createNextState(round.flowState, round.activePlayerId, isAccelerated)
+    const nextState = createNextState(round.flowState, round.activePlayerId)
 
     return {
       event_type: 'RoundDealt',
@@ -157,7 +118,7 @@ export class EventMapper implements FullEventMapperPort {
       hands,
       deck_remaining: round.deck.length,
       next_state: nextState,
-      action_timeout_seconds: getActionTimeoutSeconds(isAccelerated),
+      action_timeout_seconds: gameConfig.action_timeout_seconds,
     }
   }
 
@@ -198,8 +159,7 @@ export class EventMapper implements FullEventMapperPort {
     }
 
     const round = game.currentRound
-    const isAccelerated = isPlayerAccelerated(game, round.activePlayerId)
-    const nextState = createNextState(round.flowState, round.activePlayerId, isAccelerated)
+    const nextState = createNextState(round.flowState, round.activePlayerId)
 
     return {
       event_type: 'TurnCompleted',
@@ -218,7 +178,7 @@ export class EventMapper implements FullEventMapperPort {
       },
       deck_remaining: round.deck.length,
       next_state: nextState,
-      action_timeout_seconds: getActionTimeoutSeconds(isAccelerated),
+      action_timeout_seconds: gameConfig.action_timeout_seconds,
     }
   }
 
@@ -282,8 +242,7 @@ export class EventMapper implements FullEventMapperPort {
     }
 
     const round = game.currentRound
-    const isAccelerated = isPlayerAccelerated(game, round.activePlayerId)
-    const nextState = createNextState(round.flowState, round.activePlayerId, isAccelerated)
+    const nextState = createNextState(round.flowState, round.activePlayerId)
 
     return {
       event_type: 'TurnProgressAfterSelection',
@@ -316,7 +275,7 @@ export class EventMapper implements FullEventMapperPort {
         : null,
       deck_remaining: round.deck.length,
       next_state: nextState,
-      action_timeout_seconds: getActionTimeoutSeconds(isAccelerated),
+      action_timeout_seconds: gameConfig.action_timeout_seconds,
     }
   }
 
@@ -404,8 +363,7 @@ export class EventMapper implements FullEventMapperPort {
     }
 
     const round = game.currentRound
-    const isAccelerated = isPlayerAccelerated(game, round.activePlayerId)
-    const nextState = createNextState(round.flowState, round.activePlayerId, isAccelerated)
+    const nextState = createNextState(round.flowState, round.activePlayerId)
 
     return {
       event_type: 'DecisionMade',
@@ -418,7 +376,7 @@ export class EventMapper implements FullEventMapperPort {
         koi_koi_applied: multipliers.koi_koi_applied,
       },
       next_state: nextState,
-      action_timeout_seconds: getActionTimeoutSeconds(isAccelerated),
+      action_timeout_seconds: gameConfig.action_timeout_seconds,
     }
   }
 

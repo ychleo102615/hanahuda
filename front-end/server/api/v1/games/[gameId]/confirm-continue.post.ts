@@ -81,15 +81,33 @@ export default defineEventHandler(async (event): Promise<ConfirmContinueResponse
       throw err
     }
 
-    logger.info('Processing confirm continue request', { gameId, playerId: sessionContext.playerId })
+    // 3. 解析請求 Body
+    const body = await readBody(event)
+    const decision = body?.decision as 'CONTINUE' | 'LEAVE' | undefined
 
-    // 3. 從容器取得 UseCase
+    // 驗證 decision
+    if (!decision || (decision !== 'CONTINUE' && decision !== 'LEAVE')) {
+      logger.warn('Invalid decision', { decision })
+      setResponseStatus(event, HTTP_BAD_REQUEST)
+      return {
+        error: {
+          code: 'INVALID_DECISION',
+          message: 'Decision must be either CONTINUE or LEAVE',
+        },
+        timestamp: new Date().toISOString(),
+      }
+    }
+
+    logger.info('Processing confirm continue request', { gameId, playerId: sessionContext.playerId, decision })
+
+    // 4. 從容器取得 UseCase
     const useCase = container.confirmContinueUseCase
 
-    // 4. 執行用例
+    // 5. 執行用例
     const result = await useCase.execute({
       gameId,
       playerId: sessionContext.playerId,
+      decision,
     })
 
     // 5. 返回成功回應

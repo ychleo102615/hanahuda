@@ -151,10 +151,46 @@
           </div>
         </div>
 
-        <!-- Footer: Countdown Display or Continue Button -->
+        <!-- Footer: Countdown Display, Confirm Button, or Continue Button -->
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <!-- 需要確認繼續遊戲時：顯示確認按鈕、離開按鈕和倒數 -->
+          <template v-if="continueConfirmationVisible">
+            <div class="flex flex-col items-center gap-3">
+              <p class="text-sm text-gray-600 text-center">
+                Confirm to continue playing.
+              </p>
+              <div class="flex gap-3">
+                <button
+                  type="button"
+                  class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  @click="handleConfirmContinue('CONTINUE')"
+                >
+                  Continue
+                </button>
+                <button
+                  type="button"
+                  class="px-6 py-2 bg-gray-500 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  @click="handleConfirmContinue('LEAVE')"
+                >
+                  Leave Game
+                </button>
+              </div>
+              <div class="flex items-center gap-2 text-gray-500">
+                <span class="text-xs">Auto-end in:</span>
+                <span
+                  :class="[
+                    'text-lg font-bold tabular-nums',
+                    countdownWarningClass,
+                  ]"
+                >
+                  {{ displayCountdown }}
+                </span>
+                <span class="text-xs">s</span>
+              </div>
+            </div>
+          </template>
           <!-- 有倒數時顯示倒數 -->
-          <template v-if="displayTimeoutRemaining !== null">
+          <template v-else-if="displayTimeoutRemaining !== null">
             <div class="flex items-center justify-center gap-2 text-gray-700">
               <span class="text-sm font-medium">Next round in:</span>
               <span
@@ -210,6 +246,8 @@ const {
   roundScoredModalData,
   roundEndedInstantlyModalData,
   pendingGameFinishedData,
+  continueConfirmationVisible,
+  continueConfirmationCallback,
 } = storeToRefs(uiState)
 
 /**
@@ -318,6 +356,15 @@ function getRoundEndReasonText(reason: string): string {
 function getPlayerName(playerId: string): string {
   const localPlayerId = gameState.getLocalPlayerId()
   return playerId === localPlayerId ? 'You' : 'Opponent'
+}
+
+/**
+ * 確認繼續遊戲按鈕處理（閒置玩家確認）
+ */
+function handleConfirmContinue(decision: 'CONTINUE' | 'LEAVE'): void {
+  if (continueConfirmationCallback.value) {
+    continueConfirmationCallback.value(decision)
+  }
 }
 
 /**
