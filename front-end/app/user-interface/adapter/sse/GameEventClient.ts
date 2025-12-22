@@ -77,6 +77,7 @@ export class GameEventClient {
   private reconnectAttempts = 0
   private readonly maxAttempts = 5
   private readonly reconnectDelays = [1000, 2000, 4000, 8000, 16000] // 指數退避
+  private shouldReconnect = false // 控制重連，disconnect 時設為 false
 
   // 連線狀態回調
   private onConnectionEstablishedCallback?: () => void
@@ -118,6 +119,9 @@ export class GameEventClient {
   connect(params: SSEConnectionParams): void {
     // 保存參數用於重連
     this.lastConnectionParams = params
+
+    // 啟用重連機制
+    this.shouldReconnect = true
 
     // 構建 URL
     const queryParams = new URLSearchParams({
@@ -176,6 +180,10 @@ export class GameEventClient {
    * ```
    */
   disconnect(): void {
+    // 停止重連機制
+    this.shouldReconnect = false
+    this.reconnectAttempts = 0
+
     if (this.eventSource) {
       this.eventSource.close()
       this.eventSource = null
@@ -246,6 +254,12 @@ export class GameEventClient {
    * @private
    */
   private async reconnect(): Promise<void> {
+    // 檢查是否已被 disconnect，若是則停止重連
+    if (!this.shouldReconnect) {
+      console.info('[SSE] 重連已取消（已呼叫 disconnect）')
+      return
+    }
+
     if (!this.lastConnectionParams) {
       console.error('[SSE] 無法重連：缺少連線參數')
       this.onConnectionFailedCallback?.()
@@ -268,6 +282,13 @@ export class GameEventClient {
     )
 
     await sleep(delay)
+
+    // sleep 後再次檢查，防止在等待期間被 disconnect
+    if (!this.shouldReconnect) {
+      console.info('[SSE] 重連已取消（等待期間呼叫 disconnect）')
+      return
+    }
+
     this.connect(this.lastConnectionParams)
   }
 }
