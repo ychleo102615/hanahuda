@@ -153,8 +153,8 @@
 
         <!-- Footer: Countdown Display, Confirm Button, or Continue Button -->
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <!-- 需要確認繼續遊戲時：顯示確認按鈕、離開按鈕和倒數 -->
-          <template v-if="continueConfirmationVisible">
+          <!-- 確認繼續遊戲 - 等待玩家輸入 -->
+          <template v-if="continueConfirmationState === 'AWAITING_INPUT'">
             <div class="flex flex-col items-center gap-3">
               <p class="text-sm text-gray-600 text-center">
                 Confirm to continue playing.
@@ -187,6 +187,19 @@
                 </span>
                 <span class="text-xs">s</span>
               </div>
+            </div>
+          </template>
+          <!-- 確認繼續遊戲 - 等待伺服器回應 -->
+          <template v-else-if="continueConfirmationState === 'AWAITING_SERVER'">
+            <div class="flex flex-col items-center gap-2">
+              <div class="flex items-center gap-2 text-gray-600">
+                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <span class="font-medium">Processing...</span>
+              </div>
+              <p class="text-xs text-gray-500">Waiting for server response</p>
             </div>
           </template>
           <!-- 有倒數時顯示倒數 -->
@@ -246,7 +259,7 @@ const {
   roundScoredModalData,
   roundEndedInstantlyModalData,
   pendingGameFinishedData,
-  continueConfirmationVisible,
+  continueConfirmationState,
   continueConfirmationCallback,
 } = storeToRefs(uiState)
 
@@ -262,12 +275,13 @@ const panelType = computed<'roundScored' | 'roundEndedInstantly' | 'roundDrawn' 
 
 /**
  * 是否應該顯示彈窗
- * 有倒數或有待處理的遊戲結束資料時都顯示
+ * 有倒數、待處理的遊戲結束資料、或等待伺服器回應時都顯示
  */
 const shouldShowPanel = computed(() => {
   return panelType.value !== null && (
     displayTimeoutRemaining.value !== null ||
-    pendingGameFinishedData.value !== null
+    pendingGameFinishedData.value !== null ||
+    continueConfirmationState.value === 'AWAITING_SERVER'
   )
 })
 

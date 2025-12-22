@@ -503,4 +503,18 @@ export interface NotificationPort {
    * ```
    */
   hideContinueConfirmation(): void
+
+  /**
+   * 設置確認狀態為等待伺服器回應
+   *
+   * @description
+   * 當玩家點擊確認按鈕或倒數結束時，切換至等待伺服器回應狀態。
+   * UI 會顯示 "Processing..." 並禁用按鈕。
+   *
+   * @example
+   * ```typescript
+   * notification.setContinueConfirmationProcessing()
+   * ```
+   */
+  setContinueConfirmationProcessing(): void
 }

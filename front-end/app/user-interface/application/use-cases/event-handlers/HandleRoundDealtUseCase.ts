@@ -18,7 +18,7 @@
 
 import type { RoundDealtEvent } from '#shared/contracts'
 import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
-import type { HandleRoundDealtPort } from '../../ports/input'
+import type { HandleRoundDealtPort, ExecuteOptions } from '../../ports/input'
 
 export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
   constructor(
@@ -33,7 +33,7 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
    * @description
    * 非同步執行動畫序列，確保動畫完成後再設定最終狀態。
    */
-  execute(event: RoundDealtEvent): Promise<void> {
+  execute(event: RoundDealtEvent, _options: ExecuteOptions): Promise<void> {
     return this.executeAsync(event)
   }
 

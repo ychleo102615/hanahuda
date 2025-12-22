@@ -5,7 +5,7 @@
 import type { RoundScoredEvent } from '#shared/contracts'
 import type { UIStatePort, NotificationPort, GameStatePort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
-import type { HandleRoundScoredPort } from '../../ports/input'
+import type { HandleRoundScoredPort, ExecuteOptions } from '../../ports/input'
 
 export class HandleRoundScoredUseCase implements HandleRoundScoredPort {
   constructor(
@@ -15,7 +15,7 @@ export class HandleRoundScoredUseCase implements HandleRoundScoredPort {
     private readonly gameState: GameStatePort
   ) {}
 
-  execute(event: RoundScoredEvent): void {
+  execute(event: RoundScoredEvent, _options: ExecuteOptions): void {
     // TODO: Post-MVP 實作分數更新動畫
     // 當前直接更新分數，視覺效果由 UI 層的 Pinia store 反應式更新處理
 

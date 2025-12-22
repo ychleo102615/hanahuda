@@ -4,7 +4,7 @@
 
 import type { RoundEndedInstantlyEvent } from '#shared/contracts'
 import type { UIStatePort, NotificationPort, GameStatePort } from '../../ports/output'
-import type { HandleRoundEndedInstantlyPort } from '../../ports/input'
+import type { HandleRoundEndedInstantlyPort, ExecuteOptions } from '../../ports/input'
 
 export class HandleRoundEndedInstantlyUseCase implements HandleRoundEndedInstantlyPort {
   constructor(
@@ -13,7 +13,7 @@ export class HandleRoundEndedInstantlyUseCase implements HandleRoundEndedInstant
     private readonly gameState: GameStatePort
   ) {}
 
-  execute(event: RoundEndedInstantlyEvent): void {
+  execute(event: RoundEndedInstantlyEvent, _options: ExecuteOptions): void {
     // 0. 清理：停止倒數計時、清除流程階段
     this.notification.cleanup()
     this.gameState.setFlowStage(null)

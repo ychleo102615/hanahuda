@@ -18,7 +18,7 @@ import type { DecisionRequiredEvent } from '#shared/contracts'
 import type { UIStatePort, NotificationPort, GameStatePort, AnimationPort } from '../../ports/output'
 import type { CardPlayStateCallbacks } from '../../ports/output/animation.port'
 import type { DomainFacade } from '../../types/domain-facade'
-import type { HandleDecisionRequiredPort } from '../../ports/input'
+import type { HandleDecisionRequiredPort, ExecuteOptions } from '../../ports/input'
 import { AbortOperationError } from '../../types'
 import { getYakuInfo } from '../../../domain/yaku-info'
 
@@ -31,13 +31,13 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
     private readonly animation: AnimationPort
   ) {}
 
-  execute(event: DecisionRequiredEvent, signal?: AbortSignal): Promise<void> {
-    return this.executeAsync(event, signal)
+  execute(event: DecisionRequiredEvent, _options: ExecuteOptions): Promise<void> {
+    return this.executeAsync(event)
   }
 
-  private async executeAsync(event: DecisionRequiredEvent, signal?: AbortSignal): Promise<void> {
+  private async executeAsync(event: DecisionRequiredEvent): Promise<void> {
     try {
-      await this.executeAsyncCore(event, signal)
+      await this.executeAsyncCore(event)
     } catch (error) {
       if (error instanceof AbortOperationError) {
         console.info('[HandleDecisionRequiredUseCase] Aborted due to state recovery')
@@ -48,9 +48,9 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
   }
 
   /**
-   * 核心執行邏輯（可被中斷）
+   * 核心執行邏輯
    */
-  private async executeAsyncCore(event: DecisionRequiredEvent, signal?: AbortSignal): Promise<void> {
+  private async executeAsyncCore(event: DecisionRequiredEvent): Promise<void> {
     // 記錄動畫開始時間（用於計算動畫耗時）
     const startTS = new Date()
 

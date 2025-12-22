@@ -14,18 +14,7 @@
  */
 
 import type { OperationSessionManager } from '../abort'
-
-/**
- * 通用 Input Port 介面
- *
- * @description
- * Input Port 的 execute 方法可選擇接受 AbortSignal 參數，
- * 用於支援可取消操作。
- */
-
-interface InputPort<T = unknown> {
-  execute(payload: T, signal?: AbortSignal): void | Promise<void>
-}
+import type { ExecuteOptions, EventHandlerPort } from '~/user-interface/application/ports/input'
 
 /**
  * EventRouter 類別
@@ -44,7 +33,7 @@ interface InputPort<T = unknown> {
  */
 export class EventRouter {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private handlers: Map<string, InputPort<any>>
+  private handlers: Map<string, EventHandlerPort<any>>
 
   /**
    * 事件處理鏈，用於序列化事件處理
@@ -76,7 +65,7 @@ export class EventRouter {
    * 註冊事件處理器
    *
    * @param eventType - SSE 事件類型 (例如 'GameStarted')
-   * @param port - Input Port 實例
+   * @param port - Event Handler Port 實例
    *
    * @example
    * ```typescript
@@ -84,27 +73,30 @@ export class EventRouter {
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  register(eventType: string, port: InputPort<any>): void {
+  register(eventType: string, port: EventHandlerPort<any>): void {
     this.handlers.set(eventType, port)
   }
 
   /**
-   * 路由事件到對應的 Input Port
+   * 路由事件到對應的 Event Handler Port
    *
    * @param eventType - SSE 事件類型
    * @param payload - 事件 payload
    *
    * @description
    * 如果事件類型未註冊,記錄警告但不拋出異常。
-   * 如果 Input Port 執行失敗,錯誤會向上傳播。
+   * 如果 Event Handler Port 執行失敗,錯誤會向上傳播。
    *
    * **序列化處理**：
    * 事件會被加入 Promise 鏈中，確保前一個事件的 Use Case（包括動畫）
    * 完全執行完畢後才開始處理下一個事件。這避免了動畫衝突問題。
    *
-   * **AbortSignal 傳遞**：
-   * 若已設置 OperationSessionManager，會取得當前的 AbortSignal 傳遞給 Use Case，
-   * 讓 Use Case 可以響應取消操作。
+   * **ExecuteOptions 傳遞**：
+   * 包含 receivedAt 時間戳，讓 Use Case 可以計算事件處理延遲，調整倒數計時。
+   *
+   * **取消機制**：
+   * AbortSignal 由 Adapter 層內部管理（OperationSessionManager），
+   * 不傳遞給 Application Layer，符合 Clean Architecture 依賴規則。
    *
    * @example
    * ```typescript
@@ -121,15 +113,23 @@ export class EventRouter {
       return
     }
 
-    // 取得當前的 AbortSignal（若已設置 OperationSessionManager）
-    const signal = this.operationSession?.getSignal()
+    // 記錄事件收到的時間戳
+    const receivedAt = Date.now()
+
+    // 組裝 ExecuteOptions（不包含 signal，符合 CA 原則）
+    const options: ExecuteOptions = { receivedAt }
 
     // 將事件加入處理鏈，等待前一個事件完成
     this.eventChain = this.eventChain
       .then(() => {
+        // 檢查是否已取消（Adapter 層內部邏輯）
+        if (this.operationSession?.getSignal()?.aborted) {
+          console.info(`[EventRouter] Skipping aborted event: ${eventType}`)
+          return
+        }
         console.info(`[EventRouter] Processing event: ${eventType}`)
-        // 調用 Use Case 執行（可能包含 async 動畫），傳遞 AbortSignal
-        return port.execute(payload, signal)
+        // 調用 Use Case 執行（可能包含 async 動畫），傳遞 ExecuteOptions
+        return port.execute(payload, options)
       })
       .catch((error) => {
         // 捕獲錯誤，避免中斷事件鏈

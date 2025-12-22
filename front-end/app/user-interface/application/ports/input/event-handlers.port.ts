@@ -5,6 +5,9 @@
  * 由 Application Layer 定義並實作為 Use Cases，
  * 供 Adapter Layer（SSE Listener）呼叫。
  *
+ * 所有 Port 都繼承自 EventHandlerPort<T>，統一 execute 方法簽名：
+ * - execute(event: T, options: ExecuteOptions): void | Promise<void>
+ *
  * 包含 13 個事件處理器 Input Ports（對應 13 種 SSE 事件）：
  * - HandleGameStartedPort
  * - HandleRoundDealtPort
@@ -39,6 +42,7 @@ import type {
   TurnErrorEvent,
   GameErrorEvent,
 } from '#shared/contracts'
+import type { EventHandlerPort } from './event-handler.interface'
 
 /**
  * HandleGameStartedPort - Input Port
@@ -48,14 +52,7 @@ import type {
  *
  * 實作: HandleGameStartedUseCase
  */
-export interface HandleGameStartedPort {
-  /**
-   * 執行 GameStarted 事件處理
-   *
-   * @param event - GameStarted 事件
-   */
-  execute(event: GameStartedEvent): void | Promise<void>
-}
+export interface HandleGameStartedPort extends EventHandlerPort<GameStartedEvent> {}
 
 /**
  * HandleRoundDealtPort - Input Port
@@ -65,14 +62,7 @@ export interface HandleGameStartedPort {
  *
  * 實作: HandleRoundDealtUseCase
  */
-export interface HandleRoundDealtPort {
-  /**
-   * 執行 RoundDealt 事件處理
-   *
-   * @param event - RoundDealt 事件
-   */
-  execute(event: RoundDealtEvent): void | Promise<void>
-}
+export interface HandleRoundDealtPort extends EventHandlerPort<RoundDealtEvent> {}
 
 /**
  * HandleTurnCompletedPort - Input Port
@@ -82,15 +72,7 @@ export interface HandleRoundDealtPort {
  *
  * 實作: HandleTurnCompletedUseCase
  */
-export interface HandleTurnCompletedPort {
-  /**
-   * 執行 TurnCompleted 事件處理
-   *
-   * @param event - TurnCompleted 事件
-   * @param signal - AbortSignal（可選），用於取消操作
-   */
-  execute(event: TurnCompletedEvent, signal?: AbortSignal): void | Promise<void>
-}
+export interface HandleTurnCompletedPort extends EventHandlerPort<TurnCompletedEvent> {}
 
 /**
  * HandleSelectionRequiredPort - Input Port
@@ -100,15 +82,7 @@ export interface HandleTurnCompletedPort {
  *
  * 實作: HandleSelectionRequiredUseCase
  */
-export interface HandleSelectionRequiredPort {
-  /**
-   * 執行 SelectionRequired 事件處理
-   *
-   * @param event - SelectionRequired 事件
-   * @param signal - AbortSignal（可選），用於取消操作
-   */
-  execute(event: SelectionRequiredEvent, signal?: AbortSignal): void | Promise<void>
-}
+export interface HandleSelectionRequiredPort extends EventHandlerPort<SelectionRequiredEvent> {}
 
 /**
  * HandleTurnProgressAfterSelectionPort - Input Port
@@ -118,15 +92,7 @@ export interface HandleSelectionRequiredPort {
  *
  * 實作: HandleTurnProgressAfterSelectionUseCase
  */
-export interface HandleTurnProgressAfterSelectionPort {
-  /**
-   * 執行 TurnProgressAfterSelection 事件處理
-   *
-   * @param event - TurnProgressAfterSelection 事件
-   * @param signal - AbortSignal（可選），用於取消操作
-   */
-  execute(event: TurnProgressAfterSelectionEvent, signal?: AbortSignal): void | Promise<void>
-}
+export interface HandleTurnProgressAfterSelectionPort extends EventHandlerPort<TurnProgressAfterSelectionEvent> {}
 
 /**
  * HandleDecisionRequiredPort - Input Port
@@ -136,15 +102,7 @@ export interface HandleTurnProgressAfterSelectionPort {
  *
  * 實作: HandleDecisionRequiredUseCase
  */
-export interface HandleDecisionRequiredPort {
-  /**
-   * 執行 DecisionRequired 事件處理
-   *
-   * @param event - DecisionRequired 事件
-   * @param signal - AbortSignal（可選），用於取消操作
-   */
-  execute(event: DecisionRequiredEvent, signal?: AbortSignal): void | Promise<void>
-}
+export interface HandleDecisionRequiredPort extends EventHandlerPort<DecisionRequiredEvent> {}
 
 /**
  * HandleDecisionMadePort - Input Port
@@ -154,14 +112,7 @@ export interface HandleDecisionRequiredPort {
  *
  * 實作: HandleDecisionMadeUseCase
  */
-export interface HandleDecisionMadePort {
-  /**
-   * 執行 DecisionMade 事件處理
-   *
-   * @param event - DecisionMade 事件
-   */
-  execute(event: DecisionMadeEvent): void | Promise<void>
-}
+export interface HandleDecisionMadePort extends EventHandlerPort<DecisionMadeEvent> {}
 
 /**
  * HandleRoundScoredPort - Input Port
@@ -171,14 +122,7 @@ export interface HandleDecisionMadePort {
  *
  * 實作: HandleRoundScoredUseCase
  */
-export interface HandleRoundScoredPort {
-  /**
-   * 執行 RoundScored 事件處理
-   *
-   * @param event - RoundScored 事件
-   */
-  execute(event: RoundScoredEvent): void | Promise<void>
-}
+export interface HandleRoundScoredPort extends EventHandlerPort<RoundScoredEvent> {}
 
 /**
  * HandleRoundDrawnPort - Input Port
@@ -188,14 +132,7 @@ export interface HandleRoundScoredPort {
  *
  * 實作: HandleRoundDrawnUseCase
  */
-export interface HandleRoundDrawnPort {
-  /**
-   * 執行 RoundDrawn 事件處理
-   *
-   * @param event - RoundDrawn 事件
-   */
-  execute(event: RoundDrawnEvent): void | Promise<void>
-}
+export interface HandleRoundDrawnPort extends EventHandlerPort<RoundDrawnEvent> {}
 
 /**
  * HandleRoundEndedInstantlyPort - Input Port
@@ -205,14 +142,7 @@ export interface HandleRoundDrawnPort {
  *
  * 實作: HandleRoundEndedInstantlyUseCase
  */
-export interface HandleRoundEndedInstantlyPort {
-  /**
-   * 執行 RoundEndedInstantly 事件處理
-   *
-   * @param event - RoundEndedInstantly 事件
-   */
-  execute(event: RoundEndedInstantlyEvent): void | Promise<void>
-}
+export interface HandleRoundEndedInstantlyPort extends EventHandlerPort<RoundEndedInstantlyEvent> {}
 
 /**
  * HandleGameFinishedPort - Input Port
@@ -222,14 +152,7 @@ export interface HandleRoundEndedInstantlyPort {
  *
  * 實作: HandleGameFinishedUseCase
  */
-export interface HandleGameFinishedPort {
-  /**
-   * 執行 GameFinished 事件處理
-   *
-   * @param event - GameFinished 事件
-   */
-  execute(event: GameFinishedEvent): void | Promise<void>
-}
+export interface HandleGameFinishedPort extends EventHandlerPort<GameFinishedEvent> {}
 
 /**
  * HandleTurnErrorPort - Input Port
@@ -239,14 +162,7 @@ export interface HandleGameFinishedPort {
  *
  * 實作: HandleTurnErrorUseCase
  */
-export interface HandleTurnErrorPort {
-  /**
-   * 執行 TurnError 事件處理
-   *
-   * @param event - TurnError 事件
-   */
-  execute(event: TurnErrorEvent): void | Promise<void>
-}
+export interface HandleTurnErrorPort extends EventHandlerPort<TurnErrorEvent> {}
 
 /**
  * HandleGameErrorPort - Input Port
@@ -261,14 +177,7 @@ export interface HandleTurnErrorPort {
  *
  * 實作: HandleGameErrorUseCase
  */
-export interface HandleGameErrorPort {
-  /**
-   * 執行 GameError 事件處理
-   *
-   * @param event - GameError 事件
-   */
-  execute(event: GameErrorEvent): void | Promise<void>
-}
+export interface HandleGameErrorPort extends EventHandlerPort<GameErrorEvent> {}
 
 /**
  * HandleRoundEndedPort - Input Port
@@ -279,12 +188,5 @@ export interface HandleGameErrorPort {
  *
  * 實作: HandleRoundEndedUseCase
  */
-export interface HandleRoundEndedPort {
-  /**
-   * 執行 RoundEnded 事件處理
-   *
-   * @param event - RoundEnded 事件
-   */
-  execute(event: RoundEndedEvent): void | Promise<void>
-}
+export interface HandleRoundEndedPort extends EventHandlerPort<RoundEndedEvent> {}
 

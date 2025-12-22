@@ -4,7 +4,7 @@
 
 import type { RoundDrawnEvent } from '#shared/contracts'
 import type { NotificationPort, GameStatePort } from '../../ports/output'
-import type { HandleRoundDrawnPort } from '../../ports/input'
+import type { HandleRoundDrawnPort, ExecuteOptions } from '../../ports/input'
 
 export class HandleRoundDrawnUseCase implements HandleRoundDrawnPort {
   constructor(
@@ -12,7 +12,7 @@ export class HandleRoundDrawnUseCase implements HandleRoundDrawnPort {
     private readonly gameState: GameStatePort
   ) {}
 
-  execute(event: RoundDrawnEvent): void {
+  execute(event: RoundDrawnEvent, _options: ExecuteOptions): void {
     // 0. 清理：停止倒數計時、清除流程階段
     this.notification.cleanup()
     this.gameState.setFlowStage(null)

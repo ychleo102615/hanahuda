@@ -12,10 +12,16 @@
  *   StartGamePort,
  *   PlayHandCardPort,
  *   HandleGameStartedPort,
- *   HandleRoundDealtPort
+ *   HandleRoundDealtPort,
+ *   ExecuteOptions,
+ *   EventHandlerPort
  * } from '~/user-interface/application/ports/input'
  * ```
  */
+
+// Event Handler Base Types
+export type { ExecuteOptions } from './execute-options'
+export type { EventHandlerPort } from './event-handler.interface'
 
 // Game Initialization Input Ports
 export type { StartGamePort, StartGameOptions } from './start-game.port'

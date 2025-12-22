@@ -12,7 +12,7 @@
 
 import type { GameFinishedEvent } from '#shared/contracts'
 import type { NotificationPort, UIStatePort, SessionContextPort, GameStatePort } from '../../ports/output'
-import type { HandleGameFinishedPort } from '../../ports/input'
+import type { HandleGameFinishedPort, ExecuteOptions } from '../../ports/input'
 
 export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
   constructor(
@@ -22,7 +22,10 @@ export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
     private readonly gameState: GameStatePort,
   ) {}
 
-  execute(event: GameFinishedEvent): void {
+  execute(event: GameFinishedEvent, _options: ExecuteOptions): void {
+    // 0. 重置確認繼續遊戲狀態（若因確認超時而結束）
+    this.notification.hideContinueConfirmation()
+
     // 1. 標記遊戲已結束並清除 gameId（防止重連帶舊 ID）
     this.sessionContext.setGameFinished(true)
     this.sessionContext.setGameId(null)

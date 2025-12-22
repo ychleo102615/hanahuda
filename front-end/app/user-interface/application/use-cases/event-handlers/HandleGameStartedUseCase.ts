@@ -15,7 +15,7 @@
 
 import type { GameStartedEvent } from '#shared/contracts'
 import type { UIStatePort, GameStatePort, MatchmakingStatePort, NavigationPort, NotificationPort } from '../../ports/output'
-import type { HandleGameStartedPort } from '../../ports/input'
+import type { HandleGameStartedPort, ExecuteOptions } from '../../ports/input'
 
 export class HandleGameStartedUseCase implements HandleGameStartedPort {
   constructor(
@@ -26,7 +26,7 @@ export class HandleGameStartedUseCase implements HandleGameStartedPort {
     private readonly notification: NotificationPort
   ) {}
 
-  execute(event: GameStartedEvent): void {
+  execute(event: GameStartedEvent, _options: ExecuteOptions): void {
     // 1. 隱藏等待訊息（玩家 A 在等待時收到 GameStarted 事件）
     this.notification.hideWaitingMessage()
 

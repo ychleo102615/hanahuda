@@ -20,7 +20,7 @@
  * ```
  */
 
-import type { HandleGameErrorPort } from '../../ports/input'
+import type { HandleGameErrorPort, ExecuteOptions } from '../../ports/input'
 import type {
   NotificationPort,
   MatchmakingStatePort,
@@ -35,7 +35,7 @@ export class HandleGameErrorUseCase implements HandleGameErrorPort {
     private readonly navigation: NavigationPort
   ) {}
 
-  execute(event: GameErrorEvent): void {
+  execute(event: GameErrorEvent, _options: ExecuteOptions): void {
     // 0. 清理：停止倒數計時
     this.notification.cleanup()
 

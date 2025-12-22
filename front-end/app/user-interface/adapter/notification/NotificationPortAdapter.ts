@@ -225,5 +225,9 @@ export function createNotificationPortAdapter(
     hideContinueConfirmation(): void {
       store.hideContinueConfirmation()
     },
+
+    setContinueConfirmationProcessing(): void {
+      store.setContinueConfirmationProcessing()
+    },
   }
 }

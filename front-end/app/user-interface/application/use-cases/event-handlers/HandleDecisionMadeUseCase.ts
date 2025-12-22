@@ -16,7 +16,7 @@
 
 import type { DecisionMadeEvent } from '#shared/contracts'
 import type { UIStatePort, NotificationPort, GameStatePort } from '../../ports/output'
-import type { HandleDecisionMadePort } from '../../ports/input'
+import type { HandleDecisionMadePort, ExecuteOptions } from '../../ports/input'
 
 export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
   constructor(
@@ -25,7 +25,7 @@ export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
     private readonly gameState: GameStatePort
   ) {}
 
-  execute(event: DecisionMadeEvent): void {
+  execute(event: DecisionMadeEvent, _options: ExecuteOptions): void {
     // 1. 更新玩家 Koi-Koi 倍率
     const multiplier = event.updated_multipliers.player_multipliers[event.player_id]
     if (multiplier !== undefined) {

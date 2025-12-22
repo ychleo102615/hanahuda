@@ -65,6 +65,16 @@ export interface RoundEndedInstantlyData {
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected'
 
 /**
+ * 確認繼續遊戲的狀態
+ *
+ * @description
+ * - HIDDEN: 無需確認或已完成處理
+ * - AWAITING_INPUT: 等待玩家選擇（顯示 Continue / Leave 按鈕）
+ * - AWAITING_SERVER: 等待伺服器回應（顯示 Processing...）
+ */
+export type ContinueConfirmationState = 'HIDDEN' | 'AWAITING_INPUT' | 'AWAITING_SERVER'
+
+/**
  * Toast 類型
  */
 export type ToastType = 'info' | 'success' | 'error' | 'loading'
@@ -176,7 +186,7 @@ export interface UIStateStoreState {
   currentAnnouncement: AnnouncementData | null
 
   // 確認繼續遊戲
-  continueConfirmationVisible: boolean
+  continueConfirmationState: ContinueConfirmationState
   continueConfirmationTimeoutSeconds: number | null
   continueConfirmationCallback: ((decision: 'CONTINUE' | 'LEAVE') => void) | null
 }
@@ -307,7 +317,7 @@ export const useUIStateStore = defineStore('uiState', {
     currentAnnouncement: null,
 
     // 確認繼續遊戲
-    continueConfirmationVisible: false,
+    continueConfirmationState: 'HIDDEN' as ContinueConfirmationState,
     continueConfirmationTimeoutSeconds: null,
     continueConfirmationCallback: null,
   }),
@@ -870,17 +880,30 @@ export const useUIStateStore = defineStore('uiState', {
      * @param onDecision - 玩家選擇後的回調，傳入決策類型
      */
     showContinueConfirmation(timeoutSeconds: number, onDecision: (decision: 'CONTINUE' | 'LEAVE') => void): void {
-      this.continueConfirmationVisible = true
+      this.continueConfirmationState = 'AWAITING_INPUT'
       this.continueConfirmationTimeoutSeconds = timeoutSeconds
       this.continueConfirmationCallback = onDecision
       console.info('[UIStateStore] 顯示確認繼續遊戲介面', { timeoutSeconds })
     },
 
     /**
+     * 設置確認狀態為等待伺服器回應
+     *
+     * @description
+     * 當玩家點擊按鈕或倒數結束時調用，切換到等待伺服器回應狀態。
+     * 清除 callback 防止重複調用。
+     */
+    setContinueConfirmationProcessing(): void {
+      this.continueConfirmationState = 'AWAITING_SERVER'
+      this.continueConfirmationCallback = null
+      console.info('[UIStateStore] 確認狀態切換為等待伺服器回應')
+    },
+
+    /**
      * 隱藏確認繼續遊戲介面
      */
     hideContinueConfirmation(): void {
-      this.continueConfirmationVisible = false
+      this.continueConfirmationState = 'HIDDEN'
       this.continueConfirmationTimeoutSeconds = null
       this.continueConfirmationCallback = null
       console.info('[UIStateStore] 隱藏確認繼續遊戲介面')

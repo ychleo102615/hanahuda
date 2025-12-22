@@ -18,7 +18,7 @@ import type { SelectionRequiredEvent } from '#shared/contracts'
 import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { CardPlayStateCallbacks } from '../../ports/output/animation.port'
 import type { DomainFacade } from '../../types/domain-facade'
-import type { HandleSelectionRequiredPort } from '../../ports/input'
+import type { HandleSelectionRequiredPort, ExecuteOptions } from '../../ports/input'
 import { AbortOperationError } from '../../types'
 import { waitForLayout } from '../../../adapter/abort'
 
@@ -30,16 +30,16 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     private readonly notification: NotificationPort
   ) {}
 
-  execute(event: SelectionRequiredEvent, signal?: AbortSignal): Promise<void> {
-    return this.executeAsync(event, signal)
+  execute(event: SelectionRequiredEvent, _options: ExecuteOptions): Promise<void> {
+    return this.executeAsync(event)
   }
 
   /**
    * 非同步執行動畫和狀態更新
    */
-  private async executeAsync(event: SelectionRequiredEvent, signal?: AbortSignal): Promise<void> {
+  private async executeAsync(event: SelectionRequiredEvent): Promise<void> {
     try {
-      await this.executeAsyncCore(event, signal)
+      await this.executeAsyncCore(event)
     } catch (error) {
       if (error instanceof AbortOperationError) {
         console.info('[HandleSelectionRequiredUseCase] Aborted due to state recovery')
@@ -50,9 +50,9 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
   }
 
   /**
-   * 核心執行邏輯（可被中斷）
+   * 核心執行邏輯
    */
-  private async executeAsyncCore(event: SelectionRequiredEvent, signal?: AbortSignal): Promise<void> {
+  private async executeAsyncCore(event: SelectionRequiredEvent): Promise<void> {
     // 記錄動畫開始時間（用於計算動畫耗時）
     const startTS = new Date()
 
@@ -92,7 +92,7 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     this.gameState.updateFieldCards(newFieldCards)
 
     // 等待 DOM 布局完成
-    await waitForLayout(1, signal)
+    await waitForLayout(1)
 
     // 播放翻牌動畫（從牌堆飛到場牌）
     await this.animation.playFlipFromDeckAnimation(event.drawn_card)

@@ -17,7 +17,7 @@
 import type { TurnCompletedEvent } from '#shared/contracts'
 import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { CardPlayStateCallbacks } from '../../ports/output/animation.port'
-import type { HandleTurnCompletedPort } from '../../ports/input'
+import type { HandleTurnCompletedPort, ExecuteOptions } from '../../ports/input'
 import type { DomainFacade } from '../../types/domain-facade'
 import { AbortOperationError } from '../../types'
 
@@ -32,16 +32,16 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
   /**
    * 執行回合完成事件處理
    */
-  execute(event: TurnCompletedEvent, signal?: AbortSignal): Promise<void> {
-    return this.executeAsync(event, signal)
+  execute(event: TurnCompletedEvent, _options: ExecuteOptions): Promise<void> {
+    return this.executeAsync(event)
   }
 
   /**
    * 非同步執行動畫和狀態更新
    */
-  private async executeAsync(event: TurnCompletedEvent, signal?: AbortSignal): Promise<void> {
+  private async executeAsync(event: TurnCompletedEvent): Promise<void> {
     try {
-      await this.executeAsyncCore(event, signal)
+      await this.executeAsyncCore(event)
     } catch (error) {
       if (error instanceof AbortOperationError) {
         console.info('[HandleTurnCompletedUseCase] Aborted due to state recovery')
@@ -52,9 +52,9 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
   }
 
   /**
-   * 核心執行邏輯（可被中斷）
+   * 核心執行邏輯
    */
-  private async executeAsyncCore(event: TurnCompletedEvent, signal?: AbortSignal): Promise<void> {
+  private async executeAsyncCore(event: TurnCompletedEvent): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
