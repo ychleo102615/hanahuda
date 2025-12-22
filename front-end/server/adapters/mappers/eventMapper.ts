@@ -626,6 +626,8 @@ export class EventMapper implements FullEventMapperPort {
       })),
       current_flow_stage: snapshot.current_flow_stage,
       active_player_id: snapshot.active_player_id,
+      current_round: snapshot.current_round,
+      dealer_id: snapshot.dealer_id,
       koi_statuses: snapshot.koi_statuses.map(ks => ({
         player_id: ks.player_id,
         koi_multiplier: ks.koi_multiplier,

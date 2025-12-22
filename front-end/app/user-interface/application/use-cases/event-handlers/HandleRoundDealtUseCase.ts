@@ -67,8 +67,9 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
     const totalDeckCards = this.gameState.getRuleset().total_deck_cards
     this.gameState.updateDeckRemaining(totalDeckCards)
 
-    // 記錄莊家 ID
+    // 記錄莊家 ID 和目前局數
     this.gameState.setDealerId(event.dealer_id)
+    this.gameState.setCurrentRound(event.current_round)
     const isPlayerDealer = event.dealer_id === localPlayerId
 
     // 0. 等待頁面載入完成

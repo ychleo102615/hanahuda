@@ -420,6 +420,10 @@ export interface GameSnapshotRestore extends BaseEvent {
   readonly player_scores: ReadonlyArray<PlayerScore>
   readonly current_flow_stage: FlowState
   readonly active_player_id: string
+  /** 目前局數（從 1 開始） */
+  readonly current_round: number
+  /** 目前莊家 ID */
+  readonly dealer_id: string
   readonly koi_statuses: ReadonlyArray<KoiStatus>
   readonly action_timeout_seconds: number
   /** AWAITING_SELECTION 時的選擇上下文（可選） */

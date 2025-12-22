@@ -22,7 +22,7 @@
       @click.self="handleClose"
     >
       <div
-        class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all"
+        class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all flex flex-col max-h-[85vh]"
         @click.stop
       >
         <!-- Header -->
@@ -38,7 +38,7 @@
         </div>
 
         <!-- Body -->
-        <div class="px-6 py-6 space-y-4">
+        <div class="px-6 py-6 space-y-4 overflow-y-auto flex-1 min-h-0">
           <!-- RoundDrawn Content -->
           <div v-if="panelType === 'roundDrawn'" class="text-center">
             <p class="text-lg font-medium text-gray-800 mb-4">
@@ -152,7 +152,7 @@
         </div>
 
         <!-- Footer: Countdown Display, Confirm Button, or Continue Button -->
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex-shrink-0 min-h-[10vh]">
           <!-- 確認繼續遊戲 - 等待玩家輸入 -->
           <template v-if="continueConfirmationState === 'AWAITING_INPUT'">
             <div class="flex flex-col items-center gap-3">

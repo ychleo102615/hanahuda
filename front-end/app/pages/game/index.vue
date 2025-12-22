@@ -17,15 +17,12 @@ definePageMeta({
   middleware: 'game',
 })
 
-import { computed, onMounted, onUnmounted } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
+import { onMounted, onUnmounted } from 'vue'
 import { useDependency, useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
 import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
 import type { SessionContextPort, GameConnectionPort } from '~/user-interface/application/ports/output'
 import type { StartGamePort } from '~/user-interface/application/ports/input'
-import TopInfoBar from '~/components/TopInfoBar.vue'
+import GameTopInfoBar from '~/components/GameTopInfoBar.vue'
 import FieldZone from './components/FieldZone.vue'
 import PlayerHandZone from './components/PlayerHandZone.vue'
 import OpponentDepositoryZone from './components/OpponentDepositoryZone.vue'
@@ -49,12 +46,6 @@ import { usePageVisibility } from '~/user-interface/adapter/composables/usePageV
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
 
-const gameState = useGameStateStore()
-const uiState = useUIStateStore()
-
-// opponentHandCount 已移至 TopInfoBar 顯示
-const { connectionStatus } = storeToRefs(uiState)
-
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const gameMode = useGameMode()
@@ -76,33 +67,6 @@ const gameConnection = gameMode === 'backend'
 const mockEventEmitter = gameMode === 'mock'
   ? useOptionalDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
   : null
-
-// 連線狀態顯示
-const connectionStatusText = computed(() => {
-  switch (connectionStatus.value) {
-    case 'connected':
-      return 'Connected'
-    case 'connecting':
-      return 'Connecting...'
-    case 'disconnected':
-      return 'Disconnected'
-    default:
-      return ''
-  }
-})
-
-const connectionStatusClass = computed(() => {
-  switch (connectionStatus.value) {
-    case 'connected':
-      return 'text-green-400'
-    case 'connecting':
-      return 'text-yellow-400'
-    case 'disconnected':
-      return 'text-red-400'
-    default:
-      return ''
-  }
-})
 
 // Restart Game 處理函數
 function handleRestartGame() {
@@ -184,51 +148,7 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- 頂部資訊列 (~10% viewport) -->
     <header class="h-[10%] min-h-12 relative">
-      <TopInfoBar variant="game" @menu-click="toggleActionPanel">
-        <template #right>
-          <div class="flex items-center gap-4">
-            <div class="text-center">
-              <div class="text-xs text-gray-400">You</div>
-              <div class="text-xl font-bold">{{ gameState.myScore }}</div>
-              <!-- Koi-Koi 資訊（固定高度防止 layout shift） -->
-              <div class="h-4 flex items-center justify-center">
-                <span
-                  v-if="gameState.myKoiKoiMultiplier > 1"
-                  class="text-xs text-amber-400"
-                >
-                  KK ×{{ gameState.myKoiKoiCount }} ({{ gameState.myKoiKoiMultiplier }}x)
-                </span>
-              </div>
-            </div>
-            <div class="text-xs" :class="connectionStatusClass">
-              {{ connectionStatusText }}
-            </div>
-            <!-- T043 [US3]: Menu Button -->
-            <button
-              data-testid="menu-button"
-              aria-label="Open menu"
-              class="p-2 rounded-lg hover:bg-white/10 transition-colors"
-              @click="toggleActionPanel"
-            >
-              <!-- Hamburger Icon -->
-              <svg
-                class="h-6 w-6 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
-          </div>
-        </template>
-      </TopInfoBar>
+      <GameTopInfoBar @menu-click="toggleActionPanel" />
     </header>
 
     <!-- 對手已獲得牌區 (~15% viewport) -->

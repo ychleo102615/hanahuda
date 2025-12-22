@@ -64,6 +64,7 @@ export interface GameStateStoreState {
   flowStage: FlowState | null
   activePlayerId: string | null
   dealerId: string | null // 當前回合莊家
+  currentRound: number | null // 目前局數（從 1 開始）
 
   // 牌面狀態
   fieldCards: string[] // 場上卡片 ID 列表
@@ -111,6 +112,8 @@ export interface GameStateStoreGetters {
   groupedMyDepository: GroupedDepository // 玩家獲得區分組
   groupedOpponentDepository: GroupedDepository // 對手獲得區分組
   visualLayers: number // 牌堆視覺堆疊層數 (1-4)
+  isPlayerDealer: boolean // 本地玩家是否為莊家
+  isOpponentDealer: boolean // 對手是否為莊家
 }
 
 /**
@@ -137,6 +140,7 @@ export const useGameStateStore = defineStore('gameState', {
     flowStage: null,
     activePlayerId: null,
     dealerId: null,
+    currentRound: null,
 
     // 牌面狀態
     fieldCards: [],
@@ -275,6 +279,20 @@ export const useGameStateStore = defineStore('gameState', {
       if (this.deckRemaining >= 1) return 2
       return 1
     },
+
+    /**
+     * 本地玩家是否為莊家
+     */
+    isPlayerDealer(): boolean {
+      return this.dealerId !== null && this.dealerId === this.localPlayerId
+    },
+
+    /**
+     * 對手是否為莊家
+     */
+    isOpponentDealer(): boolean {
+      return this.dealerId !== null && this.localPlayerId !== null && this.dealerId !== this.localPlayerId
+    },
   },
 
   actions: {
@@ -356,6 +374,8 @@ export const useGameStateStore = defineStore('gameState', {
 
       this.flowStage = snapshot.current_flow_stage
       this.activePlayerId = snapshot.active_player_id
+      this.currentRound = snapshot.current_round
+      this.dealerId = snapshot.dealer_id
 
       // 更新場牌
       this.fieldCards = [...snapshot.field_cards]
@@ -431,6 +451,15 @@ export const useGameStateStore = defineStore('gameState', {
     setFlowStage(stage: FlowState | null): void {
       this.flowStage = stage
       // 注意：不再自動設定 activePlayerId，避免覆蓋正確的活動玩家
+    },
+
+    /**
+     * 設定目前局數
+     *
+     * @param round - 局數（從 1 開始）
+     */
+    setCurrentRound(round: number): void {
+      this.currentRound = round
     },
 
     /**
@@ -559,6 +588,7 @@ export const useGameStateStore = defineStore('gameState', {
       this.flowStage = null
       this.activePlayerId = null
       this.dealerId = null
+      this.currentRound = null
 
       this.fieldCards = []
       this.myHandCards = []

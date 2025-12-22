@@ -47,6 +47,10 @@ export function createGameStatePortAdapter(): GameStatePort {
       store.dealerId = playerId
     },
 
+    setCurrentRound(round: number): void {
+      store.currentRound = round
+    },
+
     updateFieldCards(cards: string[]): void {
       store.updateFieldCards(cards)
     },
@@ -107,6 +111,10 @@ export function createGameStatePortAdapter(): GameStatePort {
 
     getDealerId(): string | null {
       return store.dealerId
+    },
+
+    getCurrentRound(): number | null {
+      return store.currentRound
     },
 
     getHandCards(): string[] {

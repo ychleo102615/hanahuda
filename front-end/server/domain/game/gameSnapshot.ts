@@ -49,6 +49,10 @@ export interface GameSnapshot {
   readonly current_flow_stage: FlowState
   /** 目前行動玩家 ID */
   readonly active_player_id: string
+  /** 目前局數（從 1 開始） */
+  readonly current_round: number
+  /** 目前莊家 ID */
+  readonly dealer_id: string
   /** 各玩家的 Koi-Koi 狀態 */
   readonly koi_statuses: readonly ContractKoiStatus[]
   /** AWAITING_SELECTION 時的選擇上下文（可選） */
@@ -155,6 +159,8 @@ export function toSnapshot(game: Game): GameSnapshot | null {
     player_scores: game.cumulativeScores,
     current_flow_stage: round.flowState,
     active_player_id: round.activePlayerId,
+    current_round: game.roundsPlayed + 1,
+    dealer_id: round.dealerId,
     koi_statuses,
   }
 

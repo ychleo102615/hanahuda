@@ -134,6 +134,18 @@ export interface GameStatePort {
   setDealerId(playerId: string): void
 
   /**
+   * 設定目前局數
+   *
+   * @param round - 局數（從 1 開始）
+   *
+   * @example
+   * ```typescript
+   * gameState.setCurrentRound(3) // 第 3 局
+   * ```
+   */
+  setCurrentRound(round: number): void
+
+  /**
    * 更新場牌列表
    *
    * @param cards - 場牌 ID 列表
@@ -329,6 +341,18 @@ export interface GameStatePort {
    * ```
    */
   getDealerId(): string | null
+
+  /**
+   * 取得目前局數
+   *
+   * @returns 目前局數，若未開始則返回 null
+   *
+   * @example
+   * ```typescript
+   * const round = gameState.getCurrentRound()
+   * ```
+   */
+  getCurrentRound(): number | null
 
   /**
    * 取得玩家手牌列表

@@ -29,7 +29,7 @@ import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output'
 import { RoomApiClient, type RoomType } from '~/user-interface/adapter/api/RoomApiClient'
 import ActionPanel from '~/components/ActionPanel.vue'
-import TopInfoBar from '~/components/TopInfoBar.vue'
+import LobbyTopInfoBar from '~/components/LobbyTopInfoBar.vue'
 import type { ActionPanelItem } from '~/components/ActionPanel.vue'
 
 // Pinia Store
@@ -124,7 +124,7 @@ const handleRetry = () => {
   <div class="min-h-screen bg-green-900 flex flex-col">
     <!-- 頂部資訊列 -->
     <header class="h-14 shrink-0">
-      <TopInfoBar variant="lobby" @menu-click="togglePanel" />
+      <LobbyTopInfoBar @menu-click="togglePanel" />
     </header>
 
     <!-- 主要內容區 -->
