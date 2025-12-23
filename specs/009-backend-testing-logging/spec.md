@@ -104,7 +104,7 @@
 
 ### Key Entities
 
-- **GameLog**: 遊戲日誌記錄，包含 ID、遊戲 ID、記錄類型（command/event）、內容、時間戳、關聯玩家 ID
+- **GameLog**: 遊戲日誌記錄，包含 ID、遊戲 ID、記錄類型（command/event）、內容、時間戳、關聯玩家 ID；資料保留 30 天後自動清理
 - **TestSuite**: 測試套件，組織 Domain 和 Application 層的測試案例
 
 ## Success Criteria *(mandatory)*
@@ -117,6 +117,12 @@
 - **SC-004**: 100% 的 Domain Services 和 Use Cases 使用統一的 logger 格式
 - **SC-005**: 所有遊戲 Commands 和 Events 都被記錄到資料庫，無遺漏
 - **SC-006**: Event/Command 資料庫寫入不增加遊戲操作延遲超過 10ms
+
+## Clarifications
+
+### Session 2025-12-23
+
+- Q: GameLog 資料應保留多久？ → A: 保留 30 天後自動清理
 
 ## Assumptions
 
