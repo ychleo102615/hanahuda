@@ -8,7 +8,7 @@
  * 所有 Port 都繼承自 EventHandlerPort<T>，統一 execute 方法簽名：
  * - execute(event: T, options: ExecuteOptions): void | Promise<void>
  *
- * 包含 13 個事件處理器 Input Ports（對應 13 種 SSE 事件）：
+ * 包含 10 個事件處理器 Input Ports（對應 10 種 SSE 事件）：
  * - HandleGameStartedPort
  * - HandleRoundDealtPort
  * - HandleTurnCompletedPort
@@ -16,9 +16,7 @@
  * - HandleTurnProgressAfterSelectionPort
  * - HandleDecisionRequiredPort
  * - HandleDecisionMadePort
- * - HandleRoundScoredPort
- * - HandleRoundDrawnPort
- * - HandleRoundEndedInstantlyPort
+ * - HandleRoundEndedPort
  * - HandleGameFinishedPort
  * - HandleTurnErrorPort
  * - HandleGameErrorPort
@@ -34,9 +32,6 @@ import type {
   TurnProgressAfterSelectionEvent,
   DecisionRequiredEvent,
   DecisionMadeEvent,
-  RoundScoredEvent,
-  RoundDrawnEvent,
-  RoundEndedInstantlyEvent,
   RoundEndedEvent,
   GameFinishedEvent,
   TurnErrorEvent,
@@ -113,36 +108,6 @@ export interface HandleDecisionRequiredPort extends EventHandlerPort<DecisionReq
  * 實作: HandleDecisionMadeUseCase
  */
 export interface HandleDecisionMadePort extends EventHandlerPort<DecisionMadeEvent> {}
-
-/**
- * HandleRoundScoredPort - Input Port
- *
- * @description
- * 處理 RoundScored 事件（局結束計分）。
- *
- * 實作: HandleRoundScoredUseCase
- */
-export interface HandleRoundScoredPort extends EventHandlerPort<RoundScoredEvent> {}
-
-/**
- * HandleRoundDrawnPort - Input Port
- *
- * @description
- * 處理 RoundDrawn 事件（平局）。
- *
- * 實作: HandleRoundDrawnUseCase
- */
-export interface HandleRoundDrawnPort extends EventHandlerPort<RoundDrawnEvent> {}
-
-/**
- * HandleRoundEndedInstantlyPort - Input Port
- *
- * @description
- * 處理 RoundEndedInstantly 事件（Teshi 或場牌流局）。
- *
- * 實作: HandleRoundEndedInstantlyUseCase
- */
-export interface HandleRoundEndedInstantlyPort extends EventHandlerPort<RoundEndedInstantlyEvent> {}
 
 /**
  * HandleGameFinishedPort - Input Port

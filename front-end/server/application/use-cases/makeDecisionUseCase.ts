@@ -17,10 +17,6 @@ import {
   type Game,
 } from '~~/server/domain/game'
 import type {
-  DecisionMadeEvent,
-  RoundScoredEvent,
-  RoundDealtEvent,
-  GameFinishedEvent,
   Yaku,
   PlayerScore,
 } from '#shared/contracts'

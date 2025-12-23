@@ -35,9 +35,6 @@ import { HandleSelectionRequiredUseCase } from '../../application/use-cases/even
 import { HandleTurnProgressAfterSelectionUseCase } from '../../application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
 import { HandleDecisionRequiredUseCase } from '../../application/use-cases/event-handlers/HandleDecisionRequiredUseCase'
 import { HandleDecisionMadeUseCase } from '../../application/use-cases/event-handlers/HandleDecisionMadeUseCase'
-import { HandleRoundScoredUseCase } from '../../application/use-cases/event-handlers/HandleRoundScoredUseCase'
-import { HandleRoundEndedInstantlyUseCase } from '../../application/use-cases/event-handlers/HandleRoundEndedInstantlyUseCase'
-import { HandleRoundDrawnUseCase } from '../../application/use-cases/event-handlers/HandleRoundDrawnUseCase'
 import { HandleRoundEndedUseCase } from '../../application/use-cases/event-handlers/HandleRoundEndedUseCase'
 import { HandleGameFinishedUseCase } from '../../application/use-cases/event-handlers/HandleGameFinishedUseCase'
 import { HandleTurnErrorUseCase } from '../../application/use-cases/event-handlers/HandleTurnErrorUseCase'
@@ -419,29 +416,6 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  // T081 [US4]: 註冊 RoundScored 事件處理器
-  // Phase 9: 加入 NotificationPort（倒數計時整合）
-  container.register(
-    TOKENS.HandleRoundScoredPort,
-    () => new HandleRoundScoredUseCase(uiStatePort, domainFacade, notificationPort, gameStatePort),
-    { singleton: true }
-  )
-
-  // T082 [US4]: 註冊 RoundEndedInstantly 事件處理器
-  // Phase 9: 加入 NotificationPort（倒數計時整合）
-  container.register(
-    TOKENS.HandleRoundEndedInstantlyPort,
-    () => new HandleRoundEndedInstantlyUseCase(uiStatePort, notificationPort, gameStatePort),
-    { singleton: true }
-  )
-
-  // T083 [US4]: 註冊 RoundDrawn 事件處理器
-  container.register(
-    TOKENS.HandleRoundDrawnPort,
-    () => new HandleRoundDrawnUseCase(notificationPort, gameStatePort),
-    { singleton: true }
-  )
-
   // 註冊 RoundEnded 事件處理器（統一處理 SCORED / DRAWN / INSTANT_*）
   container.register(
     TOKENS.HandleRoundEndedPort,
@@ -683,22 +657,14 @@ function registerEventRoutes(container: DIContainer): void {
   router.register('DecisionRequired', decisionRequiredPort)
   router.register('DecisionMade', decisionMadePort)
 
-  // T081-T086 [US4]: 綁定 RoundScored、RoundEndedInstantly、RoundDrawn、GameFinished、TurnError 事件
-  const roundScoredPort = container.resolve(TOKENS.HandleRoundScoredPort) as { execute: (payload: unknown) => void }
-  const roundEndedInstantlyPort = container.resolve(TOKENS.HandleRoundEndedInstantlyPort) as { execute: (payload: unknown) => void }
-  const roundDrawnPort = container.resolve(TOKENS.HandleRoundDrawnPort) as { execute: (payload: unknown) => void }
+  // T081-T086 [US4]: 綁定 RoundEnded、GameFinished、TurnError 事件
+  const roundEndedPort = container.resolve(TOKENS.HandleRoundEndedPort) as { execute: (payload: unknown) => void }
   const gameFinishedPort = container.resolve(TOKENS.HandleGameFinishedPort) as { execute: (payload: unknown) => void }
   const turnErrorPort = container.resolve(TOKENS.HandleTurnErrorPort) as { execute: (payload: unknown) => void }
 
-  router.register('RoundScored', roundScoredPort)
-  router.register('RoundEndedInstantly', roundEndedInstantlyPort)
-  router.register('RoundDrawn', roundDrawnPort)
+  router.register('RoundEnded', roundEndedPort)
   router.register('GameFinished', gameFinishedPort)
   router.register('TurnError', turnErrorPort)
-
-  // 註冊 RoundEnded 統一事件（取代 RoundScored、RoundDrawn、RoundEndedInstantly）
-  const roundEndedPort = container.resolve(TOKENS.HandleRoundEndedPort) as { execute: (payload: unknown) => void }
-  router.register('RoundEnded', roundEndedPort)
 
   // GameSnapshotRestore 事件：使用 HandleStateRecoveryPort.handleSnapshotRestore()
   const handleStateRecoveryPort = container.resolve(TOKENS.HandleStateRecoveryPort) as HandleStateRecoveryPort

@@ -67,9 +67,6 @@ export type {
   TurnProgressAfterSelectionEvent,
   DecisionRequiredEvent,
   DecisionMadeEvent,
-  RoundScoredEvent,
-  RoundDrawnEvent,
-  RoundEndedInstantlyEvent,
   // RoundEnded (統一回合結束事件)
   RoundScoringData,
   RoundInstantEndData,

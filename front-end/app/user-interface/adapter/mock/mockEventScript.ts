@@ -295,34 +295,38 @@ export const mockEventScript: MockEventItem[] = [
     delay: 3000,
   },
 
-  // 9. 回合計分
+  // 9. 回合結束（使用 RoundEnded 統一事件）
   {
-    eventType: 'RoundScored',
+    eventType: 'RoundEnded',
     payload: {
-      event_type: 'RoundScored',
+      event_type: 'RoundEnded',
       event_id: 'evt-010',
       timestamp: new Date().toISOString(),
-      winner_id: 'player-1',
-      yaku_list: [
-        {
-          yaku_type: 'AKA_TAN',
-          base_points: 6,
-          contributing_cards: ['0131', '0231', '0331'],
-        },
-      ],
-      base_score: 6,
-      final_score: 6,
-      multipliers: {
-        player_multipliers: {
-          'player-1': 1,
-          'player-2': 1,
-        },
-      },
+      reason: 'SCORED',
       updated_total_scores: [
         { player_id: 'player-1', score: 6 },
         { player_id: 'player-2', score: 0 },
       ],
+      scoring_data: {
+        winner_id: 'player-1',
+        yaku_list: [
+          {
+            yaku_type: 'AKA_TAN',
+            base_points: 6,
+            contributing_cards: ['0131', '0231', '0331'],
+          },
+        ],
+        base_score: 6,
+        final_score: 6,
+        multipliers: {
+          player_multipliers: {
+            'player-1': 1,
+            'player-2': 1,
+          },
+        },
+      },
       display_timeout_seconds: 5,
+      require_continue_confirmation: false,
     },
     delay: 3000,
   },

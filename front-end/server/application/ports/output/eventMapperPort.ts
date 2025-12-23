@@ -14,14 +14,12 @@ import type { Game } from '~~/server/domain/game/game'
 import type {
   GameStartedEvent,
   RoundDealtEvent,
-  RoundDrawnEvent,
   GameSnapshotRestore,
   TurnCompletedEvent,
   SelectionRequiredEvent,
   TurnProgressAfterSelectionEvent,
   DecisionRequiredEvent,
   DecisionMadeEvent,
-  RoundScoredEvent,
   RoundEndedEvent,
   RoundScoringData,
   RoundInstantEndData,
@@ -127,37 +125,6 @@ export interface TurnEventMapperPort extends EventMapperPort {
   ): DecisionRequiredEvent
 
   /**
-   * 轉換為 RoundDrawn 事件（流局）
-   *
-   * @param currentScores - 目前累積分數
-   * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
-   */
-  toRoundDrawnEvent(
-    currentScores: readonly PlayerScore[],
-    displayTimeoutSeconds?: number
-  ): RoundDrawnEvent
-
-  /**
-   * 轉換為 RoundScored 事件
-   *
-   * @description
-   * 當最後一手牌形成役種時，直接結算（無 Koi-Koi 選擇）。
-   *
-   * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
-   * @deprecated 使用 toRoundEndedEvent 替代
-   */
-  toRoundScoredEvent(
-    game: Game,
-    winnerId: string,
-    yakuList: readonly Yaku[],
-    baseScore: number,
-    finalScore: number,
-    multipliers: ScoreMultipliers,
-    updatedScores: readonly PlayerScore[],
-    displayTimeoutSeconds?: number
-  ): RoundScoredEvent
-
-  /**
    * 轉換為 RoundEnded 統一事件
    *
    * @description
@@ -238,38 +205,6 @@ export interface DecisionEventMapperPort extends EventMapperPort {
     decision: 'KOI_KOI' | 'END_ROUND',
     multipliers: ScoreMultipliers
   ): DecisionMadeEvent
-
-  /**
-   * 轉換為 RoundScored 事件
-   *
-   * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
-   * @deprecated 使用 toRoundEndedEvent 替代
-   */
-  toRoundScoredEvent(
-    game: Game,
-    winnerId: string,
-    yakuList: readonly Yaku[],
-    baseScore: number,
-    finalScore: number,
-    multipliers: ScoreMultipliers,
-    updatedScores: readonly PlayerScore[],
-    displayTimeoutSeconds?: number
-  ): RoundScoredEvent
-
-  /**
-   * 轉換為 RoundDrawn 事件（流局）
-   *
-   * @description
-   * 當玩家選擇 KOI_KOI 但雙方手牌都空了，需要發送流局事件。
-   *
-   * @param currentScores - 目前累積分數
-   * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
-   * @deprecated 使用 toRoundEndedEvent 替代
-   */
-  toRoundDrawnEvent(
-    currentScores: readonly PlayerScore[],
-    displayTimeoutSeconds?: number
-  ): RoundDrawnEvent
 
   /**
    * 轉換為 RoundEnded 統一事件

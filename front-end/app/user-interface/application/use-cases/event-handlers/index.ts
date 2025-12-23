@@ -2,12 +2,12 @@
  * Event Handler Use Cases
  *
  * @description
- * 匯出所有事件處理器 Use Cases（13 個 SSE 事件處理器）。
+ * 匯出所有事件處理器 Use Cases（10 個 SSE 事件處理器）。
  *
  * 分類：
  * - Core Game Flow Events (7): GameStarted, RoundDealt, TurnCompleted, SelectionRequired, TurnProgressAfterSelection, DecisionRequired, DecisionMade
- * - Round Ending Events (4): RoundScored, RoundDrawn, RoundEndedInstantly, GameFinished
- * - Error & Reconnection Events (2): TurnError, GameSnapshotRestore
+ * - Round Ending Events (2): RoundEnded, GameFinished
+ * - Error Events (1): TurnError
  *
  * @see specs/003-ui-application-layer/contracts/events.md
  */
@@ -21,14 +21,8 @@ export { HandleTurnProgressAfterSelectionUseCase } from './HandleTurnProgressAft
 export { HandleDecisionRequiredUseCase } from './HandleDecisionRequiredUseCase'
 export { HandleDecisionMadeUseCase } from './HandleDecisionMadeUseCase'
 
-// Round Ending Events (舊事件 - 向後兼容)
-export { HandleRoundScoredUseCase } from './HandleRoundScoredUseCase'
-export { HandleRoundDrawnUseCase } from './HandleRoundDrawnUseCase'
-export { HandleRoundEndedInstantlyUseCase } from './HandleRoundEndedInstantlyUseCase'
-
-// Round Ending Events (新統一事件)
+// Round Ending Events
 export { HandleRoundEndedUseCase } from './HandleRoundEndedUseCase'
-
 export { HandleGameFinishedUseCase } from './HandleGameFinishedUseCase'
 
 // Error Events

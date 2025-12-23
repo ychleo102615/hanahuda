@@ -75,9 +75,7 @@ export type {
   TurnProgressAfterSelectionEvent,
   DecisionRequiredEvent,
   DecisionMadeEvent,
-  RoundScoredEvent,
-  RoundDrawnEvent,
-  RoundEndedInstantlyEvent,
+  RoundEndedEvent,
   GameFinishedEvent,
   TurnErrorEvent,
   GameSnapshotRestore,
@@ -116,9 +114,7 @@ export type {
   HandleTurnProgressAfterSelectionPort,
   HandleDecisionRequiredPort,
   HandleDecisionMadePort,
-  HandleRoundScoredPort,
-  HandleRoundDrawnPort,
-  HandleRoundEndedInstantlyPort,
+  HandleRoundEndedPort,
   HandleGameFinishedPort,
   HandleTurnErrorPort,
   HandleGameErrorPort,
@@ -141,8 +137,6 @@ export { HandleSelectionRequiredUseCase } from './use-cases/event-handlers'
 export { HandleTurnProgressAfterSelectionUseCase } from './use-cases/event-handlers'
 export { HandleDecisionRequiredUseCase } from './use-cases/event-handlers'
 export { HandleDecisionMadeUseCase } from './use-cases/event-handlers'
-export { HandleRoundScoredUseCase } from './use-cases/event-handlers'
-export { HandleRoundDrawnUseCase } from './use-cases/event-handlers'
-export { HandleRoundEndedInstantlyUseCase } from './use-cases/event-handlers'
+export { HandleRoundEndedUseCase } from './use-cases/event-handlers'
 export { HandleGameFinishedUseCase } from './use-cases/event-handlers'
 export { HandleTurnErrorUseCase } from './use-cases/event-handlers'

@@ -172,73 +172,8 @@ export interface DecisionMadeEvent extends BaseEvent {
   readonly action_timeout_seconds: number
 }
 
-/**
- * RoundScored 事件
- *
- * 參考: doc/shared/protocol.md#RoundScored
- *
- * @description
- * 局結束計分，包含勝者、役種列表、倍率和最終得分。
- *
- * display_timeout_seconds:
- * - 有值時：後端會在此秒數後自動推進到下一局
- * - 無值時：這是最後一回合，玩家需手動關閉面板
- */
-export interface RoundScoredEvent extends BaseEvent {
-  readonly event_type: 'RoundScored'
-  readonly winner_id: string
-  readonly yaku_list: ReadonlyArray<Yaku>
-  readonly base_score: number
-  readonly final_score: number
-  readonly multipliers: ScoreMultipliers
-  readonly updated_total_scores: ReadonlyArray<PlayerScore>
-  /** 後端倒數秒數（僅非最後回合時提供） */
-  readonly display_timeout_seconds?: number
-}
-
-/**
- * RoundDrawn 事件
- *
- * 參考: doc/shared/protocol.md#RoundDrawn
- *
- * @description
- * 平局（牌堆耗盡，無人形成役種）。
- *
- * display_timeout_seconds:
- * - 有值時：後端會在此秒數後自動推進到下一局
- * - 無值時：這是最後一回合，玩家需手動關閉面板
- */
-export interface RoundDrawnEvent extends BaseEvent {
-  readonly event_type: 'RoundDrawn'
-  readonly current_total_scores: ReadonlyArray<PlayerScore>
-  /** 後端倒數秒數（僅非最後回合時提供） */
-  readonly display_timeout_seconds?: number
-}
-
-/**
- * RoundEndedInstantly 事件
- *
- * 參考: doc/shared/protocol.md#RoundEndedInstantly
- *
- * @description
- * 局立即結束（Teshi 或場牌流局）。
- *
- * display_timeout_seconds:
- * - 有值時：後端會在此秒數後自動推進到下一局
- * - 無值時：這是最後一回合，玩家需手動關閉面板
- */
-export interface RoundEndedInstantlyEvent extends BaseEvent {
-  readonly event_type: 'RoundEndedInstantly'
-  readonly reason: RoundEndReason
-  readonly winner_id: string | null
-  readonly awarded_points: number
-  readonly updated_total_scores: ReadonlyArray<PlayerScore>
-  /** 後端倒數秒數（僅非最後回合時提供） */
-  readonly display_timeout_seconds?: number
-}
-
 // ============================================================================
-// RoundEnded 統一事件（取代 RoundScored, RoundDrawn, RoundEndedInstantly）
+// RoundEnded 統一事件
 // ============================================================================
 
 /**
@@ -493,9 +428,6 @@ export type GameEvent =
   | TurnProgressAfterSelectionEvent
   | DecisionRequiredEvent
   | DecisionMadeEvent
-  | RoundScoredEvent
-  | RoundDrawnEvent
-  | RoundEndedInstantlyEvent
   | RoundEndedEvent
   | GameFinishedEvent
   | TurnErrorEvent
@@ -522,9 +454,6 @@ export const SSE_EVENT_TYPES = [
   'TurnProgressAfterSelection',
   'DecisionRequired',
   'DecisionMade',
-  'RoundScored',
-  'RoundDrawn',
-  'RoundEndedInstantly',
   'RoundEnded',
   'GameFinished',
   'TurnError',
