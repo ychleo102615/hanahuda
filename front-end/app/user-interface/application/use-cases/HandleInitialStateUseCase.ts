@@ -114,8 +114,8 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     // 2. 顯示等待訊息
     this.notification.showWaitingMessage(data.timeout_seconds)
 
-    // 3. 啟動配對超時倒數（沿用 actionTimeoutRemaining）
-    this.notification.startActionCountdown(data.timeout_seconds)
+    // 3. 啟動配對超時倒數
+    this.notification.startCountdown(data.timeout_seconds, 'ACTION')
 
     console.info('[HandleInitialStateUseCase] Waiting for opponent, showing waiting UI')
   }
@@ -141,7 +141,7 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
 
     // 2. 隱藏等待訊息並停止配對倒數
     this.notification.hideWaitingMessage()
-    this.notification.stopActionCountdown()
+    this.notification.stopCountdown()
 
     // 3. 設定遊戲初始狀態
     this.updateUIState.initializeGameContext(data.game_id, [...data.players], data.ruleset)
@@ -187,8 +187,9 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     // 7. 根據 flow_stage 恢復 UI 面板
     this.restoreUIPanel(snapshot)
 
-    // 8. 啟動操作倒數（如果有）
-    this.notification.startActionCountdown(snapshot.action_timeout_seconds)
+    // 8. 啟動操作倒數（根據 flow_stage 判斷 mode）
+    const countdownMode = snapshot.current_flow_stage === 'AWAITING_DECISION' ? 'DISPLAY' : 'ACTION'
+    this.notification.startCountdown(snapshot.timeout_seconds, countdownMode)
 
     console.info('[HandleInitialStateUseCase] Game state restored successfully')
   }

@@ -171,22 +171,13 @@ export function createNotificationPortAdapter(
     },
 
     // ===== 倒數計時 =====
-    startActionCountdown(seconds: number): void {
+    startCountdown(seconds: number, mode: 'ACTION' | 'DISPLAY', onComplete?: () => void): void {
       countdown.cleanup()
-      countdown.startActionCountdown(seconds)
+      countdown.startCountdown(seconds, mode, onComplete)
     },
 
-    stopActionCountdown(): void {
-      countdown.stopActionCountdown()
-    },
-
-    startDisplayCountdown(seconds: number, onComplete?: () => void): void {
-      countdown.cleanup()
-      countdown.startDisplayCountdown(seconds, onComplete)
-    },
-
-    stopDisplayCountdown(): void {
-      countdown.stopDisplayCountdown()
+    stopCountdown(): void {
+      countdown.stopCountdown()
     },
 
     cleanup(): void {

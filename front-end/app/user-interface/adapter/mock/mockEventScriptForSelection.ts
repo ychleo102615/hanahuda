@@ -99,7 +99,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
         state_type: 'AWAITING_HAND_PLAY',
         active_player_id: 'player-1',
       },
-      action_timeout_seconds: 30,
+      timeout_seconds: 30,
     },
     delay: 3000,
   },
@@ -122,7 +122,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       drawn_card: '0231', // 翻出 2月短（梅赤短）
       possible_targets: ['0221', '0241', '0242'], // 3張2月牌可選
       deck_remaining: 23,
-      action_timeout_seconds: 15,
+      timeout_seconds: 15,
     },
     delay: 3000,
   },
@@ -153,7 +153,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
         state_type: 'AWAITING_HAND_PLAY',
         active_player_id: 'player-2',
       },
-      action_timeout_seconds: 30,
+      timeout_seconds: 30,
     },
     delay: 3000,
   },
@@ -184,7 +184,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
         state_type: 'AWAITING_HAND_PLAY',
         active_player_id: 'player-1',
       },
-      action_timeout_seconds: 30,
+      timeout_seconds: 30,
     },
     delay: 3000,
   },
@@ -207,7 +207,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       drawn_card: '0311', // 翻出 3月光（櫻上幕）
       possible_targets: ['0341', '0342'], // 場上有2張3月牌可選
       deck_remaining: 21,
-      action_timeout_seconds: 15,
+      timeout_seconds: 15,
     },
     delay: 3000,
   },
@@ -238,7 +238,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
         state_type: 'AWAITING_HAND_PLAY',
         active_player_id: 'player-2',
       },
-      action_timeout_seconds: 30,
+      timeout_seconds: 30,
     },
     delay: 3000,
   },

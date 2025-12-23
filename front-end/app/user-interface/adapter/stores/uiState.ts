@@ -175,9 +175,9 @@ export interface UIStateStoreState {
   fieldCardHighlightType: 'single' | 'multiple' | null
   fieldCardSourceCard: string | null
 
-  // 倒數計時
-  actionTimeoutRemaining: number | null
-  displayTimeoutRemaining: number | null
+  // 倒數計時（統一）
+  countdownRemaining: number | null
+  countdownMode: 'ACTION' | 'DISPLAY' | null
 
   // 待處理的遊戲結束資料（最後一回合緩存用）
   pendingGameFinishedData: GameFinishedData | null
@@ -312,9 +312,9 @@ export const useUIStateStore = defineStore('uiState', {
     fieldCardHighlightType: null,
     fieldCardSourceCard: null,
 
-    // 倒數計時
-    actionTimeoutRemaining: null,
-    displayTimeoutRemaining: null,
+    // 倒數計時（統一）
+    countdownRemaining: null,
+    countdownMode: null,
 
     // 待處理的遊戲結束資料
     pendingGameFinishedData: null,
@@ -702,9 +702,9 @@ export const useUIStateStore = defineStore('uiState', {
       this.fieldCardHighlightType = null
       this.fieldCardSourceCard = null
 
-      // 倒數計時（只重置 state，interval 由 useCountdown 管理）
-      this.actionTimeoutRemaining = null
-      this.displayTimeoutRemaining = null
+      // 倒數計時（只重置 state，interval 由 CountdownManager 管理）
+      this.countdownRemaining = null
+      this.countdownMode = null
 
       // 待處理的遊戲結束資料
       this.pendingGameFinishedData = null

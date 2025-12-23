@@ -168,7 +168,7 @@ export class HandleTurnProgressAfterSelectionUseCase
     // === 階段 6：啟動操作倒數（扣除動畫耗時）===
     const currentTS = new Date()
     const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
-    this.notification.startActionCountdown(event.action_timeout_seconds - dt)
+    this.notification.startCountdown(event.timeout_seconds - dt, 'ACTION')
   }
 
   /**

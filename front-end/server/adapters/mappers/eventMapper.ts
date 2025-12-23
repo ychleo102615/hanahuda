@@ -115,7 +115,7 @@ export class EventMapper implements FullEventMapperPort {
       hands,
       deck_remaining: round.deck.length,
       next_state: nextState,
-      action_timeout_seconds: gameConfig.action_timeout_seconds,
+      timeout_seconds: gameConfig.turn_timeout_seconds,
     }
   }
 
@@ -175,7 +175,7 @@ export class EventMapper implements FullEventMapperPort {
       },
       deck_remaining: round.deck.length,
       next_state: nextState,
-      action_timeout_seconds: gameConfig.action_timeout_seconds,
+      timeout_seconds: gameConfig.turn_timeout_seconds,
     }
   }
 
@@ -213,7 +213,7 @@ export class EventMapper implements FullEventMapperPort {
       drawn_card: drawnCard,
       possible_targets: [...possibleTargets],
       deck_remaining: game.currentRound.deck.length,
-      action_timeout_seconds: gameConfig.action_timeout_seconds,
+      timeout_seconds: gameConfig.turn_timeout_seconds,
     }
   }
 
@@ -272,7 +272,7 @@ export class EventMapper implements FullEventMapperPort {
         : null,
       deck_remaining: round.deck.length,
       next_state: nextState,
-      action_timeout_seconds: gameConfig.action_timeout_seconds,
+      timeout_seconds: gameConfig.turn_timeout_seconds,
     }
   }
 
@@ -336,7 +336,7 @@ export class EventMapper implements FullEventMapperPort {
       },
       current_multipliers: multipliers,
       deck_remaining: game.currentRound.deck.length,
-      action_timeout_seconds: gameConfig.action_timeout_seconds,
+      timeout_seconds: gameConfig.turn_timeout_seconds,
     }
   }
 
@@ -373,7 +373,7 @@ export class EventMapper implements FullEventMapperPort {
         koi_koi_applied: multipliers.koi_koi_applied,
       },
       next_state: nextState,
-      action_timeout_seconds: gameConfig.action_timeout_seconds,
+      timeout_seconds: gameConfig.turn_timeout_seconds,
     }
   }
 
@@ -391,7 +391,7 @@ export class EventMapper implements FullEventMapperPort {
    * @param updatedScores - 更新後的累積分數
    * @param scoringData - 計分資料（僅當 reason === 'SCORED' 時需要）
    * @param instantData - 特殊結束資料（僅當 reason 為 INSTANT_* 時需要）
-   * @param displayTimeoutSeconds - 後端倒數秒數（無值時不包含此欄位）
+   * @param timeoutSeconds - 後端倒數秒數（無值時不包含此欄位）
    * @param requireContinueConfirmation - 是否需要確認繼續遊戲
    * @returns RoundEndedEvent
    */
@@ -400,7 +400,7 @@ export class EventMapper implements FullEventMapperPort {
     updatedScores: readonly PlayerScore[],
     scoringData?: RoundScoringData,
     instantData?: RoundInstantEndData,
-    displayTimeoutSeconds?: number,
+    timeoutSeconds?: number,
     requireContinueConfirmation = false
   ): RoundEndedEvent {
     const baseEvent: RoundEndedEvent = {
@@ -426,8 +426,8 @@ export class EventMapper implements FullEventMapperPort {
       event = { ...event, instant_data: instantData }
     }
 
-    if (displayTimeoutSeconds !== undefined) {
-      event = { ...event, display_timeout_seconds: displayTimeoutSeconds }
+    if (timeoutSeconds !== undefined) {
+      event = { ...event, timeout_seconds: timeoutSeconds }
     }
 
     return event
@@ -516,7 +516,7 @@ export class EventMapper implements FullEventMapperPort {
         koi_multiplier: ks.koi_multiplier,
         times_continued: ks.times_continued,
       })),
-      action_timeout_seconds: remainingSeconds ?? gameConfig.action_timeout_seconds,
+      timeout_seconds: remainingSeconds ?? gameConfig.turn_timeout_seconds,
     }
 
     // 加入可選的上下文欄位

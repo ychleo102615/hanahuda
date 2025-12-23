@@ -48,7 +48,7 @@ export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
     if (this.notification.isRoundEndModalVisible()) {
       // 最後一回合：緩存資料，停止倒數，等待玩家關閉回合面板
       console.info('[HandleGameFinishedUseCase] 回合面板顯示中，緩存 GameFinished 資料')
-      this.notification.stopDisplayCountdown()
+      this.notification.stopCountdown()
       this.notification.setPendingGameFinished(gameFinishedData)
     } else {
       // 直接顯示遊戲結束面板

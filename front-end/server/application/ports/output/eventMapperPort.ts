@@ -134,7 +134,7 @@ export interface TurnEventMapperPort extends EventMapperPort {
    * @param updatedScores - 更新後的累積分數
    * @param scoringData - 計分資料（僅當 reason === 'SCORED' 時需要）
    * @param instantData - 特殊結束資料（僅當 reason 為 INSTANT_* 時需要）
-   * @param displayTimeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
+   * @param timeoutSeconds - 後端倒數秒數（無值時表示不自動推進）
    * @param requireContinueConfirmation - 是否需要確認繼續遊戲
    */
   toRoundEndedEvent(
@@ -142,7 +142,7 @@ export interface TurnEventMapperPort extends EventMapperPort {
     updatedScores: readonly PlayerScore[],
     scoringData?: RoundScoringData,
     instantData?: RoundInstantEndData,
-    displayTimeoutSeconds?: number,
+    timeoutSeconds?: number,
     requireContinueConfirmation?: boolean
   ): RoundEndedEvent
 
@@ -217,7 +217,7 @@ export interface DecisionEventMapperPort extends EventMapperPort {
     updatedScores: readonly PlayerScore[],
     scoringData?: RoundScoringData,
     instantData?: RoundInstantEndData,
-    displayTimeoutSeconds?: number,
+    timeoutSeconds?: number,
     requireContinueConfirmation?: boolean
   ): RoundEndedEvent
 

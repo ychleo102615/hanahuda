@@ -43,6 +43,6 @@ export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
     // 4. 啟動操作倒數
-    this.notification.startActionCountdown(event.action_timeout_seconds)
+    this.notification.startCountdown(event.timeout_seconds, 'ACTION')
   }
 }

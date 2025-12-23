@@ -63,7 +63,7 @@ export class MakeKoiKoiDecisionUseCase implements MakeKoiKoiDecisionPort {
     }
 
     // 停止 Modal 倒數（DecisionModal 使用 displayCountdown）
-    this.notification.stopDisplayCountdown()
+    this.notification.stopCountdown()
 
     // Step 1: Calculate current score
     // 加總所有役種的基礎分數

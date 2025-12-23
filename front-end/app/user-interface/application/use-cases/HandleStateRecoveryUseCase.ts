@@ -86,8 +86,9 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
     // 7. 根據 flow_stage 恢復 UI 面板
     this.restoreUIPanel(snapshot)
 
-    // 8. 啟動操作倒數（如果有）
-    this.notification.startActionCountdown(snapshot.action_timeout_seconds)
+    // 8. 啟動操作倒數（根據 flow_stage 判斷 mode）
+    const countdownMode = snapshot.current_flow_stage === 'AWAITING_DECISION' ? 'DISPLAY' : 'ACTION'
+    this.notification.startCountdown(snapshot.timeout_seconds, countdownMode)
 
     console.info('[HandleStateRecoveryUseCase] Game state restored successfully')
   }

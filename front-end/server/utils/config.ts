@@ -17,11 +17,11 @@ import {
  * 遊戲設定介面
  */
 export interface GameConfig {
-  /** 玩家操作超時（秒） - snake_case for SSE events */
-  readonly action_timeout_seconds: number
+  /** 回合操作超時（秒） */
+  readonly turn_timeout_seconds: number
 
-  /** 結果畫面顯示時間（秒） - snake_case for SSE events */
-  readonly display_timeout_seconds: number
+  /** 結果顯示時間（秒） */
+  readonly result_display_seconds: number
 
   /** 斷線超時（秒） */
   readonly disconnect_timeout_seconds: number
@@ -104,8 +104,8 @@ function parseRoomType(): RoomTypeId {
  * 從環境變數讀取設定，若未設定則使用預設值。
  *
  * 環境變數：
- * - ACTION_TIMEOUT_SECONDS: 玩家操作超時（預設 15）
- * - DISPLAY_TIMEOUT_SECONDS: 結果畫面顯示時間（預設 5）
+ * - TURN_TIMEOUT_SECONDS: 回合操作超時（預設 15）
+ * - RESULT_DISPLAY_SECONDS: 結果顯示時間（預設 5）
  * - DISCONNECT_TIMEOUT_SECONDS: 斷線超時（預設 60）
  * - CARD_PLAY_ANIMATION_MS: 出牌表演時間（預設 3000）
  * - OPPONENT_THINKING_MIN_MS: 假玩家思考下限（預設 1500）
@@ -114,8 +114,8 @@ function parseRoomType(): RoomTypeId {
  * - MATCHMAKING_TIMEOUT_SECONDS: 配對超時（預設 30）
  */
 export const gameConfig: GameConfig = {
-  action_timeout_seconds: parseEnvNumber('ACTION_TIMEOUT_SECONDS', 15),
-  display_timeout_seconds: parseEnvNumber('DISPLAY_TIMEOUT_SECONDS', 5),
+  turn_timeout_seconds: parseEnvNumber('TURN_TIMEOUT_SECONDS', 15),
+  result_display_seconds: parseEnvNumber('RESULT_DISPLAY_SECONDS', 5),
   disconnect_timeout_seconds: parseEnvNumber('DISCONNECT_TIMEOUT_SECONDS', 30),
   disconnected_action_timeout_seconds: parseEnvNumber('DISCONNECTED_ACTION_TIMEOUT_SECONDS', 3),
   confirmation_buffer_seconds: parseEnvNumber('CONFIRMATION_BUFFER_SECONDS', 2),
@@ -156,13 +156,13 @@ export function getOpponentTotalDelay(): number {
  * @throws 若設定不合理則拋出錯誤
  */
 export function validateConfig(): void {
-  if (gameConfig.action_timeout_seconds <= 0) {
-    throw new Error('ACTION_TIMEOUT_SECONDS must be positive')
+  if (gameConfig.turn_timeout_seconds <= 0) {
+    throw new Error('TURN_TIMEOUT_SECONDS must be positive')
   }
   if (gameConfig.opponent_thinking_min_ms > gameConfig.opponent_thinking_max_ms) {
     throw new Error('OPPONENT_THINKING_MIN_MS must be <= OPPONENT_THINKING_MAX_MS')
   }
-  if (gameConfig.disconnect_timeout_seconds <= gameConfig.action_timeout_seconds) {
-    throw new Error('DISCONNECT_TIMEOUT_SECONDS must be > ACTION_TIMEOUT_SECONDS')
+  if (gameConfig.disconnect_timeout_seconds <= gameConfig.turn_timeout_seconds) {
+    throw new Error('DISCONNECT_TIMEOUT_SECONDS must be > TURN_TIMEOUT_SECONDS')
   }
 }

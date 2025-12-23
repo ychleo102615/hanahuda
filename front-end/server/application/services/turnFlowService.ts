@@ -63,7 +63,7 @@ export class TurnFlowService {
     // 啟動 15 秒操作計時器
     this.gameTimeoutManager.startTimeout(
       gameId,
-      gameConfig.action_timeout_seconds,
+      gameConfig.turn_timeout_seconds,
       () => {
         console.log(`[TurnFlowService] Action timeout for player ${playerId} in game ${gameId}, executing auto-action`)
         this.autoActionUseCase.execute({
@@ -311,7 +311,7 @@ export class TurnFlowService {
 
       // 啟動 display timeout，進入下一回合
       const firstPlayerId = game.currentRound?.activePlayerId
-      this.startDisplayTimeout(gameId, gameConfig.display_timeout_seconds, () => {
+      this.startDisplayTimeout(gameId, gameConfig.result_display_seconds, () => {
         const currentGame = this.gameStore.get(gameId)
         if (!currentGame || currentGame.status === 'FINISHED') {
           return
@@ -438,7 +438,7 @@ export class TurnFlowService {
     // 根據轉換結果決定 displayTimeoutSeconds
     const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
     const displayTimeoutSeconds = isNextRound
-      ? gameConfig.display_timeout_seconds
+      ? gameConfig.result_display_seconds
       : undefined
 
     // 檢查是否需要確認繼續遊戲（計時器總時間 = displayTimeout + confirmTimeout）
@@ -606,7 +606,7 @@ export class TurnFlowService {
       ? Math.ceil(gameConfig.card_play_animation_ms / 1000)
       : 0
     const displayTimeoutSeconds = isNextRound
-      ? gameConfig.display_timeout_seconds + animationDelaySeconds
+      ? gameConfig.result_display_seconds + animationDelaySeconds
       : undefined
 
     // 2. 檢查是否需要確認繼續遊戲（計時器總時間 = displayTimeout + confirmTimeout）

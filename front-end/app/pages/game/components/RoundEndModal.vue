@@ -252,7 +252,8 @@ const uiState = useUIStateStore()
 const gameState = useGameStateStore()
 
 const {
-  displayTimeoutRemaining,
+  countdownRemaining,
+  countdownMode,
   roundDrawnModalVisible,
   roundScoredModalVisible,
   roundEndedInstantlyModalVisible,
@@ -262,6 +263,14 @@ const {
   continueConfirmationState,
   continueConfirmationCallback,
 } = storeToRefs(uiState)
+
+// 只有 DISPLAY 模式時才顯示倒數（RoundEndModal 用於顯示倒數）
+const displayTimeoutRemaining = computed(() => {
+  if (countdownRemaining.value !== null && countdownMode.value === 'DISPLAY') {
+    return countdownRemaining.value
+  }
+  return null
+})
 
 /**
  * 判斷彈窗類型

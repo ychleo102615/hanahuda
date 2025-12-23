@@ -376,63 +376,39 @@ export interface NotificationPort {
   // ===== 倒數計時 =====
 
   /**
-   * 啟動操作倒數
+   * 啟動倒數計時
    *
    * @description
-   * 用於玩家回合操作（出牌、選擇、決策）的時限倒數。
+   * 統一的倒數計時方法，根據 mode 決定顯示位置：
+   * - 'ACTION': TopInfoBar 顯示（玩家操作時限）
+   * - 'DISPLAY': Modal 內顯示（面板自動關閉）
    *
    * @param seconds - 倒數秒數
-   *
-   * @example
-   * ```typescript
-   * notification.startActionCountdown(30)
-   * ```
-   */
-  startActionCountdown(seconds: number): void
-
-  /**
-   * 停止操作倒數
-   *
-   * @description
-   * 停止當前操作倒數（通常在玩家完成操作或事件更新時調用）。
-   *
-   * @example
-   * ```typescript
-   * notification.stopActionCountdown()
-   * ```
-   */
-  stopActionCountdown(): void
-
-  /**
-   * 啟動顯示倒數
-   *
-   * @description
-   * 用於回合結束面板的自動關閉倒數。
-   *
-   * @param seconds - 倒數秒數
+   * @param mode - 倒數模式
    * @param onComplete - 倒數結束時的回調（可選）
    *
    * @example
    * ```typescript
-   * notification.startDisplayCountdown(5, () => {
+   * notification.startCountdown(30, 'ACTION')
+   * notification.startCountdown(5, 'DISPLAY', () => {
    *   // 自動進入下一回合
    * })
    * ```
    */
-  startDisplayCountdown(seconds: number, onComplete?: () => void): void
+  startCountdown(seconds: number, mode: 'ACTION' | 'DISPLAY', onComplete?: () => void): void
 
   /**
-   * 停止顯示倒數
+   * 停止倒數計時
    *
    * @description
-   * 停止當前顯示倒數。
+   * 停止當前倒數計時，清除 mode 和 remaining 狀態。
    *
    * @example
    * ```typescript
-   * notification.stopDisplayCountdown()
+   * notification.stopCountdown()
    * ```
    */
-  stopDisplayCountdown(): void
+  stopCountdown(): void
 
   /**
    * 清理所有資源

@@ -111,7 +111,7 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
     // === 階段 4：啟動操作倒數 ===
     const currentTS = new Date()
     const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
-    this.notification.startActionCountdown(event.action_timeout_seconds - dt)
+    this.notification.startCountdown(event.timeout_seconds - dt, 'ACTION')
 
     // === 階段 5：清理動畫層 ===
     this.animation.clearHiddenCards()

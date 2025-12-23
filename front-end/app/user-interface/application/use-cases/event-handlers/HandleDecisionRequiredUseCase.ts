@@ -123,7 +123,7 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
       // 啟動操作倒數（扣除動畫耗時）
       const currentTS = new Date()
       const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
-      this.notification.startDisplayCountdown(event.action_timeout_seconds - dt)
+      this.notification.startCountdown(event.timeout_seconds - dt, 'DISPLAY')
     } else {
       // === 對手獲得役種：同時顯示所有新形成的役種 ===
       const yakuList = event.yaku_update.newly_formed_yaku

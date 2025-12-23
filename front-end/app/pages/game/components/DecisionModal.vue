@@ -23,7 +23,15 @@ import { getYakuInfo } from '~/user-interface/domain/yaku-info'
 
 const uiState = useUIStateStore()
 const gameState = useGameStateStore()
-const { decisionModalVisible, decisionModalData, displayTimeoutRemaining } = storeToRefs(uiState)
+const { decisionModalVisible, decisionModalData, countdownRemaining, countdownMode } = storeToRefs(uiState)
+
+// 只有 DISPLAY 模式時才顯示倒數（DecisionModal 用於顯示倒數）
+const displayTimeoutRemaining = computed(() => {
+  if (countdownRemaining.value !== null && countdownMode.value === 'DISPLAY') {
+    return countdownRemaining.value
+  }
+  return null
+})
 const { myDepository, myKoiKoiMultiplier } = storeToRefs(gameState)
 
 // T074 [US3]: Inject MakeKoiKoiDecisionPort

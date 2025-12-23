@@ -65,9 +65,9 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
     }
 
     // 3. 處理確認繼續遊戲的需求
-    // 確認倒數使用 display_timeout_seconds 減去事件處理延遲
+    // 確認倒數使用 timeout_seconds 減去事件處理延遲
     if (event.require_continue_confirmation) {
-      const rawTimeout = event.display_timeout_seconds ?? 5 // fallback 5 秒
+      const rawTimeout = event.timeout_seconds ?? 5 // fallback 5 秒
       const adjustedTimeout = Math.max(1, rawTimeout - deltaSeconds)
       this.notification.showContinueConfirmation(
         adjustedTimeout,
@@ -91,9 +91,9 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
 
     // 4. 啟動顯示倒數（若有值），扣除事件處理延遲
     // 無值時表示最後一回合，面板需手動關閉
-    if (event.display_timeout_seconds !== undefined) {
-      const adjustedDisplayTimeout = Math.max(1, event.display_timeout_seconds - deltaSeconds)
-      this.notification.startDisplayCountdown(adjustedDisplayTimeout, () => {
+    if (event.timeout_seconds !== undefined) {
+      const adjustedDisplayTimeout = Math.max(1, event.timeout_seconds - deltaSeconds)
+      this.notification.startCountdown(adjustedDisplayTimeout, 'DISPLAY', () => {
         // 倒數結束時：
         // - 若有確認需求，切換到等待伺服器狀態（server 已處理超時）
         // - 若無確認需求，直接關閉 Modal

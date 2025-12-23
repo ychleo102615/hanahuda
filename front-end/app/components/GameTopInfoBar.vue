@@ -40,12 +40,21 @@ const {
 
 const {
   connectionStatus,
-  actionTimeoutRemaining,
+  countdownRemaining,
+  countdownMode,
   waitingForOpponent,
   reconnecting,
   gameFinishedModalVisible,
   dealingInProgress,
 } = storeToRefs(uiState)
+
+// 只有 ACTION 模式時才顯示倒數（TopInfoBar 用於操作倒數）
+const actionTimeoutRemaining = computed(() => {
+  if (countdownRemaining.value !== null && countdownMode.value === 'ACTION') {
+    return countdownRemaining.value
+  }
+  return null
+})
 
 // 連線狀態顯示
 const connectionStatusText = computed(() => {

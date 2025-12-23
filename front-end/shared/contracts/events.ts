@@ -72,7 +72,7 @@ export interface RoundDealtEvent extends BaseEvent {
   readonly hands: ReadonlyArray<PlayerHand>
   readonly deck_remaining: number
   readonly next_state: NextState
-  readonly action_timeout_seconds: number
+  readonly timeout_seconds: number
 }
 
 /**
@@ -94,7 +94,7 @@ export interface TurnCompletedEvent extends BaseEvent {
   readonly draw_card_play: CardPlay
   readonly deck_remaining: number
   readonly next_state: NextState
-  readonly action_timeout_seconds: number
+  readonly timeout_seconds: number
 }
 
 /**
@@ -112,7 +112,7 @@ export interface SelectionRequiredEvent extends BaseEvent {
   readonly drawn_card: string
   readonly possible_targets: ReadonlyArray<string>
   readonly deck_remaining: number
-  readonly action_timeout_seconds: number
+  readonly timeout_seconds: number
 }
 
 /**
@@ -132,7 +132,7 @@ export interface TurnProgressAfterSelectionEvent extends BaseEvent {
   readonly yaku_update: YakuUpdate | null
   readonly deck_remaining: number
   readonly next_state: NextState
-  readonly action_timeout_seconds: number
+  readonly timeout_seconds: number
 }
 
 /**
@@ -151,7 +151,7 @@ export interface DecisionRequiredEvent extends BaseEvent {
   readonly yaku_update: YakuUpdate
   readonly current_multipliers: ScoreMultipliers
   readonly deck_remaining: number
-  readonly action_timeout_seconds: number
+  readonly timeout_seconds: number
 }
 
 /**
@@ -169,7 +169,7 @@ export interface DecisionMadeEvent extends BaseEvent {
   readonly decision: 'KOI_KOI' | 'END_ROUND'
   readonly updated_multipliers: ScoreMultipliers
   readonly next_state: NextState
-  readonly action_timeout_seconds: number
+  readonly timeout_seconds: number
 }
 
 // ============================================================================
@@ -202,7 +202,7 @@ export interface RoundInstantEndData {
  * 統一的回合結束事件，取代 RoundScoredEvent、RoundDrawnEvent、RoundEndedInstantlyEvent。
  * 根據 reason 欄位區分不同的結束類型，並提供對應的資料。
  *
- * display_timeout_seconds:
+ * timeout_seconds:
  * - 有值時：後端會在此秒數後自動推進到下一局
  * - 無值時：這是最後一回合，玩家需手動關閉面板
  */
@@ -217,7 +217,7 @@ export interface RoundEndedEvent extends BaseEvent {
   /** 特殊結束資料（僅當 reason 為 INSTANT_* 時有值） */
   readonly instant_data?: RoundInstantEndData
   /** 後端倒數秒數（僅非最後回合時提供） */
-  readonly display_timeout_seconds?: number
+  readonly timeout_seconds?: number
   /** 是否需要確認繼續遊戲（閒置超時後設為 true） */
   readonly require_continue_confirmation: boolean
 }
@@ -360,7 +360,7 @@ export interface GameSnapshotRestore extends BaseEvent {
   /** 目前莊家 ID */
   readonly dealer_id: string
   readonly koi_statuses: ReadonlyArray<KoiStatus>
-  readonly action_timeout_seconds: number
+  readonly timeout_seconds: number
   /** AWAITING_SELECTION 時的選擇上下文（可選） */
   readonly selection_context?: SelectionContext
   /** AWAITING_DECISION 時的決策上下文（可選） */
