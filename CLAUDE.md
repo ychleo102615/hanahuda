@@ -42,7 +42,7 @@
 
 在提供任何與程式設計、架構、技術選擇相關的協助時，請優先採用『符合設計語意、抽象一致性、可讀性與長期可維護性』的解法，而非技術上最快、最簡單或最直接的做法。你的回答應著重於設計哲學、語意清晰、結構合理，而不是技巧性捷徑。
 
-# 限制
+# 架構
 - 使用 Clean Architecture, Domain-Driven Design 架構
 
 ---
@@ -51,9 +51,24 @@
 
 參考 @doc/readme.md
 
-## 專案限制
-- 開發 TypeScript 時，禁止使用 `as` 斷言，除非有使用者、註解特別允許。
-- 定義 CA ports 檔案時，使用 abstract class 定義介面，防止 dock typing。
+# 限制
+
+## TypeScript 類型定義規則
+
+1. **嚴格禁止重複定義結構相同的 interface/type**
+   - 使用任何 interface 或 type 前，必須先搜尋專案中是否已存在相同用途的定義
+   - 若存在，必須 import 引用，不可自行宣告結構相同的新類型
+   - 開發 TypeScript 時，禁止使用 `as` 斷言，除非有使用者、註解特別允許。
+   - 定義 CA ports 檔案時，使用 abstract class 定義介面，防止 dock typing。
+
+2. **字串字面量必須使用 SSOT**
+   - 若專案中已定義 `type Status = 'pending' | 'active'`，禁止在其他地方重新寫一次
+   - 必須從原始定義處 import
+
+3. **例外情況需明確標註**
+   - 若因架構需求（如 DTO 分層）故意定義結構相同但語意不同的類型，需加註釋說明理由
+
+簡單來說，**禁止任意硬編碼**，有需求時必須**取得使用者的同意**。
 
 
 ## Active Technologies
