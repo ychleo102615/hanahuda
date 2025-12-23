@@ -15,6 +15,7 @@
 
 import type { OperationSessionManager } from '../abort'
 import type { ExecuteOptions, EventHandlerPort } from '~/user-interface/application/ports/input'
+import type { SSEEventType } from '#shared/contracts'
 
 /**
  * EventRouter 類別
@@ -33,7 +34,7 @@ import type { ExecuteOptions, EventHandlerPort } from '~/user-interface/applicat
  */
 export class EventRouter {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private handlers: Map<string, EventHandlerPort<any>>
+  private handlers: Map<SSEEventType, EventHandlerPort<any>>
 
   /**
    * 事件處理鏈，用於序列化事件處理
@@ -73,7 +74,7 @@ export class EventRouter {
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  register(eventType: string, port: EventHandlerPort<any>): void {
+  register(eventType: SSEEventType, port: EventHandlerPort<any>): void {
     this.handlers.set(eventType, port)
   }
 
@@ -105,7 +106,7 @@ export class EventRouter {
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  route(eventType: string, payload: any): void {
+  route(eventType: SSEEventType, payload: any): void {
     const port = this.handlers.get(eventType)
 
     if (!port) {
@@ -147,7 +148,7 @@ export class EventRouter {
    * router.unregister('GameStarted')
    * ```
    */
-  unregister(eventType: string): void {
+  unregister(eventType: SSEEventType): void {
     this.handlers.delete(eventType)
   }
 

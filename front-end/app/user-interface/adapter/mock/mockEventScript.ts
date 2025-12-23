@@ -8,12 +8,14 @@
  * 資料結構參考: front-end/src/user-interface/application/types/shared.ts
  */
 
+import type { SSEEventType } from '#shared/contracts'
+
 /**
  * Mock 事件項目
  */
 export interface MockEventItem {
-  /** 事件類型 */
-  eventType: string
+  /** 事件類型（SSOT: 來自 shared/contracts） */
+  eventType: SSEEventType
   /** 事件 payload */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any

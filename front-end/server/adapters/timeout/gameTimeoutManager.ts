@@ -78,6 +78,9 @@ class GameTimeoutManager extends GameTimeoutPort {
   /** 確認繼續計時器（每個玩家獨立） */
   private confirmationTimers: Map<TimerKey, ConfirmationTimerInfo> = new Map()
 
+  /** 配對超時計時器（每個遊戲最多一個） */
+  private matchmakingTimers: Map<string, GameTimerInfo> = new Map()
+
   // ============================================================
   // 遊戲計時器（Action 和 Display 統一）
   // ============================================================
@@ -379,6 +382,68 @@ class GameTimeoutManager extends GameTimeoutPort {
   }
 
   // ============================================================
+  // 配對超時計時器
+  // ============================================================
+
+  /**
+   * 啟動配對超時計時器
+   *
+   * @param gameId - 遊戲 ID
+   * @param onTimeout - 超時回調函數
+   */
+  startMatchmakingTimeout(gameId: string, onTimeout: () => void): void {
+    this.clearMatchmakingTimeout(gameId)
+
+    const totalSeconds = gameConfig.matchmaking_timeout_seconds
+    // 後端加上緩衝秒數，確保前端倒數先結束
+    const totalMs = (totalSeconds + BUFFER_SECONDS) * 1000
+    const timer = setTimeout(onTimeout, totalMs)
+
+    this.matchmakingTimers.set(gameId, {
+      timerId: timer,
+      startedAt: Date.now(),
+      totalSeconds, // 記錄面向客戶端的秒數（不含緩衝）
+    })
+
+    console.log(
+      `[GameTimeoutManager] Started matchmaking timeout for game ${gameId}: ${totalSeconds}s (+${BUFFER_SECONDS}s buffer)`
+    )
+  }
+
+  /**
+   * 清除配對超時計時器
+   *
+   * @param gameId - 遊戲 ID
+   */
+  clearMatchmakingTimeout(gameId: string): void {
+    const timerInfo = this.matchmakingTimers.get(gameId)
+    if (timerInfo) {
+      clearTimeout(timerInfo.timerId)
+      this.matchmakingTimers.delete(gameId)
+      console.log(`[GameTimeoutManager] Cleared matchmaking timeout for game ${gameId}`)
+    }
+  }
+
+  /**
+   * 取得配對超時的剩餘秒數
+   *
+   * @param gameId - 遊戲 ID
+   * @returns 剩餘秒數（無計時器或已過期回傳 null）
+   */
+  getMatchmakingRemainingSeconds(gameId: string): number | null {
+    const info = this.matchmakingTimers.get(gameId)
+    if (!info) {
+      return null
+    }
+
+    const elapsed = Math.floor((Date.now() - info.startedAt) / 1000)
+    const remaining = info.totalSeconds - elapsed
+
+    // 回傳至少 1 秒，避免負數
+    return remaining > 0 ? remaining : 1
+  }
+
+  // ============================================================
   // 遊戲層級清理
   // ============================================================
 
@@ -392,6 +457,7 @@ class GameTimeoutManager extends GameTimeoutPort {
     this.clearAllDisconnectTimeouts(gameId)
     this.clearAllIdleTimeouts(gameId)
     this.clearAllContinueConfirmationTimeouts(gameId)
+    this.clearMatchmakingTimeout(gameId)
     console.log(`[GameTimeoutManager] Cleared all timers for game ${gameId}`)
   }
 

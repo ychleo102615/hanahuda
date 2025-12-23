@@ -140,6 +140,10 @@ export interface UIStateStoreState {
   roundEndedInstantlyModalVisible: boolean
   roundEndedInstantlyModalData: RoundEndedInstantlyData | null
 
+  // 遊戲錯誤 Modal
+  gameErrorModalVisible: boolean
+  gameErrorMessage: string | null
+
   // 訊息提示
   errorMessage: string | null
   infoMessage: string | null
@@ -211,6 +215,8 @@ export interface UIStateStoreActions {
   hideRoundDrawnModal(): void
   hideRoundScoredModal(): void
   hideRoundEndedInstantlyModal(): void
+  showGameErrorModal(message: string): void
+  hideGameErrorModal(): void
   hideModal(): void
   hideReconnectionMessage(): void
   hideWaitingMessage(): void
@@ -270,6 +276,10 @@ export const useUIStateStore = defineStore('uiState', {
     // 局即時結束 Modal
     roundEndedInstantlyModalVisible: false,
     roundEndedInstantlyModalData: null,
+
+    // 遊戲錯誤 Modal
+    gameErrorModalVisible: false,
+    gameErrorMessage: null,
 
     // 訊息提示
     errorMessage: null,
@@ -345,6 +355,9 @@ export const useUIStateStore = defineStore('uiState', {
 
       this.roundEndedInstantlyModalVisible = false
       this.roundEndedInstantlyModalData = null
+
+      this.gameErrorModalVisible = false
+      this.gameErrorMessage = null
     },
 
     /**
@@ -580,6 +593,28 @@ export const useUIStateStore = defineStore('uiState', {
     },
 
     /**
+     * 顯示遊戲錯誤 Modal
+     *
+     * @param message - 錯誤訊息
+     */
+    showGameErrorModal(message: string): void {
+      this._hideAllModals()
+
+      this.gameErrorModalVisible = true
+      this.gameErrorMessage = message
+      console.info('[UIStateStore] 顯示遊戲錯誤 Modal:', message)
+    },
+
+    /**
+     * 隱藏遊戲錯誤 Modal
+     */
+    hideGameErrorModal(): void {
+      this.gameErrorModalVisible = false
+      this.gameErrorMessage = null
+      console.info('[UIStateStore] 隱藏遊戲錯誤 Modal')
+    },
+
+    /**
      * 隱藏當前 Modal
      *
      * @description
@@ -641,6 +676,9 @@ export const useUIStateStore = defineStore('uiState', {
 
       this.roundEndedInstantlyModalVisible = false
       this.roundEndedInstantlyModalData = null
+
+      this.gameErrorModalVisible = false
+      this.gameErrorMessage = null
 
       this.errorMessage = null
       this.infoMessage = null

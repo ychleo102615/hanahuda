@@ -199,6 +199,40 @@ export abstract class GameTimeoutPort {
   abstract hasContinueConfirmationTimeout(gameId: string, playerId: string): boolean
 
   // ============================================================
+  // 配對超時計時器（Matchmaking Timeout）
+  // ============================================================
+
+  /**
+   * 啟動配對超時計時器
+   *
+   * @description
+   * 當玩家創建遊戲後，等待對手加入的超時計時器。
+   * 若超時前沒有對手加入，遊戲自動取消。
+   *
+   * @param gameId - 遊戲 ID
+   * @param onTimeout - 超時回調函數
+   */
+  abstract startMatchmakingTimeout(gameId: string, onTimeout: () => void): void
+
+  /**
+   * 清除配對超時計時器
+   *
+   * @param gameId - 遊戲 ID
+   */
+  abstract clearMatchmakingTimeout(gameId: string): void
+
+  /**
+   * 取得配對超時的剩餘秒數
+   *
+   * @description
+   * 用於重連時取得剩餘配對時間，確保前端倒數與後端超時同步。
+   *
+   * @param gameId - 遊戲 ID
+   * @returns 剩餘秒數（無計時器或已過期回傳 null）
+   */
+  abstract getMatchmakingRemainingSeconds(gameId: string): number | null
+
+  // ============================================================
   // 遊戲層級清理
   // ============================================================
 
@@ -206,7 +240,7 @@ export abstract class GameTimeoutPort {
    * 清除指定遊戲的所有計時器
    *
    * @description
-   * 包含遊戲計時器、斷線計時器、閒置計時器、確認繼續計時器和加速代行計時器。
+   * 包含遊戲計時器、斷線計時器、閒置計時器、確認繼續計時器、配對超時計時器。
    * 用於遊戲結束時的資源清理。
    *
    * @param gameId - 遊戲 ID

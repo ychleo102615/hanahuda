@@ -21,6 +21,7 @@
  */
 
 import { EventRouter } from './EventRouter'
+import { SSE_EVENT_TYPES } from '#shared/contracts'
 
 /**
  * SSE 連線參數
@@ -35,28 +36,6 @@ export interface SSEConnectionParams {
   /** 房間類型 ID（可選，新遊戲時指定） */
   roomTypeId?: string | null
 }
-
-/**
- * SSE 支援的事件類型
- */
-const SSE_EVENT_TYPES = [
-  'InitialState',
-  'GameStarted',
-  'RoundDealt',
-  'TurnCompleted',
-  'SelectionRequired',
-  'TurnProgressAfterSelection',
-  'DecisionRequired',
-  'DecisionMade',
-  'YakuFormed',
-  'RoundScored',
-  'RoundEndedInstantly',
-  'RoundDrawn',
-  'RoundEnded',
-  'GameFinished',
-  'TurnError',
-  'GameSnapshotRestore',
-] as const
 
 /**
  * 睡眠輔助函數

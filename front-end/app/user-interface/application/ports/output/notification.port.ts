@@ -165,6 +165,35 @@ export interface NotificationPort {
    */
   hideModal(): void
 
+  /**
+   * 顯示遊戲錯誤 Modal
+   *
+   * @description
+   * 顯示通用的遊戲錯誤 Modal，包含錯誤訊息和倒數返回大廳功能。
+   * 用於處理 GameError 事件（如配對超時、遊戲過期等）。
+   *
+   * @param message - 錯誤訊息
+   *
+   * @example
+   * ```typescript
+   * notification.showGameErrorModal('Matchmaking timeout, please retry')
+   * ```
+   */
+  showGameErrorModal(message: string): void
+
+  /**
+   * 隱藏遊戲錯誤 Modal
+   *
+   * @description
+   * 隱藏遊戲錯誤 Modal，通常在倒數結束或玩家手動關閉時調用。
+   *
+   * @example
+   * ```typescript
+   * notification.hideGameErrorModal()
+   * ```
+   */
+  hideGameErrorModal(): void
+
   // ===== Toast =====
 
   /**

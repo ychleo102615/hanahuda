@@ -501,3 +501,38 @@ export type GameEvent =
   | TurnErrorEvent
   | GameErrorEvent
   | GameSnapshotRestore
+
+/**
+ * SSE 事件類型常數陣列（SSOT）
+ *
+ * @description
+ * 所有 SSE 推送事件的類型列表。
+ * 用於 SSE 客戶端註冊事件監聽器。
+ *
+ * @note
+ * 此陣列與 GameEvent 聯合型別保持同步。
+ * 新增事件時需同時更新兩處。
+ */
+export const SSE_EVENT_TYPES = [
+  'InitialState',
+  'GameStarted',
+  'RoundDealt',
+  'TurnCompleted',
+  'SelectionRequired',
+  'TurnProgressAfterSelection',
+  'DecisionRequired',
+  'DecisionMade',
+  'RoundScored',
+  'RoundDrawn',
+  'RoundEndedInstantly',
+  'RoundEnded',
+  'GameFinished',
+  'TurnError',
+  'GameError',
+  'GameSnapshotRestore',
+] as const
+
+/**
+ * SSE 事件類型（從常數陣列衍生）
+ */
+export type SSEEventType = (typeof SSE_EVENT_TYPES)[number]

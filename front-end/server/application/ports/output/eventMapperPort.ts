@@ -26,6 +26,7 @@ import type {
   RoundScoringData,
   RoundInstantEndData,
   GameFinishedEvent,
+  GameErrorEvent,
   CardPlay,
   CardSelection,
   YakuUpdate,
@@ -33,7 +34,7 @@ import type {
   Yaku,
   PlayerScore,
 } from '#shared/contracts'
-import type { RoundEndReason, GameEndedReason } from '#shared/contracts/errors'
+import type { RoundEndReason, GameEndedReason, GameErrorCode, SuggestedAction } from '#shared/contracts/errors'
 
 // ============================================================
 // Base EventMapperPort
@@ -64,6 +65,21 @@ export interface EventMapperPort {
    * @param remainingSeconds - 操作剩餘秒數（可選，預設使用 config 值）
    */
   toGameSnapshotRestoreEvent(game: Game, remainingSeconds?: number): GameSnapshotRestore
+
+  /**
+   * 轉換為 GameError 事件
+   *
+   * @param errorCode - 錯誤代碼
+   * @param message - 錯誤訊息
+   * @param recoverable - 是否可恢復
+   * @param suggestedAction - 建議的使用者操作
+   */
+  toGameErrorEvent(
+    errorCode: GameErrorCode,
+    message: string,
+    recoverable: boolean,
+    suggestedAction?: SuggestedAction
+  ): GameErrorEvent
 }
 
 // ============================================================

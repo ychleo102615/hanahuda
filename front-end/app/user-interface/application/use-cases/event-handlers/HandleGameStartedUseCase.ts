@@ -27,8 +27,9 @@ export class HandleGameStartedUseCase implements HandleGameStartedPort {
   ) {}
 
   execute(event: GameStartedEvent, _options: ExecuteOptions): void {
-    // 1. 隱藏等待訊息（玩家 A 在等待時收到 GameStarted 事件）
+    // 1. 隱藏等待訊息並停止配對倒數（玩家 A 在等待時收到 GameStarted 事件）
     this.notification.hideWaitingMessage()
+    this.notification.stopActionCountdown()
 
     // 2. 初始化遊戲上下文（game_id, players, ruleset）
     this.updateUIState.initializeGameContext(

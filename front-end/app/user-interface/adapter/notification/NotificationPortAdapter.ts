@@ -66,6 +66,14 @@ export function createNotificationPortAdapter(
       store.hideModal()
     },
 
+    showGameErrorModal(message: string): void {
+      store.showGameErrorModal(message)
+    },
+
+    hideGameErrorModal(): void {
+      store.hideGameErrorModal()
+    },
+
     // ===== Toast (Unified Toast System) =====
     showErrorMessage(message: string): void {
       store.addToast({
@@ -145,7 +153,8 @@ export function createNotificationPortAdapter(
         store.gameFinishedModalVisible ||
         store.roundDrawnModalVisible ||
         store.roundScoredModalVisible ||
-        store.roundEndedInstantlyModalVisible
+        store.roundEndedInstantlyModalVisible ||
+        store.gameErrorModalVisible
       )
     },
 

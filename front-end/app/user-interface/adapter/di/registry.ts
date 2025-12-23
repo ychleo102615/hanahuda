@@ -69,6 +69,7 @@ import { SSEConnectionManager } from '../sse/SSEConnectionManager'
 import { RoomApiClient } from '../api/RoomApiClient'
 import { createGameConnectionPortAdapter } from '../connection/GameConnectionPortAdapter'
 import type { GameConnectionPort } from '../../application/ports/output'
+import type { SSEEventType } from '#shared/contracts'
 
 /**
  * 遊戲模式
@@ -463,9 +464,10 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T019: 註冊 GameError 事件處理器
+  // GameError 是各 Use Case 的 fallback，統一顯示錯誤 Modal
   container.register(
     TOKENS.HandleGameErrorPort,
-    () => new HandleGameErrorUseCase(notificationPort, matchmakingStatePort, navigationPort),
+    () => new HandleGameErrorUseCase(notificationPort, sessionContextPort, matchmakingStatePort),
     { singleton: true }
   )
 
@@ -651,7 +653,7 @@ function initializeMockEventEmitter(container: DIContainer): void {
  */
 function registerEventRoutes(container: DIContainer): void {
   const router = container.resolve(TOKENS.EventRouter) as {
-    register: (eventType: string, port: { execute: (payload: unknown) => void }) => void
+    register: (eventType: SSEEventType, port: { execute: (payload: unknown) => void }) => void
   }
 
   // SSE-First: 綁定 InitialState 事件（SSE 連線後的第一個事件）

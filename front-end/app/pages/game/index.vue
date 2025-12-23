@@ -30,6 +30,7 @@ import PlayerDepositoryZone from './components/PlayerDepositoryZone.vue'
 import DeckZone from './components/DeckZone.vue'
 import DecisionModal from './components/DecisionModal.vue'
 import GameFinishedModal from './components/GameFinishedModal.vue'
+import GameErrorModal from './components/GameErrorModal.vue'
 import RoundEndModal from './components/RoundEndModal.vue'
 import AnimationLayer from './components/AnimationLayer.vue'
 import GameAnnouncement from './components/GameAnnouncement.vue'
@@ -180,6 +181,9 @@ function handleFieldCardClick(cardId: string) {
 
     <!-- T089-T091 [US4]: Game Finished Modal -->
     <GameFinishedModal />
+
+    <!-- Game Error Modal -->
+    <GameErrorModal />
 
     <!-- T024-T028 [US3]: Round End Modal -->
     <RoundEndModal />

@@ -82,4 +82,9 @@ export type {
   // Snapshot Context Types
   SelectionContext,
   DecisionContext,
+  // SSE Event Types
+  SSEEventType,
 } from './events'
+
+// SSE Event Types Constant (for runtime use)
+export { SSE_EVENT_TYPES } from './events'

@@ -114,6 +114,9 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     // 2. 顯示等待訊息
     this.notification.showWaitingMessage(data.timeout_seconds)
 
+    // 3. 啟動配對超時倒數（沿用 actionTimeoutRemaining）
+    this.notification.startActionCountdown(data.timeout_seconds)
+
     console.info('[HandleInitialStateUseCase] Waiting for opponent, showing waiting UI')
   }
 
@@ -136,8 +139,9 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     // 1. 清除配對狀態（遊戲已開始）
     this.matchmakingState.clearSession()
 
-    // 2. 隱藏等待訊息
+    // 2. 隱藏等待訊息並停止配對倒數
     this.notification.hideWaitingMessage()
+    this.notification.stopActionCountdown()
 
     // 3. 設定遊戲初始狀態
     this.updateUIState.initializeGameContext(data.game_id, [...data.players], data.ruleset)

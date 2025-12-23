@@ -55,6 +55,9 @@ export interface GameConfig {
 
   /** 使用測試牌組（用於測試 TRIPLE_MATCH 等場景） */
   readonly use_test_deck: boolean
+
+  /** 配對超時（秒） - 等待對手加入的最大時間 */
+  readonly matchmaking_timeout_seconds: number
 }
 
 /**
@@ -108,6 +111,7 @@ function parseRoomType(): RoomTypeId {
  * - OPPONENT_THINKING_MIN_MS: 假玩家思考下限（預設 1500）
  * - OPPONENT_THINKING_MAX_MS: 假玩家思考上限（預設 3000）
  * - DEFAULT_ROOM_TYPE: 預設房間類型（預設 QUICK）
+ * - MATCHMAKING_TIMEOUT_SECONDS: 配對超時（預設 30）
  */
 export const gameConfig: GameConfig = {
   action_timeout_seconds: parseEnvNumber('ACTION_TIMEOUT_SECONDS', 15),
@@ -123,6 +127,7 @@ export const gameConfig: GameConfig = {
   session_timeout_ms: parseEnvNumber('SESSION_TIMEOUT_MS', 24 * 60 * 60 * 1000), // 24 hours
   default_room_type: parseRoomType(),
   use_test_deck: process.env.USE_TEST_DECK === 'true',
+  matchmaking_timeout_seconds: parseEnvNumber('MATCHMAKING_TIMEOUT_SECONDS', 30),
 }
 
 /**

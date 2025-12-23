@@ -5,17 +5,21 @@
  * 實作 HandleGameErrorPort，處理 GameError 事件（遊戲層級錯誤）。
  *
  * 依賴的 Output Ports：
- * - NotificationPort: 顯示錯誤通知
- * - MatchmakingStatePort: 更新配對狀態
- * - NavigationPort: 導航回首頁（若不可恢復）
+ * - NotificationPort: 顯示錯誤 Modal
+ * - SessionContextPort: 清除遊戲 ID
+ * - MatchmakingStatePort: 重置配對狀態（讓大廳按鈕恢復可點擊）
+ *
+ * @note
+ * GameError 是各 Use Case 的 fallback 結果，此 Use Case 負責統一處理前端展示。
+ * Modal 會顯示 5 秒倒數，之後自動導航回大廳。
  *
  * @example
  * ```typescript
  * // DI Container 註冊
  * const handleGameErrorUseCase = new HandleGameErrorUseCase(
  *   notificationPort,
- *   matchmakingStatePort,
- *   navigationPort
+ *   sessionContextPort,
+ *   matchmakingStatePort
  * )
  * ```
  */
@@ -23,41 +27,29 @@
 import type { HandleGameErrorPort, ExecuteOptions } from '../../ports/input'
 import type {
   NotificationPort,
+  SessionContextPort,
   MatchmakingStatePort,
-  NavigationPort,
 } from '../../ports/output'
 import type { GameErrorEvent } from '#shared/contracts'
 
 export class HandleGameErrorUseCase implements HandleGameErrorPort {
   constructor(
     private readonly notification: NotificationPort,
-    private readonly matchmakingState: MatchmakingStatePort,
-    private readonly navigation: NavigationPort
+    private readonly sessionContext: SessionContextPort,
+    private readonly matchmakingState: MatchmakingStatePort
   ) {}
 
   execute(event: GameErrorEvent, _options: ExecuteOptions): void {
-    // 0. 清理：停止倒數計時
+    // 1. 清理：停止所有倒數計時
     this.notification.cleanup()
 
-    // 1. 顯示錯誤通知
-    this.notification.showErrorMessage(event.message)
+    // 2. 清除遊戲 ID（遊戲已無效）
+    this.sessionContext.setGameId(null)
 
-    // 2. 更新配對狀態為錯誤
-    this.matchmakingState.setStatus('error')
-    this.matchmakingState.setErrorMessage(event.message)
+    // 3. 重置配對狀態（讓大廳按鈕恢復可點擊）
+    this.matchmakingState.clearSession()
 
-    // 3. 若不可恢復，清除會話並導航回首頁
-    if (!event.recoverable) {
-      this.matchmakingState.clearSession()
-      this.navigation.navigateToHome()
-      return
-    }
-
-    // 4. 可恢復的錯誤，根據 suggested_action 處理
-    if (event.suggested_action === 'RETURN_HOME') {
-      this.matchmakingState.clearSession()
-      this.navigation.navigateToHome()
-    }
-    // 若 suggested_action 為 'RETRY_MATCHMAKING'，則保持在大廳（使用者可手動重試）
+    // 4. 顯示錯誤 Modal（內含 5 秒倒數，自動返回大廳）
+    this.notification.showGameErrorModal(event.message)
   }
 }

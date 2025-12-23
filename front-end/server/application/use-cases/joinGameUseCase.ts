@@ -42,6 +42,7 @@ import type {
   JoinGameSnapshotOutput,
 } from '~~/server/application/ports/input/joinGameInputPort'
 import { gameConfig } from '~~/server/utils/config'
+import { GAME_ERROR_MESSAGES } from '#shared/contracts/errors'
 
 /**
  * 初始事件延遲（毫秒）
@@ -212,14 +213,21 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
     // 1. 若遊戲 WAITING → 返回 game_waiting（等待對手）
     if (game.status === 'WAITING') {
-      console.log(`[JoinGameUseCase] Game ${game.id} is WAITING, returning game_waiting`)
+      // 從 GameTimeoutManager 取得剩餘秒數（SSOT）
+      const remainingSeconds = this.gameTimeoutManager.getMatchmakingRemainingSeconds(game.id)
+        ?? gameConfig.matchmaking_timeout_seconds // fallback: 計時器不存在時使用完整秒數
+
+      console.log(`[JoinGameUseCase] Game ${game.id} is WAITING, returning game_waiting`, {
+        remainingSeconds,
+      })
+
       return {
         status: 'game_waiting',
         gameId: game.id,
         sessionToken,
         playerId,
         playerName,
-        timeoutSeconds: gameConfig.action_timeout_seconds,
+        timeoutSeconds: remainingSeconds,
       }
     }
 
@@ -291,6 +299,11 @@ export class JoinGameUseCase implements JoinGameInputPort {
       waitingPlayerId: playerId,
     })
 
+    // 啟動配對超時計時器
+    this.gameTimeoutManager.startMatchmakingTimeout(game.id, () => {
+      this.handleMatchmakingTimeout(game.id)
+    })
+
     // SSE-First: 返回 game_waiting 狀態（前端顯示等待畫面）
     return {
       status: 'game_waiting',
@@ -298,7 +311,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       sessionToken,
       playerId,
       playerName,
-      timeoutSeconds: gameConfig.action_timeout_seconds,
+      timeoutSeconds: gameConfig.matchmaking_timeout_seconds,
     }
   }
 
@@ -316,6 +329,9 @@ export class JoinGameUseCase implements JoinGameInputPort {
     playerId: string,
     playerName: string
   ): Promise<JoinGameStartedOutput> {
+    // 清除配對超時計時器（對手已加入）
+    this.gameTimeoutManager.clearMatchmakingTimeout(waitingGame.id)
+
     const sessionToken = randomUUID()
 
     const secondPlayer = createPlayer({
@@ -408,5 +424,41 @@ export class JoinGameUseCase implements JoinGameInputPort {
         )
       }
     }, INITIAL_EVENT_DELAY_MS)
+  }
+
+  /**
+   * 處理配對超時
+   *
+   * @description
+   * 當等待對手加入的時間超過設定值時，發送 GameError 事件並清理遊戲。
+   *
+   * @param gameId - 遊戲 ID
+   */
+  private handleMatchmakingTimeout(gameId: string): void {
+    console.log(`[JoinGameUseCase] Matchmaking timeout for game ${gameId}`)
+
+    // 檢查遊戲是否還在等待狀態
+    const game = this.gameStore.get(gameId)
+    if (!game || game.status !== 'WAITING') {
+      console.log(`[JoinGameUseCase] Game ${gameId} is no longer waiting, skip timeout handling`)
+      return
+    }
+
+    // 發送 GameError 事件給等待中的玩家
+    const errorEvent = this.eventMapper.toGameErrorEvent(
+      'MATCHMAKING_TIMEOUT',
+      GAME_ERROR_MESSAGES.MATCHMAKING_TIMEOUT,
+      false, // 不可恢復
+      'RETURN_HOME'
+    )
+    this.eventPublisher.publishToGame(gameId, errorEvent)
+
+    // 清理：從 GameStore 移除遊戲
+    this.gameStore.delete(gameId)
+
+    // 清理：清除所有計時器（雖然應該只有配對超時計時器）
+    this.gameTimeoutManager.clearAllForGame(gameId)
+
+    console.log(`[JoinGameUseCase] Game ${gameId} removed due to matchmaking timeout`)
   }
 }
