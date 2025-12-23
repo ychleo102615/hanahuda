@@ -46,6 +46,7 @@ import type { EventPublisherPort } from '~~/server/application/ports/output/even
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { TurnEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import {
   PlayHandCardError,
@@ -53,6 +54,10 @@ import {
   type PlayHandCardInput,
   type PlayHandCardOutput,
 } from '~~/server/application/ports/input/playHandCardInputPort'
+import { loggers } from '~~/server/utils/logger'
+
+/** Module logger instance */
+const logger = loggers.useCase('PlayHandCard')
 
 // Re-export for backwards compatibility
 export { PlayHandCardError } from '~~/server/application/ports/input/playHandCardInputPort'
@@ -71,7 +76,8 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: TurnEventMapperPort,
-    private readonly gameTimeoutManager?: GameTimeoutPort
+    private readonly gameTimeoutManager?: GameTimeoutPort,
+    private readonly gameLogRepository?: GameLogRepositoryPort
   ) {}
 
   /**
@@ -90,6 +96,14 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
    */
   async execute(input: PlayHandCardInput): Promise<PlayHandCardOutput> {
     const { gameId, playerId, cardId, targetCardId, isAutoAction } = input
+
+    // 記錄命令 (Fire-and-Forget)
+    this.gameLogRepository?.logAsync({
+      gameId,
+      playerId,
+      eventType: 'PlayHandCard',
+      payload: { cardId, targetCardId },
+    })
 
     // 0. 清除當前遊戲的超時計時器
     this.gameTimeoutManager?.clearTimeout(gameId)
@@ -239,7 +253,7 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
           )
           if (gameEnded) {
             // 已在 endGame() 中處理儲存和記憶體移除
-            console.log(`[PlayHandCardUseCase] Game ended`)
+            logger.info('Game ended', { gameId: game.id })
             return { success: true }
           }
         }
@@ -295,7 +309,7 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
     this.gameStore.set(game)
     await this.gameRepository.save(game)
 
-    console.log(`[PlayHandCardUseCase] Player ${playerId} played card ${cardId}`)
+    logger.info('Player played card', { playerId, cardId, gameId })
 
     return { success: true }
   }

@@ -111,7 +111,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
     // 4. 從容器取得 UseCase
     const useCase = container.playHandCardUseCase
 
-    // 5. 執行用例
+    // 5. 執行用例（命令日誌由 Use Case 內部記錄）
     await useCase.execute({
       gameId,
       playerId: sessionContext.playerId,

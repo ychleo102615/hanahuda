@@ -34,12 +34,17 @@ import type { RecordGameStatsInputPort } from '~~/server/application/ports/input
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { DecisionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
+import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
 import {
   MakeDecisionError,
   type MakeDecisionInputPort,
   type MakeDecisionInput,
   type MakeDecisionOutput,
 } from '~~/server/application/ports/input/makeDecisionInputPort'
+import { loggers } from '~~/server/utils/logger'
+
+/** Module logger instance */
+const logger = loggers.useCase('MakeDecision')
 
 // Re-export for backwards compatibility
 export { MakeDecisionError } from '~~/server/application/ports/input/makeDecisionInputPort'
@@ -59,7 +64,8 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: DecisionEventMapperPort,
     private readonly gameTimeoutManager?: GameTimeoutPort,
-    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort
+    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
+    private readonly gameLogRepository?: GameLogRepositoryPort
   ) {}
 
   /**
@@ -78,6 +84,14 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
    */
   async execute(input: MakeDecisionInput): Promise<MakeDecisionOutput> {
     const { gameId, playerId, decision, isAutoAction } = input
+
+    // 記錄命令 (Fire-and-Forget)
+    this.gameLogRepository?.logAsync({
+      gameId,
+      playerId,
+      eventType: 'MakeDecision',
+      payload: { decision },
+    })
 
     // 0. 清除當前遊戲的超時計時器
     this.gameTimeoutManager?.clearTimeout(gameId)
@@ -134,7 +148,7 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       // 檢查是否應該結束局（KOI_KOI 後可能無法繼續，例如雙方手牌都空了）
       if (shouldEndRound(game)) {
         // 即使選擇 KOI_KOI，如果無法繼續，也要進入流局處理
-        console.log(`[MakeDecisionUseCase] KOI_KOI but round should end, handling round draw`)
+        logger.info('KOI_KOI but round should end, handling round draw', { gameId })
         if (this.turnFlowService) {
           game = await this.turnFlowService.handleRoundDraw(gameId, game)
         }
@@ -186,7 +200,7 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
               players: game.players,
             })
           } catch (error) {
-            console.error(`[MakeDecisionUseCase] Failed to record game stats:`, error)
+            logger.error('Failed to record game stats', error, { gameId })
             // 統計記錄失敗不應影響遊戲結束流程
           }
         }
@@ -208,7 +222,7 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       )
       if (gameEnded) {
         // 已在 endGame() 中處理儲存和記憶體移除
-        console.log(`[MakeDecisionUseCase] Game ended`)
+        logger.info('Game ended', { gameId })
         return { success: true }
       }
     }
@@ -227,7 +241,7 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       this.gameStore.set(game)
     }
 
-    console.log(`[MakeDecisionUseCase] Player ${playerId} decided: ${decision}`)
+    logger.info('Player decided', { playerId, decision, gameId })
 
     return { success: true }
   }

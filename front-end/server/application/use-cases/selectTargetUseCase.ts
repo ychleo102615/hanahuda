@@ -42,6 +42,7 @@ import type { EventPublisherPort } from '~~/server/application/ports/output/even
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { SelectionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import {
   SelectTargetError,
@@ -49,6 +50,10 @@ import {
   type SelectTargetInput,
   type SelectTargetOutput,
 } from '~~/server/application/ports/input/selectTargetInputPort'
+import { loggers } from '~~/server/utils/logger'
+
+/** Module logger instance */
+const logger = loggers.useCase('SelectTarget')
 
 // Re-export for backwards compatibility
 export { SelectTargetError } from '~~/server/application/ports/input/selectTargetInputPort'
@@ -67,7 +72,8 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: SelectionEventMapperPort,
-    private readonly gameTimeoutManager?: GameTimeoutPort
+    private readonly gameTimeoutManager?: GameTimeoutPort,
+    private readonly gameLogRepository?: GameLogRepositoryPort
   ) {}
 
   /**
@@ -86,6 +92,14 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
    */
   async execute(input: SelectTargetInput): Promise<SelectTargetOutput> {
     const { gameId, playerId, sourceCardId, targetCardId, isAutoAction } = input
+
+    // 記錄命令 (Fire-and-Forget)
+    this.gameLogRepository?.logAsync({
+      gameId,
+      playerId,
+      eventType: 'SelectTarget',
+      payload: { sourceCardId, targetCardId },
+    })
 
     // 0. 清除當前遊戲的超時計時器
     this.gameTimeoutManager?.clearTimeout(gameId)
@@ -231,7 +245,7 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
         )
         if (gameEnded) {
           // 已在 endGame() 中處理儲存和記憶體移除
-          console.log(`[SelectTargetUseCase] Game ended`)
+          logger.info('Game ended', { gameId: game.id })
           return { success: true }
         }
       }
@@ -291,7 +305,7 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
     this.gameStore.set(game)
     await this.gameRepository.save(game)
 
-    console.log(`[SelectTargetUseCase] Player ${playerId} selected target ${targetCardId}`)
+    logger.info('Player selected target', { playerId, targetCardId, gameId })
 
     return { success: true }
   }

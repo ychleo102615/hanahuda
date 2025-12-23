@@ -29,6 +29,10 @@ import {
   type JoinGameAsAiOutput,
 } from '~~/server/application/ports/input/joinGameAsAiInputPort'
 import { gameConfig } from '~~/server/utils/config'
+import { loggers } from '~~/server/utils/logger'
+
+/** Module logger instance */
+const logger = loggers.useCase('JoinGameAsAi')
 
 /**
  * 初始事件延遲（毫秒）
@@ -71,13 +75,13 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
   async execute(input: JoinGameAsAiInput): Promise<JoinGameAsAiOutput> {
     const { playerId, playerName, gameId, strategyType } = input
 
-    console.log(`[JoinGameAsAiUseCase] AI ${playerName} (${strategyType}) joining game ${gameId}`)
+    logger.info('AI joining game', { playerName, strategyType, gameId })
 
     // 1. 取得目標遊戲
     const waitingGame = this.gameStore.get(gameId)
 
     if (!waitingGame) {
-      console.error(`[JoinGameAsAiUseCase] Game ${gameId} not found`)
+      logger.error('Game not found', undefined, { gameId })
       return {
         gameId,
         playerId,
@@ -86,7 +90,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
     }
 
     if (waitingGame.status !== 'WAITING') {
-      console.error(`[JoinGameAsAiUseCase] Game ${gameId} is not in WAITING status`)
+      logger.error('Game is not in WAITING status', undefined, { gameId, status: waitingGame.status })
       return {
         gameId,
         playerId,
@@ -114,9 +118,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
     this.gameStore.set(game)
     await this.gameRepository.save(game)
 
-    console.log(
-      `[JoinGameAsAiUseCase] AI ${playerName} joined game ${game.id}, game is now IN_PROGRESS`
-    )
+    logger.info('AI joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
 
     // 7. 排程初始事件（延遲讓客戶端建立 SSE 連線）
     this.scheduleInitialEvents(game)
@@ -137,15 +139,13 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
     for (const playerState of game.currentRound.playerStates) {
       const teshiResult = detectTeshi(playerState.hand)
       if (teshiResult.hasTeshi) {
-        console.log(
-          `[JoinGameAsAiUseCase] Teshi detected for player ${playerState.playerId}, month: ${teshiResult.month}`
-        )
+        logger.info('Teshi detected', { playerId: playerState.playerId, month: teshiResult.month })
       }
     }
 
     const kuttsukiResult = detectKuttsuki(game.currentRound.field)
     if (kuttsukiResult.hasKuttsuki) {
-      console.log(`[JoinGameAsAiUseCase] Kuttsuki detected on field, month: ${kuttsukiResult.month}`)
+      logger.info('Kuttsuki detected on field', { month: kuttsukiResult.month })
     }
   }
 
@@ -171,12 +171,9 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
           this.turnFlowService?.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
         }
 
-        console.log(`[JoinGameAsAiUseCase] Initial events published for game ${game.id}`)
+        logger.info('Initial events published', { gameId: game.id })
       } catch (error) {
-        console.error(
-          `[JoinGameAsAiUseCase] Failed to publish initial events for game ${game.id}:`,
-          error
-        )
+        logger.error('Failed to publish initial events', error, { gameId: game.id })
       }
     }, INITIAL_EVENT_DELAY_MS)
   }

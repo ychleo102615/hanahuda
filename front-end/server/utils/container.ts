@@ -17,6 +17,7 @@
 import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
 import { gameRepository } from '~~/server/adapters/persistence/drizzleGameRepository'
 import { playerStatsRepository } from '~~/server/adapters/persistence/drizzlePlayerStatsRepository'
+import { gameLogRepository } from '~~/server/adapters/persistence/drizzleGameLogRepository'
 
 // Adapters - Event Publisher
 import { internalEventBus } from '~~/server/adapters/event-publisher/internalEventBus'
@@ -54,9 +55,9 @@ import type { RecordGameStatsInputPort } from '~~/server/application/ports/input
 import type { ConfirmContinueInputPort } from '~~/server/application/ports/input/confirmContinueInputPort'
 
 /**
- * 建立 CompositeEventPublisher
+ * 建立 CompositeEventPublisher（注入 GameLogRepository 以支援資料庫日誌）
  */
-const compositeEventPublisher = createCompositeEventPublisher()
+const compositeEventPublisher = createCompositeEventPublisher(gameLogRepository)
 
 /**
  * 建立 Use Cases（實作 Input Ports）
@@ -74,7 +75,8 @@ const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(
   inMemoryGameStore,
   eventMapper,
   gameTimeoutManager,
-  recordGameStatsUseCase
+  recordGameStatsUseCase,
+  gameLogRepository
 )
 
 /**
@@ -92,7 +94,8 @@ const playHandCardUseCase = new PlayHandCardUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
-  gameTimeoutManager
+  gameTimeoutManager,
+  gameLogRepository
 )
 
 const selectTargetUseCase = new SelectTargetUseCase(
@@ -100,7 +103,8 @@ const selectTargetUseCase = new SelectTargetUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
-  gameTimeoutManager
+  gameTimeoutManager,
+  gameLogRepository
 )
 
 const makeDecisionUseCase = new MakeDecisionUseCase(
@@ -109,7 +113,8 @@ const makeDecisionUseCase = new MakeDecisionUseCase(
   inMemoryGameStore,
   eventMapper,
   gameTimeoutManager,
-  recordGameStatsUseCase
+  recordGameStatsUseCase,
+  gameLogRepository
 )
 
 const joinGameUseCase = new JoinGameUseCase(
@@ -170,6 +175,7 @@ export const container = {
   gameStore: inMemoryGameStore,
   gameRepository,
   playerStatsRepository,
+  gameLogRepository,
   eventPublisher: compositeEventPublisher,
   eventMapper,
   internalEventBus,

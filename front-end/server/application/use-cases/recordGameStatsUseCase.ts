@@ -16,6 +16,11 @@ import {
   type RecordGameStatsOutput,
 } from '~~/server/application/ports/input/recordGameStatsInputPort'
 
+import { loggers } from '~~/server/utils/logger'
+
+/** Module logger instance */
+const logger = loggers.useCase('RecordGameStats')
+
 // Re-export for backwards compatibility
 export { RecordGameStatsError } from '~~/server/application/ports/input/recordGameStatsInputPort'
 
@@ -46,13 +51,13 @@ export class RecordGameStatsUseCase implements RecordGameStatsInputPort {
       players,
     } = input
 
-    console.log(`[RecordGameStatsUseCase] Recording stats for game ${gameId}, winner: ${winnerId ?? 'DRAW'}`)
+    logger.info('Recording stats for game', { gameId, winnerId: winnerId ?? 'DRAW' })
 
     // 過濾出人類玩家
     const humanPlayers = players.filter(p => !p.isAi)
 
     if (humanPlayers.length === 0) {
-      console.log(`[RecordGameStatsUseCase] No human players in game ${gameId}, skipping stats recording`)
+      logger.info('No human players, skipping stats recording', { gameId })
       return { success: true }
     }
 
@@ -92,12 +97,15 @@ export class RecordGameStatsUseCase implements RecordGameStatsInputPort {
 
       try {
         await this.playerStatsRepository.upsert(upsertInput)
-        console.log(
-          `[RecordGameStatsUseCase] Recorded stats for player ${player.id}: ` +
-          `score=${scoreChange}, winner=${isWinner}, loser=${isLoser}, yakuCount=${Object.keys(yakuCounts).length}`
-        )
+        logger.info('Recorded stats for player', {
+          playerId: player.id,
+          scoreChange,
+          isWinner,
+          isLoser,
+          yakuCount: Object.keys(yakuCounts).length,
+        })
       } catch (error) {
-        console.error(`[RecordGameStatsUseCase] Failed to record stats for player ${player.id}:`, error)
+        logger.error('Failed to record stats for player', error, { playerId: player.id })
         throw new RecordGameStatsError(
           'REPOSITORY_ERROR',
           `Failed to record stats for player ${player.id}: ${error instanceof Error ? error.message : String(error)}`
@@ -105,7 +113,7 @@ export class RecordGameStatsUseCase implements RecordGameStatsInputPort {
       }
     }
 
-    console.log(`[RecordGameStatsUseCase] Successfully recorded stats for ${humanPlayers.length} human player(s) in game ${gameId}`)
+    logger.info('Successfully recorded stats for human players', { gameId, count: humanPlayers.length })
 
     return { success: true }
   }

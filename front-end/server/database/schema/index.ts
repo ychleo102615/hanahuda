@@ -13,3 +13,4 @@
 // Tables
 export { games, type Game, type NewGame, type GameStatus } from './games'
 export { playerStats, type PlayerStat, type NewPlayerStat, type YakuCounts } from './playerStats'
+export { gameLogs, type GameLog, type NewGameLog, type GameLogEventType } from './gameLogs'

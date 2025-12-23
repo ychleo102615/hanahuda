@@ -15,6 +15,20 @@
       "when": 1765808922111,
       "tag": "0001_thankful_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766495386615,
+      "tag": "0002_watery_black_crow",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1766501740264,
+      "tag": "0003_lazy_ozymandias",
+      "breakpoints": true
     }
   ]
 }

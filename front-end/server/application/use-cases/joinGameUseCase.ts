@@ -43,6 +43,10 @@ import type {
 } from '~~/server/application/ports/input/joinGameInputPort'
 import { gameConfig } from '~~/server/utils/config'
 import { GAME_ERROR_MESSAGES } from '#shared/contracts/errors'
+import { loggers } from '~~/server/utils/logger'
+
+/** Module logger instance */
+const logger = loggers.useCase('JoinGame')
 
 /**
  * 初始事件延遲（毫秒）
@@ -95,7 +99,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
     // 2. 新遊戲模式：沒有提供 gameId，開始新遊戲
     // 注意：即使有 sessionToken，也不查詢舊遊戲，直接開始新遊戲流程
-    console.log(`[JoinGameUseCase] New game mode for player ${playerName}`)
+    logger.info('New game mode', { playerName })
 
     // 3. 查找等待中的遊戲
     const waitingGame = this.gameStore.findWaitingGame()
@@ -128,7 +132,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
     playerName: string,
     sessionToken?: string
   ): Promise<JoinGameOutput> {
-    console.log(`[JoinGameUseCase] Reconnection mode for game ${gameId}, player ${playerId}`)
+    logger.info('Reconnection mode', { gameId, playerId })
 
     // 1. 先查記憶體
     const memoryGame = this.gameStore.get(gameId)
@@ -136,7 +140,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       // 驗證玩家身份
       const isPlayer = memoryGame.players.some((p) => p.id === playerId)
       if (!isPlayer) {
-        console.log(`[JoinGameUseCase] Player ${playerId} not in game ${gameId}, rejecting reconnection`)
+        logger.warn('Rejecting reconnection - player not in game', { playerId, gameId })
         // 玩家不屬於此遊戲，返回過期
         return { status: 'game_expired', gameId }
       }
@@ -144,7 +148,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       // 玩家身份驗證通過，執行重連
       const token = sessionToken || this.findPlayerSessionToken(gameId, playerId)
       if (!token) {
-        console.log(`[JoinGameUseCase] No session token for player ${playerId} in game ${gameId}`)
+        logger.warn('No session token for player', { playerId, gameId })
         return { status: 'game_expired', gameId }
       }
 
@@ -154,13 +158,13 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 2. 記憶體沒有，查資料庫
     const dbGame = await this.gameRepository.findById(gameId)
     if (!dbGame) {
-      console.log(`[JoinGameUseCase] Game ${gameId} not found`)
+      logger.info('Game not found', { gameId })
       return { status: 'game_expired', gameId }
     }
 
     // 3. 根據遊戲狀態返回結果
     if (dbGame.status === 'FINISHED') {
-      console.log(`[JoinGameUseCase] Game ${gameId} already finished`)
+      logger.info('Game already finished', { gameId })
       const winnerId = determineWinner(dbGame)
       return {
         status: 'game_finished',
@@ -176,7 +180,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
     }
 
     // 4. 遊戲在 DB 但不在記憶體 → 已過期
-    console.log(`[JoinGameUseCase] Game ${gameId} expired (in DB but not in memory)`)
+    logger.info('Game expired (in DB but not in memory)', { gameId })
     return { status: 'game_expired', gameId }
   }
 
@@ -209,7 +213,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
     playerName: string,
     sessionToken: string
   ): JoinGameSnapshotOutput | JoinGameWaitingOutput {
-    console.log(`[JoinGameUseCase] Reconnection for game ${game.id}, player ${playerId}`)
+    logger.info('Processing reconnection', { gameId: game.id, playerId })
 
     // 1. 若遊戲 WAITING → 返回 game_waiting（等待對手）
     if (game.status === 'WAITING') {
@@ -217,9 +221,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       const remainingSeconds = this.gameTimeoutManager.getMatchmakingRemainingSeconds(game.id)
         ?? gameConfig.matchmaking_timeout_seconds // fallback: 計時器不存在時使用完整秒數
 
-      console.log(`[JoinGameUseCase] Game ${game.id} is WAITING, returning game_waiting`, {
-        remainingSeconds,
-      })
+      logger.info('Game is WAITING, returning game_waiting', { gameId: game.id, remainingSeconds })
 
       return {
         status: 'game_waiting',
@@ -241,7 +243,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       remainingSeconds ?? undefined
     )
 
-    console.log(`[JoinGameUseCase] Returning snapshot for game ${game.id}, remaining: ${remainingSeconds}s`)
+    logger.info('Returning snapshot', { gameId: game.id, remainingSeconds })
 
     return {
       status: 'snapshot',
@@ -291,7 +293,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
     this.gameStore.set(game)
     await this.gameRepository.save(game)
 
-    console.log(`[JoinGameUseCase] Created new WAITING game ${gameId} for player ${playerName}`)
+    logger.info('Created new WAITING game', { gameId, playerName })
 
     // 發布 ROOM_CREATED 內部事件（通知 OpponentService 有新房間需要 AI 加入）
     this.internalEventPublisher.publishRoomCreated({
@@ -351,15 +353,13 @@ export class JoinGameUseCase implements JoinGameInputPort {
       for (const playerState of game.currentRound.playerStates) {
         const teshiResult = detectTeshi(playerState.hand)
         if (teshiResult.hasTeshi) {
-          console.log(
-            `[JoinGameUseCase] Teshi detected for player ${playerState.playerId}, month: ${teshiResult.month}`
-          )
+          logger.info('Teshi detected', { playerId: playerState.playerId, month: teshiResult.month })
         }
       }
 
       const kuttsukiResult = detectKuttsuki(game.currentRound.field)
       if (kuttsukiResult.hasKuttsuki) {
-        console.log(`[JoinGameUseCase] Kuttsuki detected on field, month: ${kuttsukiResult.month}`)
+        logger.info('Kuttsuki detected on field', { month: kuttsukiResult.month })
       }
     }
 
@@ -368,9 +368,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
     this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
     await this.gameRepository.save(game)
 
-    console.log(
-      `[JoinGameUseCase] Player ${playerName} joined game ${game.id}, game is now IN_PROGRESS`
-    )
+    logger.info('Player joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
 
     // 排程初始事件（延遲讓客戶端建立 SSE 連線）
     // GameStarted 和 RoundDealt 會廣播給所有玩家
@@ -416,12 +414,9 @@ export class JoinGameUseCase implements JoinGameInputPort {
           this.turnFlowService?.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
         }
 
-        console.log(`[JoinGameUseCase] Initial events published for game ${game.id}`)
+        logger.info('Initial events published', { gameId: game.id })
       } catch (error) {
-        console.error(
-          `[JoinGameUseCase] Failed to publish initial events for game ${game.id}:`,
-          error
-        )
+        logger.error('Failed to publish initial events', error, { gameId: game.id })
       }
     }, INITIAL_EVENT_DELAY_MS)
   }
@@ -435,12 +430,12 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * @param gameId - 遊戲 ID
    */
   private handleMatchmakingTimeout(gameId: string): void {
-    console.log(`[JoinGameUseCase] Matchmaking timeout for game ${gameId}`)
+    logger.warn('Matchmaking timeout', { gameId })
 
     // 檢查遊戲是否還在等待狀態
     const game = this.gameStore.get(gameId)
     if (!game || game.status !== 'WAITING') {
-      console.log(`[JoinGameUseCase] Game ${gameId} is no longer waiting, skip timeout handling`)
+      logger.info('Game is no longer waiting, skip timeout handling', { gameId })
       return
     }
 
@@ -459,6 +454,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 清理：清除所有計時器（雖然應該只有配對超時計時器）
     this.gameTimeoutManager.clearAllForGame(gameId)
 
-    console.log(`[JoinGameUseCase] Game ${gameId} removed due to matchmaking timeout`)
+    logger.info('Game removed due to matchmaking timeout', { gameId })
   }
 }

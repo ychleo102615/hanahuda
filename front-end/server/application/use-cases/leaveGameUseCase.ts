@@ -19,6 +19,7 @@ import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTim
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { LeaveGameEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
+import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
 import { markPlayerLeft, getPlayerConnectionStatus } from '~~/server/domain/game/playerConnection'
 import {
   LeaveGameError,
@@ -26,6 +27,10 @@ import {
   type LeaveGameInput,
   type LeaveGameOutput,
 } from '~~/server/application/ports/input/leaveGameInputPort'
+import { loggers } from '~~/server/utils/logger'
+
+/** Module logger instance */
+const logger = loggers.useCase('LeaveGame')
 
 // Re-export for backwards compatibility
 export { LeaveGameError } from '~~/server/application/ports/input/leaveGameInputPort'
@@ -48,7 +53,8 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: LeaveGameEventMapperPort,
     private readonly gameTimeoutManager?: GameTimeoutPort,
-    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort
+    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
+    private readonly gameLogRepository?: GameLogRepositoryPort
   ) {}
 
   /**
@@ -60,6 +66,14 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
    */
   async execute(input: LeaveGameInput): Promise<LeaveGameOutput> {
     const { gameId, playerId } = input
+
+    // 記錄命令 (Fire-and-Forget)
+    this.gameLogRepository?.logAsync({
+      gameId,
+      playerId,
+      eventType: 'LeaveGame',
+      payload: { reason: 'USER_ACTION' },
+    })
 
     // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
     const existingGame = this.gameStore.get(gameId)
@@ -82,7 +96,7 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
     const currentStatus = getPlayerConnectionStatus(existingGame, playerId)
     if (currentStatus === 'LEFT') {
       // 玩家已經離開，不需要重複處理
-      console.log(`[LeaveGameUseCase] Player ${playerId} already left game ${gameId}`)
+      logger.info('Player already left game', { playerId, gameId })
       return {
         success: true,
         leftAt: new Date().toISOString(),
@@ -101,7 +115,7 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
     this.gameStore.set(updatedGame)
     await this.gameRepository.save(updatedGame)
 
-    console.log(`[LeaveGameUseCase] Player ${playerId} marked as LEFT in game ${gameId}, game continues with auto-action`)
+    logger.info('Player marked as LEFT, game continues with auto-action', { playerId, gameId })
 
     return {
       success: true,

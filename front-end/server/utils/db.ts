@@ -31,11 +31,15 @@ if (!connectionString) {
  * @description
  * 使用 postgres.js 建立連線池。
  * max: 最大連線數（預設 10）
+ * connection.TimeZone: 設定為 UTC 確保時間戳一致性
  */
 const client = postgres(connectionString, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
+  connection: {
+    TimeZone: 'UTC',
+  },
 })
 
 /**

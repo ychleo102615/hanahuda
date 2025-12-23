@@ -20,6 +20,10 @@ import {
   type ConfirmContinueOutput,
 } from '~~/server/application/ports/input/confirmContinueInputPort'
 import { isConfirmationRequired } from '~~/server/domain/game/playerConnection'
+import { loggers } from '~~/server/utils/logger'
+
+/** Module logger instance */
+const logger = loggers.useCase('ConfirmContinue')
 
 /**
  * ConfirmContinueUseCase
@@ -70,11 +74,11 @@ export class ConfirmContinueUseCase implements ConfirmContinueInputPort {
     // 5. 處理玩家決策
     if (decision === 'LEAVE') {
       // 玩家選擇離開，結束遊戲
-      console.log(`[ConfirmContinueUseCase] Player ${playerId} chose to leave game ${gameId}`)
+      logger.info('Player chose to leave game', { playerId, gameId })
       await this.turnFlowService.endGameDueToIdlePlayer(gameId, playerId)
     } else {
       // 玩家選擇繼續
-      console.log(`[ConfirmContinueUseCase] Player ${playerId} confirmed continue in game ${gameId}`)
+      logger.info('Player confirmed continue', { playerId, gameId })
       await this.turnFlowService.handlePlayerConfirmContinue(gameId, playerId)
     }
 

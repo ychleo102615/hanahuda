@@ -30,6 +30,10 @@ import {
   hasDisconnectedOrLeftPlayers,
 } from '~~/server/domain/game/playerConnection'
 import { gameConfig } from '~~/server/utils/config'
+import { loggers } from '~~/server/utils/logger'
+
+/** Module logger instance */
+const logger = loggers.useCase('TurnFlow')
 
 /**
  * TurnFlowService
@@ -58,20 +62,20 @@ export class TurnFlowService {
     playerId: string,
     flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
   ): void {
-    console.log(`[TurnFlowService] Starting timeout for player ${playerId}`)
+    logger.info('Starting timeout for player', { playerId, gameId, flowState })
 
     // 啟動 15 秒操作計時器
     this.gameTimeoutManager.startTimeout(
       gameId,
       gameConfig.turn_timeout_seconds,
       () => {
-        console.log(`[TurnFlowService] Action timeout for player ${playerId} in game ${gameId}, executing auto-action`)
+        logger.info('Action timeout, executing auto-action', { playerId, gameId })
         this.autoActionUseCase.execute({
           gameId,
           playerId,
           currentFlowState: flowState,
         }).catch((error) => {
-          console.error(`[TurnFlowService] Auto-action failed:`, error)
+          logger.error('Auto-action failed', error, { playerId, gameId })
         })
       }
     )
@@ -103,7 +107,7 @@ export class TurnFlowService {
     }
 
     const remainingSeconds = this.gameTimeoutManager.getRemainingSeconds(gameId)
-    console.log(`[TurnFlowService] Player ${playerId} reconnected, remaining: ${remainingSeconds}s`)
+    logger.info('Player reconnected', { playerId, gameId, remainingSeconds })
 
     // 啟動閒置計時器（重連玩家應有閒置追蹤）
     this.startIdleTimeoutIfNeeded(gameId, playerId)
@@ -141,9 +145,9 @@ export class TurnFlowService {
       gameId,
       playerId,
       () => {
-        console.log(`[TurnFlowService] Idle timeout for player ${playerId} in game ${gameId}, marking for confirmation`)
+        logger.info('Idle timeout, marking for confirmation', { playerId, gameId })
         this.markPlayerRequiresConfirmation(gameId, playerId).catch((error) => {
-          console.error(`[TurnFlowService] Failed to mark player for confirmation:`, error)
+          logger.error('Failed to mark player for confirmation', error, { playerId, gameId })
         })
       }
     )
@@ -169,7 +173,7 @@ export class TurnFlowService {
     this.gameStore.set(updatedGame)
     await this.gameRepository.save(updatedGame)
 
-    console.log(`[TurnFlowService] Marked player ${playerId} as requiring confirmation in game ${gameId}`)
+    logger.info('Marked player as requiring confirmation', { playerId, gameId })
   }
 
   /**
@@ -193,7 +197,7 @@ export class TurnFlowService {
       const updatedGame = clearRequireContinueConfirmation(game, playerId)
       this.gameStore.set(updatedGame)
       await this.gameRepository.save(updatedGame)
-      console.log(`[TurnFlowService] Cleared confirmation requirement for player ${playerId} in game ${gameId}`)
+      logger.info('Cleared confirmation requirement', { playerId, gameId })
     }
   }
 
@@ -269,7 +273,7 @@ export class TurnFlowService {
         playerId,
         totalConfirmSeconds,
         () => {
-          console.log(`[TurnFlowService] Confirmation timeout for player ${playerId} in game ${gameId}, ending game`)
+          logger.info('Confirmation timeout, ending game', { playerId, gameId })
           this.endGameDueToIdlePlayer(gameId, playerId)
         }
       )
@@ -299,7 +303,7 @@ export class TurnFlowService {
       this.gameStore.set(updatedGame)
       await this.gameRepository.save(updatedGame)
       game = updatedGame
-      console.log(`[TurnFlowService] Player ${playerId} confirmed continue in game ${gameId}`)
+      logger.info('Player confirmed continue', { playerId, gameId })
     }
 
     // 重置閒置計時器（確認後重新開始計時）
@@ -307,7 +311,7 @@ export class TurnFlowService {
 
     // 檢查所有玩家是否都已確認
     if (game && game.pendingContinueConfirmations.length === 0) {
-      console.log(`[TurnFlowService] All players confirmed, continuing to next round`)
+      logger.info('All players confirmed, continuing to next round', { gameId })
 
       // 啟動 display timeout，進入下一回合
       const firstPlayerId = game.currentRound?.activePlayerId
@@ -349,7 +353,7 @@ export class TurnFlowService {
   ): Promise<void> {
     const game = this.gameStore.get(gameId)
     if (!game) {
-      console.warn(`[TurnFlowService] Game ${gameId} not found, cannot end game`)
+      logger.warn('Game not found, cannot end game', { gameId })
       return
     }
 
@@ -373,7 +377,7 @@ export class TurnFlowService {
     )
     this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
 
-    console.log(`[TurnFlowService] Game ${gameId} ended, reason: ${reason}, winner: ${winnerId ?? 'none'}`)
+    logger.info('Game ended', { gameId, reason, winnerId: winnerId ?? 'none' })
   }
 
   /**
@@ -386,7 +390,7 @@ export class TurnFlowService {
     try {
       const game = this.gameStore.get(gameId)
       if (!game) {
-        console.warn(`[TurnFlowService] Game ${gameId} not found, cannot end game`)
+        logger.warn('Game not found, cannot end game', { gameId })
         return
       }
 
@@ -395,7 +399,7 @@ export class TurnFlowService {
 
       await this.endGame(gameId, winnerId, 'PLAYER_IDLE_TIMEOUT')
     } catch (error) {
-      console.error(`[TurnFlowService] Failed to end game due to idle player:`, error)
+      logger.error('Failed to end game due to idle player', error, { gameId })
     }
   }
 
@@ -415,7 +419,7 @@ export class TurnFlowService {
       return false
     }
 
-    console.log(`[TurnFlowService] Found disconnected/left players in game ${gameId}, ending game`)
+    logger.info('Found disconnected/left players, ending game', { gameId })
 
     // 找出連線中的玩家作為勝者
     const connectedPlayer = game.players.find(
@@ -466,7 +470,7 @@ export class TurnFlowService {
     if (requireConfirmation) {
       // 需要確認：不啟動 display timeout
       // 等待玩家確認後由 handlePlayerConfirmContinue() 繼續流程
-      console.log(`[TurnFlowService] Waiting for player confirmation before next round (draw)`)
+      logger.info('Waiting for player confirmation before next round (draw)', { gameId })
     } else if (isNextRound) {
       // 不需要確認且有下一局：啟動 display timeout
       const firstPlayerId = updatedGame.currentRound?.activePlayerId
@@ -633,7 +637,7 @@ export class TurnFlowService {
     if (requireConfirmation) {
       // 需要確認：不啟動 display timeout
       // 等待玩家確認後由 handlePlayerConfirmContinue() 繼續流程
-      console.log(`[TurnFlowService] Waiting for player confirmation before next round`)
+      logger.info('Waiting for player confirmation before next round', { gameId })
     } else {
       // 不需要確認：根據 transitionResult 決定下一步
       if (transitionResult.transitionType === 'NEXT_ROUND') {
