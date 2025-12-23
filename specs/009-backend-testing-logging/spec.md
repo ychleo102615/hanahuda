@@ -97,14 +97,24 @@
   - Application 層使用 `loggers.useCase(name)`
   - Adapter 層使用 `loggers.adapter(name)`
 - **FR-005**: 所有日誌 MUST 包含以下結構化欄位：時間戳（ISO 8601）、日誌等級、模組名稱、Request ID（若有）、訊息內容、額外資料（JSON 格式）
-- **FR-006**: 系統 MUST 將所有遊戲 Commands 記錄到資料庫，包含：命令類型、命令內容、時間戳、玩家 ID、遊戲 ID、Request ID
+- **FR-006**: 系統 MUST 將所有遊戲 Commands 記錄到資料庫，包含：命令類型、命令內容、時間戳、玩家 ID、遊戲 ID、Request ID（若有）
+  - 涵蓋命令類型（依 `doc/shared/protocol.md`）：
+    - `TurnPlayHandCard` - 打出手牌
+    - `TurnSelectTarget` - 選擇翻牌配對目標
+    - `RoundMakeDecision` - Koi-Koi 決策
+    - `GameLeave` - 離開遊戲
+  - 註：`GameRequestJoin` 為連線命令，不在遊戲日誌範圍內
 - **FR-007**: 系統 MUST 將所有遊戲 Events 記錄到資料庫，包含：事件類型、事件內容、時間戳、遊戲 ID、相關玩家 ID（若有）
+  - 涵蓋事件類型（依 `doc/shared/protocol.md`）：
+    - 遊戲級：`GameStarted`、`RoundDealt`、`RoundEndedInstantly`、`RoundScored`、`RoundDrawn`、`GameFinished`
+    - 回合級：`TurnCompleted`、`SelectionRequired`、`TurnProgressAfterSelection`、`DecisionRequired`、`DecisionMade`
+  - 註：`TurnError`、`GameError`、`GameSnapshotRestore` 為錯誤/重連事件，不在遊戲日誌範圍內
 - **FR-008**: Event/Command 的資料庫寫入 MUST 為非同步操作，不得阻斷主要遊戲流程
 - **FR-009**: 系統 MUST 提供查詢特定遊戲歷史記錄的能力（按時間排序）
 
 ### Key Entities
 
-- **GameLog**: 遊戲日誌記錄，包含 ID、遊戲 ID、記錄類型（command/event）、內容、時間戳、關聯玩家 ID；資料保留 30 天後自動清理
+- **GameLog**: 遊戲日誌記錄，包含 ID、遊戲 ID、記錄類型（command/event）、內容、時間戳、關聯玩家 ID、Request ID（optional）；資料保留 30 天後自動清理
 - **TestSuite**: 測試套件，組織 Domain 和 Application 層的測試案例
 
 ## Success Criteria *(mandatory)*

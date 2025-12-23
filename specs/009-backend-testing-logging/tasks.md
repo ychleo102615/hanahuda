@@ -179,7 +179,7 @@
 
 ## Phase 6: User Story 4 - Event/Command Database Logging (Priority: P3)
 
-**Goal**: 實作基於 Event Sourcing 的遊戲日誌系統，支援遊戲重播
+**Goal**: 實作遊戲 Commands/Events 的資料庫日誌系統，用於稽核和問題分析
 
 **Independent Test**: 發送遊戲命令並查詢資料庫驗證記錄完整性
 
@@ -211,11 +211,17 @@
 - [ ] T054 [US4] Integrate GameLogRepository into CompositeEventPublisher for event logging
 - [ ] T055 [US4] Add command logging to API handlers (play-card, select-target, decision)
 
-### Verification
+### Edge Case Verification
 
-- [ ] T056 [US4] Test event/command logging by playing a game and querying game_logs table
+- [ ] T056 [US4] Verify log failure resilience: DrizzleGameLogRepository must catch errors and not propagate to caller
+- [ ] T057 [US4] Verify sensitive data protection: GameLog payload must not contain opponent's hand cards or deck order
+- [ ] T058 [US4] Verify async non-blocking: Log write latency must not exceed 10ms impact on game operations
 
-**Checkpoint**: User Story 4 complete - Full event sourcing implemented
+### Integration Verification
+
+- [ ] T059 [US4] Test event/command logging by playing a game and querying game_logs table
+
+**Checkpoint**: User Story 4 complete - Database logging implemented
 
 ---
 
@@ -223,12 +229,12 @@
 
 **Purpose**: Final verification and cleanup
 
-- [ ] T057 Run full test suite and verify all tests pass: `npm run test:unit:server`
-- [ ] T058 Generate and review final coverage report
-- [ ] T059 Verify Domain Layer coverage ≥ 80%
-- [ ] T060 Verify Application Layer coverage ≥ 80%
-- [ ] T061 Verify test execution time < 30 seconds
-- [ ] T062 Run database migration in development: `npm run db:migrate`
+- [ ] T060 Run full test suite and verify all tests pass: `npm run test:unit:server`
+- [ ] T061 Generate and review final coverage report
+- [ ] T062 Verify Domain Layer coverage ≥ 80%
+- [ ] T063 Verify Application Layer coverage ≥ 80%
+- [ ] T064 Verify test execution time < 30 seconds
+- [ ] T065 Run database migration in development: `npm run db:migrate`
 
 ---
 
@@ -305,7 +311,7 @@ Task: "Create Round Entity tests in front-end/server/__tests__/domain/game/round
 1. Setup → US1 (Domain Tests) → Verify 80% coverage ✓
 2. Add Foundational → US2 (Application Tests) → Verify 80% coverage ✓
 3. Add US3 (Log Standardization) → Verify no console.* calls ✓
-4. Add US4 (DB Logging) → Test event sourcing ✓
+4. Add US4 (DB Logging) → Test database logging ✓
 5. Each story adds value independently
 
 ### Parallel Team Strategy

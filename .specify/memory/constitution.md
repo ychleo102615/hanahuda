@@ -1,28 +1,22 @@
 <!--
 Sync Impact Report:
 ─────────────────────────────────────────────────────────────────────────────
-Version Change: 1.2.0 → 1.3.0
-Change Type: Minor amendment (modified testing scope + updated tech stack)
+Version Change: 1.3.0 → 1.3.1
+Change Type: Patch (clarified testing terminology)
 Modified Principles:
-  - Principle V: Test-First Development - Narrowed strict TDD scope to Domain and
-    Application Layers only. Adapter Layer (including Vue components, composables,
-    views) explicitly exempted from strict testing requirements.
-
-Modified Sections:
-  - 架構約束 > 技術棧（固定）→ 技術棧 - Updated to reflect Nuxt 4 for frontend
-    and flexible backend options (Nuxt or Java Spring Boot)
+  - Principle V: Test-First Development - Changed Application Layer coverage
+    requirement from "整合測試覆蓋率必須超過 70%" to "單元測試覆蓋率必須超過 80%"
 
 Rationale:
-  - Domain and Application Layers contain core business logic requiring rigorous testing
-  - Adapter Layer (Vue ecosystem: components, composables, views) is integration code
-    that changes frequently with UI requirements and framework updates
-  - Strict testing for Adapter Layer provides diminishing returns vs. implementation cost
-  - Tech stack update reflects current project direction with Nuxt 4 migration
+  - Application Layer Use Cases tested with mocked ports are unit tests, not
+    integration tests
+  - Aligns terminology with spec/plan documents (009-backend-testing-logging)
+  - Raises standard to match Domain Layer for consistency
 
 Templates Status:
-  ✅ plan-template.md: No changes needed (already references constitution for gates)
+  ✅ plan-template.md: No changes needed
   ✅ spec-template.md: No changes needed
-  ✅ tasks-template.md: No changes needed (test phases remain optional per spec)
+  ✅ tasks-template.md: No changes needed
 
 Follow-up TODOs:
   - None
@@ -109,7 +103,7 @@ Follow-up TODOs:
 - 撰寫測試 → 獲得使用者/規格批准 → 測試失敗 → 實作
 - 嚴格執行 Red-Green-Refactor 循環
 - Domain Layer 單元測試覆蓋率必須超過 80%
-- Application Layer 整合測試覆蓋率必須超過 70%
+- Application Layer 單元測試覆蓋率必須超過 80%
 
 **Adapter Layer 測試範圍（非強制）**:
 - Adapter Layer 屬於整合層，**無需嚴格測試**
@@ -316,4 +310,4 @@ Follow-up TODOs:
 
 ---
 
-**Version**: 1.3.0 | **Ratified**: 2025-10-22 | **Last Amended**: 2025-12-04
+**Version**: 1.3.1 | **Ratified**: 2025-10-22 | **Last Amended**: 2025-12-23

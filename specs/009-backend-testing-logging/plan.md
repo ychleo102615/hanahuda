@@ -5,7 +5,7 @@
 
 ## Summary
 
-為後端程式碼的 Domain Layer 和 Application Layer 建立完整的單元測試（覆蓋率 80%+），統一 logger 使用規範，並實作基於 Event Sourcing 的遊戲日誌系統，支援遊戲重播功能。
+為後端程式碼的 Domain Layer 和 Application Layer 建立完整的單元測試（覆蓋率 80%+），統一 logger 使用規範，並實作遊戲 Commands/Events 的資料庫日誌系統，用於稽核和問題分析。
 
 ## Technical Context
 
