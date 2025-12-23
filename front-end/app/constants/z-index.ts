@@ -27,11 +27,11 @@ export const Z_INDEX = {
   /** 遮罩層（半透明背景） */
   OVERLAY: 1000,
 
+  /** 遊戲公告（Koi-Koi、役種） */
+  ANNOUNCEMENT: 1050,
+
   /** Modal 對話框 */
   MODAL: 1100,
-
-  /** 遊戲公告（Koi-Koi、役種） */
-  ANNOUNCEMENT: 1150,
 
   /** 側邊面板（ActionPanel 內容） */
   PANEL: 1200,
