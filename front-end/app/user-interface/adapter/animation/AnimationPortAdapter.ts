@@ -19,6 +19,7 @@ import type {
   CardPlayAnimationResult,
   CardPlayStateCallbacks,
   DrawCardAnimationParams,
+  DrawnCardMatchAnimationParams,
 } from '../../application/ports/output/animation.port'
 import type { CardType } from '../../domain/types'
 import { zoneRegistry, type ZoneRegistry } from './ZoneRegistry'
@@ -968,6 +969,55 @@ export class AnimationPortAdapter implements AnimationPort {
         // 注意：這裡不調用 onRemoveFieldCards，因為牌應該留在場上
         return { hasMatch: false, matchPosition: null }
       }
+    } finally {
+      this._isAnimating = false
+    }
+  }
+
+  /**
+   * 播放翻牌選擇後的配對動畫序列
+   *
+   * @description
+   * 用於 SelectionRequired 後的配對處理。
+   * 此時翻出的牌已在場牌區（翻牌動畫已播放），
+   * 只需要處理配對部分的動畫序列：
+   * 1. 翻牌飛向配對目標
+   * 2. 配對特效（pulse）+ 淡出 + 獲得區淡入（使用 group 避免閃爍）
+   */
+  async playDrawnCardMatchSequence(
+    params: DrawnCardMatchAnimationParams,
+    callbacks: CardPlayStateCallbacks
+  ): Promise<void> {
+    const { drawnCard, matchedCard, capturedCards, isOpponent, targetCardType } = params
+
+    // 在整個序列期間保持 _isAnimating = true
+    this._isAnimating = true
+
+    // 動畫開始前清除懸浮預覽高亮
+    this.uiStateStore.clearHandCardHoverPreview()
+
+    console.info('[AnimationPort] playDrawnCardMatchSequence', {
+      drawnCard,
+      matchedCard,
+      capturedCards: [...capturedCards],
+      isOpponent,
+    })
+
+    try {
+      // 1. 翻牌飛向配對目標
+      await this.playCardToFieldAnimation(drawnCard, isOpponent, matchedCard)
+      this._isAnimating = true // 子動畫結束會設為 false，重新設為 true
+
+      // 2. 使用 playMatchAndDepositorySequence 處理配對和轉移（使用 group + pulseToFadeOut）
+      await this.playMatchAndDepositorySequence(
+        drawnCard,
+        matchedCard,
+        [...capturedCards],
+        targetCardType,
+        isOpponent,
+        callbacks,
+        true // 翻牌：從場牌區移除（包括翻出的牌本身）
+      )
     } finally {
       this._isAnimating = false
     }

@@ -96,6 +96,27 @@ export interface DrawCardAnimationParams {
 }
 
 /**
+ * 翻牌選擇後配對動畫參數（用於 playDrawnCardMatchSequence）
+ *
+ * @description
+ * 用於 SelectionRequired 後的配對處理場景。
+ * 此時翻出的牌已在場牌區（由 HandleSelectionRequiredUseCase 處理翻牌動畫），
+ * 只需要處理「飛向配對目標 → 配對 → 轉移到獲得區」的動畫。
+ */
+export interface DrawnCardMatchAnimationParams {
+  /** 翻出的卡片 ID（已在場牌區） */
+  readonly drawnCard: string
+  /** 配對的場牌 ID */
+  readonly matchedCard: string
+  /** 被捕獲的卡片列表 */
+  readonly capturedCards: readonly string[]
+  /** 是否為對手操作 */
+  readonly isOpponent: boolean
+  /** 卡片類型（用於決定獲得區分組） */
+  readonly targetCardType: CardType
+}
+
+/**
  * 卡片操作狀態更新回調
  *
  * @description
@@ -439,4 +460,41 @@ export interface AnimationPort {
     params: DrawCardAnimationParams,
     callbacks: CardPlayStateCallbacks
   ): Promise<CardPlayAnimationResult>
+
+  /**
+   * 播放翻牌選擇後的配對動畫序列
+   *
+   * @description
+   * 用於 SelectionRequired 後的配對處理。
+   * 此時翻出的牌已在場牌區（翻牌動畫已播放），
+   * 只需要處理配對部分的動畫序列：
+   * 1. 翻牌飛向配對目標
+   * 2. 配對特效（pulse）
+   * 3. 淡出 + 獲得區淡入（使用 group 避免閃爍）
+   *
+   * 使用 addGroup + pulseToFadeOut 效果，確保動畫無縫銜接。
+   *
+   * @param params - 配對參數（翻出的牌已在場上）
+   * @param callbacks - 狀態更新回調
+   * @returns Promise 完成後 resolve
+   *
+   * @example
+   * ```typescript
+   * // 在 HandleTurnProgressAfterSelectionUseCase 中使用
+   * await animation.playDrawnCardMatchSequence(
+   *   {
+   *     drawnCard: '0231',      // 翻出的牌（已在場上）
+   *     matchedCard: '0241',    // 配對目標
+   *     capturedCards: ['0231', '0241'],
+   *     isOpponent: false,
+   *     targetCardType: 'PLAIN',
+   *   },
+   *   callbacks
+   * )
+   * ```
+   */
+  playDrawnCardMatchSequence(
+    params: DrawnCardMatchAnimationParams,
+    callbacks: CardPlayStateCallbacks
+  ): Promise<void>
 }

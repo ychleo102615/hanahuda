@@ -87,9 +87,12 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     this.animation.hideCards([event.drawn_card])
 
     // 加入場牌（渲染時已是 invisible 狀態）
+    // 注意：先檢查是否已存在，避免狀態恢復後重複加入導致動畫重複
     const currentFieldCards = this.gameState.getFieldCards()
-    const newFieldCards = [...currentFieldCards, event.drawn_card]
-    this.gameState.updateFieldCards(newFieldCards)
+    if (!currentFieldCards.includes(event.drawn_card)) {
+      const newFieldCards = [...currentFieldCards, event.drawn_card]
+      this.gameState.updateFieldCards(newFieldCards)
+    }
 
     // 等待 DOM 布局完成
     await waitForLayout(1)

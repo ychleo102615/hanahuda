@@ -20,6 +20,7 @@
 
 import type { TurnProgressAfterSelectionEvent } from '#shared/contracts'
 import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
+import type { CardPlayStateCallbacks } from '../../ports/output/animation.port'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleTurnProgressAfterSelectionPort, ExecuteOptions } from '../../ports/input'
 import { AbortOperationError } from '../../types'
@@ -62,21 +63,20 @@ export class HandleTurnProgressAfterSelectionUseCase
    * 核心執行邏輯
    *
    * 關鍵設計：
-   * 1. 提前更新 FlowStage → 觸發 watcher 清除橙色框（問題 1 解決）
-   * 2. 轉移動畫完成後才移除場牌 → FLIP 動畫可見（問題 2 解決）
+   * 1. 提前更新 FlowStage → 觸發 watcher 清除橙色框
+   * 2. 使用 playDrawnCardMatchSequence 高階 API 處理配對動畫（使用 group 避免閃爍）
    *
    * 視覺流程（用戶視角）：
+   * - 翻牌飛向配對目標
    * - 配對特效（pulse）
-   * - 配對的牌從場上淡出，飛向獲得區淡入
+   * - 配對的牌從場上淡出，獲得區淡入（同步執行，無閃爍）
    * - 剩餘場牌滑順地移動填補空位（FLIP 動畫）
    *
    * 階段：
-   * 1. 更新 FlowStage 和清除 AWAITING_SELECTION 狀態（觸發 watcher 隱藏橙色框）
-   * 2. 播放翻牌移動和配對動畫（如有配對）
-   * 3. 播放轉移動畫（場上淡出 → 獲得區淡入），然後移除場牌觸發 FLIP
-   * 4. 更新場牌（無配對時加入翻牌）
-   * 5. 更新其他狀態（牌堆數量、役種記錄）
-   * 6. 清理動畫層
+   * 1. 清除 UI 狀態（解決配對提示殘留問題）
+   * 2. 播放配對動畫序列（使用高階 API，自動處理狀態更新）
+   * 3. 更新其他狀態（牌堆數量、役種記錄）
+   * 4. 清理動畫層
    */
   private async executeAsyncCore(event: TurnProgressAfterSelectionEvent): Promise<void> {
     // 記錄動畫開始時間（用於計算動畫耗時）
@@ -97,81 +97,41 @@ export class HandleTurnProgressAfterSelectionUseCase
     this.gameState.setDrawnCard(null)
     this.gameState.setPossibleTargetCardIds([])
 
-    // === 階段 2：播放翻牌移動和配對動畫 ===
-    // 注意：翻牌動畫已在 HandleSelectionRequiredUseCase 中播放（Phase 8）
-    // 這裡需要播放翻牌飛向配對目標的動畫，再播放配對效果
-    let matchPosition: { x: number; y: number } | undefined
-    if (drawCardPlay.matched_card) {
-      // 1.1 播放翻牌飛向配對目標的動畫
-      await this.animation.playCardToFieldAnimation(
-        drawCardPlay.played_card,
-        isOpponent,
-        drawCardPlay.matched_card
-      )
-
-      // 1.2 播放配對動畫（pulse 效果）
-      const position = await this.animation.playMatchAnimation(
-        drawCardPlay.played_card,
-        drawCardPlay.matched_card
-      )
-      matchPosition = position ?? undefined
-    }
-
-    // === 階段 3：處理有配對的情況 ===
+    // === 階段 2：播放配對動畫序列 ===
+    // 注意：翻牌動畫已在 HandleSelectionRequiredUseCase 中播放
+    // 這裡使用 playDrawnCardMatchSequence 高階 API 處理配對部分
     if (drawCardPlay.matched_card && capturedCards.length > 0) {
-      // 3.1 預先隱藏即將加入獲得區的卡片（避免閃現）
-      this.animation.hideCards([...capturedCards])
+      // 創建狀態更新回調（供 AnimationPortAdapter 在適當時機調用）
+      const callbacks = this.createStateCallbacks(localPlayerId, opponentPlayerId, isOpponent)
 
-      // 3.2 更新獲得區（新卡片渲染，但被隱藏）
-      const currentMyDepository = this.gameState.getDepositoryCards(localPlayerId)
-      const currentOpponentDepository = this.gameState.getDepositoryCards(opponentPlayerId)
+      // 獲取卡片類型
+      const firstCapturedCard = capturedCards[0]!
+      const targetCardType = this.domainFacade.getCardTypeFromId(firstCapturedCard)
 
-      if (!isOpponent) {
-        const newMyDepository = [...currentMyDepository, ...capturedCards]
-        this.gameState.updateDepositoryCards(newMyDepository, currentOpponentDepository)
-      } else {
-        const newOpponentDepository = [...currentOpponentDepository, ...capturedCards]
-        this.gameState.updateDepositoryCards(currentMyDepository, newOpponentDepository)
-      }
-
-      // 3.3 等待 DOM 布局完成（讓獲得區新卡片完成渲染）
-      await delay(50)
-
-      // 3.4 播放轉移動畫（從配對點淡出 → 獲得區淡入）
-      // playToDepositoryAnimation 會創建克隆卡片在 matchPosition 淡出，同時在獲得區淡入
-      const firstCapturedCard = capturedCards[0]
-      if (firstCapturedCard) {
-        const targetType = this.domainFacade.getCardTypeFromId(firstCapturedCard)
-        await this.animation.playToDepositoryAnimation(
-          [...capturedCards],
-          targetType,
+      // 使用高階 API 播放配對動畫（內部使用 group + pulseToFadeOut，無閃爍）
+      await this.animation.playDrawnCardMatchSequence(
+        {
+          drawnCard: drawCardPlay.played_card,
+          matchedCard: drawCardPlay.matched_card,
+          capturedCards: [...capturedCards],
           isOpponent,
-          matchPosition
-        )
-      }
-
-      // 3.5 移除場牌（觸發 Vue TransitionGroup FLIP 動畫）
-      // 此時配對的卡片已在動畫中飛向獲得區，可以安全移除
-      const currentFieldCards = this.gameState.getFieldCards()
-      const newFieldCards = currentFieldCards.filter(
-        id => id !== drawCardPlay.matched_card && id !== drawCardPlay.played_card
+          targetCardType,
+        },
+        callbacks
       )
-      this.gameState.updateFieldCards(newFieldCards)
 
-      // 3.6 等待 TransitionGroup FLIP 動畫完成（300ms + 50ms buffer = 350ms）
+      // 等待 TransitionGroup FLIP 動畫完成（300ms + 50ms buffer = 350ms）
       // 讓剩餘場牌滑順地重新排列填補空位
       await delay(350)
 
       console.log('[HandleTurnProgressAfterSelection] 動畫完成，已移除場牌並更新獲得區')
     } else {
-      // === 階段 4：處理無配對的情況（將翻牌加入場牌區）===
-      const currentFieldCards = this.gameState.getFieldCards()
-      const newFieldCards = [...currentFieldCards, drawCardPlay.played_card]
-      this.gameState.updateFieldCards(newFieldCards)
-      console.log('[HandleTurnProgressAfterSelection] 處理無配對，將翻牌加入場牌區')
+      // === 處理無配對的情況（翻牌已在場上，不需要額外處理）===
+      // 注意：翻牌在 HandleSelectionRequiredUseCase 中已加入場牌
+      console.log('[HandleTurnProgressAfterSelection] 無配對，翻牌已在場上')
     }
 
-    // === 階段 5：更新其他狀態 ===
+    // === 階段 3：更新其他狀態 ===
     this.gameState.updateDeckRemaining(event.deck_remaining)
 
     // 若有新役種形成且為對手，同時顯示所有新形成的役種
@@ -199,15 +159,57 @@ export class HandleTurnProgressAfterSelectionUseCase
       }
     }
 
-    // === 階段 6：清理動畫層 ===
+    // === 階段 4：清理動畫層 ===
     this.animation.clearHiddenCards()
 
-    // === 階段 7：更新活躍玩家（動畫完成後才切換，避免 TopInfoBar 在動畫期間變化）===
+    // === 階段 5：更新活躍玩家（動畫完成後才切換，避免 TopInfoBar 在動畫期間變化）===
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // === 階段 8：啟動操作倒數（扣除動畫耗時）===
+    // === 階段 6：啟動操作倒數（扣除動畫耗時）===
     const currentTS = new Date()
     const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
     this.notification.startActionCountdown(event.action_timeout_seconds - dt)
+  }
+
+  /**
+   * 創建狀態更新回調
+   *
+   * @description
+   * 這些回調由 AnimationPortAdapter 在適當時機調用，
+   * 確保動畫和狀態更新的正確順序。
+   */
+  private createStateCallbacks(
+    localPlayerId: string,
+    opponentPlayerId: string,
+    isOpponent: boolean
+  ): CardPlayStateCallbacks {
+    return {
+      onUpdateDepository: (capturedCards: string[]) => {
+        const myDepository = [...this.gameState.getDepositoryCards(localPlayerId)]
+        const opponentDepository = [...this.gameState.getDepositoryCards(opponentPlayerId)]
+
+        if (isOpponent) {
+          this.gameState.updateDepositoryCards(myDepository, [...opponentDepository, ...capturedCards])
+        } else {
+          this.gameState.updateDepositoryCards([...myDepository, ...capturedCards], opponentDepository)
+        }
+      },
+
+      onRemoveFieldCards: (cardIds: string[]) => {
+        const currentFieldCards = this.gameState.getFieldCards()
+        const newFieldCards = currentFieldCards.filter(id => !cardIds.includes(id))
+        this.gameState.updateFieldCards(newFieldCards)
+      },
+
+      onRemoveHandCard: (_cardId: string) => {
+        // 翻牌配對不需要移除手牌（翻出的牌已在場牌區）
+        // 此回調在此場景下不會被使用，但需要提供以符合介面
+      },
+
+      onAddFieldCards: (_cardIds: string[]) => {
+        // 翻牌配對時牌已在場上，不需要新增
+        // 此回調在此場景下不會被使用，但需要提供以符合介面
+      },
+    }
   }
 }
