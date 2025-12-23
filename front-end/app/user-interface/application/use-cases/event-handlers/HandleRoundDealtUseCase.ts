@@ -54,6 +54,10 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
     // 清除動畫層的隱藏卡片狀態（上一局殘留的）
     this.animation.clearHiddenCards()
 
+    // 重置 FlowStage 為 null，阻止發牌動畫期間用戶操作
+    // 這確保 PlayerHandZone 的 handleCardClick 檢查 flowStage !== 'AWAITING_HAND_PLAY' 會提前返回
+    this.gameState.setFlowStage(null)
+
     // 清空獲得區
     this.gameState.updateDepositoryCards([], [])
     // 清除翻牌選擇相關狀態

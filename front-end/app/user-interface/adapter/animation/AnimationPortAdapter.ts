@@ -200,15 +200,23 @@ export class AnimationPortAdapter implements AnimationPort {
 
         const cardId = params.fieldCards[i]!
         const cardElement = this.registry.findCard(cardId, 'field')
+        const isLastCard = i === params.fieldCards.length - 1
 
         if (cardElement && deckPosition && !this._interrupted) {
           params.onCardDealt?.()
-          this.animateSingleDealCard(cardElement, deckPosition.rect)
-          await delay(ANIMATION_DURATION.DEAL_CARD, this.operationSession.getSignal())
+
+          if (isLastCard) {
+            // 最後一張牌：等待動畫完成，確保所有動畫結束後才返回
+            await this.animateSingleDealCard(cardElement, deckPosition.rect)
+          } else {
+            // 非最後一張：啟動動畫後只等待 stagger 時間，實現交錯效果
+            this.animateSingleDealCard(cardElement, deckPosition.rect)
+            await delay(ANIMATION_DURATION.DEAL_CARD, this.operationSession.getSignal())
+          }
         }
 
         // 每張牌延遲（最後一張不需要）
-        if (i < params.fieldCards.length - 1) {
+        if (!isLastCard) {
           await delay(ANIMATION_DURATION.DEAL_STAGGER, this.operationSession.getSignal())
         }
       }
