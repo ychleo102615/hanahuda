@@ -43,6 +43,7 @@ import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTim
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { SelectionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
+import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import {
   SelectTargetError,
@@ -97,7 +98,7 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
     this.gameLogRepository?.logAsync({
       gameId,
       playerId,
-      eventType: 'SelectTarget',
+      eventType: COMMAND_TYPES.SelectTarget,
       payload: { sourceCardId, targetCardId },
     })
 

@@ -84,4 +84,5 @@ export type {
 } from './events'
 
 // SSE Event Types Constant (for runtime use)
-export { SSE_EVENT_TYPES } from './events'
+export { SSE_EVENT_TYPES, EVENT_TYPES } from './events'
+export type { EventTypeValue } from './events'

@@ -20,6 +20,7 @@
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
 import type { GameEvent, GameStartedEvent, RoundDealtEvent } from '#shared/contracts'
+import { EVENT_TYPES } from '#shared/contracts'
 import type { GameLogEventType } from '~~/server/database/schema/gameLogs'
 import { connectionStore } from './connectionStore'
 import { opponentStore } from '~~/server/adapters/opponent/opponentStore'
@@ -29,7 +30,7 @@ import { loggers } from '~~/server/utils/logger'
 const logger = loggers.adapter('CompositeEventPublisher')
 
 /**
- * 需要記錄的 SSE 事件類型
+ * 需要記錄的 SSE 事件類型（使用 EVENT_TYPES 常數）
  *
  * 不記錄的事件：
  * - TurnError, GameError: 錯誤事件由日誌框架處理
@@ -37,13 +38,13 @@ const logger = loggers.adapter('CompositeEventPublisher')
  * - SelectionRequired, DecisionRequired: 只是提示，實際操作由命令記錄
  */
 const LOGGABLE_EVENT_TYPES: Set<GameLogEventType> = new Set([
-  'GameStarted',
-  'GameFinished',
-  'RoundDealt',
-  'RoundEnded',
-  'TurnCompleted',
-  'TurnProgressAfterSelection',
-  'DecisionMade',
+  EVENT_TYPES.GameStarted,
+  EVENT_TYPES.GameFinished,
+  EVENT_TYPES.RoundDealt,
+  EVENT_TYPES.RoundEnded,
+  EVENT_TYPES.TurnCompleted,
+  EVENT_TYPES.TurnProgressAfterSelection,
+  EVENT_TYPES.DecisionMade,
 ])
 
 /**
@@ -98,8 +99,8 @@ export class CompositeEventPublisher implements EventPublisherPort {
     // 提取 playerId（若事件中有）
     const playerId = 'player_id' in event ? (event as { player_id?: string }).player_id : undefined
 
-    // 精簡 payload，只保留關鍵資訊
-    const payload = this.extractMinimalPayload(event)
+    // 提取 Event Sourcing 所需的完整 payload
+    const payload = this.extractReplayPayload(event)
 
     this.gameLogRepository.logAsync({
       gameId,
@@ -110,58 +111,71 @@ export class CompositeEventPublisher implements EventPublisherPort {
   }
 
   /**
-   * 提取精簡的 payload
+   * 提取 Event Sourcing 所需的完整 payload
    *
-   * 移除冗餘資訊，只保留關鍵欄位以減少儲存空間。
+   * @description
+   * 保留重播遊戲所需的所有關鍵資訊。
+   * 使用 EVENT_TYPES 常數確保 SSOT，並利用 TypeScript discriminated union narrowing。
+   *
+   * 設計原則：
+   * - Commands（Use Cases）記錄玩家意圖（最小化）
+   * - Events（此處）記錄完整結果（支援重播）
    */
-  private extractMinimalPayload(event: GameEvent): Record<string, unknown> {
-    const eventData = event as unknown as Record<string, unknown>
-
+  private extractReplayPayload(event: GameEvent): Record<string, unknown> {
     switch (event.event_type) {
-      case 'GameStarted':
+      case EVENT_TYPES.GameStarted:
         return {
-          starting_player_id: eventData.starting_player_id,
+          starting_player_id: event.starting_player_id,
+          players: event.players,
+          ruleset: event.ruleset,
         }
 
-      case 'GameFinished':
+      case EVENT_TYPES.GameFinished:
         return {
-          winner_id: eventData.winner_id,
-          reason: eventData.reason,
+          winner_id: event.winner_id,
+          reason: event.reason,
+          final_scores: event.final_scores,
         }
 
-      case 'RoundDealt':
+      case EVENT_TYPES.RoundDealt:
         return {
-          current_round: eventData.current_round,
-          dealer_id: eventData.dealer_id,
+          current_round: event.current_round,
+          dealer_id: event.dealer_id,
+          field: event.field,
+          hands: event.hands,
         }
 
-      case 'RoundEnded':
+      case EVENT_TYPES.RoundEnded:
         return {
-          reason: eventData.reason,
-          winner_id: eventData.winner_id,
+          reason: event.reason,
+          updated_total_scores: event.updated_total_scores,
+          scoring_data: event.scoring_data,
+          instant_data: event.instant_data,
         }
 
-      case 'TurnCompleted':
+      case EVENT_TYPES.TurnCompleted:
         return {
-          next_player_id: eventData.next_player_id,
+          player_id: event.player_id,
+          hand_card_play: event.hand_card_play,
+          draw_card_play: event.draw_card_play,
         }
 
-      case 'TurnProgressAfterSelection':
-        // 從 selection 中提取關鍵資訊
-        const selection = eventData.draw_card_selection as Record<string, unknown> | undefined
+      case EVENT_TYPES.TurnProgressAfterSelection:
         return {
-          source_card_id: selection?.source_card_id,
-          target_card_id: selection?.target_card_id,
+          player_id: event.player_id,
+          selection: event.selection,
+          draw_card_play: event.draw_card_play,
         }
 
-      case 'DecisionMade':
+      case EVENT_TYPES.DecisionMade:
         return {
-          decision: eventData.decision,
+          player_id: event.player_id,
+          decision: event.decision,
         }
 
       default:
-        // 未知事件類型，記錄完整 payload
-        return eventData
+        // 非記錄對象的事件類型，返回空物件（不應到達此處）
+        return {}
     }
   }
 

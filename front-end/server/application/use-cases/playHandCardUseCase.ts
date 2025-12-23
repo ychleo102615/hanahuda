@@ -47,6 +47,7 @@ import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTim
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { TurnEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
+import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import {
   PlayHandCardError,
@@ -101,7 +102,7 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
     this.gameLogRepository?.logAsync({
       gameId,
       playerId,
-      eventType: 'PlayHandCard',
+      eventType: COMMAND_TYPES.PlayHandCard,
       payload: { cardId, targetCardId },
     })
 

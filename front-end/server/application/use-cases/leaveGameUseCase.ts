@@ -20,6 +20,7 @@ import type { GameStorePort } from '~~/server/application/ports/output/gameStore
 import type { LeaveGameEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
+import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 import { markPlayerLeft, getPlayerConnectionStatus } from '~~/server/domain/game/playerConnection'
 import {
   LeaveGameError,
@@ -71,7 +72,7 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
     this.gameLogRepository?.logAsync({
       gameId,
       playerId,
-      eventType: 'LeaveGame',
+      eventType: COMMAND_TYPES.LeaveGame,
       payload: { reason: 'USER_ACTION' },
     })
 

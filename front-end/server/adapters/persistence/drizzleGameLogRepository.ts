@@ -26,6 +26,15 @@ import { loggers } from '~~/server/utils/logger'
 const logger = loggers.adapter('DrizzleGameLogRepository')
 
 /**
+ * 應用層序號計數器
+ *
+ * @description
+ * 單調遞增，保證 Fire-and-Forget 模式下的寫入順序。
+ * 序號在 logAsync 調用時產生（非 DB 寫入時），確保調用順序 = 邏輯順序。
+ */
+let sequenceCounter = 0
+
+/**
  * DrizzleGameLogRepository
  *
  * 實作 GameLogRepositoryPort，處理遊戲日誌的持久化操作。
@@ -38,15 +47,21 @@ export class DrizzleGameLogRepository implements GameLogRepositoryPort {
    * 非阻塞式寫入，即使寫入失敗也不影響遊戲流程。
    * 所有錯誤都會被捕獲並記錄，不會向外傳播。
    *
+   * 序號在此處產生（非 DB 寫入時），確保調用順序 = 邏輯順序。
+   *
    * @param entry - 遊戲日誌條目
    */
   logAsync(entry: GameLogEntry): void {
+    // 在調用時產生序號，保證順序
+    const sequenceNumber = ++sequenceCounter
+
     // Fire-and-forget: 不等待 Promise，讓遊戲流程繼續
-    this.writeLog(entry).catch((error) => {
+    this.writeLog(entry, sequenceNumber).catch((error) => {
       // 錯誤隔離：僅記錄錯誤，不向外傳播
       logger.error('Failed to write game log', error, {
         gameId: entry.gameId,
         eventType: entry.eventType,
+        sequenceNumber,
       })
     })
   }
@@ -55,11 +70,13 @@ export class DrizzleGameLogRepository implements GameLogRepositoryPort {
    * 實際執行日誌寫入
    *
    * @param entry - 遊戲日誌條目
+   * @param sequenceNumber - 應用層序號
    */
-  private async writeLog(entry: GameLogEntry): Promise<void> {
+  private async writeLog(entry: GameLogEntry, sequenceNumber: number): Promise<void> {
     const startTime = Date.now()
 
     await db.insert(gameLogs).values({
+      sequenceNumber,
       gameId: entry.gameId,
       playerId: entry.playerId ?? null,
       eventType: entry.eventType,
@@ -73,6 +90,7 @@ export class DrizzleGameLogRepository implements GameLogRepositoryPort {
       logger.warn('Slow game log write', {
         gameId: entry.gameId,
         eventType: entry.eventType,
+        sequenceNumber,
         durationMs: duration,
       })
     }
@@ -82,14 +100,14 @@ export class DrizzleGameLogRepository implements GameLogRepositoryPort {
    * 查詢指定遊戲的所有日誌
    *
    * @param gameId - 遊戲 ID
-   * @returns 按時間排序的日誌列表
+   * @returns 按序號排序的日誌列表（保證邏輯順序）
    */
   async findByGameId(gameId: string): Promise<readonly GameLog[]> {
     const results = await db
       .select()
       .from(gameLogs)
       .where(eq(gameLogs.gameId, gameId))
-      .orderBy(asc(gameLogs.createdAt))
+      .orderBy(asc(gameLogs.sequenceNumber))
 
     return results
   }

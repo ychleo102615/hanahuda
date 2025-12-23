@@ -8,6 +8,55 @@
  * 由對應的 Handle*UseCase 處理。
  */
 
+// ============================================================================
+// Event Type Constants (SSOT)
+// ============================================================================
+
+/**
+ * SSE 事件類型常數（Single Source of Truth）
+ *
+ * @description
+ * 所有事件類型的唯一定義處。
+ * 使用 `as const` 確保型別推導為字面量型別。
+ *
+ * 使用方式：
+ * - 型別定義: `event_type: typeof EVENT_TYPES.GameStarted`
+ * - 執行期比對: `if (event.event_type === EVENT_TYPES.GameStarted)`
+ */
+export const EVENT_TYPES = {
+  // Game Lifecycle
+  InitialState: 'InitialState',
+  GameStarted: 'GameStarted',
+  GameFinished: 'GameFinished',
+
+  // Round Events
+  RoundDealt: 'RoundDealt',
+  RoundEnded: 'RoundEnded',
+
+  // Turn Events
+  TurnCompleted: 'TurnCompleted',
+  SelectionRequired: 'SelectionRequired',
+  TurnProgressAfterSelection: 'TurnProgressAfterSelection',
+  DecisionRequired: 'DecisionRequired',
+  DecisionMade: 'DecisionMade',
+
+  // Error Events
+  TurnError: 'TurnError',
+  GameError: 'GameError',
+
+  // Snapshot
+  GameSnapshotRestore: 'GameSnapshotRestore',
+} as const
+
+/**
+ * 事件類型的值型別（從常數推導）
+ */
+export type EventTypeValue = typeof EVENT_TYPES[keyof typeof EVENT_TYPES]
+
+// ============================================================================
+// Event Interfaces
+// ============================================================================
+
 import type {
   PlayerInfo,
   PlayerHand,
@@ -48,7 +97,7 @@ export interface BaseEvent {
  * total_rounds 已包含在 ruleset 中。
  */
 export interface GameStartedEvent extends BaseEvent {
-  readonly event_type: 'GameStarted'
+  readonly event_type: typeof EVENT_TYPES.GameStarted
   readonly game_id: string
   readonly players: ReadonlyArray<PlayerInfo>
   readonly ruleset: Ruleset
@@ -65,7 +114,7 @@ export interface GameStartedEvent extends BaseEvent {
  * total_rounds 可從 GameStarted 事件的 ruleset 取得。
  */
 export interface RoundDealtEvent extends BaseEvent {
-  readonly event_type: 'RoundDealt'
+  readonly event_type: typeof EVENT_TYPES.RoundDealt
   readonly current_round: number
   readonly dealer_id: string
   readonly field: ReadonlyArray<string>
@@ -88,7 +137,7 @@ export interface RoundDealtEvent extends BaseEvent {
  * 如果役種在中途形成，會觸發 DecisionRequiredEvent 而非此事件。
  */
 export interface TurnCompletedEvent extends BaseEvent {
-  readonly event_type: 'TurnCompleted'
+  readonly event_type: typeof EVENT_TYPES.TurnCompleted
   readonly player_id: string
   readonly hand_card_play: CardPlay
   readonly draw_card_play: CardPlay
@@ -106,7 +155,7 @@ export interface TurnCompletedEvent extends BaseEvent {
  * 翻牌時出現雙重配對，需要玩家選擇配對目標。
  */
 export interface SelectionRequiredEvent extends BaseEvent {
-  readonly event_type: 'SelectionRequired'
+  readonly event_type: typeof EVENT_TYPES.SelectionRequired
   readonly player_id: string
   readonly hand_card_play: CardPlay
   readonly drawn_card: string
@@ -125,7 +174,7 @@ export interface SelectionRequiredEvent extends BaseEvent {
  * 可能包含新形成的役種（yaku_update）。
  */
 export interface TurnProgressAfterSelectionEvent extends BaseEvent {
-  readonly event_type: 'TurnProgressAfterSelection'
+  readonly event_type: typeof EVENT_TYPES.TurnProgressAfterSelection
   readonly player_id: string
   readonly selection: CardSelection
   readonly draw_card_play: CardPlay
@@ -144,7 +193,7 @@ export interface TurnProgressAfterSelectionEvent extends BaseEvent {
  * 玩家形成役種，需要決策是否 Koi-Koi。
  */
 export interface DecisionRequiredEvent extends BaseEvent {
-  readonly event_type: 'DecisionRequired'
+  readonly event_type: typeof EVENT_TYPES.DecisionRequired
   readonly player_id: string
   readonly hand_card_play: CardPlay | null
   readonly draw_card_play: CardPlay | null
@@ -164,7 +213,7 @@ export interface DecisionRequiredEvent extends BaseEvent {
  * 若選擇 END_ROUND，則會觸發 RoundScored 事件。
  */
 export interface DecisionMadeEvent extends BaseEvent {
-  readonly event_type: 'DecisionMade'
+  readonly event_type: typeof EVENT_TYPES.DecisionMade
   readonly player_id: string
   readonly decision: 'KOI_KOI' | 'END_ROUND'
   readonly updated_multipliers: ScoreMultipliers
@@ -207,7 +256,7 @@ export interface RoundInstantEndData {
  * - 無值時：這是最後一回合，玩家需手動關閉面板
  */
 export interface RoundEndedEvent extends BaseEvent {
-  readonly event_type: 'RoundEnded'
+  readonly event_type: typeof EVENT_TYPES.RoundEnded
   /** 回合結束原因 */
   readonly reason: RoundEndReason
   /** 更新後的累積分數（所有情況都有） */
@@ -231,7 +280,7 @@ export interface RoundEndedEvent extends BaseEvent {
  * 遊戲結束，包含最終分數和勝者。
  */
 export interface GameFinishedEvent extends BaseEvent {
-  readonly event_type: 'GameFinished'
+  readonly event_type: typeof EVENT_TYPES.GameFinished
   /** 勝者 ID（平局時為 null） */
   readonly winner_id: string | null
   readonly final_scores: ReadonlyArray<PlayerScore>
@@ -248,7 +297,7 @@ export interface GameFinishedEvent extends BaseEvent {
  * 操作錯誤，包含錯誤代碼和是否允許重試。
  */
 export interface TurnErrorEvent extends BaseEvent {
-  readonly event_type: 'TurnError'
+  readonly event_type: typeof EVENT_TYPES.TurnError
   readonly player_id: string
   readonly error_code: ErrorCode
   readonly error_message: string
@@ -268,7 +317,7 @@ export interface TurnErrorEvent extends BaseEvent {
  */
 export interface GameErrorEvent extends BaseEvent {
   /** 事件類型（固定為 'GameError'） */
-  readonly event_type: 'GameError'
+  readonly event_type: typeof EVENT_TYPES.GameError
 
   /**
    * 錯誤代碼
@@ -344,7 +393,7 @@ export interface DecisionContext {
  * 斷線重連時的完整遊戲狀態快照。
  */
 export interface GameSnapshotRestore extends BaseEvent {
-  readonly event_type: 'GameSnapshotRestore'
+  readonly event_type: typeof EVENT_TYPES.GameSnapshotRestore
   readonly game_id: string
   readonly players: ReadonlyArray<PlayerInfo>
   readonly ruleset: Ruleset
@@ -396,7 +445,7 @@ export type InitialStateData =
  * - `game_expired`: 顯示錯誤訊息，導航回大廳
  */
 export interface InitialStateEvent extends BaseEvent {
-  readonly event_type: 'InitialState'
+  readonly event_type: typeof EVENT_TYPES.InitialState
   /** 回應類型，決定 data 的型別 */
   readonly response_type: InitialStateResponseType
   /** 遊戲 ID */
@@ -435,30 +484,26 @@ export type GameEvent =
   | GameSnapshotRestore
 
 /**
- * SSE 事件類型常數陣列（SSOT）
+ * SSE 事件類型常數陣列（從 EVENT_TYPES 推導）
  *
  * @description
  * 所有 SSE 推送事件的類型列表。
  * 用於 SSE 客戶端註冊事件監聽器。
- *
- * @note
- * 此陣列與 GameEvent 聯合型別保持同步。
- * 新增事件時需同時更新兩處。
  */
 export const SSE_EVENT_TYPES = [
-  'InitialState',
-  'GameStarted',
-  'RoundDealt',
-  'TurnCompleted',
-  'SelectionRequired',
-  'TurnProgressAfterSelection',
-  'DecisionRequired',
-  'DecisionMade',
-  'RoundEnded',
-  'GameFinished',
-  'TurnError',
-  'GameError',
-  'GameSnapshotRestore',
+  EVENT_TYPES.InitialState,
+  EVENT_TYPES.GameStarted,
+  EVENT_TYPES.RoundDealt,
+  EVENT_TYPES.TurnCompleted,
+  EVENT_TYPES.SelectionRequired,
+  EVENT_TYPES.TurnProgressAfterSelection,
+  EVENT_TYPES.DecisionRequired,
+  EVENT_TYPES.DecisionMade,
+  EVENT_TYPES.RoundEnded,
+  EVENT_TYPES.GameFinished,
+  EVENT_TYPES.TurnError,
+  EVENT_TYPES.GameError,
+  EVENT_TYPES.GameSnapshotRestore,
 ] as const
 
 /**

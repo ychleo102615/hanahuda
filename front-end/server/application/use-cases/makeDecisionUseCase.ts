@@ -35,6 +35,7 @@ import type { GameStorePort } from '~~/server/application/ports/output/gameStore
 import type { DecisionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
+import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 import {
   MakeDecisionError,
   type MakeDecisionInputPort,
@@ -89,7 +90,7 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     this.gameLogRepository?.logAsync({
       gameId,
       playerId,
-      eventType: 'MakeDecision',
+      eventType: COMMAND_TYPES.MakeDecision,
       payload: { decision },
     })
 
