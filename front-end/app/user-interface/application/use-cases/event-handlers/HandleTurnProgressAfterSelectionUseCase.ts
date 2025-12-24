@@ -40,16 +40,16 @@ export class HandleTurnProgressAfterSelectionUseCase
   /**
    * 執行選擇後回合進展事件處理
    */
-  execute(event: TurnProgressAfterSelectionEvent, _options: ExecuteOptions): Promise<void> {
-    return this.executeAsync(event)
+  execute(event: TurnProgressAfterSelectionEvent, options: ExecuteOptions): Promise<void> {
+    return this.executeAsync(event, options.receivedAt)
   }
 
   /**
    * 非同步執行動畫和狀態更新
    */
-  private async executeAsync(event: TurnProgressAfterSelectionEvent): Promise<void> {
+  private async executeAsync(event: TurnProgressAfterSelectionEvent, receivedAt: number): Promise<void> {
     try {
-      await this.executeAsyncCore(event)
+      await this.executeAsyncCore(event, receivedAt)
     } catch (error) {
       if (error instanceof AbortOperationError) {
         console.info('[HandleTurnProgressAfterSelectionUseCase] Aborted due to state recovery')
@@ -78,9 +78,7 @@ export class HandleTurnProgressAfterSelectionUseCase
    * 3. 更新其他狀態（牌堆數量、役種記錄）
    * 4. 清理動畫層
    */
-  private async executeAsyncCore(event: TurnProgressAfterSelectionEvent): Promise<void> {
-    // 記錄動畫開始時間（用於計算動畫耗時）
-    const startTS = new Date()
+  private async executeAsyncCore(event: TurnProgressAfterSelectionEvent, receivedAt: number): Promise<void> {
 
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
@@ -165,9 +163,8 @@ export class HandleTurnProgressAfterSelectionUseCase
     // === 階段 5：更新活躍玩家（動畫完成後才切換，避免 TopInfoBar 在動畫期間變化）===
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // === 階段 6：啟動操作倒數（扣除動畫耗時）===
-    const currentTS = new Date()
-    const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
+    // === 階段 6：啟動操作倒數（從事件接收時間計算，確保與後端同步）===
+    const dt = Math.ceil((Date.now() - receivedAt) / 1000)
     this.notification.startCountdown(event.timeout_seconds - dt, 'ACTION')
   }
 

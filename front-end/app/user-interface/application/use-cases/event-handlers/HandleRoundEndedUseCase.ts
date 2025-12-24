@@ -9,6 +9,7 @@
 import type { RoundEndedEvent } from '#shared/contracts'
 import type { UIStatePort, NotificationPort, GameStatePort, SendCommandPort } from '../../ports/output'
 import type { HandleRoundEndedPort, ExecuteOptions } from '../../ports/input'
+import { DEFAULT_CONFIRMATION_TIMEOUT_SECONDS } from '~/constants'
 
 export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
   constructor(
@@ -23,8 +24,8 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
     this.notification.cleanup()
     this.gameState.setFlowStage(null)
 
-    // 計算事件處理延遲（秒），用於調整倒數時間
-    const deltaSeconds = Math.floor((Date.now() - options.receivedAt) / 1000)
+    // 計算事件處理延遲（秒），用於調整倒數時間（使用 ceil 確保不低估延遲）
+    const deltaSeconds = Math.ceil((Date.now() - options.receivedAt) / 1000)
 
     // 1. 更新分數（使用動態 player_id）
     const localPlayerId = this.updateUIState.getLocalPlayerId()
@@ -67,8 +68,8 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
     // 3. 處理確認繼續遊戲的需求
     // 確認倒數使用 timeout_seconds 減去事件處理延遲
     if (event.require_continue_confirmation) {
-      const rawTimeout = event.timeout_seconds ?? 5 // fallback 5 秒
-      const adjustedTimeout = Math.max(1, rawTimeout - deltaSeconds)
+      const rawTimeout = event.timeout_seconds ?? DEFAULT_CONFIRMATION_TIMEOUT_SECONDS
+      const adjustedTimeout = rawTimeout - deltaSeconds
       this.notification.showContinueConfirmation(
         adjustedTimeout,
         (decision: 'CONTINUE' | 'LEAVE') => {
@@ -92,7 +93,7 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
     // 4. 啟動顯示倒數（若有值），扣除事件處理延遲
     // 無值時表示最後一回合，面板需手動關閉
     if (event.timeout_seconds !== undefined) {
-      const adjustedDisplayTimeout = Math.max(1, event.timeout_seconds - deltaSeconds)
+      const adjustedDisplayTimeout = event.timeout_seconds - deltaSeconds
       this.notification.startCountdown(adjustedDisplayTimeout, 'DISPLAY', () => {
         // 倒數結束時：
         // - 若有確認需求，切換到等待伺服器狀態（server 已處理超時）

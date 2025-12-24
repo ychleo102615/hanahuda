@@ -9,12 +9,19 @@
  * - 管理單一 interval 生命週期
  * - 更新 uiState store 的倒數計時狀態（countdownRemaining + countdownMode）
  * - 提供統一的啟動/停止倒數計時方法
+ * - 處理邊界情況（seconds <= 0 時立即完成）
+ *
+ * 語義：
+ * - remaining = 5 表示「還有 5 秒」
+ * - remaining = 0 表示「時間到了」→ 觸發 callback
+ * - UI 不會顯示 0（callback 觸發時立即 stopCountdown）
  *
  * 使用方式:
  * ```typescript
  * const countdown = new CountdownManager(uiState)
  * countdown.startCountdown(30, 'ACTION')
  * countdown.startCountdown(5, 'DISPLAY', () => { ... })
+ * countdown.startCountdown(0, 'DISPLAY', () => { ... }) // 立即執行 callback
  * countdown.cleanup() // 清理 interval
  * ```
  */
@@ -31,13 +38,22 @@ export class CountdownManager {
   /**
    * 啟動倒數計時
    *
-   * @param seconds - 倒數秒數
+   * @param seconds - 倒數秒數（<= 0 時立即觸發 callback）
    * @param mode - 倒數模式（'ACTION' 用於 TopInfoBar，'DISPLAY' 用於 Modal）
-   * @param onComplete - 倒數結束時的回調（可選，僅 DISPLAY 模式使用）
+   * @param onComplete - 倒數結束時的回調（可選）
    */
   startCountdown(seconds: number, mode: 'ACTION' | 'DISPLAY', onComplete?: () => void): void {
     // 停止現有倒數
     this.stopCountdown()
+
+    // 邊界情況：seconds <= 0 表示「時間已到」，立即完成
+    if (seconds <= 0) {
+      console.info(`[CountdownManager] seconds = ${seconds}，立即完成`)
+      if (onComplete) {
+        onComplete()
+      }
+      return
+    }
 
     this.uiState.countdownRemaining = seconds
     this.uiState.countdownMode = mode
@@ -48,13 +64,19 @@ export class CountdownManager {
     this.intervalId = window.setInterval(() => {
       if (this.uiState.countdownRemaining !== null && this.uiState.countdownRemaining > 0) {
         this.uiState.countdownRemaining--
-      } else {
-        // 倒數結束，執行回調並停止
-        const callback = this.onComplete
-        this.stopCountdown()
-        if (callback) {
-          callback()
+
+        // 當 remaining 變成 0 時，觸發 callback
+        // UI 不會顯示 0，因為 stopCountdown 會立即將 remaining 設為 null
+        if (this.uiState.countdownRemaining === 0) {
+          const callback = this.onComplete
+          this.stopCountdown()
+          if (callback) {
+            callback()
+          }
         }
+      } else {
+        // 異常情況（remaining 是 null 或已經是 0），停止計時
+        this.stopCountdown()
       }
     }, 1000)
   }

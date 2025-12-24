@@ -32,16 +32,16 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
   /**
    * 執行回合完成事件處理
    */
-  execute(event: TurnCompletedEvent, _options: ExecuteOptions): Promise<void> {
-    return this.executeAsync(event)
+  execute(event: TurnCompletedEvent, options: ExecuteOptions): Promise<void> {
+    return this.executeAsync(event, options.receivedAt)
   }
 
   /**
    * 非同步執行動畫和狀態更新
    */
-  private async executeAsync(event: TurnCompletedEvent): Promise<void> {
+  private async executeAsync(event: TurnCompletedEvent, receivedAt: number): Promise<void> {
     try {
-      await this.executeAsyncCore(event)
+      await this.executeAsyncCore(event, receivedAt)
     } catch (error) {
       if (error instanceof AbortOperationError) {
         console.info('[HandleTurnCompletedUseCase] Aborted due to state recovery')
@@ -54,13 +54,12 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
   /**
    * 核心執行邏輯
    */
-  private async executeAsyncCore(event: TurnCompletedEvent): Promise<void> {
+  private async executeAsyncCore(event: TurnCompletedEvent, receivedAt: number): Promise<void> {
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
 
     this.notification.cleanup()
-    const startTS = new Date()
 
     // 創建狀態更新回調（供 AnimationPortAdapter 在適當時機調用）
     const callbacks = this.createStateCallbacks(localPlayerId, opponentPlayerId, isOpponent)
@@ -108,9 +107,8 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
     this.gameState.setFlowStage(event.next_state.state_type)
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // === 階段 4：啟動操作倒數 ===
-    const currentTS = new Date()
-    const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
+    // === 階段 4：啟動操作倒數（從事件接收時間計算，確保與後端同步）===
+    const dt = Math.ceil((Date.now() - receivedAt) / 1000)
     this.notification.startCountdown(event.timeout_seconds - dt, 'ACTION')
 
     // === 階段 5：清理動畫層 ===

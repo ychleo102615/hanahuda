@@ -30,16 +30,16 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     private readonly notification: NotificationPort
   ) {}
 
-  execute(event: SelectionRequiredEvent, _options: ExecuteOptions): Promise<void> {
-    return this.executeAsync(event)
+  execute(event: SelectionRequiredEvent, options: ExecuteOptions): Promise<void> {
+    return this.executeAsync(event, options.receivedAt)
   }
 
   /**
    * 非同步執行動畫和狀態更新
    */
-  private async executeAsync(event: SelectionRequiredEvent): Promise<void> {
+  private async executeAsync(event: SelectionRequiredEvent, receivedAt: number): Promise<void> {
     try {
-      await this.executeAsyncCore(event)
+      await this.executeAsyncCore(event, receivedAt)
     } catch (error) {
       if (error instanceof AbortOperationError) {
         console.info('[HandleSelectionRequiredUseCase] Aborted due to state recovery')
@@ -52,9 +52,7 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
   /**
    * 核心執行邏輯
    */
-  private async executeAsyncCore(event: SelectionRequiredEvent): Promise<void> {
-    // 記錄動畫開始時間（用於計算動畫耗時）
-    const startTS = new Date()
+  private async executeAsyncCore(event: SelectionRequiredEvent, receivedAt: number): Promise<void> {
 
     const localPlayerId = this.gameState.getLocalPlayerId()
     const isOpponent = event.player_id !== localPlayerId
@@ -111,9 +109,8 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     // === 階段 5：清理動畫層 ===
     this.animation.clearHiddenCards()
 
-    // === 階段 6：啟動操作倒數（扣除動畫耗時）===
-    const currentTS = new Date()
-    const dt = Math.floor((currentTS.getTime() - startTS.getTime()) / 1000)
+    // === 階段 6：啟動操作倒數（從事件接收時間計算，確保與後端同步）===
+    const dt = Math.ceil((Date.now() - receivedAt) / 1000)
     this.notification.startCountdown(event.timeout_seconds - dt, 'ACTION')
   }
 

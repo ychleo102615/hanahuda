@@ -122,6 +122,7 @@ export class EventRouter {
 
     // 將事件加入處理鏈，等待前一個事件完成
     this.eventChain = this.eventChain
+      // .then(() => new Promise(resolve => setTimeout(resolve, 3000)))
       .then(() => {
         // 檢查是否已取消（Adapter 層內部邏輯）
         if (this.operationSession?.getSignal()?.aborted) {

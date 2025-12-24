@@ -25,7 +25,7 @@ export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
     private readonly gameState: GameStatePort
   ) {}
 
-  execute(event: DecisionMadeEvent, _options: ExecuteOptions): void {
+  execute(event: DecisionMadeEvent, options: ExecuteOptions): void {
     // 1. 更新玩家 Koi-Koi 倍率
     const multiplier = event.updated_multipliers.player_multipliers[event.player_id]
     if (multiplier !== undefined) {
@@ -42,7 +42,8 @@ export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
     this.updateUIState.setFlowStage(event.next_state.state_type)
     this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // 4. 啟動操作倒數
-    this.notification.startCountdown(event.timeout_seconds, 'ACTION')
+    // 4. 啟動操作倒數（扣除事件處理延遲，使用 ceil 確保不低估延遲）
+    const deltaSeconds = Math.ceil((Date.now() - options.receivedAt) / 1000)
+    this.notification.startCountdown(event.timeout_seconds - deltaSeconds, 'ACTION')
   }
 }
