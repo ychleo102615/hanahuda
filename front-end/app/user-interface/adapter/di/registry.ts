@@ -45,7 +45,7 @@ import { HandleStateRecoveryUseCase } from '../../application/use-cases/HandleSt
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ErrorHandlerPort } from '../../application/ports/output'
 import type { HandleStateRecoveryPort } from '../../application/ports/input'
 import { createSessionContextAdapter } from '../session/SessionContextAdapter'
 import type { DomainFacade } from '../../application/types/domain-facade'
@@ -60,6 +60,7 @@ import { zoneRegistry } from '../animation/ZoneRegistry'
 import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
 import { createGameStatePortAdapter } from '../stores/GameStatePortAdapter'
 import { createNavigationPortAdapter } from '../router/NavigationPortAdapter'
+import { createApiErrorHandler } from '../api/ApiErrorHandler'
 import { CountdownManager } from '../services/CountdownManager'
 import { OperationSessionManager } from '../abort/OperationSessionManager'
 import { SSEConnectionManager } from '../sse/SSEConnectionManager'
@@ -266,6 +267,25 @@ function registerOutputPorts(container: DIContainer): void {
     { singleton: true },
   )
 
+  // ErrorHandlerPort: 統一 API 錯誤處理器
+  // 由 ApiErrorHandler Adapter 實作，根據錯誤類型決定處理策略：Toast / 重導向 / 錯誤 Modal
+  container.register(
+    TOKENS.ErrorHandlerPort,
+    () => {
+      const notification = container.resolve(TOKENS.NotificationPort) as NotificationPort
+      const navigation = container.resolve(TOKENS.NavigationPort) as NavigationPort
+      const sessionContext = container.resolve(TOKENS.SessionContextPort) as SessionContextPort
+      const matchmakingState = container.resolve(TOKENS.MatchmakingStatePort) as MatchmakingStatePort
+      return createApiErrorHandler({
+        notification,
+        navigation,
+        sessionContext,
+        matchmakingState,
+      })
+    },
+    { singleton: true },
+  )
+
   // SendCommandPort: 根據模式由不同的 Adapter 實作
   // 在 registerBackendAdapters / registerMockAdapters 中註冊
 }
@@ -315,32 +335,38 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
+  // ErrorHandlerPort: 統一 API 錯誤處理
+  const errorHandler = container.resolve(TOKENS.ErrorHandlerPort) as ErrorHandlerPort
+
   // Player Operations Use Cases
 
   // 註冊 PlayHandCardPort
   // Phase 7: 加入 animationPort 用於檢查動畫狀態
+  // 整合 ErrorHandlerPort 處理 API 錯誤
   container.register(
     TOKENS.PlayHandCardPort,
-    () => new PlayHandCardUseCase(sendCommandPort, notificationPort, domainFacade, animationPort),
+    () => new PlayHandCardUseCase(sendCommandPort, notificationPort, domainFacade, animationPort, errorHandler),
     { singleton: true }
   )
 
   // 註冊 SelectMatchTargetPort
   // Phase 7: 加入 animationPort 用於檢查動畫狀態
+  // 整合 ErrorHandlerPort 處理 API 錯誤
   container.register(
     TOKENS.SelectMatchTargetPort,
-    () => new SelectMatchTargetUseCase(sendCommandPort, domainFacade, animationPort),
+    () => new SelectMatchTargetUseCase(sendCommandPort, domainFacade, animationPort, errorHandler),
     { singleton: true }
   )
 
   // 註冊 MakeKoiKoiDecisionPort (T068-T070)
   // Phase 7: 加入 animationPort 用於檢查動畫狀態
   // Pattern B: 加入 notification 用於停止倒數計時（Use Case 控制業務邏輯）
+  // 整合 ErrorHandlerPort 處理 API 錯誤
   container.register(
     TOKENS.MakeKoiKoiDecisionPort,
     () => {
       const notification = container.resolve<NotificationPort>(TOKENS.NotificationPort)
-      return new MakeKoiKoiDecisionUseCase(sendCommandPort, domainFacade, animationPort, notification)
+      return new MakeKoiKoiDecisionUseCase(sendCommandPort, domainFacade, animationPort, notification, errorHandler)
     },
     { singleton: true }
   )

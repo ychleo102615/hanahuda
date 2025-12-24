@@ -29,5 +29,8 @@ export { SessionContextPort, type SessionIdentity } from './session-context.port
 // Game Connection
 export { GameConnectionPort, type GameConnectionParams } from './game-connection.port'
 
+// Error Handling
+export type { ErrorHandlerPort } from './error-handler.port'
+
 // Legacy Output Ports
 export type { UIStatePort } from './ui-state.port'

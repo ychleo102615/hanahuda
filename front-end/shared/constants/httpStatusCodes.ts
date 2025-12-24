@@ -197,6 +197,94 @@ export const API_ERROR_CODES = {
 export type ApiErrorCode = (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES]
 
 // ============================================================================
+// API 錯誤訊息映射
+// ============================================================================
+
+/**
+ * API 錯誤訊息映射表（英文）
+ *
+ * @description
+ * 根據錯誤代碼提供使用者友善的錯誤訊息。
+ * 用於 Toast 和錯誤 Modal 顯示。
+ */
+export const API_ERROR_MESSAGES: Record<ApiErrorCode, string> = {
+  // 400 Bad Request
+  [API_ERROR_CODES.VALIDATION_ERROR]: 'Invalid request. Please try again.',
+  [API_ERROR_CODES.MISSING_GAME_ID]: 'Game ID is required.',
+
+  // 401 Unauthorized
+  [API_ERROR_CODES.MISSING_TOKEN]: 'Session expired. Please start a new game.',
+  [API_ERROR_CODES.INVALID_SESSION]: 'Session expired. Please start a new game.',
+
+  // 403 Forbidden
+  [API_ERROR_CODES.GAME_MISMATCH]: "You don't have access to this game.",
+
+  // 404 Not Found
+  [API_ERROR_CODES.GAME_NOT_FOUND]: 'Game not found.',
+
+  // 409 Conflict
+  [API_ERROR_CODES.GAME_NOT_STARTED]: 'Game has not started yet. Please wait.',
+  [API_ERROR_CODES.GAME_ALREADY_FINISHED]: 'Game has ended.',
+  [API_ERROR_CODES.CONFIRMATION_NOT_REQUIRED]: 'This action is not needed right now.',
+  [API_ERROR_CODES.VERSION_CONFLICT]: 'State updated. Please try again.',
+
+  // 410 Gone
+  [API_ERROR_CODES.GAME_EXPIRED]: 'Game session has expired.',
+
+  // 429 Too Many Requests
+  [API_ERROR_CODES.RATE_LIMIT_EXCEEDED]: 'Too many requests. Please wait a moment.',
+
+  // 500 Internal Server Error
+  [API_ERROR_CODES.INTERNAL_ERROR]: 'An unexpected error occurred.',
+  [API_ERROR_CODES.PLAYER_NOT_FOUND]: 'An unexpected error occurred.',
+}
+
+// ============================================================================
+// 錯誤處理策略
+// ============================================================================
+
+/**
+ * 錯誤處理策略類型
+ *
+ * @description
+ * - TOAST: 顯示 Toast 通知，留在當前頁面
+ * - REDIRECT_HOME: 清理 session 並導航至首頁
+ * - REDIRECT_LOBBY: 清理 session 並導航至大廳
+ * - ERROR_MODAL: 顯示錯誤 Modal（5 秒倒數返回大廳）
+ */
+export type ErrorHandlingStrategy = 'TOAST' | 'REDIRECT_HOME' | 'REDIRECT_LOBBY' | 'ERROR_MODAL'
+
+/**
+ * 錯誤代碼對應的處理策略映射
+ *
+ * @description
+ * 定義每個錯誤代碼應該採用的處理策略。
+ */
+export const ERROR_HANDLING_STRATEGY: Record<ApiErrorCode, ErrorHandlingStrategy> = {
+  // Toast (可恢復錯誤)
+  [API_ERROR_CODES.VALIDATION_ERROR]: 'TOAST',
+  [API_ERROR_CODES.MISSING_GAME_ID]: 'TOAST',
+  [API_ERROR_CODES.GAME_NOT_STARTED]: 'TOAST',
+  [API_ERROR_CODES.CONFIRMATION_NOT_REQUIRED]: 'TOAST',
+  [API_ERROR_CODES.VERSION_CONFLICT]: 'TOAST',
+  [API_ERROR_CODES.RATE_LIMIT_EXCEEDED]: 'TOAST',
+
+  // 重導向至首頁 (session 無效或遊戲不存在)
+  [API_ERROR_CODES.MISSING_TOKEN]: 'REDIRECT_HOME',
+  [API_ERROR_CODES.INVALID_SESSION]: 'REDIRECT_HOME',
+  [API_ERROR_CODES.GAME_MISMATCH]: 'REDIRECT_HOME',
+  [API_ERROR_CODES.GAME_NOT_FOUND]: 'REDIRECT_HOME',
+  [API_ERROR_CODES.GAME_EXPIRED]: 'REDIRECT_HOME',
+
+  // 重導向至大廳 (遊戲已結束)
+  [API_ERROR_CODES.GAME_ALREADY_FINISHED]: 'REDIRECT_LOBBY',
+
+  // 錯誤 Modal (伺服器錯誤)
+  [API_ERROR_CODES.INTERNAL_ERROR]: 'ERROR_MODAL',
+  [API_ERROR_CODES.PLAYER_NOT_FOUND]: 'ERROR_MODAL',
+}
+
+// ============================================================================
 // 狀態碼與錯誤代碼映射
 // ============================================================================
 

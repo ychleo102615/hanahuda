@@ -105,6 +105,16 @@ export function createNotificationPortAdapter(
       console.info('[NotificationPort] Info message:', message)
     },
 
+    showWarningMessage(message: string): void {
+      store.addToast({
+        type: 'warning',
+        message,
+        duration: 5000,
+        dismissible: true,
+      })
+      console.info('[NotificationPort] Warning message:', message)
+    },
+
     showReconnectionMessage(): void {
       // Remove any existing loading toast first
       store.removeToastByType('loading')

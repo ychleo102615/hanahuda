@@ -28,6 +28,8 @@ import {
   ServerError,
   TimeoutError,
   ValidationError,
+  ApiError,
+  createApiError,
 } from './errors'
 
 /**
@@ -56,17 +58,6 @@ export interface JoinGameRequest {
  */
 export interface GameApiClientOptions {
   timeout?: number  // 超時時間 (毫秒),預設 5000ms
-}
-
-/**
- * HTTP 錯誤訊息映射表
- */
-const ERROR_MESSAGE_MAPPING: Record<number, string> = {
-  400: '請求格式錯誤,請稍後再試',
-  404: '遊戲不存在或已結束',
-  422: '此操作不合法,請檢查遊戲狀態',
-  500: '伺服器暫時無法使用,請稍後再試',
-  503: '伺服器維護中,請稍後再試',
 }
 
 /**
@@ -286,23 +277,18 @@ export class GameApiClient implements SendCommandPort {
 
       // 處理 HTTP 錯誤
       if (!response.ok) {
-        const errorText = await response.text()
         const status = response.status
 
-        // 4xx 錯誤 -> ValidationError (不重試)
-        if (status >= 400 && status < 500) {
-          const message = ERROR_MESSAGE_MAPPING[status] || '請求失敗'
-          throw new ValidationError(message)
+        // 嘗試解析 JSON 錯誤格式
+        let errorBody: { error?: { code?: string; message?: string } } | null = null
+        try {
+          errorBody = await response.json()
+        } catch {
+          // JSON 解析失敗，使用 null
         }
 
-        // 5xx 錯誤 -> ServerError (可重試)
-        if (status >= 500) {
-          const message = ERROR_MESSAGE_MAPPING[status] || `伺服器錯誤 (${status})`
-          throw new ServerError(status, message)
-        }
-
-        // 其他錯誤
-        throw new Error(`HTTP ${status}: ${errorText}`)
+        // 建立 ApiError（包含 errorCode 和友善訊息）
+        throw createApiError(status, errorBody)
       }
 
       // 204 No Content 回應
@@ -378,6 +364,11 @@ export class GameApiClient implements SendCommandPort {
     // ServerError (5xx) 可重試
     if (error instanceof ServerError) {
       return true
+    }
+
+    // ApiError: 5xx 可重試，4xx 不重試
+    if (error instanceof ApiError) {
+      return error.status >= 500
     }
 
     // ValidationError (4xx) 不重試

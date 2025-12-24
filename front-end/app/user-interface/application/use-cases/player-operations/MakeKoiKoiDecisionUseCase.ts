@@ -23,7 +23,7 @@ import type {
   MakeKoiKoiDecisionInput,
   MakeKoiKoiDecisionOutput,
 } from '../../ports/input/player-operations.port'
-import type { SendCommandPort, AnimationPort, NotificationPort } from '../../ports/output'
+import type { SendCommandPort, AnimationPort, NotificationPort, ErrorHandlerPort } from '../../ports/output'
 import type { YakuScore } from '#shared/contracts'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { Result } from '../../types/result'
@@ -39,12 +39,14 @@ export class MakeKoiKoiDecisionUseCase implements MakeKoiKoiDecisionPort {
    * @param domainFacade - Domain Layer 業務邏輯門面（預留，可用於役種驗證）
    * @param animationPort - 動畫系統 Output Port（用於檢查動畫狀態）
    * @param notification - 通知系統 Output Port（用於停止倒數計時）
+   * @param errorHandler - 錯誤處理 Output Port
    */
   constructor(
     private readonly sendCommandPort: SendCommandPort,
     private readonly domainFacade: DomainFacade,
     private readonly animationPort: AnimationPort,
-    private readonly notification: NotificationPort
+    private readonly notification: NotificationPort,
+    private readonly errorHandler: ErrorHandlerPort
   ) {}
 
   /**
@@ -82,7 +84,9 @@ export class MakeKoiKoiDecisionUseCase implements MakeKoiKoiDecisionPort {
     }
 
     // Step 3: Send decision command to backend
-    this.sendCommandPort.makeDecision(input.decision)
+    this.sendCommandPort.makeDecision(input.decision).catch((error: unknown) => {
+      this.errorHandler.handle(error)
+    })
 
     // Step 4: Return result
     return {

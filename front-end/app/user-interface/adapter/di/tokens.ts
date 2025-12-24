@@ -15,6 +15,7 @@ export const TOKENS = {
   NavigationPort: Symbol('NavigationPort'),
   SessionContextPort: Symbol('SessionContextPort'),
   GameConnectionPort: Symbol('GameConnectionPort'),
+  ErrorHandlerPort: Symbol('ErrorHandlerPort'),
 
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),

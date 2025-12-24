@@ -25,7 +25,7 @@ import type {
   PlayHandCardInput,
   PlayHandCardOutput,
 } from '../../ports/input/player-operations.port'
-import type { SendCommandPort, NotificationPort, AnimationPort } from '../../ports/output'
+import type { SendCommandPort, NotificationPort, AnimationPort, ErrorHandlerPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { Result } from '../../types/result'
 import { getCardById, type Card } from '~/user-interface/domain'
@@ -41,12 +41,14 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
    * @param notification - 觸發通知效果的 Output Port
    * @param domainFacade - Domain Layer 業務邏輯門面
    * @param animationPort - 動畫系統 Output Port（用於檢查動畫狀態）
+   * @param errorHandler - 錯誤處理 Output Port
    */
   constructor(
     private readonly sendCommandPort: SendCommandPort,
     private readonly notification: NotificationPort,
     private readonly domainFacade: DomainFacade,
-    private readonly animationPort: AnimationPort
+    private readonly animationPort: AnimationPort,
+    private readonly errorHandler: ErrorHandlerPort
   ) {}
 
   /**
@@ -100,7 +102,7 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
       const isValidTarget = matchableCards.some(card => card.card_id === input.targetCardId)
 
       if (isValidTarget) {
-        this.sendCommandPort.playHandCard(input.cardId, input.targetCardId)
+        this.sendCommand(input.cardId, input.targetCardId)
         return {
           success: true,
           value: {
@@ -119,7 +121,7 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
     // 沒有指定 targetCardId，根據配對數量自動處理
     if (matchableCards.length === 0 || matchableCards.length === 3) {
       // 無配對或三重配對：發送命令（無 target）
-      this.sendCommandPort.playHandCard(input.cardId, undefined)
+      this.sendCommand(input.cardId, undefined)
 
       return {
         success: true,
@@ -132,7 +134,7 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
       // 單一配對：直接發送命令（帶 target）
       const targetCardId = matchableCards[0]!.card_id
 
-      this.sendCommandPort.playHandCard(input.cardId, targetCardId)
+      this.sendCommand(input.cardId, targetCardId)
 
       return {
         success: true,
@@ -148,5 +150,17 @@ export class PlayHandCardUseCase implements PlayHandCardPort {
         error: 'DOUBLE_MATCH_REQUIRES_TARGET',
       }
     }
+  }
+
+  /**
+   * 發送打牌命令並處理錯誤
+   *
+   * @param cardId - 手牌 ID
+   * @param targetCardId - 配對目標 ID（可選）
+   */
+  private sendCommand(cardId: string, targetCardId: string | undefined): void {
+    this.sendCommandPort.playHandCard(cardId, targetCardId).catch((error: unknown) => {
+      this.errorHandler.handle(error)
+    })
   }
 }

@@ -22,7 +22,7 @@ import type {
   SelectMatchTargetInput,
   SelectMatchTargetOutput,
 } from '../../ports/input/player-operations.port'
-import type { SendCommandPort, AnimationPort } from '../../ports/output'
+import type { SendCommandPort, AnimationPort, ErrorHandlerPort } from '../../ports/output'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { Result } from '../../types/result'
 import { getCardById, type Card } from '~/user-interface/domain'
@@ -37,11 +37,13 @@ export class SelectMatchTargetUseCase implements SelectMatchTargetPort {
    * @param sendCommandPort - 發送命令到後端的 Output Port
    * @param domainFacade - Domain Layer 業務邏輯門面
    * @param animationPort - 動畫系統 Output Port（用於檢查動畫狀態）
+   * @param errorHandler - 錯誤處理 Output Port
    */
   constructor(
     private readonly sendCommandPort: SendCommandPort,
     private readonly domainFacade: DomainFacade,
-    private readonly animationPort: AnimationPort
+    private readonly animationPort: AnimationPort,
+    private readonly errorHandler: ErrorHandlerPort
   ) {}
 
   /**
@@ -83,7 +85,9 @@ export class SelectMatchTargetUseCase implements SelectMatchTargetPort {
     }
 
     // Step 3: Send command - 發送 TurnSelectTarget 命令到後端
-    this.sendCommandPort.selectTarget(input.sourceCardId, input.targetCardId)
+    this.sendCommandPort.selectTarget(input.sourceCardId, input.targetCardId).catch((error: unknown) => {
+      this.errorHandler.handle(error)
+    })
 
     return {
       success: true,

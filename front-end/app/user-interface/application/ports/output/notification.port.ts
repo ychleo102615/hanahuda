@@ -242,6 +242,22 @@ export interface NotificationPort {
   showInfoMessage(message: string): void
 
   /**
+   * 顯示警告訊息
+   *
+   * @description
+   * 顯示警告 Toast，用於可恢復但需注意的錯誤（如 429 Rate Limit）。
+   * 與錯誤訊息區分：警告表示暫時性問題，玩家稍後可重試。
+   *
+   * @param message - 警告訊息
+   *
+   * @example
+   * ```typescript
+   * notification.showWarningMessage('Too many requests. Please wait a moment.')
+   * ```
+   */
+  showWarningMessage(message: string): void
+
+  /**
    * 顯示正在重連訊息
    *
    * @description

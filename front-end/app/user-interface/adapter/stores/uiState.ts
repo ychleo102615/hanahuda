@@ -77,7 +77,7 @@ export type ContinueConfirmationState = 'HIDDEN' | 'AWAITING_INPUT' | 'AWAITING_
 /**
  * Toast 類型
  */
-export type ToastType = 'info' | 'success' | 'error' | 'loading'
+export type ToastType = 'info' | 'success' | 'error' | 'warning' | 'loading'
 
 /**
  * Toast 資料
