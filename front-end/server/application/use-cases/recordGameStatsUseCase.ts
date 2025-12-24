@@ -49,9 +49,14 @@ export class RecordGameStatsUseCase implements RecordGameStatsInputPort {
       winnerYakuList,
       winnerKoiMultiplier,
       players,
+      isRoundEndOnly,
     } = input
 
-    logger.info('Recording stats for game', { gameId, winnerId: winnerId ?? 'DRAW' })
+    logger.info('Recording stats for game', {
+      gameId,
+      winnerId: winnerId ?? 'DRAW',
+      isRoundEndOnly: isRoundEndOnly ?? false,
+    })
 
     // 過濾出人類玩家
     const humanPlayers = players.filter(p => !p.isAi)
@@ -93,6 +98,7 @@ export class RecordGameStatsUseCase implements RecordGameStatsInputPort {
         yakuCounts,
         koiKoiCallCount,
         hadMultiplierWin,
+        isRoundEndOnly,
       }
 
       try {

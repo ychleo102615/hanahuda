@@ -28,7 +28,6 @@ export function createMockGameRepository(): MockGameRepository {
   return {
     save: vi.fn<(game: Game) => Promise<void>>().mockResolvedValue(undefined),
     findById: vi.fn<(gameId: string) => Promise<Game | null>>().mockResolvedValue(null),
-    findBySessionToken: vi.fn<(sessionToken: string) => Promise<Game | null>>().mockResolvedValue(null),
     findByPlayerId: vi.fn<(playerId: string) => Promise<Game | null>>().mockResolvedValue(null),
     updateStatus: vi.fn<(gameId: string, status: GameStatus) => Promise<void>>().mockResolvedValue(undefined),
     delete: vi.fn<(gameId: string) => Promise<void>>().mockResolvedValue(undefined),
@@ -45,7 +44,6 @@ export function createMockGameRepository(): MockGameRepository {
 export function createMockGameRepositoryWithGame(game: Game): MockGameRepository {
   const mock = createMockGameRepository()
   mock.findById.mockResolvedValue(game)
-  mock.findBySessionToken.mockResolvedValue(game)
   mock.findByPlayerId.mockResolvedValue(game)
   return mock
 }

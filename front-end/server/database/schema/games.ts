@@ -8,8 +8,7 @@
  * 參考: specs/008-nuxt-backend-server/data-model.md#Games-Table
  */
 
-import { pgTable, uuid, varchar, jsonb, timestamp, boolean, integer } from 'drizzle-orm/pg-core'
-import type { PlayerScore } from '#shared/contracts'
+import { pgTable, uuid, varchar, timestamp, boolean, integer } from 'drizzle-orm/pg-core'
 
 /**
  * 遊戲狀態
@@ -23,20 +22,11 @@ export const games = pgTable('games', {
   /** 遊戲 ID (UUID v4) */
   id: uuid('id').primaryKey().defaultRandom(),
 
-  /** 會話 Token (用於重連驗證) */
-  sessionToken: uuid('session_token').unique().notNull(),
-
   /** 玩家 1 ID */
   player1Id: uuid('player1_id').notNull(),
 
-  /** 玩家 1 名稱 */
-  player1Name: varchar('player1_name', { length: 50 }).notNull(),
-
   /** 玩家 2 ID (可為 null，等待配對時) */
   player2Id: uuid('player2_id'),
-
-  /** 玩家 2 名稱 */
-  player2Name: varchar('player2_name', { length: 50 }),
 
   /** 玩家 2 是否為 AI */
   isPlayer2Ai: boolean('is_player2_ai').default(true).notNull(),
@@ -50,8 +40,11 @@ export const games = pgTable('games', {
   /** 已完成局數 */
   roundsPlayed: integer('rounds_played').notNull().default(0),
 
-  /** 累計分數 */
-  cumulativeScores: jsonb('cumulative_scores').$type<PlayerScore[]>().notNull().default([]),
+  /** 玩家 1 累計分數 */
+  player1Score: integer('player1_score').notNull().default(0),
+
+  /** 玩家 2 累計分數 */
+  player2Score: integer('player2_score').notNull().default(0),
 
   /** 建立時間 */
   createdAt: timestamp('created_at').defaultNow().notNull(),

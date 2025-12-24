@@ -55,41 +55,52 @@ export class DrizzlePlayerStatsRepository implements PlayerStatsRepositoryPort {
       yakuCounts,
       koiKoiCallCount,
       hadMultiplierWin,
+      isRoundEndOnly,
     } = input
 
     // 新記錄的初始值
+    // 若是局結束記錄，不計入遊戲場次
     const newRecord = {
       playerId,
-      totalScore: scoreChange,
-      gamesPlayed: 1,
-      gamesWon: isWinner ? 1 : 0,
-      gamesLost: isLoser ? 1 : 0,
+      totalScore: isRoundEndOnly ? 0 : scoreChange,
+      gamesPlayed: isRoundEndOnly ? 0 : 1,
+      gamesWon: isRoundEndOnly ? 0 : (isWinner ? 1 : 0),
+      gamesLost: isRoundEndOnly ? 0 : (isLoser ? 1 : 0),
       yakuCounts: yakuCounts,
       koiKoiCalls: koiKoiCallCount,
       multiplierWins: hadMultiplierWin ? 1 : 0,
     }
 
-    await db
-      .insert(playerStats)
-      .values(newRecord)
-      .onConflictDoUpdate({
-        target: playerStats.playerId,
-        set: {
-          // 累加數值欄位
+    // 根據是否為局結束記錄，決定更新哪些欄位
+    const updateSet = isRoundEndOnly
+      ? {
+          // 局結束記錄：只更新役種/Koi-Koi/倍率
+          koiKoiCalls: sql`${playerStats.koiKoiCalls} + ${koiKoiCallCount}`,
+          multiplierWins: sql`${playerStats.multiplierWins} + ${hadMultiplierWin ? 1 : 0}`,
+          yakuCounts: this.buildYakuCountsMergeExpression(yakuCounts),
+          updatedAt: new Date(),
+        }
+      : {
+          // 遊戲結束記錄：更新所有欄位
           totalScore: sql`${playerStats.totalScore} + ${scoreChange}`,
           gamesPlayed: sql`${playerStats.gamesPlayed} + 1`,
           gamesWon: sql`${playerStats.gamesWon} + ${isWinner ? 1 : 0}`,
           gamesLost: sql`${playerStats.gamesLost} + ${isLoser ? 1 : 0}`,
           koiKoiCalls: sql`${playerStats.koiKoiCalls} + ${koiKoiCallCount}`,
           multiplierWins: sql`${playerStats.multiplierWins} + ${hadMultiplierWin ? 1 : 0}`,
-          // 合併役種計數（使用 PostgreSQL JSONB 合併）
           yakuCounts: this.buildYakuCountsMergeExpression(yakuCounts),
-          // 更新時間戳
           updatedAt: new Date(),
-        },
+        }
+
+    await db
+      .insert(playerStats)
+      .values(newRecord)
+      .onConflictDoUpdate({
+        target: playerStats.playerId,
+        set: updateSet,
       })
 
-    console.log(`[DrizzlePlayerStatsRepository] Upserted stats for player ${playerId}`)
+    console.log(`[DrizzlePlayerStatsRepository] Upserted stats for player ${playerId}${isRoundEndOnly ? ' (round only)' : ''}`)
   }
 
   /**

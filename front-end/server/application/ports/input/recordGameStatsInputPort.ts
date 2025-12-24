@@ -36,6 +36,14 @@ export interface RecordGameStatsInput {
 
   /** 遊戲中的所有玩家 (用於識別 AI) */
   readonly players: readonly Player[]
+
+  /**
+   * 是否僅記錄局結束統計（不更新遊戲勝負場次）
+   *
+   * - true: 只記錄役種/Koi-Koi/倍率，不更新 gamesPlayed/gamesWon/gamesLost
+   * - false/undefined: 完整記錄（遊戲結束時使用）
+   */
+  readonly isRoundEndOnly?: boolean
 }
 
 /**

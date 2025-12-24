@@ -33,14 +33,6 @@ export interface GameRepositoryPort {
   findById(gameId: string): Promise<Game | null>
 
   /**
-   * 透過會話 Token 查找遊戲
-   *
-   * @param sessionToken - 會話 Token
-   * @returns 遊戲（若存在）
-   */
-  findBySessionToken(sessionToken: string): Promise<Game | null>
-
-  /**
    * 透過玩家 ID 查找遊戲
    *
    * @param playerId - 玩家 ID

@@ -19,11 +19,8 @@ export type YakuCounts = Record<string, number>
  * Player Stats 表
  */
 export const playerStats = pgTable('player_stats', {
-  /** 統計 ID */
-  id: uuid('id').primaryKey().defaultRandom(),
-
-  /** 玩家 ID (唯一) */
-  playerId: uuid('player_id').unique().notNull(),
+  /** 玩家 ID (主鍵) */
+  playerId: uuid('player_id').primaryKey(),
 
   /** 總分數 */
   totalScore: integer('total_score').notNull().default(0),

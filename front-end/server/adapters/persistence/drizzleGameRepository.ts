@@ -9,9 +9,12 @@
  */
 
 import { eq } from 'drizzle-orm'
+import { randomUUID } from 'node:crypto'
 import type { Game, GameStatus } from '~~/server/domain/game/game'
 import { getDefaultRuleset } from '~~/server/domain/game/game'
 import type { Player } from '~~/server/domain/game/player'
+import { AI_PLAYER_DEFAULT_NAME } from '~~/server/domain/game/player'
+import type { PlayerScore } from '#shared/contracts'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import { db } from '~~/server/utils/db'
 import { games, type NewGame } from '~~/server/database/schema'
@@ -38,17 +41,14 @@ export class DrizzleGameRepository implements GameRepositoryPort {
         target: games.id,
         set: {
           player2Id: dbRecord.player2Id,
-          player2Name: dbRecord.player2Name,
           isPlayer2Ai: dbRecord.isPlayer2Ai,
           status: dbRecord.status,
           roundsPlayed: dbRecord.roundsPlayed,
-          cumulativeScores: dbRecord.cumulativeScores,
+          player1Score: dbRecord.player1Score,
+          player2Score: dbRecord.player2Score,
           updatedAt: new Date(),
         },
       })
-
-    // 注意：Session 的建立由 UseCase 層透過 saveSession() 明確控制
-    // 不在此處自動建立，避免重複插入
   }
 
   /**
@@ -56,20 +56,6 @@ export class DrizzleGameRepository implements GameRepositoryPort {
    */
   async findById(gameId: string): Promise<Game | null> {
     const results = await db.select().from(games).where(eq(games.id, gameId)).limit(1)
-    const record = results[0]
-
-    if (!record) {
-      return null
-    }
-
-    return this.toDomainModel(record)
-  }
-
-  /**
-   * 透過會話 Token 查找遊戲
-   */
-  async findBySessionToken(sessionToken: string): Promise<Game | null> {
-    const results = await db.select().from(games).where(eq(games.sessionToken, sessionToken)).limit(1)
     const record = results[0]
 
     if (!record) {
@@ -152,18 +138,24 @@ export class DrizzleGameRepository implements GameRepositoryPort {
       throw new Error('Game must have at least one player')
     }
 
+    // 從 cumulativeScores 提取分數
+    const player1Score = game.cumulativeScores.find(
+      s => s.player_id === player1.id
+    )?.score ?? 0
+    const player2Score = game.cumulativeScores.find(
+      s => s.player_id === player2?.id
+    )?.score ?? 0
+
     return {
       id: game.id,
-      sessionToken: game.sessionToken,
       player1Id: player1.id,
-      player1Name: player1.name,
       player2Id: player2?.id ?? null,
-      player2Name: player2?.name ?? null,
       isPlayer2Ai: player2?.isAi ?? true,
       status: game.status,
       totalRounds: game.totalRounds,
       roundsPlayed: game.roundsPlayed,
-      cumulativeScores: [...game.cumulativeScores],
+      player1Score,
+      player2Score,
       createdAt: game.createdAt,
       updatedAt: game.updatedAt,
     }
@@ -174,22 +166,36 @@ export class DrizzleGameRepository implements GameRepositoryPort {
    *
    * 注意：此轉換無法還原完整的 Domain Game（如 currentRound），
    * 因為 DB 只儲存基本遊戲資訊。完整狀態由記憶體 Store 管理。
+   *
+   * sessionToken 和 player names 使用臨時/預設值，
+   * 因為這些資訊不再儲存於 DB。
    */
   private toDomainModel(record: typeof games.$inferSelect): Game {
-    // 建立 players 陣列
+    // 建立 players 陣列（使用預設名稱）
     const players: Player[] = [
       {
         id: record.player1Id,
-        name: record.player1Name,
+        name: 'Player',
         isAi: false, // player1 一定是人類
       },
     ]
 
-    if (record.player2Id && record.player2Name) {
+    if (record.player2Id) {
       players.push({
         id: record.player2Id,
-        name: record.player2Name,
+        name: record.isPlayer2Ai ? AI_PLAYER_DEFAULT_NAME : 'Player 2',
         isAi: record.isPlayer2Ai,
+      })
+    }
+
+    // 從兩個 score 欄位重建 cumulativeScores
+    const cumulativeScores: PlayerScore[] = [
+      { player_id: record.player1Id, score: record.player1Score },
+    ]
+    if (record.player2Id) {
+      cumulativeScores.push({
+        player_id: record.player2Id,
+        score: record.player2Score,
       })
     }
 
@@ -208,10 +214,10 @@ export class DrizzleGameRepository implements GameRepositoryPort {
 
     return Object.freeze({
       id: record.id,
-      sessionToken: record.sessionToken,
+      sessionToken: randomUUID(), // 臨時 sessionToken（DB 不再儲存）
       players: Object.freeze(players),
       ruleset,
-      cumulativeScores: Object.freeze(record.cumulativeScores ?? []),
+      cumulativeScores: Object.freeze(cumulativeScores),
       roundsPlayed: record.roundsPlayed,
       totalRounds: record.totalRounds,
       currentRound: null, // DB 不儲存 currentRound，由記憶體 Store 管理

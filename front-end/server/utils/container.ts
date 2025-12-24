@@ -95,6 +95,7 @@ const playHandCardUseCase = new PlayHandCardUseCase(
   inMemoryGameStore,
   eventMapper,
   gameTimeoutManager,
+  recordGameStatsUseCase,
   gameLogRepository
 )
 
@@ -104,6 +105,7 @@ const selectTargetUseCase = new SelectTargetUseCase(
   inMemoryGameStore,
   eventMapper,
   gameTimeoutManager,
+  recordGameStatsUseCase,
   gameLogRepository
 )
 
@@ -149,7 +151,8 @@ const turnFlowService = new TurnFlowService(
   inMemoryGameStore,
   gameRepository,
   compositeEventPublisher,
-  eventMapper
+  eventMapper,
+  recordGameStatsUseCase
 )
 
 // 4. 注入 TurnFlowService 到需要它的 Use Cases

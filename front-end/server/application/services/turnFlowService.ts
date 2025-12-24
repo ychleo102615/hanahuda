@@ -11,9 +11,11 @@
  */
 
 import { type Game, finishGame } from '~~/server/domain/game/game'
+import { calculateWinner } from '~~/server/domain/game/gameEndConditions'
 import type { ScoreMultipliers, RoundScoringData, PlayerScore, GameEndedReason } from '#shared/contracts'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
+import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
@@ -47,7 +49,8 @@ export class TurnFlowService {
     private readonly gameStore: GameStorePort,
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
-    private readonly eventMapper: TurnEventMapperPort
+    private readonly eventMapper: TurnEventMapperPort,
+    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort
   ) {}
 
   /**
@@ -360,6 +363,23 @@ export class TurnFlowService {
     // 使用 Domain 函數結束遊戲
     const finishedGame = finishGame(game, winnerId)
 
+    // 記錄遊戲統計（非正常結束也需要記錄勝負）
+    if (this.recordGameStatsUseCase) {
+      try {
+        await this.recordGameStatsUseCase.execute({
+          gameId,
+          winnerId: winnerId ?? null,
+          finalScores: finishedGame.cumulativeScores,
+          winnerYakuList: [], // 非正常結束沒有役種資訊
+          winnerKoiMultiplier: 1, // 非正常結束沒有倍率
+          players: finishedGame.players,
+        })
+      } catch (error) {
+        logger.error('Failed to record game stats', error, { gameId })
+        // 統計記錄失敗不應影響遊戲結束流程
+      }
+    }
+
     // 1. 先寫 DB（確保持久化成功）
     await this.gameRepository.save(finishedGame)
 
@@ -394,8 +414,9 @@ export class TurnFlowService {
         return
       }
 
-      const otherPlayer = game.players.find(p => p.id !== idlePlayerId)
-      const winnerId = otherPlayer?.id
+      // 依分數決定勝者（而非閒置狀態）
+      const winnerResult = calculateWinner(game)
+      const winnerId = winnerResult.winnerId ?? undefined
 
       await this.endGame(gameId, winnerId, 'PLAYER_IDLE_TIMEOUT')
     } catch (error) {
@@ -421,11 +442,12 @@ export class TurnFlowService {
 
     logger.info('Found disconnected/left players, ending game', { gameId })
 
-    // 找出連線中的玩家作為勝者
-    const connectedPlayer = game.players.find(
-      p => !isPlayerDisconnectedOrLeft(game, p.id)
-    )
-    const winnerId = connectedPlayer?.id
+    // 依分數決定勝者（而非連線狀態）
+    const winnerResult = calculateWinner(game)
+    const winnerId = winnerResult.winnerId ?? undefined
+
+    // 先將更新寫入 gameStore，讓 endGame() 能取得最新狀態（包含當前回合的分數）
+    this.gameStore.set(game)
 
     await this.endGame(gameId, winnerId, 'PLAYER_DISCONNECTED')
     return true

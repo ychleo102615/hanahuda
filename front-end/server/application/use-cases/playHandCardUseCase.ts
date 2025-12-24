@@ -16,6 +16,7 @@ import type {
   CardPlay,
   YakuUpdate,
   Yaku,
+  PlayerScore,
 } from '#shared/contracts'
 import {
   updateRound,
@@ -49,6 +50,7 @@ import type { TurnEventMapperPort } from '~~/server/application/ports/output/eve
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
 import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
+import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
 import {
   PlayHandCardError,
   type PlayHandCardInputPort,
@@ -78,6 +80,7 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: TurnEventMapperPort,
     private readonly gameTimeoutManager?: GameTimeoutPort,
+    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
     private readonly gameLogRepository?: GameLogRepositoryPort
   ) {}
 
@@ -235,6 +238,57 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
             roundEndResult.finalScore
           )
           game = transitionResult.game
+
+          // 取得勝者的 Koi-Koi 倍率
+          const winnerKoiStatus = existingGame.currentRound?.koiStatuses.find(
+            k => k.player_id === playerId
+          )
+          const winnerKoiMultiplier = winnerKoiStatus?.koi_multiplier ?? 1
+
+          // 記錄統計
+          if (this.recordGameStatsUseCase) {
+            if (transitionResult.transitionType === 'GAME_FINISHED') {
+              // 遊戲結束：記錄完整統計（勝負場次 + 役種/Koi-Koi/倍率）
+              const winner = transitionResult.winner
+              if (winner) {
+                try {
+                  await this.recordGameStatsUseCase.execute({
+                    gameId,
+                    winnerId: winner.winnerId,
+                    finalScores: winner.finalScores,
+                    winnerYakuList: roundEndResult.yakuList,
+                    winnerKoiMultiplier,
+                    players: game.players,
+                  })
+                } catch (error) {
+                  logger.error('Failed to record game stats', error, { gameId })
+                  // 統計記錄失敗不應影響遊戲結束流程
+                }
+              }
+            } else if (transitionResult.transitionType === 'NEXT_ROUND') {
+              // 局結束但遊戲繼續：只記錄該局的役種/Koi-Koi/倍率
+              try {
+                const currentScores: PlayerScore[] = game.players.map(p => ({
+                  player_id: p.id,
+                  score: game.cumulativeScores.find(s => s.player_id === p.id)?.score ?? 0,
+                }))
+
+                await this.recordGameStatsUseCase.execute({
+                  gameId,
+                  winnerId: playerId,
+                  finalScores: currentScores,
+                  winnerYakuList: roundEndResult.yakuList,
+                  winnerKoiMultiplier,
+                  players: game.players,
+                  isRoundEndOnly: true,
+                })
+                logger.info('Recorded round-only stats', { gameId, roundWinner: playerId })
+              } catch (error) {
+                logger.error('Failed to record round-only stats', error, { gameId })
+                // 統計記錄失敗不應影響遊戲流程
+              }
+            }
+          }
 
           // 使用 TurnFlowService 的共用方法處理回合結束
           // 傳入 includeAnimationDelay=true，因為前端需要先播放 TurnCompleted 動畫

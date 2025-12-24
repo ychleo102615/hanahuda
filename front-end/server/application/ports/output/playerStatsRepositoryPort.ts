@@ -36,6 +36,14 @@ export interface UpsertPlayerStatsInput {
 
   /** 是否透過 Koi-Koi 倍率獲勝 (倍率 > 1) */
   readonly hadMultiplierWin: boolean
+
+  /**
+   * 是否僅記錄局結束統計（不更新遊戲勝負場次）
+   *
+   * - true: 只記錄役種/Koi-Koi/倍率，不更新 gamesPlayed/gamesWon/gamesLost/totalScore
+   * - false/undefined: 完整記錄（遊戲結束時使用）
+   */
+  readonly isRoundEndOnly?: boolean
 }
 
 /**
