@@ -76,17 +76,22 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
     // 原因：避免舊狀態殘留，完全按照快照內容恢復
     this.updateUIState.resetState()
 
-    // 5. 靜默恢復完整遊戲狀態（無動畫）
+    // 5. 重置 UI 臨時狀態
+    // 原因：abortAll() 可能中斷發牌動畫，導致 dealingInProgress 永遠為 true
+    // UIStatePort.resetState() 只重置 GameStateStore，不會重置 UIStateStore
+    this.notification.setDealingInProgress(false)
+
+    // 6. 靜默恢復完整遊戲狀態（無動畫）
     // 注意：restoreGameState 會恢復 selection_context（drawnCard, possibleTargetCardIds）
     this.updateUIState.restoreGameState(snapshot)
 
-    // 6. 隱藏重連訊息
+    // 7. 隱藏重連訊息
     this.notification.hideReconnectionMessage()
 
-    // 7. 根據 flow_stage 恢復 UI 面板
+    // 8. 根據 flow_stage 恢復 UI 面板
     this.restoreUIPanel(snapshot)
 
-    // 8. 啟動操作倒數（根據 flow_stage 判斷 mode）
+    // 9. 啟動操作倒數（根據 flow_stage 判斷 mode）
     const countdownMode = snapshot.current_flow_stage === 'AWAITING_DECISION' ? 'DISPLAY' : 'ACTION'
     this.notification.startCountdown(snapshot.timeout_seconds, countdownMode)
 

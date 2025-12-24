@@ -184,6 +184,10 @@ export function createNotificationPortAdapter(
       countdown.cleanup()
     },
 
+    resetUITemporaryState(): void {
+      store.reset()
+    },
+
     // ===== 遊戲公告系統 =====
     showKoiKoiAnnouncement(): void {
       store.queueAnnouncement({

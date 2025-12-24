@@ -686,6 +686,13 @@ export const useUIStateStore = defineStore('uiState', {
       this.connectionStatus = 'disconnected'
       this.reconnecting = false
 
+      // 等待對手狀態
+      this.waitingForOpponent = false
+      this.waitingTimeoutSeconds = null
+
+      // 發牌動畫狀態
+      this.dealingInProgress = false
+
       // 手牌確認模式
       this.handCardConfirmationMode = false
       this.handCardAwaitingConfirmation = null

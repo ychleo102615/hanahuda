@@ -423,6 +423,30 @@ export interface NotificationPort {
    */
   cleanup(): void
 
+  /**
+   * 重置 UI 臨時狀態
+   *
+   * @description
+   * 重置所有 UI 臨時狀態（UIStateStore 管理的狀態），包括：
+   * - dealingInProgress（發牌動畫狀態）
+   * - waitingForOpponent（等待對手狀態）
+   * - reconnecting（重連狀態）
+   * - 所有 Modal 和 Toast
+   * - 手牌確認模式、場牌選擇模式等互動狀態
+   *
+   * 使用場景：
+   * - StartGameUseCase 啟動新連線前清理舊狀態
+   * - 避免 abortAll() 中斷動畫後狀態殘留
+   *
+   * @note 此方法重置 UIStateStore，與 UIStatePort.resetState()（重置 GameStateStore）不同
+   *
+   * @example
+   * ```typescript
+   * notification.resetUITemporaryState()
+   * ```
+   */
+  resetUITemporaryState(): void
+
   // ===== 遊戲公告系統 =====
 
   /**

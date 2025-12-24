@@ -99,6 +99,7 @@ export class StartGameUseCase implements StartGamePort {
     // 4. 重置狀態
     this.gameState.reset()
     this.notification.cleanup()
+    this.notification.resetUITemporaryState()
 
     // 5. 建立新連線
     const gameId = this.sessionContext.getGameId()
