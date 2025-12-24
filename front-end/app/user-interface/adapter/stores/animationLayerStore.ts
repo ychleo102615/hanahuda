@@ -6,7 +6,7 @@
  * 用於跨容器動畫，避免 overflow 裁切問題。
  */
 
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 /**
@@ -96,6 +96,18 @@ export const useAnimationLayerStore = defineStore('animationLayer', () => {
   const animatingGroups = ref<CardGroup[]>([])
   const hiddenCardIds = ref<Set<string>>(new Set())
 
+  // Computed
+  /**
+   * 是否有動畫正在進行
+   *
+   * @description
+   * 根據動畫層中的卡片和卡片組數量判斷。
+   * 響應式狀態，可用於 Vue computed 依賴追蹤。
+   */
+  const isAnimating = computed(() =>
+    animatingCards.value.length > 0 || animatingGroups.value.length > 0
+  )
+
   // Actions - 動畫卡片管理
   function addCard(card: AnimatingCard): void {
     animatingCards.value.push(card)
@@ -146,6 +158,8 @@ export const useAnimationLayerStore = defineStore('animationLayer', () => {
     animatingCards,
     animatingGroups,
     hiddenCardIds,
+    // Computed
+    isAnimating,
     // Actions - 卡片管理
     addCard,
     removeCard,

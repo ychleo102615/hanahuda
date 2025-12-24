@@ -49,6 +49,10 @@ export class CountdownManager {
     // 邊界情況：seconds <= 0 表示「時間已到」，立即完成
     if (seconds <= 0) {
       console.info(`[CountdownManager] seconds = ${seconds}，立即完成`)
+      // ACTION 模式超時：禁止玩家操作
+      if (mode === 'ACTION') {
+        this.uiState.setActionTimeoutExpired(true)
+      }
       if (onComplete) {
         onComplete()
       }
@@ -69,7 +73,12 @@ export class CountdownManager {
         // UI 不會顯示 0，因為 stopCountdown 會立即將 remaining 設為 null
         if (this.uiState.countdownRemaining === 0) {
           const callback = this.onComplete
+          // ACTION 模式超時：禁止玩家操作（在 stopCountdown 之前檢查，因為 stop 會清除 mode）
+          const isActionTimeout = this.uiState.countdownMode === 'ACTION'
           this.stopCountdown()
+          if (isActionTimeout) {
+            this.uiState.setActionTimeoutExpired(true)
+          }
           if (callback) {
             callback()
           }

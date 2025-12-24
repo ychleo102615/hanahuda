@@ -179,6 +179,9 @@ export interface UIStateStoreState {
   countdownRemaining: number | null
   countdownMode: 'ACTION' | 'DISPLAY' | null
 
+  // 操作超時狀態（ACTION 模式倒數完成時為 true，禁止玩家操作）
+  isActionTimeoutExpired: boolean
+
   // 待處理的遊戲結束資料（最後一回合緩存用）
   pendingGameFinishedData: GameFinishedData | null
 
@@ -250,6 +253,9 @@ export interface UIStateStoreActions {
   // 確認繼續遊戲
   showContinueConfirmation(timeoutSeconds: number, onDecision: (decision: 'CONTINUE' | 'LEAVE') => void): void
   hideContinueConfirmation(): void
+
+  // 操作超時狀態
+  setActionTimeoutExpired(value: boolean): void
 }
 
 /**
@@ -315,6 +321,9 @@ export const useUIStateStore = defineStore('uiState', {
     // 倒數計時（統一）
     countdownRemaining: null,
     countdownMode: null,
+
+    // 操作超時狀態
+    isActionTimeoutExpired: false,
 
     // 待處理的遊戲結束資料
     pendingGameFinishedData: null,
@@ -713,6 +722,9 @@ export const useUIStateStore = defineStore('uiState', {
       this.countdownRemaining = null
       this.countdownMode = null
 
+      // 操作超時狀態
+      this.isActionTimeoutExpired = false
+
       // 待處理的遊戲結束資料
       this.pendingGameFinishedData = null
 
@@ -952,6 +964,29 @@ export const useUIStateStore = defineStore('uiState', {
       this.continueConfirmationTimeoutSeconds = null
       this.continueConfirmationCallback = null
       console.info('[UIStateStore] 隱藏確認繼續遊戲介面')
+    },
+
+    // ===== 操作超時狀態 =====
+
+    /**
+     * 設置操作超時狀態
+     *
+     * @description
+     * 當 ACTION 模式倒數完成時設為 true，禁止玩家繼續操作。
+     * 同時清除所有操作相關的高亮狀態（手牌選中、懸浮預覽、場牌選擇）。
+     * 當啟動新的 ACTION 倒數時重置為 false。
+     *
+     * @param value - 是否超時
+     */
+    setActionTimeoutExpired(value: boolean): void {
+      this.isActionTimeoutExpired = value
+      if (value) {
+        // 清除所有操作相關的高亮狀態
+        this.exitHandCardConfirmationMode()
+        this.clearHandCardHoverPreview()
+        this.exitFieldCardSelectionMode()
+        console.info('[UIStateStore] 操作超時，禁止玩家操作，已清除高亮狀態')
+      }
     },
   },
 })

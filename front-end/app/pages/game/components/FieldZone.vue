@@ -35,7 +35,18 @@ const {
   handCardConfirmationMode,
   matchableFieldCards,
   matchCount,
+  isActionTimeoutExpired,
 } = storeToRefs(uiState)
+
+/**
+ * 玩家是否可以選擇場牌
+ *
+ * @description
+ * 當操作時間超時時，禁止場牌選擇操作。
+ * 此條件與 PlayerHandZone 的 canPlayerAct 類似，
+ * 但場牌選擇有自己的模式判斷邏輯。
+ */
+const canSelectFieldCard = computed(() => !isActionTimeoutExpired.value)
 
 // 注入 Ports
 const selectMatchTargetPort = useDependency<SelectMatchTargetPort>(TOKENS.SelectMatchTargetPort)
@@ -87,6 +98,9 @@ function isMultipleMatchHighlight(cardId: string): boolean {
 
 // 處理卡片點擊
 function handleCardClick(cardId: string) {
+  // 前置條件檢查：操作超時時禁止選擇
+  if (!canSelectFieldCard.value) return
+
   // 情境 1: 翻牌選擇模式（AWAITING_SELECTION）
   if (fieldCardSelectionMode.value && fieldCardSelectableTargets.value.includes(cardId)) {
     // 從 gameState 取得完整參數
@@ -142,8 +156,9 @@ function handleCardClick(cardId: string) {
         :key="cardId"
         :card-id="cardId"
         :is-selectable="
-          (fieldCardSelectionMode && fieldCardSelectableTargets.includes(cardId)) ||
-          (handCardConfirmationMode && matchableFieldCards.includes(cardId))
+          canSelectFieldCard &&
+          ((fieldCardSelectionMode && fieldCardSelectableTargets.includes(cardId)) ||
+          (handCardConfirmationMode && matchableFieldCards.includes(cardId)))
         "
         :is-preview-highlighted="isPreviewHighlighted(cardId)"
         :is-single-match-highlight="isSingleMatchHighlight(cardId)"

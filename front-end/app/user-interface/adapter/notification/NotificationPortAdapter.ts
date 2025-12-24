@@ -173,6 +173,10 @@ export function createNotificationPortAdapter(
     // ===== 倒數計時 =====
     startCountdown(seconds: number, mode: 'ACTION' | 'DISPLAY', onComplete?: () => void): void {
       countdown.cleanup()
+      // 啟動新的 ACTION 倒數時重置超時狀態，允許玩家操作
+      if (mode === 'ACTION') {
+        store.setActionTimeoutExpired(false)
+      }
       countdown.startCountdown(seconds, mode, onComplete)
     },
 

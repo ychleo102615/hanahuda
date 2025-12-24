@@ -8,26 +8,28 @@
  * T058 [US2]: 注入 PlayHandCardPort
  */
 
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
+import { useAnimationLayerStore } from '~/user-interface/adapter/stores/animationLayerStore'
 import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
 import { useDependency } from '~/user-interface/adapter/composables/useDependency'
 import CardComponent from './CardComponent.vue'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { PlayHandCardPort } from '~/user-interface/application/ports/input'
 import type { DomainFacade } from '~/user-interface/application/types/domain-facade'
-import type { AnimationPort } from '~/user-interface/application/ports/output'
 import { getCardById } from '~/user-interface/domain'
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
+const animationLayerStore = useAnimationLayerStore()
 
 // 註冊區域位置
 const { elementRef: handRef } = useZoneRegistration('player-hand')
 const { myHandCards, isMyTurn, fieldCards } = storeToRefs(gameState)
-const { handCardAwaitingConfirmation } = storeToRefs(uiState)
+const { handCardAwaitingConfirmation, isActionTimeoutExpired } = storeToRefs(uiState)
+const { isAnimating } = storeToRefs(animationLayerStore)
 
 // T058 [US2]: 注入 PlayHandCardPort
 const playHandCardPort = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
@@ -35,8 +37,27 @@ const playHandCardPort = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort
 // 通過 DI 獲取 DomainFacade
 const domainFacade = useDependency<DomainFacade>(TOKENS.DomainFacade)
 
-// 注入 AnimationPort 用於檢查動畫狀態
-const animationPort = useDependency<AnimationPort>(TOKENS.AnimationPort)
+// 從 gameState 取得 flowStage（用於 canPlayerAct 判斷）
+const { flowStage, possibleTargetCardIds } = storeToRefs(gameState)
+
+/**
+ * 玩家是否可以操作手牌
+ *
+ * @description
+ * 整合所有操作前置條件（全部為響應式狀態）：
+ * 1. 是我的回合（isMyTurn）
+ * 2. 沒有動畫正在播放（!isAnimating）
+ * 3. 處於等待出手牌階段（flowStage === 'AWAITING_HAND_PLAY'）
+ * 4. 操作時間未超時（!isActionTimeoutExpired）
+ */
+const canPlayerAct = computed(() => {
+  return (
+    isMyTurn.value &&
+    !isAnimating.value &&
+    flowStage.value === 'AWAITING_HAND_PLAY' &&
+    !isActionTimeoutExpired.value
+  )
+})
 
 const emit = defineEmits<{
   cardSelect: [cardId: string]
@@ -44,11 +65,8 @@ const emit = defineEmits<{
 
 // 處理手牌點擊（兩次點擊確認）
 function handleCardClick(cardId: string) {
-  // 前置條件檢查
-  if (!isMyTurn.value) return
-  if (animationPort.isAnimating()) return
-  // 只有在等待出手牌階段才允許出牌
-  if (flowStage.value !== 'AWAITING_HAND_PLAY') return
+  // 前置條件檢查（使用統一的 canPlayerAct）
+  if (!canPlayerAct.value) return
 
   // 第一次點擊：進入確認模式
   if (handCardAwaitingConfirmation.value !== cardId) {
@@ -100,12 +118,8 @@ function handleCardClick(cardId: string) {
 
 // 處理滑鼠進入手牌（懸浮預覽）
 function handleMouseEnter(cardId: string) {
-  if (!isMyTurn.value) return
-  if (animationPort.isAnimating()) return
-
-  // 只有在等待出手牌階段才顯示懸浮高亮
-  // 出牌後進入其他階段（AWAITING_DECK_DRAW、AWAITING_SELECTION 等）時不顯示
-  if (flowStage.value !== 'AWAITING_HAND_PLAY') return
+  // 前置條件檢查（使用統一的 canPlayerAct）
+  if (!canPlayerAct.value) return
 
   // 如果是已選中的手牌，不顯示預覽高亮
   if (handCardAwaitingConfirmation.value === cardId) {
@@ -157,7 +171,6 @@ watch(isMyTurn, (newIsMyTurn) => {
 // 當 HandleSelectionRequiredUseCase 設定 FlowStage 為 AWAITING_SELECTION 時，
 // 根據 possibleTargetCardIds 數量來決定 UI 行為
 // 注意：只有自己的回合才進入選擇模式
-const { flowStage, possibleTargetCardIds } = storeToRefs(gameState)
 watch(flowStage, (newStage, oldStage) => {
   // 只有自己的回合才進入選擇模式
   if (newStage === 'AWAITING_SELECTION' && possibleTargetCardIds.value.length > 0 && isMyTurn.value) {
@@ -205,7 +218,7 @@ defineExpose({
         v-for="cardId in myHandCards"
         :key="cardId"
         :card-id="cardId"
-        :is-selectable="isMyTurn"
+        :is-selectable="canPlayerAct"
         :is-selected="isSelected(cardId)"
         size="lg"
         @click="handleCardClick"
