@@ -3,9 +3,12 @@
  *
  * @description
  * 根據 API 錯誤類型決定處理策略：
- * - Toast 通知（可恢復錯誤）
- * - 重導向（session 失效或遊戲不存在）
- * - 錯誤 Modal（伺服器錯誤）
+ * - Toast 通知（可恢復錯誤、網路錯誤、超時）
+ * - RedirectModal（session 失效、遊戲不存在、伺服器錯誤）
+ *
+ * 錯誤分類：
+ * - 技術錯誤（NetworkError, TimeoutError, ServerError）：由 shared/errors 處理
+ * - 應用錯誤（ApiError with errorCode）：由此 Adapter 根據策略處理
  *
  * 遵循 Clean Architecture：
  * - 位於 Adapter Layer
@@ -20,13 +23,8 @@ import type { NavigationPort } from '../../application/ports/output/navigation.p
 import type { SessionContextPort } from '../../application/ports/output/session-context.port'
 import type { MatchmakingStatePort } from '../../application/ports/output/matchmaking-state.port'
 import type { ErrorHandlerPort } from '../../application/ports/output/error-handler.port'
-import {
-  ApiError,
-  NetworkError,
-  ServerError,
-  TimeoutError,
-  ValidationError,
-} from './errors'
+import { isHttpError, handleHttpError } from '#shared/errors'
+import { ApiError, ValidationError } from './errors'
 import {
   API_ERROR_CODES,
   API_ERROR_MESSAGES,
@@ -78,7 +76,14 @@ export function createApiErrorHandler(deps: ApiErrorHandlerDependencies): ApiErr
   }
 
   /**
-   * 處理 ApiError
+   * 處理 ApiError（應用層錯誤）
+   *
+   * @description
+   * 根據 errorCode 決定處理策略：
+   * - TOAST：顯示 Toast 通知（可恢復錯誤）
+   * - REDIRECT_HOME：顯示 RedirectModal 後導向首頁（session 失效）
+   * - REDIRECT_LOBBY：顯示 RedirectModal 後導向大廳（遊戲不存在）
+   * - ERROR_MODAL：顯示 RedirectModal 後導向大廳（伺服器錯誤）
    */
   function handleApiError(error: ApiError): boolean {
     const { errorCode, status, message } = error
@@ -87,7 +92,7 @@ export function createApiErrorHandler(deps: ApiErrorHandlerDependencies): ApiErr
     if (!errorCode) {
       if (status >= 500) {
         cleanupSession()
-        notification.showGameErrorModal(message)
+        notification.showRedirectModal(message, 'lobby', 'Server Error')
       } else {
         notification.showErrorMessage(message)
       }
@@ -109,19 +114,17 @@ export function createApiErrorHandler(deps: ApiErrorHandlerDependencies): ApiErr
 
       case 'REDIRECT_HOME':
         cleanupSession()
-        notification.showErrorMessage(displayMessage)
-        navigation.navigateToHome()
+        notification.showRedirectModal(displayMessage, 'home', 'Session Error')
         return true
 
       case 'REDIRECT_LOBBY':
         cleanupSession()
-        notification.showInfoMessage(displayMessage)
-        navigation.navigateToLobby()
+        notification.showRedirectModal(displayMessage, 'lobby', 'Game Error')
         return true
 
       case 'ERROR_MODAL':
         cleanupSession()
-        notification.showGameErrorModal(displayMessage)
+        notification.showRedirectModal(displayMessage, 'lobby', 'Server Error')
         return true
 
       default:
@@ -132,39 +135,49 @@ export function createApiErrorHandler(deps: ApiErrorHandlerDependencies): ApiErr
   }
 
   /**
-   * 處理 ServerError（5xx）
+   * 處理技術錯誤（NetworkError, TimeoutError, ServerError）
+   *
+   * @description
+   * 使用 shared/errors 的 handleHttpError 取得處理建議，
+   * 然後根據 action 呼叫對應的 notification 方法。
    */
-  function handleServerError(error: ServerError): boolean {
-    cleanupSession()
-    notification.showGameErrorModal(error.message)
-    return true
+  function handleTechnicalError(error: unknown): boolean {
+    const result = handleHttpError(error)
+
+    if (!result.handled) {
+      return false
+    }
+
+    switch (result.action) {
+      case 'TOAST':
+        notification.showErrorMessage(result.message)
+        return true
+
+      case 'MODAL':
+        cleanupSession()
+        notification.showRedirectModal(result.message, 'lobby', 'Server Error')
+        return true
+
+      default:
+        notification.showErrorMessage(result.message)
+        return true
+    }
   }
 
   return {
     handle(error: unknown): boolean {
-      // 1. ApiError：使用 errorCode 決定策略
+      // 1. 技術錯誤（NetworkError, TimeoutError, ServerError）
+      //    使用 shared/errors 的 handleHttpError 處理
+      if (isHttpError(error)) {
+        return handleTechnicalError(error)
+      }
+
+      // 2. ApiError（應用層錯誤）：使用 errorCode 決定策略
       if (error instanceof ApiError) {
         return handleApiError(error)
       }
 
-      // 2. NetworkError：顯示 Toast
-      if (error instanceof NetworkError) {
-        notification.showErrorMessage('Network error. Please check your connection.')
-        return true
-      }
-
-      // 3. TimeoutError：顯示 Toast
-      if (error instanceof TimeoutError) {
-        notification.showErrorMessage('Request timed out. Please try again.')
-        return true
-      }
-
-      // 4. ServerError：顯示錯誤 Modal
-      if (error instanceof ServerError) {
-        return handleServerError(error)
-      }
-
-      // 5. ValidationError（舊版相容）：顯示 Toast
+      // 3. ValidationError（舊版相容）：顯示 Toast
       if (error instanceof ValidationError) {
         notification.showErrorMessage(error.message)
         return true

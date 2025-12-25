@@ -1,32 +1,35 @@
 <template>
   <Transition name="modal-fade">
     <div
-      v-if="uiStateStore.gameErrorModalVisible"
+      v-if="uiStateStore.redirectModalVisible"
       class="fixed inset-0 flex items-center justify-center bg-black/60"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="game-error-title"
+      aria-labelledby="redirect-modal-title"
       :style="{ zIndex: Z_INDEX.MODAL }"
     >
       <div
         class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all"
       >
         <!-- Header -->
-        <div class="px-6 py-5 text-white bg-gradient-to-r from-red-500 to-red-600">
-          <h2 id="game-error-title" class="text-2xl font-bold text-center">
-            Game Error
+        <div
+          class="px-6 py-5 text-white"
+          :class="headerGradientClass"
+        >
+          <h2 id="redirect-modal-title" class="text-2xl font-bold text-center">
+            {{ modalTitle }}
           </h2>
         </div>
 
         <!-- Body -->
         <div class="px-6 py-6 space-y-4">
           <p class="text-center text-lg text-gray-800">
-            {{ uiStateStore.gameErrorMessage ?? 'An unexpected error occurred.' }}
+            {{ modalMessage }}
           </p>
 
           <!-- Countdown -->
           <p class="text-center text-sm text-gray-600">
-            Returning to lobby in
+            {{ countdownText }}
             <span
               :class="[
                 'font-bold',
@@ -43,10 +46,11 @@
         <div class="px-6 py-4 bg-gray-50 flex justify-center">
           <button
             type="button"
-            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            @click="handleReturnToLobby"
+            class="px-6 py-2 text-white rounded-lg transition-colors font-medium"
+            :class="buttonClass"
+            @click="handleRedirect"
           >
-            Return to Lobby
+            {{ buttonText }}
           </button>
         </div>
       </div>
@@ -56,20 +60,21 @@
 
 <script setup lang="ts">
 /**
- * GameErrorModal Component
+ * RedirectModal Component
  *
  * @description
- * 通用的遊戲錯誤 Modal，用於顯示 GameError 事件。
- * 包含 5 秒倒數，結束後自動返回大廳。
+ * 通用的重導向 Modal，用於顯示需要離開遊戲頁面的錯誤。
+ * 支援重導向至首頁（home）或大廳（lobby）。
+ * 包含 5 秒倒數，結束後自動導航。
  *
  * Features:
- * - 顯示錯誤訊息（來自 uiStateStore.gameErrorMessage）
+ * - 根據 target 決定標題、顏色、導航路徑
  * - 5 秒倒數（< 3 秒時文字轉紅色）
- * - 手動點擊「Return to Lobby」按鈕可提前返回
- * - 倒數結束自動導航至 /lobby
+ * - 手動點擊按鈕可提前返回
+ * - 倒數結束自動導航
  */
 
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { Z_INDEX } from '~/constants'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 
@@ -79,6 +84,39 @@ const router = useRouter()
 const COUNTDOWN_SECONDS = 5
 const countdown = ref(COUNTDOWN_SECONDS)
 let intervalId: ReturnType<typeof setInterval> | null = null
+
+// 計算屬性
+const modalData = computed(() => uiStateStore.redirectModalData)
+const redirectTarget = computed(() => modalData.value?.target ?? 'lobby')
+
+const modalTitle = computed(() => {
+  if (modalData.value?.title) return modalData.value.title
+  return redirectTarget.value === 'home' ? 'Session Error' : 'Game Error'
+})
+
+const modalMessage = computed(() =>
+  modalData.value?.message ?? 'An unexpected error occurred.'
+)
+
+const countdownText = computed(() =>
+  redirectTarget.value === 'home' ? 'Returning to home in' : 'Returning to lobby in'
+)
+
+const buttonText = computed(() =>
+  redirectTarget.value === 'home' ? 'Return to Home' : 'Return to Lobby'
+)
+
+const headerGradientClass = computed(() =>
+  redirectTarget.value === 'home'
+    ? 'bg-gradient-to-r from-orange-500 to-orange-600'
+    : 'bg-gradient-to-r from-red-500 to-red-600'
+)
+
+const buttonClass = computed(() =>
+  redirectTarget.value === 'home'
+    ? 'bg-orange-600 hover:bg-orange-700'
+    : 'bg-blue-600 hover:bg-blue-700'
+)
 
 /**
  * 清理倒數計時器
@@ -100,23 +138,24 @@ function startCountdown(): void {
   intervalId = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
-      handleReturnToLobby()
+      handleRedirect()
     }
   }, 1000)
 }
 
 /**
- * 返回大廳
+ * 執行重導向
  */
-function handleReturnToLobby(): void {
+function handleRedirect(): void {
   clearCountdownInterval()
-  uiStateStore.hideGameErrorModal()
-  router.push('/lobby')
+  const path = redirectTarget.value === 'home' ? '/' : '/lobby'
+  uiStateStore.hideRedirectModal()
+  router.push(path)
 }
 
-// 監聽 Modal 顯示狀態，啟動/停止倒數
+// 監聯 Modal 顯示狀態，啟動/停止倒數
 watch(
-  () => uiStateStore.gameErrorModalVisible,
+  () => uiStateStore.redirectModalVisible,
   (visible) => {
     if (visible) {
       startCountdown()

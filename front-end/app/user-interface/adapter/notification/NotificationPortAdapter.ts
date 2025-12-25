@@ -66,12 +66,21 @@ export function createNotificationPortAdapter(
       store.hideModal()
     },
 
+    showRedirectModal(message: string, target: 'home' | 'lobby', title?: string): void {
+      store.showRedirectModal(message, target, title)
+    },
+
+    hideRedirectModal(): void {
+      store.hideRedirectModal()
+    },
+
+    // 向後相容（deprecated）
     showGameErrorModal(message: string): void {
-      store.showGameErrorModal(message)
+      store.showRedirectModal(message, 'lobby')
     },
 
     hideGameErrorModal(): void {
-      store.hideGameErrorModal()
+      store.hideRedirectModal()
     },
 
     // ===== Toast (Unified Toast System) =====
@@ -164,7 +173,7 @@ export function createNotificationPortAdapter(
         store.roundDrawnModalVisible ||
         store.roundScoredModalVisible ||
         store.roundEndedInstantlyModalVisible ||
-        store.gameErrorModalVisible
+        store.redirectModalVisible
       )
     },
 

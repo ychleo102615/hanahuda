@@ -65,6 +65,20 @@ export interface RoundEndedInstantlyData {
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected'
 
 /**
+ * 重導向目標
+ */
+export type RedirectTarget = 'home' | 'lobby'
+
+/**
+ * 重導向 Modal 資料
+ */
+export interface RedirectModalData {
+  message: string
+  target: RedirectTarget
+  title?: string
+}
+
+/**
  * 確認繼續遊戲的狀態
  *
  * @description
@@ -140,9 +154,9 @@ export interface UIStateStoreState {
   roundEndedInstantlyModalVisible: boolean
   roundEndedInstantlyModalData: RoundEndedInstantlyData | null
 
-  // 遊戲錯誤 Modal
-  gameErrorModalVisible: boolean
-  gameErrorMessage: string | null
+  // 重導向 Modal（取代遊戲錯誤 Modal）
+  redirectModalVisible: boolean
+  redirectModalData: RedirectModalData | null
 
   // 訊息提示
   errorMessage: string | null
@@ -283,9 +297,9 @@ export const useUIStateStore = defineStore('uiState', {
     roundEndedInstantlyModalVisible: false,
     roundEndedInstantlyModalData: null,
 
-    // 遊戲錯誤 Modal
-    gameErrorModalVisible: false,
-    gameErrorMessage: null,
+    // 重導向 Modal（取代遊戲錯誤 Modal）
+    redirectModalVisible: false,
+    redirectModalData: null,
 
     // 訊息提示
     errorMessage: null,
@@ -365,8 +379,8 @@ export const useUIStateStore = defineStore('uiState', {
       this.roundEndedInstantlyModalVisible = false
       this.roundEndedInstantlyModalData = null
 
-      this.gameErrorModalVisible = false
-      this.gameErrorMessage = null
+      this.redirectModalVisible = false
+      this.redirectModalData = null
     },
 
     /**
@@ -602,25 +616,46 @@ export const useUIStateStore = defineStore('uiState', {
     },
 
     /**
-     * 顯示遊戲錯誤 Modal
+     * 顯示重導向 Modal
      *
-     * @param message - 錯誤訊息
+     * @param message - 訊息
+     * @param target - 重導向目標 ('home' | 'lobby')
+     * @param title - 可選標題
      */
-    showGameErrorModal(message: string): void {
+    showRedirectModal(message: string, target: RedirectTarget, title?: string): void {
       this._hideAllModals()
 
-      this.gameErrorModalVisible = true
-      this.gameErrorMessage = message
-      console.info('[UIStateStore] 顯示遊戲錯誤 Modal:', message)
+      this.redirectModalVisible = true
+      this.redirectModalData = { message, target, title }
+      console.info('[UIStateStore] 顯示重導向 Modal:', { message, target, title })
     },
 
     /**
-     * 隱藏遊戲錯誤 Modal
+     * 隱藏重導向 Modal
+     */
+    hideRedirectModal(): void {
+      this.redirectModalVisible = false
+      this.redirectModalData = null
+      console.info('[UIStateStore] 隱藏重導向 Modal')
+    },
+
+    /**
+     * 顯示遊戲錯誤 Modal（向後相容）
+     *
+     * @deprecated 使用 showRedirectModal(message, 'lobby')
+     * @param message - 錯誤訊息
+     */
+    showGameErrorModal(message: string): void {
+      this.showRedirectModal(message, 'lobby')
+    },
+
+    /**
+     * 隱藏遊戲錯誤 Modal（向後相容）
+     *
+     * @deprecated 使用 hideRedirectModal()
      */
     hideGameErrorModal(): void {
-      this.gameErrorModalVisible = false
-      this.gameErrorMessage = null
-      console.info('[UIStateStore] 隱藏遊戲錯誤 Modal')
+      this.hideRedirectModal()
     },
 
     /**
@@ -686,8 +721,8 @@ export const useUIStateStore = defineStore('uiState', {
       this.roundEndedInstantlyModalVisible = false
       this.roundEndedInstantlyModalData = null
 
-      this.gameErrorModalVisible = false
-      this.gameErrorMessage = null
+      this.redirectModalVisible = false
+      this.redirectModalData = null
 
       this.errorMessage = null
       this.infoMessage = null

@@ -166,31 +166,44 @@ export interface NotificationPort {
   hideModal(): void
 
   /**
-   * 顯示遊戲錯誤 Modal
+   * 顯示重導向 Modal
    *
    * @description
-   * 顯示通用的遊戲錯誤 Modal，包含錯誤訊息和倒數返回大廳功能。
-   * 用於處理 GameError 事件（如配對超時、遊戲過期等）。
+   * 顯示重導向 Modal，包含訊息和倒數返回指定頁面功能。
+   * 用於處理需要離開遊戲頁面的錯誤（session 過期、遊戲不存在等）。
    *
-   * @param message - 錯誤訊息
+   * @param message - 訊息
+   * @param target - 重導向目標 ('home' | 'lobby')
+   * @param title - 可選標題
    *
    * @example
    * ```typescript
-   * notification.showGameErrorModal('Matchmaking timeout, please retry')
+   * notification.showRedirectModal('Session expired', 'home')
+   * notification.showRedirectModal('Game has ended', 'lobby')
    * ```
+   */
+  showRedirectModal(message: string, target: 'home' | 'lobby', title?: string): void
+
+  /**
+   * 隱藏重導向 Modal
+   *
+   * @description
+   * 隱藏重導向 Modal，通常在倒數結束或玩家手動關閉時調用。
+   */
+  hideRedirectModal(): void
+
+  /**
+   * 顯示遊戲錯誤 Modal（向後相容）
+   *
+   * @deprecated 使用 showRedirectModal(message, 'lobby')
+   * @param message - 錯誤訊息
    */
   showGameErrorModal(message: string): void
 
   /**
-   * 隱藏遊戲錯誤 Modal
+   * 隱藏遊戲錯誤 Modal（向後相容）
    *
-   * @description
-   * 隱藏遊戲錯誤 Modal，通常在倒數結束或玩家手動關閉時調用。
-   *
-   * @example
-   * ```typescript
-   * notification.hideGameErrorModal()
-   * ```
+   * @deprecated 使用 hideRedirectModal()
    */
   hideGameErrorModal(): void
 

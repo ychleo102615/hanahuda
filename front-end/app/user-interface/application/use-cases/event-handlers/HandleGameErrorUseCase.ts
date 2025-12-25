@@ -5,13 +5,13 @@
  * 實作 HandleGameErrorPort，處理 GameError 事件（遊戲層級錯誤）。
  *
  * 依賴的 Output Ports：
- * - NotificationPort: 顯示錯誤 Modal
+ * - NotificationPort: 顯示 RedirectModal（5 秒倒數後導向大廳）
  * - SessionContextPort: 清除遊戲 ID
  * - MatchmakingStatePort: 重置配對狀態（讓大廳按鈕恢復可點擊）
  *
  * @note
  * GameError 是各 Use Case 的 fallback 結果，此 Use Case 負責統一處理前端展示。
- * Modal 會顯示 5 秒倒數，之後自動導航回大廳。
+ * RedirectModal 會顯示 5 秒倒數，之後自動導航回大廳。
  *
  * @example
  * ```typescript
@@ -49,7 +49,7 @@ export class HandleGameErrorUseCase implements HandleGameErrorPort {
     // 3. 重置配對狀態（讓大廳按鈕恢復可點擊）
     this.matchmakingState.clearSession()
 
-    // 4. 顯示錯誤 Modal（內含 5 秒倒數，自動返回大廳）
-    this.notification.showGameErrorModal(event.message)
+    // 4. 顯示 RedirectModal（5 秒倒數後導向大廳）
+    this.notification.showRedirectModal(event.message, 'lobby', 'Game Error')
   }
 }
