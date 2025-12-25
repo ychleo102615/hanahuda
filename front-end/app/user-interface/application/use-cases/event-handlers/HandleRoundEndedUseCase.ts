@@ -53,7 +53,8 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
         break
 
       case 'INSTANT_TESHI':
-      case 'INSTANT_FIELD_KUTTSUKI':
+      case 'INSTANT_KUTTSUKI':
+      case 'INSTANT_FIELD_TESHI':
         if (event.instant_data) {
           this.notification.showRoundEndedInstantlyModal(
             event.reason,

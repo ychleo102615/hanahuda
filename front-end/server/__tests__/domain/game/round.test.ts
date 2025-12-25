@@ -18,6 +18,7 @@ import {
   getPlayerKoiStatus,
   detectTeshi,
   detectKuttsuki,
+  detectFieldTeshi,
 } from '~/server/domain/round'
 import type { DealResult } from '~/server/domain/services/deckService'
 import {
@@ -27,7 +28,7 @@ import {
   PLAYER_1_ID,
   PLAYER_2_ID,
 } from '../../fixtures/games'
-import { TESHI_CARDS, KUTTSUKI_FIELD, HAND_STANDARD, FIELD_MIXED_CARDS } from '../../fixtures/cards'
+import { TESHI_CARDS, KUTTSUKI_HAND, FIELD_TESHI_CARDS, HAND_STANDARD, FIELD_MIXED_CARDS } from '../../fixtures/cards'
 
 describe('Round Entity', () => {
   describe('createRound', () => {
@@ -290,24 +291,52 @@ describe('Round Entity', () => {
     })
 
     describe('detectKuttsuki', () => {
-      it('應檢測到喰付', () => {
-        const result = detectKuttsuki(KUTTSUKI_FIELD)
+      it('應檢測到喰付（手牌 4 對同月份）', () => {
+        const result = detectKuttsuki(KUTTSUKI_HAND)
 
         expect(result.hasKuttsuki).toBe(true)
-        expect(result.month).not.toBeNull()
+        expect(result.months).toEqual([1, 2, 3, 4])
       })
 
       it('無喰付時應返回 false', () => {
-        const result = detectKuttsuki(FIELD_MIXED_CARDS)
+        const result = detectKuttsuki(HAND_STANDARD)
 
         expect(result.hasKuttsuki).toBe(false)
+        expect(result.months).toBeNull()
+      })
+
+      it('空手牌應返回 false', () => {
+        const result = detectKuttsuki([])
+
+        expect(result.hasKuttsuki).toBe(false)
+      })
+
+      it('手牌非 8 張時應返回 false', () => {
+        const result = detectKuttsuki(TESHI_CARDS) // 4 張
+
+        expect(result.hasKuttsuki).toBe(false)
+      })
+    })
+
+    describe('detectFieldTeshi', () => {
+      it('應檢測到場上手四（場牌 4 張同月份）', () => {
+        const result = detectFieldTeshi(FIELD_TESHI_CARDS)
+
+        expect(result.hasFieldTeshi).toBe(true)
+        expect(result.month).not.toBeNull()
+      })
+
+      it('無場上手四時應返回 false', () => {
+        const result = detectFieldTeshi(FIELD_MIXED_CARDS)
+
+        expect(result.hasFieldTeshi).toBe(false)
         expect(result.month).toBeNull()
       })
 
       it('空場牌應返回 false', () => {
-        const result = detectKuttsuki([])
+        const result = detectFieldTeshi([])
 
-        expect(result.hasKuttsuki).toBe(false)
+        expect(result.hasFieldTeshi).toBe(false)
       })
     })
   })

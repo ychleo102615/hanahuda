@@ -10,7 +10,9 @@
  * @module server/application/services/turnFlowService
  */
 
-import { type Game, finishGame } from '~~/server/domain/game/game'
+import { type Game, finishGame, finishRound, finishRoundDraw, startRound } from '~~/server/domain/game/game'
+import type { SpecialRuleResult } from '~~/server/domain/services/specialRulesService'
+import type { RoundEndReason } from '#shared/contracts'
 import { calculateWinner } from '~~/server/domain/game/gameEndConditions'
 import type { ScoreMultipliers, RoundScoringData, PlayerScore, GameEndedReason } from '#shared/contracts'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
@@ -685,5 +687,125 @@ export class TurnFlowService {
     }
 
     return false  // 遊戲繼續
+  }
+
+  /**
+   * 處理開局特殊規則觸發
+   *
+   * @description
+   * 事件順序：
+   * 1. 發送 RoundDealtEvent（前端播放發牌動畫）
+   * 2. 更新遊戲狀態（finishRound / finishRoundDraw）
+   * 3. 若遊戲未結束，立即開始下一局
+   * 4. 等待發牌動畫時間
+   * 5. 發送 RoundEndedEvent（特殊規則結束）
+   * 6. 處理回合轉換（開始下一局或結束遊戲）
+   *
+   * @param gameId - 遊戲 ID
+   * @param game - 遊戲狀態（已發牌但尚未 finishRound）
+   * @param specialRuleResult - 特殊規則結果
+   */
+  async handleSpecialRuleTriggered(
+    gameId: string,
+    game: Game,
+    specialRuleResult: SpecialRuleResult
+  ): Promise<void> {
+    logger.info('Handling special rule triggered', {
+      gameId,
+      type: specialRuleResult.type,
+      winnerId: specialRuleResult.winnerId,
+    })
+
+    // 1. 發送 RoundDealtEvent（特殊規則版本：next_state = null, timeout = 0）
+    //    前端會開始發牌動畫，但不啟動倒數、不允許操作
+    const roundDealtEvent = this.eventMapper.toRoundDealtEventForSpecialRule(game)
+    this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+
+    // 2. 立即更新遊戲狀態（finishRound / finishRoundDraw）
+    let updatedGame: Game
+    if (specialRuleResult.winnerId && specialRuleResult.awardedPoints > 0) {
+      updatedGame = finishRound(game, specialRuleResult.winnerId, specialRuleResult.awardedPoints)
+    } else {
+      updatedGame = finishRoundDraw(game)
+    }
+
+    // 3. 若遊戲未結束，立即開始下一局（確保 currentRound 不為 null）
+    //    這樣重連時能正確建立快照
+    if (updatedGame.status !== 'FINISHED') {
+      updatedGame = startRound(updatedGame)
+    }
+
+    // 4. 儲存狀態
+    this.gameStore.set(updatedGame)
+    await this.gameRepository.save(updatedGame)
+
+    // 5. 計算回合轉換結果
+    const transitionResult = this.calculateSpecialRuleTransitionResult(updatedGame)
+
+    // 6. 立即發送 RoundEndedEvent（前端 EventRouter 會等發牌動畫結束後處理）
+    //    timeout_seconds 包含發牌動畫時間 + 結果顯示時間
+    const reason = this.toRoundEndReason(specialRuleResult)
+    const displayTimeoutSeconds = transitionResult.transitionType === 'NEXT_ROUND'
+      ? gameConfig.dealing_animation_seconds + gameConfig.result_display_seconds
+      : undefined
+
+    const roundEndedEvent = this.eventMapper.toRoundEndedEvent(
+      reason,
+      updatedGame.cumulativeScores,
+      undefined, // scoringData
+      {
+        winner_id: specialRuleResult.winnerId,
+        awarded_points: specialRuleResult.awardedPoints,
+      },
+      displayTimeoutSeconds,
+      false // requireConfirmation
+    )
+    this.eventPublisher.publishToGame(gameId, roundEndedEvent)
+
+    logger.info('Special rule RoundEnded event published', {
+      gameId,
+      reason,
+      transitionType: transitionResult.transitionType,
+    })
+
+    // 7. 處理回合轉換（會發送新回合的 RoundDealtEvent）
+    //    使用加長後的 timeout 作為後端等待時間
+    this.handleRoundTransitionResult(gameId, updatedGame, transitionResult, displayTimeoutSeconds ?? 0)
+  }
+
+  /**
+   * 將 SpecialRuleType 轉換為 RoundEndReason
+   */
+  private toRoundEndReason(result: SpecialRuleResult): RoundEndReason {
+    switch (result.type) {
+      case 'TESHI':
+        return 'INSTANT_TESHI'
+      case 'KUTTSUKI':
+        return 'INSTANT_KUTTSUKI'
+      case 'FIELD_TESHI':
+        return 'INSTANT_FIELD_TESHI'
+      default:
+        return 'DRAWN'
+    }
+  }
+
+  /**
+   * 計算回合轉換結果（特殊規則版本）
+   *
+   * @description
+   * 從遊戲狀態判斷是繼續下一局還是遊戲結束。
+   * 注意：此時 updatedGame 可能已經執行了 startRound，
+   * 所以 currentRound 會是新回合的資料。
+   */
+  private calculateSpecialRuleTransitionResult(game: Game): RoundTransitionResult {
+    if (game.status === 'FINISHED') {
+      const winnerResult = calculateWinner(game)
+      return {
+        transitionType: 'GAME_FINISHED',
+        game,
+        winner: winnerResult,
+      }
+    }
+    return { transitionType: 'NEXT_ROUND', game, winner: null }
   }
 }

@@ -46,10 +46,16 @@ export const DEFAULT_YAKU_SETTINGS: ReadonlyArray<YakuSetting> = Object.freeze([
 
 /**
  * 預設特殊規則
+ *
+ * @description
+ * - teshi: 手四（手牌 4 張同月份） - 觸發者獲 6 分
+ * - kuttsuki: 喰付（手牌 4 對同月份） - 觸發者獲 6 分
+ * - field_teshi: 場上手四（場牌 4 張同月份） - 流局重發
  */
 export const DEFAULT_SPECIAL_RULES: SpecialRules = Object.freeze({
   teshi_enabled: true,
-  field_kuttsuki_enabled: true,
+  kuttsuki_enabled: true,
+  field_teshi_enabled: true,
 })
 
 /**

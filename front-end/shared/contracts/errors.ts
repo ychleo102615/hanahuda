@@ -40,14 +40,16 @@ export type SuggestedAction = 'RETRY_MATCHMAKING' | 'RETURN_HOME' | 'RECONNECT'
  * @description
  * - SCORED: 計分結束（有勝者、役種、分數）
  * - DRAWN: 流局（牌堆耗盡，無人形成役種）
- * - INSTANT_TESHI: 手役（發牌後立即形成的特殊役種）
- * - INSTANT_FIELD_KUTTSUKI: 場牌四張同月（場札流局）
+ * - INSTANT_TESHI: 手四（手牌有 4 張同月份） - 觸發者獲 6 分
+ * - INSTANT_KUTTSUKI: 喰付（手牌有 4 對同月份） - 觸發者獲 6 分
+ * - INSTANT_FIELD_TESHI: 場上手四（場牌有 4 張同月份） - 流局重發
  */
 export type RoundEndReason =
   | 'SCORED'
   | 'DRAWN'
   | 'INSTANT_TESHI'
-  | 'INSTANT_FIELD_KUTTSUKI'
+  | 'INSTANT_KUTTSUKI'
+  | 'INSTANT_FIELD_TESHI'
 
 /**
  * 遊戲結束原因類型

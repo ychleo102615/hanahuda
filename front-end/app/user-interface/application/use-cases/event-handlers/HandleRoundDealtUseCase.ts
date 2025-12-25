@@ -116,12 +116,18 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
     this.notification.setDealingInProgress(false)
 
     // 5. 動畫完成後更新遊戲狀態
-    // 遵循 Server 權威原則：使用 server 提供的 next_state 設定狀態
-    this.gameState.setFlowStage(event.next_state.state_type)
-    this.gameState.setActivePlayer(event.next_state.active_player_id)
+    // 若 next_state 為 null，表示特殊規則觸發，不設定 flowStage 也不啟動倒數
+    // 前端會保持 flowStage = null，玩家無法操作，等待 RoundEndedEvent
+    if (event.next_state) {
+      // 正常流程：遵循 Server 權威原則，使用 server 提供的 next_state 設定狀態
+      this.gameState.setFlowStage(event.next_state.state_type)
+      this.gameState.setActivePlayer(event.next_state.active_player_id)
 
-    // 6. 啟動操作倒數（從事件接收時間計算，確保與後端同步）
-    const dt = Math.ceil((Date.now() - receivedAt) / 1000)
-    this.notification.startCountdown(event.timeout_seconds - dt, 'ACTION')
+      // 啟動操作倒數（從事件接收時間計算，確保與後端同步）
+      const dt = Math.ceil((Date.now() - receivedAt) / 1000)
+      this.notification.startCountdown(event.timeout_seconds - dt, 'ACTION')
+    }
+    // 特殊規則觸發時：flowStage 保持 null，玩家無法操作
+    // RoundEndedEvent 會接續處理
   }
 }

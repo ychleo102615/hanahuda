@@ -29,8 +29,8 @@ export {
 } from './roundQueries'
 
 // 狀態偵測
-export type { TeshiResult, KuttsukiResult } from './roundDetection'
-export { detectTeshi, detectKuttsuki } from './roundDetection'
+export type { TeshiResult, KuttsukiResult, FieldTeshiResult } from './roundDetection'
+export { detectTeshi, detectKuttsuki, detectFieldTeshi } from './roundDetection'
 
 // 回合操作
 export type {

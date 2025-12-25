@@ -58,6 +58,9 @@ export interface GameConfig {
 
   /** 配對超時（秒） - 等待對手加入的最大時間 */
   readonly matchmaking_timeout_seconds: number
+
+  /** 發牌動畫時間（秒）- 開局時前端播放發牌動畫所需時間 */
+  readonly dealing_animation_seconds: number
 }
 
 /**
@@ -128,6 +131,7 @@ export const gameConfig: GameConfig = {
   default_room_type: parseRoomType(),
   use_test_deck: process.env.USE_TEST_DECK === 'true',
   matchmaking_timeout_seconds: parseEnvNumber('MATCHMAKING_TIMEOUT_SECONDS', 30),
+  dealing_animation_seconds: parseEnvNumber('DEALING_ANIMATION_SECONDS', 3),
 }
 
 /**

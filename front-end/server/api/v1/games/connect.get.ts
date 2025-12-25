@@ -171,7 +171,7 @@ export default defineEventHandler(async (event) => {
         ruleset: {
           total_rounds: result.ruleset.totalRounds,
           yaku_settings: [],
-          special_rules: { teshi_enabled: true, field_kuttsuki_enabled: true },
+          special_rules: { teshi_enabled: true, kuttsuki_enabled: true, field_teshi_enabled: true },
           total_deck_cards: 48,
         },
         starting_player_id: result.startingPlayerId,

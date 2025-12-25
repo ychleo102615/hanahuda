@@ -61,7 +61,7 @@ describe('HandleGameStartedUseCase', () => {
           ],
           special_rules: {
             teshi_enabled: true,
-            field_kuttsuki_enabled: true,
+            field_teshi_enabled: true,
           },
           total_deck_cards: 48,
         },
@@ -86,7 +86,7 @@ describe('HandleGameStartedUseCase', () => {
           ],
           special_rules: {
             teshi_enabled: true,
-            field_kuttsuki_enabled: true,
+            field_teshi_enabled: true,
           },
           total_deck_cards: 48,
         }
@@ -109,7 +109,7 @@ describe('HandleGameStartedUseCase', () => {
           yaku_settings: [],
           special_rules: {
             teshi_enabled: false,
-            field_kuttsuki_enabled: false,
+            field_teshi_enabled: false,
           },
           total_deck_cards: 48,
         },
@@ -151,7 +151,7 @@ describe('HandleGameStartedUseCase', () => {
   //         yaku_settings: [],
   //         special_rules: {
   //           teshi_enabled: true,
-  //           field_kuttsuki_enabled: true,
+  //           field_teshi_enabled: true,
   //         },
   //       },
   //       starting_player_id: 'player-1',
@@ -182,7 +182,7 @@ describe('HandleGameStartedUseCase', () => {
           yaku_settings: [],
           special_rules: {
             teshi_enabled: true,
-            field_kuttsuki_enabled: true,
+            field_teshi_enabled: true,
           },
           total_deck_cards: 48,
         },
@@ -209,7 +209,7 @@ describe('HandleGameStartedUseCase', () => {
           yaku_settings: [],
           special_rules: {
             teshi_enabled: true,
-            field_kuttsuki_enabled: true,
+            field_teshi_enabled: true,
           },
           total_deck_cards: 48,
         },

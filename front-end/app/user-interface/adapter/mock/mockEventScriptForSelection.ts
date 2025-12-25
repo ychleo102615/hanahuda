@@ -54,7 +54,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
         ],
         special_rules: {
           teshi_enabled: true,
-          field_kuttsuki_enabled: true,
+          field_teshi_enabled: true,
         },
         total_deck_cards: 48,
       },

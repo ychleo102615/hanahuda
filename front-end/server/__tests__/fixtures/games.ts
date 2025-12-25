@@ -55,7 +55,8 @@ export const DEFAULT_RULESET: Ruleset = Object.freeze({
   yaku_settings: DEFAULT_YAKU_SETTINGS,
   special_rules: Object.freeze({
     teshi_enabled: true,
-    field_kuttsuki_enabled: true,
+    kuttsuki_enabled: true,
+    field_teshi_enabled: true,
   }),
 })
 

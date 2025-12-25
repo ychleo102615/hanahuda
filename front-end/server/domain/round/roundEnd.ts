@@ -36,7 +36,7 @@ export interface RoundEndResult {
   /** 是否為平局 */
   readonly isDraw: boolean
   /** 觸發的特殊規則類型 */
-  readonly specialRuleTriggered: 'TESHI' | 'FIELD_KUTTSUKI' | null
+  readonly specialRuleTriggered: 'TESHI' | 'KUTTSUKI' | 'FIELD_TESHI' | null
 }
 
 /**

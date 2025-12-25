@@ -149,10 +149,16 @@ export interface YakuSetting {
 
 /**
  * 特殊規則
+ *
+ * @description
+ * - teshi: 手四（手牌有 4 張同月份） - 觸發者獲 6 分
+ * - kuttsuki: 喰付（手牌有 4 對同月份，即 8 張都成對） - 觸發者獲 6 分
+ * - field_teshi: 場上手四（場牌有 4 張同月份） - 流局重發
  */
 export interface SpecialRules {
   readonly teshi_enabled: boolean
-  readonly field_kuttsuki_enabled: boolean
+  readonly kuttsuki_enabled: boolean
+  readonly field_teshi_enabled: boolean
 }
 
 /**

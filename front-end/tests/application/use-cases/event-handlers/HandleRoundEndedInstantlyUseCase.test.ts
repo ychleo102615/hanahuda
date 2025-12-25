@@ -49,12 +49,12 @@ describe('HandleRoundEndedInstantlyUseCase', () => {
     expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(5, expect.any(Function))
   })
 
-  it('應該處理 FIELD_KUTTSUKI 情況', () => {
+  it('應該處理 FIELD_TESHI 情況（場上手四流局）', () => {
     const event: RoundEndedInstantlyEvent = {
       event_type: 'RoundEndedInstantly',
       event_id: 'evt-902',
       timestamp: '2025-01-15T10:09:00Z',
-      reason: 'FIELD_KUTTSUKI',
+      reason: 'FIELD_TESHI',
       winner_id: null,
       awarded_points: 0,
       updated_total_scores: [
@@ -66,7 +66,7 @@ describe('HandleRoundEndedInstantlyUseCase', () => {
 
     expect(() => useCase.execute(event)).not.toThrow()
     expect(mockNotification.showRoundEndedInstantlyModal).toHaveBeenCalledWith(
-      'FIELD_KUTTSUKI',
+      'FIELD_TESHI',
       null,
       0,
       event.updated_total_scores

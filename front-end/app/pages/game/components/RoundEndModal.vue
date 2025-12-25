@@ -363,11 +363,20 @@ function getYakuName(yakuType: string): string {
 
 /**
  * 取得結束原因文字
+ *
+ * @description
+ * 將 RoundEndReason 轉換為使用者可讀的文字。
+ * 特殊規則使用日文名稱（附英文說明）。
  */
 function getRoundEndReasonText(reason: string): string {
   const reasonTexts: Record<string, string> = {
-    TESHI: 'Hand Yaku (Teshi)',
-    FIELD_KUTTSUKI: 'Field Four-of-a-Kind',
+    // 特殊規則（開局立即結束）
+    INSTANT_TESHI: '手四 (Teshi) - 4 cards of same month in hand',
+    INSTANT_KUTTSUKI: '喰付 (Kuttsuki) - 4 pairs in hand',
+    INSTANT_FIELD_TESHI: '場上手四 (Field Teshi) - 4 cards of same month on field - Redeal',
+    // 其他結束原因
+    SCORED: 'Yaku Scored',
+    DRAWN: 'Draw - No cards remaining',
     NO_YAKU: 'No Yaku Formed',
   }
   return reasonTexts[reason] || reason

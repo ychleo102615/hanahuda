@@ -2,7 +2,7 @@
  * Special Rules Service - Domain Layer
  *
  * @description
- * 處理特殊規則（手四 Teshi、喰付 Kuttsuki）的檢測與計分。
+ * 處理特殊規則（手四 Teshi、喰付 Kuttsuki、場上手四 Field Teshi）的檢測與計分。
  * 純 TypeScript，無框架依賴。
  *
  * @module server/domain/services/specialRulesService
@@ -10,12 +10,17 @@
 
 import type { SpecialRules } from '#shared/contracts'
 import type { Round } from '../round'
-import { detectTeshi, detectKuttsuki, getPlayerHand } from '../round'
+import { detectTeshi, detectKuttsuki, detectFieldTeshi, getPlayerHand } from '../round'
 
 /**
  * 特殊規則觸發類型
+ *
+ * @description
+ * - TESHI: 手四（手牌 4 張同月份） - 觸發者獲 6 分
+ * - KUTTSUKI: 喰付（手牌 4 對同月份） - 觸發者獲 6 分
+ * - FIELD_TESHI: 場上手四（場牌 4 張同月份） - 流局重發
  */
-export type SpecialRuleType = 'TESHI' | 'FIELD_KUTTSUKI'
+export type SpecialRuleType = 'TESHI' | 'KUTTSUKI' | 'FIELD_TESHI'
 
 /**
  * 特殊規則檢測結果
@@ -25,29 +30,33 @@ export interface SpecialRuleResult {
   readonly triggered: boolean
   /** 觸發的規則類型 */
   readonly type: SpecialRuleType | null
-  /** 受影響的玩家 ID（Teshi 時為觸發者，Kuttsuki 時為 null） */
-  readonly affectedPlayerId: string | null
-  /** 獎勵/懲罰分數（Teshi 為負，Kuttsuki 為 0） */
+  /** 觸發者玩家 ID */
+  readonly triggeredPlayerId: string | null
+  /** 獲得分數（手四/喰付為 6 分，場上手四為 0） */
   readonly awardedPoints: number
-  /** 勝者 ID（Teshi 時為對手，Kuttsuki 時為 null） */
+  /** 勝者 ID（手四/喰付為觸發者，場上手四為 null） */
   readonly winnerId: string | null
-  /** 觸發的月份 */
+  /** 觸發的月份（手四/場上手四為單一月份，喰付為 null） */
   readonly month: number | null
+  /** 觸發的月份列表（僅喰付使用，4 個月份） */
+  readonly months: readonly number[] | null
 }
 
 /**
- * 預設 Teshi 懲罰分數
+ * 特殊規則獲得分數
  *
- * 手四規則：持有 4 張同月份牌的玩家失分，對手獲得 6 分
+ * @description
+ * 手四和喰付觸發者獲得 6 分
  */
-const TESHI_PENALTY_POINTS = 6
+const SPECIAL_RULE_POINTS = 6
 
 /**
  * 檢測並處理特殊規則
  *
  * 檢查順序：
  * 1. 先檢查所有玩家的 Teshi（手四）
- * 2. 再檢查場牌的 Kuttsuki（喰付）
+ * 2. 再檢查所有玩家的 Kuttsuki（喰付）
+ * 3. 最後檢查場牌的 Field Teshi（場上手四）
  *
  * @param round - 目前局狀態
  * @param specialRulesConfig - 特殊規則設定
@@ -57,42 +66,59 @@ export function checkSpecialRules(
   round: Round,
   specialRulesConfig: SpecialRules
 ): SpecialRuleResult {
-  // 1. 檢查 Teshi（手四）
+  // 1. 檢查 Teshi（手四）- 觸發者獲 6 分
   if (specialRulesConfig.teshi_enabled) {
     for (const playerState of round.playerStates) {
       const hand = getPlayerHand(round, playerState.playerId)
       const teshiResult = detectTeshi(hand)
 
       if (teshiResult.hasTeshi) {
-        // 找出對手 ID
-        const opponentId = round.playerStates.find(
-          (ps) => ps.playerId !== playerState.playerId
-        )?.playerId ?? null
-
         return {
           triggered: true,
           type: 'TESHI',
-          affectedPlayerId: playerState.playerId,
-          awardedPoints: TESHI_PENALTY_POINTS,
-          winnerId: opponentId, // 對手獲勝
+          triggeredPlayerId: playerState.playerId,
+          awardedPoints: SPECIAL_RULE_POINTS,
+          winnerId: playerState.playerId, // 觸發者獲勝
           month: teshiResult.month,
+          months: null,
         }
       }
     }
   }
 
-  // 2. 檢查 Kuttsuki（喰付）
-  if (specialRulesConfig.field_kuttsuki_enabled) {
-    const kuttsukiResult = detectKuttsuki(round.field)
+  // 2. 檢查 Kuttsuki（喰付）- 觸發者獲 6 分
+  if (specialRulesConfig.kuttsuki_enabled) {
+    for (const playerState of round.playerStates) {
+      const hand = getPlayerHand(round, playerState.playerId)
+      const kuttsukiResult = detectKuttsuki(hand)
 
-    if (kuttsukiResult.hasKuttsuki) {
+      if (kuttsukiResult.hasKuttsuki) {
+        return {
+          triggered: true,
+          type: 'KUTTSUKI',
+          triggeredPlayerId: playerState.playerId,
+          awardedPoints: SPECIAL_RULE_POINTS,
+          winnerId: playerState.playerId, // 觸發者獲勝
+          month: null,
+          months: kuttsukiResult.months,
+        }
+      }
+    }
+  }
+
+  // 3. 檢查 Field Teshi（場上手四）- 流局
+  if (specialRulesConfig.field_teshi_enabled) {
+    const fieldTeshiResult = detectFieldTeshi(round.field)
+
+    if (fieldTeshiResult.hasFieldTeshi) {
       return {
         triggered: true,
-        type: 'FIELD_KUTTSUKI',
-        affectedPlayerId: null,
+        type: 'FIELD_TESHI',
+        triggeredPlayerId: null,
         awardedPoints: 0, // 流局無得分
         winnerId: null, // 無勝者
-        month: kuttsukiResult.month,
+        month: fieldTeshiResult.month,
+        months: null,
       }
     }
   }
@@ -101,20 +127,21 @@ export function checkSpecialRules(
   return {
     triggered: false,
     type: null,
-    affectedPlayerId: null,
+    triggeredPlayerId: null,
     awardedPoints: 0,
     winnerId: null,
     month: null,
+    months: null,
   }
 }
 
 /**
- * 取得 Teshi 懲罰分數
+ * 取得特殊規則獲得分數
  *
- * @returns Teshi 懲罰分數常數
+ * @returns 特殊規則分數常數
  */
-export function getTeshiPenaltyPoints(): number {
-  return TESHI_PENALTY_POINTS
+export function getSpecialRulePoints(): number {
+  return SPECIAL_RULE_POINTS
 }
 
 /**

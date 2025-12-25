@@ -120,6 +120,40 @@ export class EventMapper implements FullEventMapperPort {
   }
 
   /**
+   * 將 Game 轉換為特殊規則觸發時的 RoundDealtEvent
+   *
+   * @description
+   * 特殊規則（手四、喰付、場上手四）觸發時使用。
+   * - next_state 為 null（無需玩家操作）
+   * - timeout_seconds 為 0
+   *
+   * @param game - 遊戲聚合根
+   * @returns RoundDealtEvent（next_state = null, timeout_seconds = 0）
+   * @throws Error 如果 currentRound 不存在
+   */
+  toRoundDealtEventForSpecialRule(game: Game): RoundDealtEvent {
+    if (!game.currentRound) {
+      throw new Error('Cannot create RoundDealtEvent for special rule: currentRound is null')
+    }
+
+    const round = game.currentRound
+    const hands = this.toPlayerHands(round)
+
+    return {
+      event_type: 'RoundDealt',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      current_round: game.roundsPlayed + 1,
+      dealer_id: round.dealerId,
+      field: [...round.field],
+      hands,
+      deck_remaining: round.deck.length,
+      next_state: null,
+      timeout_seconds: 0,
+    }
+  }
+
+  /**
    * 從 Round 提取玩家手牌資訊
    *
    * @param round - 局狀態

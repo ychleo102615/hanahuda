@@ -16,11 +16,10 @@
 import type { Game } from '~~/server/domain/game/game'
 import { addSecondPlayerAndStart, startRound } from '~~/server/domain/game/game'
 import { createPlayer } from '~~/server/domain/game/player'
-import { detectTeshi, detectKuttsuki } from '~~/server/domain/round'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
-import type { EventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import {
@@ -28,7 +27,7 @@ import {
   type JoinGameAsAiInput,
   type JoinGameAsAiOutput,
 } from '~~/server/application/ports/input/joinGameAsAiInputPort'
-import { gameConfig } from '~~/server/utils/config'
+import { checkSpecialRules, type SpecialRuleResult } from '~~/server/domain/services/specialRulesService'
 import { loggers } from '~~/server/utils/logger'
 
 /** Module logger instance */
@@ -53,7 +52,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
-    private readonly eventMapper: EventMapperPort,
+    private readonly eventMapper: FullEventMapperPort,
     private readonly gameTimeoutManager?: GameTimeoutPort
   ) {
     super()
@@ -109,19 +108,35 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
     let game = addSecondPlayerAndStart(waitingGame, aiPlayer)
 
     // 4. 發牌並開始第一局（可使用測試牌組）
-    game = startRound(game, gameConfig.use_test_deck)
+    game = startRound(game, true)
+    // game = startRound(game, gameConfig.use_test_deck)
 
-    // 5. 檢查 Teshi/Kuttsuki（診斷用）
-    this.logSpecialConditions(game)
+    // 5. 檢查特殊規則（手四、喰付、場上手四）
+    const specialRuleResult = this.checkAndHandleSpecialRules(game)
 
-    // 6. 儲存到記憶體和資料庫
-    this.gameStore.set(game)
-    await this.gameRepository.save(game)
+    if (specialRuleResult.triggered && game.currentRound) {
+      // 特殊規則觸發：儲存遊戲狀態（確保 currentRound 存在以支援重連）
+      this.gameStore.set(game)
+      await this.gameRepository.save(game)
 
-    logger.info('AI joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
+      logger.info('Special rule triggered, delegating to TurnFlowService', {
+        gameId: game.id,
+        ruleType: specialRuleResult.type,
+        winnerId: specialRuleResult.winnerId,
+      })
 
-    // 7. 排程初始事件（延遲讓客戶端建立 SSE 連線）
-    this.scheduleInitialEvents(game)
+      // 排程初始事件（延遲讓客戶端建立 SSE 連線）
+      this.scheduleSpecialRuleEvents(game, specialRuleResult)
+    } else {
+      // 無特殊規則：正常流程
+      this.gameStore.set(game)
+      await this.gameRepository.save(game)
+
+      logger.info('AI joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
+
+      // 排程初始事件（延遲讓客戶端建立 SSE 連線）
+      this.scheduleInitialEvents(game)
+    }
 
     return {
       gameId: game.id,
@@ -131,26 +146,29 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
   }
 
   /**
-   * 記錄特殊條件（Teshi/Kuttsuki）
+   * 檢查特殊規則
+   *
+   * @param game - 遊戲狀態
+   * @returns 特殊規則檢測結果
    */
-  private logSpecialConditions(game: Game): void {
-    if (!game.currentRound) return
-
-    for (const playerState of game.currentRound.playerStates) {
-      const teshiResult = detectTeshi(playerState.hand)
-      if (teshiResult.hasTeshi) {
-        logger.info('Teshi detected', { playerId: playerState.playerId, month: teshiResult.month })
+  private checkAndHandleSpecialRules(game: Game): SpecialRuleResult {
+    if (!game.currentRound) {
+      return {
+        triggered: false,
+        type: null,
+        triggeredPlayerId: null,
+        awardedPoints: 0,
+        winnerId: null,
+        month: null,
+        months: null,
       }
     }
 
-    const kuttsukiResult = detectKuttsuki(game.currentRound.field)
-    if (kuttsukiResult.hasKuttsuki) {
-      logger.info('Kuttsuki detected on field', { month: kuttsukiResult.month })
-    }
+    return checkSpecialRules(game.currentRound, game.ruleset.special_rules)
   }
 
   /**
-   * 排程初始事件
+   * 排程初始事件（正常流程）
    *
    * @param game - 遊戲狀態
    */
@@ -174,6 +192,44 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
         logger.info('Initial events published', { gameId: game.id })
       } catch (error) {
         logger.error('Failed to publish initial events', error, { gameId: game.id })
+      }
+    }, INITIAL_EVENT_DELAY_MS)
+  }
+
+  /**
+   * 排程特殊規則事件
+   *
+   * @description
+   * 委託 TurnFlowService 處理特殊規則：
+   * 1. 發送 GameStartedEvent
+   * 2. 呼叫 handleSpecialRuleTriggered（處理 RoundDealt、狀態更新、RoundEnded、回合轉換）
+   *
+   * @param game - 遊戲狀態（currentRound 存在）
+   * @param result - 特殊規則結果
+   */
+  private scheduleSpecialRuleEvents(
+    game: Game,
+    result: SpecialRuleResult
+  ): void {
+    setTimeout(() => {
+      try {
+        // 發送 GameStarted 事件
+        const gameStartedEvent = this.eventMapper.toGameStartedEvent(game)
+        this.eventPublisher.publishToGame(game.id, gameStartedEvent)
+
+        // 委託 TurnFlowService 處理特殊規則流程
+        this.turnFlowService?.handleSpecialRuleTriggered(game.id, game, result)
+          .catch((error) => {
+            logger.error('Failed to handle special rule', error, { gameId: game.id })
+          })
+
+        logger.info('Special rule handling delegated', {
+          gameId: game.id,
+          ruleType: result.type,
+          winnerId: result.winnerId,
+        })
+      } catch (error) {
+        logger.error('Failed to schedule special rule events', error, { gameId: game.id })
       }
     }, INITIAL_EVENT_DELAY_MS)
   }

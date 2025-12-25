@@ -131,7 +131,7 @@ export interface NotificationPort {
    * @description
    * 回合因特殊原因立即結束時（Teshi、場牌流局、無役種），顯示結束原因和分數。
    *
-   * @param reason - 結束原因（TESHI、FIELD_KUTTSUKI、NO_YAKU）
+   * @param reason - 結束原因（TESHI、KUTTSUKI、FIELD_TESHI、NO_YAKU）
    * @param winnerId - 勝者玩家 ID（可能為 null）
    * @param awardedPoints - 獲得的分數
    * @param updatedTotalScores - 更新後的總分列表

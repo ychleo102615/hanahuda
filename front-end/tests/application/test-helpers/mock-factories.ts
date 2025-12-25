@@ -243,7 +243,7 @@ export function createMockGameStatePort(): GameStatePort {
     getRuleset: vi.fn().mockReturnValue({
       total_rounds: 2,
       yaku_settings: [],
-      special_rules: { teshi_enabled: true, field_kuttsuki_enabled: true },
+      special_rules: { teshi_enabled: true, kuttsuki_enabled: true, field_teshi_enabled: true },
       total_deck_cards: 48,
     }),
     resetKoiKoiMultipliers: vi.fn(),

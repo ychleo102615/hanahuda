@@ -57,6 +57,18 @@ export interface EventMapperPort {
   toRoundDealtEvent(game: Game): RoundDealtEvent
 
   /**
+   * 轉換為特殊規則觸發時的 RoundDealt 事件
+   *
+   * @description
+   * 特殊規則（手四、喰付、場上手四）觸發時使用。
+   * - next_state 為 null（無需玩家操作）
+   * - timeout_seconds 為 0
+   *
+   * @param game - 遊戲聚合根（currentRound 必須存在）
+   */
+  toRoundDealtEventForSpecialRule(game: Game): RoundDealtEvent
+
+  /**
    * 轉換為 GameSnapshotRestore 事件
    *
    * @param game - 遊戲聚合根

@@ -23,24 +23,23 @@ import {
   createPlayer,
   type Game,
 } from '~~/server/domain/game'
-import { detectTeshi, detectKuttsuki } from '~~/server/domain/round'
 import type { RoomTypeId } from '#shared/constants/roomTypes'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { InternalEventPublisherPort } from '~~/server/application/ports/output/internalEventPublisherPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
-import type { EventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import type {
   JoinGameInputPort,
   JoinGameInput,
   JoinGameOutput,
-  JoinGameSuccessOutput,
   JoinGameWaitingOutput,
   JoinGameStartedOutput,
   JoinGameSnapshotOutput,
 } from '~~/server/application/ports/input/joinGameInputPort'
+import { checkSpecialRules, type SpecialRuleResult } from '~~/server/domain/services/specialRulesService'
 import { gameConfig } from '~~/server/utils/config'
 import { GAME_ERROR_MESSAGES } from '#shared/contracts/errors'
 import { loggers } from '~~/server/utils/logger'
@@ -71,7 +70,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
-    private readonly eventMapper: EventMapperPort,
+    private readonly eventMapper: FullEventMapperPort,
     private readonly internalEventPublisher: InternalEventPublisherPort,
     private readonly gameTimeoutManager: GameTimeoutPort
   ) {}
@@ -348,31 +347,38 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 發牌並開始第一局（可使用測試牌組）
     game = startRound(game, gameConfig.use_test_deck)
 
-    // 檢查 Teshi/Kuttsuki
-    if (game.currentRound) {
-      for (const playerState of game.currentRound.playerStates) {
-        const teshiResult = detectTeshi(playerState.hand)
-        if (teshiResult.hasTeshi) {
-          logger.info('Teshi detected', { playerId: playerState.playerId, month: teshiResult.month })
-        }
-      }
+    // 檢查特殊規則（手四、喰付、場上手四）
+    const specialRuleResult = this.checkAndHandleSpecialRules(game)
 
-      const kuttsukiResult = detectKuttsuki(game.currentRound.field)
-      if (kuttsukiResult.hasKuttsuki) {
-        logger.info('Kuttsuki detected on field', { month: kuttsukiResult.month })
-      }
+    // 儲存 startingPlayerId（不論是否觸發特殊規則，都需要回傳）
+    const startingPlayerId = game.currentRound?.activePlayerId ?? game.players[0]?.id ?? ''
+
+    if (specialRuleResult.triggered && game.currentRound) {
+      // 特殊規則觸發：儲存遊戲狀態（確保 currentRound 存在以支援重連）
+      this.gameStore.set(game)
+      this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
+      await this.gameRepository.save(game)
+
+      logger.info('Special rule triggered, delegating to TurnFlowService', {
+        gameId: game.id,
+        ruleType: specialRuleResult.type,
+        winnerId: specialRuleResult.winnerId,
+      })
+
+      // 排程初始事件（延遲讓客戶端建立 SSE 連線）
+      this.scheduleSpecialRuleEvents(game, specialRuleResult)
+    } else {
+      // 無特殊規則：正常流程
+      this.gameStore.set(game)
+      this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
+      await this.gameRepository.save(game)
+
+      logger.info('Player joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
+
+      // 排程初始事件（延遲讓客戶端建立 SSE 連線）
+      // GameStarted 和 RoundDealt 會廣播給所有玩家
+      this.scheduleInitialEvents(game)
     }
-
-    // 儲存到記憶體和資料庫
-    this.gameStore.set(game)
-    this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
-    await this.gameRepository.save(game)
-
-    logger.info('Player joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
-
-    // 排程初始事件（延遲讓客戶端建立 SSE 連線）
-    // GameStarted 和 RoundDealt 會廣播給所有玩家
-    this.scheduleInitialEvents(game)
 
     // SSE-First: 返回 game_started 狀態
     return {
@@ -388,7 +394,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       ruleset: {
         totalRounds: game.ruleset.total_rounds,
       },
-      startingPlayerId: game.currentRound?.activePlayerId ?? game.players[0]?.id ?? '',
+      startingPlayerId,
     }
   }
 
@@ -455,5 +461,69 @@ export class JoinGameUseCase implements JoinGameInputPort {
     this.gameTimeoutManager.clearAllForGame(gameId)
 
     logger.info('Game removed due to matchmaking timeout', { gameId })
+  }
+
+  // ============================================================
+  // 特殊規則處理
+  // ============================================================
+
+  /**
+   * 檢查特殊規則
+   *
+   * @param game - 遊戲狀態
+   * @returns 特殊規則檢測結果
+   */
+  private checkAndHandleSpecialRules(game: Game): SpecialRuleResult {
+    if (!game.currentRound) {
+      return {
+        triggered: false,
+        type: null,
+        triggeredPlayerId: null,
+        awardedPoints: 0,
+        winnerId: null,
+        month: null,
+        months: null,
+      }
+    }
+
+    return checkSpecialRules(game.currentRound, game.ruleset.special_rules)
+  }
+
+  /**
+   * 排程特殊規則事件
+   *
+   * @description
+   * 委託 TurnFlowService 處理特殊規則：
+   * 1. 發送 GameStartedEvent
+   * 2. 呼叫 handleSpecialRuleTriggered（處理 RoundDealt、狀態更新、RoundEnded、回合轉換）
+   *
+   * @param game - 遊戲狀態（currentRound 存在）
+   * @param result - 特殊規則結果
+   */
+  private scheduleSpecialRuleEvents(
+    game: Game,
+    result: SpecialRuleResult
+  ): void {
+    setTimeout(() => {
+      try {
+        // 發送 GameStarted 事件
+        const gameStartedEvent = this.eventMapper.toGameStartedEvent(game)
+        this.eventPublisher.publishToGame(game.id, gameStartedEvent)
+
+        // 委託 TurnFlowService 處理特殊規則流程
+        this.turnFlowService?.handleSpecialRuleTriggered(game.id, game, result)
+          .catch((error) => {
+            logger.error('Failed to handle special rule', error, { gameId: game.id })
+          })
+
+        logger.info('Special rule handling delegated', {
+          gameId: game.id,
+          ruleType: result.type,
+          winnerId: result.winnerId,
+        })
+      } catch (error) {
+        logger.error('Failed to schedule special rule events', error, { gameId: game.id })
+      }
+    }, INITIAL_EVENT_DELAY_MS)
   }
 }

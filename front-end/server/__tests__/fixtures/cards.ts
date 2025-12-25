@@ -229,7 +229,7 @@ export const HAND_STANDARD = Object.freeze([
 // ============================================================
 
 /**
- * 手四（Teshi）：同月份 4 張牌
+ * 手四（Teshi）：手牌中有 4 張同月份牌
  */
 export const TESHI_CARDS = Object.freeze([
   '0111', // 1 月光牌
@@ -239,13 +239,29 @@ export const TESHI_CARDS = Object.freeze([
 ])
 
 /**
- * 喰付（Kuttsuki）：場上有 4 張同月份牌
- * 場牌共 8 張，其中 1 月有 4 張（觸發喰付）
+ * 喰付（Kuttsuki）：手牌中有 4 對同月份牌
+ * 手牌共 8 張，分成 4 對（每對 2 張同月份）
  */
-export const KUTTSUKI_FIELD = Object.freeze([
-  '0111', '0131', '0141', '0142', // 1 月 4 張 (喰付)
+export const KUTTSUKI_HAND = Object.freeze([
+  '0111', '0131', // 1 月 2 張
+  '0221', '0231', // 2 月 2 張
+  '0311', '0331', // 3 月 2 張
+  '0421', '0431', // 4 月 2 張
+])
+
+/**
+ * 場上手四（Field Teshi）：場牌中有 4 張同月份牌
+ * 場牌共 8 張，其中 1 月有 4 張（觸發場上手四）
+ */
+export const FIELD_TESHI_CARDS = Object.freeze([
+  '0111', '0131', '0141', '0142', // 1 月 4 張 (場上手四)
   '0221', '0231', '0341', '0342', // 其他月份填滿 8 張
 ])
+
+/**
+ * @deprecated 使用 FIELD_TESHI_CARDS
+ */
+export const KUTTSUKI_FIELD = FIELD_TESHI_CARDS
 
 // ============================================================
 // 邊界情況測試

@@ -112,6 +112,10 @@ export interface GameStartedEvent extends BaseEvent {
  * @description
  * 發牌完成，包含場牌、手牌和牌堆剩餘數量。
  * total_rounds 可從 GameStarted 事件的 ruleset 取得。
+ *
+ * 當特殊規則觸發（手四、喰付、場上手四）時：
+ * - next_state 為 null（無需玩家操作）
+ * - timeout_seconds 為 0
  */
 export interface RoundDealtEvent extends BaseEvent {
   readonly event_type: typeof EVENT_TYPES.RoundDealt
@@ -120,7 +124,8 @@ export interface RoundDealtEvent extends BaseEvent {
   readonly field: ReadonlyArray<string>
   readonly hands: ReadonlyArray<PlayerHand>
   readonly deck_remaining: number
-  readonly next_state: NextState
+  /** 下一步狀態（特殊規則觸發時為 null） */
+  readonly next_state: NextState | null
   readonly timeout_seconds: number
 }
 

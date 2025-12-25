@@ -60,6 +60,19 @@ export function createMockEventMapper(): MockEventMapper {
       timeout_seconds: 15,
     }),
 
+    toRoundDealtEventForSpecialRule: vi.fn<(game: Game) => RoundDealtEvent>().mockReturnValue({
+      event_type: 'RoundDealt',
+      round_number: 1,
+      player_hand: [],
+      opponent_hand_count: 8,
+      field_cards: [],
+      deck_count: 24,
+      dealer_id: 'player-1',
+      active_player_id: 'player-1',
+      next_state: null,
+      timeout_seconds: 0,
+    }),
+
     toGameSnapshotRestoreEvent: vi.fn<(game: Game, remainingSeconds?: number) => GameSnapshotRestore>().mockReturnValue({
       event_type: 'GameSnapshotRestore',
       snapshot: {
