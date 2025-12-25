@@ -28,7 +28,7 @@ const animationLayerStore = useAnimationLayerStore()
 // 註冊區域位置
 const { elementRef: handRef } = useZoneRegistration('player-hand')
 const { myHandCards, isMyTurn, fieldCards } = storeToRefs(gameState)
-const { handCardAwaitingConfirmation, isActionTimeoutExpired } = storeToRefs(uiState)
+const { handCardAwaitingConfirmation, isActionTimeoutExpired, isSubmittingAction } = storeToRefs(uiState)
 const { isAnimating } = storeToRefs(animationLayerStore)
 
 // T058 [US2]: 注入 PlayHandCardPort
@@ -49,13 +49,15 @@ const { flowStage, possibleTargetCardIds } = storeToRefs(gameState)
  * 2. 沒有動畫正在播放（!isAnimating）
  * 3. 處於等待出手牌階段（flowStage === 'AWAITING_HAND_PLAY'）
  * 4. 操作時間未超時（!isActionTimeoutExpired）
+ * 5. 沒有正在提交的操作（!isSubmittingAction，防止弱網重複點擊）
  */
 const canPlayerAct = computed(() => {
   return (
     isMyTurn.value &&
     !isAnimating.value &&
     flowStage.value === 'AWAITING_HAND_PLAY' &&
-    !isActionTimeoutExpired.value
+    !isActionTimeoutExpired.value &&
+    !isSubmittingAction.value
   )
 })
 
@@ -104,6 +106,8 @@ function handleCardClick(cardId: string) {
 
   if (matchableCardIds.length !== 2) {
     // 非雙重配對：直接執行（無配對、單一配對、三重配對）
+    // 設定提交狀態，防止弱網環境下重複點擊
+    uiState.setSubmittingAction(true)
     playHandCardPort.execute({
       cardId,
       handCards: myHandCards.value,
@@ -154,7 +158,7 @@ function clearSelection() {
   uiState.exitHandCardConfirmationMode()
 }
 
-// 監聽回合變化，非玩家回合時清除所有高亮狀態
+// 監聽回合變化，非玩家回合時清除所有高亮狀態與提交狀態
 import { watch } from 'vue'
 watch(isMyTurn, (newIsMyTurn) => {
   if (!newIsMyTurn) {
@@ -164,6 +168,8 @@ watch(isMyTurn, (newIsMyTurn) => {
     }
     // 清除懸浮預覽高亮（解決游標停留時回合切換的問題）
     uiState.clearHandCardHoverPreview()
+    // 清除提交狀態（回合結束時重置）
+    uiState.setSubmittingAction(false)
   }
 })
 
@@ -172,6 +178,11 @@ watch(isMyTurn, (newIsMyTurn) => {
 // 根據 possibleTargetCardIds 數量來決定 UI 行為
 // 注意：只有自己的回合才進入選擇模式
 watch(flowStage, (newStage, oldStage) => {
+  // 當 flowStage 從 AWAITING_HAND_PLAY 變化時，清除提交狀態（表示伺服器已回應）
+  if (oldStage === 'AWAITING_HAND_PLAY' && newStage !== 'AWAITING_HAND_PLAY') {
+    uiState.setSubmittingAction(false)
+  }
+
   // 只有自己的回合才進入選擇模式
   if (newStage === 'AWAITING_SELECTION' && possibleTargetCardIds.value.length > 0 && isMyTurn.value) {
     // 進入場牌選擇模式

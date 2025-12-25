@@ -196,6 +196,9 @@ export interface UIStateStoreState {
   // 操作超時狀態（ACTION 模式倒數完成時為 true，禁止玩家操作）
   isActionTimeoutExpired: boolean
 
+  // 正在提交操作（防止弱網環境下重複點擊）
+  isSubmittingAction: boolean
+
   // 待處理的遊戲結束資料（最後一回合緩存用）
   pendingGameFinishedData: GameFinishedData | null
 
@@ -270,6 +273,9 @@ export interface UIStateStoreActions {
 
   // 操作超時狀態
   setActionTimeoutExpired(value: boolean): void
+
+  // 提交操作狀態（防止重複點擊）
+  setSubmittingAction(value: boolean): void
 }
 
 /**
@@ -338,6 +344,9 @@ export const useUIStateStore = defineStore('uiState', {
 
     // 操作超時狀態
     isActionTimeoutExpired: false,
+
+    // 正在提交操作
+    isSubmittingAction: false,
 
     // 待處理的遊戲結束資料
     pendingGameFinishedData: null,
@@ -760,6 +769,9 @@ export const useUIStateStore = defineStore('uiState', {
       // 操作超時狀態
       this.isActionTimeoutExpired = false
 
+      // 正在提交操作
+      this.isSubmittingAction = false
+
       // 待處理的遊戲結束資料
       this.pendingGameFinishedData = null
 
@@ -1022,6 +1034,20 @@ export const useUIStateStore = defineStore('uiState', {
         this.exitFieldCardSelectionMode()
         console.info('[UIStateStore] 操作超時，禁止玩家操作，已清除高亮狀態')
       }
+    },
+
+    /**
+     * 設置提交操作狀態
+     *
+     * @description
+     * 防止弱網環境下玩家重複點擊導致多次提交。
+     * 在呼叫 API 前設為 true，收到回應後設為 false。
+     *
+     * @param value - 是否正在提交
+     */
+    setSubmittingAction(value: boolean): void {
+      this.isSubmittingAction = value
+      console.info('[UIStateStore] 提交操作狀態:', value)
     },
   },
 })
