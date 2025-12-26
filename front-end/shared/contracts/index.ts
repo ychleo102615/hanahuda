@@ -79,6 +79,7 @@ export type {
   // Snapshot Context Types
   SelectionContext,
   DecisionContext,
+  RoundEndInfo,
   // SSE Event Types
   SSEEventType,
 } from './events'

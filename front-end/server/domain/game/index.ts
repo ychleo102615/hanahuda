@@ -13,6 +13,7 @@ export type {
   Game,
   GameStatus,
   CreateGameParams,
+  EndRoundParams,
 } from './game'
 export {
   getDefaultRuleset,
@@ -24,6 +25,7 @@ export {
   finishRound,
   finishRoundDraw,
   finishGame,
+  endRound,
 } from './game'
 
 // 查詢函數
@@ -31,6 +33,7 @@ export {
   getHumanPlayer,
   getAiPlayer,
   canContinue,
+  isLastRound,
   getPlayerScore,
   isPlayerTurn,
   getCurrentFlowState,

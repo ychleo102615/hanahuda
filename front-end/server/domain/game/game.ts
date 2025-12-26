@@ -14,14 +14,15 @@
  * @module server/domain/game/game
  */
 
-import type { Ruleset, PlayerScore, PlayerConnectionInfo } from '#shared/contracts'
+import type { Ruleset, PlayerScore, PlayerConnectionInfo, RoundScoringData, RoundInstantEndData } from '#shared/contracts'
+import type { RoundEndReason } from '#shared/contracts/errors'
 import {
   type RoomTypeId,
   getRuleset,
   DEFAULT_ROOM_TYPE_ID,
 } from '#shared/constants/roomTypes'
 import type { Player } from './player'
-import type { Round } from '../round'
+import type { Round, RoundSettlementInfo } from '../round'
 import { createRound } from '../round'
 import { createShuffledDeck, deal } from '../services/deckService'
 
@@ -302,6 +303,67 @@ export function finishGame(game: Game, winnerId?: string): Game {
     ...game,
     currentRound: null,
     status: 'FINISHED' as GameStatus,
+    updatedAt: new Date(),
+  })
+}
+
+/**
+ * 結束回合參數
+ */
+export interface EndRoundParams {
+  readonly reason: RoundEndReason
+  readonly winnerId: string | null
+  readonly awardedPoints: number
+  readonly scoringData?: RoundScoringData
+  readonly instantData?: RoundInstantEndData
+  /** 總倒數秒數（用於重連時計算剩餘秒數，undefined 表示最後一局不需要倒數） */
+  readonly totalTimeoutSeconds?: number
+}
+
+/**
+ * 結束回合（進入結算階段）
+ *
+ * @description
+ * 將回合狀態設為 ROUND_ENDED，但保留所有牌面資料。
+ * 用於結算展示期間（局間階段），直到倒數結束才執行 finishRound()。
+ *
+ * 語意：局間歸屬於上一局的尾部階段，因此：
+ * - currentRound 保持存在（不設為 null）
+ * - flowState 設為 'ROUND_ENDED'
+ * - settlementInfo 儲存結算資訊供快照和重連使用
+ *
+ * @param game - 遊戲
+ * @param params - 結束回合參數
+ * @returns 更新後的遊戲
+ */
+export function endRound(game: Game, params: EndRoundParams): Game {
+  if (game.status !== 'IN_PROGRESS') {
+    throw new Error(`Cannot end round for game with status: ${game.status}`)
+  }
+
+  if (!game.currentRound) {
+    throw new Error('Cannot end round: no current round')
+  }
+
+  const settlementInfo: RoundSettlementInfo = {
+    reason: params.reason,
+    winnerId: params.winnerId,
+    awardedPoints: params.awardedPoints,
+    scoringData: params.scoringData,
+    instantData: params.instantData,
+    endedAt: new Date(),
+    totalTimeoutSeconds: params.totalTimeoutSeconds,
+  }
+
+  const updatedRound: Round = Object.freeze({
+    ...game.currentRound,
+    flowState: 'ROUND_ENDED' as const,
+    settlementInfo,
+  })
+
+  return Object.freeze({
+    ...game,
+    currentRound: updatedRound,
     updatedAt: new Date(),
   })
 }

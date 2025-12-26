@@ -581,6 +581,20 @@ export class EventMapper implements FullEventMapperPort {
       }
     }
 
+    if (snapshot.round_end_info) {
+      return {
+        ...baseEvent,
+        round_end_info: {
+          reason: snapshot.round_end_info.reason,
+          winner_id: snapshot.round_end_info.winner_id,
+          awarded_points: snapshot.round_end_info.awarded_points,
+          scoring_data: snapshot.round_end_info.scoring_data,
+          instant_data: snapshot.round_end_info.instant_data,
+          timeout_remaining_seconds: snapshot.round_end_info.timeout_remaining_seconds,
+        },
+      }
+    }
+
     return baseEvent
   }
 

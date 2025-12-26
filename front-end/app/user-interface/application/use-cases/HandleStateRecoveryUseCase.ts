@@ -92,8 +92,11 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
     this.restoreUIPanel(snapshot)
 
     // 9. 啟動操作倒數（根據 flow_stage 判斷 mode）
-    const countdownMode = snapshot.current_flow_stage === 'AWAITING_DECISION' ? 'DISPLAY' : 'ACTION'
-    this.notification.startCountdown(snapshot.timeout_seconds, countdownMode)
+    // 注意：ROUND_ENDED 狀態由 restoreRoundEndedState() 處理倒數，不需要在這裡啟動
+    if (snapshot.current_flow_stage !== 'ROUND_ENDED') {
+      const countdownMode = snapshot.current_flow_stage === 'AWAITING_DECISION' ? 'DISPLAY' : 'ACTION'
+      this.notification.startCountdown(snapshot.timeout_seconds, countdownMode)
+    }
 
     console.info('[HandleStateRecoveryUseCase] Game state restored successfully')
   }
@@ -143,9 +146,74 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
         }
         break
 
+      case 'ROUND_ENDED':
+        // 恢復局間結算狀態，顯示 RoundEndedModal
+        if (snapshot.round_end_info) {
+          this.restoreRoundEndedState(snapshot)
+        }
+        break
+
       default:
         // 其他狀態不需要特殊的 UI 恢復
         break
+    }
+  }
+
+  /**
+   * 恢復局間結算狀態
+   *
+   * @description
+   * 當 flowStage === 'ROUND_ENDED' 時，恢復 RoundEndedModal 的顯示。
+   * 根據 reason 決定顯示哪種類型的 Modal。
+   *
+   * @param snapshot - 遊戲狀態快照
+   */
+  private restoreRoundEndedState(snapshot: GameSnapshotRestore): void {
+    const roundEndInfo = snapshot.round_end_info!
+
+    console.info('[HandleStateRecoveryUseCase] ROUND_ENDED - restoring round end modal', {
+      reason: roundEndInfo.reason,
+      winnerId: roundEndInfo.winner_id,
+      remainingSeconds: roundEndInfo.timeout_remaining_seconds,
+    })
+
+    // 根據 reason 顯示對應的 Modal
+    switch (roundEndInfo.reason) {
+      case 'SCORED':
+        if (roundEndInfo.scoring_data && roundEndInfo.winner_id) {
+          this.notification.showRoundScoredModal(
+            roundEndInfo.winner_id,
+            roundEndInfo.scoring_data.yaku_list,
+            roundEndInfo.scoring_data.base_score,
+            roundEndInfo.scoring_data.final_score,
+            roundEndInfo.scoring_data.multipliers,
+            [...snapshot.player_scores]
+          )
+        }
+        break
+
+      case 'DRAWN':
+        this.notification.showRoundDrawnModal([...snapshot.player_scores])
+        break
+
+      case 'INSTANT_TESHI':
+      case 'INSTANT_KUTTSUKI':
+      case 'INSTANT_FIELD_TESHI':
+        this.notification.showRoundEndedInstantlyModal(
+          roundEndInfo.reason,
+          roundEndInfo.winner_id,
+          roundEndInfo.awarded_points,
+          [...snapshot.player_scores]
+        )
+        break
+
+      default:
+        console.warn('[HandleStateRecoveryUseCase] Unknown round end reason:', roundEndInfo.reason)
+    }
+
+    // 啟動剩餘倒數（DISPLAY mode）
+    if (roundEndInfo.timeout_remaining_seconds > 0) {
+      this.notification.startCountdown(roundEndInfo.timeout_remaining_seconds, 'DISPLAY')
     }
   }
 

@@ -14,7 +14,8 @@
  * @module server/domain/round/round
  */
 
-import type { FlowState, CardPlay } from '#shared/contracts'
+import type { FlowState, CardPlay, RoundScoringData, RoundInstantEndData } from '#shared/contracts'
+import type { RoundEndReason } from '#shared/contracts/errors'
 import type { KoiStatus } from './koiStatus'
 import { createInitialKoiStatus } from './koiStatus'
 import type { DealResult } from '../services/deckService'
@@ -51,6 +52,34 @@ export interface PendingDecision {
 }
 
 /**
+ * 回合結算資訊
+ *
+ * @description
+ * 當 flowState === 'ROUND_ENDED' 時，此欄位記錄回合結束的詳細資訊。
+ * 用於結算展示期間（局間階段），以及斷線重連時恢復 RoundEndedModal。
+ *
+ * 注意：此類型與 roundEnd.ts 中的 RoundEndResult 不同：
+ * - RoundEndResult: 計算結果，包含 yakuList、koiMultiplier 等計算細節
+ * - RoundSettlementInfo: 用於儲存在 Round 中，供快照和重連使用
+ */
+export interface RoundSettlementInfo {
+  /** 結束原因 */
+  readonly reason: RoundEndReason
+  /** 獲勝者 ID（流局時為 null） */
+  readonly winnerId: string | null
+  /** 獲得分數 */
+  readonly awardedPoints: number
+  /** 計分資料（僅當 reason === 'SCORED' 時有值） */
+  readonly scoringData?: RoundScoringData
+  /** 特殊規則資料（僅當 reason 為 INSTANT_* 時有值） */
+  readonly instantData?: RoundInstantEndData
+  /** 結算開始時間（用於計算重連時的剩餘倒數秒數） */
+  readonly endedAt: Date
+  /** 總倒數秒數（用於計算重連時的剩餘秒數，undefined 表示最後一局不需要倒數） */
+  readonly totalTimeoutSeconds?: number
+}
+
+/**
  * Round Entity
  *
  * 一局遊戲的完整狀態
@@ -74,6 +103,8 @@ export interface Round {
   readonly pendingSelection: PendingSelection | null
   /** 等待 Koi-Koi 決策（若有） */
   readonly pendingDecision: PendingDecision | null
+  /** 回合結算資訊（僅當 flowState === 'ROUND_ENDED' 時有值） */
+  readonly settlementInfo?: RoundSettlementInfo
 }
 
 /**

@@ -10,7 +10,8 @@
  * @module server/application/services/turnFlowService
  */
 
-import { type Game, finishGame, finishRound, finishRoundDraw, startRound } from '~~/server/domain/game/game'
+import { type Game, finishGame, finishRound, finishRoundDraw, startRound, endRound } from '~~/server/domain/game/game'
+import { isLastRound } from '~~/server/domain/game/gameQueries'
 import type { SpecialRuleResult } from '~~/server/domain/services/specialRulesService'
 import type { RoundEndReason } from '#shared/contracts'
 import { calculateWinner } from '~~/server/domain/game/gameEndConditions'
@@ -25,8 +26,10 @@ import type { TurnEventMapperPort } from '~~/server/application/ports/output/eve
 import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
 import {
   transitionAfterRoundDraw,
+  finalizeRoundAndTransition,
   type RoundTransitionResult,
 } from '~~/server/domain/services/roundTransitionService'
+import type { RoundEndResult } from '~~/server/domain/round'
 import {
   setRequireContinueConfirmation,
   clearRequireContinueConfirmation,
@@ -614,44 +617,77 @@ export class TurnFlowService {
    * 處理計分回合結束（SCORED）
    *
    * @description
-   * 統一處理回合結束後的所有邏輯：
-   * 1. 檢查並啟動確認計時器
+   * 使用新的「局間歸屬上一局尾部」語意處理回合結束：
+   * 1. 使用 endRound() 設定結算狀態（保留 currentRound，flowState = 'ROUND_ENDED'）
    * 2. 發送 RoundEnded 事件
    * 3. 檢查斷線玩家
-   * 4. 根據確認需求決定是否啟動 display timeout
+   * 4. 倒數結束後呼叫 finalizeRoundAndTransition() 完成轉換
    *
    * @param gameId - 遊戲 ID
-   * @param game - 遊戲狀態（已完成轉換）
-   * @param transitionResult - 轉換結果
-   * @param scoringData - 計分資料
-   * @param includeAnimationDelay - 是否包含動畫延遲（用於「最後一手形成役種」情況，
-   *                                前端需要先播放 TurnCompleted 動畫）
+   * @param game - 遊戲狀態（原始狀態，尚未轉換）
+   * @param winnerId - 勝者 ID
+   * @param roundEndResult - 局結束計算結果
+   * @param multipliers - 倍率資訊
+   * @param includeAnimationDelay - 是否包含動畫延遲
    * @returns 若遊戲已結束，返回 true；否則返回 false
    */
   async handleScoredRoundEnd(
     gameId: string,
     game: Game,
-    transitionResult: RoundTransitionResult,
-    scoringData: RoundScoringData,
+    winnerId: string,
+    roundEndResult: RoundEndResult,
+    multipliers: ScoreMultipliers,
     includeAnimationDelay: boolean = false
   ): Promise<boolean> {
-    // 1. 計算 displayTimeoutSeconds
-    const isNextRound = transitionResult.transitionType === 'NEXT_ROUND'
-    // 若需要包含動畫延遲，將 card_play_animation_ms 轉換為秒並加到 timeout
+    // 1. 判斷是否為最後一局
+    const lastRound = isLastRound(game)
+
+    // 2. 計算 displayTimeoutSeconds（最後一局不需要倒數，因為不會進入下一局）
     const animationDelaySeconds = includeAnimationDelay
       ? Math.ceil(gameConfig.card_play_animation_ms / 1000)
       : 0
-    const displayTimeoutSeconds = isNextRound
-      ? gameConfig.result_display_seconds + animationDelaySeconds
-      : undefined
+    const displayTimeoutSeconds = lastRound
+      ? undefined
+      : gameConfig.result_display_seconds + animationDelaySeconds
 
-    // 2. 檢查是否需要確認繼續遊戲（計時器總時間 = displayTimeout + confirmTimeout）
-    const requireConfirmation = this.handleRoundEndConfirmation(gameId, game, displayTimeoutSeconds ?? 0)
+    // 3. 建立 RoundScoringData
+    const scoringData: RoundScoringData = {
+      winner_id: winnerId,
+      yaku_list: roundEndResult.yakuList,
+      base_score: roundEndResult.baseScore,
+      final_score: roundEndResult.finalScore,
+      multipliers,
+    }
 
-    // 3. 發送 RoundEnded 事件
+    // 4. 使用 endRound() 設定結算狀態（不執行 finishRound）
+    //    傳入 totalTimeoutSeconds 供重連時計算剩餘秒數
+    let updatedGame = endRound(game, {
+      reason: 'SCORED',
+      winnerId,
+      awardedPoints: roundEndResult.finalScore,
+      scoringData,
+      totalTimeoutSeconds: displayTimeoutSeconds,
+    })
+
+    // 儲存更新（此時 flowState = 'ROUND_ENDED'，重連可正確顯示 RoundEndedModal）
+    this.gameStore.set(updatedGame)
+    await this.gameRepository.save(updatedGame)
+
+    // 5. 檢查是否需要確認繼續遊戲（最後一局不需要確認）
+    const requireConfirmation = lastRound
+      ? false
+      : this.handleRoundEndConfirmation(gameId, updatedGame, displayTimeoutSeconds ?? 0)
+
+    // 6. 發送 RoundEnded 事件（使用更新後的累積分數預覽，但實際尚未計入）
+    //    預覽分數用於前端顯示
+    const previewScores = game.cumulativeScores.map((ps) =>
+      ps.player_id === winnerId
+        ? { player_id: ps.player_id, score: ps.score + roundEndResult.finalScore }
+        : ps
+    )
     const roundEndedEvent = this.eventMapper.toRoundEndedEvent(
       'SCORED',
-      game.cumulativeScores,
+      previewScores,
       scoringData,
       undefined,
       displayTimeoutSeconds,
@@ -659,55 +695,84 @@ export class TurnFlowService {
     )
     this.eventPublisher.publishToGame(gameId, roundEndedEvent)
 
-    // 4. 檢查是否有斷線/離開玩家
-    const gameEndedByDisconnect = await this.checkAndHandleDisconnectedPlayers(gameId, game)
+    // 7. 檢查是否有斷線/離開玩家
+    const gameEndedByDisconnect = await this.checkAndHandleDisconnectedPlayers(gameId, updatedGame)
     if (gameEndedByDisconnect) {
-      return true  // 遊戲已結束
+      return true
     }
 
-    // 5. 根據確認需求決定下一步
-    if (requireConfirmation) {
-      // 需要確認：不啟動 display timeout
-      // 等待玩家確認後由 handlePlayerConfirmContinue() 繼續流程
+    // 8. 根據確認需求決定下一步
+    if (lastRound) {
+      // 最後一局：直接執行局轉換（會發送 GameFinished 事件）
+      logger.info('Last round ended, finalizing game', { gameId })
+      await this.handleFinalizeRound(gameId)
+      return true
+    } else if (requireConfirmation) {
       logger.info('Waiting for player confirmation before next round', { gameId })
     } else {
-      // 不需要確認：根據 transitionResult 決定下一步
+      // 啟動 display timeout，倒數結束後執行 finalizeRoundAndTransition
+      this.startDisplayTimeout(gameId, displayTimeoutSeconds!, async () => {
+        await this.handleFinalizeRound(gameId)
+      })
+    }
+
+    return false
+  }
+
+  /**
+   * 執行局轉換（倒數結束後呼叫）
+   *
+   * @description
+   * 從 ROUND_ENDED 狀態執行實際的局轉換：
+   * 1. 呼叫 finalizeRoundAndTransition()
+   * 2. 根據結果發送 RoundDealt 或 GameFinished 事件
+   */
+  private async handleFinalizeRound(gameId: string): Promise<void> {
+    const currentGame = this.gameStore.get(gameId)
+    if (!currentGame || currentGame.status === 'FINISHED') {
+      return
+    }
+
+    try {
+      // 執行實際的局轉換
+      const transitionResult = finalizeRoundAndTransition(currentGame)
+      const updatedGame = transitionResult.game
+
+      // 儲存更新
+      this.gameStore.set(updatedGame)
+      await this.gameRepository.save(updatedGame)
+
       if (transitionResult.transitionType === 'NEXT_ROUND') {
-        // 繼續下一回合
-        const firstPlayerId = game.currentRound?.activePlayerId
-        this.startDisplayTimeout(gameId, displayTimeoutSeconds!, () => {
-          const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
-          this.eventPublisher.publishToGame(gameId, roundDealtEvent)
-          if (firstPlayerId) {
-            this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
-          }
-        })
+        // 發送 RoundDealt 事件
+        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(updatedGame)
+        this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+
+        // 啟動新回合第一位玩家的超時
+        const firstPlayerId = updatedGame.currentRound?.activePlayerId
+        if (firstPlayerId) {
+          this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
+        }
       } else {
         // 遊戲結束
         const winner = transitionResult.winner
         if (winner) {
-          // 先將更新寫入 gameStore，讓 endGame() 能取得最新狀態
-          this.gameStore.set(game)
           await this.endGame(gameId, winner.winnerId ?? undefined, 'NORMAL')
-          return true  // 遊戲已結束
         }
       }
+    } catch (error) {
+      logger.error('Failed to finalize round', error, { gameId })
     }
-
-    return false  // 遊戲繼續
   }
 
   /**
    * 處理開局特殊規則觸發
    *
    * @description
-   * 事件順序：
+   * 使用新的「局間歸屬上一局尾部」語意：
    * 1. 發送 RoundDealtEvent（前端播放發牌動畫）
-   * 2. 更新遊戲狀態（finishRound / finishRoundDraw）
-   * 3. 若遊戲未結束，立即開始下一局
-   * 4. 等待發牌動畫時間
-   * 5. 發送 RoundEndedEvent（特殊規則結束）
-   * 6. 處理回合轉換（開始下一局或結束遊戲）
+   * 2. 使用 endRound() 設定結算狀態（保留 currentRound，flowState = 'ROUND_ENDED'）
+   * 3. 發送 RoundEndedEvent
+   * 4. 倒數結束後呼叫 finalizeRoundAndTransition()
    *
    * @param gameId - 遊戲 ID
    * @param game - 遊戲狀態（已發牌但尚未 finishRound）
@@ -729,37 +794,42 @@ export class TurnFlowService {
     const roundDealtEvent = this.eventMapper.toRoundDealtEventForSpecialRule(game)
     this.eventPublisher.publishToGame(gameId, roundDealtEvent)
 
-    // 2. 立即更新遊戲狀態（finishRound / finishRoundDraw）
-    let updatedGame: Game
-    if (specialRuleResult.winnerId && specialRuleResult.awardedPoints > 0) {
-      updatedGame = finishRound(game, specialRuleResult.winnerId, specialRuleResult.awardedPoints)
-    } else {
-      updatedGame = finishRoundDraw(game)
-    }
+    // 2. 判斷是否為最後一局
+    const lastRound = isLastRound(game)
 
-    // 3. 若遊戲未結束，立即開始下一局（確保 currentRound 不為 null）
-    //    這樣重連時能正確建立快照
-    if (updatedGame.status !== 'FINISHED') {
-      updatedGame = startRound(updatedGame)
-    }
+    // 3. 計算 displayTimeoutSeconds（發牌動畫 + 結果顯示，最後一局不需要倒數）
+    const displayTimeoutSeconds = lastRound
+      ? undefined
+      : gameConfig.dealing_animation_seconds + gameConfig.result_display_seconds
 
-    // 4. 儲存狀態
+    // 4. 使用 endRound() 設定結算狀態（保留 currentRound）
+    //    傳入 totalTimeoutSeconds 供重連時計算剩餘秒數
+    const reason = this.toRoundEndReason(specialRuleResult)
+    const updatedGame = endRound(game, {
+      reason,
+      winnerId: specialRuleResult.winnerId,
+      awardedPoints: specialRuleResult.awardedPoints,
+      instantData: {
+        winner_id: specialRuleResult.winnerId,
+        awarded_points: specialRuleResult.awardedPoints,
+      },
+      totalTimeoutSeconds: displayTimeoutSeconds,
+    })
+
+    // 5. 儲存狀態（此時 flowState = 'ROUND_ENDED'，重連可正確顯示 RoundEndedModal）
     this.gameStore.set(updatedGame)
     await this.gameRepository.save(updatedGame)
 
-    // 5. 計算回合轉換結果
-    const transitionResult = this.calculateSpecialRuleTransitionResult(updatedGame)
-
-    // 6. 立即發送 RoundEndedEvent（前端 EventRouter 會等發牌動畫結束後處理）
-    //    timeout_seconds 包含發牌動畫時間 + 結果顯示時間
-    const reason = this.toRoundEndReason(specialRuleResult)
-    const displayTimeoutSeconds = transitionResult.transitionType === 'NEXT_ROUND'
-      ? gameConfig.dealing_animation_seconds + gameConfig.result_display_seconds
-      : undefined
-
+    // 6. 發送 RoundEndedEvent（前端 EventRouter 會等發牌動畫結束後處理）
+    //    使用預覽分數（尚未計入累積分數）
+    const previewScores = game.cumulativeScores.map((ps) =>
+      ps.player_id === specialRuleResult.winnerId
+        ? { player_id: ps.player_id, score: ps.score + specialRuleResult.awardedPoints }
+        : ps
+    )
     const roundEndedEvent = this.eventMapper.toRoundEndedEvent(
       reason,
-      updatedGame.cumulativeScores,
+      previewScores,
       undefined, // scoringData
       {
         winner_id: specialRuleResult.winnerId,
@@ -773,12 +843,20 @@ export class TurnFlowService {
     logger.info('Special rule RoundEnded event published', {
       gameId,
       reason,
-      transitionType: transitionResult.transitionType,
+      lastRound,
     })
 
-    // 7. 處理回合轉換（會發送新回合的 RoundDealtEvent）
-    //    使用加長後的 timeout 作為後端等待時間
-    this.handleRoundTransitionResult(gameId, updatedGame, transitionResult, displayTimeoutSeconds ?? 0)
+    // 7. 根據是否為最後一局決定下一步
+    if (lastRound) {
+      // 最後一局：直接執行局轉換（會發送 GameFinished 事件）
+      logger.info('Last round with special rule, finalizing game', { gameId })
+      await this.handleFinalizeRound(gameId)
+    } else {
+      // 啟動 display timeout，倒數結束後執行 finalizeRoundAndTransition
+      this.startDisplayTimeout(gameId, displayTimeoutSeconds!, async () => {
+        await this.handleFinalizeRound(gameId)
+      })
+    }
   }
 
   /**
@@ -797,23 +875,4 @@ export class TurnFlowService {
     }
   }
 
-  /**
-   * 計算回合轉換結果（特殊規則版本）
-   *
-   * @description
-   * 從遊戲狀態判斷是繼續下一局還是遊戲結束。
-   * 注意：此時 updatedGame 可能已經執行了 startRound，
-   * 所以 currentRound 會是新回合的資料。
-   */
-  private calculateSpecialRuleTransitionResult(game: Game): RoundTransitionResult {
-    if (game.status === 'FINISHED') {
-      const winnerResult = calculateWinner(game)
-      return {
-        transitionType: 'GAME_FINISHED',
-        game,
-        winner: winnerResult,
-      }
-    }
-    return { transitionType: 'NEXT_ROUND', game, winner: null }
-  }
 }

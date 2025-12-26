@@ -390,6 +390,27 @@ export interface DecisionContext {
 }
 
 /**
+ * 回合結束資訊（用於 ROUND_ENDED 狀態的快照恢復）
+ *
+ * @description
+ * 當 current_flow_stage === 'ROUND_ENDED' 時，此資訊用於恢復 RoundEndedModal 的顯示。
+ */
+export interface RoundEndInfo {
+  /** 結束原因 */
+  readonly reason: RoundEndReason
+  /** 獲勝者 ID（流局時為 null） */
+  readonly winner_id: string | null
+  /** 獲得分數 */
+  readonly awarded_points: number
+  /** 計分資料（僅當 reason === 'SCORED' 時有值） */
+  readonly scoring_data?: RoundScoringData
+  /** 特殊規則資料（僅當 reason 為 INSTANT_* 時有值） */
+  readonly instant_data?: RoundInstantEndData
+  /** 剩餘倒數秒數（用於恢復前端倒數計時器） */
+  readonly timeout_remaining_seconds: number
+}
+
+/**
  * GameSnapshotRestore 快照
  *
  * 參考: doc/shared/protocol.md#GameSnapshotRestore
@@ -419,6 +440,8 @@ export interface GameSnapshotRestore extends BaseEvent {
   readonly selection_context?: SelectionContext
   /** AWAITING_DECISION 時的決策上下文（可選） */
   readonly decision_context?: DecisionContext
+  /** ROUND_ENDED 時的結算資訊（可選） */
+  readonly round_end_info?: RoundEndInfo
 }
 
 // ============================================================================

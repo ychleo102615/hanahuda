@@ -16,7 +16,6 @@ import type {
   CardPlay,
   YakuUpdate,
   Yaku,
-  PlayerScore,
 } from '#shared/contracts'
 import {
   updateRound,
@@ -35,9 +34,6 @@ import {
   canPlayerKoiKoi,
   calculateRoundEndResult,
 } from '~~/server/domain/round'
-import {
-  transitionAfterRoundScored,
-} from '~~/server/domain/services/roundTransitionService'
 import {
   detectYaku,
   detectNewYaku,
@@ -230,88 +226,22 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
           )
 
           // 建立倍率資訊（使用 TurnFlowService 的共用方法）
-          const multipliers = this.turnFlowService!.buildMultipliers(existingGame)
+          const multipliers = this.turnFlowService!.buildMultipliers(game)
 
-          // 處理局轉換
-          const transitionResult = transitionAfterRoundScored(
-            game,
-            playerId,
-            roundEndResult.finalScore
-          )
-          game = transitionResult.game
-
-          // 取得勝者的 Koi-Koi 倍率
-          const winnerKoiStatus = existingGame.currentRound?.koiStatuses.find(
-            k => k.player_id === playerId
-          )
-          const winnerKoiMultiplier = winnerKoiStatus?.koi_multiplier ?? 1
-
-          // 記錄統計
-          if (this.recordGameStatsUseCase) {
-            if (transitionResult.transitionType === 'GAME_FINISHED') {
-              // 遊戲結束：記錄完整統計（勝負場次 + 役種/Koi-Koi/倍率）
-              const winner = transitionResult.winner
-              if (winner) {
-                try {
-                  await this.recordGameStatsUseCase.execute({
-                    gameId,
-                    winnerId: winner.winnerId,
-                    finalScores: winner.finalScores,
-                    winnerYakuList: roundEndResult.yakuList,
-                    winnerKoiMultiplier,
-                    players: game.players,
-                  })
-                } catch (error) {
-                  logger.error('Failed to record game stats', error, { gameId })
-                  // 統計記錄失敗不應影響遊戲結束流程
-                }
-              }
-            } else if (transitionResult.transitionType === 'NEXT_ROUND') {
-              // 局結束但遊戲繼續：只記錄該局的役種/Koi-Koi/倍率
-              try {
-                const currentScores: PlayerScore[] = game.players.map(p => ({
-                  player_id: p.id,
-                  score: game.cumulativeScores.find(s => s.player_id === p.id)?.score ?? 0,
-                }))
-
-                await this.recordGameStatsUseCase.execute({
-                  gameId,
-                  winnerId: playerId,
-                  finalScores: currentScores,
-                  winnerYakuList: roundEndResult.yakuList,
-                  winnerKoiMultiplier,
-                  players: game.players,
-                  isRoundEndOnly: true,
-                })
-                logger.info('Recorded round-only stats', { gameId, roundWinner: playerId })
-              } catch (error) {
-                logger.error('Failed to record round-only stats', error, { gameId })
-                // 統計記錄失敗不應影響遊戲流程
-              }
-            }
-          }
-
-          // 使用 TurnFlowService 的共用方法處理回合結束
+          // 使用 TurnFlowService 處理回合結束（使用新的「局間歸屬上一局尾部」語意）
           // 傳入 includeAnimationDelay=true，因為前端需要先播放 TurnCompleted 動畫
-          const scoringData = {
-            winner_id: playerId,
-            yaku_list: roundEndResult.yakuList,
-            base_score: roundEndResult.baseScore,
-            final_score: roundEndResult.finalScore,
-            multipliers,
-          }
-          const gameEnded = await this.turnFlowService?.handleScoredRoundEnd(
+          await this.turnFlowService?.handleScoredRoundEnd(
             gameId,
             game,
-            transitionResult,
-            scoringData,
+            playerId,
+            roundEndResult,
+            multipliers,
             true // includeAnimationDelay: 最後一手形成役種，需等待動畫
           )
-          if (gameEnded) {
-            // 已在 endGame() 中處理儲存和記憶體移除
-            logger.info('Game ended', { gameId: game.id })
-            return { success: true }
-          }
+
+          // handleScoredRoundEnd 已處理儲存和事件發送，直接返回
+          logger.info('Last card formed yaku, round ended', { gameId: game.id })
+          return { success: true }
         }
       } else {
         // 無新役種，回合完成

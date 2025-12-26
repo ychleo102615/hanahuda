@@ -43,6 +43,20 @@ export function canContinue(game: Game): boolean {
 }
 
 /**
+ * 檢查當前是否為最後一局
+ *
+ * @description
+ * 用於判斷當前回合結束後是否還能繼續遊戲。
+ * 當 roundsPlayed + 1 >= totalRounds 時，表示這是最後一局。
+ *
+ * @param game - 遊戲
+ * @returns 是否為最後一局
+ */
+export function isLastRound(game: Game): boolean {
+  return game.roundsPlayed + 1 >= game.totalRounds
+}
+
+/**
  * 取得玩家累積分數
  *
  * @param game - 遊戲

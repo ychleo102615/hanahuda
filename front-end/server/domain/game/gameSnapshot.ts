@@ -18,6 +18,7 @@ import type {
   KoiStatus as ContractKoiStatus,
   SelectionContext,
   DecisionContext,
+  RoundEndInfo,
 } from '#shared/contracts'
 import type { Game } from './game'
 
@@ -59,6 +60,8 @@ export interface GameSnapshot {
   readonly selection_context?: SelectionContext
   /** AWAITING_DECISION 時的決策上下文（可選） */
   readonly decision_context?: DecisionContext
+  /** ROUND_ENDED 時的結算資訊（可選） */
+  readonly round_end_info?: RoundEndInfo
 }
 
 /**
@@ -124,6 +127,7 @@ export function toSnapshot(game: Game): GameSnapshot | null {
   // 根據 flowState 建立上下文
   let selection_context: SelectionContext | undefined
   let decision_context: DecisionContext | undefined
+  let round_end_info: RoundEndInfo | undefined
 
   if (round.flowState === 'AWAITING_SELECTION' && round.pendingSelection) {
     selection_context = Object.freeze({
@@ -145,6 +149,23 @@ export function toSnapshot(game: Game): GameSnapshot | null {
     decision_context = Object.freeze({
       all_active_yaku: round.pendingDecision.activeYaku,
       current_multipliers: Object.freeze({ player_multipliers, koi_koi_applied }),
+    })
+  }
+
+  if (round.flowState === 'ROUND_ENDED' && round.settlementInfo) {
+    // 計算剩餘倒數秒數
+    // 若 totalTimeoutSeconds 為 undefined，表示最後一局不需要倒數，剩餘秒數為 0
+    const totalTimeout = round.settlementInfo.totalTimeoutSeconds ?? 0
+    const elapsed = (Date.now() - round.settlementInfo.endedAt.getTime()) / 1000
+    const remaining = Math.max(0, totalTimeout - elapsed)
+
+    round_end_info = Object.freeze({
+      reason: round.settlementInfo.reason,
+      winner_id: round.settlementInfo.winnerId,
+      awarded_points: round.settlementInfo.awardedPoints,
+      scoring_data: round.settlementInfo.scoringData,
+      instant_data: round.settlementInfo.instantData,
+      timeout_remaining_seconds: Math.ceil(remaining),
     })
   }
 
@@ -170,6 +191,9 @@ export function toSnapshot(game: Game): GameSnapshot | null {
   }
   if (decision_context) {
     return Object.freeze({ ...snapshot, decision_context })
+  }
+  if (round_end_info) {
+    return Object.freeze({ ...snapshot, round_end_info })
   }
 
   return Object.freeze(snapshot)

@@ -15,6 +15,7 @@ export type {
   PendingSelection,
   PendingDecision,
   CreateRoundParams,
+  RoundSettlementInfo,
 } from './round'
 export { createRound } from './round'
 

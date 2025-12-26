@@ -17,16 +17,12 @@ import {
   type Game,
 } from '~~/server/domain/game'
 import type {
-  Yaku,
   PlayerScore,
 } from '#shared/contracts'
 import {
   handleDecision as domainHandleDecision,
   calculateRoundEndResult,
 } from '~~/server/domain/round'
-import {
-  transitionAfterRoundScored,
-} from '~~/server/domain/services/roundTransitionService'
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
@@ -170,98 +166,28 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
         game.ruleset.yaku_settings
       )
 
-      // 建立倍率資訊（使用 TurnFlowService 的共用方法，傳入更新前的遊戲取得倍率）
-      const multipliers = this.turnFlowService!.buildMultipliers(existingGame)
+      // 建立倍率資訊（使用 TurnFlowService 的共用方法）
+      const multipliers = this.turnFlowService!.buildMultipliers(game)
 
-      // 使用 Domain Service 處理局轉換
-      const transitionResult = transitionAfterRoundScored(
-        game,
-        playerId,
-        roundEndResult.finalScore
-      )
-      game = transitionResult.game
-
-      // 取得勝者的 Koi-Koi 倍率
-      const winnerKoiStatus = existingGame.currentRound?.koiStatuses.find(
-        k => k.player_id === playerId
-      )
-      const winnerKoiMultiplier = winnerKoiStatus?.koi_multiplier ?? 1
-
-      // 記錄統計
-      if (this.recordGameStatsUseCase) {
-        if (transitionResult.transitionType === 'GAME_FINISHED') {
-          // 遊戲結束：記錄完整統計（勝負場次 + 役種/Koi-Koi/倍率）
-          const winner = transitionResult.winner
-          if (winner) {
-            try {
-              await this.recordGameStatsUseCase.execute({
-                gameId,
-                winnerId: winner.winnerId,
-                finalScores: winner.finalScores,
-                winnerYakuList: roundEndResult.yakuList,
-                winnerKoiMultiplier,
-                players: game.players,
-              })
-            } catch (error) {
-              logger.error('Failed to record game stats', error, { gameId })
-              // 統計記錄失敗不應影響遊戲結束流程
-            }
-          }
-        } else if (transitionResult.transitionType === 'NEXT_ROUND') {
-          // 局結束但遊戲繼續：只記錄該局的役種/Koi-Koi/倍率
-          try {
-            // 取得該局的累積分數作為 finalScores
-            const currentScores: PlayerScore[] = game.players.map(p => ({
-              player_id: p.id,
-              score: game.cumulativeScores.find(s => s.player_id === p.id)?.score ?? 0,
-            }))
-
-            await this.recordGameStatsUseCase.execute({
-              gameId,
-              winnerId: playerId,
-              finalScores: currentScores,
-              winnerYakuList: roundEndResult.yakuList,
-              winnerKoiMultiplier,
-              players: game.players,
-              isRoundEndOnly: true,
-            })
-            logger.info('Recorded round-only stats', { gameId, roundWinner: playerId })
-          } catch (error) {
-            logger.error('Failed to record round-only stats', error, { gameId })
-            // 統計記錄失敗不應影響遊戲流程
-          }
-        }
-      }
-
-      // 使用 TurnFlowService 的共用方法處理回合結束
-      const scoringData = {
-        winner_id: playerId,
-        yaku_list: roundEndResult.yakuList,
-        base_score: roundEndResult.baseScore,
-        final_score: roundEndResult.finalScore,
-        multipliers,
-      }
-      const gameEnded = await this.turnFlowService?.handleScoredRoundEnd(
+      // 使用 TurnFlowService 處理回合結束（使用新的「局間歸屬上一局尾部」語意）
+      // 注意：handleScoredRoundEnd 內部會使用 endRound() 設定結算狀態，
+      //       並在倒數結束後呼叫 finalizeRoundAndTransition() 完成轉換
+      await this.turnFlowService?.handleScoredRoundEnd(
         gameId,
         game,
-        transitionResult,
-        scoringData
+        playerId,
+        roundEndResult,
+        multipliers
       )
-      if (gameEnded) {
-        // 已在 endGame() 中處理儲存和記憶體移除
-        logger.info('Game ended', { gameId })
-        return { success: true }
-      }
+
+      // handleScoredRoundEnd 已處理儲存和事件發送，直接返回
+      logger.info('Player decided END_ROUND', { playerId, gameId })
+      return { success: true }
     }
 
-      // 6. 儲存更新
+      // 6. 儲存更新（僅 KOI_KOI 分支會到達這裡）
       await this.gameRepository.save(game)
-      if (game.status === 'FINISHED') {
-        // 遊戲結束，從記憶體移除
-        this.gameStore.delete(gameId)
-      } else {
-        this.gameStore.set(game)
-      }
+      this.gameStore.set(game)
 
       logger.info('Player decided', { playerId, decision, gameId })
 

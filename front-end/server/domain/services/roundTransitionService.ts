@@ -149,3 +149,67 @@ export function transitionAfterPlayerLeave(
 export function canGameContinue(game: Game): boolean {
   return canContinue(game)
 }
+
+/**
+ * 從 ROUND_ENDED 狀態完成局轉換
+ *
+ * @description
+ * 當局處於 ROUND_ENDED 狀態（結算展示倒數結束後）時，
+ * 執行實際的局轉換：finishRound() 並開始下一局或結束遊戲。
+ *
+ * 此函數在 RoundEnded 倒數結束時被調用，負責：
+ * 1. 從 settlementInfo 取得結算資訊
+ * 2. 執行 finishRound() 或 finishRoundDraw()
+ * 3. 判斷是否繼續下一局
+ * 4. 返回 RoundTransitionResult
+ *
+ * @param game - 處於 ROUND_ENDED 狀態的遊戲
+ * @returns 局轉換結果
+ * @throws 若 currentRound 不在 ROUND_ENDED 狀態
+ */
+export function finalizeRoundAndTransition(game: Game): RoundTransitionResult {
+  if (!game.currentRound) {
+    throw new Error('Cannot finalize: no current round')
+  }
+
+  if (game.currentRound.flowState !== 'ROUND_ENDED') {
+    throw new Error(`Cannot finalize: round not in ROUND_ENDED state, current: ${game.currentRound.flowState}`)
+  }
+
+  const settlementInfo = game.currentRound.settlementInfo
+  if (!settlementInfo) {
+    throw new Error('Cannot finalize: no settlement info available')
+  }
+
+  // 根據結算資訊執行實際的局結束
+  let updatedGame: Game
+
+  if (settlementInfo.winnerId && settlementInfo.awardedPoints > 0) {
+    // 有勝者且有得分
+    updatedGame = finishRound(game, settlementInfo.winnerId, settlementInfo.awardedPoints)
+  } else {
+    // 平局或特殊規則無得分
+    updatedGame = finishRoundDraw(game)
+  }
+
+  // 檢查是否可以繼續下一局
+  if (canContinue(updatedGame)) {
+    // 開始新局
+    updatedGame = startRound(updatedGame)
+
+    return {
+      game: updatedGame,
+      transitionType: 'NEXT_ROUND',
+      winner: null,
+    }
+  } else {
+    // 遊戲結束
+    const winner = calculateWinner(updatedGame)
+
+    return {
+      game: updatedGame,
+      transitionType: 'GAME_FINISHED',
+      winner,
+    }
+  }
+}
