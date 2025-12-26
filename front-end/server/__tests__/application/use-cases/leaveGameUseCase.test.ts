@@ -15,6 +15,7 @@ import {
   createEventPublisherMock,
   createGameStoreMock,
   createEventMapperMock,
+  createGameLockMock,
   createGameTimeoutMock,
 } from '../../mocks'
 import {
@@ -28,6 +29,7 @@ describe('LeaveGameUseCase', () => {
   let eventPublisher: ReturnType<typeof createEventPublisherMock>
   let gameStore: ReturnType<typeof createGameStoreMock>
   let eventMapper: ReturnType<typeof createEventMapperMock>
+  let gameLock: ReturnType<typeof createGameLockMock>
   let gameTimeoutManager: ReturnType<typeof createGameTimeoutMock>
 
   // Use Case
@@ -40,6 +42,7 @@ describe('LeaveGameUseCase', () => {
     eventPublisher = createEventPublisherMock()
     gameStore = createGameStoreMock()
     eventMapper = createEventMapperMock()
+    gameLock = createGameLockMock()
     gameTimeoutManager = createGameTimeoutMock()
 
     useCase = new LeaveGameUseCase(
@@ -47,6 +50,7 @@ describe('LeaveGameUseCase', () => {
       eventPublisher,
       gameStore,
       eventMapper,
+      gameLock,
       gameTimeoutManager
     )
   })

@@ -82,7 +82,7 @@ function fisherYatesShuffle<T>(array: readonly T[]): T[] {
 export function createShuffledDeck(useTestDeck = false): string[] {
   if (useTestDeck) {
     // 測試模式：返回固定順序的牌組
-    return getTestDeck('teshi')
+    return getTestDeck('field_teshi')
   }
   return fisherYatesShuffle(ALL_CARD_IDS)
 }

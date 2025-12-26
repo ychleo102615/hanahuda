@@ -48,6 +48,7 @@ import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTim
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { TurnEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
+import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
 import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
@@ -79,6 +80,7 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: TurnEventMapperPort,
+    private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager?: GameTimeoutPort,
     private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
     private readonly gameLogRepository?: GameLogRepositoryPort
@@ -101,7 +103,7 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
   async execute(input: PlayHandCardInput): Promise<PlayHandCardOutput> {
     const { gameId, playerId, cardId, targetCardId, isAutoAction } = input
 
-    // 記錄命令 (Fire-and-Forget)
+    // 記錄命令 (Fire-and-Forget) - 在鎖外執行，用於審計
     this.gameLogRepository?.logAsync({
       gameId,
       playerId,
@@ -109,24 +111,23 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
       payload: { cardId, targetCardId },
     })
 
-    // 0. 清除當前遊戲的超時計時器
-    this.gameTimeoutManager?.clearTimeout(gameId)
+    // 使用悲觀鎖確保同一遊戲的操作互斥執行
+    return this.gameLock.withLock(gameId, async () => {
+      // 0. 清除當前遊戲的超時計時器
+      this.gameTimeoutManager?.clearTimeout(gameId)
 
-    // 0.1 若為玩家主動操作，處理閒置相關邏輯
-    if (!isAutoAction) {
-      await this.turnFlowService?.handlePlayerActiveOperation(gameId, playerId)
-    }
+      // 0.1 若為玩家主動操作，處理閒置相關邏輯
+      if (!isAutoAction) {
+        await this.turnFlowService?.handlePlayerActiveOperation(gameId, playerId)
+      }
 
-    // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
-    const existingGame = this.gameStore.get(gameId)
-    if (!existingGame) {
-      throw new PlayHandCardError('GAME_NOT_FOUND', `Game not found: ${gameId}`)
-    }
+      // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
+      const existingGame = this.gameStore.get(gameId)
+      if (!existingGame) {
+        throw new PlayHandCardError('GAME_NOT_FOUND', `Game not found: ${gameId}`)
+      }
 
-    // 樂觀鎖：記住讀取時的版本
-    const oldVersion = existingGame.currentRound?.version
-
-    let game = existingGame
+      let game = existingGame
 
     // 2. 驗證玩家回合
     if (!isPlayerTurn(game, playerId)) {
@@ -355,17 +356,13 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
       }
     }
 
-    // 8. 儲存更新
-    // 樂觀鎖檢查
-    const currentGame = this.gameStore.get(gameId)
-    if (currentGame?.currentRound?.version !== oldVersion) {
-      throw new PlayHandCardError('VERSION_CONFLICT', 'Concurrent modification detected')
-    }
-    this.gameStore.set(game)
-    await this.gameRepository.save(game)
+      // 8. 儲存更新
+      this.gameStore.set(game)
+      await this.gameRepository.save(game)
 
-    logger.info('Player played card', { playerId, cardId, gameId })
+      logger.info('Player played card', { playerId, cardId, gameId })
 
-    return { success: true }
+      return { success: true }
+    }) // end of withLock
   }
 }

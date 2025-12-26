@@ -122,7 +122,6 @@ export function createTestRound(overrides: Partial<Round> = {}): Round {
     ]),
     pendingSelection: null,
     pendingDecision: null,
-    version: 1,
   }
 
   return Object.freeze({

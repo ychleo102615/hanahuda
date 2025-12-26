@@ -35,6 +35,7 @@ import type { GameStorePort } from '~~/server/application/ports/output/gameStore
 import type { DecisionEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
+import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
 import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 import {
   MakeDecisionError,
@@ -64,6 +65,7 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: DecisionEventMapperPort,
+    private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager?: GameTimeoutPort,
     private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
     private readonly gameLogRepository?: GameLogRepositoryPort
@@ -86,7 +88,7 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
   async execute(input: MakeDecisionInput): Promise<MakeDecisionOutput> {
     const { gameId, playerId, decision, isAutoAction } = input
 
-    // 記錄命令 (Fire-and-Forget)
+    // 記錄命令 (Fire-and-Forget) - 在鎖外執行，用於審計
     this.gameLogRepository?.logAsync({
       gameId,
       playerId,
@@ -94,24 +96,23 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       payload: { decision },
     })
 
-    // 0. 清除當前遊戲的超時計時器
-    this.gameTimeoutManager?.clearTimeout(gameId)
+    // 使用悲觀鎖確保同一遊戲的操作互斥執行
+    return this.gameLock.withLock(gameId, async () => {
+      // 0. 清除當前遊戲的超時計時器
+      this.gameTimeoutManager?.clearTimeout(gameId)
 
-    // 0.1 若為玩家主動操作，處理閒置相關邏輯
-    if (!isAutoAction) {
-      await this.turnFlowService?.handlePlayerActiveOperation(gameId, playerId)
-    }
+      // 0.1 若為玩家主動操作，處理閒置相關邏輯
+      if (!isAutoAction) {
+        await this.turnFlowService?.handlePlayerActiveOperation(gameId, playerId)
+      }
 
-    // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
-    const existingGame = this.gameStore.get(gameId)
-    if (!existingGame) {
-      throw new MakeDecisionError('GAME_NOT_FOUND', `Game not found: ${gameId}`)
-    }
+      // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
+      const existingGame = this.gameStore.get(gameId)
+      if (!existingGame) {
+        throw new MakeDecisionError('GAME_NOT_FOUND', `Game not found: ${gameId}`)
+      }
 
-    // 樂觀鎖：記住讀取時的版本
-    const oldVersion = existingGame.currentRound?.version
-
-    let game = existingGame
+      let game = existingGame
 
     // 2. 驗證玩家回合
     if (!isPlayerTurn(game, playerId)) {
@@ -253,22 +254,18 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       }
     }
 
-    // 6. 儲存更新
-    // 樂觀鎖檢查
-    const currentGame = this.gameStore.get(gameId)
-    if (currentGame?.currentRound?.version !== oldVersion) {
-      throw new MakeDecisionError('VERSION_CONFLICT', 'Concurrent modification detected')
-    }
-    await this.gameRepository.save(game)
-    if (game.status === 'FINISHED') {
-      // 遊戲結束，從記憶體移除
-      this.gameStore.delete(gameId)
-    } else {
-      this.gameStore.set(game)
-    }
+      // 6. 儲存更新
+      await this.gameRepository.save(game)
+      if (game.status === 'FINISHED') {
+        // 遊戲結束，從記憶體移除
+        this.gameStore.delete(gameId)
+      } else {
+        this.gameStore.set(game)
+      }
 
-    logger.info('Player decided', { playerId, decision, gameId })
+      logger.info('Player decided', { playerId, decision, gameId })
 
-    return { success: true }
+      return { success: true }
+    }) // end of withLock
   }
 }

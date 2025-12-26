@@ -66,3 +66,10 @@ export {
   getUpsertCalls,
   type MockPlayerStatsRepository,
 } from './playerStatsRepositoryMock'
+
+// GameLock
+export {
+  createMockGameLock,
+  createMockGameLock as createGameLockMock,
+  type MockGameLock,
+} from './gameLockMock'

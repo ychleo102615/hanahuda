@@ -74,8 +74,6 @@ export interface Round {
   readonly pendingSelection: PendingSelection | null
   /** 等待 Koi-Koi 決策（若有） */
   readonly pendingDecision: PendingDecision | null
-  /** 樂觀鎖版本號，每次操作後遞增 */
-  readonly version: number
 }
 
 /**
@@ -123,6 +121,5 @@ export function createRound(params: CreateRoundParams): Round {
     koiStatuses: Object.freeze(koiStatuses),
     pendingSelection: null,
     pendingDecision: null,
-    version: 1,
   })
 }

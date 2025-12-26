@@ -21,6 +21,7 @@ import type { EventPublisherPort } from '~~/server/application/ports/output/even
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
+import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import {
   JoinGameAsAiInputPort,
@@ -53,6 +54,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: FullEventMapperPort,
+    private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager?: GameTimeoutPort
   ) {
     super()
@@ -76,73 +78,76 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
 
     logger.info('AI joining game', { playerName, strategyType, gameId })
 
-    // 1. 取得目標遊戲
-    const waitingGame = this.gameStore.get(gameId)
+    // 使用悲觀鎖確保同一遊戲的操作互斥執行
+    return this.gameLock.withLock(gameId, async () => {
+      // 1. 取得目標遊戲
+      const waitingGame = this.gameStore.get(gameId)
 
-    if (!waitingGame) {
-      logger.error('Game not found', undefined, { gameId })
-      return {
-        gameId,
-        playerId,
-        success: false,
+      if (!waitingGame) {
+        logger.error('Game not found', undefined, { gameId })
+        return {
+          gameId,
+          playerId,
+          success: false,
+        }
       }
-    }
 
-    if (waitingGame.status !== 'WAITING') {
-      logger.error('Game is not in WAITING status', undefined, { gameId, status: waitingGame.status })
-      return {
-        gameId,
-        playerId,
-        success: false,
+      if (waitingGame.status !== 'WAITING') {
+        logger.error('Game is not in WAITING status', undefined, { gameId, status: waitingGame.status })
+        return {
+          gameId,
+          playerId,
+          success: false,
+        }
       }
-    }
 
-    // 2. 建立 AI 玩家（isAi = true）
-    const aiPlayer = createPlayer({
-      id: playerId,
-      name: playerName,
-      isAi: true,
-    })
-
-    // 3. 加入遊戲並開始
-    let game = addSecondPlayerAndStart(waitingGame, aiPlayer)
-
-    // 4. 發牌並開始第一局（可使用測試牌組）
-    game = startRound(game, true)
-    // game = startRound(game, gameConfig.use_test_deck)
-
-    // 5. 檢查特殊規則（手四、喰付、場上手四）
-    const specialRuleResult = this.checkAndHandleSpecialRules(game)
-
-    if (specialRuleResult.triggered && game.currentRound) {
-      // 特殊規則觸發：儲存遊戲狀態（確保 currentRound 存在以支援重連）
-      this.gameStore.set(game)
-      await this.gameRepository.save(game)
-
-      logger.info('Special rule triggered, delegating to TurnFlowService', {
-        gameId: game.id,
-        ruleType: specialRuleResult.type,
-        winnerId: specialRuleResult.winnerId,
+      // 2. 建立 AI 玩家（isAi = true）
+      const aiPlayer = createPlayer({
+        id: playerId,
+        name: playerName,
+        isAi: true,
       })
 
-      // 排程初始事件（延遲讓客戶端建立 SSE 連線）
-      this.scheduleSpecialRuleEvents(game, specialRuleResult)
-    } else {
-      // 無特殊規則：正常流程
-      this.gameStore.set(game)
-      await this.gameRepository.save(game)
+      // 3. 加入遊戲並開始
+      let game = addSecondPlayerAndStart(waitingGame, aiPlayer)
 
-      logger.info('AI joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
+      // 4. 發牌並開始第一局（可使用測試牌組）
+      game = startRound(game, true)
+      // game = startRound(game, gameConfig.use_test_deck)
 
-      // 排程初始事件（延遲讓客戶端建立 SSE 連線）
-      this.scheduleInitialEvents(game)
-    }
+      // 5. 檢查特殊規則（手四、喰付、場上手四）
+      const specialRuleResult = this.checkAndHandleSpecialRules(game)
 
-    return {
-      gameId: game.id,
-      playerId,
-      success: true,
-    }
+      if (specialRuleResult.triggered && game.currentRound) {
+        // 特殊規則觸發：儲存遊戲狀態（確保 currentRound 存在以支援重連）
+        this.gameStore.set(game)
+        await this.gameRepository.save(game)
+
+        logger.info('Special rule triggered, delegating to TurnFlowService', {
+          gameId: game.id,
+          ruleType: specialRuleResult.type,
+          winnerId: specialRuleResult.winnerId,
+        })
+
+        // 排程初始事件（延遲讓客戶端建立 SSE 連線）
+        this.scheduleSpecialRuleEvents(game, specialRuleResult)
+      } else {
+        // 無特殊規則：正常流程
+        this.gameStore.set(game)
+        await this.gameRepository.save(game)
+
+        logger.info('AI joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
+
+        // 排程初始事件（延遲讓客戶端建立 SSE 連線）
+        this.scheduleInitialEvents(game)
+      }
+
+      return {
+        gameId: game.id,
+        playerId,
+        success: true,
+      }
+    }) // end of withLock
   }
 
   /**

@@ -22,6 +22,7 @@ import type { GameStorePort } from '~~/server/application/ports/output/gameStore
 import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { TurnEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
 import {
   transitionAfterRoundDraw,
   type RoundTransitionResult,
@@ -52,6 +53,7 @@ export class TurnFlowService {
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly eventMapper: TurnEventMapperPort,
+    private readonly gameLock: GameLockPort,
     private readonly recordGameStatsUseCase?: RecordGameStatsInputPort
   ) {}
 
@@ -166,19 +168,22 @@ export class TurnFlowService {
    * 設置 `requireContinueConfirmation = true`，在回合結束時顯示確認提示。
    */
   private async markPlayerRequiresConfirmation(gameId: string, playerId: string): Promise<void> {
-    const game = this.gameStore.get(gameId)
-    if (!game || game.status === 'FINISHED') {
-      return
-    }
+    // 使用悲觀鎖確保同一遊戲的操作互斥執行（此方法從超時回調調用）
+    await this.gameLock.withLock(gameId, async () => {
+      const game = this.gameStore.get(gameId)
+      if (!game || game.status === 'FINISHED') {
+        return
+      }
 
-    // 使用 Domain Layer 函數設置確認需求
-    const updatedGame = setRequireContinueConfirmation(game, playerId)
+      // 使用 Domain Layer 函數設置確認需求
+      const updatedGame = setRequireContinueConfirmation(game, playerId)
 
-    // 儲存更新
-    this.gameStore.set(updatedGame)
-    await this.gameRepository.save(updatedGame)
+      // 儲存更新
+      this.gameStore.set(updatedGame)
+      await this.gameRepository.save(updatedGame)
 
-    logger.info('Marked player as requiring confirmation', { playerId, gameId })
+      logger.info('Marked player as requiring confirmation', { playerId, gameId })
+    })
   }
 
   /**
@@ -409,21 +414,24 @@ export class TurnFlowService {
    * @param idlePlayerId - 閒置玩家 ID
    */
   async endGameDueToIdlePlayer(gameId: string, idlePlayerId: string): Promise<void> {
-    try {
-      const game = this.gameStore.get(gameId)
-      if (!game) {
-        logger.warn('Game not found, cannot end game', { gameId })
-        return
+    // 使用悲觀鎖確保同一遊戲的操作互斥執行（此方法可能從超時回調調用）
+    await this.gameLock.withLock(gameId, async () => {
+      try {
+        const game = this.gameStore.get(gameId)
+        if (!game) {
+          logger.warn('Game not found, cannot end game', { gameId })
+          return
+        }
+
+        // 依分數決定勝者（而非閒置狀態）
+        const winnerResult = calculateWinner(game)
+        const winnerId = winnerResult.winnerId ?? undefined
+
+        await this.endGame(gameId, winnerId, 'PLAYER_IDLE_TIMEOUT')
+      } catch (error) {
+        logger.error('Failed to end game due to idle player', error, { gameId })
       }
-
-      // 依分數決定勝者（而非閒置狀態）
-      const winnerResult = calculateWinner(game)
-      const winnerId = winnerResult.winnerId ?? undefined
-
-      await this.endGame(gameId, winnerId, 'PLAYER_IDLE_TIMEOUT')
-    } catch (error) {
-      logger.error('Failed to end game due to idle player', error, { gameId })
-    }
+    })
   }
 
   /**

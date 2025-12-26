@@ -223,11 +223,11 @@ describe('Game Aggregate', () => {
   describe('updateRound', () => {
     it('應更新 currentRound', () => {
       const game = createTestInProgressGame()
-      const newRound = createTestRound({ version: 5 })
+      const newRound = createTestRound({ flowState: 'AWAITING_SELECTION' })
 
       const updatedGame = updateRound(game, newRound)
 
-      expect(updatedGame.currentRound?.version).toBe(5)
+      expect(updatedGame.currentRound?.flowState).toBe('AWAITING_SELECTION')
     })
 
     it('非 IN_PROGRESS 狀態應拋出錯誤', () => {

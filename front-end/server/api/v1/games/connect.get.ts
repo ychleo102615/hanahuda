@@ -289,22 +289,25 @@ export default defineEventHandler(async (event) => {
       container.gameTimeoutManager.clearDisconnectTimeout(effectiveGameId, playerId)
 
       // 重連處理：若玩家之前是 DISCONNECTED 狀態，標記為重新連線
-      const currentGame = container.gameStore.get(effectiveGameId)
-      if (currentGame) {
-        const connectionStatus = getPlayerConnectionStatus(currentGame, playerId)
-        if (connectionStatus === 'DISCONNECTED') {
-          const reconnectedGame = markPlayerReconnected(currentGame, playerId)
-          container.gameStore.set(reconnectedGame)
-          container.gameRepository.save(reconnectedGame).catch(error => {
-            logger.error('Failed to save reconnected game state', error)
-          })
+      // 使用悲觀鎖確保同一遊戲的操作互斥執行
+      container.gameLock.withLock(effectiveGameId, async () => {
+        const currentGame = container.gameStore.get(effectiveGameId)
+        if (currentGame) {
+          const connectionStatus = getPlayerConnectionStatus(currentGame, playerId)
+          if (connectionStatus === 'DISCONNECTED') {
+            const reconnectedGame = markPlayerReconnected(currentGame, playerId)
+            container.gameStore.set(reconnectedGame)
+            await container.gameRepository.save(reconnectedGame)
 
-          // 處理重連計時器邏輯：清除加速計時器，保留操作計時器繼續倒數
-          container.turnFlowService.handlePlayerReconnected(effectiveGameId, playerId)
+            // 處理重連計時器邏輯：清除加速計時器，保留操作計時器繼續倒數
+            container.turnFlowService.handlePlayerReconnected(effectiveGameId, playerId)
 
-          logger.info('Player reconnected and marked as CONNECTED', { gameId: effectiveGameId, playerId })
+            logger.info('Player reconnected and marked as CONNECTED', { gameId: effectiveGameId, playerId })
+          }
         }
-      }
+      }).catch(error => {
+        logger.error('Failed to handle reconnection', error)
+      })
 
       // 心跳計時器
       const heartbeatInterval = setInterval(() => {
@@ -326,25 +329,31 @@ export default defineEventHandler(async (event) => {
 
         // 新邏輯（Phase 5）：標記玩家為 DISCONNECTED，不立即結束遊戲
         // 遊戲繼續進行（由系統代行，3秒超時），回合結束時檢查並決定是否結束遊戲
+        // 使用悲觀鎖確保同一遊戲的操作互斥執行
+        container.gameLock.withLock(effectiveGameId, async () => {
+          const disconnectGame = container.gameStore.get(effectiveGameId)
+          if (disconnectGame && disconnectGame.status === 'IN_PROGRESS') {
+            // 檢查玩家是否已經是 LEFT 狀態（已主動離開）
+            const status = getPlayerConnectionStatus(disconnectGame, playerId)
+            if (status !== 'LEFT') {
+              // 標記為 DISCONNECTED
+              const disconnectedGame = markPlayerDisconnected(disconnectGame, playerId)
+              container.gameStore.set(disconnectedGame)
+              await container.gameRepository.save(disconnectedGame)
+              logger.info('Player marked as DISCONNECTED, game continues with accelerated auto-action', {
+                gameId: effectiveGameId,
+                playerId,
+              })
+            }
+          }
+        }).catch(error => {
+          logger.error('Failed to handle disconnect', error)
+        })
+
+        // 啟動斷線超時計時器（用於在沒有活動的情況下的保護機制）
+        // 若玩家在超時前重連，計時器會被清除
         const disconnectGame = container.gameStore.get(effectiveGameId)
         if (disconnectGame && disconnectGame.status === 'IN_PROGRESS') {
-          // 檢查玩家是否已經是 LEFT 狀態（已主動離開）
-          const status = getPlayerConnectionStatus(disconnectGame, playerId)
-          if (status !== 'LEFT') {
-            // 標記為 DISCONNECTED
-            const disconnectedGame = markPlayerDisconnected(disconnectGame, playerId)
-            container.gameStore.set(disconnectedGame)
-            container.gameRepository.save(disconnectedGame).catch(error => {
-              logger.error('Failed to save disconnected game state', error)
-            })
-            logger.info('Player marked as DISCONNECTED, game continues with accelerated auto-action', {
-              gameId: effectiveGameId,
-              playerId,
-            })
-          }
-
-          // 啟動斷線超時計時器（用於在沒有活動的情況下的保護機制）
-          // 若玩家在超時前重連，計時器會被清除
           container.gameTimeoutManager.startDisconnectTimeout(
             effectiveGameId,
             playerId,

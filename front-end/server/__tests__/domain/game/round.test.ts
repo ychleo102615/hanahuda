@@ -52,7 +52,6 @@ describe('Round Entity', () => {
       expect(round.dealerId).toBe(PLAYER_1_ID)
       expect(round.activePlayerId).toBe(PLAYER_1_ID)
       expect(round.flowState).toBe('AWAITING_HAND_PLAY')
-      expect(round.version).toBe(1)
     })
 
     it('應正確設定玩家手牌', () => {
@@ -341,17 +340,4 @@ describe('Round Entity', () => {
     })
   })
 
-  describe('Version Control', () => {
-    it('初始版本應為 1', () => {
-      const round = createTestRound()
-
-      expect(round.version).toBe(1)
-    })
-
-    it('應可建立指定版本的回合', () => {
-      const round = createTestRound({ version: 5 })
-
-      expect(round.version).toBe(5)
-    })
-  })
 })

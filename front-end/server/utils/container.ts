@@ -29,6 +29,9 @@ import { eventMapper } from '~~/server/adapters/mappers/eventMapper'
 // Adapters - Timeout
 import { gameTimeoutManager } from '~~/server/adapters/timeout/gameTimeoutManager'
 
+// Adapters - Lock
+import { inMemoryGameLock } from '~~/server/adapters/lock/inMemoryGameLock'
+
 // Use Cases
 import { JoinGameUseCase } from '~~/server/application/use-cases/joinGameUseCase'
 import { JoinGameAsAiUseCase } from '~~/server/application/use-cases/joinGameAsAiUseCase'
@@ -74,6 +77,7 @@ const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
+  inMemoryGameLock,
   gameTimeoutManager,
   recordGameStatsUseCase,
   gameLogRepository
@@ -94,6 +98,7 @@ const playHandCardUseCase = new PlayHandCardUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
+  inMemoryGameLock,
   gameTimeoutManager,
   recordGameStatsUseCase,
   gameLogRepository
@@ -104,6 +109,7 @@ const selectTargetUseCase = new SelectTargetUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
+  inMemoryGameLock,
   gameTimeoutManager,
   recordGameStatsUseCase,
   gameLogRepository
@@ -114,6 +120,7 @@ const makeDecisionUseCase = new MakeDecisionUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
+  inMemoryGameLock,
   gameTimeoutManager,
   recordGameStatsUseCase,
   gameLogRepository
@@ -125,6 +132,7 @@ const joinGameUseCase = new JoinGameUseCase(
   inMemoryGameStore,
   eventMapper,
   internalEventBus,
+  inMemoryGameLock,
   gameTimeoutManager
 )
 
@@ -133,6 +141,7 @@ const joinGameAsAiUseCase = new JoinGameAsAiUseCase(
   compositeEventPublisher,
   inMemoryGameStore,
   eventMapper,
+  inMemoryGameLock,
   gameTimeoutManager
 )
 
@@ -152,6 +161,7 @@ const turnFlowService = new TurnFlowService(
   gameRepository,
   compositeEventPublisher,
   eventMapper,
+  inMemoryGameLock,
   recordGameStatsUseCase
 )
 
@@ -165,7 +175,8 @@ joinGameAsAiUseCase.setTurnFlowService(turnFlowService)
 // 5. 建立 ConfirmContinueUseCase（依賴 turnFlowService）
 const confirmContinueUseCase: ConfirmContinueInputPort = new ConfirmContinueUseCase(
   inMemoryGameStore,
-  turnFlowService
+  turnFlowService,
+  inMemoryGameLock
 )
 
 /**
@@ -183,6 +194,7 @@ export const container = {
   eventMapper,
   internalEventBus,
   gameTimeoutManager,
+  gameLock: inMemoryGameLock,
 
   // Use Cases (Input Ports)
   joinGameUseCase,

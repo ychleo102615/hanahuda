@@ -30,6 +30,7 @@ import type { InternalEventPublisherPort } from '~~/server/application/ports/out
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
+import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
 import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import type {
   JoinGameInputPort,
@@ -72,6 +73,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: FullEventMapperPort,
     private readonly internalEventPublisher: InternalEventPublisherPort,
+    private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager: GameTimeoutPort
   ) {}
 
@@ -104,8 +106,20 @@ export class JoinGameUseCase implements JoinGameInputPort {
     const waitingGame = this.gameStore.findWaitingGame()
 
     if (waitingGame) {
-      // 3a. 加入現有遊戲
-      return this.joinExistingGame(waitingGame, playerId, playerName)
+      // 3a. 嘗試加入現有遊戲（使用悲觀鎖保護）
+      try {
+        return await this.joinExistingGame(waitingGame, playerId, playerName)
+      } catch (error) {
+        // 如果遊戲在等待鎖期間已被其他玩家加入，改為建立新遊戲
+        if (error instanceof Error && error.message === 'GAME_NO_LONGER_WAITING') {
+          logger.info('Game was joined by another player, creating new game', {
+            attemptedGameId: waitingGame.id,
+            playerName,
+          })
+          return this.createNewGame(playerId, playerName, roomType)
+        }
+        throw error
+      }
     } else {
       // 3b. 建立新遊戲（WAITING 狀態）
       return this.createNewGame(playerId, playerName, roomType)
@@ -330,72 +344,82 @@ export class JoinGameUseCase implements JoinGameInputPort {
     playerId: string,
     playerName: string
   ): Promise<JoinGameStartedOutput> {
-    // 清除配對超時計時器（對手已加入）
-    this.gameTimeoutManager.clearMatchmakingTimeout(waitingGame.id)
+    // 使用悲觀鎖確保同一遊戲的操作互斥執行
+    return this.gameLock.withLock(waitingGame.id, async () => {
+      // 重新驗證遊戲狀態（可能在等待鎖期間已被其他玩家加入）
+      const currentGame = this.gameStore.get(waitingGame.id)
+      if (!currentGame || currentGame.status !== 'WAITING') {
+        // 遊戲已不再等待中，呼叫方應改為建立新遊戲
+        throw new Error('GAME_NO_LONGER_WAITING')
+      }
 
-    const sessionToken = randomUUID()
+      // 清除配對超時計時器（對手已加入）
+      this.gameTimeoutManager.clearMatchmakingTimeout(waitingGame.id)
 
-    const secondPlayer = createPlayer({
-      id: playerId,
-      name: playerName,
-      isAi: false,
-    })
+      const sessionToken = randomUUID()
 
-    // 加入遊戲並開始
-    let game = addSecondPlayerAndStart(waitingGame, secondPlayer)
-
-    // 發牌並開始第一局（可使用測試牌組）
-    game = startRound(game, gameConfig.use_test_deck)
-
-    // 檢查特殊規則（手四、喰付、場上手四）
-    const specialRuleResult = this.checkAndHandleSpecialRules(game)
-
-    // 儲存 startingPlayerId（不論是否觸發特殊規則，都需要回傳）
-    const startingPlayerId = game.currentRound?.activePlayerId ?? game.players[0]?.id ?? ''
-
-    if (specialRuleResult.triggered && game.currentRound) {
-      // 特殊規則觸發：儲存遊戲狀態（確保 currentRound 存在以支援重連）
-      this.gameStore.set(game)
-      this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
-      await this.gameRepository.save(game)
-
-      logger.info('Special rule triggered, delegating to TurnFlowService', {
-        gameId: game.id,
-        ruleType: specialRuleResult.type,
-        winnerId: specialRuleResult.winnerId,
+      const secondPlayer = createPlayer({
+        id: playerId,
+        name: playerName,
+        isAi: false,
       })
 
-      // 排程初始事件（延遲讓客戶端建立 SSE 連線）
-      this.scheduleSpecialRuleEvents(game, specialRuleResult)
-    } else {
-      // 無特殊規則：正常流程
-      this.gameStore.set(game)
-      this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
-      await this.gameRepository.save(game)
+      // 加入遊戲並開始
+      let game = addSecondPlayerAndStart(currentGame, secondPlayer)
 
-      logger.info('Player joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
+      // 發牌並開始第一局（可使用測試牌組）
+      game = startRound(game, gameConfig.use_test_deck)
 
-      // 排程初始事件（延遲讓客戶端建立 SSE 連線）
-      // GameStarted 和 RoundDealt 會廣播給所有玩家
-      this.scheduleInitialEvents(game)
-    }
+      // 檢查特殊規則（手四、喰付、場上手四）
+      const specialRuleResult = this.checkAndHandleSpecialRules(game)
 
-    // SSE-First: 返回 game_started 狀態
-    return {
-      status: 'game_started',
-      gameId: game.id,
-      sessionToken,
-      playerId,
-      players: game.players.map(p => ({
-        playerId: p.id,
-        playerName: p.name,
-        isAi: p.isAi,
-      })),
-      ruleset: {
-        totalRounds: game.ruleset.total_rounds,
-      },
-      startingPlayerId,
-    }
+      // 儲存 startingPlayerId（不論是否觸發特殊規則，都需要回傳）
+      const startingPlayerId = game.currentRound?.activePlayerId ?? game.players[0]?.id ?? ''
+
+      if (specialRuleResult.triggered && game.currentRound) {
+        // 特殊規則觸發：儲存遊戲狀態（確保 currentRound 存在以支援重連）
+        this.gameStore.set(game)
+        this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
+        await this.gameRepository.save(game)
+
+        logger.info('Special rule triggered, delegating to TurnFlowService', {
+          gameId: game.id,
+          ruleType: specialRuleResult.type,
+          winnerId: specialRuleResult.winnerId,
+        })
+
+        // 排程初始事件（延遲讓客戶端建立 SSE 連線）
+        this.scheduleSpecialRuleEvents(game, specialRuleResult)
+      } else {
+        // 無特殊規則：正常流程
+        this.gameStore.set(game)
+        this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
+        await this.gameRepository.save(game)
+
+        logger.info('Player joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
+
+        // 排程初始事件（延遲讓客戶端建立 SSE 連線）
+        // GameStarted 和 RoundDealt 會廣播給所有玩家
+        this.scheduleInitialEvents(game)
+      }
+
+      // SSE-First: 返回 game_started 狀態
+      return {
+        status: 'game_started',
+        gameId: game.id,
+        sessionToken,
+        playerId,
+        players: game.players.map(p => ({
+          playerId: p.id,
+          playerName: p.name,
+          isAi: p.isAi,
+        })),
+        ruleset: {
+          totalRounds: game.ruleset.total_rounds,
+        },
+        startingPlayerId,
+      }
+    }) // end of withLock
   }
 
   /**

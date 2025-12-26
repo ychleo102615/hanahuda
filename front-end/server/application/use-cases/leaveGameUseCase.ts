@@ -18,6 +18,7 @@ import type { EventPublisherPort } from '~~/server/application/ports/output/even
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 import type { LeaveGameEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
 import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
@@ -53,6 +54,7 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: LeaveGameEventMapperPort,
+    private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager?: GameTimeoutPort,
     private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
     private readonly gameLogRepository?: GameLogRepositoryPort
@@ -68,7 +70,7 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
   async execute(input: LeaveGameInput): Promise<LeaveGameOutput> {
     const { gameId, playerId } = input
 
-    // 記錄命令 (Fire-and-Forget)
+    // 記錄命令 (Fire-and-Forget) - 在鎖外執行，用於審計
     this.gameLogRepository?.logAsync({
       gameId,
       playerId,
@@ -76,51 +78,54 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
       payload: { reason: 'USER_ACTION' },
     })
 
-    // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
-    const existingGame = this.gameStore.get(gameId)
-    if (!existingGame) {
-      throw new LeaveGameError('GAME_NOT_FOUND', `Game not found: ${gameId}`)
-    }
+    // 使用悲觀鎖確保同一遊戲的操作互斥執行
+    return this.gameLock.withLock(gameId, async () => {
+      // 1. 取得遊戲狀態（從記憶體讀取，因為 currentRound 不儲存於 DB）
+      const existingGame = this.gameStore.get(gameId)
+      if (!existingGame) {
+        throw new LeaveGameError('GAME_NOT_FOUND', `Game not found: ${gameId}`)
+      }
 
-    // 2. 驗證遊戲狀態
-    if (existingGame.status === 'FINISHED') {
-      throw new LeaveGameError('GAME_ALREADY_FINISHED', `Game already finished: ${gameId}`)
-    }
+      // 2. 驗證遊戲狀態
+      if (existingGame.status === 'FINISHED') {
+        throw new LeaveGameError('GAME_ALREADY_FINISHED', `Game already finished: ${gameId}`)
+      }
 
-    // 3. 驗證玩家是否在遊戲中
-    const playerInGame = existingGame.players.find((p) => p.id === playerId)
-    if (!playerInGame) {
-      throw new LeaveGameError('PLAYER_NOT_IN_GAME', `Player not in game: ${playerId}`)
-    }
+      // 3. 驗證玩家是否在遊戲中
+      const playerInGame = existingGame.players.find((p) => p.id === playerId)
+      if (!playerInGame) {
+        throw new LeaveGameError('PLAYER_NOT_IN_GAME', `Player not in game: ${playerId}`)
+      }
 
-    // 4. 檢查玩家是否已經離開
-    const currentStatus = getPlayerConnectionStatus(existingGame, playerId)
-    if (currentStatus === 'LEFT') {
-      // 玩家已經離開，不需要重複處理
-      logger.info('Player already left game', { playerId, gameId })
+      // 4. 檢查玩家是否已經離開
+      const currentStatus = getPlayerConnectionStatus(existingGame, playerId)
+      if (currentStatus === 'LEFT') {
+        // 玩家已經離開，不需要重複處理
+        logger.info('Player already left game', { playerId, gameId })
+        return {
+          success: true,
+          leftAt: new Date().toISOString(),
+        }
+      }
+
+      // 5. 標記玩家為 LEFT 狀態（不結束遊戲）
+      const updatedGame = markPlayerLeft(existingGame, playerId)
+
+      // 6. 清除該玩家的閒置計時器和確認超時計時器
+      // 因為 LEFT 玩家不需要再追蹤閒置狀態
+      this.gameTimeoutManager?.clearIdleTimeout(gameId, playerId)
+      this.gameTimeoutManager?.clearContinueConfirmationTimeout(gameId, playerId)
+
+      // 7. 儲存更新
+      this.gameStore.set(updatedGame)
+      await this.gameRepository.save(updatedGame)
+
+      logger.info('Player marked as LEFT, game continues with auto-action', { playerId, gameId })
+
       return {
         success: true,
         leftAt: new Date().toISOString(),
       }
-    }
-
-    // 5. 標記玩家為 LEFT 狀態（不結束遊戲）
-    const updatedGame = markPlayerLeft(existingGame, playerId)
-
-    // 6. 清除該玩家的閒置計時器和確認超時計時器
-    // 因為 LEFT 玩家不需要再追蹤閒置狀態
-    this.gameTimeoutManager?.clearIdleTimeout(gameId, playerId)
-    this.gameTimeoutManager?.clearContinueConfirmationTimeout(gameId, playerId)
-
-    // 7. 儲存更新
-    this.gameStore.set(updatedGame)
-    await this.gameRepository.save(updatedGame)
-
-    logger.info('Player marked as LEFT, game continues with auto-action', { playerId, gameId })
-
-    return {
-      success: true,
-      leftAt: new Date().toISOString(),
-    }
+    }) // end of withLock
   }
 }
