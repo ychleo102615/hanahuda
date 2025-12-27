@@ -4,7 +4,7 @@ import NavigationBar from '~/components/NavigationBar.vue'
 import HeroSection from '~/components/HeroSection.vue'
 import RulesSection from '~/components/RulesSection.vue'
 import Footer from '~/components/Footer.vue'
-import type { RuleCategory, YakuCard } from '~/types/rules'
+import type { RuleCategoryUnion, YakuCard } from '~/types/rules'
 import type { NavigationLink } from '~/components/NavigationBar.vue'
 
 // Import JSON data
@@ -27,7 +27,7 @@ const heroData = {
 }
 
 // Rules Section data (with proper typing)
-const rulesCategories = ref<RuleCategory[]>(rulesDataJson.categories as RuleCategory[])
+const rulesCategories = ref<RuleCategoryUnion[]>(rulesDataJson.categories as RuleCategoryUnion[])
 const yakuList = ref<YakuCard[]>(yakuDataJson.yakuList as YakuCard[])
 
 // RulesSection ref for programmatic control

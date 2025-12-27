@@ -51,6 +51,14 @@ const getCategoryColor = (category: string): string => {
   };
   return colors[category] || 'bg-blue-500 text-white';
 };
+
+// Get card icon size based on category
+const getCardIconClass = (category: string): string => {
+  if (category === 'kasu') {
+    return 'h-20 w-auto drop-shadow-lg';
+  }
+  return 'h-32 w-auto drop-shadow-lg';
+};
 </script>
 
 <template>
@@ -93,7 +101,7 @@ const getCategoryColor = (category: string): string => {
             v-for="cardId in currentYaku.cardIds"
             :key="cardId"
             :name="getCardIconName(cardId)"
-            class-name="h-32 w-auto drop-shadow-lg transition-transform hover:scale-105"
+            :class-name="getCardIconClass(currentYaku.category)"
             :aria-label="`Card ${cardId}`"
           />
         </div>

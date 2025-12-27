@@ -1,14 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import YakuCarousel from './YakuCarousel.vue';
-import type { RuleCategory, YakuCard, OrderedListItem } from '~/types/rules';
+import KeywordText from './rules/KeywordText.vue';
+import MonthRow from './rules/MonthRow.vue';
+import CardTypeBlock from './rules/CardTypeBlock.vue';
+import type {
+  RuleCategoryUnion,
+  YakuCard,
+  GameObjectiveCategory,
+  CardDeckCategory,
+  CardTypesCategory,
+  HowToPlayCategory,
+  ScoringRulesCategory,
+} from '~/types/rules';
 
 interface Props {
-  categories?: RuleCategory[];
+  categories?: RuleCategoryUnion[];
   yakuList?: YakuCard[];
 }
 
-// Props (optional as they can be loaded dynamically)
 const props = withDefaults(defineProps<Props>(), {
   categories: () => [],
   yakuList: () => [],
@@ -49,10 +59,27 @@ const expandAll = () => {
 };
 
 defineExpose({ expandAll });
+
+// Type guards for each category type
+const isGameObjective = (
+  cat: RuleCategoryUnion
+): cat is GameObjectiveCategory => cat.id === 'game-objective';
+
+const isCardDeck = (cat: RuleCategoryUnion): cat is CardDeckCategory =>
+  cat.id === 'card-deck';
+
+const isCardTypes = (cat: RuleCategoryUnion): cat is CardTypesCategory =>
+  cat.id === 'card-types';
+
+const isHowToPlay = (cat: RuleCategoryUnion): cat is HowToPlayCategory =>
+  cat.id === 'how-to-play';
+
+const isScoringRules = (cat: RuleCategoryUnion): cat is ScoringRulesCategory =>
+  cat.id === 'scoring-rules';
 </script>
 
 <template>
-  <section id="rules" class="py-16 px-4  bg-primary-400">
+  <section id="rules" class="py-16 px-4 bg-primary-400">
     <div class="container mx-auto max-w-6xl">
       <!-- Section Header -->
       <h2 class="text-4xl font-bold text-center mb-12 text-primary-900">
@@ -78,7 +105,9 @@ defineExpose({ expandAll });
             </h3>
             <span
               class="text-2xl text-primary-700 transition-transform duration-300 ease-in-out inline-block"
-              :class="isCategoryExpanded(category.id) ? 'rotate-45' : 'rotate-0'"
+              :class="
+                isCategoryExpanded(category.id) ? 'rotate-45' : 'rotate-0'
+              "
             >
               +
             </span>
@@ -88,37 +117,93 @@ defineExpose({ expandAll });
           <div
             :id="`rules-content-${category.id}`"
             class="grid transition-[grid-template-rows] duration-300 ease-in-out"
-            :class="isCategoryExpanded(category.id) ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
+            :class="
+              isCategoryExpanded(category.id)
+                ? 'grid-rows-[1fr]'
+                : 'grid-rows-[0fr]'
+            "
           >
             <div class="overflow-hidden">
               <div class="px-6 pb-6 pt-2 text-gray-700 space-y-4">
-                <!-- Render sections dynamically -->
-                <div v-for="(section, idx) in category.sections" :key="idx">
-                  <!-- Paragraph -->
-                  <p v-if="section.type === 'paragraph'" class="leading-relaxed">
-                    {{ section.text }}
-                  </p>
+                <!-- Game Objective -->
+                <template v-if="isGameObjective(category)">
+                  <template
+                    v-for="(section, idx) in category.sections"
+                    :key="idx"
+                  >
+                    <p
+                      v-if="section.type === 'rich-paragraph' && section.spans"
+                      class="leading-relaxed"
+                    >
+                      <KeywordText :spans="section.spans" />
+                    </p>
+                    <ul
+                      v-else-if="section.type === 'list' && section.items"
+                      class="list-disc list-inside space-y-2"
+                    >
+                      <li v-for="(item, i) in section.items" :key="i">
+                        <KeywordText :spans="item" />
+                      </li>
+                    </ul>
+                  </template>
+                </template>
 
-                  <!-- Unordered List -->
-                  <ul v-else-if="section.type === 'list'" class="list-disc list-inside space-y-2">
-                    <li v-for="(item, i) in section.items as string[]" :key="i">
-                      {{ item }}
-                    </li>
+                <!-- Card Deck -->
+                <template v-else-if="isCardDeck(category)">
+                  <p class="leading-relaxed mb-4">{{ category.introText }}</p>
+                  <ul class="months-list space-y-0">
+                    <MonthRow
+                      v-for="month in category.months"
+                      :key="month.month"
+                      :month="month"
+                    />
                   </ul>
+                </template>
 
-                  <!-- Ordered List -->
-                  <ol v-else-if="section.type === 'ordered-list'" class="list-decimal list-inside space-y-3">
-                    <li v-for="(item, i) in section.items as OrderedListItem[]" :key="i" class="font-semibold">
-                      {{ item.title }}
-                      <p class="font-normal mt-1">{{ item.text }}</p>
-                      <ul v-if="item.subItems" class="list-disc list-inside ml-6 mt-2 space-y-1 font-normal">
-                        <li v-for="(subItem, j) in item.subItems" :key="j">
-                          {{ subItem }}
+                <!-- Card Types -->
+                <template v-else-if="isCardTypes(category)">
+                  <p class="leading-relaxed mb-4">{{ category.introText }}</p>
+                  <div class="types-list">
+                    <CardTypeBlock
+                      v-for="cardType in category.types"
+                      :key="cardType.typeId"
+                      :type="cardType"
+                    />
+                  </div>
+                </template>
+
+                <!-- How To Play -->
+                <template v-else-if="isHowToPlay(category)">
+                  <ol class="list-decimal list-inside space-y-4">
+                    <li
+                      v-for="(step, i) in category.steps"
+                      :key="i"
+                      class="font-semibold"
+                    >
+                      {{ step.title }}
+                      <p class="font-normal mt-1 ml-5">
+                        <KeywordText :spans="step.content" />
+                      </p>
+                      <ul
+                        v-if="step.subItems"
+                        class="list-disc list-inside ml-8 mt-2 space-y-1 font-normal"
+                      >
+                        <li v-for="(subItem, j) in step.subItems" :key="j">
+                          <KeywordText :spans="subItem" />
                         </li>
                       </ul>
                     </li>
                   </ol>
-                </div>
+                </template>
+
+                <!-- Scoring Rules -->
+                <template v-else-if="isScoringRules(category)">
+                  <ul class="list-disc list-inside space-y-2">
+                    <li v-for="(rule, i) in category.rules" :key="i">
+                      <KeywordText :spans="rule" />
+                    </li>
+                  </ul>
+                </template>
               </div>
             </div>
           </div>
@@ -137,4 +222,14 @@ defineExpose({ expandAll });
 </template>
 
 <style scoped>
+.months-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.types-list {
+  display: flex;
+  flex-direction: column;
+}
 </style>

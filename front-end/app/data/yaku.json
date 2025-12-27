@@ -61,6 +61,7 @@
       "category": "tanzaku",
       "points": 1,
       "minimumCards": 5,
+      "cardIds": ["0131", "0231", "0331", "0431", "0531"],
       "description": "Collect 5 or more ribbon cards (1 point per card over 5)"
     },
     {
@@ -97,6 +98,7 @@
       "category": "tane",
       "points": 1,
       "minimumCards": 5,
+      "cardIds": ["0221", "0421", "0521", "0621", "0721"],
       "description": "Collect 5 or more animal/object cards (1 point per card over 5)"
     },
     {
@@ -106,6 +108,7 @@
       "category": "kasu",
       "points": 1,
       "minimumCards": 10,
+      "cardIds": ["0141", "0142", "0241", "0242", "0341", "0342", "0441", "0442", "0541", "0542"],
       "description": "Collect 10 or more plain cards (1 point per card over 10)"
     }
   ]
