@@ -52,7 +52,6 @@ export class SessionContextAdapter extends SessionContextPort {
    */
   setGameId(gameId: string | null): void {
     if (typeof window === 'undefined') {
-      console.warn('[SessionContextAdapter] Cannot set gameId on server-side')
       return
     }
     if (gameId === null) {
@@ -93,7 +92,6 @@ export class SessionContextAdapter extends SessionContextPort {
    */
   setIdentity(identity: SessionIdentity): void {
     if (typeof window === 'undefined') {
-      console.warn('[SessionContextAdapter] Cannot set identity on server-side')
       return
     }
     sessionStorage.setItem(STORAGE_KEYS.playerId, identity.playerId)
@@ -117,7 +115,6 @@ export class SessionContextAdapter extends SessionContextPort {
    */
   clearIdentity(): void {
     if (typeof window === 'undefined') {
-      console.warn('[SessionContextAdapter] Cannot clear identity on server-side')
       return
     }
     sessionStorage.removeItem(STORAGE_KEYS.gameId)
@@ -155,7 +152,6 @@ export class SessionContextAdapter extends SessionContextPort {
    */
   setRoomTypeId(roomTypeId: string | null): void {
     if (typeof window === 'undefined') {
-      console.warn('[SessionContextAdapter] Cannot set roomTypeId on server-side')
       return
     }
     if (roomTypeId === null) {
@@ -181,7 +177,6 @@ export class SessionContextAdapter extends SessionContextPort {
    */
   setGameFinished(finished: boolean): void {
     if (typeof window === 'undefined') {
-      console.warn('[SessionContextAdapter] Cannot set gameFinished on server-side')
       return
     }
     if (finished) {

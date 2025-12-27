@@ -48,7 +48,6 @@ export class CountdownManager {
 
     // 邊界情況：seconds <= 0 表示「時間已到」，立即完成
     if (seconds <= 0) {
-      console.info(`[CountdownManager] seconds = ${seconds}，立即完成`)
       // ACTION 模式超時：禁止玩家操作
       if (mode === 'ACTION') {
         this.uiState.setActionTimeoutExpired(true)
@@ -62,7 +61,6 @@ export class CountdownManager {
     this.uiState.countdownRemaining = seconds
     this.uiState.countdownMode = mode
     this.onComplete = onComplete
-    console.info(`[CountdownManager] 啟動倒數: ${seconds}s, mode: ${mode}`)
 
     // 建立 interval
     this.intervalId = window.setInterval(() => {
@@ -101,7 +99,6 @@ export class CountdownManager {
     this.onComplete = undefined
     this.uiState.countdownRemaining = null
     this.uiState.countdownMode = null
-    console.info('[CountdownManager] 停止倒數')
   }
 
   /**
@@ -109,6 +106,5 @@ export class CountdownManager {
    */
   cleanup(): void {
     this.stopCountdown()
-    console.info('[CountdownManager] 已清理')
   }
 }

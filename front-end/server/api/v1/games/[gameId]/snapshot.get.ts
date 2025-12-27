@@ -16,8 +16,6 @@
 import { z } from 'zod'
 import { container } from '~~/server/utils/container'
 import type { SnapshotApiResponse } from '#shared/contracts'
-import { createLogger } from '~~/server/utils/logger'
-import { initRequestId } from '~~/server/utils/requestId'
 import { determineWinner } from '~~/server/domain/game'
 import {
   HTTP_OK,
@@ -56,16 +54,12 @@ interface SnapshotResponseWrapper {
 }
 
 export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper | ErrorResponse> => {
-  const requestId = initRequestId(event)
-  const logger = createLogger('API:snapshot', requestId)
-
   try {
     // 1. 解析並驗證路由參數
     const params = getRouterParams(event)
     const paramsResult = RequestParamsSchema.safeParse(params)
 
     if (!paramsResult.success) {
-      logger.warn('Invalid gameId parameter')
       setResponseStatus(event, HTTP_BAD_REQUEST)
       return {
         error: {
@@ -82,7 +76,6 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
     const sessionToken = getCookie(event, 'session_token')
 
     if (!sessionToken) {
-      logger.warn('Missing session token cookie', { gameId })
       setResponseStatus(event, HTTP_UNAUTHORIZED)
       return {
         error: {
@@ -93,8 +86,6 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
       }
     }
 
-    logger.info('Processing snapshot request', { gameId })
-
     // 3. 嘗試從 gameStore（記憶體）取得遊戲
     const game = container.gameStore.getBySessionToken(sessionToken!)
 
@@ -102,7 +93,6 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
     if (game) {
       // 4.1. 驗證 gameId 匹配
       if (game.id !== gameId) {
-        logger.warn('Game ID mismatch', { requestedGameId: gameId, actualGameId: game.id })
         setResponseStatus(event, HTTP_NOT_FOUND)
         return {
           error: {
@@ -115,7 +105,6 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
 
       // 4.2. 檢查遊戲狀態 - FINISHED
       if (game.status === 'FINISHED') {
-        logger.info('Game already finished (in memory)', { gameId })
         setResponseStatus(event, HTTP_OK)
         return {
           data: {
@@ -134,7 +123,6 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
 
       // 4.3. 檢查遊戲狀態 - WAITING
       if (game.status === 'WAITING') {
-        logger.warn('Game not started yet', { gameId })
         setResponseStatus(event, HTTP_CONFLICT)
         return {
           error: {
@@ -152,7 +140,6 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
         remainingSeconds ?? undefined
       )
 
-      logger.info('Snapshot request completed', { gameId, remainingSeconds })
       setResponseStatus(event, HTTP_OK)
       return {
         data: {
@@ -164,12 +151,10 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
     }
 
     // 5. 記憶體沒有遊戲 → 查詢資料庫
-    logger.info('Game not in memory, querying database', { gameId })
     const dbGame = await container.gameRepository.findById(gameId)
 
     if (!dbGame) {
       // 5.1. 資料庫也沒有 → 404
-      logger.warn('Game not found in database', { gameId })
       setResponseStatus(event, HTTP_NOT_FOUND)
       return {
         error: {
@@ -182,7 +167,6 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
 
     // 5.2. 資料庫有遊戲且已結束 → 返回遊戲結果
     if (dbGame.status === 'FINISHED') {
-      logger.info('Game finished (from database)', { gameId })
       setResponseStatus(event, HTTP_OK)
       return {
         data: {
@@ -200,7 +184,6 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
     }
 
     // 5.3. 資料庫有遊戲但未結束 → 遊戲已過期（無法恢復完整狀態）
-    logger.info('Game expired (in database but not in memory)', { gameId, status: dbGame.status })
     setResponseStatus(event, HTTP_OK)
     return {
       data: {
@@ -209,9 +192,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
       },
       timestamp: new Date().toISOString(),
     }
-  } catch (error) {
-    logger.error('Unexpected error', error)
-
+  } catch {
     setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
     return {
       error: {

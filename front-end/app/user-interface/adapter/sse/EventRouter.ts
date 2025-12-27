@@ -110,7 +110,6 @@ export class EventRouter {
     const port = this.handlers.get(eventType)
 
     if (!port) {
-      console.warn(`[EventRouter] 未註冊的事件類型: ${eventType}`)
       return
     }
 
@@ -126,16 +125,13 @@ export class EventRouter {
       .then(() => {
         // 檢查是否已取消（Adapter 層內部邏輯）
         if (this.operationSession?.getSignal()?.aborted) {
-          console.info(`[EventRouter] Skipping aborted event: ${eventType}`)
           return
         }
-        console.info(`[EventRouter] Processing event: ${eventType}`)
         // 調用 Use Case 執行（可能包含 async 動畫），傳遞 ExecuteOptions
         return port.execute(payload, options)
       })
       .catch((error) => {
         // 捕獲錯誤，避免中斷事件鏈
-        console.error(`[EventRouter] Error processing event ${eventType}:`, error)
       })
   }
 
@@ -184,7 +180,6 @@ export class EventRouter {
    */
   clearEventChain(): void {
     this.eventChain = Promise.resolve()
-    console.info('[EventRouter] Clearing event chain')
   }
 
   /**

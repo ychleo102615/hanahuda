@@ -29,10 +29,6 @@ import {
   type LeaveGameInput,
   type LeaveGameOutput,
 } from '~~/server/application/ports/input/leaveGameInputPort'
-import { loggers } from '~~/server/utils/logger'
-
-/** Module logger instance */
-const logger = loggers.useCase('LeaveGame')
 
 // Re-export for backwards compatibility
 export { LeaveGameError } from '~~/server/application/ports/input/leaveGameInputPort'
@@ -101,7 +97,6 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
       const currentStatus = getPlayerConnectionStatus(existingGame, playerId)
       if (currentStatus === 'LEFT') {
         // 玩家已經離開，不需要重複處理
-        logger.info('Player already left game', { playerId, gameId })
         return {
           success: true,
           leftAt: new Date().toISOString(),
@@ -119,8 +114,6 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
       // 7. 儲存更新
       this.gameStore.set(updatedGame)
       await this.gameRepository.save(updatedGame)
-
-      logger.info('Player marked as LEFT, game continues with auto-action', { playerId, gameId })
 
       return {
         success: true,

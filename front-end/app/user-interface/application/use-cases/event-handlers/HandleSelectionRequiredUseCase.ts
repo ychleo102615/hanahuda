@@ -42,7 +42,6 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
       await this.executeAsyncCore(event, receivedAt)
     } catch (error) {
       if (error instanceof AbortOperationError) {
-        console.info('[HandleSelectionRequiredUseCase] Aborted due to state recovery')
         return
       }
       throw error

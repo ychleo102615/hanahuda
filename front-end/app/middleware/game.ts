@@ -20,18 +20,15 @@ export default defineNuxtRouteMiddleware((to, from) => {
   // 從 SessionContext 檢查是否有活躍的遊戲會話
   const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
-  console.info('[Middleware] 進入遊戲頁面', { from: from.path })
 
   // SSE-First 架構：檢查是否有房間選擇資訊（playerId + roomTypeId）
   // 而非 hasActiveSession()（playerId + gameId），因為 gameId 要等 SSE 連線後才會有
   if (!sessionContext.hasRoomSelection()) {
-    console.warn('[Middleware] 無房間選擇資訊，重定向至 /lobby')
     return navigateTo('/lobby')
   }
 
   // 如果遊戲已結束，清除 session 並返回大廳
   if (sessionContext.isGameFinished()) {
-    console.info('[Middleware] 遊戲已結束，清除 session 並重定向至 /lobby')
     sessionContext.clearIdentity()
     return navigateTo('/lobby')
   }

@@ -77,7 +77,6 @@ function parseEnvNumber(key: string, defaultValue: number): number {
   }
   const parsed = parseInt(value, 10)
   if (isNaN(parsed)) {
-    console.warn(`Invalid value for ${key}: "${value}", using default: ${defaultValue}`)
     return defaultValue
   }
   return parsed
@@ -96,7 +95,6 @@ function parseRoomType(): RoomTypeId {
   if (isValidRoomTypeId(value)) {
     return value
   }
-  console.warn(`Invalid DEFAULT_ROOM_TYPE: "${value}", using default: ${DEFAULT_ROOM_TYPE_ID}`)
   return DEFAULT_ROOM_TYPE_ID
 }
 

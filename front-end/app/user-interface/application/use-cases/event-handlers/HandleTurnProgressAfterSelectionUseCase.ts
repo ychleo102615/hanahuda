@@ -52,7 +52,6 @@ export class HandleTurnProgressAfterSelectionUseCase
       await this.executeAsyncCore(event, receivedAt)
     } catch (error) {
       if (error instanceof AbortOperationError) {
-        console.info('[HandleTurnProgressAfterSelectionUseCase] Aborted due to state recovery')
         return
       }
       throw error
@@ -122,11 +121,9 @@ export class HandleTurnProgressAfterSelectionUseCase
       // 讓剩餘場牌滑順地重新排列填補空位
       await delay(350)
 
-      console.log('[HandleTurnProgressAfterSelection] 動畫完成，已移除場牌並更新獲得區')
     } else {
       // === 處理無配對的情況（翻牌已在場上，不需要額外處理）===
       // 注意：翻牌在 HandleSelectionRequiredUseCase 中已加入場牌
-      console.log('[HandleTurnProgressAfterSelection] 無配對，翻牌已在場上')
     }
 
     // === 階段 3：更新其他狀態 ===
@@ -134,8 +131,6 @@ export class HandleTurnProgressAfterSelectionUseCase
 
     // 若有新役種形成且為對手，同時顯示所有新形成的役種
     if (event.yaku_update && event.yaku_update.newly_formed_yaku.length > 0) {
-      console.info('[HandleTurnProgressAfterSelection] Yaku formed:',
-        event.yaku_update.newly_formed_yaku.map(y => y.yaku_type))
 
       if (isOpponent) {
         const yakuList = event.yaku_update.newly_formed_yaku

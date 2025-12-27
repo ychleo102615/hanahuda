@@ -33,10 +33,6 @@ import type {
   AutoActionInput,
 } from '~~/server/application/ports/input/autoActionInputPort'
 import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
-import { loggers } from '~~/server/utils/logger'
-
-/** Module logger instance */
-const logger = loggers.useCase('AutoAction')
 
 /**
  * 卡片價值等級（數值越低，價值越低，越優先被打出）
@@ -69,25 +65,18 @@ export class AutoActionUseCase implements AutoActionInputPort {
   async execute(input: AutoActionInput): Promise<void> {
     const { gameId, playerId, currentFlowState } = input
 
-    logger.info('Executing auto-action', { playerId, gameId, currentFlowState })
-
-    try {
-      switch (currentFlowState) {
-        case 'AWAITING_HAND_PLAY':
-          await this.autoPlayHandCard(gameId, playerId)
-          break
-        case 'AWAITING_SELECTION':
-          await this.autoSelectTarget(gameId, playerId)
-          break
-        case 'AWAITING_DECISION':
-          await this.autoMakeDecision(gameId, playerId)
-          break
-        default:
-          logger.warn('Unexpected flow state', { currentFlowState })
-      }
-    } catch (error) {
-      logger.error('Error executing auto-action', error)
-      throw error
+    switch (currentFlowState) {
+      case 'AWAITING_HAND_PLAY':
+        await this.autoPlayHandCard(gameId, playerId)
+        break
+      case 'AWAITING_SELECTION':
+        await this.autoSelectTarget(gameId, playerId)
+        break
+      case 'AWAITING_DECISION':
+        await this.autoMakeDecision(gameId, playerId)
+        break
+      default:
+        // Unexpected flow state - do nothing
     }
   }
 
@@ -112,8 +101,6 @@ export class AutoActionUseCase implements AutoActionInputPort {
 
     // 檢測配對並選擇目標（處理 DOUBLE_MATCH）
     const targetCardId = this.findMatchingTarget(cardToPlay, game.currentRound.field)
-
-    logger.info('Auto-playing card', { cardToPlay, targetCardId, playerId, gameId })
 
     await this.playHandCardUseCase.execute({
       gameId,
@@ -146,8 +133,6 @@ export class AutoActionUseCase implements AutoActionInputPort {
       throw new Error('No possible targets')
     }
 
-    logger.info('Auto-selecting target', { targetCard, playerId, gameId })
-
     await this.selectTargetUseCase.execute({
       gameId,
       playerId,
@@ -163,8 +148,6 @@ export class AutoActionUseCase implements AutoActionInputPort {
    * 策略：永遠選擇 END_ROUND（不繼續 Koi-Koi）
    */
   private async autoMakeDecision(gameId: string, playerId: string): Promise<void> {
-    logger.info('Auto-making decision END_ROUND', { playerId, gameId })
-
     await this.makeDecisionUseCase.execute({
       gameId,
       playerId,

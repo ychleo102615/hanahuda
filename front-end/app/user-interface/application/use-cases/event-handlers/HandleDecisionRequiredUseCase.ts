@@ -40,7 +40,6 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
       await this.executeAsyncCore(event, receivedAt)
     } catch (error) {
       if (error instanceof AbortOperationError) {
-        console.info('[HandleDecisionRequiredUseCase] Aborted due to state recovery')
         return
       }
       throw error
@@ -139,8 +138,6 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
       if (yakuList.length > 0) {
         this.notification.showOpponentYakuAnnouncement(yakuList)
       }
-      console.info('[HandleDecisionRequiredUseCase] Opponent yaku formed:',
-        event.yaku_update.newly_formed_yaku.map(y => y.yaku_type))
     }
 
     // === 階段 6：更新 FlowStage ===

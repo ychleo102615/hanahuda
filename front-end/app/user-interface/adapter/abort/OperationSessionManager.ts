@@ -52,11 +52,9 @@ export class OperationSessionManager {
     // 先中止舊會話
     if (this.currentController) {
       this.currentController.abort()
-      console.info('[OperationSessionManager] Previous session aborted')
     }
 
     this.currentController = new AbortController()
-    console.info('[OperationSessionManager] New session created')
     return this.currentController.signal
   }
 
@@ -81,11 +79,9 @@ export class OperationSessionManager {
   abortAll(): void {
     if (this.currentController) {
       this.currentController.abort()
-      console.info('[OperationSessionManager] All operations aborted')
     }
     // 立即創建新的 session，確保後續操作有有效的 signal
     this.currentController = new AbortController()
-    console.info('[OperationSessionManager] New session created after abort')
   }
 
   /**

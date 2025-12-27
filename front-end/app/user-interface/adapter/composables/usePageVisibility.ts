@@ -61,33 +61,27 @@ export function usePageVisibility(): void {
     }
 
     // 頁面恢復可見
-    console.info('[usePageVisibility] 頁面恢復可見')
 
     // 檢查是否有活躍遊戲（gameId 由 SessionContextPort 管理）
     const gameId = sessionContext.getGameId()
     if (!gameId) {
-      console.info('[usePageVisibility] 無活躍遊戲，跳過重連')
       return
     }
 
     // 檢查 StartGameUseCase 是否可用
     if (!startGameUseCase) {
-      console.warn('[usePageVisibility] StartGameUseCase 未註冊，跳過重連')
       return
     }
 
     // 觸發重連（不帶 isNewGame，保留 gameId）
-    console.info('[usePageVisibility] 觸發遊戲重連', { gameId })
     startGameUseCase.execute()
   }
 
   onMounted(() => {
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    console.info('[usePageVisibility] 已啟用頁面可見性監控')
   })
 
   onUnmounted(() => {
     document.removeEventListener('visibilitychange', handleVisibilityChange)
-    console.info('[usePageVisibility] 已停用頁面可見性監控')
   })
 }

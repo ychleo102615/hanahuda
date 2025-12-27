@@ -54,10 +54,6 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
    * @param snapshot - 遊戲狀態快照
    */
   handleSnapshotRestore(snapshot: GameSnapshotRestore): void {
-    console.info('[HandleStateRecoveryUseCase] Restoring game state from snapshot', {
-      gameId: snapshot.game_id,
-      flowStage: snapshot.current_flow_stage,
-    })
 
     // 1. 中斷所有進行中的 Use Cases
     // 原因：重連後的快照是權威狀態，進行中的操作已無意義
@@ -98,7 +94,6 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
       this.notification.startCountdown(snapshot.timeout_seconds, countdownMode)
     }
 
-    console.info('[HandleStateRecoveryUseCase] Game state restored successfully')
   }
 
   /**
@@ -123,10 +118,6 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
       case 'AWAITING_SELECTION':
         // selection_context 已由 restoreGameState 恢復到 GameStateStore
         // Adapter Layer 的 watcher 會監聽 FlowStage 變化，觸發場牌選擇 UI
-        console.info('[HandleStateRecoveryUseCase] AWAITING_SELECTION - selection UI will be triggered by watcher', {
-          isMyTurn,
-          hasSelectionContext: !!snapshot.selection_context,
-        })
         break
 
       case 'AWAITING_DECISION':
@@ -139,10 +130,6 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
             snapshot.active_player_id
           )
           this.notification.showDecisionModal(yakuScores, currentScore)
-          console.info('[HandleStateRecoveryUseCase] AWAITING_DECISION - decision modal shown', {
-            yakuCount: yakuScores.length,
-            currentScore,
-          })
         }
         break
 
@@ -171,11 +158,6 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
   private restoreRoundEndedState(snapshot: GameSnapshotRestore): void {
     const roundEndInfo = snapshot.round_end_info!
 
-    console.info('[HandleStateRecoveryUseCase] ROUND_ENDED - restoring round end modal', {
-      reason: roundEndInfo.reason,
-      winnerId: roundEndInfo.winner_id,
-      remainingSeconds: roundEndInfo.timeout_remaining_seconds,
-    })
 
     // 根據 reason 顯示對應的 Modal
     switch (roundEndInfo.reason) {
@@ -208,7 +190,6 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
         break
 
       default:
-        console.warn('[HandleStateRecoveryUseCase] Unknown round end reason:', roundEndInfo.reason)
     }
 
     // 啟動剩餘倒數（DISPLAY mode）
@@ -254,11 +235,6 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
    * @param result - 遊戲結束資訊
    */
   handleGameFinished(result: GameFinishedInfo): void {
-    console.info('[HandleStateRecoveryUseCase] Game already finished', {
-      gameId: result.game_id,
-      winnerId: result.winner_id,
-      roundsPlayed: result.rounds_played,
-    })
 
     // 1. 建構訊息
     const winnerMsg = result.winner_id
@@ -276,7 +252,6 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
    * 處理遊戲已過期
    */
   handleGameExpired(): void {
-    console.info('[HandleStateRecoveryUseCase] Game expired')
 
     // 1. 顯示錯誤訊息
     this.notification.showErrorMessage('Your game session has expired. Please start a new game.')
@@ -291,7 +266,6 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
    * @param error - 錯誤類型
    */
   handleFetchFailed(error: SnapshotError): void {
-    console.warn('[HandleStateRecoveryUseCase] Failed to fetch game snapshot', { error })
 
     // 1. 根據錯誤類型顯示不同訊息
     let message: string

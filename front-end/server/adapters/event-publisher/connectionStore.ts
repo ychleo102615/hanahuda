@@ -58,8 +58,6 @@ class ConnectionStore {
       connectedAt: new Date(),
       handler,
     })
-
-    console.log(`[ConnectionStore] Player ${playerId} connected to game ${gameId}`)
   }
 
   /**
@@ -72,7 +70,6 @@ class ConnectionStore {
     const gameConnections = this.connections.get(gameId)
     if (gameConnections) {
       gameConnections.delete(playerId)
-      console.log(`[ConnectionStore] Player ${playerId} disconnected from game ${gameId}`)
 
       // 如果遊戲沒有連線了，清除遊戲條目
       if (gameConnections.size === 0) {
@@ -135,11 +132,8 @@ class ConnectionStore {
     for (const connection of connections) {
       try {
         connection.handler(event)
-      } catch (error) {
-        console.error(
-          `[ConnectionStore] Error broadcasting to player ${connection.playerId}:`,
-          error,
-        )
+      } catch {
+        // Error handled silently
       }
     }
   }
@@ -158,8 +152,7 @@ class ConnectionStore {
       try {
         connection.handler(event)
         return true
-      } catch (error) {
-        console.error(`[ConnectionStore] Error sending to player ${playerId}:`, error)
+      } catch {
         return false
       }
     }
@@ -173,7 +166,6 @@ class ConnectionStore {
    */
   clearGame(gameId: string): void {
     this.connections.delete(gameId)
-    console.log(`[ConnectionStore] Cleared all connections for game ${gameId}`)
   }
 
   /**

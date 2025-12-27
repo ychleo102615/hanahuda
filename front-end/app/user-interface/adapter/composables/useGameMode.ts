@@ -27,7 +27,6 @@ export function useGameMode(): GameMode {
 
   // 驗證模式有效性
   if (!VALID_MODES.includes(mode as GameMode)) {
-    console.warn(`[useGameMode] 無效的遊戲模式: ${mode}，使用預設 'backend'`)
     return 'backend'
   }
 

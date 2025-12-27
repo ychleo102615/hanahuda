@@ -91,7 +91,6 @@ export function createNotificationPortAdapter(
         duration: 5000,
         dismissible: true,
       })
-      console.info('[NotificationPort] Error message:', message)
     },
 
     showSuccessMessage(message: string): void {
@@ -101,7 +100,6 @@ export function createNotificationPortAdapter(
         duration: 3000,
         dismissible: false,
       })
-      console.info('[NotificationPort] Success message:', message)
     },
 
     showInfoMessage(message: string): void {
@@ -111,7 +109,6 @@ export function createNotificationPortAdapter(
         duration: 5000,
         dismissible: false,
       })
-      console.info('[NotificationPort] Info message:', message)
     },
 
     showWarningMessage(message: string): void {
@@ -121,7 +118,6 @@ export function createNotificationPortAdapter(
         duration: 5000,
         dismissible: true,
       })
-      console.info('[NotificationPort] Warning message:', message)
     },
 
     showReconnectionMessage(): void {
@@ -135,7 +131,6 @@ export function createNotificationPortAdapter(
         dismissible: false,
       })
       store.reconnecting = true
-      console.info('[NotificationPort] Reconnecting...')
     },
 
     hideReconnectionMessage(): void {
@@ -149,7 +144,6 @@ export function createNotificationPortAdapter(
         duration: 3000,
         dismissible: false,
       })
-      console.info('[NotificationPort] Connection restored')
     },
 
     // ===== 等待訊息 =====

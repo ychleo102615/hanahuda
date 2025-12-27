@@ -64,11 +64,7 @@ export class OpponentInstance {
     private readonly playerId: string,
     private readonly strategyType: AiStrategyType,
     private readonly deps: OpponentInstanceDependencies
-  ) {
-    console.log(
-      `[OpponentInstance] Created for game ${gameId}, player ${playerId}, strategy ${strategyType}`
-    )
-  }
+  ) {}
 
   /**
    * 處理遊戲事件
@@ -84,7 +80,6 @@ export class OpponentInstance {
    */
   handleEvent(event: GameEvent): void {
     if (this.isDisposed) {
-      console.log(`[OpponentInstance] Disposed, ignoring event for game ${this.gameId}`)
       return
     }
 
@@ -92,9 +87,6 @@ export class OpponentInstance {
     // 需要直接從 player_id 判斷是否輪到 AI
     if (event.event_type === 'SelectionRequired') {
       if (event.player_id === this.playerId) {
-        console.log(
-          `[OpponentInstance] AI turn: AWAITING_SELECTION for player ${this.playerId} in game ${this.gameId}`
-        )
         this.scheduleSelectTarget(event)
       }
       return
@@ -102,9 +94,6 @@ export class OpponentInstance {
 
     if (event.event_type === 'DecisionRequired') {
       if (event.player_id === this.playerId) {
-        console.log(
-          `[OpponentInstance] AI turn: AWAITING_DECISION for player ${this.playerId} in game ${this.gameId}`
-        )
         this.scheduleDecision()
       }
       return
@@ -112,9 +101,6 @@ export class OpponentInstance {
 
     // 終止事件處理：當回合或遊戲結束時，取消已排程的 AI 操作
     if (this.isTerminalEvent(event.event_type)) {
-      console.log(
-        `[OpponentInstance] Terminal event ${event.event_type} received, cancelling scheduled actions for game ${this.gameId}`
-      )
       aiActionScheduler.cancel(this.gameId)
       return
     }
@@ -129,9 +115,6 @@ export class OpponentInstance {
     if (nextPlayerId !== this.playerId) return
 
     const flowState = nextState.state_type
-    console.log(
-      `[OpponentInstance] AI turn: ${flowState} for player ${this.playerId} in game ${this.gameId}`
-    )
 
     switch (flowState) {
       case 'AWAITING_HAND_PLAY':
@@ -140,12 +123,10 @@ export class OpponentInstance {
       case 'AWAITING_SELECTION':
         // 這是從其他事件（如 TurnCompleted）轉換而來的情況
         // 實際上不應該發生，因為 SelectionRequired 會直接觸發
-        console.warn(`[OpponentInstance] Unexpected AWAITING_SELECTION from next_state`)
         break
       case 'AWAITING_DECISION':
         // 這是從其他事件轉換而來的情況
         // 實際上不應該發生，因為 DecisionRequired 會直接觸發
-        console.warn(`[OpponentInstance] Unexpected AWAITING_DECISION from next_state`)
         break
     }
   }
@@ -162,7 +143,6 @@ export class OpponentInstance {
       try {
         const game = this.deps.gameStore.get(this.gameId)
         if (!game?.currentRound) {
-          console.error(`[OpponentInstance] No game or round for ${this.gameId}`)
           return
         }
 
@@ -171,7 +151,6 @@ export class OpponentInstance {
           (ps) => ps.playerId === this.playerId
         )
         if (!playerState || playerState.hand.length === 0) {
-          console.error(`[OpponentInstance] No hand cards for player ${this.playerId}`)
           return
         }
 
@@ -179,18 +158,14 @@ export class OpponentInstance {
         const selectedCard = this.selectCardFromHand(playerState.hand)
         const targetCardId = this.findMatchingTarget(selectedCard, game.currentRound.field)
 
-        console.log(
-          `[OpponentInstance] AI plays card ${selectedCard}${targetCardId ? ` -> ${targetCardId}` : ''}`
-        )
-
         await this.deps.playHandCard.execute({
           gameId: this.gameId,
           playerId: this.playerId,
           cardId: selectedCard,
           targetCardId,
         })
-      } catch (error) {
-        console.error(`[OpponentInstance] Failed to play hand card:`, error)
+      } catch {
+        // Error handled silently
       }
     })
   }
@@ -207,7 +182,6 @@ export class OpponentInstance {
       try {
         // 從 SelectionRequired 事件中取得選項
         if (event.event_type !== 'SelectionRequired') {
-          console.error(`[OpponentInstance] Unexpected event type: ${event.event_type}`)
           return
         }
 
@@ -216,16 +190,11 @@ export class OpponentInstance {
         const possibleTargets = selectionEvent.possible_targets
 
         if (!possibleTargets || possibleTargets.length === 0) {
-          console.error(`[OpponentInstance] No possible targets for selection`)
           return
         }
 
         // 執行策略選擇目標
         const selectedTarget = this.selectTarget(possibleTargets)
-
-        console.log(
-          `[OpponentInstance] AI selects target ${selectedTarget} for drawn card ${drawnCard}`
-        )
 
         await this.deps.selectTarget.execute({
           gameId: this.gameId,
@@ -233,8 +202,8 @@ export class OpponentInstance {
           sourceCardId: drawnCard,
           targetCardId: selectedTarget,
         })
-      } catch (error) {
-        console.error(`[OpponentInstance] Failed to select target:`, error)
+      } catch {
+        // Error handled silently
       }
     })
   }
@@ -252,15 +221,13 @@ export class OpponentInstance {
         // 執行策略選擇決策
         const decision = this.selectDecision()
 
-        console.log(`[OpponentInstance] AI decides: ${decision}`)
-
         await this.deps.makeDecision.execute({
           gameId: this.gameId,
           playerId: this.playerId,
           decision,
         })
-      } catch (error) {
-        console.error(`[OpponentInstance] Failed to make decision:`, error)
+      } catch {
+        // Error handled silently
       }
     })
   }
@@ -374,7 +341,6 @@ export class OpponentInstance {
 
     this.isDisposed = true
     aiActionScheduler.cancel(this.gameId)
-    console.log(`[OpponentInstance] Disposed for game ${this.gameId}`)
   }
 
   /**

@@ -74,7 +74,6 @@ function handleCardClick(cardId: string) {
   if (handCardAwaitingConfirmation.value !== cardId) {
     const handCard = getCardById(cardId)
     if (!handCard) {
-      console.warn('[PlayerHandZone] Card not found:', cardId)
       return
     }
 
@@ -93,7 +92,6 @@ function handleCardClick(cardId: string) {
   // 第二次點擊同一張牌：執行打牌邏輯
   const handCard = getCardById(cardId)
   if (!handCard) {
-    console.warn('[PlayerHandZone] Card not found:', cardId)
     return
   }
 
@@ -116,7 +114,6 @@ function handleCardClick(cardId: string) {
     uiState.exitHandCardConfirmationMode()
   } else {
     // 雙重配對：必須選擇配對目標
-    console.info('[PlayerHandZone] Double match, please click field card')
   }
 }
 
@@ -201,14 +198,9 @@ watch(flowStage, (newStage, oldStage) => {
       highlightType
     )
 
-    console.info('[PlayerHandZone] 進入場牌選擇模式:', {
-      targets: possibleTargetCardIds.value,
-      highlightType,
-    })
   } else if (oldStage === 'AWAITING_SELECTION' && newStage !== 'AWAITING_SELECTION') {
     // 離開場牌選擇模式（當 FlowStage 變化時自動清除）
     uiState.exitFieldCardSelectionMode()
-    console.info('[PlayerHandZone] 離開場牌選擇模式')
   }
 })
 

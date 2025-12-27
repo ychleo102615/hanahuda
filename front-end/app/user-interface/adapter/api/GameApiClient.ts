@@ -335,10 +335,6 @@ export class GameApiClient implements SendCommandPort {
 
       if (retries > 0 && isRetryable) {
         const delay = (4 - retries) * 1000 // 1s, 2s, 3s
-        console.warn(
-          `[API] 請求失敗,${delay}ms 後重試... (剩餘 ${retries} 次)`,
-          error
-        )
 
         await sleep(delay)
         return this.postWithRetry(url, body, retries - 1)

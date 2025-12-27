@@ -66,7 +66,6 @@ export function getYakuInfo(yakuType: string): YakuInfo | null {
   const mappedId = YAKU_TYPE_MAP[yakuType] || yakuType.toLowerCase()
   const yaku = yakuData.yakuList.find(y => y.id === mappedId)
   if (!yaku) {
-    console.warn(`[getYakuInfo] Unknown yaku type: ${yakuType}`)
     return null
   }
   return {

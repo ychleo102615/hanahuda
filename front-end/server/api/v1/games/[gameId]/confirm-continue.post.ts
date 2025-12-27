@@ -16,8 +16,6 @@ import {
   SessionValidationError,
   createSessionErrorResponse,
 } from '~~/server/utils/sessionValidation'
-import { createLogger } from '~~/server/utils/logger'
-import { initRequestId } from '~~/server/utils/requestId'
 import {
   HTTP_OK,
   HTTP_BAD_REQUEST,
@@ -50,14 +48,10 @@ interface ConfirmContinueResponse {
 }
 
 export default defineEventHandler(async (event): Promise<ConfirmContinueResponse | ErrorResponse> => {
-  const requestId = initRequestId(event)
-  const logger = createLogger('API:confirm-continue', requestId)
-
   try {
     // 1. 取得遊戲 ID
     const gameId = getRouterParam(event, 'gameId')
     if (!gameId) {
-      logger.warn('Missing game ID')
       setResponseStatus(event, HTTP_BAD_REQUEST)
       return {
         error: {
@@ -74,7 +68,6 @@ export default defineEventHandler(async (event): Promise<ConfirmContinueResponse
       sessionContext = validateSession(event, gameId)
     } catch (err) {
       if (err instanceof SessionValidationError) {
-        logger.warn('Session validation failed', { code: err.code, gameId })
         setResponseStatus(event, err.statusCode)
         return createSessionErrorResponse(err)
       }
@@ -87,7 +80,6 @@ export default defineEventHandler(async (event): Promise<ConfirmContinueResponse
 
     // 驗證 decision
     if (!decision || (decision !== 'CONTINUE' && decision !== 'LEAVE')) {
-      logger.warn('Invalid decision', { decision })
       setResponseStatus(event, HTTP_BAD_REQUEST)
       return {
         error: {
@@ -97,8 +89,6 @@ export default defineEventHandler(async (event): Promise<ConfirmContinueResponse
         timestamp: new Date().toISOString(),
       }
     }
-
-    logger.info('Processing confirm continue request', { gameId, playerId: sessionContext.playerId, decision })
 
     // 4. 從容器取得 UseCase
     const useCase = container.confirmContinueUseCase
@@ -110,8 +100,7 @@ export default defineEventHandler(async (event): Promise<ConfirmContinueResponse
       decision,
     })
 
-    // 5. 返回成功回應
-    logger.info('Confirm continue request completed', { gameId })
+    // 6. 返回成功回應
     setResponseStatus(event, HTTP_OK)
     return {
       data: {
@@ -123,7 +112,6 @@ export default defineEventHandler(async (event): Promise<ConfirmContinueResponse
   } catch (error) {
     // 處理 UseCase 錯誤
     if (error instanceof ConfirmContinueError) {
-      logger.warn('Confirm continue error', { code: error.code, message: error.message })
       const statusCode =
         error.code === 'GAME_NOT_FOUND'
           ? HTTP_NOT_FOUND
@@ -142,7 +130,6 @@ export default defineEventHandler(async (event): Promise<ConfirmContinueResponse
       }
     }
 
-    logger.error('Unexpected error', error)
     setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
     return {
       error: {

@@ -103,10 +103,6 @@ class GameTimeoutManager extends GameTimeoutPort {
       startedAt: Date.now(),
       totalSeconds: seconds,
     })
-
-    console.log(
-      `[GameTimeoutManager] Started timeout for game ${gameId}: ${seconds}s (+${BUFFER_SECONDS}s buffer)`
-    )
   }
 
   /**
@@ -119,7 +115,6 @@ class GameTimeoutManager extends GameTimeoutPort {
     if (timerInfo) {
       clearTimeout(timerInfo.timerId)
       this.gameTimers.delete(gameId)
-      console.log(`[GameTimeoutManager] Cleared timeout for game ${gameId}`)
     }
   }
 
@@ -159,10 +154,6 @@ class GameTimeoutManager extends GameTimeoutPort {
 
     const timer = setTimeout(onTimeout, gameConfig.disconnect_timeout_seconds * 1000)
     this.disconnectTimers.set(key, timer)
-
-    console.log(
-      `[GameTimeoutManager] Started disconnect timeout for ${key}: ${gameConfig.disconnect_timeout_seconds}s`
-    )
   }
 
   /**
@@ -177,7 +168,6 @@ class GameTimeoutManager extends GameTimeoutPort {
     if (timer) {
       clearTimeout(timer)
       this.disconnectTimers.delete(key)
-      console.log(`[GameTimeoutManager] Cleared disconnect timeout for ${key}`)
     }
   }
 
@@ -197,7 +187,6 @@ class GameTimeoutManager extends GameTimeoutPort {
         }
       }
     }
-    console.log(`[GameTimeoutManager] Cleared all disconnect timeouts for game ${gameId}`)
   }
 
   /**
@@ -232,10 +221,6 @@ class GameTimeoutManager extends GameTimeoutPort {
       timerId: timer,
       onTimeout,
     })
-
-    console.log(
-      `[GameTimeoutManager] Started idle timeout for ${key}: ${gameConfig.disconnect_timeout_seconds}s`
-    )
   }
 
   /**
@@ -254,7 +239,6 @@ class GameTimeoutManager extends GameTimeoutPort {
         timerId: newTimer,
         onTimeout: timerInfo.onTimeout,
       })
-      console.log(`[GameTimeoutManager] Reset idle timeout for ${key}`)
     }
   }
 
@@ -270,7 +254,6 @@ class GameTimeoutManager extends GameTimeoutPort {
     if (timerInfo) {
       clearTimeout(timerInfo.timerId)
       this.idleTimers.delete(key)
-      console.log(`[GameTimeoutManager] Cleared idle timeout for ${key}`)
     }
   }
 
@@ -290,7 +273,6 @@ class GameTimeoutManager extends GameTimeoutPort {
         }
       }
     }
-    console.log(`[GameTimeoutManager] Cleared all idle timeouts for game ${gameId}`)
   }
 
   /**
@@ -328,10 +310,6 @@ class GameTimeoutManager extends GameTimeoutPort {
 
     const timer = setTimeout(onTimeout, totalSeconds * 1000)
     this.confirmationTimers.set(key, { timerId: timer })
-
-    console.log(
-      `[GameTimeoutManager] Started confirmation timeout for ${key}: ${totalSeconds}s`
-    )
   }
 
   /**
@@ -346,7 +324,6 @@ class GameTimeoutManager extends GameTimeoutPort {
     if (timerInfo) {
       clearTimeout(timerInfo.timerId)
       this.confirmationTimers.delete(key)
-      console.log(`[GameTimeoutManager] Cleared confirmation timeout for ${key}`)
     }
   }
 
@@ -366,7 +343,6 @@ class GameTimeoutManager extends GameTimeoutPort {
         }
       }
     }
-    console.log(`[GameTimeoutManager] Cleared all confirmation timeouts for game ${gameId}`)
   }
 
   /**
@@ -404,10 +380,6 @@ class GameTimeoutManager extends GameTimeoutPort {
       startedAt: Date.now(),
       totalSeconds, // 記錄面向客戶端的秒數（不含緩衝）
     })
-
-    console.log(
-      `[GameTimeoutManager] Started matchmaking timeout for game ${gameId}: ${totalSeconds}s (+${BUFFER_SECONDS}s buffer)`
-    )
   }
 
   /**
@@ -420,7 +392,6 @@ class GameTimeoutManager extends GameTimeoutPort {
     if (timerInfo) {
       clearTimeout(timerInfo.timerId)
       this.matchmakingTimers.delete(gameId)
-      console.log(`[GameTimeoutManager] Cleared matchmaking timeout for game ${gameId}`)
     }
   }
 
@@ -458,7 +429,6 @@ class GameTimeoutManager extends GameTimeoutPort {
     this.clearAllIdleTimeouts(gameId)
     this.clearAllContinueConfirmationTimeouts(gameId)
     this.clearMatchmakingTimeout(gameId)
-    console.log(`[GameTimeoutManager] Cleared all timers for game ${gameId}`)
   }
 
   // ============================================================

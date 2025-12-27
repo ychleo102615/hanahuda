@@ -113,7 +113,6 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
 
       // 檢查遊戲是否已結束 - 若已結束，跳過 API 調用
       if (gameEnded.value || sessionContext.isGameFinished()) {
-        console.info('[useLeaveGame] 遊戲已結束，跳過 leaveGame API')
         clearLocalStateAndNavigate()
         return
       }
@@ -121,7 +120,6 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
       // 從 SessionContext 取得 gameId
       const gameId = sessionContext.getGameId()
       if (!gameId) {
-        console.warn('[useLeaveGame] 無法退出遊戲：找不到 gameId')
         // 即使沒有 gameId，仍然清除本地狀態並導航回首頁
         clearLocalStateAndNavigate()
         return
@@ -131,19 +129,15 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
       if (gameApiClient) {
         try {
           await gameApiClient.leaveGame(gameId)
-          console.info('[useLeaveGame] 成功調用 leaveGame API')
         } catch (error) {
-          console.error('[useLeaveGame] leaveGame API 失敗:', error)
           // 即使 API 失敗，仍然清除本地狀態並導航
         }
       } else {
-        console.warn('[useLeaveGame] GameApiClient 未注入')
       }
 
       // 清除本地狀態並導航
       clearLocalStateAndNavigate()
     } catch (error) {
-      console.error('[useLeaveGame] 退出遊戲流程失敗:', error)
       // 發生任何錯誤，仍然嘗試清除狀態並導航
       clearLocalStateAndNavigate()
     }

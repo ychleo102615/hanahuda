@@ -125,7 +125,6 @@ export function registerDependencies(container: DIContainer, mode: GameMode, pin
 function registerStores(container: DIContainer, pinia: Pinia): void {
   // Nuxt 4: 確保僅在 client-side 註冊 Pinia stores
   if (import.meta.server) {
-    console.warn('[DI] Skipping Pinia stores registration on server-side')
     return
   }
 
@@ -500,7 +499,6 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  console.info('[DI] Registered Player Operations, US2, US3, and US4 event handlers')
 }
 
 /**
@@ -517,7 +515,6 @@ function registerInputPorts(container: DIContainer): void {
  * - GameConnectionPort
  */
 function registerBackendAdapters(container: DIContainer): void {
-  console.info('[DI] 註冊 Backend 模式 Adapters')
 
   // Nuxt 同域，使用空字串作為 baseURL
   const baseURL = ''
@@ -592,7 +589,6 @@ function registerBackendAdapters(container: DIContainer): void {
  * 註冊 MockApiClient 與 EventRouter，用於開發測試。
  */
 function registerMockAdapters(container: DIContainer): void {
-  console.info('[DI] 註冊 Mock 模式 Adapters')
 
   // Mock 模式也使用空字串作為 baseURL
   const baseURL = ''
@@ -632,7 +628,6 @@ function registerMockAdapters(container: DIContainer): void {
  * 註冊 MockEventEmitter，必須在事件路由註冊後呼叫。
  */
 function initializeMockEventEmitter(container: DIContainer): void {
-  console.info('[DI] 初始化 Mock 事件發射器')
 
   // MockEventEmitter
   container.register(
@@ -705,7 +700,6 @@ function registerEventRoutes(container: DIContainer): void {
   const gameErrorPort = container.resolve(TOKENS.HandleGameErrorPort) as { execute: (payload: unknown) => void }
   router.register('GameError', gameErrorPort)
 
-  console.info('[DI] Phase 6: Registered US2, US3, and US4 event routes')
 }
 
 /**
@@ -718,6 +712,5 @@ function registerEventRoutes(container: DIContainer): void {
  * TODO: Post-MVP - Local Game BC 實作後啟用
  */
 function registerLocalAdapters(container: DIContainer): void {
-  console.warn('[DI] Local mode not implemented, using Mock mode fallback (Post-MVP)')
   registerMockAdapters(container)
 }

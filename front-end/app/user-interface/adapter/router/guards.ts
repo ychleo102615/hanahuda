@@ -45,10 +45,8 @@ export function gamePageGuard(
   from: RouteLocationNormalized,
   next: NavigationGuardNext
 ): void {
-  console.info('[Router] 進入遊戲頁面', { from: from.path })
 
   if (!sessionContext.hasActiveSession()) {
-    console.warn('[Router] 無遊戲會話，重定向至 /lobby')
     next({ name: 'lobby' })
     return
   }
@@ -89,14 +87,9 @@ export function lobbyPageGuard(
 ): void {
   // 若遊戲會話已建立，重定向至遊戲畫面
   if (sessionContext.hasActiveSession()) {
-    console.warn('[Router] 遊戲會話已存在，重定向至 /game', {
-      gameId: sessionContext.getGameId(),
-      from: from.path,
-    })
     next({ name: 'game' })
     return
   }
 
-  console.info('[Router] 進入大廳頁面', { from: from.path })
   next()
 }

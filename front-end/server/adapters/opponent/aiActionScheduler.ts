@@ -31,8 +31,6 @@ class AiActionScheduler {
 
     const timerId = setTimeout(callback, delayMs)
     this.timers.set(gameId, timerId)
-
-    console.log(`[AiActionScheduler] Scheduled action for game ${gameId}: ${delayMs}ms`)
   }
 
   /**
@@ -45,7 +43,6 @@ class AiActionScheduler {
     if (timerId) {
       clearTimeout(timerId)
       this.timers.delete(gameId)
-      console.log(`[AiActionScheduler] Cancelled action for game ${gameId}`)
     }
   }
 }

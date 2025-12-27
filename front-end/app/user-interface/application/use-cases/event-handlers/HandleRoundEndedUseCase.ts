@@ -79,16 +79,13 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
 
           // 發送確認命令
           this.sendCommand.confirmContinue(decision).then(() => {
-            console.log(`[HandleRoundEndedUseCase] Confirmation sent: ${decision}`)
             // 不調用 hideContinueConfirmation，等待 GameFinished / RoundDealt 事件
           }).catch((error) => {
-            console.error('[HandleRoundEndedUseCase] Failed to send confirmation:', error)
             this.notification.showErrorMessage('Failed to confirm. Please try again.')
             // 保持 AWAITING_SERVER 狀態，等待 Server 回應
           })
         }
       )
-      console.log(`[HandleRoundEndedUseCase] Confirmation required (adjusted timeout: ${adjustedTimeout}s)`)
     }
 
     // 4. 啟動顯示倒數（若有值），扣除事件處理延遲

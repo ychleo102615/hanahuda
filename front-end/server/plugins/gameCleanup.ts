@@ -12,9 +12,6 @@
  */
 
 import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
-import { createLogger } from '~~/server/utils/logger'
-
-const logger = createLogger('Plugin:GameCleanup')
 
 /** 清理間隔（毫秒）：5 分鐘 */
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000
@@ -29,44 +26,23 @@ let cleanupTimer: ReturnType<typeof setInterval> | null = null
  * 執行遊戲清理
  */
 function performCleanup(): void {
-  try {
-    const beforeCount = inMemoryGameStore.getCount()
-    const cleaned = inMemoryGameStore.cleanupExpired(MAX_GAME_AGE_MS)
-    const afterCount = inMemoryGameStore.getCount()
-
-    if (cleaned > 0) {
-      logger.info('Expired games cleaned', {
-        cleaned,
-        beforeCount,
-        afterCount,
-      })
-    }
-  } catch (error) {
-    logger.error('Failed to cleanup games', error)
-  }
+  inMemoryGameStore.cleanupExpired(MAX_GAME_AGE_MS)
 }
 
 export default defineNitroPlugin((nitroApp) => {
   // 避免重複初始化
   if (cleanupTimer) {
-    logger.warn('Cleanup scheduler already initialized, skipping')
     return
   }
 
   // 啟動定期清理
   cleanupTimer = setInterval(performCleanup, CLEANUP_INTERVAL_MS)
 
-  logger.info('Game cleanup scheduler initialized', {
-    intervalMs: CLEANUP_INTERVAL_MS,
-    maxAgeMs: MAX_GAME_AGE_MS,
-  })
-
   // 在伺服器關閉時清理計時器
   nitroApp.hooks.hook('close', () => {
     if (cleanupTimer) {
       clearInterval(cleanupTimer)
       cleanupTimer = null
-      logger.info('Game cleanup scheduler stopped')
     }
   })
 })

@@ -39,11 +39,9 @@ export class MockEventEmitter {
    */
   start(): void {
     if (this.isRunning) {
-      console.warn('[Mock SSE] 已在運行中')
       return
     }
 
-    console.info('[Mock SSE] 開始發送事件')
     this.isRunning = true
     this.currentIndex = 0
     this.sendNextEvent()
@@ -58,7 +56,6 @@ export class MockEventEmitter {
       this.timerId = null
     }
     this.isRunning = false
-    console.info('[Mock SSE] 停止發送事件')
   }
 
   /**
@@ -77,7 +74,6 @@ export class MockEventEmitter {
    */
   sendNext(): void {
     if (this.currentIndex >= mockEventScript.length) {
-      console.info('[Mock SSE] 所有事件已發送完畢')
       return
     }
 
@@ -85,7 +81,6 @@ export class MockEventEmitter {
     if (!event) return
 
     const { eventType, payload } = event
-    console.info(`[Mock SSE] 發送事件 [${this.currentIndex + 1}/${mockEventScript.length}]: ${eventType}`, payload)
 
     this.eventRouter.route(eventType, payload)
     this.currentIndex++
@@ -98,7 +93,6 @@ export class MockEventEmitter {
   private sendNextEvent(): void {
     if (!this.isRunning || this.currentIndex >= mockEventScript.length) {
       this.isRunning = false
-      console.info('[Mock SSE] 所有事件已發送完畢')
       return
     }
 
@@ -106,7 +100,6 @@ export class MockEventEmitter {
     if (!event) return
 
     const { eventType, payload, delay } = event
-    console.info(`[Mock SSE] 發送事件 [${this.currentIndex + 1}/${mockEventScript.length}]: ${eventType}`, payload)
 
     this.eventRouter.route(eventType, payload)
     this.currentIndex++

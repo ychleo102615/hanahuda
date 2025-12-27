@@ -29,10 +29,7 @@ import {
   type JoinGameAsAiOutput,
 } from '~~/server/application/ports/input/joinGameAsAiInputPort'
 import { checkSpecialRules, type SpecialRuleResult } from '~~/server/domain/services/specialRulesService'
-import { loggers } from '~~/server/utils/logger'
-
-/** Module logger instance */
-const logger = loggers.useCase('JoinGameAsAi')
+import { gameConfig } from '~~/server/utils/config'
 
 /**
  * 初始事件延遲（毫秒）
@@ -74,9 +71,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
    * @returns AI 加入結果
    */
   async execute(input: JoinGameAsAiInput): Promise<JoinGameAsAiOutput> {
-    const { playerId, playerName, gameId, strategyType } = input
-
-    logger.info('AI joining game', { playerName, strategyType, gameId })
+    const { playerId, playerName, gameId } = input
 
     // 使用悲觀鎖確保同一遊戲的操作互斥執行
     return this.gameLock.withLock(gameId, async () => {
@@ -84,7 +79,6 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
       const waitingGame = this.gameStore.get(gameId)
 
       if (!waitingGame) {
-        logger.error('Game not found', undefined, { gameId })
         return {
           gameId,
           playerId,
@@ -93,7 +87,6 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
       }
 
       if (waitingGame.status !== 'WAITING') {
-        logger.error('Game is not in WAITING status', undefined, { gameId, status: waitingGame.status })
         return {
           gameId,
           playerId,
@@ -122,20 +115,12 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
         this.gameStore.set(game)
         await this.gameRepository.save(game)
 
-        logger.info('Special rule triggered, delegating to TurnFlowService', {
-          gameId: game.id,
-          ruleType: specialRuleResult.type,
-          winnerId: specialRuleResult.winnerId,
-        })
-
         // 排程初始事件（延遲讓客戶端建立 SSE 連線）
         this.scheduleSpecialRuleEvents(game, specialRuleResult)
       } else {
         // 無特殊規則：正常流程
         this.gameStore.set(game)
         await this.gameRepository.save(game)
-
-        logger.info('AI joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
 
         // 排程初始事件（延遲讓客戶端建立 SSE 連線）
         this.scheduleInitialEvents(game)
@@ -192,10 +177,8 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
         if (firstPlayerId) {
           this.turnFlowService?.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
         }
-
-        logger.info('Initial events published', { gameId: game.id })
-      } catch (error) {
-        logger.error('Failed to publish initial events', error, { gameId: game.id })
+      } catch {
+        // Failed to publish initial events
       }
     }, INITIAL_EVENT_DELAY_MS)
   }
@@ -223,17 +206,11 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
 
         // 委託 TurnFlowService 處理特殊規則流程
         this.turnFlowService?.handleSpecialRuleTriggered(game.id, game, result)
-          .catch((error) => {
-            logger.error('Failed to handle special rule', error, { gameId: game.id })
+          .catch(() => {
+            // Failed to handle special rule
           })
-
-        logger.info('Special rule handling delegated', {
-          gameId: game.id,
-          ruleType: result.type,
-          winnerId: result.winnerId,
-        })
-      } catch (error) {
-        logger.error('Failed to schedule special rule events', error, { gameId: game.id })
+      } catch {
+        // Failed to schedule special rule events
       }
     }, INITIAL_EVENT_DELAY_MS)
   }

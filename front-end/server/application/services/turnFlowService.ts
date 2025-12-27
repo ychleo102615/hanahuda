@@ -38,10 +38,6 @@ import {
   hasDisconnectedOrLeftPlayers,
 } from '~~/server/domain/game/playerConnection'
 import { gameConfig } from '~~/server/utils/config'
-import { loggers } from '~~/server/utils/logger'
-
-/** Module logger instance */
-const logger = loggers.useCase('TurnFlow')
 
 /**
  * TurnFlowService
@@ -72,20 +68,17 @@ export class TurnFlowService {
     playerId: string,
     flowState: 'AWAITING_HAND_PLAY' | 'AWAITING_SELECTION' | 'AWAITING_DECISION'
   ): void {
-    logger.info('Starting timeout for player', { playerId, gameId, flowState })
-
     // 啟動 15 秒操作計時器
     this.gameTimeoutManager.startTimeout(
       gameId,
       gameConfig.turn_timeout_seconds,
       () => {
-        logger.info('Action timeout, executing auto-action', { playerId, gameId })
         this.autoActionUseCase.execute({
           gameId,
           playerId,
           currentFlowState: flowState,
-        }).catch((error) => {
-          logger.error('Auto-action failed', error, { playerId, gameId })
+        }).catch(() => {
+          // Auto-action failed
         })
       }
     )
@@ -115,9 +108,6 @@ export class TurnFlowService {
     if (game.currentRound.activePlayerId !== playerId) {
       return
     }
-
-    const remainingSeconds = this.gameTimeoutManager.getRemainingSeconds(gameId)
-    logger.info('Player reconnected', { playerId, gameId, remainingSeconds })
 
     // 啟動閒置計時器（重連玩家應有閒置追蹤）
     this.startIdleTimeoutIfNeeded(gameId, playerId)
@@ -155,9 +145,8 @@ export class TurnFlowService {
       gameId,
       playerId,
       () => {
-        logger.info('Idle timeout, marking for confirmation', { playerId, gameId })
-        this.markPlayerRequiresConfirmation(gameId, playerId).catch((error) => {
-          logger.error('Failed to mark player for confirmation', error, { playerId, gameId })
+        this.markPlayerRequiresConfirmation(gameId, playerId).catch(() => {
+          // Failed to mark player for confirmation
         })
       }
     )
@@ -184,8 +173,6 @@ export class TurnFlowService {
       // 儲存更新
       this.gameStore.set(updatedGame)
       await this.gameRepository.save(updatedGame)
-
-      logger.info('Marked player as requiring confirmation', { playerId, gameId })
     })
   }
 
@@ -210,7 +197,6 @@ export class TurnFlowService {
       const updatedGame = clearRequireContinueConfirmation(game, playerId)
       this.gameStore.set(updatedGame)
       await this.gameRepository.save(updatedGame)
-      logger.info('Cleared confirmation requirement', { playerId, gameId })
     }
   }
 
@@ -286,7 +272,6 @@ export class TurnFlowService {
         playerId,
         totalConfirmSeconds,
         () => {
-          logger.info('Confirmation timeout, ending game', { playerId, gameId })
           this.endGameDueToIdlePlayer(gameId, playerId)
         }
       )
@@ -316,7 +301,6 @@ export class TurnFlowService {
       this.gameStore.set(updatedGame)
       await this.gameRepository.save(updatedGame)
       game = updatedGame
-      logger.info('Player confirmed continue', { playerId, gameId })
     }
 
     // 重置閒置計時器（確認後重新開始計時）
@@ -324,8 +308,6 @@ export class TurnFlowService {
 
     // 檢查所有玩家是否都已確認
     if (game && game.pendingContinueConfirmations.length === 0) {
-      logger.info('All players confirmed, continuing to next round', { gameId })
-
       // 啟動 display timeout，進入下一回合
       const firstPlayerId = game.currentRound?.activePlayerId
       this.startDisplayTimeout(gameId, gameConfig.result_display_seconds, () => {
@@ -366,7 +348,6 @@ export class TurnFlowService {
   ): Promise<void> {
     const game = this.gameStore.get(gameId)
     if (!game) {
-      logger.warn('Game not found, cannot end game', { gameId })
       return
     }
 
@@ -384,8 +365,7 @@ export class TurnFlowService {
           winnerKoiMultiplier: 1, // 非正常結束沒有倍率
           players: finishedGame.players,
         })
-      } catch (error) {
-        logger.error('Failed to record game stats', error, { gameId })
+      } catch {
         // 統計記錄失敗不應影響遊戲結束流程
       }
     }
@@ -406,8 +386,6 @@ export class TurnFlowService {
       reason
     )
     this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
-
-    logger.info('Game ended', { gameId, reason, winnerId: winnerId ?? 'none' })
   }
 
   /**
@@ -422,7 +400,6 @@ export class TurnFlowService {
       try {
         const game = this.gameStore.get(gameId)
         if (!game) {
-          logger.warn('Game not found, cannot end game', { gameId })
           return
         }
 
@@ -431,8 +408,8 @@ export class TurnFlowService {
         const winnerId = winnerResult.winnerId ?? undefined
 
         await this.endGame(gameId, winnerId, 'PLAYER_IDLE_TIMEOUT')
-      } catch (error) {
-        logger.error('Failed to end game due to idle player', error, { gameId })
+      } catch {
+        // Failed to end game due to idle player
       }
     })
   }
@@ -452,8 +429,6 @@ export class TurnFlowService {
     if (!hasDisconnectedOrLeftPlayers(game)) {
       return false
     }
-
-    logger.info('Found disconnected/left players, ending game', { gameId })
 
     // 依分數決定勝者（而非連線狀態）
     const winnerResult = calculateWinner(game)
@@ -505,7 +480,6 @@ export class TurnFlowService {
     if (requireConfirmation) {
       // 需要確認：不啟動 display timeout
       // 等待玩家確認後由 handlePlayerConfirmContinue() 繼續流程
-      logger.info('Waiting for player confirmation before next round (draw)', { gameId })
     } else if (isNextRound) {
       // 不需要確認且有下一局：啟動 display timeout
       const firstPlayerId = updatedGame.currentRound?.activePlayerId
@@ -711,11 +685,10 @@ export class TurnFlowService {
     // 8. 根據確認需求決定下一步
     if (lastRound) {
       // 最後一局：直接執行局轉換（會發送 GameFinished 事件）
-      logger.info('Last round ended, finalizing game', { gameId })
       await this.handleFinalizeRound(gameId)
       return true
     } else if (requireConfirmation) {
-      logger.info('Waiting for player confirmation before next round', { gameId })
+      // Waiting for player confirmation before next round
     } else {
       // 啟動 display timeout，倒數結束後執行 finalizeRoundAndTransition
       this.startDisplayTimeout(gameId, displayTimeoutSeconds!, async () => {
@@ -766,8 +739,8 @@ export class TurnFlowService {
           await this.endGame(gameId, winner.winnerId ?? undefined, 'NORMAL')
         }
       }
-    } catch (error) {
-      logger.error('Failed to finalize round', error, { gameId })
+    } catch {
+      // Failed to finalize round
     }
   }
 
@@ -790,11 +763,6 @@ export class TurnFlowService {
     game: Game,
     specialRuleResult: SpecialRuleResult
   ): Promise<void> {
-    logger.info('Handling special rule triggered', {
-      gameId,
-      type: specialRuleResult.type,
-      winnerId: specialRuleResult.winnerId,
-    })
 
     // 1. 發送 RoundDealtEvent（特殊規則版本：next_state = null, timeout = 0）
     //    前端會開始發牌動畫，但不啟動倒數、不允許操作
@@ -847,16 +815,9 @@ export class TurnFlowService {
     )
     this.eventPublisher.publishToGame(gameId, roundEndedEvent)
 
-    logger.info('Special rule RoundEnded event published', {
-      gameId,
-      reason,
-      lastRound,
-    })
-
     // 7. 根據是否為最後一局決定下一步
     if (lastRound) {
       // 最後一局：直接執行局轉換（會發送 GameFinished 事件）
-      logger.info('Last round with special rule, finalizing game', { gameId })
       await this.handleFinalizeRound(gameId)
     } else {
       // 啟動 display timeout，倒數結束後執行 finalizeRoundAndTransition

@@ -43,10 +43,6 @@ import type {
 import { checkSpecialRules, type SpecialRuleResult } from '~~/server/domain/services/specialRulesService'
 import { gameConfig } from '~~/server/utils/config'
 import { GAME_ERROR_MESSAGES } from '#shared/contracts/errors'
-import { loggers } from '~~/server/utils/logger'
-
-/** Module logger instance */
-const logger = loggers.useCase('JoinGame')
 
 /**
  * 初始事件延遲（毫秒）
@@ -100,7 +96,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
     // 2. 新遊戲模式：沒有提供 gameId，開始新遊戲
     // 注意：即使有 sessionToken，也不查詢舊遊戲，直接開始新遊戲流程
-    logger.info('New game mode', { playerName })
 
     // 3. 查找等待中的遊戲
     const waitingGame = this.gameStore.findWaitingGame()
@@ -112,10 +107,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
       } catch (error) {
         // 如果遊戲在等待鎖期間已被其他玩家加入，改為建立新遊戲
         if (error instanceof Error && error.message === 'GAME_NO_LONGER_WAITING') {
-          logger.info('Game was joined by another player, creating new game', {
-            attemptedGameId: waitingGame.id,
-            playerName,
-          })
           return this.createNewGame(playerId, playerName, roomType)
         }
         throw error
@@ -145,15 +136,12 @@ export class JoinGameUseCase implements JoinGameInputPort {
     playerName: string,
     sessionToken?: string
   ): Promise<JoinGameOutput> {
-    logger.info('Reconnection mode', { gameId, playerId })
-
     // 1. 先查記憶體
     const memoryGame = this.gameStore.get(gameId)
     if (memoryGame) {
       // 驗證玩家身份
       const isPlayer = memoryGame.players.some((p) => p.id === playerId)
       if (!isPlayer) {
-        logger.warn('Rejecting reconnection - player not in game', { playerId, gameId })
         // 玩家不屬於此遊戲，返回過期
         return { status: 'game_expired', gameId }
       }
@@ -161,7 +149,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
       // 玩家身份驗證通過，執行重連
       const token = sessionToken || this.findPlayerSessionToken(gameId, playerId)
       if (!token) {
-        logger.warn('No session token for player', { playerId, gameId })
         return { status: 'game_expired', gameId }
       }
 
@@ -171,13 +158,11 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 2. 記憶體沒有，查資料庫
     const dbGame = await this.gameRepository.findById(gameId)
     if (!dbGame) {
-      logger.info('Game not found', { gameId })
       return { status: 'game_expired', gameId }
     }
 
     // 3. 根據遊戲狀態返回結果
     if (dbGame.status === 'FINISHED') {
-      logger.info('Game already finished', { gameId })
       const winnerId = determineWinner(dbGame)
       return {
         status: 'game_finished',
@@ -193,7 +178,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     }
 
     // 4. 遊戲在 DB 但不在記憶體 → 已過期
-    logger.info('Game expired (in DB but not in memory)', { gameId })
     return { status: 'game_expired', gameId }
   }
 
@@ -226,15 +210,11 @@ export class JoinGameUseCase implements JoinGameInputPort {
     playerName: string,
     sessionToken: string
   ): JoinGameSnapshotOutput | JoinGameWaitingOutput {
-    logger.info('Processing reconnection', { gameId: game.id, playerId })
-
     // 1. 若遊戲 WAITING → 返回 game_waiting（等待對手）
     if (game.status === 'WAITING') {
       // 從 GameTimeoutManager 取得剩餘秒數（SSOT）
       const remainingSeconds = this.gameTimeoutManager.getMatchmakingRemainingSeconds(game.id)
         ?? gameConfig.matchmaking_timeout_seconds // fallback: 計時器不存在時使用完整秒數
-
-      logger.info('Game is WAITING, returning game_waiting', { gameId: game.id, remainingSeconds })
 
       return {
         status: 'game_waiting',
@@ -255,8 +235,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
       game,
       remainingSeconds ?? undefined
     )
-
-    logger.info('Returning snapshot', { gameId: game.id, remainingSeconds })
 
     return {
       status: 'snapshot',
@@ -305,8 +283,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 儲存到記憶體和資料庫
     this.gameStore.set(game)
     await this.gameRepository.save(game)
-
-    logger.info('Created new WAITING game', { gameId, playerName })
 
     // 發布 ROOM_CREATED 內部事件（通知 OpponentService 有新房間需要 AI 加入）
     this.internalEventPublisher.publishRoomCreated({
@@ -382,12 +358,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
         this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
         await this.gameRepository.save(game)
 
-        logger.info('Special rule triggered, delegating to TurnFlowService', {
-          gameId: game.id,
-          ruleType: specialRuleResult.type,
-          winnerId: specialRuleResult.winnerId,
-        })
-
         // 排程初始事件（延遲讓客戶端建立 SSE 連線）
         this.scheduleSpecialRuleEvents(game, specialRuleResult)
       } else {
@@ -395,8 +365,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
         this.gameStore.set(game)
         this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
         await this.gameRepository.save(game)
-
-        logger.info('Player joined game, game is now IN_PROGRESS', { gameId: game.id, playerName })
 
         // 排程初始事件（延遲讓客戶端建立 SSE 連線）
         // GameStarted 和 RoundDealt 會廣播給所有玩家
@@ -443,10 +411,8 @@ export class JoinGameUseCase implements JoinGameInputPort {
         if (firstPlayerId) {
           this.turnFlowService?.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
         }
-
-        logger.info('Initial events published', { gameId: game.id })
-      } catch (error) {
-        logger.error('Failed to publish initial events', error, { gameId: game.id })
+      } catch {
+        // Failed to publish initial events
       }
     }, INITIAL_EVENT_DELAY_MS)
   }
@@ -460,12 +426,9 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * @param gameId - 遊戲 ID
    */
   private handleMatchmakingTimeout(gameId: string): void {
-    logger.warn('Matchmaking timeout', { gameId })
-
     // 檢查遊戲是否還在等待狀態
     const game = this.gameStore.get(gameId)
     if (!game || game.status !== 'WAITING') {
-      logger.info('Game is no longer waiting, skip timeout handling', { gameId })
       return
     }
 
@@ -483,8 +446,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
     // 清理：清除所有計時器（雖然應該只有配對超時計時器）
     this.gameTimeoutManager.clearAllForGame(gameId)
-
-    logger.info('Game removed due to matchmaking timeout', { gameId })
   }
 
   // ============================================================
@@ -536,17 +497,11 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
         // 委託 TurnFlowService 處理特殊規則流程
         this.turnFlowService?.handleSpecialRuleTriggered(game.id, game, result)
-          .catch((error) => {
-            logger.error('Failed to handle special rule', error, { gameId: game.id })
+          .catch(() => {
+            // Failed to handle special rule
           })
-
-        logger.info('Special rule handling delegated', {
-          gameId: game.id,
-          ruleType: result.type,
-          winnerId: result.winnerId,
-        })
-      } catch (error) {
-        logger.error('Failed to schedule special rule events', error, { gameId: game.id })
+      } catch {
+        // Failed to schedule special rule events
       }
     }, INITIAL_EVENT_DELAY_MS)
   }

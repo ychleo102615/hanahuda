@@ -97,14 +97,13 @@ export default defineEventHandler(async (event) => {
         try {
           const sseData = formatSSE(gameEvent)
           controller.enqueue(encoder.encode(sseData))
-        } catch (error) {
-          console.error(`[SSE] Error sending event to player ${playerId}:`, error)
+        } catch {
+          // Error handled silently
         }
       }
 
       // 註冊連線
       connectionStore.addConnection(gameId, playerId, handler)
-      console.log(`[SSE] Player ${playerId} connected to game ${gameId}`)
 
       // 清除斷線超時（重連時）
       container.gameTimeoutManager.clearDisconnectTimeout(gameId, playerId)
@@ -114,8 +113,7 @@ export default defineEventHandler(async (event) => {
         try {
           const heartbeat = formatHeartbeat()
           controller.enqueue(encoder.encode(heartbeat))
-        } catch (error) {
-          console.error(`[SSE] Error sending heartbeat to player ${playerId}:`, error)
+        } catch {
           clearInterval(heartbeatInterval)
         }
       }, gameConfig.sse_heartbeat_interval_seconds * 1000)
@@ -125,7 +123,6 @@ export default defineEventHandler(async (event) => {
         clearInterval(heartbeatInterval)
         connectionStore.removeConnection(gameId, playerId)
         controller.close()
-        console.log(`[SSE] Player ${playerId} disconnected from game ${gameId}`)
 
         // 啟動斷線超時（若超時未重連，對手獲勝）
         const currentGame = inMemoryGameStore.get(gameId)
@@ -134,15 +131,13 @@ export default defineEventHandler(async (event) => {
             gameId,
             playerId,
             async () => {
-              console.log(`[SSE] Player ${playerId} disconnect timeout in game ${gameId}`)
               try {
                 await container.leaveGameUseCase.execute({
                   gameId,
                   playerId,
                 })
-                console.log(`[SSE] Game ${gameId} ended due to player ${playerId} disconnect timeout`)
-              } catch (error) {
-                console.error(`[SSE] Failed to handle disconnect timeout:`, error)
+              } catch {
+                // Error handled silently
               }
             }
           )

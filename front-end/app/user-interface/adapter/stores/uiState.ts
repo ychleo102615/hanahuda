@@ -412,7 +412,6 @@ export const useUIStateStore = defineStore('uiState', {
         currentScore,
         potentialScore,
       }
-      console.info('[UIStateStore] 顯示 Koi-Koi 決策 Modal', this.decisionModalData)
     },
 
     /**
@@ -421,7 +420,6 @@ export const useUIStateStore = defineStore('uiState', {
     hideDecisionModal(): void {
       this.decisionModalVisible = false
       this.decisionModalData = null
-      console.info('[UIStateStore] 隱藏 Koi-Koi 決策 Modal')
     },
 
     /**
@@ -431,7 +429,6 @@ export const useUIStateStore = defineStore('uiState', {
      */
     showErrorMessage(message: string): void {
       this.errorMessage = message
-      console.error('[UIStateStore] 錯誤訊息:', message)
 
       // 自動消失（3 秒後）
       setTimeout(() => {
@@ -449,7 +446,6 @@ export const useUIStateStore = defineStore('uiState', {
      */
     showReconnectionMessage(): void {
       this.reconnecting = true
-      console.info('[UIStateStore] Reconnecting...')
     },
 
     /**
@@ -458,7 +454,6 @@ export const useUIStateStore = defineStore('uiState', {
     hideReconnectionMessage(): void {
       this.reconnecting = false
       this.infoMessage = 'Connection restored'
-      console.info('[UIStateStore]', this.infoMessage)
 
       // 自動消失（3 秒後）
       setTimeout(() => {
@@ -476,7 +471,6 @@ export const useUIStateStore = defineStore('uiState', {
     showWaitingMessage(timeoutSeconds: number): void {
       this.waitingForOpponent = true
       this.waitingTimeoutSeconds = timeoutSeconds
-      console.info('[UIStateStore] Waiting for opponent...', { timeoutSeconds })
     },
 
     /**
@@ -485,7 +479,6 @@ export const useUIStateStore = defineStore('uiState', {
     hideWaitingMessage(): void {
       this.waitingForOpponent = false
       this.waitingTimeoutSeconds = null
-      console.info('[UIStateStore] Stopped waiting for opponent')
     },
 
     /**
@@ -495,7 +488,6 @@ export const useUIStateStore = defineStore('uiState', {
      */
     setDealingInProgress(inProgress: boolean): void {
       this.dealingInProgress = inProgress
-      console.info('[UIStateStore] Dealing in progress:', inProgress)
     },
 
     /**
@@ -514,7 +506,6 @@ export const useUIStateStore = defineStore('uiState', {
         finalScores: [...finalScores],
         isPlayerWinner,
       }
-      console.info('[UIStateStore] 顯示遊戲結束 Modal', this.gameFinishedModalData)
     },
 
     /**
@@ -523,7 +514,6 @@ export const useUIStateStore = defineStore('uiState', {
     hideGameFinishedModal(): void {
       this.gameFinishedModalVisible = false
       this.gameFinishedModalData = null
-      console.info('[UIStateStore] 隱藏遊戲結束 Modal')
     },
 
     /**
@@ -536,7 +526,6 @@ export const useUIStateStore = defineStore('uiState', {
 
       this.roundDrawnModalVisible = true
       this.roundDrawnModalScores = [...currentTotalScores]
-      console.info('[UIStateStore] 顯示平局 Modal', this.roundDrawnModalScores)
     },
 
     /**
@@ -545,7 +534,6 @@ export const useUIStateStore = defineStore('uiState', {
     hideRoundDrawnModal(): void {
       this.roundDrawnModalVisible = false
       this.roundDrawnModalScores = []
-      console.info('[UIStateStore] 隱藏平局 Modal')
     },
 
     /**
@@ -577,7 +565,6 @@ export const useUIStateStore = defineStore('uiState', {
         multipliers,
         updatedTotalScores: [...updatedTotalScores],
       }
-      console.info('[UIStateStore] 顯示回合計分 Modal', this.roundScoredModalData)
     },
 
     /**
@@ -586,7 +573,6 @@ export const useUIStateStore = defineStore('uiState', {
     hideRoundScoredModal(): void {
       this.roundScoredModalVisible = false
       this.roundScoredModalData = null
-      console.info('[UIStateStore] 隱藏回合計分 Modal')
     },
 
     /**
@@ -612,7 +598,6 @@ export const useUIStateStore = defineStore('uiState', {
         awardedPoints,
         updatedTotalScores: [...updatedTotalScores],
       }
-      console.info('[UIStateStore] 顯示局即時結束 Modal', this.roundEndedInstantlyModalData)
     },
 
     /**
@@ -621,7 +606,6 @@ export const useUIStateStore = defineStore('uiState', {
     hideRoundEndedInstantlyModal(): void {
       this.roundEndedInstantlyModalVisible = false
       this.roundEndedInstantlyModalData = null
-      console.info('[UIStateStore] 隱藏局即時結束 Modal')
     },
 
     /**
@@ -636,7 +620,6 @@ export const useUIStateStore = defineStore('uiState', {
 
       this.redirectModalVisible = true
       this.redirectModalData = { message, target, title }
-      console.info('[UIStateStore] 顯示重導向 Modal:', { message, target, title })
     },
 
     /**
@@ -645,7 +628,6 @@ export const useUIStateStore = defineStore('uiState', {
     hideRedirectModal(): void {
       this.redirectModalVisible = false
       this.redirectModalData = null
-      console.info('[UIStateStore] 隱藏重導向 Modal')
     },
 
     /**
@@ -676,7 +658,6 @@ export const useUIStateStore = defineStore('uiState', {
      */
     hideModal(): void {
       this._hideAllModals()
-      console.info('[UIStateStore] 隱藏所有 Modal')
     },
 
     /**
@@ -686,7 +667,6 @@ export const useUIStateStore = defineStore('uiState', {
      */
     setConnectionStatus(status: ConnectionStatus): void {
       this.connectionStatus = status
-      console.info('[UIStateStore] 連線狀態變更:', status)
     },
 
     /**
@@ -700,7 +680,6 @@ export const useUIStateStore = defineStore('uiState', {
      */
     setPendingGameFinished(data: GameFinishedData): void {
       this.pendingGameFinishedData = { ...data, finalScores: [...data.finalScores] }
-      console.info('[UIStateStore] 設定待處理的遊戲結束資料', this.pendingGameFinishedData)
     },
 
     /**
@@ -708,7 +687,6 @@ export const useUIStateStore = defineStore('uiState', {
      */
     clearPendingGameFinished(): void {
       this.pendingGameFinishedData = null
-      console.info('[UIStateStore] 清除待處理的遊戲結束資料')
     },
 
     /**
@@ -782,7 +760,6 @@ export const useUIStateStore = defineStore('uiState', {
       this.announcementQueue = []
       this.currentAnnouncement = null
 
-      console.info('[UIStateStore] 狀態已重置')
     },
 
     /**
@@ -793,7 +770,6 @@ export const useUIStateStore = defineStore('uiState', {
       this.handCardAwaitingConfirmation = cardId
       this.matchableFieldCards = [...matchableCards]
       this.matchCount = matchCount
-      console.info('[UIStateStore] 進入手牌確認模式', { cardId, matchCount })
     },
 
     /**
@@ -807,7 +783,6 @@ export const useUIStateStore = defineStore('uiState', {
       // 清除懸浮預覽狀態，避免殘留高亮
       this.handCardHoverPreview = null
       this.previewHighlightedTargets = []
-      console.info('[UIStateStore] 退出手牌確認模式')
     },
 
     /**
@@ -839,7 +814,6 @@ export const useUIStateStore = defineStore('uiState', {
       this.fieldCardSelectableTargets = [...selectableTargets]
       this.fieldCardHighlightType = highlightType
       this.fieldCardSourceCard = sourceCard
-      console.info('[UIStateStore] 進入場牌選擇模式', { sourceCard, highlightType, targetCount: selectableTargets.length })
     },
 
     /**
@@ -850,7 +824,6 @@ export const useUIStateStore = defineStore('uiState', {
       this.fieldCardSelectableTargets = []
       this.fieldCardHighlightType = null
       this.fieldCardSourceCard = null
-      console.info('[UIStateStore] 退出場牌選擇模式')
     },
 
     // ========================================
@@ -867,7 +840,6 @@ export const useUIStateStore = defineStore('uiState', {
       const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
       const newToast: ToastData = { ...toast, id }
       this.activeToasts.push(newToast)
-      console.info('[UIStateStore] Added toast:', newToast)
 
       // 設定自動移除計時器
       if (toast.duration !== null) {
@@ -888,7 +860,6 @@ export const useUIStateStore = defineStore('uiState', {
       const index = this.activeToasts.findIndex((t) => t.id === id)
       if (index !== -1) {
         this.activeToasts.splice(index, 1)
-        console.info('[UIStateStore] Removed toast:', id)
       }
     },
 
@@ -902,7 +873,6 @@ export const useUIStateStore = defineStore('uiState', {
       this.activeToasts = this.activeToasts.filter((t) => t.type !== type)
       const removedCount = initialLength - this.activeToasts.length
       if (removedCount > 0) {
-        console.info('[UIStateStore] Removed toasts by type:', type, 'count:', removedCount)
       }
     },
 
@@ -911,7 +881,6 @@ export const useUIStateStore = defineStore('uiState', {
      */
     clearAllToasts(): void {
       this.activeToasts = []
-      console.info('[UIStateStore] Cleared all toasts')
     },
 
     // ========================================
@@ -931,7 +900,6 @@ export const useUIStateStore = defineStore('uiState', {
       const id = `announcement-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
       const newAnnouncement: AnnouncementData = { ...announcement, id }
       this.announcementQueue.push(newAnnouncement)
-      console.info('[UIStateStore] Queued announcement:', newAnnouncement)
 
       // 如果沒有正在播放的公告，立即播放
       if (!this.currentAnnouncement) {
@@ -955,7 +923,6 @@ export const useUIStateStore = defineStore('uiState', {
       const next = this.announcementQueue.shift()
       if (next) {
         this.currentAnnouncement = next
-        console.info('[UIStateStore] Playing announcement:', next)
       }
     },
 
@@ -972,7 +939,6 @@ export const useUIStateStore = defineStore('uiState', {
     clearAllAnnouncements(): void {
       this.announcementQueue = []
       this.currentAnnouncement = null
-      console.info('[UIStateStore] Cleared all announcements')
     },
 
     // ===== 確認繼續遊戲 =====
@@ -987,7 +953,6 @@ export const useUIStateStore = defineStore('uiState', {
       this.continueConfirmationState = 'AWAITING_INPUT'
       this.continueConfirmationTimeoutSeconds = timeoutSeconds
       this.continueConfirmationCallback = onDecision
-      console.info('[UIStateStore] 顯示確認繼續遊戲介面', { timeoutSeconds })
     },
 
     /**
@@ -1000,7 +965,6 @@ export const useUIStateStore = defineStore('uiState', {
     setContinueConfirmationProcessing(): void {
       this.continueConfirmationState = 'AWAITING_SERVER'
       this.continueConfirmationCallback = null
-      console.info('[UIStateStore] 確認狀態切換為等待伺服器回應')
     },
 
     /**
@@ -1010,7 +974,6 @@ export const useUIStateStore = defineStore('uiState', {
       this.continueConfirmationState = 'HIDDEN'
       this.continueConfirmationTimeoutSeconds = null
       this.continueConfirmationCallback = null
-      console.info('[UIStateStore] 隱藏確認繼續遊戲介面')
     },
 
     // ===== 操作超時狀態 =====
@@ -1032,7 +995,6 @@ export const useUIStateStore = defineStore('uiState', {
         this.exitHandCardConfirmationMode()
         this.clearHandCardHoverPreview()
         this.exitFieldCardSelectionMode()
-        console.info('[UIStateStore] 操作超時，禁止玩家操作，已清除高亮狀態')
       }
     },
 
@@ -1047,7 +1009,6 @@ export const useUIStateStore = defineStore('uiState', {
      */
     setSubmittingAction(value: boolean): void {
       this.isSubmittingAction = value
-      console.info('[UIStateStore] 提交操作狀態:', value)
     },
   },
 })

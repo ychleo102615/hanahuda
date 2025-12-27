@@ -54,11 +54,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
    * @param signal - AbortSignal（可選），用於取消操作
    */
   execute(event: InitialStateEvent, signal?: AbortSignal): void {
-    console.info('[HandleInitialStateUseCase] Processing InitialState', {
-      responseType: event.response_type,
-      gameId: event.game_id,
-      playerId: event.player_id,
-    })
 
     // 儲存遊戲 ID 到 SessionContext
     this.sessionContext.setGameId(event.game_id)
@@ -86,7 +81,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
 
       default: {
         const _exhaustiveCheck: never = event.response_type
-        console.error('[HandleInitialStateUseCase] Unknown response_type:', _exhaustiveCheck)
       }
     }
   }
@@ -101,11 +95,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
    * @param data - 等待資料
    */
   private handleGameWaiting(data: GameWaitingData): void {
-    console.info('[HandleInitialStateUseCase] Game waiting for opponent', {
-      gameId: data.game_id,
-      playerId: data.player_id,
-      timeoutSeconds: data.timeout_seconds,
-    })
 
     // 1. 更新配對狀態為等待中
     this.matchmakingState.setStatus('waiting')
@@ -117,7 +106,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     // 3. 啟動配對超時倒數
     this.notification.startCountdown(data.timeout_seconds, 'ACTION')
 
-    console.info('[HandleInitialStateUseCase] Waiting for opponent, showing waiting UI')
   }
 
   /**
@@ -130,11 +118,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
    * @param data - 遊戲開始資料
    */
   private handleGameStarted(data: GameStartedData): void {
-    console.info('[HandleInitialStateUseCase] Game started', {
-      gameId: data.game_id,
-      playerCount: data.players.length,
-      startingPlayerId: data.starting_player_id,
-    })
 
     // 1. 清除配對狀態（遊戲已開始）
     this.matchmakingState.clearSession()
@@ -146,7 +129,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     // 3. 設定遊戲初始狀態
     this.updateUIState.initializeGameContext(data.game_id, [...data.players], data.ruleset)
 
-    console.info('[HandleInitialStateUseCase] Game state initialized, waiting for RoundDealt')
   }
 
   /**
@@ -159,10 +141,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
    * @param snapshot - 遊戲快照
    */
   private handleSnapshotRestore(snapshot: GameSnapshotRestore): void {
-    console.info('[HandleInitialStateUseCase] Restoring game state from snapshot', {
-      gameId: snapshot.game_id,
-      flowStage: snapshot.current_flow_stage,
-    })
 
     // 1. 中斷所有進行中的 Use Cases
     this.operationSession.abortAll()
@@ -194,7 +172,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
       this.notification.startCountdown(snapshot.timeout_seconds, countdownMode)
     }
 
-    console.info('[HandleInitialStateUseCase] Game state restored successfully')
   }
 
   /**
@@ -215,10 +192,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
 
     switch (snapshot.current_flow_stage) {
       case 'AWAITING_SELECTION':
-        console.info('[HandleInitialStateUseCase] AWAITING_SELECTION - selection UI will be triggered by watcher', {
-          isMyTurn,
-          hasSelectionContext: !!snapshot.selection_context,
-        })
         break
 
       case 'AWAITING_DECISION':
@@ -230,10 +203,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
             snapshot.active_player_id
           )
           this.notification.showDecisionModal(yakuScores, currentScore)
-          console.info('[HandleInitialStateUseCase] AWAITING_DECISION - decision modal shown', {
-            yakuCount: yakuScores.length,
-            currentScore,
-          })
         }
         break
 
@@ -261,11 +230,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
   private restoreRoundEndedState(snapshot: GameSnapshotRestore): void {
     const roundEndInfo = snapshot.round_end_info!
 
-    console.info('[HandleInitialStateUseCase] ROUND_ENDED - restoring round end modal', {
-      reason: roundEndInfo.reason,
-      winnerId: roundEndInfo.winner_id,
-      remainingSeconds: roundEndInfo.timeout_remaining_seconds,
-    })
 
     // 根據 reason 顯示對應的 Modal
     switch (roundEndInfo.reason) {
@@ -298,7 +262,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
         break
 
       default:
-        console.warn('[HandleInitialStateUseCase] Unknown round end reason:', roundEndInfo.reason)
     }
 
     // 啟動剩餘倒數（DISPLAY mode）
@@ -340,11 +303,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
    * @param result - 遊戲結束資訊
    */
   private handleGameFinished(result: GameFinishedInfo): void {
-    console.info('[HandleInitialStateUseCase] Game already finished', {
-      gameId: result.game_id,
-      winnerId: result.winner_id,
-      roundsPlayed: result.rounds_played,
-    })
 
     // 1. 清除配對狀態
     this.matchmakingState.clearSession()
@@ -372,7 +330,6 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
    * 顯示錯誤訊息，導航回大廳。
    */
   private handleGameExpired(): void {
-    console.info('[HandleInitialStateUseCase] Game expired')
 
     // 1. 清除配對狀態
     this.matchmakingState.clearSession()

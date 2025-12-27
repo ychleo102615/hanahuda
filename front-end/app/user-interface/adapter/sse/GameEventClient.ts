@@ -121,18 +121,12 @@ export class GameEventClient {
 
       // 連線建立成功
       this.eventSource.onopen = () => {
-        console.info('[SSE] 連線已建立', {
-          playerId: params.playerId,
-          playerName: params.playerName,
-          gameId: params.gameId ?? 'new-game',
-        })
         this.reconnectAttempts = 0
         this.onConnectionEstablishedCallback?.()
       }
 
       // 連線錯誤或中斷
       this.eventSource.onerror = (event) => {
-        console.error('[SSE] 連線錯誤', event)
         this.eventSource?.close()
         this.eventSource = null
         this.onConnectionLostCallback?.()
@@ -142,7 +136,6 @@ export class GameEventClient {
       // 註冊所有事件監聽器
       this.registerEventListeners()
     } catch (error) {
-      console.error('[SSE] 建立連線失敗', error)
       this.onConnectionFailedCallback?.()
     }
   }
@@ -166,7 +159,6 @@ export class GameEventClient {
     if (this.eventSource) {
       this.eventSource.close()
       this.eventSource = null
-      console.info('[SSE] 連線已斷開')
     }
     // 清空事件處理鏈，防止舊事件繼續處理
     this.eventRouter.clearEventChain()
@@ -216,13 +208,8 @@ export class GameEventClient {
       this.eventSource!.addEventListener(eventType, (event: MessageEvent) => {
         try {
           const payload = JSON.parse(event.data)
-          console.info(`[SSE] 接收事件: ${eventType}`, payload)
           this.eventRouter.route(eventType, payload)
         } catch (error) {
-          console.error(`[SSE] 事件解析失敗: ${eventType}`, {
-            data: event.data,
-            error,
-          })
         }
       })
     })
@@ -235,20 +222,15 @@ export class GameEventClient {
   private async reconnect(): Promise<void> {
     // 檢查是否已被 disconnect，若是則停止重連
     if (!this.shouldReconnect) {
-      console.info('[SSE] 重連已取消（已呼叫 disconnect）')
       return
     }
 
     if (!this.lastConnectionParams) {
-      console.error('[SSE] 無法重連：缺少連線參數')
       this.onConnectionFailedCallback?.()
       return
     }
 
     if (this.reconnectAttempts >= this.maxAttempts) {
-      console.error(
-        `[SSE] 重連失敗，達到最大嘗試次數 (${this.maxAttempts})`
-      )
       this.onConnectionFailedCallback?.()
       return
     }
@@ -256,15 +238,11 @@ export class GameEventClient {
     const delay = this.reconnectDelays[this.reconnectAttempts] ?? 16000
     this.reconnectAttempts++
 
-    console.warn(
-      `[SSE] 重連中... (嘗試 ${this.reconnectAttempts}/${this.maxAttempts})，等待 ${delay}ms`
-    )
 
     await sleep(delay)
 
     // sleep 後再次檢查，防止在等待期間被 disconnect
     if (!this.shouldReconnect) {
-      console.info('[SSE] 重連已取消（等待期間呼叫 disconnect）')
       return
     }
 

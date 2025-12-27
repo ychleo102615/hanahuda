@@ -12,11 +12,7 @@
  */
 
 import { rateLimiter } from '~~/server/utils/rateLimiter'
-import { createLogger } from '~~/server/utils/logger'
-import { getRequestId } from '~~/server/utils/requestId'
 import { HTTP_TOO_MANY_REQUESTS } from '#shared/constants'
-
-const logger = createLogger('Middleware:RateLimit')
 
 /**
  * 取得客戶端識別鍵
@@ -80,7 +76,6 @@ export default defineEventHandler((event) => {
 
   // 取得客戶端識別鍵
   const clientKey = getClientKey(event)
-  const requestId = getRequestId(event)
 
   // 檢查 rate limit
   const result = rateLimiter.check(clientKey, endpointType)
@@ -94,14 +89,6 @@ export default defineEventHandler((event) => {
 
   if (!result.allowed) {
     // 超過限制
-    logger.warn('Rate limit exceeded', {
-      clientKey,
-      endpointType,
-      path,
-      retryAfter: result.retryAfter,
-      requestId,
-    })
-
     setHeader(event, 'Retry-After', String(result.retryAfter))
     setResponseStatus(event, HTTP_TOO_MANY_REQUESTS)
 

@@ -40,11 +40,6 @@ export function useDependency<T>(token: symbol): T {
     // 提供更友善的錯誤訊息
     if ((error as DependencyNotFoundError).name === 'DependencyNotFoundError') {
       const config = useRuntimeConfig()
-      console.error(
-        `[useDependency] 依賴未註冊: ${token.toString()}\n` +
-        `請確認此依賴已在 registry.ts 中註冊。\n` +
-        `當前遊戲模式: ${config.public.gameMode || 'unknown'}`
-      )
     }
     throw error
   }

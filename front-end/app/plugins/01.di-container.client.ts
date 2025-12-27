@@ -16,7 +16,6 @@ import { registerDependencies, type GameMode } from '~/user-interface/adapter/di
 export default defineNuxtPlugin({ dependsOn: ['pinia'], setup(nuxtApp) {
   // 僅在 client-side 執行（.client.ts 後綴已確保，此檢查為額外保險）
   if (import.meta.server) {
-    console.warn('[DI Plugin] Skipping on server-side')
     return
   }
 
@@ -28,17 +27,12 @@ export default defineNuxtPlugin({ dependsOn: ['pinia'], setup(nuxtApp) {
   const config = useRuntimeConfig()
   const gameMode = config.public.gameMode as GameMode
 
-  console.info('[DI Plugin] Initializing DI container', { gameMode })
 
   try {
     // 註冊所有依賴，明確傳遞 pinia 實例
     registerDependencies(container, gameMode, pinia)
 
-    console.info('[DI Plugin] DI container initialized successfully', {
-      registeredTokens: container.getRegisteredTokens().length,
-    })
   } catch (error) {
-    console.error('[DI Plugin] Failed to initialize DI container:', error)
     throw error
   }
 

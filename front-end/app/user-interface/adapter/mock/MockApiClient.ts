@@ -41,7 +41,6 @@ export class MockApiClient implements SendCommandPort {
   async joinGame(request: JoinGameRequest): Promise<JoinGameResponse> {
     await delay(50)
 
-    console.info('[Mock API] joinGame', { request })
 
     // Mock 模式：session_token 由 Cookie 管理，回應不包含 token
     return {
@@ -57,7 +56,6 @@ export class MockApiClient implements SendCommandPort {
   async leaveGame(gameId: string): Promise<void> {
     await delay(50)
 
-    console.info('[Mock API] leaveGame', { gameId })
 
     // Mock 不執行任何操作,只記錄日誌
   }
@@ -68,7 +66,6 @@ export class MockApiClient implements SendCommandPort {
   async playHandCard(cardId: string, matchTargetId?: string): Promise<void> {
     await delay(50)
 
-    console.info('[Mock API] playHandCard', { cardId, matchTargetId })
 
     // Mock 不執行任何操作,事件由 MockEventEmitter 推送
   }
@@ -79,7 +76,6 @@ export class MockApiClient implements SendCommandPort {
   async selectTarget(sourceCardId: string, targetCardId: string): Promise<void> {
     await delay(50)
 
-    console.info('[Mock API] selectTarget', { sourceCardId, targetCardId })
 
     // Mock 不執行任何操作,事件由 MockEventEmitter 推送
   }
@@ -90,7 +86,6 @@ export class MockApiClient implements SendCommandPort {
   async makeDecision(decision: 'KOI_KOI' | 'END_ROUND'): Promise<void> {
     await delay(50)
 
-    console.info('[Mock API] makeDecision', { decision })
 
     // Mock 不執行任何操作,事件由 MockEventEmitter 推送
   }
@@ -101,7 +96,6 @@ export class MockApiClient implements SendCommandPort {
   async confirmContinue(decision: 'CONTINUE' | 'LEAVE'): Promise<void> {
     await delay(50)
 
-    console.info('[Mock API] confirmContinue:', decision)
 
     // Mock 不執行任何操作,事件由 MockEventEmitter 推送
   }

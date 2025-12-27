@@ -56,7 +56,6 @@ class GameEventBus {
   publish(gameId: string, event: GameEvent): void {
     const channel = this.getChannel(gameId)
     this.emitter.emit(channel, event)
-    console.log(`[GameEventBus] Published ${event.event_type} to game ${gameId}`)
   }
 
   /**
@@ -70,12 +69,9 @@ class GameEventBus {
     const channel = this.getChannel(gameId)
     this.emitter.on(channel, handler)
 
-    console.log(`[GameEventBus] Subscribed to game ${gameId}`)
-
     // 返回取消訂閱函數
     return () => {
       this.emitter.off(channel, handler)
-      console.log(`[GameEventBus] Unsubscribed from game ${gameId}`)
     }
   }
 
@@ -109,7 +105,6 @@ class GameEventBus {
   removeAllListeners(gameId: string): void {
     const channel = this.getChannel(gameId)
     this.emitter.removeAllListeners(channel)
-    console.log(`[GameEventBus] Removed all listeners for game ${gameId}`)
   }
 }
 

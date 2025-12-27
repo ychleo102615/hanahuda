@@ -25,12 +25,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   // 若遊戲會話已建立，重定向至遊戲畫面
   if (sessionContext.hasActiveSession()) {
-    console.warn('[Middleware] 遊戲會話已存在，重定向至 /game', {
-      gameId: sessionContext.getGameId(),
-      from: from.path,
-    })
     return navigateTo('/game')
   }
 
-  console.info('[Middleware] 進入大廳頁面', { from: from.path })
 })

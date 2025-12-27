@@ -16,8 +16,6 @@
 import { randomUUID } from 'crypto'
 import { getCookie } from 'h3'
 import { setSessionCookie, SESSION_COOKIE_NAME } from '~~/server/utils/sessionValidation'
-import { createLogger } from '~~/server/utils/logger'
-import { initRequestId } from '~~/server/utils/requestId'
 
 /**
  * 成功回應型別
@@ -33,14 +31,10 @@ interface SessionResponse {
 }
 
 export default defineEventHandler(async (event): Promise<SessionResponse> => {
-  const requestId = initRequestId(event)
-  const logger = createLogger('API:session', requestId)
-
   // 1. 檢查是否已有 session_token Cookie
   const existingToken = getCookie(event, SESSION_COOKIE_NAME)
 
   if (existingToken) {
-    logger.info('Existing session found', { tokenPrefix: existingToken.slice(0, 8) })
     return {
       data: {
         has_session: true,
@@ -53,8 +47,6 @@ export default defineEventHandler(async (event): Promise<SessionResponse> => {
   // 2. 建立新的 session_token
   const sessionToken = randomUUID()
   setSessionCookie(event, sessionToken)
-
-  logger.info('New session created', { tokenPrefix: sessionToken.slice(0, 8) })
 
   return {
     data: {

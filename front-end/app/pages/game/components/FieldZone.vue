@@ -108,7 +108,6 @@ function handleCardClick(cardId: string) {
     const possibleTargets = gameState.possibleTargetCardIds
 
     if (!drawnCard || possibleTargets.length === 0) {
-      console.error('[FieldZone] Missing drawnCard or possibleTargets for AWAITING_SELECTION')
       return
     }
 
@@ -124,12 +123,10 @@ function handleCardClick(cardId: string) {
   // 情境 2: 手牌確認模式（兩次點擊） - 點擊場牌來配對
   if (handCardConfirmationMode.value && matchableFieldCards.value.includes(cardId)) {
     if (!uiState.handCardAwaitingConfirmation) {
-      console.warn('[FieldZone] No handCard awaiting confirmation')
       return
     }
 
     const selectedHandCard = uiState.handCardAwaitingConfirmation
-    console.info('[FieldZone] 手牌確認模式 - 執行配對:', { selectedHandCard, fieldCard: cardId })
 
     playHandCardPort.execute({
       cardId: selectedHandCard,

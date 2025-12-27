@@ -158,7 +158,6 @@ async function startAnimationIfNeeded(cardId: string) {
   } catch (error) {
     // 如果是 AbortOperationError，靜默忽略（動畫已被取消）
     if (error instanceof AbortOperationError) {
-      console.info(`[AnimationLayer] Card animation aborted: ${cardId}`)
       animatedCardIds.value.delete(cardId)
       return
     }
@@ -212,7 +211,6 @@ async function startGroupAnimation(groupId: string) {
   } catch (error) {
     // 如果是 AbortOperationError，靜默忽略（動畫已被取消）
     if (error instanceof AbortOperationError) {
-      console.info(`[AnimationLayer] Group animation aborted: ${groupId}`)
       animatedGroupIds.value.delete(groupId)
       return
     }

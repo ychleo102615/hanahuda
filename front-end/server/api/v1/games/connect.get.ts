@@ -38,8 +38,6 @@ import { connectionStore } from '~~/server/adapters/event-publisher/connectionSt
 import { container } from '~~/server/utils/container'
 import { gameConfig } from '~~/server/utils/config'
 import { setSessionCookie, SESSION_COOKIE_NAME } from '~~/server/utils/sessionValidation'
-import { createLogger } from '~~/server/utils/logger'
-import { initRequestId } from '~~/server/utils/requestId'
 import {
   markPlayerDisconnected,
   markPlayerReconnected,
@@ -94,15 +92,11 @@ function buildInitialStateEvent(
 }
 
 export default defineEventHandler(async (event) => {
-  const requestId = initRequestId(event)
-  const logger = createLogger('API:connect', requestId)
-
   // 1. 解析並驗證 Query Parameters
   const query = getQuery(event)
   const parseResult = ConnectQuerySchema.safeParse(query)
 
   if (!parseResult.success) {
-    logger.warn('Validation failed', { errors: parseResult.error.flatten().fieldErrors })
     setResponseStatus(event, HTTP_BAD_REQUEST)
     return {
       error: {
@@ -119,14 +113,6 @@ export default defineEventHandler(async (event) => {
   // 2. 從 Cookie 讀取 session_token
   const sessionToken = getCookie(event, SESSION_COOKIE_NAME)
 
-  logger.info('Processing connect request', {
-    playerId,
-    playerName,
-    hasGameId: !!gameId,
-    roomType: roomType ?? 'default',
-    hasSessionToken: !!sessionToken,
-  })
-
   // 3. 呼叫 JoinGameUseCase
   const useCase = container.joinGameUseCase
   const result = await useCase.execute({
@@ -136,8 +122,6 @@ export default defineEventHandler(async (event) => {
     gameId,
     roomType,
   })
-
-  logger.info('JoinGameUseCase result', { status: result.status })
 
   // 4. 建立 InitialState 事件資料
   let initialStateEvent: InitialStateEvent
@@ -215,7 +199,6 @@ export default defineEventHandler(async (event) => {
       effectiveSessionToken = sessionToken || ''
       // game_expired 不需要 data，前端只需要 response_type 即可處理
       initialStateEvent = buildInitialStateEvent('game_expired', result.gameId, playerId, null)
-      logger.info('Game expired, sending InitialState event', { gameId: result.gameId })
       break
     }
 
@@ -223,7 +206,6 @@ export default defineEventHandler(async (event) => {
     case 'success': {
       // 舊版 success 沒有足夠資訊建立 InitialState
       // 這是過渡期的相容處理，不應該出現在 SSE 端點
-      logger.warn('Legacy success status encountered in SSE endpoint, this should not happen')
       throw new Error('Legacy success status is not supported in SSE endpoint')
     }
 
@@ -236,7 +218,6 @@ export default defineEventHandler(async (event) => {
   // 6. 設定 Session Cookie（如果是新 session）
   if (effectiveSessionToken && effectiveSessionToken !== sessionToken) {
     setSessionCookie(event, effectiveSessionToken)
-    logger.info('Session cookie set', { gameId: effectiveGameId })
   }
 
   // 7. 設定 SSE headers
@@ -256,12 +237,8 @@ export default defineEventHandler(async (event) => {
       try {
         const sseData = formatSSE(initialStateEvent)
         controller.enqueue(encoder.encode(sseData))
-        logger.info('InitialState event sent', {
-          gameId: effectiveGameId,
-          responseType: initialStateEvent.response_type,
-        })
-      } catch (error) {
-        logger.error('Failed to send InitialState', error)
+      } catch {
+        // Failed to send InitialState
       }
 
       // 對於 game_finished 或 game_expired，不需要建立持久連線
@@ -276,14 +253,13 @@ export default defineEventHandler(async (event) => {
         try {
           const sseData = formatSSE(gameEvent)
           controller.enqueue(encoder.encode(sseData))
-        } catch (error) {
-          logger.error('Error sending event', { error, playerId })
+        } catch {
+          // Error sending event
         }
       }
 
       // 註冊連線
       connectionStore.addConnection(effectiveGameId, playerId, handler)
-      logger.info('Player connected', { gameId: effectiveGameId, playerId })
 
       // 清除斷線超時（重連時）
       container.gameTimeoutManager.clearDisconnectTimeout(effectiveGameId, playerId)
@@ -301,12 +277,10 @@ export default defineEventHandler(async (event) => {
 
             // 處理重連計時器邏輯：清除加速計時器，保留操作計時器繼續倒數
             container.turnFlowService.handlePlayerReconnected(effectiveGameId, playerId)
-
-            logger.info('Player reconnected and marked as CONNECTED', { gameId: effectiveGameId, playerId })
           }
         }
-      }).catch(error => {
-        logger.error('Failed to handle reconnection', error)
+      }).catch(() => {
+        // Failed to handle reconnection
       })
 
       // 心跳計時器
@@ -314,8 +288,7 @@ export default defineEventHandler(async (event) => {
         try {
           const heartbeat = formatHeartbeat()
           controller.enqueue(encoder.encode(heartbeat))
-        } catch (error) {
-          logger.error('Error sending heartbeat', { error, playerId })
+        } catch {
           clearInterval(heartbeatInterval)
         }
       }, gameConfig.sse_heartbeat_interval_seconds * 1000)
@@ -325,7 +298,6 @@ export default defineEventHandler(async (event) => {
         clearInterval(heartbeatInterval)
         connectionStore.removeConnection(effectiveGameId, playerId)
         controller.close()
-        logger.info('Player disconnected', { gameId: effectiveGameId, playerId })
 
         // 新邏輯（Phase 5）：標記玩家為 DISCONNECTED，不立即結束遊戲
         // 遊戲繼續進行（由系統代行，3秒超時），回合結束時檢查並決定是否結束遊戲
@@ -340,14 +312,10 @@ export default defineEventHandler(async (event) => {
               const disconnectedGame = markPlayerDisconnected(disconnectGame, playerId)
               container.gameStore.set(disconnectedGame)
               await container.gameRepository.save(disconnectedGame)
-              logger.info('Player marked as DISCONNECTED, game continues with accelerated auto-action', {
-                gameId: effectiveGameId,
-                playerId,
-              })
             }
           }
-        }).catch(error => {
-          logger.error('Failed to handle disconnect', error)
+        }).catch(() => {
+          // Failed to handle disconnect
         })
 
         // 啟動斷線超時計時器（用於在沒有活動的情況下的保護機制）
@@ -358,7 +326,6 @@ export default defineEventHandler(async (event) => {
             effectiveGameId,
             playerId,
             async () => {
-              logger.info('Player disconnect timeout reached', { gameId: effectiveGameId, playerId })
               // 斷線超時後，若遊戲仍在進行且玩家仍斷線，標記為 LEFT
               // 這是一個保護機制，正常情況下回合結束時就會處理
               try {
@@ -371,11 +338,10 @@ export default defineEventHandler(async (event) => {
                       gameId: effectiveGameId,
                       playerId,
                     })
-                    logger.info('Disconnected player marked as LEFT after timeout', { gameId: effectiveGameId })
                   }
                 }
-              } catch (error) {
-                logger.error('Failed to handle disconnect timeout', error)
+              } catch {
+                // Failed to handle disconnect timeout
               }
             }
           )

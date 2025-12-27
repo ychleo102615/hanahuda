@@ -56,7 +56,6 @@ export const CARD_BACK_ICON_NAME = 'Hanafuda_Back'
 export function mmtiToSvgName(mmti: string): string | null {
   // 驗證格式：必須是 4 位字串
   if (!mmti || mmti.length !== 4) {
-    console.warn(`[cardMapping] Invalid MMTI format: "${mmti}" (length should be 4)`)
     return null
   }
 
@@ -68,21 +67,18 @@ export function mmtiToSvgName(mmti: string): string | null {
   // 驗證月份
   const monthName = MONTH_MAP[month]
   if (!monthName) {
-    console.warn(`[cardMapping] Invalid month code: "${month}" in MMTI "${mmti}"`)
     return null
   }
 
   // 驗證牌型
   const typeName = TYPE_MAP[type]
   if (!typeName) {
-    console.warn(`[cardMapping] Invalid type code: "${type}" in MMTI "${mmti}"`)
     return null
   }
 
   // 驗證索引（1-4）
   const indexNum = parseInt(index, 10)
   if (isNaN(indexNum) || indexNum < 1 || indexNum > 4) {
-    console.warn(`[cardMapping] Invalid index: "${index}" in MMTI "${mmti}"`)
     return null
   }
 

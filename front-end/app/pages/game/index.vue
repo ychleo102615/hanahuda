@@ -92,12 +92,10 @@ const {
 // GamePage 不再直接調用業務 Port，由子組件負責
 
 onMounted(() => {
-  console.info('[GamePage] 遊戲頁面已載入', { gameMode })
 
   // 檢查是否有 playerId
   const playerId = sessionContext.getPlayerId()
   if (!playerId) {
-    console.error('[GamePage] 無 playerId，導向大廳')
     navigateTo('/lobby')
     return
   }
@@ -106,11 +104,9 @@ onMounted(() => {
   if (gameMode === 'backend' && startGameUseCase) {
     // Backend 模式：使用 StartGameUseCase 建立 SSE 連線
     // UseCase 會從 SessionContext 取得所有必要資訊
-    console.info('[GamePage] 使用 StartGameUseCase 建立連線')
     startGameUseCase.execute()
   } else if (gameMode === 'mock' && mockEventEmitter) {
     // Mock 模式：啟動事件腳本
-    console.info('[GamePage] 啟動 Mock 事件腳本')
     mockEventEmitter.start()
   }
 })
@@ -118,13 +114,11 @@ onMounted(() => {
 onUnmounted(() => {
   // 斷開連線（Backend 模式）
   if (gameConnection) {
-    console.info('[GamePage] 斷開遊戲連線')
     gameConnection.disconnect()
   }
 
   // 重置 Mock 事件發射器（Mock 模式）
   if (mockEventEmitter) {
-    console.info('[GamePage] 重置 Mock 事件發射器')
     mockEventEmitter.reset()
   }
 })
@@ -133,7 +127,6 @@ onUnmounted(() => {
 // GamePage 只作為協調者，不處理業務邏輯
 // 所有場牌點擊邏輯已移至 FieldZone 組件內部處理
 function handleFieldCardClick(cardId: string) {
-  console.info('[GamePage] 場牌點擊事件（已由 FieldZone 處理）:', cardId)
 }
 </script>
 

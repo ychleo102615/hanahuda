@@ -39,10 +39,6 @@ import {
   type MakeDecisionInput,
   type MakeDecisionOutput,
 } from '~~/server/application/ports/input/makeDecisionInputPort'
-import { loggers } from '~~/server/utils/logger'
-
-/** Module logger instance */
-const logger = loggers.useCase('MakeDecision')
 
 // Re-export for backwards compatibility
 export { MakeDecisionError } from '~~/server/application/ports/input/makeDecisionInputPort'
@@ -146,7 +142,6 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       // 檢查是否應該結束局（KOI_KOI 後可能無法繼續，例如雙方手牌都空了）
       if (shouldEndRound(game)) {
         // 即使選擇 KOI_KOI，如果無法繼續，也要進入流局處理
-        logger.info('KOI_KOI but round should end, handling round draw', { gameId })
         if (this.turnFlowService) {
           game = await this.turnFlowService.handleRoundDraw(gameId, game)
         }
@@ -182,15 +177,12 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
       )
 
       // handleScoredRoundEnd 已處理儲存和事件發送，直接返回
-      logger.info('Player decided END_ROUND', { playerId, gameId })
       return { success: true }
     }
 
       // 6. 儲存更新（僅 KOI_KOI 分支會到達這裡）
       await this.gameRepository.save(game)
       this.gameStore.set(game)
-
-      logger.info('Player decided', { playerId, decision, gameId })
 
       return { success: true }
     }) // end of withLock

@@ -20,10 +20,6 @@ import type {
 } from '~~/server/application/ports/output/gameLogRepositoryPort'
 import { db } from '~~/server/utils/db'
 import { gameLogs, type GameLog } from '~~/server/database/schema'
-import { loggers } from '~~/server/utils/logger'
-
-/** Module logger instance */
-const logger = loggers.adapter('DrizzleGameLogRepository')
 
 /**
  * 應用層序號計數器
@@ -56,13 +52,8 @@ export class DrizzleGameLogRepository implements GameLogRepositoryPort {
     const sequenceNumber = ++sequenceCounter
 
     // Fire-and-forget: 不等待 Promise，讓遊戲流程繼續
-    this.writeLog(entry, sequenceNumber).catch((error) => {
-      // 錯誤隔離：僅記錄錯誤，不向外傳播
-      logger.error('Failed to write game log', error, {
-        gameId: entry.gameId,
-        eventType: entry.eventType,
-        sequenceNumber,
-      })
+    this.writeLog(entry, sequenceNumber).catch(() => {
+      // 錯誤隔離：僅忽略錯誤，不向外傳播
     })
   }
 
@@ -73,8 +64,6 @@ export class DrizzleGameLogRepository implements GameLogRepositoryPort {
    * @param sequenceNumber - 應用層序號
    */
   private async writeLog(entry: GameLogEntry, sequenceNumber: number): Promise<void> {
-    const startTime = Date.now()
-
     await db.insert(gameLogs).values({
       sequenceNumber,
       gameId: entry.gameId,
@@ -82,18 +71,6 @@ export class DrizzleGameLogRepository implements GameLogRepositoryPort {
       eventType: entry.eventType,
       payload: entry.payload,
     })
-
-    const duration = Date.now() - startTime
-
-    // 效能監控：如果寫入超過 10ms，記錄警告
-    if (duration > 10) {
-      logger.warn('Slow game log write', {
-        gameId: entry.gameId,
-        eventType: entry.eventType,
-        sequenceNumber,
-        durationMs: duration,
-      })
-    }
   }
 
   /**

@@ -68,16 +68,9 @@ export class StartGameUseCase implements StartGamePort {
     const roomTypeId = this.sessionContext.getRoomTypeId()
 
     if (!playerId) {
-      console.error('[StartGameUseCase] 無 playerId，無法啟動遊戲')
       throw new Error('No player ID found in session')
     }
 
-    console.info('[StartGameUseCase] 啟動遊戲連線', {
-      playerId,
-      playerName,
-      roomTypeId,
-      isNewGame,
-    })
 
     // 1. 新遊戲：清除 gameId 和遊戲結束標記
     if (isNewGame) {

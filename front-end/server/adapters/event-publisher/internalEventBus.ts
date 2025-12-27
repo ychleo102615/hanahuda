@@ -50,10 +50,8 @@ class InternalEventBus implements InternalEventPublisherPort {
    */
   onRoomCreated(handler: RoomCreatedHandler): Unsubscribe {
     this.emitter.on('ROOM_CREATED', handler)
-    console.log('[InternalEventBus] Subscribed to ROOM_CREATED')
     return () => {
       this.emitter.off('ROOM_CREATED', handler)
-      console.log('[InternalEventBus] Unsubscribed from ROOM_CREATED')
     }
   }
 
@@ -64,7 +62,6 @@ class InternalEventBus implements InternalEventPublisherPort {
    */
   publishRoomCreated(payload: RoomCreatedPayload): void {
     this.emitter.emit('ROOM_CREATED', payload)
-    console.log(`[InternalEventBus] ROOM_CREATED: game ${payload.gameId}`)
   }
 }
 

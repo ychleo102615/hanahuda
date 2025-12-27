@@ -80,7 +80,6 @@ class InMemoryGameStore implements GameStorePort {
     }
 
     this.games.set(game.id, game)
-    console.log(`[InMemoryGameStore] Saved game ${game.id}, status: ${game.status}`)
   }
 
   /**
@@ -97,7 +96,6 @@ class InMemoryGameStore implements GameStorePort {
       }
       this.sessionGameMap.delete(game.sessionToken)
       this.games.delete(gameId)
-      console.log(`[InMemoryGameStore] Deleted game ${gameId}`)
     }
   }
 
@@ -188,7 +186,6 @@ class InMemoryGameStore implements GameStorePort {
   addPlayerSession(sessionToken: string, gameId: string, playerId: string): void {
     this.sessionGameMap.set(sessionToken, gameId)
     this.playerGameMap.set(playerId, gameId)
-    console.log(`[InMemoryGameStore] Added session ${sessionToken} for player ${playerId} in game ${gameId}`)
   }
 
   /**
@@ -198,7 +195,6 @@ class InMemoryGameStore implements GameStorePort {
     this.games.clear()
     this.playerGameMap.clear()
     this.sessionGameMap.clear()
-    console.log('[InMemoryGameStore] Cleared all games')
   }
 
   /**
@@ -217,10 +213,6 @@ class InMemoryGameStore implements GameStorePort {
         this.delete(gameId)
         cleaned++
       }
-    }
-
-    if (cleaned > 0) {
-      console.log(`[InMemoryGameStore] Cleaned up ${cleaned} expired games`)
     }
 
     return cleaned

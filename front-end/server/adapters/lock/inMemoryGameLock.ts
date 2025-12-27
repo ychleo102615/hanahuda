@@ -15,9 +15,6 @@
 
 import { AsyncLocalStorage } from 'async_hooks'
 import { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
-import { loggers } from '~~/server/utils/logger'
-
-const logger = loggers.adapter('GameLock')
 
 /**
  * 用於追蹤當前呼叫鏈持有的鎖
@@ -44,7 +41,6 @@ export class InMemoryGameLock extends GameLockPort {
     const heldLocks = lockContext.getStore()
     if (heldLocks?.has(gameId)) {
       // 可重入：直接執行，不需等待
-      logger.debug('Reentrant lock access', { gameId })
       return operation()
     }
 
@@ -63,8 +59,6 @@ export class InMemoryGameLock extends GameLockPort {
     // 等待前一個鎖釋放
     await currentLock
 
-    logger.debug('Lock acquired', { gameId })
-
     // 建立或更新持有鎖的集合
     const newHeldLocks = new Set(heldLocks ?? [])
     newHeldLocks.add(gameId)
@@ -75,7 +69,6 @@ export class InMemoryGameLock extends GameLockPort {
     } finally {
       // 確保鎖一定會被釋放
       releaseLock()
-      logger.debug('Lock released', { gameId })
 
       // 清理：若此鎖是最後一個，移除 entry
       if (this.locks.get(gameId) === newLock) {

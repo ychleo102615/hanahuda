@@ -24,10 +24,6 @@ import { EVENT_TYPES } from '#shared/contracts'
 import type { GameLogEventType } from '~~/server/database/schema/gameLogs'
 import { connectionStore } from './connectionStore'
 import { opponentStore } from '~~/server/adapters/opponent/opponentStore'
-import { loggers } from '~~/server/utils/logger'
-
-/** Module logger instance */
-const logger = loggers.adapter('CompositeEventPublisher')
 
 /**
  * 需要記錄的 SSE 事件類型（使用 EVENT_TYPES 常數）
@@ -68,18 +64,12 @@ export class CompositeEventPublisher implements EventPublisherPort {
     const connectionCount = connectionStore.getConnectionCount(gameId)
     if (connectionCount > 0) {
       connectionStore.broadcast(gameId, event)
-      logger.info('SSE broadcast', {
-        eventType: event.event_type,
-        gameId,
-        connectionCount,
-      })
     }
 
     // 2. 發布到 AI 對手（若有註冊）
     const hasOpponent = opponentStore.hasOpponent(gameId)
     if (hasOpponent) {
       opponentStore.sendEvent(gameId, event)
-      logger.info('AI broadcast', { eventType: event.event_type, gameId })
     }
 
     // 3. 記錄到資料庫（Fire-and-Forget）
@@ -211,12 +201,7 @@ export class CompositeEventPublisher implements EventPublisherPort {
    * @param event - 遊戲事件
    */
   publishToPlayer(gameId: string, playerId: string, event: GameEvent): void {
-    const success = connectionStore.sendToPlayer(gameId, playerId, event)
-    if (success) {
-      logger.info('Sent event to player', { eventType: event.event_type, playerId, gameId })
-    } else {
-      logger.info('No connection for player, event not sent', { playerId, gameId })
-    }
+    connectionStore.sendToPlayer(gameId, playerId, event)
   }
 }
 

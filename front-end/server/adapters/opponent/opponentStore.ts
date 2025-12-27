@@ -54,9 +54,6 @@ class OpponentStore {
    */
   register(info: OpponentInfo): void {
     this.opponents.set(info.gameId, info)
-    console.log(
-      `[OpponentStore] Registered opponent ${info.playerId} for game ${info.gameId} (strategy: ${info.strategyType})`
-    )
   }
 
   /**
@@ -68,9 +65,6 @@ class OpponentStore {
     const opponent = this.opponents.get(gameId)
     if (opponent) {
       this.opponents.delete(gameId)
-      console.log(
-        `[OpponentStore] Unregistered opponent ${opponent.playerId} from game ${gameId}`
-      )
     }
   }
 
@@ -107,11 +101,7 @@ class OpponentStore {
       try {
         opponent.handler(event)
         return true
-      } catch (error) {
-        console.error(
-          `[OpponentStore] Error sending event to opponent in game ${gameId}:`,
-          error
-        )
+      } catch {
         return false
       }
     }

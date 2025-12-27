@@ -17,8 +17,6 @@ import {
   createSessionErrorResponse,
   clearSessionCookie,
 } from '~~/server/utils/sessionValidation'
-import { createLogger } from '~~/server/utils/logger'
-import { initRequestId } from '~~/server/utils/requestId'
 import {
   HTTP_OK,
   HTTP_BAD_REQUEST,
@@ -51,14 +49,10 @@ interface LeaveResponse {
 }
 
 export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorResponse> => {
-  const requestId = initRequestId(event)
-  const logger = createLogger('API:leave', requestId)
-
   try {
     // 1. 取得遊戲 ID
     const gameId = getRouterParam(event, 'gameId')
     if (!gameId) {
-      logger.warn('Missing game ID')
       setResponseStatus(event, HTTP_BAD_REQUEST)
       return {
         error: {
@@ -75,14 +69,11 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
       sessionContext = validateSession(event, gameId)
     } catch (err) {
       if (err instanceof SessionValidationError) {
-        logger.warn('Session validation failed', { code: err.code, gameId })
         setResponseStatus(event, err.statusCode)
         return createSessionErrorResponse(err)
       }
       throw err
     }
-
-    logger.info('Processing leave request', { gameId, playerId: sessionContext.playerId })
 
     // 3. 從容器取得 UseCase
     const useCase = container.leaveGameUseCase
@@ -95,10 +86,8 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
 
     // 5. 清除 Session Cookie
     clearSessionCookie(event)
-    logger.info('Session cookie cleared', { gameId })
 
     // 6. 返回成功回應
-    logger.info('Leave request completed', { gameId })
     setResponseStatus(event, HTTP_OK)
     return {
       data: {
@@ -110,7 +99,6 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
   } catch (error) {
     // 處理 UseCase 錯誤
     if (error instanceof LeaveGameError) {
-      logger.warn('Leave game error', { code: error.code, message: error.message })
       const statusCode =
         error.code === 'GAME_NOT_FOUND'
           ? HTTP_NOT_FOUND
@@ -127,7 +115,6 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
       }
     }
 
-    logger.error('Unexpected error', error)
     setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
     return {
       error: {

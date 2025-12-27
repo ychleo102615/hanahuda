@@ -99,8 +99,6 @@ export class DrizzlePlayerStatsRepository implements PlayerStatsRepositoryPort {
         target: playerStats.playerId,
         set: updateSet,
       })
-
-    console.log(`[DrizzlePlayerStatsRepository] Upserted stats for player ${playerId}${isRoundEndOnly ? ' (round only)' : ''}`)
   }
 
   /**

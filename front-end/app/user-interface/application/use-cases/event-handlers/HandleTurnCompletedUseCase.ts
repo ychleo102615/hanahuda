@@ -44,7 +44,6 @@ export class HandleTurnCompletedUseCase implements HandleTurnCompletedPort {
       await this.executeAsyncCore(event, receivedAt)
     } catch (error) {
       if (error instanceof AbortOperationError) {
-        console.info('[HandleTurnCompletedUseCase] Aborted due to state recovery')
         return
       }
       throw error

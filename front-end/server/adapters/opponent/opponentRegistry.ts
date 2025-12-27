@@ -84,15 +84,12 @@ export class OpponentRegistry {
    */
   start(): void {
     if (this.unsubscribeRoomCreated) {
-      console.log('[OpponentRegistry] Already started')
       return
     }
 
     this.unsubscribeRoomCreated = this.deps.internalEventBus.onRoomCreated(async (payload) => {
       await this.handleRoomCreated(payload)
     })
-
-    console.log('[OpponentRegistry] Started, listening for ROOM_CREATED')
   }
 
   /**
@@ -113,8 +110,6 @@ export class OpponentRegistry {
       opponentStore.unregister(gameId)
     }
     this.instances.clear()
-
-    console.log('[OpponentRegistry] Stopped')
   }
 
   /**
@@ -123,8 +118,6 @@ export class OpponentRegistry {
    * @param payload - 房間建立事件 Payload
    */
   private async handleRoomCreated(payload: RoomCreatedPayload): Promise<void> {
-    console.log(`[OpponentRegistry] ROOM_CREATED received for game ${payload.gameId}`)
-
     // 1. 建立 AI 玩家 ID
     const aiPlayerId = randomUUID()
     const aiPlayerName = 'AI Opponent'
@@ -170,14 +163,10 @@ export class OpponentRegistry {
         strategyType,
       })
 
-      if (result.success) {
-        console.log(`[OpponentRegistry] AI ${aiPlayerId} joined game ${payload.gameId}`)
-      } else {
-        console.error(`[OpponentRegistry] Failed to join game ${payload.gameId}`)
+      if (!result.success) {
         this.cleanupGame(payload.gameId)
       }
-    } catch (error) {
-      console.error(`[OpponentRegistry] Error joining game ${payload.gameId}:`, error)
+    } catch {
       this.cleanupGame(payload.gameId)
     }
   }

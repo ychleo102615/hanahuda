@@ -69,7 +69,6 @@ export class SSEConnectionManager {
    * ```
    */
   connect(params: SSEConnectionParams): void {
-    console.info('[SSEConnectionManager] 建立 SSE 連線', params)
 
     // 儲存連線參數供重連使用
     this.currentParams = params
@@ -85,7 +84,6 @@ export class SSEConnectionManager {
    * 斷開 SSE 連線
    */
   disconnect(): void {
-    console.info('[SSEConnectionManager] 斷開 SSE 連線')
     this.gameEventClient.disconnect()
     this.uiStateStore.setConnectionStatus('disconnected')
   }
@@ -111,21 +109,18 @@ export class SSEConnectionManager {
   private setupCallbacks(): void {
     // 連線建立成功
     this.gameEventClient.onConnectionEstablished(() => {
-      console.info('[SSEConnectionManager] SSE 連線已建立')
       this.uiStateStore.setConnectionStatus('connected')
       this.uiStateStore.hideReconnectionMessage()
     })
 
     // 連線中斷
     this.gameEventClient.onConnectionLost(() => {
-      console.warn('[SSEConnectionManager] SSE 連線中斷')
       this.uiStateStore.setConnectionStatus('disconnected')
       this.uiStateStore.showReconnectionMessage()
     })
 
     // 重連失敗
     this.gameEventClient.onConnectionFailed(() => {
-      console.error('[SSEConnectionManager] SSE 連線失敗')
       this.uiStateStore.setConnectionStatus('disconnected')
       this.uiStateStore.showErrorMessage('Unable to connect to game server')
     })

@@ -19,7 +19,6 @@ export function useScrollTo() {
   const scrollTo = (elementId: string, offset = 0) => {
     const element = document.getElementById(elementId)
     if (!element) {
-      console.warn(`Element with id "${elementId}" not found`)
       return
     }
 

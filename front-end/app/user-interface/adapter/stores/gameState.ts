@@ -315,7 +315,6 @@ export const useGameStateStore = defineStore('gameState', {
       // 辨識本地玩家（非 AI 玩家）
       const localPlayer = players.find((p) => !p.is_ai)
       if (!localPlayer) {
-        console.error('[GameStateStore] 找不到本地玩家')
         return
       }
 
@@ -360,12 +359,6 @@ export const useGameStateStore = defineStore('gameState', {
             this.opponentPlayerId = opponent.player_id
             this.opponentPlayerName = opponent.player_name
           }
-          console.info('[GameStateStore] Initialized player IDs from snapshot', {
-            localPlayerId: this.localPlayerId,
-            localPlayerName: this.localPlayerName,
-            opponentPlayerId: this.opponentPlayerId,
-            opponentPlayerName: this.opponentPlayerName,
-          })
         }
       }
 
@@ -423,21 +416,12 @@ export const useGameStateStore = defineStore('gameState', {
       if (snapshot.selection_context) {
         this.drawnCard = snapshot.selection_context.drawn_card
         this.possibleTargetCardIds = [...snapshot.selection_context.possible_targets]
-        console.info('[GameStateStore] 恢復選擇上下文', {
-          drawnCard: this.drawnCard,
-          possibleTargets: this.possibleTargetCardIds,
-        })
       } else {
         // 清除選擇上下文（非 AWAITING_SELECTION 狀態）
         this.drawnCard = null
         this.possibleTargetCardIds = []
       }
 
-      console.info('[GameStateStore] 快照恢復完成', {
-        flowStage: this.flowStage,
-        fieldCards: this.fieldCards.length,
-        myHandCards: this.myHandCards.length,
-      })
     },
 
     /**
@@ -528,7 +512,6 @@ export const useGameStateStore = defineStore('gameState', {
      */
     setPossibleTargetCardIds(cardIds: string[]): void {
       this.possibleTargetCardIds = [...cardIds]
-      console.info('[GameStateStore] 設定可配對目標:', cardIds)
     },
 
     /**
@@ -538,7 +521,6 @@ export const useGameStateStore = defineStore('gameState', {
      */
     setDrawnCard(cardId: string | null): void {
       this.drawnCard = cardId
-      console.info('[GameStateStore] 設定翻出卡片:', cardId)
     },
 
     /**
@@ -608,7 +590,6 @@ export const useGameStateStore = defineStore('gameState', {
       // 遊戲結束標記
       this.gameEnded = false
 
-      console.info('[GameStateStore] 狀態已重置')
     },
 
     /**
@@ -619,7 +600,6 @@ export const useGameStateStore = defineStore('gameState', {
      */
     resetKoiKoiMultipliers(): void {
       this.koiKoiMultipliers = {}
-      console.info('[GameStateStore] Koi-Koi 倍率已重置')
     },
 
     /**
@@ -629,7 +609,6 @@ export const useGameStateStore = defineStore('gameState', {
      */
     setGameEnded(ended: boolean): void {
       this.gameEnded = ended
-      console.info('[GameStateStore] 遊戲結束標記:', ended)
     },
   },
 })

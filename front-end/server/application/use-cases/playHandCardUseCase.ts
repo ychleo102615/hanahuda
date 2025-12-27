@@ -54,10 +54,6 @@ import {
   type PlayHandCardInput,
   type PlayHandCardOutput,
 } from '~~/server/application/ports/input/playHandCardInputPort'
-import { loggers } from '~~/server/utils/logger'
-
-/** Module logger instance */
-const logger = loggers.useCase('PlayHandCard')
 
 // Re-export for backwards compatibility
 export { PlayHandCardError } from '~~/server/application/ports/input/playHandCardInputPort'
@@ -241,7 +237,6 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
           )
 
           // handleScoredRoundEnd 已處理儲存和事件發送，直接返回
-          logger.info('Last card formed yaku, round ended', { gameId: game.id })
           return { success: true }
         }
       } else {
@@ -290,8 +285,6 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
       // 8. 儲存更新
       this.gameStore.set(game)
       await this.gameRepository.save(game)
-
-      logger.info('Player played card', { playerId, cardId, gameId })
 
       return { success: true }
     }) // end of withLock

@@ -10,8 +10,6 @@
 
 import { z } from 'zod'
 import { container } from '~~/server/utils/container'
-import { createLogger } from '~~/server/utils/logger'
-import { initRequestId } from '~~/server/utils/requestId'
 import { setSessionCookie } from '~~/server/utils/sessionValidation'
 import {
   HTTP_OK,
@@ -85,16 +83,12 @@ interface JoinGameExpiredResponse {
 type JoinGameResponse = JoinGameSuccessResponse | JoinGameFinishedResponse | JoinGameExpiredResponse
 
 export default defineEventHandler(async (event): Promise<JoinGameResponse | ErrorResponse> => {
-  const requestId = initRequestId(event)
-  const logger = createLogger('API:join', requestId)
-
   try {
     // 1. 解析並驗證請求 Body
     const body = await readBody(event)
     const parseResult = JoinGameRequestSchema.safeParse(body)
 
     if (!parseResult.success) {
-      logger.warn('Validation failed', { errors: parseResult.error.flatten().fieldErrors })
       setResponseStatus(event, HTTP_BAD_REQUEST)
       return {
         error: {
@@ -111,14 +105,6 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
     // 2. 從 Cookie 讀取 session_token（優先使用 Cookie，因為 HttpOnly Cookie 更安全）
     const cookieSessionToken = getCookie(event, 'session_token')
     const sessionToken = cookieSessionToken || bodySessionToken
-
-    logger.info('Processing join request', {
-      playerId: player_id,
-      playerName: player_name,
-      hasSessionToken: !!sessionToken,
-      hasGameId: !!game_id,
-      source: cookieSessionToken ? 'cookie' : (bodySessionToken ? 'body' : 'none'),
-    })
 
     // 3. 從容器取得 JoinGameUseCase
     const useCase = container.joinGameUseCase
@@ -140,7 +126,6 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
       case 'snapshot': {
         // 設定 HttpOnly Cookie 存放 session_token
         setSessionCookie(event, result.sessionToken)
-        logger.info('Session cookie set', { gameId: result.gameId, status: result.status })
 
         setResponseStatus(event, HTTP_CREATED)
         return {
@@ -157,14 +142,12 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
         // 5a. 舊版成功加入/重連遊戲（向後兼容）
         // 設定 HttpOnly Cookie 存放 session_token
         setSessionCookie(event, result.sessionToken)
-        logger.info('Session cookie set', { gameId: result.gameId })
 
         // 設定回應狀態碼
         // 201 Created: 新遊戲建立（WAITING 或 IN_PROGRESS）
         // 200 OK: 重連現有遊戲
         setResponseStatus(event, result.reconnected ? HTTP_OK : HTTP_CREATED)
 
-        logger.info('Join request completed', { gameId: result.gameId, reconnected: result.reconnected })
         return {
           data: {
             game_id: result.gameId,
@@ -177,7 +160,6 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
 
       case 'game_finished': {
         // 5b. 遊戲已結束（從 DB 查到）
-        logger.info('Game already finished', { gameId: result.gameId, winnerId: result.winnerId })
         setResponseStatus(event, HTTP_OK)
         return {
           data: {
@@ -197,7 +179,6 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
 
       case 'game_expired': {
         // 5c. 遊戲已過期（在 DB 但不在記憶體）
-        logger.info('Game expired', { gameId: result.gameId })
         setResponseStatus(event, HTTP_OK)
         return {
           data: {
@@ -214,9 +195,7 @@ export default defineEventHandler(async (event): Promise<JoinGameResponse | Erro
         throw new Error(`Unexpected status: ${(_exhaustiveCheck as { status: string }).status}`)
       }
     }
-  } catch (error) {
-    logger.error('Unexpected error', error)
-
+  } catch {
     setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
     return {
       error: {

@@ -111,13 +111,6 @@ export class AnimationPortAdapter implements AnimationPort {
 
     const deckPosition = this.registry.getPosition('deck')
 
-    console.info('[AnimationPort] playDealAnimation', {
-      fieldCards: params.fieldCards.length,
-      playerHandCards: params.playerHandCards.length,
-      opponentHandCount: params.opponentHandCount,
-      isPlayerDealer: params.isPlayerDealer,
-      deckPosition: deckPosition ? 'found' : 'not registered',
-    })
 
     // 若無牌可發，直接返回
     if (params.fieldCards.length === 0 && params.playerHandCards.length === 0 && params.opponentHandCount === 0) {
@@ -273,14 +266,12 @@ export class AnimationPortAdapter implements AnimationPort {
     // 獲取對手手牌區域位置
     const opponentHandPosition = this.registry.getPosition('opponent-hand')
     if (!opponentHandPosition) {
-      console.warn('[AnimationPort] opponent-hand zone not registered')
       return
     }
 
     // 計算目標位置（使用 getCardPosition 計算每張牌的位置）
     const cardPosition = this.registry.getCardPosition('opponent-hand', cardIndex)
     if (!cardPosition) {
-      console.warn('[AnimationPort] Cannot calculate card position for index', cardIndex)
       return
     }
 
@@ -329,13 +320,6 @@ export class AnimationPortAdapter implements AnimationPort {
     const targetElement = targetCardId ? this.registry.findCard(targetCardId, 'field') : null
     const fieldPosition = this.registry.getPosition('field')
 
-    console.info('[AnimationPort] playCardToFieldAnimation', {
-      cardId,
-      isOpponent,
-      targetCardId,
-      hasElement: !!cardElement,
-      hasTarget: !!targetElement,
-    })
 
     // 計算卡片尺寸（預設值）
     const cardWidth = 60
@@ -438,7 +422,6 @@ export class AnimationPortAdapter implements AnimationPort {
         )
       } else if (fieldPosition) {
         // 場牌區沒有該卡片 → 飛到場牌區中心（備用方案）
-        console.warn('[AnimationPort] 場牌區找不到卡片，使用中心位置', { cardId })
         toRect = new DOMRect(
           fieldPosition.rect.x + fieldPosition.rect.width / 2 - fromRect.width / 2,
           fieldPosition.rect.y + fieldPosition.rect.height / 2 - fromRect.height / 2,
@@ -486,11 +469,6 @@ export class AnimationPortAdapter implements AnimationPort {
     // 配對時場牌在 field zone
     const fieldCardElement = this.registry.findCard(fieldCardId, 'field')
 
-    console.info('[AnimationPort] playMatchAnimation (merge effect)', {
-      handCardId,
-      fieldCardId,
-      hasFieldElement: !!fieldCardElement,
-    })
     console.trace()
 
     let fieldPosition: { x: number; y: number } | null = null
@@ -562,12 +540,6 @@ export class AnimationPortAdapter implements AnimationPort {
 
     this._isAnimating = true
 
-    console.info('[AnimationPort] playToDepositoryAnimation', {
-      cardIds,
-      targetType,
-      isOpponent,
-      fromPosition,
-    })
 
     // 計算淡出位置
     const cardWidth = 60
@@ -668,11 +640,6 @@ export class AnimationPortAdapter implements AnimationPort {
       }
     })
 
-    console.info('[AnimationPort] playToDepositoryAnimation positions', {
-      requested: cardIds.length,
-      found: cardPositions.length,
-      positions: cardPositions.map(p => ({ cardId: p.cardId, x: p.rect.x, y: p.rect.y })),
-    })
 
     // === 階段 4：創建淡入動畫組（在獲得區位置）並同時等待淡出淡入完成 ===
     let fadeInPromise: Promise<void> = Promise.resolve()
@@ -725,11 +692,6 @@ export class AnimationPortAdapter implements AnimationPort {
     // 翻牌後卡片在 field zone
     const cardElement = this.registry.findCard(cardId, 'field')
 
-    console.info('[AnimationPort] playFlipFromDeckAnimation', {
-      cardId,
-      deck: deckPosition ? 'found' : 'not registered',
-      hasElement: !!cardElement,
-    })
 
     try {
       if (cardElement && deckPosition && !this._interrupted) {
@@ -797,7 +759,6 @@ export class AnimationPortAdapter implements AnimationPort {
       this._interrupted = false
     }, 0)
 
-    console.info('[AnimationPort] interrupt - all animations stopped')
   }
 
   isAnimating(): boolean {
@@ -806,19 +767,16 @@ export class AnimationPortAdapter implements AnimationPort {
 
   clearHiddenCards(): void {
     this.animationLayerStore.clear()
-    console.info('[AnimationPort] clearHiddenCards')
   }
 
   hideCards(cardIds: string[]): void {
     this.animationLayerStore.hideCards(cardIds)
-    console.info('[AnimationPort] hideCards', { cardIds })
   }
 
   async waitForReady(requiredZones: string[], timeoutMs = 3000): Promise<void> {
     const intervalMs = 50
     let waited = 0
 
-    console.info('[AnimationPort] waitForReady', { requiredZones, timeoutMs })
 
     while (waited < timeoutMs) {
       // 檢查所有必要的 zone 是否已註冊
@@ -827,7 +785,6 @@ export class AnimationPortAdapter implements AnimationPort {
       )
 
       if (allReady) {
-        console.info('[AnimationPort] All zones ready', { requiredZones, waitedMs: waited })
         return
       }
 
@@ -835,7 +792,6 @@ export class AnimationPortAdapter implements AnimationPort {
       waited += intervalMs
     }
 
-    console.warn('[AnimationPort] waitForReady timeout', { requiredZones, waited, timeoutMs })
   }
 
   // ===== 高階動畫方法（封裝完整動畫序列）=====
@@ -860,13 +816,6 @@ export class AnimationPortAdapter implements AnimationPort {
     // 動畫開始前清除懸浮預覽高亮，確保出牌後場牌不再顯示高亮提示
     this.uiStateStore.clearHandCardHoverPreview()
 
-    console.info('[AnimationPort] playCardPlaySequence', {
-      playedCard,
-      matchedCard,
-      hasMatch,
-      capturedCards: [...capturedCards],
-      isOpponent,
-    })
 
     try {
       if (hasMatch) {
@@ -930,13 +879,6 @@ export class AnimationPortAdapter implements AnimationPort {
     // 動畫開始前清除懸浮預覽高亮，確保翻牌時場牌不再顯示高亮提示
     this.uiStateStore.clearHandCardHoverPreview()
 
-    console.info('[AnimationPort] playDrawCardSequence', {
-      drawnCard,
-      matchedCard,
-      hasMatch,
-      capturedCards: [...capturedCards],
-      isOpponent,
-    })
 
     try {
       // 1. 預先隱藏翻牌（會在場牌區渲染）
@@ -1004,12 +946,6 @@ export class AnimationPortAdapter implements AnimationPort {
     // 動畫開始前清除懸浮預覽高亮
     this.uiStateStore.clearHandCardHoverPreview()
 
-    console.info('[AnimationPort] playDrawnCardMatchSequence', {
-      drawnCard,
-      matchedCard,
-      capturedCards: [...capturedCards],
-      isOpponent,
-    })
 
     try {
       // 1. 翻牌飛向配對目標
@@ -1060,7 +996,6 @@ export class AnimationPortAdapter implements AnimationPort {
     // 2. 獲取主要配對場牌位置
     const fieldCardElement = this.registry.findCard(fieldCardId, 'field')
     if (!fieldCardElement) {
-      console.warn('[AnimationPort] playMatchAndDepositorySequence: field card not found', { fieldCardId })
       return null
     }
     const fieldRect = fieldCardElement.getBoundingClientRect()
@@ -1078,7 +1013,6 @@ export class AnimationPortAdapter implements AnimationPort {
       if (element) {
         additionalCardsWithRects.push({ cardId, rect: element.getBoundingClientRect() })
       } else {
-        console.warn('[AnimationPort] playMatchAndDepositorySequence: additional field card not found', { cardId })
       }
     }
 

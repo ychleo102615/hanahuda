@@ -66,7 +66,6 @@ onMounted(async () => {
   try {
     roomTypes.value = await roomApiClient.getRoomTypes()
   } catch (error) {
-    console.error('[GameLobby] Failed to load room types:', error)
     loadError.value = 'Failed to load room types'
   } finally {
     isLoadingRooms.value = false
@@ -107,7 +106,6 @@ const handleSelectRoom = (roomTypeId: string) => {
   // 儲存到 SessionContext（供 game page 使用）
   sessionContext.setIdentity({ playerId, playerName, roomTypeId })
 
-  console.info('[GameLobby] 選擇房間並導航', { playerId, playerName, roomTypeId })
 
   // 直接導航到遊戲頁面，SSE 連線在那裡建立
   navigateTo('/game')

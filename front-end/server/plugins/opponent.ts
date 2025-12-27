@@ -34,6 +34,4 @@ export default defineNitroPlugin(() => {
 
   // 啟動 Registry（開始監聽 ROOM_CREATED 事件）
   opponentRegistry.start()
-
-  console.log('[OpponentPlugin] OpponentRegistry started')
 })
