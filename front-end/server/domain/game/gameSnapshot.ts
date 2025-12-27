@@ -146,9 +146,11 @@ export function toSnapshot(game: Game): GameSnapshot | null {
       player_multipliers[ks.player_id] = multiplier
     }
 
+    // 在決策階段尚未結算，is_score_doubled 設為 false
+    // 7 點翻倍只在結算時才計算（由 RoundScoringData 提供）
     decision_context = Object.freeze({
       all_active_yaku: round.pendingDecision.activeYaku,
-      current_multipliers: Object.freeze({ player_multipliers, koi_koi_applied }),
+      current_multipliers: Object.freeze({ player_multipliers, koi_koi_applied, is_score_doubled: false }),
     })
   }
 

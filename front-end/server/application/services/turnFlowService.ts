@@ -540,14 +540,17 @@ export class TurnFlowService {
    * 建立倍率資訊
    *
    * @description
-   * 新規則：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享）。
+   * 計分規則：
+   * 1. Koi-Koi 倍率：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享）
+   * 2. 7 點翻倍：基礎分數 ≥ 7 時，最終分數再 ×2
    *
    * @param game - 遊戲狀態
+   * @param isScoreDoubled - 是否觸發 7 點翻倍（預設為 false，結算時由外部傳入）
    * @returns 倍率資訊
    */
-  buildMultipliers(game: Game): ScoreMultipliers {
+  buildMultipliers(game: Game, isScoreDoubled: boolean = false): ScoreMultipliers {
     if (!game.currentRound) {
-      return { player_multipliers: {}, koi_koi_applied: false }
+      return { player_multipliers: {}, koi_koi_applied: false, is_score_doubled: false }
     }
 
     // 檢查是否有任一玩家宣告過 Koi-Koi
@@ -562,7 +565,11 @@ export class TurnFlowService {
       playerMultipliers[koiStatus.player_id] = multiplier
     }
 
-    return { player_multipliers: playerMultipliers, koi_koi_applied: koiKoiApplied }
+    return {
+      player_multipliers: playerMultipliers,
+      koi_koi_applied: koiKoiApplied,
+      is_score_doubled: isScoreDoubled,
+    }
   }
 
   /**

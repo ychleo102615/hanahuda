@@ -405,6 +405,7 @@ export class EventMapper implements FullEventMapperPort {
       updated_multipliers: {
         player_multipliers: { ...multipliers.player_multipliers },
         koi_koi_applied: multipliers.koi_koi_applied,
+        is_score_doubled: multipliers.is_score_doubled,
       },
       next_state: nextState,
       timeout_seconds: gameConfig.turn_timeout_seconds,
@@ -576,6 +577,7 @@ export class EventMapper implements FullEventMapperPort {
           current_multipliers: {
             player_multipliers: { ...snapshot.decision_context.current_multipliers.player_multipliers },
             koi_koi_applied: snapshot.decision_context.current_multipliers.koi_koi_applied,
+            is_score_doubled: snapshot.decision_context.current_multipliers.is_score_doubled,
           },
         },
       }

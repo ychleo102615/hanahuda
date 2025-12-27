@@ -105,17 +105,22 @@ export interface YakuUpdate {
 }
 
 /**
- * 分數倍率（Koi-Koi 倍率）
+ * 分數倍率（Koi-Koi 倍率 + 7 點翻倍）
  *
  * @description
- * 新的計分規則：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享）。
- * 無論宣告幾次都只加倍一次。
+ * 計分規則：
+ * 1. Koi-Koi 倍率：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享），無論宣告幾次都只加倍一次
+ * 2. 7 點翻倍：基礎分數 ≥ 7 時，最終分數再 ×2
+ *
+ * 最終分數 = 基礎分數 × Koi-Koi 倍率 × 7 點翻倍
  */
 export interface ScoreMultipliers {
-  /** 各玩家的倍率（全部相同，1 或 2） */
+  /** 各玩家的倍率（全部相同，1 或 2，僅表示 Koi-Koi 倍率） */
   readonly player_multipliers: Record<string, number>
   /** 是否有任一玩家宣告過 Koi-Koi */
   readonly koi_koi_applied: boolean
+  /** 是否觸發 7 點翻倍（基礎分數 ≥ 7） */
+  readonly is_score_doubled: boolean
 }
 
 /**

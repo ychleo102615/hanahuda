@@ -226,7 +226,8 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
           )
 
           // 建立倍率資訊（使用 TurnFlowService 的共用方法）
-          const multipliers = this.turnFlowService!.buildMultipliers(game)
+          // 傳入 roundEndResult.isDoubled，讓前端能顯示 7 點翻倍資訊
+          const multipliers = this.turnFlowService!.buildMultipliers(game, roundEndResult.isDoubled)
 
           // 使用 TurnFlowService 處理回合結束（使用新的「局間歸屬上一局尾部」語意）
           // 傳入 includeAnimationDelay=true，因為前端需要先播放 TurnCompleted 動畫

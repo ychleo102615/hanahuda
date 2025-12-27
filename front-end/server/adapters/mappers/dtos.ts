@@ -15,12 +15,18 @@ import type { Player } from '~~/server/domain/game/player'
 /**
  * 將 KoiStatus 陣列轉換為 ScoreMultipliers
  *
- * 新規則：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享）。
+ * 計分規則：
+ * 1. Koi-Koi 倍率：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享）
+ * 2. 7 點翻倍：基礎分數 ≥ 7 時，最終分數再 ×2
  *
  * @param koiStatuses - 各玩家的 Koi-Koi 狀態
+ * @param isScoreDoubled - 是否觸發 7 點翻倍（預設為 false，結算時由外部傳入）
  * @returns 玩家倍率映射
  */
-export function toScoreMultipliers(koiStatuses: readonly KoiStatus[]): ScoreMultipliers {
+export function toScoreMultipliers(
+  koiStatuses: readonly KoiStatus[],
+  isScoreDoubled: boolean = false
+): ScoreMultipliers {
   // 檢查是否有任一玩家宣告過 Koi-Koi
   const koiKoiApplied = koiStatuses.some(status => status.times_continued > 0)
   const multiplier = koiKoiApplied ? 2 : 1
@@ -33,6 +39,7 @@ export function toScoreMultipliers(koiStatuses: readonly KoiStatus[]): ScoreMult
   return {
     player_multipliers: playerMultipliers,
     koi_koi_applied: koiKoiApplied,
+    is_score_doubled: isScoreDoubled,
   }
 }
 

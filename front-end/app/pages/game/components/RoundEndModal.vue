@@ -91,9 +91,21 @@
                 <span class="text-sm text-gray-600">Base Score:</span>
                 <span class="text-lg font-semibold text-gray-700">{{ roundScoredModalData.baseScore }}</span>
               </div>
-              <div class="flex items-center justify-between py-1">
-                <span class="text-sm text-gray-600">Multiplier:</span>
-                <span class="text-lg font-semibold text-gray-700">×{{ roundScoredModalData.multipliers.player_multipliers[roundScoredModalData.winnerId] }}</span>
+              <!-- Koi-Koi Bonus（有人喊過 Koi-Koi 時顯示） -->
+              <div
+                v-if="roundScoredModalData.multipliers.koi_koi_applied"
+                class="flex items-center justify-between py-1"
+              >
+                <span class="text-sm text-gray-600">Koi-Koi Bonus:</span>
+                <span class="text-lg font-semibold text-gray-700">×2</span>
+              </div>
+              <!-- 7+ Score Bonus（基礎分數 ≥ 7 時顯示） -->
+              <div
+                v-if="roundScoredModalData.multipliers.is_score_doubled"
+                class="flex items-center justify-between py-1"
+              >
+                <span class="text-sm text-gray-600">7+ Score Bonus:</span>
+                <span class="text-lg font-semibold text-gray-700">×2</span>
               </div>
               <div class="flex items-center justify-between py-2 border-t-2 border-gray-300">
                 <span class="text-base font-bold text-gray-800">Final Score:</span>

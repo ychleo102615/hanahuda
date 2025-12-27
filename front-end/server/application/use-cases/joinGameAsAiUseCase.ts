@@ -112,8 +112,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
       let game = addSecondPlayerAndStart(waitingGame, aiPlayer)
 
       // 4. 發牌並開始第一局（可使用測試牌組）
-      game = startRound(game, true)
-      // game = startRound(game, gameConfig.use_test_deck)
+      game = startRound(game, gameConfig.use_test_deck)
 
       // 5. 檢查特殊規則（手四、喰付、場上手四）
       const specialRuleResult = this.checkAndHandleSpecialRules(game)
