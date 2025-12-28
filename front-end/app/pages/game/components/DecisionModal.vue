@@ -105,7 +105,7 @@ function handleEndRound() {
         :style="{ zIndex: Z_INDEX.MODAL }"
       >
         <!-- T073 [US3]: Modal content -->
-        <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
+        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-2xl mx-4">
           <!-- Title -->
           <h2 class="mb-4 text-center text-2xl font-bold text-yellow-600">
             Yaku Achieved!

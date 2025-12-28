@@ -91,8 +91,11 @@ export class ZoneRegistry {
       return null
     }
 
-    // 返回最新位置
-    return entry.position
+    // 即時獲取位置，確保 RWD 調整後位置正確
+    return {
+      zoneName,
+      rect: entry.element.getBoundingClientRect(),
+    }
   }
 
   /**
