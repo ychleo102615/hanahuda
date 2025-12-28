@@ -13,8 +13,8 @@
           <span v-if="group.cards.length > 0" class="text-gray-500">({{ group.cards.length }})</span>
         </div>
 
-        <!-- 卡片列表 -->
-        <div class="flex gap-1 flex-wrap justify-center flex-1 items-center">
+        <!-- 卡片列表（不換行，橫向滾動） -->
+        <div class="flex gap-1 justify-center flex-1 items-center">
           <CardComponent
             v-for="cardId in group.cards"
             :key="cardId"

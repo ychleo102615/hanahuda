@@ -5,6 +5,10 @@
  * @description
  * 顯示牌堆和剩餘牌數，作為發牌動畫的視覺起點。
  * 支援視覺堆疊效果（3-4 層偏移）。
+ *
+ * 響應式設計：
+ * - 大螢幕 (>=640px)：正常顯示在 FieldZone 右側
+ * - 小螢幕 (<640px)：fixed 定位在畫面右側，隱藏視覺元素
  */
 
 import { computed } from 'vue'
@@ -34,16 +38,26 @@ const layerStyles = computed(() => {
 </script>
 
 <template>
-  <div class="relative flex flex-col items-center justify-center h-full p-2">
-    <!-- 牌堆視覺堆疊 -->
+  <!--
+    響應式定位：
+    - 小螢幕：fixed 定位在畫面右側中央
+    - 大螢幕：正常定位在 FieldZone 右側
+  -->
+  <div class="
+    fixed right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-auto
+    sm:static sm:translate-y-0 sm:z-auto sm:w-24 sm:h-full
+    flex flex-col items-center justify-center p-2
+  ">
+    <!-- 牌堆視覺堆疊（ref 用於動畫定位） -->
     <div ref="deckRef" class="relative w-16 h-24 flex justify-center">
+      <!-- 大螢幕：顯示牌堆 -->
       <div
         v-for="(style, index) in layerStyles"
         :key="index"
         :data-card-id="'deck' + index"
         :style="style"
         :data-testid="'deck-layer'"
-        class="absolute inline-flex items-center justify-center rounded-md "
+        class="absolute items-center justify-center rounded-md hidden sm:inline-flex"
       >
         <SvgIcon
           :name="CARD_BACK_ICON_NAME"
@@ -53,9 +67,10 @@ const layerStyles = computed(() => {
       </div>
     </div>
 
-    <!-- 剩餘牌數顯示 -->
-    <div class="mt-2 text-white text-sm font-medium bg-black/60 px-2 py-0.5 rounded">
+    <!-- 剩餘牌數顯示：小螢幕隱藏 -->
+    <div class="hidden sm:block mt-2 text-white text-sm font-medium bg-black/60 px-2 py-0.5 rounded">
       {{ deckRemaining }}
     </div>
   </div>
 </template>
+

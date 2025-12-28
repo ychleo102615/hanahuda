@@ -4,8 +4,7 @@
  *
  * @description
  * 顯示玩家手牌，支援選擇。
- * T054 [US2]: 添加 click handlers for card selection
- * T058 [US2]: 注入 PlayHandCardPort
+ * 使用 flex-wrap 佈局，寬度不足時自動換行擴展高度。
  */
 
 import { computed } from 'vue'
@@ -210,12 +209,12 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="handRef" class="h-full flex items-center justify-center p-4 overflow-x-auto">
+  <div ref="handRef" class="card-zone-container h-full flex items-center justify-center p-4">
     <TransitionGroup
       v-if="myHandCards.length > 0"
       name="hand-cards"
       tag="div"
-      class="flex gap-3"
+      class="flex flex-wrap justify-center gap-3"
     >
       <CardComponent
         v-for="cardId in myHandCards"
@@ -223,7 +222,7 @@ defineExpose({
         :card-id="cardId"
         :is-selectable="canPlayerAct"
         :is-selected="isSelected(cardId)"
-        size="lg"
+        size="auto"
         @click="handleCardClick"
         @mouseenter="handleMouseEnter(cardId)"
         @mouseleave="handleMouseLeave"
@@ -239,6 +238,19 @@ defineExpose({
 </template>
 
 <style scoped>
+/* Container Query 支援動態卡片大小 */
+.card-zone-container {
+  container-type: size;
+  container-name: hand-zone;
+}
+
+@container hand-zone (height > 0px) {
+  .card-zone-container {
+    /* 計算卡片高度：容器高度 - padding * 0.85 */
+    --card-height: clamp(3rem, calc(100cqh - 2rem) * 0.85, 8rem);
+  }
+}
+
 /* FLIP 動畫 */
 .hand-cards-move {
   transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);

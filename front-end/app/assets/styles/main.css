@@ -27,6 +27,12 @@
   /* 自訂間距 */
   --spacing-18: 4.5rem;
   --spacing-22: 5.5rem;
+
+  /* 卡片尺寸變數（RWD fallback） */
+  --card-height-sm: 4.5rem;   /* 72px */
+  --card-height-md: 6rem;     /* 96px */
+  --card-height-lg: 8rem;     /* 128px */
+  --card-height-min: 3rem;    /* 48px - 最小限制 */
 }
 
 /* Custom global styles */

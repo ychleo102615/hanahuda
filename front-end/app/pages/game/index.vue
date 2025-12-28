@@ -3,8 +3,9 @@
  * GamePage - 遊戲主頁面
  *
  * @description
- * 遊戲介面固定 Viewport 設計（100vh × 100vw，無垂直滾動）。
- * 整合所有遊戲區域組件。
+ * 遊戲介面響應式設計：
+ * - 大螢幕：各區域按比例填滿 viewport（100vh）
+ * - 小螢幕：各區域使用最小高度，頁面可垂直滾動
  *
  * SSE-First Architecture:
  * - 頁面載入時建立 SSE 連線
@@ -131,7 +132,7 @@ function handleFieldCardClick(cardId: string) {
 </script>
 
 <template>
-  <div class="h-screen w-screen flex flex-col bg-green-900 overflow-hidden">
+  <div class="h-[max(100vh,730px)] w-screen flex flex-col bg-green-900 overflow-y-auto">
     <!-- 虛擬對手手牌區域（viewport 上方，用於發牌動畫目標） -->
     <div
       ref="opponentHandRef"
@@ -141,7 +142,7 @@ function handleFieldCardClick(cardId: string) {
     />
 
     <!-- 頂部資訊列 (~10% viewport) -->
-    <header class="h-[10%] min-h-12 relative">
+    <header class="h-[10%] relative">
       <GameTopInfoBar @menu-click="toggleActionPanel" />
     </header>
 
@@ -153,7 +154,8 @@ function handleFieldCardClick(cardId: string) {
     <!-- 場中央牌區 (~30% viewport) -->
     <section class="h-[30%] bg-green-800/50 flex">
       <FieldZone class="flex-1" @card-click="handleFieldCardClick" />
-      <DeckZone class="w-24 shrink-0" />
+      <!-- DeckZone：大螢幕正常顯示，小螢幕 fixed 定位（內部響應式處理） -->
+      <DeckZone />
     </section>
 
     <!-- 玩家已獲得牌區 (~15% viewport) -->

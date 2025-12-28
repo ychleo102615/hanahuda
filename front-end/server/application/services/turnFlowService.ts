@@ -642,7 +642,7 @@ export class TurnFlowService {
 
     // 4. 使用 endRound() 設定結算狀態（不執行 finishRound）
     //    傳入 totalTimeoutSeconds 供重連時計算剩餘秒數
-    let updatedGame = endRound(game, {
+    const updatedGame = endRound(game, {
       reason: 'SCORED',
       winnerId,
       awardedPoints: roundEndResult.finalScore,

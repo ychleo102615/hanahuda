@@ -4,7 +4,9 @@
  *
  * @description
  * 顯示場上 8 張卡片，支援配對高亮。
- * 新增兩次點擊確認架構：
+ * 使用 flex-wrap 佈局，寬度不足時自動換行擴展高度。
+ *
+ * 高亮模式：
  * - 懸浮預覽高亮（紫色框）
  * - 單一配對高亮（綠色框 + 輕微閃爍）
  * - 多重配對高亮（橙色框 + 明顯閃爍）
@@ -142,7 +144,7 @@ function handleCardClick(cardId: string) {
 </script>
 
 <template>
-  <div ref="fieldRef" class="h-full flex items-center justify-center p-4">
+  <div ref="fieldRef" class="field-zone-container h-full flex items-center justify-center p-4">
     <TransitionGroup
       name="field-cards"
       tag="div"
@@ -160,7 +162,7 @@ function handleCardClick(cardId: string) {
         :is-preview-highlighted="isPreviewHighlighted(cardId)"
         :is-single-match-highlight="isSingleMatchHighlight(cardId)"
         :is-multiple-match-highlight="isMultipleMatchHighlight(cardId)"
-        size="md"
+        size="auto"
         @click="handleCardClick"
       />
     </TransitionGroup>
@@ -168,19 +170,23 @@ function handleCardClick(cardId: string) {
 </template>
 
 <style scoped>
+/* Container Query 支援動態卡片大小 */
+.field-zone-container {
+  container-type: size;
+  container-name: field-zone;
+}
+
+@container field-zone (height > 0px) {
+  .field-zone-container {
+    /* 計算卡片高度：(容器高度 - padding - gap) / 2 行 * 0.9 */
+    --card-height: clamp(3rem, calc((100cqh - 2rem - 1rem) / 2) * 0.9, 6rem);
+  }
+}
+
 /* FLIP 動畫 - 只動畫 transform */
 .field-cards-move {
   transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
-/* 新卡片淡入 - 已註釋，避免與動畫層衝突 */
-/* .field-cards-enter-active {
-  transition: opacity 200ms ease-in;
-}
-
-.field-cards-enter-from {
-  opacity: 0;
-} */
 
 /* 移除 leave 動畫 - 讓卡片直接消失 */
 .field-cards-leave-active {

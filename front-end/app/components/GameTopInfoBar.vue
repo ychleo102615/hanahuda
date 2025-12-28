@@ -4,6 +4,10 @@
   @description
   遊戲頁面專用的狀態面板，顯示對手/玩家資訊、回合狀態、倒數計時等。
 
+  響應式設計：
+  - 大螢幕 (>=640px)：完整顯示（名稱、分數、Cards left、Koi-Koi 狀態）
+  - 小螢幕 (<640px)：隱藏 Cards left，保留名稱、分數、Koi-Koi 狀態
+
   Events:
   - menuClick: 選單按鈕點擊事件
 -->
@@ -39,7 +43,6 @@ const {
 } = storeToRefs(gameState)
 
 const {
-  connectionStatus,
   countdownRemaining,
   countdownMode,
   waitingForOpponent,
@@ -56,32 +59,6 @@ const actionTimeoutRemaining = computed(() => {
   return null
 })
 
-// 連線狀態顯示
-const connectionStatusText = computed(() => {
-  switch (connectionStatus.value) {
-    case 'connected':
-      return 'Connected'
-    case 'connecting':
-      return 'Connecting...'
-    case 'disconnected':
-      return 'Disconnected'
-    default:
-      return ''
-  }
-})
-
-const connectionStatusClass = computed(() => {
-  switch (connectionStatus.value) {
-    case 'connected':
-      return 'text-green-400'
-    case 'connecting':
-      return 'text-yellow-400'
-    case 'disconnected':
-      return 'text-red-400'
-    default:
-      return ''
-  }
-})
 
 // 統一狀態文字（單一行顯示）
 const statusText = computed(() => {
@@ -137,16 +114,18 @@ const totalRounds = computed(() => ruleset.value?.total_rounds ?? 12)
 <template>
   <div class="h-full bg-gray-800 text-white px-4 py-2 flex items-center justify-between">
     <!-- Left Section: 對手資訊 -->
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-2 sm:gap-4 shrink-0">
       <!-- 分數欄 -->
       <div class="text-center">
-        <div class="text-xs text-gray-400 flex items-center justify-center gap-1">
-          {{ opponentPlayerName || 'Opponent' }}
+        <!-- 名稱 + 莊家標記（小螢幕簡寫，大螢幕完整） -->
+        <div class="flex text-xs text-gray-400 items-center justify-center gap-1">
+          <span class="sm:hidden">Opp.</span>
+          <span class="hidden sm:inline">{{ opponentPlayerName || 'Opponent' }}</span>
           <span v-if="isOpponentDealer" class="text-amber-500 font-bold" title="Dealer">(親)</span>
         </div>
         <div class="text-xl font-bold">{{ opponentScore }}</div>
-        <!-- 狀態列（固定高度防止 layout shift）：Koi-Koi 資訊 -->
-        <div class="h-4 flex items-center justify-center">
+        <!-- Koi-Koi 狀態 -->
+        <div class="flex h-4 items-center justify-center">
           <span
             v-if="opponentKoiKoiMultiplier > 1"
             class="text-xs text-amber-400"
@@ -155,23 +134,23 @@ const totalRounds = computed(() => ruleset.value?.total_rounds ?? 12)
           </span>
         </div>
       </div>
-      <!-- 手牌數欄 -->
-      <div class="flex flex-col items-center gap-1 text-gray-300" title="Opponent hand count">
+      <!-- 手牌數欄：小螢幕隱藏 -->
+      <div class="hidden sm:flex flex-col items-center gap-1 text-gray-300" title="Opponent hand count">
         <span class="text-sm text-gray-400 font-medium">Cards left</span>
         <span class="text-sm font-medium">{{ opponentHandCount }}</span>
       </div>
     </div>
 
     <!-- Center Section: 回合資訊 -->
-    <div class="flex flex-col items-center">
+    <div class="flex flex-col items-center shrink min-w-0">
       <!-- 局數顯示 -->
-      <div v-if="currentRound !== null" class="text-sm text-gray-400">
+      <div v-if="currentRound !== null" class="text-sm text-gray-400 whitespace-nowrap">
         Round {{ currentRound }} / {{ totalRounds }}
       </div>
       <!-- Unified status text -->
       <div
         v-if="statusText"
-        class="text-lg font-medium"
+        class="text-lg font-medium truncate max-w-full"
         :class="{ 'text-yellow-400': isMyTurnStatus }"
       >
         {{ statusText }}
@@ -188,16 +167,18 @@ const totalRounds = computed(() => ruleset.value?.total_rounds ?? 12)
       </div>
     </div>
 
-    <!-- Right Section: 玩家資訊 + 連線狀態 + 選單 -->
-    <div class="flex items-center gap-4">
+    <!-- Right Section: 玩家資訊 + 選單 -->
+    <div class="flex items-center gap-2 sm:gap-4 shrink-0">
       <div class="text-center">
-        <div class="text-xs text-gray-400 flex items-center justify-center gap-1">
-          {{ localPlayerName || 'You' }}
+        <!-- 名稱 + 莊家標記（小螢幕簡寫，大螢幕完整） -->
+        <div class="flex text-xs text-gray-400 items-center justify-center gap-1">
+          <span class="sm:hidden">You</span>
+          <span class="hidden sm:inline">{{ localPlayerName || 'You' }}</span>
           <span v-if="isPlayerDealer" class="text-amber-500 font-bold" title="Dealer">(親)</span>
         </div>
         <div class="text-xl font-bold">{{ myScore }}</div>
-        <!-- 狀態列（固定高度防止 layout shift）：Koi-Koi 資訊 -->
-        <div class="h-4 flex items-center justify-center">
+        <!-- Koi-Koi 狀態 -->
+        <div class="flex h-4 items-center justify-center">
           <span
             v-if="myKoiKoiMultiplier > 1"
             class="text-xs text-amber-400"
@@ -205,9 +186,6 @@ const totalRounds = computed(() => ruleset.value?.total_rounds ?? 12)
             koikoi
           </span>
         </div>
-      </div>
-      <div class="text-xs" :class="connectionStatusClass">
-        {{ connectionStatusText }}
       </div>
       <MenuButton @click="emit('menuClick')" />
     </div>

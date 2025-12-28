@@ -20,7 +20,7 @@ interface Props {
   isSelected?: boolean
   isHighlighted?: boolean
   isFaceDown?: boolean
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'auto'
   isAnimationClone?: boolean  // 是否為動畫演出用的複製品
   isPreviewHighlighted?: boolean  // 懸浮預覽高亮（紫色框，不閃爍）
   isSingleMatchHighlight?: boolean  // 單一配對高亮（綠色框 + 輕微閃爍）
@@ -59,6 +59,11 @@ const sizeClasses = computed(() => {
   // 動畫複製品自動填滿容器
   if (props.isAnimationClone) {
     return 'h-full w-full'
+  }
+
+  // RWD 動態尺寸：讀取容器提供的 CSS 變數
+  if (props.size === 'auto') {
+    return 'h-[var(--card-height,6rem)] w-auto'
   }
 
   switch (props.size) {
