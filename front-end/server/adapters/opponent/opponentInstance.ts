@@ -16,7 +16,7 @@
  * @module server/adapters/opponent/opponentInstance
  */
 
-import type { GameEvent } from '#shared/contracts'
+import type { GameEvent, Yaku } from '#shared/contracts'
 import type { AiStrategyType } from '~~/server/application/ports/input/joinGameAsAiInputPort'
 import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
 import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
@@ -218,8 +218,12 @@ export class OpponentInstance {
       if (this.isDisposed) return
 
       try {
+        // 從遊戲狀態取得當前役種資訊
+        const game = this.deps.gameStore.get(this.gameId)
+        const activeYaku = game?.currentRound?.pendingDecision?.activeYaku ?? []
+
         // 執行策略選擇決策
-        const decision = this.selectDecision()
+        const decision = this.selectDecision(activeYaku)
 
         await this.deps.makeDecision.execute({
           gameId: this.gameId,
@@ -264,11 +268,28 @@ export class OpponentInstance {
   /**
    * 選擇 Koi-Koi 決策
    *
+   * @description
+   * 基於分數閾值的簡單決策邏輯：
+   * - 役種總分 >= 5 分：選擇 END_ROUND（保守收場）
+   * - 役種總分 < 5 分：選擇 KOI_KOI（繼續挑戰更高分）
+   *
+   * 5 分閾值涵蓋的役種：三光(6)、豬鹿蝶(5)、赤短/青短(5) 等
+   *
+   * @param activeYaku - 當前形成的役種列表
    * @returns 決策
    */
-  private selectDecision(): 'KOI_KOI' | 'END_ROUND' {
-    // [測試用] 永遠選擇 KOI_KOI，方便測試平局狀態
-    // TODO: 未來可根據 strategyType 和遊戲狀態實作不同策略
+  private selectDecision(activeYaku: readonly Yaku[]): 'KOI_KOI' | 'END_ROUND' {
+    const SCORE_THRESHOLD = 5
+
+    // 計算當前役種總分
+    const totalScore = activeYaku.reduce((sum, yaku) => sum + yaku.base_points, 0)
+
+    // 分數 >= 閾值，保守結束
+    if (totalScore >= SCORE_THRESHOLD) {
+      return 'END_ROUND'
+    }
+
+    // 分數較低，繼續挑戰
     return 'KOI_KOI'
   }
 
