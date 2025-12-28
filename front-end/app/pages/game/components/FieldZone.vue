@@ -144,28 +144,30 @@ function handleCardClick(cardId: string) {
 </script>
 
 <template>
-  <div ref="fieldRef" class="field-zone-container h-full flex items-center justify-center p-4">
-    <TransitionGroup
-      name="field-cards"
-      tag="div"
-      class="grid grid-flow-col grid-rows-2 gap-4"
-    >
-      <CardComponent
-        v-for="cardId in fieldCards"
-        :key="cardId"
-        :card-id="cardId"
-        :is-selectable="
-          canSelectFieldCard &&
-          ((fieldCardSelectionMode && fieldCardSelectableTargets.includes(cardId)) ||
-          (handCardConfirmationMode && matchableFieldCards.includes(cardId)))
-        "
-        :is-preview-highlighted="isPreviewHighlighted(cardId)"
-        :is-single-match-highlight="isSingleMatchHighlight(cardId)"
-        :is-multiple-match-highlight="isMultipleMatchHighlight(cardId)"
-        size="auto"
-        @click="handleCardClick"
-      />
-    </TransitionGroup>
+  <div class="field-zone-container h-full">
+    <div ref="fieldRef" class="field-zone-inner h-full flex items-center p-4 overflow-x-auto">
+      <TransitionGroup
+        name="field-cards"
+        tag="div"
+        class="grid grid-flow-col grid-rows-2 gap-4 mx-auto"
+      >
+        <CardComponent
+          v-for="cardId in fieldCards"
+          :key="cardId"
+          :card-id="cardId"
+          :is-selectable="
+            canSelectFieldCard &&
+            ((fieldCardSelectionMode && fieldCardSelectableTargets.includes(cardId)) ||
+            (handCardConfirmationMode && matchableFieldCards.includes(cardId)))
+          "
+          :is-preview-highlighted="isPreviewHighlighted(cardId)"
+          :is-single-match-highlight="isSingleMatchHighlight(cardId)"
+          :is-multiple-match-highlight="isMultipleMatchHighlight(cardId)"
+          size="auto"
+          @click="handleCardClick"
+        />
+      </TransitionGroup>
+    </div>
   </div>
 </template>
 
@@ -177,9 +179,9 @@ function handleCardClick(cardId: string) {
 }
 
 @container field-zone (height > 0px) {
-  .field-zone-container {
+  .field-zone-inner {
     /* 計算卡片高度：(容器高度 - padding - gap) / 2 行 * 0.9 */
-    --card-height: clamp(3rem, calc((100cqh - 2rem - 1rem) / 2) * 0.9, 6rem);
+    --card-height: clamp(3rem, calc((100cqh - 2rem - 1rem) / 2) * 0.9, 10rem);
   }
 }
 

@@ -209,30 +209,26 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="handRef" class="card-zone-container h-full flex items-center justify-center p-4">
-    <TransitionGroup
-      v-if="myHandCards.length > 0"
-      name="hand-cards"
-      tag="div"
-      class="flex flex-wrap justify-center gap-3"
-    >
-      <CardComponent
-        v-for="cardId in myHandCards"
-        :key="cardId"
-        :card-id="cardId"
-        :is-selectable="canPlayerAct"
-        :is-selected="isSelected(cardId)"
-        size="auto"
-        @click="handleCardClick"
-        @mouseenter="handleMouseEnter(cardId)"
-        @mouseleave="handleMouseLeave"
-      />
-    </TransitionGroup>
-    <div
-      v-else
-      class="text-gray-500 text-sm"
-    >
-      No cards
+  <div class="card-zone-container h-full">
+    <div ref="handRef" class="card-zone-inner h-full flex items-center p-4 overflow-x-auto">
+      <TransitionGroup
+        v-if="myHandCards.length > 0"
+        name="hand-cards"
+        tag="div"
+        class="flex gap-3 mx-auto"
+      >
+        <CardComponent
+          v-for="cardId in myHandCards"
+          :key="cardId"
+          :card-id="cardId"
+          :is-selectable="canPlayerAct"
+          :is-selected="isSelected(cardId)"
+          size="auto"
+          @click="handleCardClick"
+          @mouseenter="handleMouseEnter(cardId)"
+          @mouseleave="handleMouseLeave"
+        />
+      </TransitionGroup>
     </div>
   </div>
 </template>
@@ -245,9 +241,9 @@ defineExpose({
 }
 
 @container hand-zone (height > 0px) {
-  .card-zone-container {
-    /* 計算卡片高度：容器高度 - padding * 0.85 */
-    --card-height: clamp(3rem, calc(100cqh - 2rem) * 0.85, 8rem);
+  .card-zone-inner {
+    /* 計算卡片高度：(容器高度 - padding) * 0.7，單行橫向滾動 */
+    --card-height: clamp(3rem, calc((100cqh - 2rem) * 0.7), 10rem);
   }
 }
 
