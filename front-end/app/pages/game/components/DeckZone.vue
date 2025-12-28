@@ -8,7 +8,7 @@
  *
  * 響應式設計：
  * - 大螢幕 (>=640px)：正常顯示在 FieldZone 右側
- * - 小螢幕 (<640px)：fixed 定位在畫面右側，隱藏視覺元素
+ * - 小螢幕 (<640px)：absolute 定位在畫面右側（跟隨頁面滾動）
  */
 
 import { computed } from 'vue'
@@ -40,11 +40,11 @@ const layerStyles = computed(() => {
 <template>
   <!--
     響應式定位：
-    - 小螢幕：fixed 定位在畫面右側中央
+    - 小螢幕：absolute 定位在畫面右側中央（跟隨頁面滾動）
     - 大螢幕：正常定位在 FieldZone 右側
   -->
   <div class="
-    fixed right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-auto
+    absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-auto
     sm:static sm:translate-y-0 sm:z-auto sm:w-24 sm:h-full
     flex flex-col items-center justify-center p-2
   ">

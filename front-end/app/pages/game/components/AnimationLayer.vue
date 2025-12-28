@@ -3,8 +3,8 @@
  * AnimationLayer - 全域動畫層組件
  *
  * @description
- * 渲染正在執行動畫的卡片，使用 fixed positioning 避免 overflow 裁切。
- * 透過 Teleport 將動畫層放到 body，確保在最上層。
+ * 渲染正在執行動畫的卡片，使用 absolute positioning 相對於 game page。
+ * 動畫層跟隨頁面滾動，座標需從 viewport 轉換為容器相對座標。
  *
  * 取消機制：
  * - 使用 OperationSessionManager 的 AbortSignal 實現統一取消
@@ -12,7 +12,7 @@
  * - 不再需要 cancel callback 機制
  */
 
-import { ref } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { useAnimationLayerStore } from '~/user-interface/adapter/stores'
 import CardComponent from './CardComponent.vue'
 import { Z_INDEX } from '~/constants'
@@ -25,6 +25,110 @@ const store = useAnimationLayerStore()
 
 // 從 DI 獲取 OperationSessionManager
 const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
+
+// 動畫層容器引用
+const layerRef = ref<HTMLElement | null>(null)
+
+/**
+ * 將 viewport 座標轉換為相對於動畫層容器的座標
+ *
+ * @description
+ * getBoundingClientRect() 返回的是 viewport 座標，
+ * 但 AnimationLayer 使用 absolute 定位，需要容器相對座標。
+ *
+ * 注意：不需要加 scrollTop/scrollLeft，因為 layerRect 已經反映了滾動效果。
+ * absolute 定位的元素會隨父容器滾動移動，所以 layerRect 會即時更新。
+ */
+function viewportToContainer(viewportX: number, viewportY: number): { x: number; y: number } {
+  if (!layerRef.value) return { x: viewportX, y: viewportY }
+
+  const layerRect = layerRef.value.getBoundingClientRect()
+
+  return {
+    x: viewportX - layerRect.left,
+    y: viewportY - layerRect.top,
+  }
+}
+
+/**
+ * 座標快照緩存
+ *
+ * @description
+ * 在卡片首次出現時計算容器座標並緩存，避免每次渲染重新計算。
+ * 這解決了「fromRect 是快照，layerRect 是即時值」導致的座標不一致問題。
+ */
+const cardPositionCache = reactive<Record<string, { x: number; y: number }>>({})
+const groupPositionCache = reactive<Record<string, { x: number; y: number }>>({})
+
+// 監聽卡片變化，為新卡片計算並緩存座標
+watch(
+  () => store.animatingCards.map(c => c.cardId),
+  (cardIds) => {
+    // 為新卡片計算座標
+    for (const card of store.animatingCards) {
+      if (!(card.cardId in cardPositionCache) && layerRef.value) {
+        const pos = viewportToContainer(card.fromRect.x, card.fromRect.y)
+        cardPositionCache[card.cardId] = pos
+      }
+    }
+    // 清理已移除的卡片
+    const currentIds = new Set(cardIds)
+    for (const id of Object.keys(cardPositionCache)) {
+      if (!currentIds.has(id)) {
+        delete cardPositionCache[id]
+      }
+    }
+  },
+  { immediate: true }
+)
+
+// 監聽組變化，為新組計算並緩存座標
+watch(
+  () => store.animatingGroups.map(g => g.groupId),
+  (groupIds) => {
+    // 為新組計算座標
+    for (const group of store.animatingGroups) {
+      if (!(group.groupId in groupPositionCache) && layerRef.value) {
+        const pos = viewportToContainer(group.boundingBox.x, group.boundingBox.y)
+        groupPositionCache[group.groupId] = pos
+      }
+    }
+    // 清理已移除的組
+    const currentIds = new Set(groupIds)
+    for (const id of Object.keys(groupPositionCache)) {
+      if (!currentIds.has(id)) {
+        delete groupPositionCache[id]
+      }
+    }
+  },
+  { immediate: true }
+)
+
+/**
+ * 獲取卡片的緩存座標，如果沒有則即時計算
+ */
+function getCardPosition(card: typeof store.animatingCards[0]): { x: number; y: number } {
+  if (card.cardId in cardPositionCache) {
+    return cardPositionCache[card.cardId]
+  }
+  // 備用：如果快取不存在，即時計算（理論上不應該發生）
+  const pos = viewportToContainer(card.fromRect.x, card.fromRect.y)
+  cardPositionCache[card.cardId] = pos
+  return pos
+}
+
+/**
+ * 獲取組的緩存座標，如果沒有則即時計算
+ */
+function getGroupPosition(group: typeof store.animatingGroups[0]): { x: number; y: number } {
+  if (group.groupId in groupPositionCache) {
+    return groupPositionCache[group.groupId]
+  }
+  // 備用：如果快取不存在，即時計算（理論上不應該發生）
+  const pos = viewportToContainer(group.boundingBox.x, group.boundingBox.y)
+  groupPositionCache[group.groupId] = pos
+  return pos
+}
 
 // 追蹤已經開始動畫的卡片 ID
 const animatedCardIds = ref<Set<string>>(new Set())
@@ -348,17 +452,52 @@ async function executeSimpleGroupAnimation(
 </script>
 
 <template>
-  <Teleport to="body">
-    <div class="fixed inset-0 pointer-events-none" :style="{ zIndex: Z_INDEX.ANIMATION }">
-      <!-- 單獨卡片動畫 -->
+  <!-- 動畫層相對於 game page 定位，跟隨頁面滾動 -->
+  <div
+    ref="layerRef"
+    class="absolute inset-0 pointer-events-none"
+    :style="{ zIndex: Z_INDEX.ANIMATION }"
+  >
+    <!-- 單獨卡片動畫 -->
+    <div
+      v-for="card in store.animatingCards"
+      :key="card.cardId"
+      :ref="(el) => setCardRef(card.cardId, el as HTMLElement)"
+      class="absolute"
+      :style="{
+        left: `${getCardPosition(card).x}px`,
+        top: `${getCardPosition(card).y}px`,
+        width: `${card.fromRect.width}px`,
+        height: `${card.fromRect.height}px`,
+      }"
+    >
+      <CardComponent
+        :card-id="card.renderCardId || card.cardId"
+        :is-animation-clone="true"
+        :is-face-down="card.isFaceDown"
+      />
+    </div>
+
+    <!-- 卡片組動畫（容器控制 opacity/scale，卡片使用相對座標） -->
+    <div
+      v-for="group in store.animatingGroups"
+      :key="group.groupId"
+      :ref="(el) => setGroupRef(group.groupId, el as HTMLElement)"
+      class="absolute"
+      :style="{
+        left: `${getGroupPosition(group).x}px`,
+        top: `${getGroupPosition(group).y}px`,
+        width: `${group.boundingBox.width}px`,
+        height: `${group.boundingBox.height}px`,
+      }"
+    >
       <div
-        v-for="card in store.animatingCards"
+        v-for="card in group.cards"
         :key="card.cardId"
-        :ref="(el) => setCardRef(card.cardId, el as HTMLElement)"
         class="absolute"
         :style="{
-          left: `${card.fromRect.x}px`,
-          top: `${card.fromRect.y}px`,
+          left: `${card.fromRect.x - group.boundingBox.x}px`,
+          top: `${card.fromRect.y - group.boundingBox.y}px`,
           width: `${card.fromRect.width}px`,
           height: `${card.fromRect.height}px`,
         }"
@@ -369,38 +508,6 @@ async function executeSimpleGroupAnimation(
           :is-face-down="card.isFaceDown"
         />
       </div>
-
-      <!-- 卡片組動畫（容器控制 opacity/scale，卡片使用相對座標） -->
-      <div
-        v-for="group in store.animatingGroups"
-        :key="group.groupId"
-        :ref="(el) => setGroupRef(group.groupId, el as HTMLElement)"
-        class="absolute"
-        :style="{
-          left: `${group.boundingBox.x}px`,
-          top: `${group.boundingBox.y}px`,
-          width: `${group.boundingBox.width}px`,
-          height: `${group.boundingBox.height}px`,
-        }"
-      >
-        <div
-          v-for="card in group.cards"
-          :key="card.cardId"
-          class="absolute"
-          :style="{
-            left: `${card.fromRect.x - group.boundingBox.x}px`,
-            top: `${card.fromRect.y - group.boundingBox.y}px`,
-            width: `${card.fromRect.width}px`,
-            height: `${card.fromRect.height}px`,
-          }"
-        >
-          <CardComponent
-            :card-id="card.renderCardId || card.cardId"
-            :is-animation-clone="true"
-            :is-face-down="card.isFaceDown"
-          />
-        </div>
-      </div>
     </div>
-  </Teleport>
+  </div>
 </template>
