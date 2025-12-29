@@ -81,8 +81,8 @@ const containerClasses = computed(() => {
   return [
     'inline-flex items-center justify-center rounded-md transition-shadow duration-200',
     {
-      // 可選狀態 - 只保留 cursor 和 shadow，scale 由 motion 處理
-      'cursor-pointer hover:drop-shadow-lg': props.isSelectable,
+      // 可選狀態 - 只保留 cursor（hover shadow 移至 CSS @media 處理）
+      'cursor-pointer': props.isSelectable,
       'cursor-default': !props.isSelectable,
 
       // 選中狀態（優先級最高）- 金色框
@@ -125,6 +125,12 @@ const cardIconName = computed(() => {
 // 卡片容器 ref 用於 motion
 const cardRef = shallowRef<HTMLElement | null>(null)
 
+// 檢測是否支援真正的 hover（非觸控設備）
+// 觸控設備沒有 hover 概念，禁用 hover 動畫避免「黏住」問題
+const supportsHover = typeof window !== 'undefined'
+  ? window.matchMedia('(hover: hover)').matches
+  : true
+
 // 使用 @vueuse/motion 設定動畫
 const { apply } = useMotion(cardRef, {
   initial: {
@@ -160,9 +166,9 @@ const { apply } = useMotion(cardRef, {
   },
 })
 
-// 處理滑鼠進入
+// 處理滑鼠進入（只在支援 hover 的設備上觸發）
 function handleMouseEnter() {
-  if (props.isSelectable && !props.isSelected) {
+  if (supportsHover && props.isSelectable && !props.isSelected) {
     apply('hovered')
   }
 }
@@ -241,5 +247,12 @@ watch(() => props.enableShake, (shouldShake) => {
 
 .shake {
   animation: shake 0.5s ease-in-out;
+}
+
+/* 只在支援 hover 的設備上（非觸控）顯示 hover 陰影效果 */
+@media (hover: hover) {
+  .cursor-pointer:hover {
+    filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.04)) drop-shadow(0 4px 3px rgb(0 0 0 / 0.1));
+  }
 }
 </style>

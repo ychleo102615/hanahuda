@@ -132,7 +132,7 @@ function handleFieldCardClick(cardId: string) {
 </script>
 
 <template>
-  <div class="h-[max(100vh,730px)] w-screen flex flex-col bg-green-900 overflow-y-auto relative">
+  <div class="h-[max(100vh,690px)] w-full flex flex-col bg-green-900 overflow-y-auto overflow-x-hidden overscroll-x-none relative pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
     <!-- 虛擬對手手牌區域（viewport 上方，用於發牌動畫目標） -->
     <div
       ref="opponentHandRef"

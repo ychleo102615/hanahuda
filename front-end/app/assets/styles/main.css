@@ -39,12 +39,24 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* 防止 iOS Safari 過度捲動（橡皮筋效果） */
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    /* 防止雙擊放大，保留正常滾動和捏合縮放 */
+    touch-action: manipulation;
+    /* 背景色：消除 iOS Safari safe area 白邊（配合 TopInfoBar） */
+    background-color: #1f2937; /* gray-800 */
   }
 
   body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* 防止 iOS Safari 過度捲動（橡皮筋效果） */
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    /* 背景色：消除 iOS Safari safe area 白邊（配合 TopInfoBar） */
+    background-color: #1f2937; /* gray-800 */
   }
 
   /* Focus visible styles for accessibility */
