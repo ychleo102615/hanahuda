@@ -256,34 +256,30 @@ export class AnimationPortAdapter implements AnimationPort {
   /**
    * 對手發牌動畫輔助方法
    * @private
-   * @param cardIndex - 卡片索引（用於計算目標位置）
+   * @param cardIndex - 卡片索引（用於產生唯一 ID）
    * @param fromRect - 牌堆位置（動畫起點）
    */
   private async animateOpponentDealCard(
     cardIndex: number,
     fromRect: DOMRect
   ): Promise<void> {
-    // 獲取對手手牌區域位置
+    // 獲取對手手牌區域位置（虛擬區域，位於 viewport 上方）
     const opponentHandPosition = this.registry.getPosition('opponent-hand')
     if (!opponentHandPosition) {
-      return
-    }
-
-    // 計算目標位置（使用 getCardPosition 計算每張牌的位置）
-    const cardPosition = this.registry.getCardPosition('opponent-hand', cardIndex)
-    if (!cardPosition) {
       return
     }
 
     // 創建虛擬 cardId 用於動畫
     const virtualCardId = `opponent-hand-${cardIndex}`
 
-    // 創建目標 DOMRect
+    // 計算目標位置：使用區域中心點
+    // 對手手牌區是虛擬區域（不可見），所有卡片飛向中心即可
+    const { rect } = opponentHandPosition
     const toRect = new DOMRect(
-      cardPosition.x,
-      cardPosition.y,
+      rect.left + rect.width / 2 - 30,  // 中心點減去卡片寬度一半
+      rect.top + rect.height / 2 - 45,  // 中心點減去卡片高度一半
       60,  // CARD_WIDTH
-      90   // CARD_HEIGHT (估算)
+      90   // CARD_HEIGHT
     )
 
     // 通過 store 添加動畫卡片，設定 isFaceDown 為 true

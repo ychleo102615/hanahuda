@@ -9,7 +9,7 @@
  * @since Phase 6 - User Story 4
  */
 
-import type { ZoneName, ZonePosition, Position } from './types'
+import type { ZoneName, ZonePosition } from './types'
 
 /**
  * 區域註冊資料
@@ -95,26 +95,6 @@ export class ZoneRegistry {
     return {
       zoneName,
       rect: entry.element.getBoundingClientRect(),
-    }
-  }
-
-  /**
-   * 計算卡片在區域中的位置
-   *
-   * @param zoneName - 區域名稱
-   * @param cardIndex - 卡片索引（從 0 開始）
-   * @returns 卡片的螢幕座標
-   */
-  getCardPosition(zoneName: ZoneName, cardIndex: number): Position {
-    const entry = this.zones.get(zoneName)
-    if (!entry) {
-      return { x: 0, y: 0 }
-    }
-
-    const { rect } = entry.position
-    return {
-      x: rect.left + rect.width / 2,
-      y: rect.top,
     }
   }
 
