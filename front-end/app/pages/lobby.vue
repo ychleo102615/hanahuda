@@ -152,12 +152,12 @@ const handleRetry = () => {
           </div>
 
           <!-- 房間類型列表 -->
-          <div v-else class="grid gap-6 md:grid-cols-3">
+          <div v-else class="grid gap-6 px-6">
             <button
               v-for="room in roomTypes"
               :key="room.id"
               :disabled="!canStartMatchmaking || hasError"
-              class="bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-xl p-6 border border-gray-700 text-left transition-all duration-200 hover:border-primary-500 hover:bg-gray-800/90 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-gray-700"
+              class="bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-xl p-6 border border-gray-700 text-left transition-all duration-200 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500 hover:bg-gray-800/90 active:scale-[0.98] active:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:translate-y-0 disabled:hover:shadow-xl disabled:hover:border-gray-700"
               @click="handleSelectRoom(room.id)"
             >
               <!-- 房間名稱 -->
@@ -215,22 +215,6 @@ const handleRetry = () => {
             </button>
           </div>
 
-          <!-- Coming Soon 預覽卡片：自訂房間 -->
-          <div class="mt-6 relative bg-gray-800/40 backdrop-blur-sm rounded-lg shadow-xl p-6 border border-gray-700/50 opacity-60">
-            <!-- Coming Soon 徽章 -->
-            <div class="absolute top-4 right-4 bg-primary-600/80 text-white text-xs font-bold px-3 py-1 rounded-full">
-              Coming Soon
-            </div>
-
-            <!-- 卡片標題 -->
-            <h2 class="text-xl font-bold text-gray-400 mb-4">
-              Custom Room
-            </h2>
-
-            <p class="text-gray-500 text-sm">
-              Create or join a custom game room with your own rules
-            </p>
-          </div>
         </div>
       </div>
     </main>
