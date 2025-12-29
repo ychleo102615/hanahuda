@@ -40,7 +40,7 @@ const isVisible = computed(() => {
   <Transition name="hint">
     <div
       v-if="isVisible"
-      class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50"
+      class="fixed bottom-[26%] left-1/2 -translate-x-1/2 z-50"
     >
       <div
         class="px-6 py-3 bg-gray-800 bg-opacity-90 text-white text-sm font-medium rounded-lg shadow-lg"
