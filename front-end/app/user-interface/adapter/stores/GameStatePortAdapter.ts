@@ -39,7 +39,7 @@ export function createGameStatePortAdapter(): GameStatePort {
       store.setFlowStage(stage)
     },
 
-    setActivePlayer(playerId: string): void {
+    setActivePlayer(playerId: string | null): void {
       store.activePlayerId = playerId
     },
 

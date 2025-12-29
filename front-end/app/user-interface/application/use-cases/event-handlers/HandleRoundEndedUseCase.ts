@@ -20,9 +20,10 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
   ) {}
 
   execute(event: RoundEndedEvent, options: ExecuteOptions): void {
-    // 0. 清理：停止倒數計時、清除流程階段
+    // 0. 清理：停止倒數計時、清除流程階段與活動玩家
     this.notification.cleanup()
     this.gameState.setFlowStage(null)
+    this.gameState.setActivePlayer(null)
 
     // 計算事件處理延遲（秒），用於調整倒數時間（使用 ceil 確保不低估延遲）
     const deltaSeconds = Math.ceil((Date.now() - options.receivedAt) / 1000)

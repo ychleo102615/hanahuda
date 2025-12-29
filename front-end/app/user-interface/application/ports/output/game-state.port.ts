@@ -112,14 +112,15 @@ export interface GameStatePort {
   /**
    * 設定當前活動玩家
    *
-   * @param playerId - 玩家 ID
+   * @param playerId - 玩家 ID，傳入 null 表示清除活動玩家（如回合結束時）
    *
    * @example
    * ```typescript
    * gameState.setActivePlayer('player-2')
+   * gameState.setActivePlayer(null) // 回合結束，清除活動玩家
    * ```
    */
-  setActivePlayer(playerId: string): void
+  setActivePlayer(playerId: string | null): void
 
   /**
    * 設定當前回合莊家
