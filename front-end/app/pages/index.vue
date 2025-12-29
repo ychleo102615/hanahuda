@@ -20,7 +20,7 @@ const navigationLinks: NavigationLink[] = [
 
 // Hero Section data
 const heroData = {
-  title: 'Hanafuda Koi-Koi',
+  title: 'Hanafuda Koi-Koi こいこい',
   subtitle: 'Experience the classic Japanese card game online',
   ctaText: 'Start Playing',
   ctaTarget: '/lobby',
@@ -45,7 +45,7 @@ const handleRulesClick = () => {
   <div class="min-h-screen">
     <!-- Navigation Bar -->
     <NavigationBar
-      logo="Hanafuda Koi-Koi"
+      logo="Hanafuda Koi-Koi こいこい"
       :links="navigationLinks"
       :transparent="false"
       @rules-click="handleRulesClick"
@@ -74,7 +74,7 @@ const handleRulesClick = () => {
       <!-- About Section Placeholder -->
       <section id="about" class="relative min-h-[50vh] bg-primary-50 flex items-center justify-center">
         <div class="text-center">
-          <h2 class="text-3xl font-bold text-primary-900 mb-4">About Hanafuda Koi-Koi</h2>
+          <h2 class="text-3xl font-bold text-primary-900 mb-4">About Hanafuda Koi-Koi こいこい</h2>
           <p class="text-lg text-primary-700">
             This is a demonstration project developed by Leo Huang.
           </p>

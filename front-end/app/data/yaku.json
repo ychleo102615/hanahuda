@@ -16,7 +16,7 @@
       "category": "hikari",
       "points": 8,
       "cardIds": ["0111", "0311", "0811", "1211"],
-      "description": "Collect 4 bright cards (excluding Rain Man)"
+      "description": "Collect 4 bright cards (excluding Ono no Michikaze)"
     },
     {
       "id": "ameshiko",
@@ -25,7 +25,7 @@
       "category": "hikari",
       "points": 7,
       "cardIds": ["0111", "0311", "0811", "1111"],
-      "description": "Collect 4 bright cards (including Rain Man)"
+      "description": "Collect 4 bright cards (including Ono no Michikaze)"
     },
     {
       "id": "sanko",
@@ -34,7 +34,7 @@
       "category": "hikari",
       "points": 5,
       "cardIds": ["0111", "0311", "0811"],
-      "description": "Collect 3 bright cards (excluding Rain Man)"
+      "description": "Collect 3 bright cards (excluding Ono no Michikaze)"
     },
     {
       "id": "akatan",

@@ -213,7 +213,7 @@ const isScoringRules = (cat: RuleCategoryUnion): cat is ScoringRulesCategory =>
       <!-- Yaku Carousel Section -->
       <div v-if="yakuList.length > 0" class="mt-12">
         <h3 class="text-3xl font-bold text-center mb-8 text-primary-900">
-          Featured Yaku (Scoring Combinations)
+          Featured Yaku 役 (Scoring Combinations)
         </h3>
         <YakuCarousel :yaku-list="yakuList" />
       </div>

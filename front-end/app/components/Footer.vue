@@ -7,7 +7,7 @@ import ExternalLinkIcon from './ExternalLinkIcon.vue'
 
 // 版權資訊
 const copyrightYear = new Date().getFullYear()
-const projectName = 'Hanafuda Koi-Koi'
+const projectName = 'Hanafuda Koi-Koi こいこい'
 
 // 個人資訊
 const personalInfo = {

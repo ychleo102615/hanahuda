@@ -64,13 +64,26 @@ const getCardIconClass = (category: string): string => {
 <template>
   <div class="relative w-full max-w-4xl mx-auto">
     <!-- Carousel Container -->
-    <div class="relative overflow-hidden rounded-lg shadow-lg bg-white p-8 min-h-[560px] flex items-center">
+    <div class="carousel-container relative overflow-hidden rounded-lg shadow-lg bg-white min-h-[560px] flex items-center">
+      <!-- Left Navigation Zone -->
+      <button
+        v-if="yakuList.length > 1"
+        @click="prev"
+        aria-label="Previous Yaku"
+        class="nav-zone nav-zone-left"
+      >
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+
       <!-- Current Yaku Card Display -->
-      <div v-if="currentYaku" class="text-center space-y-6 w-full">
+      <div v-if="currentYaku" class="text-center space-y-6 w-full p-8">
         <!-- Yaku Name -->
         <div class="space-y-2">
           <h4 class="text-3xl font-bold text-primary-900">
             {{ currentYaku.name }}
+            <span class="text-2xl text-primary-700">({{ currentYaku.nameJa }})</span>
           </h4>
         </div>
 
@@ -108,33 +121,22 @@ const getCardIconClass = (category: string): string => {
       </div>
 
       <!-- Empty State -->
-      <div v-else class="text-center text-gray-500 py-12">
+      <div v-else class="text-center text-gray-500 py-12 w-full">
         No Yaku available
       </div>
+
+      <!-- Right Navigation Zone -->
+      <button
+        v-if="yakuList.length > 1"
+        @click="next"
+        aria-label="Next Yaku"
+        class="nav-zone nav-zone-right"
+      >
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
     </div>
-
-    <!-- Navigation Buttons -->
-    <button
-      @click="prev"
-      :disabled="yakuList.length === 0"
-      aria-label="Previous Yaku"
-      class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 bg-white hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-4 shadow-lg transition-all"
-    >
-      <svg class="w-6 h-6 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-      </svg>
-    </button>
-
-    <button
-      @click="next"
-      :disabled="yakuList.length === 0"
-      aria-label="Next Yaku"
-      class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 bg-white hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-4 shadow-lg transition-all"
-    >
-      <svg class="w-6 h-6 text-primary-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-      </svg>
-    </button>
 
     <!-- Indicator Dots -->
     <div class="flex justify-center gap-2 mt-6">
@@ -155,16 +157,58 @@ const getCardIconClass = (category: string): string => {
 </template>
 
 <style scoped>
-/* Smooth transitions for navigation */
-button {
+/* Navigation Zone Styles */
+.nav-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  z-index: 10;
+}
+
+.nav-zone-left {
+  left: 0;
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.nav-zone-right {
+  right: 0;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.nav-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #d1d5db;
+  transition: color 0.2s ease;
+}
+
+.nav-zone:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.nav-zone:hover .nav-icon {
+  color: #374151;
+}
+
+.nav-zone:active {
+  background-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Indicator dot transitions */
+.flex.justify-center.gap-2 button {
   transition: all 0.3s ease;
 }
 
-button:hover:not(:disabled) {
-  transform: scale(1.05);
-}
-
 /* Focus visible styles for accessibility */
+.nav-zone:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--color-primary-900);
   outline-offset: 2px;
