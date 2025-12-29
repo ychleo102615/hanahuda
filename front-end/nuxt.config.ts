@@ -13,6 +13,20 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
+  app: {
+    head: {
+      meta: [
+        // viewport-fit=cover: 讓內容延伸到 safe area
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+        // theme-color: Safari 頂部/底部 UI 顏色（配合遊戲頁面背景色）
+        { name: 'theme-color', content: '#14532d' }, // green-900
+        // iOS Safari 狀態列樣式
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      ],
+    },
+  },
+
   typescript: {
     strict: true,
     typeCheck: process.env.NODE_ENV === 'production', // dev 模式停用，避免 vite-plugin-checker race condition
