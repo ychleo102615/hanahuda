@@ -108,8 +108,9 @@ watch(
  * 獲取卡片的緩存座標，如果沒有則即時計算
  */
 function getCardPosition(card: typeof store.animatingCards[0]): { x: number; y: number } {
-  if (card.cardId in cardPositionCache) {
-    return cardPositionCache[card.cardId]
+  const cached = cardPositionCache[card.cardId]
+  if (cached) {
+    return cached
   }
   // 備用：如果快取不存在，即時計算（理論上不應該發生）
   const pos = viewportToContainer(card.fromRect.x, card.fromRect.y)
@@ -121,8 +122,9 @@ function getCardPosition(card: typeof store.animatingCards[0]): { x: number; y: 
  * 獲取組的緩存座標，如果沒有則即時計算
  */
 function getGroupPosition(group: typeof store.animatingGroups[0]): { x: number; y: number } {
-  if (group.groupId in groupPositionCache) {
-    return groupPositionCache[group.groupId]
+  const cached = groupPositionCache[group.groupId]
+  if (cached) {
+    return cached
   }
   // 備用：如果快取不存在，即時計算（理論上不應該發生）
   const pos = viewportToContainer(group.boundingBox.x, group.boundingBox.y)
