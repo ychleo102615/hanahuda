@@ -134,16 +134,20 @@ export function createNotificationPortAdapter(
     },
 
     hideReconnectionMessage(): void {
+      // 先記錄狀態，避免重複顯示 Toast
+      const wasReconnecting = store.reconnecting
       // Remove loading toast
       store.removeToastByType('loading')
       store.reconnecting = false
-      // Show success toast
-      store.addToast({
-        type: 'success',
-        message: 'Connection restored',
-        duration: 3000,
-        dismissible: false,
-      })
+      // 只有從 reconnecting 狀態恢復時才顯示成功 Toast
+      if (wasReconnecting) {
+        store.addToast({
+          type: 'success',
+          message: 'Connection restored',
+          duration: 3000,
+          dismissible: false,
+        })
+      }
     },
 
     // ===== 等待訊息 =====

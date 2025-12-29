@@ -17,9 +17,10 @@ export default defineNuxtConfig({
     head: {
       meta: [
         // viewport-fit=cover: 讓內容延伸到 safe area
-        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        // theme-color: Safari 頂部/底部 UI 顏色（配合遊戲頁面背景色）
-        { name: 'theme-color', content: '#14532d' }, // green-900
+        // maximum-scale=1, user-scalable=no: 禁用雙擊放大和捏合縮放
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover' },
+        // theme-color: Safari 頂部/底部 UI 顏色（配合 TopInfoBar 背景色）
+        { name: 'theme-color', content: '#1f2937' }, // gray-800
         // iOS Safari 狀態列樣式
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },

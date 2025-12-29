@@ -33,6 +33,9 @@ import { TOKENS } from '../di/tokens'
 import type { StartGamePort } from '../../application/ports/input'
 import type { SessionContextPort } from '../../application/ports/output'
 
+/** 防抖間隔（毫秒）- iOS 上 visibilitychange 可能短時間內觸發多次 */
+const RECONNECT_DEBOUNCE_MS = 2000
+
 /**
  * 頁面可見性監控 Composable
  *
@@ -51,6 +54,9 @@ export function usePageVisibility(): void {
   const startGameUseCase = useOptionalDependency<StartGamePort>(TOKENS.StartGamePort)
   const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
+  // 防抖：記錄上次觸發時間，避免 iOS 上多次觸發
+  let lastTriggerTime = 0
+
   /**
    * 處理頁面可見性變化
    */
@@ -61,6 +67,13 @@ export function usePageVisibility(): void {
     }
 
     // 頁面恢復可見
+
+    // 防抖檢查：2 秒內不重複觸發
+    const now = Date.now()
+    if (now - lastTriggerTime < RECONNECT_DEBOUNCE_MS) {
+      return
+    }
+    lastTriggerTime = now
 
     // 檢查是否有活躍遊戲（gameId 由 SessionContextPort 管理）
     const gameId = sessionContext.getGameId()

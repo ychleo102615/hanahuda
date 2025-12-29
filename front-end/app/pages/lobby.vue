@@ -119,7 +119,7 @@ const handleRetry = () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-green-900 flex flex-col">
+  <div class="min-h-screen bg-green-900 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
     <!-- 頂部資訊列 -->
     <header class="h-14 shrink-0">
       <LobbyTopInfoBar @menu-click="togglePanel" />
