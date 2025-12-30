@@ -15,14 +15,6 @@ import type {
   GameStartedEvent,
   RoundDealtEvent,
   GameSnapshotRestore,
-  TurnCompletedEvent,
-  SelectionRequiredEvent,
-  TurnProgressAfterSelectionEvent,
-  DecisionRequiredEvent,
-  DecisionMadeEvent,
-  RoundEndedEvent,
-  GameFinishedEvent,
-  GameErrorEvent,
 } from '#shared/contracts'
 
 /**

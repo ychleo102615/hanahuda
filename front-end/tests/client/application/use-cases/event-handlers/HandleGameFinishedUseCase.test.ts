@@ -11,7 +11,7 @@ import {
   createMockSessionContextPort,
   createMockGameStatePort,
 } from '../../test-helpers/mock-factories'
-import type { NotificationPort, UIStatePort, SessionContextPort, GameStatePort } from '@/user-interface/application/ports'
+import type { NotificationPort, UIStatePort, GameStatePort } from '@/user-interface/application/ports'
 
 describe('HandleGameFinishedUseCase', () => {
   let mockNotification: NotificationPort

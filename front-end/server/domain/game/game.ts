@@ -298,7 +298,7 @@ export function finishRoundDraw(game: Game): Game {
  * @param winnerId - 勝者 ID（可選，若無則視為平局）
  * @returns 更新後的遊戲（狀態為 FINISHED）
  */
-export function finishGame(game: Game, winnerId?: string): Game {
+export function finishGame(game: Game, _winnerId?: string): Game {
   return Object.freeze({
     ...game,
     currentRound: null,

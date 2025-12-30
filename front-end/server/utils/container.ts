@@ -47,11 +47,6 @@ import { ConfirmContinueUseCase } from '~~/server/application/use-cases/confirmC
 import { TurnFlowService } from '~~/server/application/services/turnFlowService'
 
 // Input Port Types
-import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
-import type { JoinGameAsAiInputPort } from '~~/server/application/ports/input/joinGameAsAiInputPort'
-import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
-import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
-import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
 import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'

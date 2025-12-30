@@ -81,7 +81,7 @@ export class HandleRoundEndedUseCase implements HandleRoundEndedPort {
           // 發送確認命令
           this.sendCommand.confirmContinue(decision).then(() => {
             // 不調用 hideContinueConfirmation，等待 GameFinished / RoundDealt 事件
-          }).catch((error) => {
+          }).catch(() => {
             this.notification.showErrorMessage('Failed to confirm. Please try again.')
             // 保持 AWAITING_SERVER 狀態，等待 Server 回應
           })

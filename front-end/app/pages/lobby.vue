@@ -66,7 +66,7 @@ const menuItems = computed<ActionPanelItem[]>(() => [
 onMounted(async () => {
   try {
     roomTypes.value = await roomApiClient.getRoomTypes()
-  } catch (error) {
+  } catch (_error) {
     loadError.value = 'Failed to load room types'
   } finally {
     isLoadingRooms.value = false

@@ -18,7 +18,7 @@ import {
   addToField,
   type MatchResult,
 } from '~/server/domain/services/matchingService'
-import { MONTH_1_ALL_CARDS, FIELD_MIXED_CARDS } from '../../fixtures/cards'
+import { FIELD_MIXED_CARDS } from '../../fixtures/cards'
 
 describe('matchingService', () => {
   describe('canMatch', () => {

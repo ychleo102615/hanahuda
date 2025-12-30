@@ -21,7 +21,6 @@ import {
   createLastRoundGame,
   PLAYER_1_ID,
   PLAYER_2_ID,
-  GAME_ID,
 } from '../../fixtures/games'
 
 describe('roundTransitionService', () => {

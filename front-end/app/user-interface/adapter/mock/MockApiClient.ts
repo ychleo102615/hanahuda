@@ -53,7 +53,7 @@ export class MockApiClient implements SendCommandPort {
   /**
    * Mock leaveGame
    */
-  async leaveGame(gameId: string): Promise<void> {
+  async leaveGame(_gameId: string): Promise<void> {
     await delay(50)
 
 
@@ -63,7 +63,7 @@ export class MockApiClient implements SendCommandPort {
   /**
    * Mock playHandCard
    */
-  async playHandCard(cardId: string, matchTargetId?: string): Promise<void> {
+  async playHandCard(_cardId: string, _matchTargetId?: string): Promise<void> {
     await delay(50)
 
 
@@ -73,7 +73,7 @@ export class MockApiClient implements SendCommandPort {
   /**
    * Mock selectTarget
    */
-  async selectTarget(sourceCardId: string, targetCardId: string): Promise<void> {
+  async selectTarget(_sourceCardId: string, _targetCardId: string): Promise<void> {
     await delay(50)
 
 
@@ -83,7 +83,7 @@ export class MockApiClient implements SendCommandPort {
   /**
    * Mock makeDecision
    */
-  async makeDecision(decision: 'KOI_KOI' | 'END_ROUND'): Promise<void> {
+  async makeDecision(_decision: 'KOI_KOI' | 'END_ROUND'): Promise<void> {
     await delay(50)
 
 
@@ -93,7 +93,7 @@ export class MockApiClient implements SendCommandPort {
   /**
    * Mock confirmContinue
    */
-  async confirmContinue(decision: 'CONTINUE' | 'LEAVE'): Promise<void> {
+  async confirmContinue(_decision: 'CONTINUE' | 'LEAVE'): Promise<void> {
     await delay(50)
 
 

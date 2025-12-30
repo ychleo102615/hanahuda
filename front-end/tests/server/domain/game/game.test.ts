@@ -20,7 +20,6 @@ import {
   getDefaultRuleset,
   createPlayer,
 } from '~/server/domain/game'
-import type { Game } from '~/server/domain/game/game'
 import {
   createTestWaitingGame,
   createTestInProgressGame,

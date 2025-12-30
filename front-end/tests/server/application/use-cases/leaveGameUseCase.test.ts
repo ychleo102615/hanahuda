@@ -20,7 +20,6 @@ import {
 } from '../../mocks'
 import {
   PLAYER_1_ID,
-  GAME_ID,
 } from '../../fixtures/games'
 
 describe('LeaveGameUseCase', () => {

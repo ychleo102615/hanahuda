@@ -9,7 +9,7 @@
  */
 
 import { randomUUID } from 'crypto'
-import type { Game, Player } from '~~/server/domain/game'
+import type { Game } from '~~/server/domain/game'
 import { toSnapshot } from '~~/server/domain/game'
 import type { Round } from '~~/server/domain/round'
 import type {
@@ -30,18 +30,14 @@ import type {
   GameEndedReason,
   GameErrorCode,
   SuggestedAction,
-  PlayerInfo,
   PlayerHand,
-  PlayerDepository,
   CardPlay,
   CardSelection,
   YakuUpdate,
-  Yaku,
   ScoreMultipliers,
   PlayerScore,
-  KoiStatus,
 } from '#shared/contracts'
-import { toPlayerInfo, toPlayerInfoList, createNextState, toScoreMultipliers } from './dtos'
+import { toPlayerInfoList, createNextState, toScoreMultipliers } from './dtos'
 import { gameConfig } from '~~/server/utils/config'
 import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 

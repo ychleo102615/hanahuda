@@ -127,8 +127,6 @@ onUnmounted(() => {
 
 // GamePage 只作為協調者，不處理業務邏輯
 // 所有場牌點擊邏輯已移至 FieldZone 組件內部處理
-function handleFieldCardClick(cardId: string) {
-}
 </script>
 
 <template>
@@ -159,7 +157,7 @@ function handleFieldCardClick(cardId: string) {
 
       <!-- 場中央牌區 (flex-[30]) -->
       <section class="flex-30 bg-green-800/50 flex min-h-0">
-        <FieldZone class="flex-1" @card-click="handleFieldCardClick" />
+        <FieldZone class="flex-1" />
         <!-- DeckZone：大螢幕正常顯示，小螢幕 fixed 定位（內部響應式處理） -->
         <DeckZone />
       </section>

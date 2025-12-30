@@ -25,7 +25,7 @@ import {
   PLAYER_2_ID,
   GAME_ID,
 } from '../../fixtures/games'
-import { HAND_STANDARD, FIELD_MIXED_CARDS } from '../../fixtures/cards'
+import { HAND_STANDARD } from '../../fixtures/cards'
 
 describe('PlayHandCardUseCase', () => {
   // Mocks

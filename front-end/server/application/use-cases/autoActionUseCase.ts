@@ -15,8 +15,8 @@
  * @module server/application/use-cases/autoActionUseCase
  */
 
-import type { FlowState } from '#shared/contracts'
-import type { Game } from '~~/server/domain/game/game'
+import type { FlowState as _FlowState } from '#shared/contracts'
+import type { Game as _Game } from '~~/server/domain/game/game'
 import { getPlayerHand } from '~~/server/domain/round'
 import {
   HIKARI_CARDS,

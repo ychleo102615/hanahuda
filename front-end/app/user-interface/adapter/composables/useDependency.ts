@@ -39,7 +39,7 @@ export function useDependency<T>(token: symbol): T {
   } catch (error) {
     // 提供更友善的錯誤訊息
     if ((error as DependencyNotFoundError).name === 'DependencyNotFoundError') {
-      const config = useRuntimeConfig()
+      // 可在此加入除錯資訊
     }
     throw error
   }

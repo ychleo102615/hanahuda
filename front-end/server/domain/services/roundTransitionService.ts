@@ -9,7 +9,6 @@
  * @module server/domain/services/roundTransitionService
  */
 
-import type { PlayerScore } from '#shared/contracts'
 import {
   canContinue,
   startRound,

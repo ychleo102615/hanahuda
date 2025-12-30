@@ -183,17 +183,6 @@ export const DEFAULT_YAKU_POINTS: Record<YakuType, number> = {
 // ============================================================
 
 /**
- * 計算卡片集合中屬於指定類別的數量
- */
-function countCardsIn(
-  depositoryCards: readonly string[],
-  categoryCards: readonly string[]
-): number {
-  const categorySet = new Set(categoryCards)
-  return depositoryCards.filter((card) => categorySet.has(card)).length
-}
-
-/**
  * 取得卡片集合中屬於指定類別的卡片
  */
 function getCardsIn(

@@ -13,7 +13,7 @@
  * 參考: specs/003-ui-application-layer/contracts/events.md#TurnCompletedEvent
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleTurnCompletedUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnCompletedUseCase'
 import type { TurnCompletedEvent } from '#shared/contracts'
 import {
@@ -39,12 +39,6 @@ describe('HandleTurnCompletedUseCase', () => {
     mockDomainFacade = createMockDomainFacade()
     useCase = new HandleTurnCompletedUseCase(mockGameState, mockAnimation, mockNotification, mockDomainFacade)
   })
-
-  // Helper: 等待異步操作完成（增加等待時間以確保所有 Promise 完成，包括 TransitionGroup 動畫延遲）
-  const flushPromises = async () => {
-    // 等待 TransitionGroup FLIP 動畫完成（350ms）+ 額外時間確保所有操作完成
-    await new Promise(resolve => setTimeout(resolve, 400))
-  }
 
   describe('播放配對動畫', () => {
     it('應該在有配對時播放 playMatchAnimation + playToDepositoryAnimation', async () => {

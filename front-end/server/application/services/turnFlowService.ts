@@ -10,12 +10,12 @@
  * @module server/application/services/turnFlowService
  */
 
-import { type Game, finishGame, finishRound, finishRoundDraw, startRound, endRound } from '~~/server/domain/game/game'
+import { type Game, finishGame, endRound } from '~~/server/domain/game/game'
 import { isLastRound } from '~~/server/domain/game/gameQueries'
 import type { SpecialRuleResult } from '~~/server/domain/services/specialRulesService'
 import type { RoundEndReason } from '#shared/contracts'
 import { calculateWinner } from '~~/server/domain/game/gameEndConditions'
-import type { ScoreMultipliers, RoundScoringData, PlayerScore, GameEndedReason } from '#shared/contracts'
+import type { ScoreMultipliers, RoundScoringData, GameEndedReason } from '#shared/contracts'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
@@ -34,7 +34,6 @@ import {
   setRequireContinueConfirmation,
   clearRequireContinueConfirmation,
   isConfirmationRequired,
-  isPlayerDisconnectedOrLeft,
   hasDisconnectedOrLeftPlayers,
 } from '~~/server/domain/game/playerConnection'
 import { gameConfig } from '~~/server/utils/config'
@@ -383,7 +382,7 @@ export class TurnFlowService {
    * @param gameId - 遊戲 ID
    * @param idlePlayerId - 閒置玩家 ID
    */
-  async endGameDueToIdlePlayer(gameId: string, idlePlayerId: string): Promise<void> {
+  async endGameDueToIdlePlayer(gameId: string, _idlePlayerId: string): Promise<void> {
     // 使用悲觀鎖確保同一遊戲的操作互斥執行（此方法可能從超時回調調用）
     await this.gameLock.withLock(gameId, async () => {
       try {

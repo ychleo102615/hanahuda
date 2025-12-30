@@ -409,7 +409,7 @@ export function selectTarget(
     throw new Error('No pending selection')
   }
 
-  const { drawnCard, possibleTargets, handCardPlay } = round.pendingSelection
+  const { drawnCard, possibleTargets } = round.pendingSelection
 
   if (!possibleTargets.includes(targetCardId)) {
     throw new Error(`Invalid target: ${targetCardId}. Valid targets: ${possibleTargets.join(', ')}`)

@@ -12,7 +12,7 @@
  * 參考: specs/003-ui-application-layer/contracts/events.md#TurnProgressAfterSelectionEvent
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { HandleTurnProgressAfterSelectionUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
 import type { TurnProgressAfterSelectionEvent } from '#shared/contracts'
 import {

@@ -14,7 +14,7 @@ import { useDependency } from '~/user-interface/adapter/composables/useDependenc
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output/session-context.port'
 
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware((_to, _from) => {
   // Nuxt 4: 只在 client-side 執行
   if (import.meta.server) {
     return

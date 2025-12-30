@@ -22,7 +22,7 @@ import type {
   DrawnCardMatchAnimationParams,
 } from '../../application/ports/output/animation.port'
 import type { CardType } from '../../domain/types'
-import { zoneRegistry, type ZoneRegistry } from './ZoneRegistry'
+import type { ZoneRegistry } from './ZoneRegistry'
 import type { ZoneName } from './types'
 import type { AnimationLayerStore } from '../stores'
 import type { useUIStateStore } from '../stores/uiState'

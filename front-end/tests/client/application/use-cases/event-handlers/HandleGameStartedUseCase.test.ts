@@ -24,7 +24,7 @@ import type { UIStatePort, TriggerUIEffectPort, GameStatePort, NotificationPort,
 
 describe('HandleGameStartedUseCase', () => {
   let mockUIState: UIStatePort
-  let mockTriggerUIEffect: TriggerUIEffectPort
+  let _mockTriggerUIEffect: TriggerUIEffectPort
   let mockGameState: GameStatePort
   let mockNotification: NotificationPort
   let mockMatchmakingState: MatchmakingStatePort

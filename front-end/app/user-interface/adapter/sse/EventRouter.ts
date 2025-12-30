@@ -130,7 +130,7 @@ export class EventRouter {
         // 調用 Use Case 執行（可能包含 async 動畫），傳遞 ExecuteOptions
         return port.execute(payload, options)
       })
-      .catch((error) => {
+      .catch(() => {
         // 捕獲錯誤，避免中斷事件鏈
       })
   }

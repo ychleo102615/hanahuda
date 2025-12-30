@@ -100,8 +100,8 @@ export function createRateLimiter(): RateLimiter {
   // 儲存結構: Map<`${key}:${endpoint}`, timestamp[]>
   const requests = new Map<string, number[]>()
 
-  // 自動清理計時器
-  const cleanupTimer: ReturnType<typeof setInterval> | null = null
+  // 自動清理計時器（預留供未來使用）
+  const _cleanupTimer: ReturnType<typeof setInterval> | null = null
 
   /**
    * 取得複合鍵
@@ -143,7 +143,6 @@ export function createRateLimiter(): RateLimiter {
 
       const compositeKey = getCompositeKey(key, endpoint)
       const now = Date.now()
-      const windowStart = now - config.windowMs
 
       // 清理過期記錄並取得有效的請求時間戳
       const validTimestamps = cleanupExpiredRequests(compositeKey, config)

@@ -126,16 +126,16 @@ export class GameEventClient {
       }
 
       // 連線錯誤或中斷
-      this.eventSource.onerror = (event) => {
+      this.eventSource.onerror = () => {
         this.eventSource?.close()
         this.eventSource = null
         this.onConnectionLostCallback?.()
         void this.reconnect()
       }
 
-      // 註冊所有事件監聽器
+      // 註冊所有事件監聯器
       this.registerEventListeners()
-    } catch (error) {
+    } catch {
       this.onConnectionFailedCallback?.()
     }
   }
@@ -209,7 +209,8 @@ export class GameEventClient {
         try {
           const payload = JSON.parse(event.data)
           this.eventRouter.route(eventType, payload)
-        } catch (error) {
+        } catch {
+          // 忽略 JSON 解析錯誤
         }
       })
     })

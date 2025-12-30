@@ -216,7 +216,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
   /**
    * 查找玩家的 session token（從 gameStore 的 session map）
    */
-  private findPlayerSessionToken(gameId: string, playerId: string): string | undefined {
+  private findPlayerSessionToken(_gameId: string, _playerId: string): string | undefined {
     // gameStore 可能有方法可以查詢，但目前沒有
     // 這裡暫時返回 undefined，讓呼叫方處理
     return undefined

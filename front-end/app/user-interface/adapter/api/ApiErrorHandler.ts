@@ -61,7 +61,7 @@ export interface ApiErrorHandler extends ErrorHandlerPort {
  * @returns ApiErrorHandler 實例
  */
 export function createApiErrorHandler(deps: ApiErrorHandlerDependencies): ApiErrorHandler {
-  const { notification, navigation, sessionContext, matchmakingState } = deps
+  const { notification, sessionContext, matchmakingState } = deps
 
   /**
    * 清理 session 狀態

@@ -29,7 +29,6 @@ import type {
   CardSelection,
   YakuUpdate,
   ScoreMultipliers,
-  Yaku,
   PlayerScore,
 } from '#shared/contracts'
 import type { RoundEndReason, GameEndedReason, GameErrorCode, SuggestedAction } from '#shared/contracts/errors'

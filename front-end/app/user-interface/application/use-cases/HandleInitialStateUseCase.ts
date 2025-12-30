@@ -53,7 +53,7 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
    * @param event - InitialState 事件
    * @param signal - AbortSignal（可選），用於取消操作
    */
-  execute(event: InitialStateEvent, signal?: AbortSignal): void {
+  execute(event: InitialStateEvent, _signal?: AbortSignal): void {
 
     // 儲存遊戲 ID 到 SessionContext
     this.sessionContext.setGameId(event.game_id)

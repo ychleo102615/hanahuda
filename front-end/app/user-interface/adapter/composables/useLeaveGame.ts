@@ -129,7 +129,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
       if (gameApiClient) {
         try {
           await gameApiClient.leaveGame(gameId)
-        } catch (error) {
+        } catch {
           // 即使 API 失敗，仍然清除本地狀態並導航
         }
       } else {
@@ -137,7 +137,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
 
       // 清除本地狀態並導航
       clearLocalStateAndNavigate()
-    } catch (error) {
+    } catch {
       // 發生任何錯誤，仍然嘗試清除狀態並導航
       clearLocalStateAndNavigate()
     }
