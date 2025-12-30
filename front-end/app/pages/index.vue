@@ -73,7 +73,7 @@ const handleRulesClick = () => {
 
       <!-- About Section Placeholder -->
       <section id="about" class="relative min-h-[50vh] bg-primary-50 flex items-center justify-center">
-        <div class="text-center">
+        <div class="text-center px-6">
           <h2 class="text-3xl font-bold text-primary-900 mb-4">About Hanafuda Koi-Koi こいこい</h2>
           <p class="text-lg text-primary-700">
             This is a demonstration project developed by Leo Huang.
