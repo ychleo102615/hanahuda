@@ -23,6 +23,7 @@ definePageMeta({
 })
 
 import { ref, computed, onMounted } from 'vue'
+import { v4 as uuidv4 } from 'uuid'
 import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
 import { useDependency } from '~/user-interface/adapter/composables/useDependency'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
@@ -87,10 +88,8 @@ const handleBackToHome = () => {
   closePanel()
 }
 
-// 生成 UUID
-const generateUUID = (): string => {
-  return crypto.randomUUID()
-}
+// 生成 UUID（使用 uuid 套件，相容非安全上下文）
+const generateUUID = (): string => uuidv4()
 
 // 選擇房間並開始配對
 const handleSelectRoom = (roomTypeId: string) => {
