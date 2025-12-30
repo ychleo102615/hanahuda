@@ -43,6 +43,7 @@ describe('HandleRoundDealtUseCase', () => {
         event_id: 'evt-102',
         timestamp: '2025-01-15T10:01:00Z',
         dealer_id: 'player-2',
+        current_round: 1,
         field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
         hands: [
           { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
@@ -56,12 +57,7 @@ describe('HandleRoundDealtUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-
-      // 等待 async 操作完成
-      await vi.waitFor(() => {
-        expect(mockGameState.updateFieldCards).toHaveBeenCalled()
-      })
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockGameState.updateFieldCards).toHaveBeenCalledWith([
@@ -85,6 +81,7 @@ describe('HandleRoundDealtUseCase', () => {
         event_id: 'evt-103',
         timestamp: '2025-01-15T10:01:00Z',
         dealer_id: 'player-1',
+        current_round: 1,
         field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
         hands: [
           { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
@@ -98,12 +95,7 @@ describe('HandleRoundDealtUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-
-      // 等待 async 操作完成
-      await vi.waitFor(() => {
-        expect(mockGameState.updateHandCards).toHaveBeenCalled()
-      })
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockGameState.updateHandCards).toHaveBeenCalledWith([
@@ -125,6 +117,7 @@ describe('HandleRoundDealtUseCase', () => {
         event_id: 'evt-103',
         timestamp: '2025-01-15T10:01:00Z',
         dealer_id: 'player-1',
+        current_round: 1,
         field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
         hands: [
           { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
@@ -138,24 +131,20 @@ describe('HandleRoundDealtUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-
-      // 等待 async 操作完成
-      await vi.waitFor(() => {
-        expect(mockGameState.updateOpponentHandCount).toHaveBeenCalled()
-      })
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockGameState.updateOpponentHandCount).toHaveBeenCalledWith(8)
     })
 
-    it('應該處理玩家手牌不存在的情況（不應拋出錯誤）', () => {
+    it('應該處理玩家手牌不存在的情況（不應拋出錯誤）', async () => {
       // Arrange
       const event: RoundDealtEvent = {
         event_type: 'RoundDealt',
         event_id: 'evt-104',
         timestamp: '2025-01-15T10:01:00Z',
         dealer_id: 'player-1',
+        current_round: 1,
         field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
         hands: [
           { player_id: 'player-2', cards: ['0501', '0502', '0503', '0504', '0601', '0602', '0603', '0604'] },
@@ -168,7 +157,7 @@ describe('HandleRoundDealtUseCase', () => {
       }
 
       // Act & Assert: 不應拋出錯誤
-      expect(() => useCase.execute(event)).not.toThrow()
+      await expect(useCase.execute(event, { receivedAt: Date.now() })).resolves.not.toThrow()
     })
   })
 
@@ -180,6 +169,7 @@ describe('HandleRoundDealtUseCase', () => {
         event_id: 'evt-105',
         timestamp: '2025-01-15T10:01:00Z',
         dealer_id: 'player-1',
+        current_round: 1,
         field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
         hands: [
           { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
@@ -193,12 +183,7 @@ describe('HandleRoundDealtUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-
-      // 等待 async 操作完成
-      await vi.waitFor(() => {
-        expect(mockAnimation.playDealAnimation).toHaveBeenCalled()
-      })
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert: 驗證 onCardDealt 回調被傳遞
       const callArgs = (mockAnimation.playDealAnimation as ReturnType<typeof vi.fn>).mock.calls[0][0]
@@ -220,6 +205,7 @@ describe('HandleRoundDealtUseCase', () => {
         event_id: 'evt-101',
         timestamp: '2025-01-15T10:01:00Z',
         dealer_id: 'player-1',
+        current_round: 1,
         field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
         hands: [
           { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
@@ -233,12 +219,7 @@ describe('HandleRoundDealtUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-
-      // 等待 async 操作完成
-      await vi.waitFor(() => {
-        expect(mockAnimation.playDealAnimation).toHaveBeenCalled()
-      })
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockAnimation.playDealAnimation).toHaveBeenCalledWith(
@@ -259,6 +240,7 @@ describe('HandleRoundDealtUseCase', () => {
         event_id: 'evt-106',
         timestamp: '2025-01-15T10:01:00Z',
         dealer_id: 'player-1',
+        current_round: 1,
         field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
         hands: [
           { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
@@ -272,12 +254,7 @@ describe('HandleRoundDealtUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-
-      // 等待 async 操作完成
-      await vi.waitFor(() => {
-        expect(mockGameState.setFlowStage).toHaveBeenCalled()
-      })
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockGameState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
@@ -292,6 +269,7 @@ describe('HandleRoundDealtUseCase', () => {
         event_id: 'evt-107',
         timestamp: '2025-01-15T10:01:00Z',
         dealer_id: 'player-1',
+        current_round: 1,
         field: ['0101', '0102', '0103', '0104', '0201', '0202', '0203', '0204'],
         hands: [
           { player_id: 'player-1', cards: ['0301', '0302', '0303', '0304', '0401', '0402', '0403', '0404'] },
@@ -305,12 +283,7 @@ describe('HandleRoundDealtUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
-
-      // 等待 async 操作完成
-      await vi.waitFor(() => {
-        expect(mockGameState.setFlowStage).toHaveBeenCalled()
-      })
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert: 驗證所有方法都被調用
       expect(mockGameState.updateFieldCards).toHaveBeenCalled()

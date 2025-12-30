@@ -16,9 +16,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PlayHandCardUseCase } from '@/user-interface/application/use-cases/player-operations/PlayHandCardUseCase'
 import {
   createMockSendCommandPort,
-  createMockTriggerUIEffectPort,
+  createMockNotificationPort,
   createMockDomainFacade,
   createMockAnimationPort,
+  createMockErrorHandlerPort,
 } from '../../test-helpers/mock-factories'
 import type { Card } from '@/user-interface/domain'
 
@@ -40,15 +41,17 @@ describe('PlayHandCardUseCase', () => {
 
   // Test helpers
   let mockSendCommandPort: ReturnType<typeof createMockSendCommandPort>
-  let mockTriggerUIEffectPort: ReturnType<typeof createMockTriggerUIEffectPort>
+  let mockNotificationPort: ReturnType<typeof createMockNotificationPort>
   let mockDomainFacade: ReturnType<typeof createMockDomainFacade>
   let mockAnimationPort: ReturnType<typeof createMockAnimationPort>
+  let mockErrorHandler: ReturnType<typeof createMockErrorHandlerPort>
 
   beforeEach(() => {
     mockSendCommandPort = createMockSendCommandPort()
-    mockTriggerUIEffectPort = createMockTriggerUIEffectPort()
+    mockNotificationPort = createMockNotificationPort()
     mockDomainFacade = createMockDomainFacade()
     mockAnimationPort = createMockAnimationPort()
+    mockErrorHandler = createMockErrorHandlerPort()
   })
 
   describe('Pre-validation (卡片存在性驗證)', () => {
@@ -58,9 +61,10 @@ describe('PlayHandCardUseCase', () => {
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
-        mockTriggerUIEffectPort,
+        mockNotificationPort,
         mockDomainFacade,
-        mockAnimationPort
+        mockAnimationPort,
+        mockErrorHandler
       )
 
       // Act
@@ -86,9 +90,10 @@ describe('PlayHandCardUseCase', () => {
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
-        mockTriggerUIEffectPort,
+        mockNotificationPort,
         mockDomainFacade,
-        mockAnimationPort
+        mockAnimationPort,
+        mockErrorHandler
       )
 
       // Act
@@ -112,9 +117,10 @@ describe('PlayHandCardUseCase', () => {
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
-        mockTriggerUIEffectPort,
+        mockNotificationPort,
         mockDomainFacade,
-        mockAnimationPort
+        mockAnimationPort,
+        mockErrorHandler
       )
 
       // Act
@@ -134,7 +140,6 @@ describe('PlayHandCardUseCase', () => {
 
       expect(mockDomainFacade.findMatchableCards).toHaveBeenCalled()
       expect(mockSendCommandPort.playHandCard).toHaveBeenCalledWith('0141', undefined)
-      expect(mockTriggerUIEffectPort.showSelectionUI).not.toHaveBeenCalled()
     })
   })
 
@@ -146,9 +151,10 @@ describe('PlayHandCardUseCase', () => {
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
-        mockTriggerUIEffectPort,
+        mockNotificationPort,
         mockDomainFacade,
-        mockAnimationPort
+        mockAnimationPort,
+        mockErrorHandler
       )
 
       // Act
@@ -168,12 +174,11 @@ describe('PlayHandCardUseCase', () => {
 
       expect(mockDomainFacade.findMatchableCards).toHaveBeenCalled()
       expect(mockSendCommandPort.playHandCard).toHaveBeenCalledWith('0141', '0142')
-      expect(mockTriggerUIEffectPort.showSelectionUI).not.toHaveBeenCalled()
     })
   })
 
   describe('Multiple match scenario (多重配對場景)', () => {
-    it('should trigger selection UI when multiple matchable cards found', () => {
+    it('should return error for double match requiring UI selection', () => {
       // Arrange
       mockDomainFacade.validateCardExists = vi.fn().mockReturnValue(true)
       mockDomainFacade.findMatchableCards = vi
@@ -182,9 +187,10 @@ describe('PlayHandCardUseCase', () => {
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
-        mockTriggerUIEffectPort,
+        mockNotificationPort,
         mockDomainFacade,
-        mockAnimationPort
+        mockAnimationPort,
+        mockErrorHandler
       )
 
       // Act
@@ -194,21 +200,51 @@ describe('PlayHandCardUseCase', () => {
         fieldCards: ['0142', '0143', '0241'], // 兩張同月、一張不同月
       })
 
-      // Assert
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.value.needSelection).toBe(true)
-        expect(result.value.possibleTargets).toEqual(['0142', '0143'])
-        expect(result.value.selectedTarget).toBeUndefined()
+      // Assert: 雙重配對時，Use Case 預期 UI 層已處理並傳入 targetCardId
+      // 若未傳入，則返回錯誤要求 UI 層進行選擇
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toBe('DOUBLE_MATCH_REQUIRES_TARGET')
       }
 
       expect(mockDomainFacade.findMatchableCards).toHaveBeenCalled()
-      // 注意：在新架構中，手牌多重配對通過「兩次點擊確認模式」在 UI 層處理
-      // Use Case 不再觸發 showSelectionUI，而是返回 needSelection: true
       expect(mockSendCommandPort.playHandCard).not.toHaveBeenCalled()
     })
 
-    it('should handle three matchable cards', () => {
+    it('should handle double match with targetCardId provided', () => {
+      // Arrange
+      mockDomainFacade.validateCardExists = vi.fn().mockReturnValue(true)
+      mockDomainFacade.findMatchableCards = vi
+        .fn()
+        .mockReturnValue([mockFieldCard1, mockFieldCard2])
+
+      const useCase = new PlayHandCardUseCase(
+        mockSendCommandPort,
+        mockNotificationPort,
+        mockDomainFacade,
+        mockAnimationPort,
+        mockErrorHandler
+      )
+
+      // Act: UI 層傳入 targetCardId 確認選擇
+      const result = useCase.execute({
+        cardId: '0141',
+        handCards: ['0141'],
+        fieldCards: ['0142', '0143', '0241'],
+        targetCardId: '0142', // 使用者選擇的目標
+      })
+
+      // Assert
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.value.needSelection).toBe(false)
+        expect(result.value.selectedTarget).toBe('0142')
+      }
+
+      expect(mockSendCommandPort.playHandCard).toHaveBeenCalledWith('0141', '0142')
+    })
+
+    it('should auto-capture all cards for triple match (TRIPLE_MATCH)', () => {
       // Arrange
       const mockFieldCard3: Card = {
         card_id: '0144',
@@ -224,9 +260,10 @@ describe('PlayHandCardUseCase', () => {
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
-        mockTriggerUIEffectPort,
+        mockNotificationPort,
         mockDomainFacade,
-        mockAnimationPort
+        mockAnimationPort,
+        mockErrorHandler
       )
 
       // Act
@@ -236,16 +273,15 @@ describe('PlayHandCardUseCase', () => {
         fieldCards: ['0142', '0143', '0144'],
       })
 
-      // Assert
+      // Assert: 三重配對時，直接配對所有牌（無需選擇）
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.value.needSelection).toBe(true)
-        expect(result.value.possibleTargets).toEqual(['0142', '0143', '0144'])
+        expect(result.value.needSelection).toBe(false)
+        expect(result.value.selectedTarget).toBe(null) // TRIPLE_MATCH 不需要指定 target
       }
 
-      // 注意：在新架構中，手牌多重配對通過「兩次點擊確認模式」在 UI 層處理
-      // Use Case 不再觸發 showSelectionUI，而是返回 needSelection: true
-      expect(mockSendCommandPort.playHandCard).not.toHaveBeenCalled()
+      // 三重配對應該發送命令（不帶 target，由後端處理）
+      expect(mockSendCommandPort.playHandCard).toHaveBeenCalledWith('0141', undefined)
     })
   })
 
@@ -256,9 +292,10 @@ describe('PlayHandCardUseCase', () => {
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
-        mockTriggerUIEffectPort,
+        mockNotificationPort,
         mockDomainFacade,
-        mockAnimationPort
+        mockAnimationPort,
+        mockErrorHandler
       )
 
       // Act
@@ -282,9 +319,10 @@ describe('PlayHandCardUseCase', () => {
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
-        mockTriggerUIEffectPort,
+        mockNotificationPort,
         mockDomainFacade,
-        mockAnimationPort
+        mockAnimationPort,
+        mockErrorHandler
       )
 
       // Act
@@ -316,9 +354,10 @@ describe('PlayHandCardUseCase', () => {
 
       const useCase = new PlayHandCardUseCase(
         mockSendCommandPort,
-        mockTriggerUIEffectPort,
+        mockNotificationPort,
         mockDomainFacade,
-        mockAnimationPort
+        mockAnimationPort,
+        mockErrorHandler
       )
 
       // Act

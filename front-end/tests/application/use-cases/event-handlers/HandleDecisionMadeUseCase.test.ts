@@ -16,18 +16,21 @@ import type { DecisionMadeEvent } from '#shared/contracts'
 import {
   createMockUIStatePort,
   createMockNotificationPort,
+  createMockGameStatePort,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, NotificationPort } from '@/user-interface/application/ports'
+import type { UIStatePort, NotificationPort, GameStatePort } from '@/user-interface/application/ports'
 
 describe('HandleDecisionMadeUseCase', () => {
   let mockUIState: UIStatePort
   let mockNotification: NotificationPort
+  let mockGameState: GameStatePort
   let useCase: HandleDecisionMadeUseCase
 
   beforeEach(() => {
     mockUIState = createMockUIStatePort()
     mockNotification = createMockNotificationPort()
-    useCase = new HandleDecisionMadeUseCase(mockUIState, mockNotification)
+    mockGameState = createMockGameStatePort()
+    useCase = new HandleDecisionMadeUseCase(mockUIState, mockNotification, mockGameState)
   })
 
   describe('更新 Koi-Koi 倍率', () => {
@@ -49,11 +52,11 @@ describe('HandleDecisionMadeUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      useCase.execute(event)
+      useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockUIState.updateKoiKoiMultiplier).toHaveBeenCalledWith('player-1', 2)
@@ -77,11 +80,11 @@ describe('HandleDecisionMadeUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      useCase.execute(event)
+      useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockUIState.updateKoiKoiMultiplier).toHaveBeenCalledWith('player-1', 3)
@@ -107,11 +110,11 @@ describe('HandleDecisionMadeUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      useCase.execute(event)
+      useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
@@ -137,11 +140,11 @@ describe('HandleDecisionMadeUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      useCase.execute(event)
+      useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert: 驗證所有方法都被調用
       expect(mockUIState.updateKoiKoiMultiplier).toHaveBeenCalled()

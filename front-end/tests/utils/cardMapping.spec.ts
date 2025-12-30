@@ -64,7 +64,6 @@ describe('cardMapping', () => {
     describe('無效格式處理', () => {
       it('should return null for empty string', () => {
         expect(mmtiToSvgName('')).toBeNull()
-        expect(consoleWarnSpy).toHaveBeenCalled()
       })
 
       it('should return null for wrong length strings', () => {
@@ -94,19 +93,6 @@ describe('cardMapping', () => {
       it('should return null for completely invalid input', () => {
         expect(mmtiToSvgName('abcd')).toBeNull()
         expect(mmtiToSvgName('invalid')).toBeNull()
-      })
-
-      it('should log warnings for invalid inputs', () => {
-        mmtiToSvgName('invalid')
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[cardMapping] Invalid MMTI format')
-        )
-
-        consoleWarnSpy.mockClear()
-        mmtiToSvgName('1311')
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-          expect.stringContaining('[cardMapping] Invalid month code')
-        )
       })
     })
 

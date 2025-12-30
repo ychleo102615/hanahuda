@@ -49,6 +49,8 @@ import type {
   NotificationPort,
   MatchmakingStatePort,
   NavigationPort,
+  ErrorHandlerPort,
+  SessionContextPort,
 } from '@/user-interface/application/ports'
 import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
 
@@ -222,6 +224,7 @@ export function createMockGameStatePort(): GameStatePort {
     setFlowStage: vi.fn(),
     setActivePlayer: vi.fn(),
     setDealerId: vi.fn(),
+    setCurrentRound: vi.fn(),
     updateFieldCards: vi.fn(),
     updateHandCards: vi.fn(),
     updateOpponentHandCount: vi.fn(),
@@ -248,6 +251,7 @@ export function createMockGameStatePort(): GameStatePort {
     }),
     resetKoiKoiMultipliers: vi.fn(),
     reset: vi.fn(),
+    setGameEnded: vi.fn(),
   }
 }
 
@@ -396,4 +400,57 @@ export function createMockNavigationPort(): NavigationPort {
     navigateToGame: vi.fn(),
     navigateToHome: vi.fn(),
   }
+}
+
+/**
+ * 建立 Mock ErrorHandlerPort
+ *
+ * @description
+ * `handle` 預設返回 true（表示錯誤已處理）。
+ *
+ * @example
+ * ```typescript
+ * const mockErrorHandler = createMockErrorHandlerPort()
+ *
+ * // 驗證方法調用
+ * mockErrorHandler.handle(new Error('test'))
+ * expect(mockErrorHandler.handle).toHaveBeenCalled()
+ * ```
+ */
+export function createMockErrorHandlerPort(): ErrorHandlerPort {
+  return {
+    handle: vi.fn().mockReturnValue(true),
+  }
+}
+
+/**
+ * 建立 Mock SessionContextPort
+ *
+ * @description
+ * 所有方法預設返回合理的預設值。
+ *
+ * @example
+ * ```typescript
+ * const mockSessionContext = createMockSessionContextPort()
+ *
+ * // 驗證方法調用
+ * mockSessionContext.setGameFinished(true)
+ * expect(mockSessionContext.setGameFinished).toHaveBeenCalledWith(true)
+ * ```
+ */
+export function createMockSessionContextPort(): SessionContextPort {
+  return {
+    getGameId: vi.fn().mockReturnValue('game-123'),
+    setGameId: vi.fn(),
+    getPlayerId: vi.fn().mockReturnValue('player-1'),
+    getPlayerName: vi.fn().mockReturnValue('Test Player'),
+    setIdentity: vi.fn(),
+    clearIdentity: vi.fn(),
+    hasActiveSession: vi.fn().mockReturnValue(true),
+    getRoomTypeId: vi.fn().mockReturnValue(null),
+    setRoomTypeId: vi.fn(),
+    hasRoomSelection: vi.fn().mockReturnValue(false),
+    setGameFinished: vi.fn(),
+    isGameFinished: vi.fn().mockReturnValue(false),
+  } as SessionContextPort
 }

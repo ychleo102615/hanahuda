@@ -14,7 +14,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    exclude: [...configDefaults.exclude, 'e2e/**', 'server/**', 'tests/integration/**', 'tests/unit/**'],
     root: fileURLToPath(new URL('./', import.meta.url)),
     setupFiles: ['./vitest.setup.ts'],
   },

@@ -8,18 +8,24 @@ import type { GameFinishedEvent } from '#shared/contracts'
 import {
   createMockNotificationPort,
   createMockUIStatePort,
+  createMockSessionContextPort,
+  createMockGameStatePort,
 } from '../../test-helpers/mock-factories'
-import type { NotificationPort, UIStatePort } from '@/user-interface/application/ports'
+import type { NotificationPort, UIStatePort, SessionContextPort, GameStatePort } from '@/user-interface/application/ports'
 
 describe('HandleGameFinishedUseCase', () => {
   let mockNotification: NotificationPort
   let mockUIState: UIStatePort
+  let mockSessionContext: ReturnType<typeof createMockSessionContextPort>
+  let mockGameState: GameStatePort
   let useCase: HandleGameFinishedUseCase
 
   beforeEach(() => {
     mockNotification = createMockNotificationPort()
     mockUIState = createMockUIStatePort()
-    useCase = new HandleGameFinishedUseCase(mockNotification, mockUIState)
+    mockSessionContext = createMockSessionContextPort()
+    mockGameState = createMockGameStatePort()
+    useCase = new HandleGameFinishedUseCase(mockNotification, mockUIState, mockSessionContext, mockGameState)
   })
 
   it('當玩家獲勝時，isPlayerWinner 應為 true', () => {
@@ -37,7 +43,7 @@ describe('HandleGameFinishedUseCase', () => {
       ],
     }
 
-    useCase.execute(event)
+    useCase.execute(event, { receivedAt: Date.now() })
 
     // 驗證 getCurrentPlayerId 被調用
     expect(mockUIState.getLocalPlayerId).toHaveBeenCalledTimes(1)
@@ -69,7 +75,7 @@ describe('HandleGameFinishedUseCase', () => {
       ],
     }
 
-    useCase.execute(event)
+    useCase.execute(event, { receivedAt: Date.now() })
 
     // 驗證 getCurrentPlayerId 被調用
     expect(mockUIState.getLocalPlayerId).toHaveBeenCalledTimes(1)
@@ -97,7 +103,7 @@ describe('HandleGameFinishedUseCase', () => {
       ],
     }
 
-    useCase.execute(event)
+    useCase.execute(event, { receivedAt: Date.now() })
 
     // player-2 獲勝且當前玩家是 player-2，所以 isPlayerWinner 應為 true
     expect(mockNotification.showGameFinishedModal).toHaveBeenCalledWith(

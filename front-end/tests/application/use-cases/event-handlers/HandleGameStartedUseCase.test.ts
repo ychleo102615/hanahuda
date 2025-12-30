@@ -38,7 +38,7 @@ describe('HandleGameStartedUseCase', () => {
     mockNotification = createMockNotificationPort()
     mockMatchmakingState = createMockMatchmakingStatePort()
     mockNavigation = createMockNavigationPort()
-    useCase = new HandleGameStartedUseCase(mockUIState, mockGameState, mockMatchmakingState, mockNavigation)
+    useCase = new HandleGameStartedUseCase(mockUIState, mockGameState, mockMatchmakingState, mockNavigation, mockNotification)
   })
 
   describe('初始化遊戲上下文', () => {
@@ -69,7 +69,7 @@ describe('HandleGameStartedUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
+      useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockUIState.initializeGameContext).toHaveBeenCalledWith(
@@ -117,7 +117,7 @@ describe('HandleGameStartedUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
+      useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockUIState.initializeGameContext).toHaveBeenCalledWith(
@@ -158,7 +158,7 @@ describe('HandleGameStartedUseCase', () => {
   //     }
   //
   //     // Act
-  //     useCase.execute(event)
+  //     useCase.execute(event, { receivedAt: Date.now() })
   //
   //     // Assert
   //     expect(mockTriggerUIEffect.triggerAnimation).toHaveBeenCalled()
@@ -190,7 +190,7 @@ describe('HandleGameStartedUseCase', () => {
       }
 
       // Act & Assert: 不應拋出錯誤
-      expect(() => useCase.execute(event)).not.toThrow()
+      expect(() => useCase.execute(event, { receivedAt: Date.now() })).not.toThrow()
     })
 
     it('應該處理空的 yaku_settings', () => {
@@ -217,7 +217,7 @@ describe('HandleGameStartedUseCase', () => {
       }
 
       // Act
-      useCase.execute(event)
+      useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert: 應該正常處理空的 yaku_settings
       expect(mockUIState.initializeGameContext).toHaveBeenCalledWith(
