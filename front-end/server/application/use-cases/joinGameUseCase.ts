@@ -42,7 +42,10 @@ import type {
 } from '~~/server/application/ports/input/joinGameInputPort'
 import { checkSpecialRules, type SpecialRuleResult } from '~~/server/domain/services/specialRulesService'
 import { gameConfig } from '~~/server/utils/config'
+import { logger } from '~~/server/utils/logger'
 import { GAME_ERROR_MESSAGES } from '#shared/contracts/errors'
+import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
+import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 
 /**
  * 初始事件延遲（毫秒）
@@ -70,7 +73,8 @@ export class JoinGameUseCase implements JoinGameInputPort {
     private readonly eventMapper: FullEventMapperPort,
     private readonly internalEventPublisher: InternalEventPublisherPort,
     private readonly gameLock: GameLockPort,
-    private readonly gameTimeoutManager: GameTimeoutPort
+    private readonly gameTimeoutManager: GameTimeoutPort,
+    private readonly gameLogRepository?: GameLogRepositoryPort
   ) {}
 
   /**
@@ -143,12 +147,26 @@ export class JoinGameUseCase implements JoinGameInputPort {
       const isPlayer = memoryGame.players.some((p) => p.id === playerId)
       if (!isPlayer) {
         // 玩家不屬於此遊戲，返回過期
+        logger.error('Game expired', { gameId, playerId, reason: 'player_not_in_game' })
+        this.gameLogRepository?.logAsync({
+          gameId,
+          playerId,
+          eventType: COMMAND_TYPES.ReconnectGameFailed,
+          payload: { reason: 'player_not_in_game' },
+        })
         return { status: 'game_expired', gameId }
       }
 
       // 玩家身份驗證通過，執行重連
       const token = sessionToken || this.findPlayerSessionToken(gameId, playerId)
       if (!token) {
+        logger.error('Game expired', { gameId, playerId, reason: 'no_session_token' })
+        this.gameLogRepository?.logAsync({
+          gameId,
+          playerId,
+          eventType: COMMAND_TYPES.ReconnectGameFailed,
+          payload: { reason: 'no_session_token' },
+        })
         return { status: 'game_expired', gameId }
       }
 
@@ -158,6 +176,13 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 2. 記憶體沒有，查資料庫
     const dbGame = await this.gameRepository.findById(gameId)
     if (!dbGame) {
+      logger.error('Game expired', { gameId, playerId, reason: 'not_found_in_db' })
+      this.gameLogRepository?.logAsync({
+        gameId,
+        playerId,
+        eventType: COMMAND_TYPES.ReconnectGameFailed,
+        payload: { reason: 'not_found_in_db' },
+      })
       return { status: 'game_expired', gameId }
     }
 
@@ -178,6 +203,13 @@ export class JoinGameUseCase implements JoinGameInputPort {
     }
 
     // 4. 遊戲在 DB 但不在記憶體 → 已過期
+    logger.error('Game expired', { gameId, playerId, reason: 'in_db_not_in_memory' })
+    this.gameLogRepository?.logAsync({
+      gameId,
+      playerId,
+      eventType: COMMAND_TYPES.ReconnectGameFailed,
+      payload: { reason: 'in_db_not_in_memory' },
+    })
     return { status: 'game_expired', gameId }
   }
 
@@ -216,6 +248,14 @@ export class JoinGameUseCase implements JoinGameInputPort {
       const remainingSeconds = this.gameTimeoutManager.getMatchmakingRemainingSeconds(game.id)
         ?? gameConfig.matchmaking_timeout_seconds // fallback: 計時器不存在時使用完整秒數
 
+      // 記錄重連成功（等待狀態）
+      this.gameLogRepository?.logAsync({
+        gameId: game.id,
+        playerId,
+        eventType: COMMAND_TYPES.ReconnectGame,
+        payload: { gameStatus: 'WAITING' },
+      })
+
       return {
         status: 'game_waiting',
         gameId: game.id,
@@ -235,6 +275,14 @@ export class JoinGameUseCase implements JoinGameInputPort {
       game,
       remainingSeconds ?? undefined
     )
+
+    // 記錄重連成功（進行中）
+    this.gameLogRepository?.logAsync({
+      gameId: game.id,
+      playerId,
+      eventType: COMMAND_TYPES.ReconnectGame,
+      payload: { gameStatus: 'IN_PROGRESS' },
+    })
 
     return {
       status: 'snapshot',
@@ -293,6 +341,14 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 啟動配對超時計時器
     this.gameTimeoutManager.startMatchmakingTimeout(game.id, () => {
       this.handleMatchmakingTimeout(game.id)
+    })
+
+    // 記錄建立遊戲命令
+    this.gameLogRepository?.logAsync({
+      gameId: game.id,
+      playerId,
+      eventType: COMMAND_TYPES.CreateGame,
+      payload: { playerName, roomType: effectiveRoomType },
     })
 
     // SSE-First: 返回 game_waiting 狀態（前端顯示等待畫面）
@@ -371,6 +427,14 @@ export class JoinGameUseCase implements JoinGameInputPort {
         this.scheduleInitialEvents(game)
       }
 
+      // 記錄加入遊戲命令
+      this.gameLogRepository?.logAsync({
+        gameId: game.id,
+        playerId,
+        eventType: COMMAND_TYPES.JoinExistingGame,
+        payload: { playerName },
+      })
+
       // SSE-First: 返回 game_started 狀態
       return {
         status: 'game_started',
@@ -411,8 +475,8 @@ export class JoinGameUseCase implements JoinGameInputPort {
         if (firstPlayerId) {
           this.turnFlowService?.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
         }
-      } catch {
-        // Failed to publish initial events
+      } catch (err) {
+        logger.error('Failed to publish initial events', { gameId: game.id, error: String(err) })
       }
     }, INITIAL_EVENT_DELAY_MS)
   }
@@ -431,6 +495,8 @@ export class JoinGameUseCase implements JoinGameInputPort {
     if (!game || game.status !== 'WAITING') {
       return
     }
+
+    logger.info('Matchmaking timeout', { gameId })
 
     // 發送 GameError 事件給等待中的玩家
     const errorEvent = this.eventMapper.toGameErrorEvent(

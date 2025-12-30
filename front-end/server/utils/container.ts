@@ -133,7 +133,8 @@ const joinGameUseCase = new JoinGameUseCase(
   eventMapper,
   internalEventBus,
   inMemoryGameLock,
-  gameTimeoutManager
+  gameTimeoutManager,
+  gameLogRepository
 )
 
 const joinGameAsAiUseCase = new JoinGameAsAiUseCase(

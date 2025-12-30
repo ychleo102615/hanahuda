@@ -28,6 +28,10 @@ export const COMMAND_TYPES = {
   SelectTarget: 'SelectTarget',
   MakeDecision: 'MakeDecision',
   LeaveGame: 'LeaveGame',
+  CreateGame: 'CreateGame',
+  JoinExistingGame: 'JoinExistingGame',
+  ReconnectGame: 'ReconnectGame',
+  ReconnectGameFailed: 'ReconnectGameFailed',
 } as const
 
 /**

@@ -23,6 +23,7 @@ import {
   HTTP_FORBIDDEN,
   HTTP_INTERNAL_SERVER_ERROR,
 } from '#shared/constants'
+import { logger } from '~~/server/utils/logger'
 
 /**
  * Session Cookie 名稱
@@ -101,6 +102,7 @@ export function validateSession(event: H3Event, gameId: string): SessionContext 
   const game = inMemoryGameStore.getBySessionToken(token)
 
   if (!game) {
+    logger.error('Invalid session', { errorCode: 'INVALID_SESSION', sessionToken: token })
     throw new SessionValidationError(
       'INVALID_SESSION',
       HTTP_UNAUTHORIZED,
@@ -110,6 +112,7 @@ export function validateSession(event: H3Event, gameId: string): SessionContext 
 
   // 3. 驗證遊戲 ID 匹配
   if (game.id !== gameId) {
+    logger.error('Game mismatch', { errorCode: 'GAME_MISMATCH', gameId, expectedGameId: game.id, sessionToken: token })
     throw new SessionValidationError(
       'GAME_MISMATCH',
       HTTP_FORBIDDEN,

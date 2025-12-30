@@ -44,6 +44,7 @@ import {
   getPlayerConnectionStatus,
 } from '~~/server/domain/game/playerConnection'
 import { HTTP_BAD_REQUEST } from '#shared/constants'
+import { logger } from '~~/server/utils/logger'
 
 /**
  * Query Parameters Schema
@@ -195,6 +196,7 @@ export default defineEventHandler(async (event) => {
     }
 
     case 'game_expired': {
+      logger.error('SSE connect: game_expired', { gameId: result.gameId, playerId })
       effectiveGameId = result.gameId
       effectiveSessionToken = sessionToken || ''
       // game_expired 不需要 data，前端只需要 response_type 即可處理
@@ -237,8 +239,8 @@ export default defineEventHandler(async (event) => {
       try {
         const sseData = formatSSE(initialStateEvent)
         controller.enqueue(encoder.encode(sseData))
-      } catch {
-        // Failed to send InitialState
+      } catch (err) {
+        logger.error('Failed to send InitialState', { gameId: effectiveGameId, playerId, error: String(err) })
       }
 
       // 對於 game_finished 或 game_expired，不需要建立持久連線
@@ -279,8 +281,8 @@ export default defineEventHandler(async (event) => {
             container.turnFlowService.handlePlayerReconnected(effectiveGameId, playerId)
           }
         }
-      }).catch(() => {
-        // Failed to handle reconnection
+      }).catch((err) => {
+        logger.error('Failed to handle reconnection', { gameId: effectiveGameId, playerId, error: String(err) })
       })
 
       // 心跳計時器
@@ -314,8 +316,8 @@ export default defineEventHandler(async (event) => {
               await container.gameRepository.save(disconnectedGame)
             }
           }
-        }).catch(() => {
-          // Failed to handle disconnect
+        }).catch((err) => {
+          logger.error('Failed to handle disconnect', { gameId: effectiveGameId, playerId, error: String(err) })
         })
 
         // 啟動斷線超時計時器（用於在沒有活動的情況下的保護機制）
@@ -340,8 +342,8 @@ export default defineEventHandler(async (event) => {
                     })
                   }
                 }
-              } catch {
-                // Failed to handle disconnect timeout
+              } catch (err) {
+                logger.error('Failed to handle disconnect timeout', { gameId: effectiveGameId, playerId, error: String(err) })
               }
             }
           )
