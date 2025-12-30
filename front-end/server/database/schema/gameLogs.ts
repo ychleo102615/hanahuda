@@ -49,6 +49,9 @@ export type CommandTypeValue = typeof COMMAND_TYPES[keyof typeof COMMAND_TYPES]
  * @description
  * 使用 Extract 從 GameEvent 聯合型別中提取需要記錄的事件類型。
  * 這確保型別與 EVENT_TYPES 常數保持一致。
+ *
+ * 注意：SelectionRequired 和 DecisionRequired 也需要記錄，
+ * 因為它們包含翻開的牌堆牌資訊，對於遊戲重播是必要的。
  */
 type LoggableSseEventType = Extract<
   GameEvent['event_type'],
@@ -57,7 +60,9 @@ type LoggableSseEventType = Extract<
   | typeof EVENT_TYPES.RoundDealt
   | typeof EVENT_TYPES.RoundEnded
   | typeof EVENT_TYPES.TurnCompleted
+  | typeof EVENT_TYPES.SelectionRequired
   | typeof EVENT_TYPES.TurnProgressAfterSelection
+  | typeof EVENT_TYPES.DecisionRequired
   | typeof EVENT_TYPES.DecisionMade
 >
 

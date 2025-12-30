@@ -31,7 +31,10 @@ import { opponentStore } from '~~/server/adapters/opponent/opponentStore'
  * 不記錄的事件：
  * - TurnError, GameError: 錯誤事件由日誌框架處理
  * - InitialState, GameSnapshotRestore: 狀態恢復事件
- * - SelectionRequired, DecisionRequired: 只是提示，實際操作由命令記錄
+ *
+ * 注意：SelectionRequired 和 DecisionRequired 必須記錄，
+ * 因為它們包含翻開的牌堆牌資訊（drawn_card / draw_card_play），
+ * 對於遊戲重播是必要的。
  */
 const LOGGABLE_EVENT_TYPES: Set<GameLogEventType> = new Set([
   EVENT_TYPES.GameStarted,
@@ -39,7 +42,9 @@ const LOGGABLE_EVENT_TYPES: Set<GameLogEventType> = new Set([
   EVENT_TYPES.RoundDealt,
   EVENT_TYPES.RoundEnded,
   EVENT_TYPES.TurnCompleted,
+  EVENT_TYPES.SelectionRequired,
   EVENT_TYPES.TurnProgressAfterSelection,
+  EVENT_TYPES.DecisionRequired,
   EVENT_TYPES.DecisionMade,
 ])
 
@@ -145,21 +150,33 @@ export class CompositeEventPublisher implements EventPublisherPort {
 
       case EVENT_TYPES.TurnCompleted:
         return {
-          player_id: event.player_id,
           hand_card_play: event.hand_card_play,
           draw_card_play: event.draw_card_play,
         }
 
+      case EVENT_TYPES.SelectionRequired:
+        return {
+          hand_card_play: event.hand_card_play,
+          drawn_card: event.drawn_card,
+          possible_targets: event.possible_targets,
+        }
+
       case EVENT_TYPES.TurnProgressAfterSelection:
         return {
-          player_id: event.player_id,
           selection: event.selection,
           draw_card_play: event.draw_card_play,
         }
 
+      case EVENT_TYPES.DecisionRequired:
+        return {
+          hand_card_play: event.hand_card_play,
+          draw_card_play: event.draw_card_play,
+          yaku_update: event.yaku_update,
+          current_multipliers: event.current_multipliers,
+        }
+
       case EVENT_TYPES.DecisionMade:
         return {
-          player_id: event.player_id,
           decision: event.decision,
         }
 
