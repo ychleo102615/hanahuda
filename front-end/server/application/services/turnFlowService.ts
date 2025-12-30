@@ -308,20 +308,9 @@ export class TurnFlowService {
 
     // 檢查所有玩家是否都已確認
     if (game && game.pendingContinueConfirmations.length === 0) {
-      // 啟動 display timeout，進入下一回合
-      const firstPlayerId = game.currentRound?.activePlayerId
-      this.startDisplayTimeout(gameId, gameConfig.result_display_seconds, () => {
-        const currentGame = this.gameStore.get(gameId)
-        if (!currentGame || currentGame.status === 'FINISHED') {
-          return
-        }
-
-        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(currentGame)
-        this.eventPublisher.publishToGame(gameId, roundDealtEvent)
-
-        if (firstPlayerId) {
-          this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
-        }
+      // 啟動 display timeout，執行局轉換並進入下一回合
+      this.startDisplayTimeout(gameId, gameConfig.result_display_seconds, async () => {
+        await this.handleFinalizeRound(gameId)
       })
     }
   }
