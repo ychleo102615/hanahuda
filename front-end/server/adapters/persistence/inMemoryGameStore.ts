@@ -29,6 +29,23 @@ export type RoundState = Round
 export type GameState = Game
 
 /**
+ * 清理遊戲資訊
+ *
+ * @description
+ * 記錄被清理遊戲的詳細資訊，用於日誌記錄和異常偵測。
+ */
+export interface CleanedGameInfo {
+  /** 遊戲 ID */
+  gameId: string
+  /** 遊戲狀態 */
+  status: GameStatus
+  /** 陳舊時間（毫秒） */
+  staleDurationMs: number
+  /** 玩家 ID 列表 */
+  playerIds: string[]
+}
+
+/**
  * 記憶體遊戲儲存
  *
  * @description
@@ -200,18 +217,27 @@ class InMemoryGameStore implements GameStorePort {
   /**
    * 清除過期遊戲
    *
+   * @description
+   * 清除所有 updatedAt 超過指定時間的遊戲（無論狀態）。
+   * IN_PROGRESS 遊戲被清理視為異常情況，呼叫端應記錄警告。
+   *
    * @param maxAgeMs 最大存活時間（毫秒）
-   * @returns 清除的遊戲數量
+   * @returns 被清除遊戲的詳細資訊列表
    */
-  cleanupExpired(maxAgeMs: number): number {
+  cleanupExpired(maxAgeMs: number): CleanedGameInfo[] {
     const now = Date.now()
-    let cleaned = 0
+    const cleaned: CleanedGameInfo[] = []
 
     for (const [gameId, game] of this.games.entries()) {
       const age = now - game.updatedAt.getTime()
-      if (age > maxAgeMs && game.status !== 'IN_PROGRESS') {
+      if (age > maxAgeMs) {
+        cleaned.push({
+          gameId,
+          status: game.status,
+          staleDurationMs: age,
+          playerIds: game.players.map(p => p.id),
+        })
         this.delete(gameId)
-        cleaned++
       }
     }
 
