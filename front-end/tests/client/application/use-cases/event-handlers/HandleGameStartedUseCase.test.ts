@@ -33,7 +33,7 @@ describe('HandleGameStartedUseCase', () => {
 
   beforeEach(() => {
     mockUIState = createMockUIStatePort()
-    mockTriggerUIEffect = createMockTriggerUIEffectPort()
+    _mockTriggerUIEffect = createMockTriggerUIEffectPort()
     mockGameState = createMockGameStatePort()
     mockNotification = createMockNotificationPort()
     mockMatchmakingState = createMockMatchmakingStatePort()
