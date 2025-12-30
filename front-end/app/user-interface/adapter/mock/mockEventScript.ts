@@ -272,10 +272,8 @@ export const mockEventScript: MockEventItem[] = [
         ],
       },
       current_multipliers: {
-        player_multipliers: {
-          'player-1': 1,
-          'player-2': 1,
-        },
+        koi_koi_applied: false,
+        is_score_doubled: false,
       },
       deck_remaining: 19,
       timeout_seconds: 20,
@@ -307,10 +305,8 @@ export const mockEventScript: MockEventItem[] = [
         base_score: 6,
         final_score: 6,
         multipliers: {
-          player_multipliers: {
-            'player-1': 1,
-            'player-2': 1,
-          },
+          koi_koi_applied: false,
+          is_score_doubled: false,
         },
       },
       timeout_seconds: 5,

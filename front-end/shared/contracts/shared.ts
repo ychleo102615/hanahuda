@@ -138,11 +138,11 @@ export interface YakuUpdate {
  * 2. 7 點翻倍：基礎分數 ≥ 7 時，最終分數再 ×2
  *
  * 最終分數 = 基礎分數 × Koi-Koi 倍率 × 7 點翻倍
+ *
+ * 倍率推導：koi_koi_applied ? 2 : 1
  */
 export interface ScoreMultipliers {
-  /** 各玩家的倍率（全部相同，1 或 2，僅表示 Koi-Koi 倍率） */
-  readonly player_multipliers: Record<string, number>
-  /** 是否有任一玩家宣告過 Koi-Koi */
+  /** 是否有任一玩家宣告過 Koi-Koi（true = 倍率 2，false = 倍率 1） */
   readonly koi_koi_applied: boolean
   /** 是否觸發 7 點翻倍（基礎分數 ≥ 7） */
   readonly is_score_doubled: boolean

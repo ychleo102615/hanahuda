@@ -126,8 +126,7 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
           const yakuScores = this.convertYakuToYakuScores(snapshot.decision_context.all_active_yaku)
           const currentScore = this.calculateCurrentScore(
             snapshot.decision_context.all_active_yaku,
-            snapshot.decision_context.current_multipliers,
-            snapshot.active_player_id
+            snapshot.decision_context.current_multipliers
           )
           this.notification.showDecisionModal(yakuScores, currentScore)
         }
@@ -216,16 +215,14 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
    *
    * @param yaku - 役種列表
    * @param multipliers - 分數倍率
-   * @param playerId - 玩家 ID
    * @returns 計算後的分數
    */
   private calculateCurrentScore(
     yaku: ReadonlyArray<{ base_points: number }>,
-    multipliers: { player_multipliers: Record<string, number> },
-    playerId: string
+    multipliers: { koi_koi_applied: boolean }
   ): number {
     const baseScore = yaku.reduce((sum, y) => sum + y.base_points, 0)
-    const multiplier = multipliers.player_multipliers[playerId] ?? 1
+    const multiplier = multipliers.koi_koi_applied ? 2 : 1
     return baseScore * multiplier
   }
 

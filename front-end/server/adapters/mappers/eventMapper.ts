@@ -396,7 +396,6 @@ export class EventMapper implements FullEventMapperPort {
       player_id: playerId,
       decision,
       updated_multipliers: {
-        player_multipliers: { ...multipliers.player_multipliers },
         koi_koi_applied: multipliers.koi_koi_applied,
         is_score_doubled: multipliers.is_score_doubled,
       },
@@ -568,7 +567,6 @@ export class EventMapper implements FullEventMapperPort {
             contributing_cards: [...y.contributing_cards],
           })),
           current_multipliers: {
-            player_multipliers: { ...snapshot.decision_context.current_multipliers.player_multipliers },
             koi_koi_applied: snapshot.decision_context.current_multipliers.koi_koi_applied,
             is_score_doubled: snapshot.decision_context.current_multipliers.is_score_doubled,
           },

@@ -19,9 +19,11 @@ import type { Player } from '~~/server/domain/game/player'
  * 1. Koi-Koi 倍率：只要有任一方宣告過 Koi-Koi，分數就 ×2（全局共享）
  * 2. 7 點翻倍：基礎分數 ≥ 7 時，最終分數再 ×2
  *
+ * 倍率推導：koi_koi_applied ? 2 : 1
+ *
  * @param koiStatuses - 各玩家的 Koi-Koi 狀態
  * @param isScoreDoubled - 是否觸發 7 點翻倍（預設為 false，結算時由外部傳入）
- * @returns 玩家倍率映射
+ * @returns ScoreMultipliers
  */
 export function toScoreMultipliers(
   koiStatuses: readonly KoiStatus[],
@@ -29,15 +31,8 @@ export function toScoreMultipliers(
 ): ScoreMultipliers {
   // 檢查是否有任一玩家宣告過 Koi-Koi
   const koiKoiApplied = koiStatuses.some(status => status.times_continued > 0)
-  const multiplier = koiKoiApplied ? 2 : 1
-
-  const playerMultipliers: Record<string, number> = {}
-  for (const status of koiStatuses) {
-    playerMultipliers[status.player_id] = multiplier
-  }
 
   return {
-    player_multipliers: playerMultipliers,
     koi_koi_applied: koiKoiApplied,
     is_score_doubled: isScoreDoubled,
   }

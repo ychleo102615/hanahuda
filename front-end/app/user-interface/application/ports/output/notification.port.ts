@@ -108,7 +108,7 @@ export interface NotificationPort {
    *   [{ yaku_type: 'TANE', base_points: 1, contributing_cards: ['0301', '0401'] }],
    *   1,
    *   2,
-   *   { player_multipliers: { 'player-1': 2, 'player-2': 1 } },
+   *   { koi_koi_applied: true, is_score_doubled: false },
    *   [
    *     { player_id: 'player-1', score: 2 },
    *     { player_id: 'player-2', score: 0 }

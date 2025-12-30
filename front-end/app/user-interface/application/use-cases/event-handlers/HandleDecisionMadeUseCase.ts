@@ -26,11 +26,9 @@ export class HandleDecisionMadeUseCase implements HandleDecisionMadePort {
   ) {}
 
   execute(event: DecisionMadeEvent, options: ExecuteOptions): void {
-    // 1. 更新玩家 Koi-Koi 倍率
-    const multiplier = event.updated_multipliers.player_multipliers[event.player_id]
-    if (multiplier !== undefined) {
-      this.updateUIState.updateKoiKoiMultiplier(event.player_id, multiplier)
-    }
+    // 1. 更新玩家 Koi-Koi 倍率（從 koi_koi_applied 推導）
+    const multiplier = event.updated_multipliers.koi_koi_applied ? 2 : 1
+    this.updateUIState.updateKoiKoiMultiplier(event.player_id, multiplier)
 
     // 2. 若為對手選擇 KOI_KOI，顯示動畫提示
     const localPlayerId = this.gameState.getLocalPlayerId()

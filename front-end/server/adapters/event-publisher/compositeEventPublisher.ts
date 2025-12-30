@@ -19,11 +19,57 @@
 
 import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
-import type { GameEvent, GameStartedEvent, RoundDealtEvent } from '#shared/contracts'
+import type { GameEvent, GameStartedEvent, RoundDealtEvent, CardPlay } from '#shared/contracts'
 import { EVENT_TYPES } from '#shared/contracts'
 import type { GameLogEventType } from '~~/server/database/schema/gameLogs'
 import { connectionStore } from './connectionStore'
 import { opponentStore } from '~~/server/adapters/opponent/opponentStore'
+
+// ============================================================================
+// Payload 精簡工具（儲存優化，不影響業務契約）
+// ============================================================================
+
+/**
+ * 精簡 CardPlay，省略空的 matched_cards
+ *
+ * @description
+ * 儲存層優化：當 matched_cards 為空陣列時省略該欄位，節省 JSON 大小。
+ * 讀取時需用 `matched_cards ?? []` 還原。
+ *
+ * @param cardPlay - 卡片操作（可為 null）
+ * @returns 精簡後的物件（省略空陣列欄位）
+ */
+function compactCardPlay(cardPlay: CardPlay | null): Record<string, unknown> | null {
+  if (!cardPlay) return null
+
+  if (cardPlay.matched_cards.length === 0) {
+    return { played_card: cardPlay.played_card }
+  }
+
+  return {
+    played_card: cardPlay.played_card,
+    matched_cards: [...cardPlay.matched_cards],
+  }
+}
+
+/**
+ * 移除物件中的 null 值欄位
+ *
+ * @description
+ * 儲存層優化：移除值為 null 的欄位，節省 JSON 大小。
+ *
+ * @param obj - 原始物件
+ * @returns 移除 null 值後的新物件
+ */
+function omitNullValues<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== null) {
+      result[key] = value
+    }
+  }
+  return result
+}
 
 /**
  * 需要記錄的 SSE 事件類型（使用 EVENT_TYPES 常數）
@@ -149,31 +195,36 @@ export class CompositeEventPublisher implements EventPublisherPort {
         }
 
       case EVENT_TYPES.TurnCompleted:
-        return {
-          hand_card_play: event.hand_card_play,
-          draw_card_play: event.draw_card_play,
-        }
+        // 精簡：省略空 matched_cards 和 null 值
+        return omitNullValues({
+          hand_card_play: compactCardPlay(event.hand_card_play),
+          draw_card_play: compactCardPlay(event.draw_card_play),
+        })
 
       case EVENT_TYPES.SelectionRequired:
+        // 精簡：省略空 matched_cards
         return {
-          hand_card_play: event.hand_card_play,
+          hand_card_play: compactCardPlay(event.hand_card_play),
           drawn_card: event.drawn_card,
           possible_targets: event.possible_targets,
         }
 
       case EVENT_TYPES.TurnProgressAfterSelection:
-        return {
+        // 精簡：省略空 matched_cards 和 null 值
+        return omitNullValues({
           selection: event.selection,
-          draw_card_play: event.draw_card_play,
-        }
+          draw_card_play: compactCardPlay(event.draw_card_play),
+          yaku_update: event.yaku_update,
+        })
 
       case EVENT_TYPES.DecisionRequired:
-        return {
-          hand_card_play: event.hand_card_play,
-          draw_card_play: event.draw_card_play,
+        // 精簡：省略空 matched_cards 和 null 值
+        return omitNullValues({
+          hand_card_play: compactCardPlay(event.hand_card_play),
+          draw_card_play: compactCardPlay(event.draw_card_play),
           yaku_update: event.yaku_update,
           current_multipliers: event.current_multipliers,
-        }
+        })
 
       case EVENT_TYPES.DecisionMade:
         return {

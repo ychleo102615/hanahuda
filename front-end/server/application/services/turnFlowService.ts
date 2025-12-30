@@ -513,23 +513,15 @@ export class TurnFlowService {
    */
   buildMultipliers(game: Game, isScoreDoubled: boolean = false): ScoreMultipliers {
     if (!game.currentRound) {
-      return { player_multipliers: {}, koi_koi_applied: false, is_score_doubled: false }
+      return { koi_koi_applied: false, is_score_doubled: false }
     }
 
     // 檢查是否有任一玩家宣告過 Koi-Koi
     const koiKoiApplied = game.currentRound.koiStatuses.some(
       status => status.times_continued > 0
     )
-    const multiplier = koiKoiApplied ? 2 : 1
-
-    // 所有玩家使用相同的倍率
-    const playerMultipliers: Record<string, number> = {}
-    for (const koiStatus of game.currentRound.koiStatuses) {
-      playerMultipliers[koiStatus.player_id] = multiplier
-    }
 
     return {
-      player_multipliers: playerMultipliers,
       koi_koi_applied: koiKoiApplied,
       is_score_doubled: isScoreDoubled,
     }

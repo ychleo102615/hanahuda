@@ -81,10 +81,6 @@ describe('HandleDecisionRequiredUseCase', () => {
           ],
         },
         current_multipliers: {
-          player_multipliers: {
-            'player-1': 1,
-            'player-2': 1,
-          },
           koi_koi_applied: false,
           is_score_doubled: false,
         },
@@ -127,10 +123,6 @@ describe('HandleDecisionRequiredUseCase', () => {
           ],
         },
         current_multipliers: {
-          player_multipliers: {
-            'player-1': 1,
-            'player-2': 1,
-          },
           koi_koi_applied: false,
           is_score_doubled: false,
         },
@@ -181,10 +173,6 @@ describe('HandleDecisionRequiredUseCase', () => {
           ],
         },
         current_multipliers: {
-          player_multipliers: {
-            'player-1': 1,
-            'player-2': 1,
-          },
           koi_koi_applied: false,
           is_score_doubled: false,
         },

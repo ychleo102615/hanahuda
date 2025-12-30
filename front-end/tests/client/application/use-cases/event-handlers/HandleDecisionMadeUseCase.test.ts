@@ -43,10 +43,8 @@ describe('HandleDecisionMadeUseCase', () => {
         player_id: 'player-1',
         decision: 'KOI_KOI',
         updated_multipliers: {
-          player_multipliers: {
-            'player-1': 2,
-            'player-2': 1,
-          },
+          koi_koi_applied: true,
+          is_score_doubled: false,
         },
         next_state: {
           state_type: 'AWAITING_HAND_PLAY',
@@ -62,7 +60,7 @@ describe('HandleDecisionMadeUseCase', () => {
       expect(mockUIState.updateKoiKoiMultiplier).toHaveBeenCalledWith('player-1', 2)
     })
 
-    it('應該處理多個玩家的倍率更新', () => {
+    it('當 koi_koi_applied 為 false 時，倍率應為 1', () => {
       // Arrange
       const event: DecisionMadeEvent = {
         event_type: 'DecisionMade',
@@ -71,10 +69,8 @@ describe('HandleDecisionMadeUseCase', () => {
         player_id: 'player-1',
         decision: 'KOI_KOI',
         updated_multipliers: {
-          player_multipliers: {
-            'player-1': 3,
-            'player-2': 1,
-          },
+          koi_koi_applied: false,
+          is_score_doubled: false,
         },
         next_state: {
           state_type: 'AWAITING_HAND_PLAY',
@@ -86,8 +82,8 @@ describe('HandleDecisionMadeUseCase', () => {
       // Act
       useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert
-      expect(mockUIState.updateKoiKoiMultiplier).toHaveBeenCalledWith('player-1', 3)
+      // Assert: koi_koi_applied = false → multiplier = 1
+      expect(mockUIState.updateKoiKoiMultiplier).toHaveBeenCalledWith('player-1', 1)
     })
   })
 
@@ -101,10 +97,8 @@ describe('HandleDecisionMadeUseCase', () => {
         player_id: 'player-1',
         decision: 'KOI_KOI',
         updated_multipliers: {
-          player_multipliers: {
-            'player-1': 2,
-            'player-2': 1,
-          },
+          koi_koi_applied: true,
+          is_score_doubled: false,
         },
         next_state: {
           state_type: 'AWAITING_HAND_PLAY',
@@ -131,10 +125,8 @@ describe('HandleDecisionMadeUseCase', () => {
         player_id: 'player-1',
         decision: 'KOI_KOI',
         updated_multipliers: {
-          player_multipliers: {
-            'player-1': 2,
-            'player-2': 1,
-          },
+          koi_koi_applied: true,
+          is_score_doubled: false,
         },
         next_state: {
           state_type: 'AWAITING_HAND_PLAY',

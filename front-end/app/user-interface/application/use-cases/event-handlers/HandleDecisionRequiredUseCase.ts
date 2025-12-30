@@ -118,7 +118,7 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
       (sum, yaku) => sum + yaku.base_points,
       0
     )
-    const multiplier = event.current_multipliers.player_multipliers[event.player_id] || 1
+    const multiplier = event.current_multipliers.koi_koi_applied ? 2 : 1
     const finalScore = currentScore * multiplier
 
     if (isMyTurn) {
