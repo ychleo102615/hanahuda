@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./app', import.meta.url)),
       '~': fileURLToPath(new URL('./app', import.meta.url)),
+      '#shared/contracts': fileURLToPath(new URL('./shared/contracts', import.meta.url)),
     },
   },
   test: {

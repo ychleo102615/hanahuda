@@ -19,28 +19,37 @@ import {
   createMockUIStatePort,
   createMockDomainFacade,
   createMockNotificationPort,
+  createMockGameStatePort,
+  createMockAnimationPort,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, DomainFacade, NotificationPort } from '@/user-interface/application'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort } from '@/user-interface/application/ports'
+import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
 
 describe('HandleDecisionRequiredUseCase', () => {
   let mockUIState: UIStatePort
+  let mockGameState: GameStatePort
+  let mockAnimation: AnimationPort
   let mockDomainFacade: DomainFacade
   let mockNotification: NotificationPort
   let useCase: HandleDecisionRequiredUseCase
 
   beforeEach(() => {
     mockUIState = createMockUIStatePort()
+    mockGameState = createMockGameStatePort()
+    mockAnimation = createMockAnimationPort()
     mockDomainFacade = createMockDomainFacade()
     mockNotification = createMockNotificationPort()
     useCase = new HandleDecisionRequiredUseCase(
       mockUIState,
       mockNotification,
-      mockDomainFacade
+      mockDomainFacade,
+      mockGameState,
+      mockAnimation
     )
   })
 
   describe('啟動 Modal 倒數', () => {
-    it('應該啟動 Modal 倒數計時', () => {
+    it('應該啟動 Modal 倒數計時', async () => {
       // Arrange
       const event: DecisionRequiredEvent = {
         event_type: 'DecisionRequired',
@@ -49,13 +58,11 @@ describe('HandleDecisionRequiredUseCase', () => {
         player_id: 'player-1',
         hand_card_play: {
           played_card: '0301',
-          matched_card: '0101',
-          captured_cards: ['0301', '0101'],
+          matched_cards: ['0101'],
         },
         draw_card_play: {
           played_card: '0302',
-          matched_card: '0102',
-          captured_cards: ['0302', '0102'],
+          matched_cards: ['0102'],
         },
         yaku_update: {
           newly_formed_yaku: [
@@ -78,21 +85,23 @@ describe('HandleDecisionRequiredUseCase', () => {
             'player-1': 1,
             'player-2': 1,
           },
+          koi_koi_applied: false,
+          is_score_doubled: false,
         },
         deck_remaining: 19,
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert: 應該啟動顯示倒數（用於 Modal）
-      expect(mockNotification.startDisplayCountdown).toHaveBeenCalledWith(30)
+      expect(mockNotification.startCountdown).toHaveBeenCalled()
     })
   })
 
   describe('顯示決策 Modal', () => {
-    it('應該調用 showDecisionModal 並傳遞役種資訊', () => {
+    it('應該調用 showDecisionModal 並傳遞役種資訊', async () => {
       // Arrange
       const event: DecisionRequiredEvent = {
         event_type: 'DecisionRequired',
@@ -122,13 +131,15 @@ describe('HandleDecisionRequiredUseCase', () => {
             'player-1': 1,
             'player-2': 1,
           },
+          koi_koi_applied: false,
+          is_score_doubled: false,
         },
         deck_remaining: 19,
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert: 應該調用 NotificationPort 的 showDecisionModal
       expect(mockNotification.showDecisionModal).toHaveBeenCalledWith(
@@ -144,7 +155,7 @@ describe('HandleDecisionRequiredUseCase', () => {
   })
 
   describe('更新 FlowStage', () => {
-    it('應該更新 FlowStage 為 AWAITING_DECISION', () => {
+    it('應該更新 FlowStage 為 AWAITING_DECISION', async () => {
       // Arrange
       const event: DecisionRequiredEvent = {
         event_type: 'DecisionRequired',
@@ -174,13 +185,15 @@ describe('HandleDecisionRequiredUseCase', () => {
             'player-1': 1,
             'player-2': 1,
           },
+          koi_koi_applied: false,
+          is_score_doubled: false,
         },
         deck_remaining: 19,
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockUIState.setFlowStage).toHaveBeenCalledWith('AWAITING_DECISION')

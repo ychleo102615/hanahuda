@@ -15,6 +15,7 @@
  */
 
 import type { DecisionRequiredEvent } from '#shared/contracts'
+import { deriveCapturedCards } from '#shared/contracts'
 import type { UIStatePort, NotificationPort, GameStatePort, AnimationPort } from '../../ports/output'
 import type { CardPlayStateCallbacks } from '../../ports/output/animation.port'
 import type { DomainFacade } from '../../types/domain-facade'
@@ -60,16 +61,20 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
 
     // === 階段 1：處理手牌操作 ===
     if (event.hand_card_play) {
-      const firstCapturedCard = event.hand_card_play.captured_cards[0]
-      const targetCardType = firstCapturedCard
-        ? this.domainFacade.getCardTypeFromId(firstCapturedCard)
+      const handCapturedCards = deriveCapturedCards(
+        event.hand_card_play.played_card,
+        event.hand_card_play.matched_cards
+      )
+      const handMatchedCard = event.hand_card_play.matched_cards[0] ?? null
+      const targetCardType = handCapturedCards[0]
+        ? this.domainFacade.getCardTypeFromId(handCapturedCards[0])
         : 'PLAIN'
 
       await this.animation.playCardPlaySequence(
         {
           playedCard: event.hand_card_play.played_card,
-          matchedCard: event.hand_card_play.matched_card,
-          capturedCards: event.hand_card_play.captured_cards,
+          matchedCard: handMatchedCard,
+          capturedCards: [...handCapturedCards],
           isOpponent,
           targetCardType,
         },
@@ -79,16 +84,20 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
 
     // === 階段 2：處理翻牌操作 ===
     if (event.draw_card_play) {
-      const firstCapturedCard = event.draw_card_play.captured_cards[0]
-      const targetCardType = firstCapturedCard
-        ? this.domainFacade.getCardTypeFromId(firstCapturedCard)
+      const drawCapturedCards = deriveCapturedCards(
+        event.draw_card_play.played_card,
+        event.draw_card_play.matched_cards
+      )
+      const drawMatchedCard = event.draw_card_play.matched_cards[0] ?? null
+      const targetCardType = drawCapturedCards[0]
+        ? this.domainFacade.getCardTypeFromId(drawCapturedCards[0])
         : 'PLAIN'
 
       await this.animation.playDrawCardSequence(
         {
           drawnCard: event.draw_card_play.played_card,
-          matchedCard: event.draw_card_play.matched_card,
-          capturedCards: event.draw_card_play.captured_cards,
+          matchedCard: drawMatchedCard,
+          capturedCards: [...drawCapturedCards],
           isOpponent,
           targetCardType,
         },

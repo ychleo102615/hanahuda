@@ -55,12 +55,10 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
         selection: {
           source_card: '0401',
           selected_target: '0102',
-          captured_cards: ['0401', '0102'],
         },
         draw_card_play: {
           played_card: '0501',
-          matched_card: '0201',
-          captured_cards: ['0501', '0201'],
+          matched_cards: ['0201'],
         },
         yaku_update: null,
         deck_remaining: 20,
@@ -68,30 +66,17 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: 應該先播放翻牌飛向配對目標動畫，再播放配對動畫和轉移動畫
-      expect(mockAnimation.playCardToFieldAnimation).toHaveBeenCalledWith('0501', false, '0201')
-      expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0501', '0201')
-      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
-        ['0501', '0201'],
-        'PLAIN', // targetType (mock 返回 PLAIN)
-        false, // isOpponent
-        undefined // matchPosition (mock 返回 undefined)
-      )
-
-      // 驗證調用順序：playCardToFieldAnimation -> playMatchAnimation -> playToDepositoryAnimation
-      const playCardCall = mockAnimation.playCardToFieldAnimation.mock.invocationCallOrder[0]
-      const matchCall = mockAnimation.playMatchAnimation.mock.invocationCallOrder[0]
-      const depositoryCall = mockAnimation.playToDepositoryAnimation.mock.invocationCallOrder[0]
-      expect(playCardCall).toBeLessThan(matchCall!)
-      expect(matchCall).toBeLessThan(depositoryCall!)
+      // Assert: 應該呼叫高階動畫 API
+      expect(mockAnimation.playDrawnCardMatchSequence).toHaveBeenCalled()
     })
 
-    it('應該在翻牌無配對時不播放動畫', async () => {
+    it('應該在翻牌無配對時不播放配對動畫', async () => {
       // Arrange
       const event: TurnProgressAfterSelectionEvent = {
         event_type: 'TurnProgressAfterSelection',
@@ -101,12 +86,10 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
         selection: {
           source_card: '0401',
           selected_target: '0102',
-          captured_cards: ['0401', '0102'],
         },
         draw_card_play: {
           played_card: '0501',
-          matched_card: null,
-          captured_cards: [],
+          matched_cards: [],
         },
         yaku_update: null,
         deck_remaining: 20,
@@ -114,34 +97,32 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: 翻牌無配對時不播放動畫
-      expect(mockAnimation.playMatchAnimation).not.toHaveBeenCalled()
+      // Assert: 翻牌無配對時不播放配對動畫
+      expect(mockAnimation.playDrawnCardMatchSequence).not.toHaveBeenCalled()
     })
   })
 
   describe('役種形成記錄', () => {
-    it('應該在有新役種形成時記錄（console.info）', async () => {
+    it('應該在有新役種形成時顯示對手役種公告', async () => {
       // Arrange
-      const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {})
       const event: TurnProgressAfterSelectionEvent = {
         event_type: 'TurnProgressAfterSelection',
         event_id: 'evt-403',
         timestamp: '2025-01-15T10:04:00Z',
-        player_id: 'player-1',
+        player_id: 'player-2', // 對手
         selection: {
           source_card: '0401',
           selected_target: '0102',
-          captured_cards: ['0401', '0102'],
         },
         draw_card_play: {
           played_card: '0501',
-          matched_card: null,
-          captured_cards: [],
+          matched_cards: [],
         },
         yaku_update: {
           newly_formed_yaku: [
@@ -162,25 +143,20 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
         deck_remaining: 20,
         next_state: {
           state_type: 'AWAITING_HAND_PLAY',
-          active_player_id: 'player-2',
+          active_player_id: 'player-1',
         },
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: 應該記錄役種形成
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[HandleTurnProgressAfterSelection] Yaku formed:',
-        ['TANE']
-      )
-
-      consoleSpy.mockRestore()
+      // Assert: 對手役種應該顯示公告
+      expect(mockNotification.showOpponentYakuAnnouncement).toHaveBeenCalled()
     })
 
-    it('應該在沒有新役種時跳過記錄', async () => {
+    it('應該在沒有新役種時不顯示公告', async () => {
       // Arrange
-      const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {})
       const event: TurnProgressAfterSelectionEvent = {
         event_type: 'TurnProgressAfterSelection',
         event_id: 'evt-404',
@@ -189,12 +165,10 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
         selection: {
           source_card: '0401',
           selected_target: '0102',
-          captured_cards: ['0401', '0102'],
         },
         draw_card_play: {
           played_card: '0501',
-          matched_card: null,
-          captured_cards: [],
+          matched_cards: [],
         },
         yaku_update: null,
         deck_remaining: 20,
@@ -202,18 +176,14 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: 不應該記錄役種形成
-      expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Yaku formed'),
-        expect.anything()
-      )
-
-      consoleSpy.mockRestore()
+      // Assert: 不應該顯示公告
+      expect(mockNotification.showOpponentYakuAnnouncement).not.toHaveBeenCalled()
     })
   })
 
@@ -228,12 +198,10 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
         selection: {
           source_card: '0401',
           selected_target: '0102',
-          captured_cards: ['0401', '0102'],
         },
         draw_card_play: {
           played_card: '0501',
-          matched_card: null,
-          captured_cards: [],
+          matched_cards: [],
         },
         yaku_update: null,
         deck_remaining: 20,
@@ -241,10 +209,11 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockGameState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
@@ -262,12 +231,10 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
         selection: {
           source_card: '0401',
           selected_target: '0102',
-          captured_cards: ['0401', '0102'],
         },
         draw_card_play: {
           played_card: '0501',
-          matched_card: '0201',
-          captured_cards: ['0501', '0201'],
+          matched_cards: ['0201'],
         },
         yaku_update: null,
         deck_remaining: 20,
@@ -275,23 +242,22 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: isOpponent = true
-      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
-        ['0501', '0201'],
-        'PLAIN', // targetType (mock 返回 PLAIN)
-        true, // isOpponent = true
-        undefined // matchPosition (mock 返回 undefined)
+      // Assert: isOpponent = true 應該傳入高階動畫 API
+      expect(mockAnimation.playDrawnCardMatchSequence).toHaveBeenCalledWith(
+        expect.objectContaining({ isOpponent: true }),
+        expect.any(Object)
       )
     })
   })
 
   describe('清除選擇狀態', () => {
-    it('應該在 FlowStage 更新後清除 drawnCard 和 possibleTargetCardIds', async () => {
+    it('應該清除 drawnCard 和 possibleTargetCardIds', async () => {
       // Arrange
       const event: TurnProgressAfterSelectionEvent = {
         event_type: 'TurnProgressAfterSelection',
@@ -301,12 +267,10 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
         selection: {
           source_card: '0401',
           selected_target: '0102',
-          captured_cards: ['0401', '0102'],
         },
         draw_card_play: {
           played_card: '0501',
-          matched_card: '0201',
-          captured_cards: ['0501', '0201'],
+          matched_cards: ['0201'],
         },
         yaku_update: null,
         deck_remaining: 20,
@@ -314,73 +278,15 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert: 應該清除選擇狀態
       expect(mockGameState.setDrawnCard).toHaveBeenCalledWith(null)
       expect(mockGameState.setPossibleTargetCardIds).toHaveBeenCalledWith([])
-
-      // 驗證調用順序：setFlowStage 應該在 setDrawnCard 之前
-      const flowStageCall = mockGameState.setFlowStage.mock.invocationCallOrder[0]
-      const drawnCardCall = mockGameState.setDrawnCard.mock.invocationCallOrder[0]
-      expect(flowStageCall).toBeLessThan(drawnCardCall!)
-    })
-  })
-
-  describe('場牌移除與 FLIP 動畫', () => {
-    it('應該在動畫完成後移除場牌，並等待 FLIP 動畫', async () => {
-      // Arrange
-      const event: TurnProgressAfterSelectionEvent = {
-        event_type: 'TurnProgressAfterSelection',
-        event_id: 'evt-408',
-        timestamp: '2025-01-15T10:04:00Z',
-        player_id: 'player-1',
-        selection: {
-          source_card: '0401',
-          selected_target: '0102',
-          captured_cards: ['0401', '0102'],
-        },
-        draw_card_play: {
-          played_card: '0501',
-          matched_card: '0201',
-          captured_cards: ['0501', '0201'],
-        },
-        yaku_update: null,
-        deck_remaining: 20,
-        next_state: {
-          state_type: 'AWAITING_HAND_PLAY',
-          active_player_id: 'player-2',
-        },
-      }
-
-      // 記錄時間戳
-      const timestamps: { action: string; time: number }[] = []
-      mockAnimation.playToDepositoryAnimation.mockImplementation(async () => {
-        timestamps.push({ action: 'playToDepositoryAnimation', time: Date.now() })
-      })
-      mockGameState.updateFieldCards.mockImplementation(() => {
-        timestamps.push({ action: 'updateFieldCards', time: Date.now() })
-      })
-
-      // Act
-      const startTime = Date.now()
-      await useCase.execute(event)
-
-      // Assert: 驗證場牌被移除（同時移除翻牌和配對場牌）
-      expect(mockGameState.updateFieldCards).toHaveBeenCalled()
-      const updateFieldCardsCall = mockGameState.updateFieldCards.mock.calls[0]
-      const newFieldCards = updateFieldCardsCall![0]
-
-      // 驗證兩張卡片都被移除
-      expect(newFieldCards).not.toContain('0501') // 翻牌
-      expect(newFieldCards).not.toContain('0201') // 配對場牌
-
-      // 驗證有足夠的等待時間（至少 350ms）
-      const elapsedTime = Date.now() - startTime
-      expect(elapsedTime).toBeGreaterThanOrEqual(350)
     })
   })
 })

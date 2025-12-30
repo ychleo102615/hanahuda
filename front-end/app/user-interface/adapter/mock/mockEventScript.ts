@@ -33,8 +33,8 @@ export interface MockEventItem {
  * 卡片 ID 格式: {月份2位}{類型1位}{序號1位}
  * 類型: 1=光牌, 2=種牌, 3=短冊, 4=かす
  *
- * CardPlay.captured_cards 說明:
- * - 配對成功: 包含 played_card + matched_card（兩張牌都進入獲得區）
+ * CardPlay.matched_cards 說明:
+ * - 配對成功: 包含配對的場牌（1 張，TRIPLE_MATCH 時為 3 張）
  * - 無配對: 空陣列（played_card 留在場上）
  */
 export const mockEventScript: MockEventItem[] = [
@@ -119,13 +119,11 @@ export const mockEventScript: MockEventItem[] = [
       player_id: 'player-1',
       hand_card_play: {
         played_card: '0131', // 松赤短
-        matched_card: '0141', // 配對松かす1
-        captured_cards: ['0131', '0141'], // 兩張都進入獲得區
+        matched_cards: ['0141'], // 配對松かす1
       },
       draw_card_play: {
         played_card: '0142', // 松かす2
-        matched_card: null, // 無配對
-        captured_cards: [], // 空陣列，牌留在場上
+        matched_cards: [], // 無配對，牌留在場上
       },
       deck_remaining: 23,
       next_state: {
@@ -147,13 +145,11 @@ export const mockEventScript: MockEventItem[] = [
       player_id: 'player-2',
       hand_card_play: {
         played_card: '0111', // 松光
-        matched_card: '0142', // 配對松かす2
-        captured_cards: ['0111', '0142'],
+        matched_cards: ['0142'], // 配對松かす2
       },
       draw_card_play: {
         played_card: '0931', // 菊青短
-        matched_card: null,
-        captured_cards: [],
+        matched_cards: [], // 無配對
       },
       deck_remaining: 22,
       next_state: {
@@ -175,13 +171,11 @@ export const mockEventScript: MockEventItem[] = [
       player_id: 'player-1',
       hand_card_play: {
         played_card: '0231', // 梅赤短
-        matched_card: '0241', // 配對梅かす1
-        captured_cards: ['0231', '0241'],
+        matched_cards: ['0241'], // 配對梅かす1
       },
       draw_card_play: {
         played_card: '0242', // 梅かす2
-        matched_card: null,
-        captured_cards: [],
+        matched_cards: [], // 無配對
       },
       deck_remaining: 21,
       next_state: {
@@ -203,13 +197,11 @@ export const mockEventScript: MockEventItem[] = [
       player_id: 'player-2',
       hand_card_play: {
         played_card: '0221', // 梅鶯
-        matched_card: '0242', // 配對梅かす2
-        captured_cards: ['0221', '0242'],
+        matched_cards: ['0242'], // 配對梅かす2
       },
       draw_card_play: {
         played_card: '0941', // 菊かす1
-        matched_card: '0931', // 配對菊青短（場上的九月牌）
-        captured_cards: ['0941', '0931'], // 兩張都進入獲得區
+        matched_cards: ['0931'], // 配對菊青短（場上的九月牌）
       },
       deck_remaining: 20,
       next_state: {
@@ -231,13 +223,11 @@ export const mockEventScript: MockEventItem[] = [
       player_id: 'player-1',
       hand_card_play: {
         played_card: '0331', // 櫻赤短
-        matched_card: '0341', // 配對櫻かす1
-        captured_cards: ['0331', '0341'],
+        matched_cards: ['0341'], // 配對櫻かす1
       },
       draw_card_play: {
         played_card: '0342', // 櫻かす2
-        matched_card: null,
-        captured_cards: [],
+        matched_cards: [], // 無配對
       },
       deck_remaining: 19,
       next_state: {
@@ -259,13 +249,11 @@ export const mockEventScript: MockEventItem[] = [
       player_id: 'player-1',
       hand_card_play: {
         played_card: '0331',
-        matched_card: '0341',
-        captured_cards: ['0331', '0341'],
+        matched_cards: ['0341'],
       },
       draw_card_play: {
         played_card: '0342',
-        matched_card: null,
-        captured_cards: [],
+        matched_cards: [],
       },
       yaku_update: {
         newly_formed_yaku: [

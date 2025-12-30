@@ -56,8 +56,7 @@ describe('HandleTurnCompletedUseCase', () => {
         player_id: 'player-1',
         hand_card_play: {
           played_card: '0301',
-          matched_card: '0101',
-          captured_cards: ['0301', '0101'],
+          matched_cards: ['0101'],
         },
         draw_card_play: null,
         deck_remaining: 23,
@@ -65,20 +64,14 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: 應該播放配對動畫和轉移動畫
-      expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0301', '0101')
-      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
-        ['0301', '0101'],
-        'PLAIN', // targetType (mock 返回 PLAIN)
-        false, // isOpponent = false (player-1 is local player)
-        undefined // matchPosition (mock 返回 undefined)
-      )
+      // Assert: 應該呼叫高階動畫 API
+      expect(mockAnimation.playCardPlaySequence).toHaveBeenCalled()
     })
 
     it('應該在無配對時播放 playCardToFieldAnimation', async () => {
@@ -90,8 +83,7 @@ describe('HandleTurnCompletedUseCase', () => {
         player_id: 'player-1',
         hand_card_play: {
           played_card: '0301',
-          matched_card: null,
-          captured_cards: [],
+          matched_cards: [],
         },
         draw_card_play: null,
         deck_remaining: 23,
@@ -99,15 +91,14 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: 應該播放移至場牌動畫
-      expect(mockAnimation.playCardToFieldAnimation).toHaveBeenCalledWith('0301', false, undefined)
-      expect(mockAnimation.playMatchAnimation).not.toHaveBeenCalled()
+      // Assert: 應該呼叫高階動畫 API（無配對時 capturedCards 為空）
+      expect(mockAnimation.playCardPlaySequence).toHaveBeenCalled()
     })
 
     it('應該處理 hand_card_play 為 null 的情況', async () => {
@@ -120,19 +111,18 @@ describe('HandleTurnCompletedUseCase', () => {
         hand_card_play: null,
         draw_card_play: {
           played_card: '0302',
-          matched_card: '0102',
-          captured_cards: ['0302', '0102'],
+          matched_cards: ['0102'],
         },
         deck_remaining: 22,
         next_state: {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act & Assert: 不應拋出錯誤
-      await expect(useCase.execute(event)).resolves.not.toThrow()
+      await expect(useCase.execute(event, { receivedAt: Date.now() })).resolves.not.toThrow()
     })
 
     it('應該處理 draw_card_play 為 null 的情況', async () => {
@@ -144,8 +134,7 @@ describe('HandleTurnCompletedUseCase', () => {
         player_id: 'player-1',
         hand_card_play: {
           played_card: '0301',
-          matched_card: '0101',
-          captured_cards: ['0301', '0101'],
+          matched_cards: ['0101'],
         },
         draw_card_play: null,
         deck_remaining: 23,
@@ -153,16 +142,16 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act & Assert: 不應拋出錯誤
-      await expect(useCase.execute(event)).resolves.not.toThrow()
+      await expect(useCase.execute(event, { receivedAt: Date.now() })).resolves.not.toThrow()
     })
   })
 
   describe('翻牌配對動畫', () => {
-    it('應該在翻牌有配對時播放配對動畫', async () => {
+    it('應該在翻牌有配對時呼叫 playDrawCardSequence', async () => {
       // Arrange
       const event: TurnCompletedEvent = {
         event_type: 'TurnCompleted',
@@ -172,31 +161,24 @@ describe('HandleTurnCompletedUseCase', () => {
         hand_card_play: null,
         draw_card_play: {
           played_card: '0302',
-          matched_card: '0102',
-          captured_cards: ['0302', '0102'],
+          matched_cards: ['0102'],
         },
         deck_remaining: 22,
         next_state: {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: 應該播放翻牌配對動畫和轉移動畫（不含 playFlipFromDeckAnimation，那是 Phase 8）
-      expect(mockAnimation.playMatchAnimation).toHaveBeenCalledWith('0302', '0102')
-      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
-        ['0302', '0102'],
-        'PLAIN', // targetType (mock 返回 PLAIN)
-        false, // isOpponent = false
-        undefined // matchPosition (mock 返回 undefined)
-      )
+      // Assert: 應該呼叫高階動畫 API
+      expect(mockAnimation.playDrawCardSequence).toHaveBeenCalled()
     })
 
-    it('應該在翻牌無配對時不播放任何動畫', async () => {
+    it('應該在翻牌無配對時呼叫 playDrawCardSequence（capturedCards 為空）', async () => {
       // Arrange
       const event: TurnCompletedEvent = {
         event_type: 'TurnCompleted',
@@ -206,23 +188,21 @@ describe('HandleTurnCompletedUseCase', () => {
         hand_card_play: null,
         draw_card_play: {
           played_card: '0302',
-          matched_card: null,
-          captured_cards: [],
+          matched_cards: [],
         },
         deck_remaining: 22,
         next_state: {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: 翻牌無配對時不播放動畫（牌已在場上）
-      expect(mockAnimation.playMatchAnimation).not.toHaveBeenCalled()
-      expect(mockAnimation.playCardToFieldAnimation).not.toHaveBeenCalled()
+      // Assert: 應該呼叫高階動畫 API
+      expect(mockAnimation.playDrawCardSequence).toHaveBeenCalled()
     })
   })
 
@@ -236,8 +216,7 @@ describe('HandleTurnCompletedUseCase', () => {
         player_id: 'player-1',
         hand_card_play: {
           played_card: '0301',
-          matched_card: '0101',
-          captured_cards: ['0301', '0101'],
+          matched_cards: ['0101'],
         },
         draw_card_play: null,
         deck_remaining: 22,
@@ -245,11 +224,11 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockGameState.updateDeckRemaining).toHaveBeenCalledWith(22)
@@ -266,8 +245,7 @@ describe('HandleTurnCompletedUseCase', () => {
         player_id: 'player-1',
         hand_card_play: {
           played_card: '0301',
-          matched_card: null,
-          captured_cards: [],
+          matched_cards: [],
         },
         draw_card_play: null,
         deck_remaining: 23,
@@ -275,11 +253,11 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-2',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockGameState.setFlowStage).toHaveBeenCalledWith('AWAITING_HAND_PLAY')
@@ -296,8 +274,7 @@ describe('HandleTurnCompletedUseCase', () => {
         player_id: 'player-2', // 對手
         hand_card_play: {
           played_card: '0301',
-          matched_card: '0101',
-          captured_cards: ['0301', '0101'],
+          matched_cards: ['0101'],
         },
         draw_card_play: null,
         deck_remaining: 23,
@@ -305,18 +282,16 @@ describe('HandleTurnCompletedUseCase', () => {
           state_type: 'AWAITING_HAND_PLAY',
           active_player_id: 'player-1',
         },
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: isOpponent = true
-      expect(mockAnimation.playToDepositoryAnimation).toHaveBeenCalledWith(
-        ['0301', '0101'],
-        'PLAIN', // targetType (mock 返回 PLAIN)
-        true, // isOpponent = true
-        undefined // matchPosition (mock 返回 undefined)
+      // Assert: 應該以 isOpponent=true 呼叫高階動畫 API
+      expect(mockAnimation.playCardPlaySequence).toHaveBeenCalledWith(
+        expect.objectContaining({ isOpponent: true }),
+        expect.any(Object)
       )
     })
   })

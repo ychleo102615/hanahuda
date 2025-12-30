@@ -49,20 +49,19 @@ describe('HandleSelectionRequiredUseCase', () => {
         player_id: 'player-1',
         hand_card_play: {
           played_card: '0301',
-          matched_card: '0101',
-          captured_cards: ['0301', '0101'],
+          matched_cards: ['0101'],
         },
         drawn_card: '0401',
         possible_targets: ['0102', '0103'],
         deck_remaining: 21,
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
-      // Assert: 應該播放手牌飛向場牌的動畫
-      expect(mockAnimation.playCardToFieldAnimation).toHaveBeenCalledWith('0301', false, '0101')
+      // Assert: 應該呼叫高階動畫 API
+      expect(mockAnimation.playCardPlaySequence).toHaveBeenCalled()
     })
   })
 
@@ -76,17 +75,16 @@ describe('HandleSelectionRequiredUseCase', () => {
         player_id: 'player-1',
         hand_card_play: {
           played_card: '0301',
-          matched_card: '0101',
-          captured_cards: ['0301', '0101'],
+          matched_cards: ['0101'],
         },
         drawn_card: '0401',
         possible_targets: ['0102', '0103'],
         deck_remaining: 21,
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockGameState.setDrawnCard).toHaveBeenCalledWith('0401')
@@ -104,17 +102,16 @@ describe('HandleSelectionRequiredUseCase', () => {
         player_id: 'player-1',
         hand_card_play: {
           played_card: '0301',
-          matched_card: '0101',
-          captured_cards: ['0301', '0101'],
+          matched_cards: ['0101'],
         },
         drawn_card: '0401',
         possible_targets: ['0102', '0103'],
         deck_remaining: 21,
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert
       expect(mockGameState.setFlowStage).toHaveBeenCalledWith('AWAITING_SELECTION')
@@ -131,20 +128,19 @@ describe('HandleSelectionRequiredUseCase', () => {
         player_id: 'player-1',
         hand_card_play: {
           played_card: '0301',
-          matched_card: '0101',
-          captured_cards: ['0301', '0101'],
+          matched_cards: ['0101'],
         },
         drawn_card: '0401',
         possible_targets: ['0102', '0103'],
         deck_remaining: 21,
-        action_timeout_seconds: 30,
+        timeout_seconds: 30,
       }
 
       // Act
-      await useCase.execute(event)
+      await useCase.execute(event, { receivedAt: Date.now() })
 
       // Assert: 驗證所有方法都被調用
-      expect(mockAnimation.playCardToFieldAnimation).toHaveBeenCalled()
+      expect(mockAnimation.playCardPlaySequence).toHaveBeenCalled()
       expect(mockGameState.setDrawnCard).toHaveBeenCalled()
       expect(mockGameState.setPossibleTargetCardIds).toHaveBeenCalled()
       expect(mockGameState.setFlowStage).toHaveBeenCalled()

@@ -281,6 +281,11 @@ export function createMockAnimationPort(): AnimationPort {
     isAnimating: vi.fn().mockReturnValue(false),
     hideCards: vi.fn(),
     clearHiddenCards: vi.fn(),
+    waitForReady: vi.fn().mockResolvedValue(undefined),
+    // 高階動畫 API
+    playCardPlaySequence: vi.fn().mockResolvedValue({ hasMatch: true, matchPosition: null }),
+    playDrawCardSequence: vi.fn().mockResolvedValue({ hasMatch: true, matchPosition: null }),
+    playDrawnCardMatchSequence: vi.fn().mockResolvedValue(undefined),
   }
 }
 
@@ -316,9 +321,14 @@ export function createMockNotificationPort(): NotificationPort {
     showRoundScoredModal: vi.fn(),
     showRoundEndedInstantlyModal: vi.fn(),
     hideModal: vi.fn(),
+    showRedirectModal: vi.fn(),
+    hideRedirectModal: vi.fn(),
+    showGameErrorModal: vi.fn(),
+    hideGameErrorModal: vi.fn(),
     showErrorMessage: vi.fn(),
     showSuccessMessage: vi.fn(),
     showInfoMessage: vi.fn(),
+    showWarningMessage: vi.fn(),
     showReconnectionMessage: vi.fn(),
     hideReconnectionMessage: vi.fn(),
     isModalVisible: vi.fn().mockReturnValue(false),
@@ -327,17 +337,17 @@ export function createMockNotificationPort(): NotificationPort {
     showWaitingMessage: vi.fn(),
     hideWaitingMessage: vi.fn(),
     setDealingInProgress: vi.fn(),
-    startActionCountdown: vi.fn(),
-    stopActionCountdown: vi.fn(),
-    startDisplayCountdown: vi.fn(),
-    stopDisplayCountdown: vi.fn(),
+    // 統一倒數計時 API
+    startCountdown: vi.fn(),
+    stopCountdown: vi.fn(),
     cleanup: vi.fn(),
+    resetUITemporaryState: vi.fn(),
     showKoiKoiAnnouncement: vi.fn(),
     hideKoiKoiAnnouncement: vi.fn(),
     showOpponentYakuAnnouncement: vi.fn(),
     showContinueConfirmation: vi.fn(),
     hideContinueConfirmation: vi.fn(),
-    setConfirmationExpired: vi.fn(),
+    setContinueConfirmationProcessing: vi.fn(),
   }
 }
 

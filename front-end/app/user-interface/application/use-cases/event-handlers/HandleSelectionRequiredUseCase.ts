@@ -15,6 +15,7 @@
  */
 
 import type { SelectionRequiredEvent } from '#shared/contracts'
+import { deriveCapturedCards } from '#shared/contracts'
 import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { CardPlayStateCallbacks } from '../../ports/output/animation.port'
 import type { DomainFacade } from '../../types/domain-facade'
@@ -63,16 +64,20 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     const callbacks = this.createStateCallbacks(localPlayerId, opponentPlayerId, isOpponent)
 
     // === 階段 1：處理手牌操作 ===
-    const firstCapturedCard = handCardPlay.captured_cards[0]
-    const targetCardType = firstCapturedCard
-      ? this.domainFacade.getCardTypeFromId(firstCapturedCard)
+    const handCapturedCards = deriveCapturedCards(
+      handCardPlay.played_card,
+      handCardPlay.matched_cards
+    )
+    const handMatchedCard = handCardPlay.matched_cards[0] ?? null
+    const targetCardType = handCapturedCards[0]
+      ? this.domainFacade.getCardTypeFromId(handCapturedCards[0])
       : 'PLAIN'
 
     await this.animation.playCardPlaySequence(
       {
         playedCard: handCardPlay.played_card,
-        matchedCard: handCardPlay.matched_card,
-        capturedCards: handCardPlay.captured_cards,
+        matchedCard: handMatchedCard,
+        capturedCards: [...handCapturedCards],
         isOpponent,
         targetCardType,
       },

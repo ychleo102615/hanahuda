@@ -19,6 +19,7 @@
  */
 
 import type { TurnProgressAfterSelectionEvent } from '#shared/contracts'
+import { deriveCapturedCards } from '#shared/contracts'
 import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
 import type { CardPlayStateCallbacks } from '../../ports/output/animation.port'
 import type { DomainFacade } from '../../types/domain-facade'
@@ -84,7 +85,11 @@ export class HandleTurnProgressAfterSelectionUseCase
     const opponentPlayerId = isOpponent ? event.player_id : 'opponent'
 
     const drawCardPlay = event.draw_card_play
-    const capturedCards = drawCardPlay.captured_cards
+    const capturedCards = deriveCapturedCards(
+      drawCardPlay.played_card,
+      drawCardPlay.matched_cards
+    )
+    const drawMatchedCard = drawCardPlay.matched_cards[0] ?? null
 
     // === 階段 1：清除 UI 狀態（解決配對提示殘留問題）===
     // 提前更新 FlowStage 和清除 AWAITING_SELECTION 狀態
@@ -97,7 +102,7 @@ export class HandleTurnProgressAfterSelectionUseCase
     // === 階段 2：播放配對動畫序列 ===
     // 注意：翻牌動畫已在 HandleSelectionRequiredUseCase 中播放
     // 這裡使用 playDrawnCardMatchSequence 高階 API 處理配對部分
-    if (drawCardPlay.matched_card && capturedCards.length > 0) {
+    if (drawMatchedCard && capturedCards.length > 0) {
       // 創建狀態更新回調（供 AnimationPortAdapter 在適當時機調用）
       const callbacks = this.createStateCallbacks(localPlayerId, opponentPlayerId, isOpponent)
 
@@ -109,7 +114,7 @@ export class HandleTurnProgressAfterSelectionUseCase
       await this.animation.playDrawnCardMatchSequence(
         {
           drawnCard: drawCardPlay.played_card,
-          matchedCard: drawCardPlay.matched_card,
+          matchedCard: drawMatchedCard,
           capturedCards: [...capturedCards],
           isOpponent,
           targetCardType,

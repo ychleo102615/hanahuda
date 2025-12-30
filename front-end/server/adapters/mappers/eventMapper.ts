@@ -199,13 +199,11 @@ export class EventMapper implements FullEventMapperPort {
       player_id: playerId,
       hand_card_play: {
         played_card: handCardPlay.played_card,
-        matched_card: handCardPlay.matched_card,
-        captured_cards: [...handCardPlay.captured_cards],
+        matched_cards: [...handCardPlay.matched_cards],
       },
       draw_card_play: {
         played_card: drawCardPlay.played_card,
-        matched_card: drawCardPlay.matched_card,
-        captured_cards: [...drawCardPlay.captured_cards],
+        matched_cards: [...drawCardPlay.matched_cards],
       },
       deck_remaining: round.deck.length,
       next_state: nextState,
@@ -241,8 +239,7 @@ export class EventMapper implements FullEventMapperPort {
       player_id: playerId,
       hand_card_play: {
         played_card: handCardPlay.played_card,
-        matched_card: handCardPlay.matched_card,
-        captured_cards: [...handCardPlay.captured_cards],
+        matched_cards: [...handCardPlay.matched_cards],
       },
       drawn_card: drawnCard,
       possible_targets: [...possibleTargets],
@@ -283,12 +280,10 @@ export class EventMapper implements FullEventMapperPort {
       selection: {
         source_card: selection.source_card,
         selected_target: selection.selected_target,
-        captured_cards: [...selection.captured_cards],
       },
       draw_card_play: {
         played_card: drawCardPlay.played_card,
-        matched_card: drawCardPlay.matched_card,
-        captured_cards: [...drawCardPlay.captured_cards],
+        matched_cards: [...drawCardPlay.matched_cards],
       },
       yaku_update: yakuUpdate
         ? {
@@ -345,15 +340,13 @@ export class EventMapper implements FullEventMapperPort {
       hand_card_play: handCardPlay
         ? {
             played_card: handCardPlay.played_card,
-            matched_card: handCardPlay.matched_card,
-            captured_cards: [...handCardPlay.captured_cards],
+            matched_cards: [...handCardPlay.matched_cards],
           }
         : null,
       draw_card_play: drawCardPlay
         ? {
             played_card: drawCardPlay.played_card,
-            matched_card: drawCardPlay.matched_card,
-            captured_cards: [...drawCardPlay.captured_cards],
+            matched_cards: [...drawCardPlay.matched_cards],
           }
         : null,
       yaku_update: {

@@ -71,11 +71,15 @@ export interface NextState {
 
 /**
  * 卡片操作（打牌/翻牌的結果）
+ *
+ * @description
+ * - matched_cards 空陣列 = 無配對（牌留在場上）
+ * - matched_cards 1 元素 = 單配對或雙配對選擇後
+ * - matched_cards 3 元素 = 三重配對（場上 3 張同月份，打出第 4 張）
  */
 export interface CardPlay {
   readonly played_card: string
-  readonly matched_card: string | null
-  readonly captured_cards: ReadonlyArray<string>
+  readonly matched_cards: ReadonlyArray<string>
 }
 
 /**
@@ -84,7 +88,28 @@ export interface CardPlay {
 export interface CardSelection {
   readonly source_card: string
   readonly selected_target: string
-  readonly captured_cards: ReadonlyArray<string>
+}
+
+// ============================================================================
+// CardPlay Helper Functions
+// ============================================================================
+
+/**
+ * 從 CardPlay 推導 captured_cards
+ *
+ * @description
+ * - 無配對（matchedCards 為空）: 返回空陣列
+ * - 有配對: 返回 [playedCard, ...matchedCards]
+ *
+ * @param playedCard - 打出或翻出的卡片
+ * @param matchedCards - 配對的場牌
+ * @returns 進入獲得區的卡片清單
+ */
+export function deriveCapturedCards(
+  playedCard: string,
+  matchedCards: readonly string[]
+): readonly string[] {
+  return matchedCards.length > 0 ? [playedCard, ...matchedCards] : []
 }
 
 /**

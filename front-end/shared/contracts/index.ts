@@ -50,6 +50,9 @@ export type {
   GameStartedData,
 } from './shared'
 
+// Shared Helper Functions
+export { deriveCapturedCards } from './shared'
+
 // Commands
 export type { TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision } from './commands'
 

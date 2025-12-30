@@ -219,8 +219,7 @@ export function playHandCard(
       // 無配對，卡片加入場牌
       handCardPlay = {
         played_card: cardId,
-        matched_card: null,
-        captured_cards: [],
+        matched_cards: [],
       }
       updatedField = addToField(round.field, cardId)
       capturedCards = []
@@ -231,8 +230,7 @@ export function playHandCard(
       capturedCards = executeCaptureFromMatch(cardId, handMatchResult.target, handMatchResult)
       handCardPlay = {
         played_card: cardId,
-        matched_card: handMatchResult.target,
-        captured_cards: capturedCards,
+        matched_cards: [handMatchResult.target],
       }
       updatedField = removeFromField(round.field, capturedCards)
       break
@@ -248,24 +246,17 @@ export function playHandCard(
       capturedCards = executeCaptureFromMatch(cardId, handTargetCardId, handMatchResult)
       handCardPlay = {
         played_card: cardId,
-        matched_card: handTargetCardId,
-        captured_cards: capturedCards,
+        matched_cards: [handTargetCardId],
       }
       updatedField = removeFromField(round.field, capturedCards)
       break
 
     case 'TRIPLE_MATCH':
-      // 三重配對，捕獲全部
+      // 三重配對，捕獲全部 4 張（1 手牌 + 3 場牌）
       capturedCards = executeCaptureFromMatch(cardId, null, handMatchResult)
-      // 優先使用用戶指定的目標牌，否則使用預設 targets[0]
-      const matchedCard =
-        handTargetCardId && handMatchResult.targets.includes(handTargetCardId)
-          ? handTargetCardId
-          : handMatchResult.targets[0]
       handCardPlay = {
         played_card: cardId,
-        matched_card: matchedCard ?? null,
-        captured_cards: capturedCards,
+        matched_cards: [...handMatchResult.targets],  // 3 張場牌
       }
       updatedField = removeFromField(round.field, capturedCards)
       break
@@ -319,8 +310,7 @@ export function playHandCard(
       // 無配對，加入場牌
       drawCardPlay = {
         played_card: drawnCard,
-        matched_card: null,
-        captured_cards: [],
+        matched_cards: [],
       }
       finalField = addToField(updatedField, drawnCard)
       break
@@ -330,8 +320,7 @@ export function playHandCard(
       drawCapturedCards = executeCaptureFromMatch(drawnCard, drawMatchResult.target, drawMatchResult)
       drawCardPlay = {
         played_card: drawnCard,
-        matched_card: drawMatchResult.target,
-        captured_cards: drawCapturedCards,
+        matched_cards: [drawMatchResult.target],
       }
       finalField = removeFromField(updatedField, drawCapturedCards)
       break
@@ -348,13 +337,11 @@ export function playHandCard(
       break
 
     case 'TRIPLE_MATCH':
-      // 三重配對，捕獲全部
+      // 三重配對，捕獲全部（1 張翻牌 + 3 張場牌）
       drawCapturedCards = executeCaptureFromMatch(drawnCard, null, drawMatchResult)
-      const drawMatchedCard = drawMatchResult.targets[0]
       drawCardPlay = {
         played_card: drawnCard,
-        matched_card: drawMatchedCard ?? null,
-        captured_cards: drawCapturedCards,
+        matched_cards: [...drawMatchResult.targets],  // 3 張場牌
       }
       finalField = removeFromField(updatedField, drawCapturedCards)
       break
@@ -434,13 +421,11 @@ export function selectTarget(
   const selection: CardSelection = {
     source_card: drawnCard,
     selected_target: targetCardId,
-    captured_cards: capturedCards,
   }
 
   const drawCardPlay: CardPlay = {
     played_card: drawnCard,
-    matched_card: targetCardId,
-    captured_cards: capturedCards,
+    matched_cards: [targetCardId],
   }
 
   // 更新場牌

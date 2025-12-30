@@ -116,8 +116,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       player_id: 'player-1',
       hand_card_play: {
         played_card: '0111', // 1月光（松上鶴）
-        matched_card: null, // 場上無1月牌，無配對
-        captured_cards: [],
+        matched_cards: [], // 場上無1月牌，無配對
       },
       drawn_card: '0231', // 翻出 2月短（梅赤短）
       possible_targets: ['0221', '0241', '0242'], // 3張2月牌可選
@@ -140,12 +139,10 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       selection: {
         source_card: '0231', // 翻出的 2月短
         selected_target: '0241', // 選擇配對 2月かす1
-        captured_cards: ['0231', '0241'], // 捕獲的牌
       },
       draw_card_play: {
         played_card: '0231', // 翻出的牌
-        matched_card: '0241', // 配對的牌
-        captured_cards: ['0231', '0241'], // 翻牌階段獲得的牌
+        matched_cards: ['0241'], // 配對的場牌
       },
       yaku_update: null, // 此回合未形成役種
       deck_remaining: 23,
@@ -171,13 +168,11 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       player_id: 'player-2',
       hand_card_play: {
         played_card: '0131', // 1月短
-        matched_card: '0111', // 配對場上的1月光
-        captured_cards: ['0131', '0111'],
+        matched_cards: ['0111'], // 配對場上的1月光
       },
       draw_card_play: {
         played_card: '0141', // 翻出 1月かす
-        matched_card: null, // 場上無1月牌（已被捕獲）
-        captured_cards: [],
+        matched_cards: [], // 場上無1月牌（已被捕獲）
       },
       deck_remaining: 22,
       next_state: {
@@ -201,8 +196,7 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       player_id: 'player-1',
       hand_card_play: {
         played_card: '0431', // 4月短（藤短）
-        matched_card: null, // 場上無4月牌
-        captured_cards: [],
+        matched_cards: [], // 場上無4月牌
       },
       drawn_card: '0311', // 翻出 3月光（櫻上幕）
       possible_targets: ['0341', '0342'], // 場上有2張3月牌可選
@@ -225,12 +219,10 @@ export const mockEventScriptForSelection: MockEventItem[] = [
       selection: {
         source_card: '0311', // 翻出的 3月光
         selected_target: '0341', // 選擇配對 3月かす1
-        captured_cards: ['0311', '0341'], // 捕獲的牌
       },
       draw_card_play: {
         played_card: '0311',
-        matched_card: '0341',
-        captured_cards: ['0311', '0341'],
+        matched_cards: ['0341'], // 配對的場牌
       },
       yaku_update: null, // 此回合未形成役種
       deck_remaining: 21,
