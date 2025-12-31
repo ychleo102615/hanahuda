@@ -16,7 +16,7 @@ export default defineConfigWithVueTs(
     files: ['**/*.{ts,mts,tsx,vue}'],
   },
 
-  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
+  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**', '**/.nuxt/**', '**/.output/**']),
 
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
@@ -25,7 +25,21 @@ export default defineConfigWithVueTs(
     name: 'app/vue-rules',
     rules: {
       'vue/multi-word-component-names': ['error', {
-        ignores: ['Footer']
+        ignores: ['Footer', 'index', 'lobby']
+      }]
+    }
+  },
+
+  {
+    name: 'app/typescript-rules',
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
+      }],
+      '@typescript-eslint/no-empty-object-type': ['error', {
+        allowInterfaces: 'with-single-extends'
       }]
     }
   },

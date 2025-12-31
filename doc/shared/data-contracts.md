@@ -190,33 +190,66 @@
 ```json
 {
   "player_id": "player-uuid",
+  "player_name": "Player 1",
   "session_token": "optional-token-for-reconnect"
+}
+```
+
+| 欄位 | 型別 | 必填 | 說明 |
+|-----|------|------|------|
+| `player_id` | string (UUID) | ✅ | 玩家唯一識別碼 |
+| `player_name` | string | ✅ | 玩家顯示名稱（1-50 字元） |
+| `session_token` | string (UUID) | ❌ | 會話 Token（用於重連） |
+
+**Response:**
+```json
+{
+  "data": {
+    "game_id": "game-uuid",
+    "session_token": "session-uuid",
+    "player_id": "player-uuid",
+    "sse_endpoint": "/api/v1/games/{gameId}/events"
+  },
+  "timestamp": "2025-01-01T00:00:00Z"
 }
 ```
 
 ### POST /api/v1/games/{gameId}/turns/play-card
 ```json
 {
-  "card_id_to_play": "0341"
+  "card_id": "0341",
+  "target_card_id": "0342"
 }
 ```
 
-### POST /api/v1/games/{gameId}/turns/select-match
+| 欄位 | 型別 | 必填 | 說明 |
+|-----|------|------|------|
+| `card_id` | string | ✅ | 打出的手牌 ID（MMTI 格式） |
+| `target_card_id` | string | ❌ | 配對目標的場牌 ID |
+
+### POST /api/v1/games/{gameId}/turns/select-target
 ```json
 {
   "source_card_id": "0341",
-  "selected_target_id": "0342"
+  "target_card_id": "0342"
 }
 ```
+
+| 欄位 | 型別 | 必填 | 說明 |
+|-----|------|------|------|
+| `source_card_id` | string | ✅ | 翻出的牌 ID |
+| `target_card_id` | string | ✅ | 選擇配對的目標牌 ID |
 
 ### POST /api/v1/games/{gameId}/rounds/decision
 ```json
 {
-  "decision_type": "KOI_KOI"
+  "decision": "KOI_KOI"
 }
 ```
 
-（`decision_type` 可為 `"KOI_KOI"` 或 `"END_ROUND"`）
+| 欄位 | 型別 | 必填 | 說明 |
+|-----|------|------|------|
+| `decision` | string | ✅ | 決策類型：`"KOI_KOI"` 或 `"END_ROUND"` |
 
 ---
 

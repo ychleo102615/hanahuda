@@ -11,6 +11,7 @@
 - [遊戲規則](./shared/game-rules.md) - 花札卡片、役種、計分規則
 - [通訊協議](./shared/protocol.md) - 前後端交互規格（命令與事件）
 - [數據契約](./shared/data-contracts.md) - 前後端共用的數據結構
+- [HTTP 狀態碼](./shared/http-status-codes.md) - API 回應狀態碼與錯誤代碼定義
 
 ### 前端架構
 - [前端架構總覽](./frontend/architecture.md) - 前端技術棧與 BC 劃分
@@ -37,6 +38,9 @@
 ### 質量保證
 - [測試策略](./quality/testing-strategy.md) - 各層測試重點與覆蓋率目標
 - [指標與標準](./quality/metrics.md) - 效能指標、程式碼品質標準
+
+### 架構決策記錄
+- [Nuxt 全棧整合可行性分析](./nuxt-fullstack-feasibility.md) - 後端整合至 Nuxt 4 的可行性評估、部署平台比較
 
 ---
 
@@ -67,7 +71,7 @@
 - **技術展示**: 完整的前後端分離架構，展示可擴展的分散式系統設計
 
 ### 1.4 技術棧
-- **前端**: Vue 3 + TypeScript + Tailwind CSS v4
+- **前端**: Nuxt 4 + Vue 3 + TypeScript + Tailwind CSS v4
 - **後端**: Java (Spring Boot) + PostgreSQL
 - **通訊**: REST API + Server-Sent Events (SSE)
 - **架構**: Clean Architecture + Domain-Driven Design + 微服務預備架構
@@ -469,6 +473,7 @@ Phase 3 (分散式):
 - **Clean Architecture** - Robert C. Martin
 - **Domain-Driven Design** - Eric Evans
 - **Spring Boot Documentation** - https://spring.io/projects/spring-boot
+- **Nuxt Documentation** - https://nuxt.com/
 - **Vue 3 Documentation** - https://vuejs.org/
 - **Server-Sent Events (MDN)** - https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
 

@@ -41,6 +41,7 @@
 
 **客戶端命令 (C2S)**:
 - `GameRequestJoin` - 加入遊戲/重連
+- `GameLeave` - 離開遊戲
 - `TurnPlayHandCard` - 打出手牌
 - `TurnSelectTarget` - 選擇翻牌配對目標
 - `RoundMakeDecision` - Koi-Koi 決策
@@ -48,6 +49,7 @@
 **伺服器事件 (S2C)**:
 - 遊戲級: `GameStarted` | `RoundDealt` | `RoundEndedInstantly` | `RoundScored` | `RoundDrawn` | `GameFinished`
 - 回合級: `TurnCompleted` | `SelectionRequired` | `TurnProgressAfterSelection` | `DecisionRequired` | `DecisionMade` | `TurnError`
+- 錯誤級: `GameError` (遊戲會話層級錯誤)
 - 重連: `GameSnapshotRestore`
 
 ### 關鍵枚舉值
@@ -89,10 +91,15 @@
 #### CardPlay（卡片操作）
 ```typescript
 {
-  card: string,              // 打出/翻開的卡片 ID
-  captured: string[]         // 捕獲的卡片
+  played_card: string,           // 打出/翻開的卡片 ID
+  matched_card: string | null,   // 配對的場牌 ID（無配對為 null）
+  captured_cards: string[]       // 捕獲的卡片（配對成功包含 played_card + matched_card）
 }
 ```
+
+**說明**：
+- `matched_card` 為 `null` 時，表示無配對，`captured_cards` 為空陣列 `[]`
+- 配對成功時，`captured_cards` 包含 `played_card` 和 `matched_card` 兩張牌
 
 #### CardSelection（卡片選擇）
 ```typescript
@@ -226,6 +233,7 @@
 | 命令 | 流程狀態 | Payload | 說明 |
 |------|---------|---------|------|
 | **GameRequestJoin** | 任意 | `{player_id, session_token}` | 加入或重連 |
+| **GameLeave** | 任意 | `{}` | 玩家主動離開遊戲（結束會話）|
 | **TurnPlayHandCard** | `AWAITING_HAND_PLAY` | `{card, target?}` | 打手牌，`target` 為配對目標或 `null` |
 | **TurnSelectTarget** | `AWAITING_SELECTION` | `{source, target}` | 翻牌雙重配對時選擇目標 |
 | **RoundMakeDecision** | `AWAITING_DECISION` | `{decision}` | `"KOI_KOI"` → `DecisionMade`，`"END_ROUND"` → `RoundScored` |
@@ -256,7 +264,8 @@
   field: string[],
   hands: PlayerHand[],              // 自己手牌傳 cards 陣列，對手僅傳 count
   deck_remaining: number,
-  next_state: NextState             // active_player_id 指明第一個行動玩家
+  next_state: NextState,            // active_player_id 指明第一個行動玩家
+  action_timeout_seconds: number    // 首位玩家的出牌時限
 }
 ```
 
@@ -267,7 +276,8 @@ Teshi 或場牌流局立即結束
   reason: RoundEndReason,              // TESHI | FIELD_KUTTSUKI
   winner_id?: string,                  // Teshi 時才有勝者
   points_earned?: number,              // 勝者獲得的分數
-  cumulative_scores: PlayerScore[]
+  cumulative_scores: PlayerScore[],
+  display_timeout_seconds: number      // 結果面板顯示時間
 }
 ```
 
@@ -280,7 +290,8 @@ Teshi 或場牌流局立即結束
   base_total: number,
   multipliers: ScoreMultipliers,
   final_points: number,                // 勝者實際獲得分數（base_total × 倍數）
-  cumulative_scores: PlayerScore[]
+  cumulative_scores: PlayerScore[],
+  display_timeout_seconds: number      // 結果面板顯示時間
 }
 ```
 
@@ -289,7 +300,8 @@ Teshi 或場牌流局立即結束
 ```json
 {
   reason: RoundEndReason,              // NO_YAKU
-  cumulative_scores: PlayerScore[]     // 分數無變化，僅返回當前分數
+  cumulative_scores: PlayerScore[]     // 分數無變化，僅返回當前分數,
+  display_timeout_seconds: number      // 結果面板顯示時間
 }
 ```
 
@@ -308,13 +320,17 @@ Teshi 或場牌流局立即結束
 
 #### TurnCompleted
 打手牌、翻牌均完成（無中斷、無役型形成）
+
+**注意**：此事件中手牌和翻牌操作都必須存在，不會是 null。
+
 ```json
 {
   player_id: string,
-  hand_play: CardPlay,                 // 打手牌操作
-  deck_flip: CardPlay,                 // 翻牌操作
+  hand_card_play: CardPlay,            // 打手牌操作（必定存在）
+  draw_card_play: CardPlay,            // 翻牌操作（必定存在）
   deck_remaining: number,
-  next_state: NextState
+  next_state: NextState,
+  action_timeout_seconds: number       // 下一位玩家的出牌時限
 }
 ```
 
@@ -323,8 +339,11 @@ Teshi 或場牌流局立即結束
 ```json
 {
   player_id: string,
-  hand_play: CardPlay,                 // 已完成的打手牌操作
-  selection: CardSelection             // 需要選擇的翻牌配對
+  hand_card_play: CardPlay,            // 已完成的打手牌操作
+  drawn_card: string,                  // 翻出的卡片 ID
+  possible_targets: string[],          // 可選擇的配對目標
+  deck_remaining: number,
+  action_timeout_seconds: number       // 選擇配對目標的時限
 }
 ```
 
@@ -332,22 +351,30 @@ Teshi 或場牌流局立即結束
 翻牌選擇完成，繼續流程
 ```json
 {
-  selected_capture: CardPlay,         // 選擇後的翻牌操作
+  player_id: string,
+  selection: CardSelection,            // 玩家的選擇
+  draw_card_play: CardPlay,            // 選擇後的翻牌操作
+  yaku_update: YakuUpdate | null,      // 有新役型時才有值
   deck_remaining: number,
-  yaku_update?: YakuUpdate | null,    // 有新役型時才有值
-  next_state: NextState
+  next_state: NextState,
+  action_timeout_seconds: number       // 若進入下一狀態需操作,包含新時限
 }
 ```
 
 #### DecisionRequired
 形成役型，需決策 Koi-Koi（隱含狀態：`AWAITING_DECISION`，行動玩家為 `player_id`）
+
+**注意**：役種可能在手牌階段或翻牌階段形成，因此兩個字段可能為 null。
+
 ```json
 {
   player_id: string,
-  hand_play: CardPlay,                 // 本回合打手牌操作
-  deck_flip: CardPlay,                 // 本回合翻牌操作
+  hand_card_play: CardPlay | null,     // 本回合打手牌操作（可能為 null）
+  draw_card_play: CardPlay | null,     // 本回合翻牌操作（可能為 null）
+  yaku_update: YakuUpdate,
+  current_multipliers: ScoreMultipliers,
   deck_remaining: number,
-  yaku_update: YakuUpdate
+  action_timeout_seconds: number       // Koi-Koi 決策時限
 }
 ```
 
@@ -358,7 +385,8 @@ Teshi 或場牌流局立即結束
   player_id: string,
   decision: "KOI_KOI",
   koi_multiplier_update: number,       // 玩家更新後的 Koi-Koi 倍數
-  next_state: NextState                // 繼續遊戲，返回 AWAITING_HAND_PLAY
+  next_state: NextState                // 繼續遊戲，返回 AWAITING_HAND_PLAY,
+  action_timeout_seconds: number       // 下一位玩家的出牌時限
 }
 ```
 
@@ -367,6 +395,49 @@ Teshi 或場牌流局立即結束
 ```json
 {error_code, message, retry_allowed}
 ```
+
+#### GameError
+遊戲層級錯誤事件（配對超時、會話過期等）
+
+**與 TurnError 的區別**：
+- **TurnError**: 回合操作層級錯誤（打牌無效、選擇錯誤）
+- **GameError**: 遊戲會話層級錯誤（配對超時、遊戲過期、對手斷線）
+
+```json
+{
+  event_type: "GameError",
+  event_id: string,
+  timestamp: string,
+  error_code: "MATCHMAKING_TIMEOUT" | "GAME_EXPIRED" | "SESSION_INVALID" | "OPPONENT_DISCONNECTED",
+  message: string,
+  recoverable: boolean,
+  suggested_action?: "RETRY_MATCHMAKING" | "RETURN_HOME" | "RECONNECT"
+}
+```
+
+**錯誤代碼說明**：
+
+| error_code | recoverable | suggested_action | 說明 |
+|------------|-------------|------------------|------|
+| `MATCHMAKING_TIMEOUT` | `true` | `RETRY_MATCHMAKING` | 配對超時（30 秒內未找到對手） |
+| `GAME_EXPIRED` | `false` | `RETURN_HOME` | 遊戲會話過期（長時間未操作） |
+| `SESSION_INVALID` | `false` | `RETURN_HOME` | 會話 Token 無效/過期 |
+| `OPPONENT_DISCONNECTED` | `false` | `RETURN_HOME` | 對手永久斷線（超過重連時限） |
+
+**範例**（配對超時）：
+```json
+{
+  "event_type": "GameError",
+  "event_id": "550e8400-e29b-41d4-a716-446655440001",
+  "timestamp": "2025-11-30T12:00:30Z",
+  "error_code": "MATCHMAKING_TIMEOUT",
+  "message": "Matchmaking timeout after 30 seconds",
+  "recoverable": true,
+  "suggested_action": "RETRY_MATCHMAKING"
+}
+```
+
+**詳細規格**：參見 `specs/007-lobby-settings-panel/contracts/game-error-event.md`
 
 ---
 
@@ -382,7 +453,8 @@ Teshi 或場牌流局立即結束
   game: GameState,
   round: RoundState,
   cards: CardsState,
-  flow_state: CurrentFlowState       // context.selection 在 AWAITING_SELECTION 時存在
+  flow_state: CurrentFlowState,      // context.selection 在 AWAITING_SELECTION 時存在
+  action_timeout_seconds: number     // 重連時的剩餘時限
 }
 ```
 
@@ -395,10 +467,19 @@ Teshi 或場牌流局立即結束
 C→S: TurnPlayHandCard {card: "0341", target: "0342"}
 S→C: TurnCompleted {
        player_id: "p1",
-       hand_play: {card: "0341", captured: ["0342"]},
-       deck_flip: {card: "0843", captured: []},
+       hand_card_play: {
+         played_card: "0341",
+         matched_card: "0342",
+         captured_cards: ["0341", "0342"]
+       },
+       draw_card_play: {
+         played_card: "0843",
+         matched_card: null,
+         captured_cards: []
+       },
        deck_remaining: 23,
-       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
+       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"},
+       action_timeout_seconds: 30
      }
 ```
 
@@ -407,14 +488,33 @@ S→C: TurnCompleted {
 C→S: TurnPlayHandCard {card: "0341", target: "0342"}
 S→C: SelectionRequired {
        player_id: "p1",
-       hand_play: {card: "0341", captured: ["0342"]},
-       selection: {source: "0841", options: ["0842", "0843"]}
+       hand_card_play: {
+         played_card: "0341",
+         matched_card: "0342",
+         captured_cards: ["0341", "0342"]
+       },
+       drawn_card: "0841",
+       possible_targets: ["0842", "0843"],
+       deck_remaining: 23,
+       action_timeout_seconds: 30
      }
 C→S: TurnSelectTarget {source: "0841", target: "0842"}
 S→C: TurnProgressAfterSelection {
-       selected_capture: {card: "0841", captured: ["0842"]},
+       player_id: "p1",
+       selection: {
+         source_card: "0841",
+         selected_target: "0842",
+         captured_cards: ["0841", "0842"]
+       },
+       draw_card_play: {
+         played_card: "0841",
+         matched_card: "0842",
+         captured_cards: ["0841", "0842"]
+       },
+       yaku_update: null,
        deck_remaining: 23,
-       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
+       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"},
+       action_timeout_seconds: 30
      }
 ```
 
@@ -423,17 +523,31 @@ S→C: TurnProgressAfterSelection {
 C→S: TurnPlayHandCard {card: "0331", target: null}
 S→C: DecisionRequired {
        player_id: "p1",
-       hand_play: {card: "0331", captured: ["0332"]},
-       deck_flip: {card: "0333", captured: ["0334"]},
+       hand_card_play: {
+         played_card: "0331",
+         matched_card: "0332",
+         captured_cards: ["0331", "0332"]
+       },
+       draw_card_play: {
+         played_card: "0333",
+         matched_card: "0334",
+         captured_cards: ["0333", "0334"]
+       },
+       yaku_update: {
+         newly_formed_yaku: [{yaku_type: "AKA_TAN", base_points: 6}],
+         all_active_yaku: [{yaku_type: "AKA_TAN", base_points: 6}]
+       },
+       current_multipliers: {player_multipliers: {"p1": 1, "p2": 1}},
        deck_remaining: 23,
-       yaku_update: {new: [{type: "AKATAN", base_points: 5}], total_base: 5}
+       action_timeout_seconds: 30
      }
 C→S: RoundMakeDecision {decision: "KOI_KOI"}
 S→C: DecisionMade {
        player_id: "p1",
        decision: "KOI_KOI",
-       koi_multiplier_update: 2,
-       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"}
+       updated_multipliers: {player_multipliers: {"p1": 2, "p2": 1}},
+       next_state: {state_type: "AWAITING_HAND_PLAY", active_player_id: "p2"},
+       action_timeout_seconds: 30
      }
 ```
 
@@ -442,19 +556,39 @@ S→C: DecisionMade {
 C→S: TurnPlayHandCard {card: "0131", target: "0132"}
 S→C: DecisionRequired {
        player_id: "p1",
-       hand_play: {card: "0131", captured: ["0132"]},
-       deck_flip: {card: "0133", captured: ["0134"]},
+       hand_card_play: {
+         played_card: "0131",
+         matched_card: "0132",
+         captured_cards: ["0131", "0132"]
+       },
+       draw_card_play: {
+         played_card: "0133",
+         matched_card: "0134",
+         captured_cards: ["0133", "0134"]
+       },
+       yaku_update: {
+         newly_formed_yaku: [{yaku_type: "AO_TAN", base_points: 6}],
+         all_active_yaku: [
+           {yaku_type: "AKA_TAN", base_points: 6},
+           {yaku_type: "AO_TAN", base_points: 6}
+         ]
+       },
+       current_multipliers: {player_multipliers: {"p1": 2, "p2": 1}},
        deck_remaining: 22,
-       yaku_update: {new: [{type: "AOTAN", base_points: 5}], total_base: 10}
+       action_timeout_seconds: 30
      }
 C→S: RoundMakeDecision {decision: "END_ROUND"}
 S→C: RoundScored {
        winner_id: "p1",
-       yakus: [{type: "AKATAN", base_points: 5}, {type: "AOTAN", base_points: 5}],
-       base_total: 10,
-       multipliers: {seven_plus: 2},
-       final_points: 20,
-       cumulative_scores: [{player_id: "p1", score: 20}, {player_id: "p2", score: 0}]
+       yaku_list: [
+         {yaku_type: "AKA_TAN", base_points: 6},
+         {yaku_type: "AO_TAN", base_points: 6}
+       ],
+       base_score: 12,
+       final_score: 24,
+       multipliers: {player_multipliers: {"p1": 2, "p2": 1}},
+       updated_total_scores: [{player_id: "p1", score: 24}, {player_id: "p2", score: 0}],
+       display_timeout_seconds: 5
      }
      // END_ROUND 時直接發送 RoundScored，省略 DecisionMade
 ```

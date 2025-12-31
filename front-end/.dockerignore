@@ -1,0 +1,36 @@
+# 依賴與構建快取
+node_modules/
+.nuxt/
+.output/
+dist/
+
+# 測試
+coverage/
+test-results/
+playwright-report/
+e2e/
+
+# 開發工具
+.vscode/
+.idea/
+*.log
+
+# Git
+.git/
+.gitignore
+
+# 環境變數（由 fly secrets 管理）
+.env
+.env.*
+!.env.example
+
+# 其他
+.DS_Store
+*.md
+docker-compose.yml
+vitest*.config.ts
+playwright.config.ts
+eslint.config.ts
+.prettierrc.json
+.editorconfig
+drizzle.config.ts

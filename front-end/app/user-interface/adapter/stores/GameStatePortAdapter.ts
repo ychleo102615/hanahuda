@@ -1,0 +1,154 @@
+/**
+ * GameStatePortAdapter
+ *
+ * @description
+ * 實作 GameStatePort 介面，包裝 GameStateStore 處理遊戲狀態。
+ * 此 Adapter 是原 UIStatePort Adapter 的擴展版本。
+ */
+
+import type { GameStatePort } from '../../application/ports/output/game-state.port'
+import type {
+  FlowState,
+  PlayerInfo,
+  Ruleset,
+  GameSnapshotRestore,
+  YakuScore,
+} from '#shared/contracts'
+import { useGameStateStore } from './gameState'
+
+/**
+ * 建立 GameStatePort Adapter
+ *
+ * @returns GameStatePort 實作
+ */
+export function createGameStatePortAdapter(): GameStatePort {
+  const store = useGameStateStore()
+
+  return {
+    // ===== 初始化 =====
+    initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void {
+      store.initializeGameContext(gameId, players, ruleset)
+    },
+
+    restoreGameState(snapshot: GameSnapshotRestore): void {
+      store.restoreGameState(snapshot)
+    },
+
+    // ===== 狀態更新 =====
+    setFlowStage(stage: FlowState): void {
+      store.setFlowStage(stage)
+    },
+
+    setActivePlayer(playerId: string | null): void {
+      store.activePlayerId = playerId
+    },
+
+    setDealerId(playerId: string): void {
+      store.dealerId = playerId
+    },
+
+    setCurrentRound(round: number): void {
+      store.currentRound = round
+    },
+
+    updateFieldCards(cards: string[]): void {
+      store.updateFieldCards(cards)
+    },
+
+    updateHandCards(cards: string[]): void {
+      store.updateHandCards(cards)
+    },
+
+    updateOpponentHandCount(count: number): void {
+      store.opponentHandCount = count
+    },
+
+    updateDepositoryCards(playerCards: string[], opponentCards: string[]): void {
+      store.updateDepositoryCards(playerCards, opponentCards)
+    },
+
+    updateScores(playerScore: number, opponentScore: number): void {
+      store.updateScores(playerScore, opponentScore)
+    },
+
+    updateDeckRemaining(count: number): void {
+      store.updateDeckRemaining(count)
+    },
+
+    updateYaku(playerYaku: YakuScore[], opponentYaku: YakuScore[]): void {
+      store.myYaku = [...playerYaku]
+      store.opponentYaku = [...opponentYaku]
+    },
+
+    setPossibleTargetCardIds(cardIds: string[]): void {
+      store.setPossibleTargetCardIds(cardIds)
+    },
+
+    setDrawnCard(cardId: string | null): void {
+      store.setDrawnCard(cardId)
+    },
+
+    // ===== 查詢 =====
+    getLocalPlayerId(): string {
+      return store.getLocalPlayerId()
+    },
+
+    getFieldCards(): string[] {
+      return [...store.fieldCards]
+    },
+
+    getDepositoryCards(playerId: string): string[] {
+      if (playerId === store.localPlayerId) {
+        return [...store.myDepository]
+      } else {
+        return [...store.opponentDepository]
+      }
+    },
+
+    getDeckRemaining(): number {
+      return store.deckRemaining
+    },
+
+    getDealerId(): string | null {
+      return store.dealerId
+    },
+
+    getCurrentRound(): number | null {
+      return store.currentRound
+    },
+
+    getHandCards(): string[] {
+      return [...store.myHandCards]
+    },
+
+    getOpponentHandCount(): number {
+      return store.opponentHandCount
+    },
+
+    getDrawnCard(): string | null {
+      return store.getDrawnCard()
+    },
+
+    getPossibleTargetCardIds(): string[] {
+      return store.getPossibleTargetCardIds()
+    },
+
+    getRuleset(): Ruleset {
+      // 此方法只應在遊戲上下文初始化後調用
+      // initializeGameContext() 或 restoreGameState() 會確保 ruleset 被設定
+      return store.ruleset as Ruleset
+    },
+
+    resetKoiKoiMultipliers(): void {
+      store.resetKoiKoiMultipliers()
+    },
+
+    reset(): void {
+      store.$reset()
+    },
+
+    setGameEnded(ended: boolean): void {
+      store.setGameEnded(ended)
+    },
+  }
+}

@@ -1,0 +1,333 @@
+{
+  "categories": [
+    {
+      "id": "game-objective",
+      "title": "Game Objective",
+      "defaultExpanded": true,
+      "sections": [
+        {
+          "type": "rich-paragraph",
+          "spans": [
+            { "type": "text", "content": "The goal of " },
+            { "type": "keyword-en", "content": "Koi-Koi" },
+            { "type": "text", "content": " (" },
+            { "type": "keyword-ja", "content": "こいこい" },
+            { "type": "text", "content": ") is to form " },
+            { "type": "keyword-en", "content": "Yaku" },
+            { "type": "text", "content": " (" },
+            { "type": "keyword-ja", "content": "役" },
+            { "type": "text", "content": ", scoring combinations) by capturing cards from the playing field." }
+          ]
+        },
+        {
+          "type": "rich-paragraph",
+          "spans": [
+            { "type": "text", "content": "When you form a " },
+            { "type": "keyword-en", "content": "Yaku" },
+            { "type": "text", "content": ", you can choose to:" }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            [
+              { "type": "keyword-en", "content": "Continue (Koi-Koi)" },
+              { "type": "text", "content": ": Keep playing to form more " },
+              { "type": "keyword-en", "content": "Yaku" },
+              { "type": "text", "content": " and multiply your score." }
+            ],
+            [
+              { "type": "keyword-en", "content": "Stop" },
+              { "type": "text", "content": ": End the round and claim your current points." }
+            ]
+          ]
+        },
+        {
+          "type": "rich-paragraph",
+          "spans": [
+            { "type": "text", "content": "Be careful! If you choose to continue and your opponent forms a " },
+            { "type": "keyword-en", "content": "Yaku" },
+            { "type": "text", "content": " first, you lose all your points and they " },
+            { "type": "keyword-en", "content": "double" },
+            { "type": "text", "content": " their score." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "card-deck",
+      "title": "Card Deck",
+      "defaultExpanded": false,
+      "introText": "The Hanafuda deck consists of 48 cards, with 4 cards per month (January to December). Each month represents a specific flower or plant:",
+      "months": [
+        {
+          "month": 1,
+          "nameJa": "睦月",
+          "nameRomaji": "Mutsuki",
+          "flowerJa": "松",
+          "flowerEn": "Pine",
+          "cardIds": ["0111", "0131", "0141", "0142"]
+        },
+        {
+          "month": 2,
+          "nameJa": "如月",
+          "nameRomaji": "Kisaragi",
+          "flowerJa": "梅",
+          "flowerEn": "Plum Blossom",
+          "cardIds": ["0221", "0231", "0241", "0242"]
+        },
+        {
+          "month": 3,
+          "nameJa": "弥生",
+          "nameRomaji": "Yayoi",
+          "flowerJa": "櫻",
+          "flowerEn": "Cherry Blossom",
+          "cardIds": ["0311", "0331", "0341", "0342"]
+        },
+        {
+          "month": 4,
+          "nameJa": "卯月",
+          "nameRomaji": "Uzuki",
+          "flowerJa": "藤",
+          "flowerEn": "Wisteria",
+          "cardIds": ["0421", "0431", "0441", "0442"]
+        },
+        {
+          "month": 5,
+          "nameJa": "皐月",
+          "nameRomaji": "Satsuki",
+          "flowerJa": "菖蒲",
+          "flowerEn": "Iris",
+          "cardIds": ["0521", "0531", "0541", "0542"]
+        },
+        {
+          "month": 6,
+          "nameJa": "水無月",
+          "nameRomaji": "Minazuki",
+          "flowerJa": "牡丹",
+          "flowerEn": "Peony",
+          "cardIds": ["0621", "0631", "0641", "0642"]
+        },
+        {
+          "month": 7,
+          "nameJa": "文月",
+          "nameRomaji": "Fumizuki",
+          "flowerJa": "萩",
+          "flowerEn": "Bush Clover",
+          "cardIds": ["0721", "0731", "0741", "0742"]
+        },
+        {
+          "month": 8,
+          "nameJa": "葉月",
+          "nameRomaji": "Hazuki",
+          "flowerJa": "芒",
+          "flowerEn": "Susuki Grass",
+          "cardIds": ["0811", "0821", "0841", "0842"]
+        },
+        {
+          "month": 9,
+          "nameJa": "長月",
+          "nameRomaji": "Nagatsuki",
+          "flowerJa": "菊",
+          "flowerEn": "Chrysanthemum",
+          "cardIds": ["0921", "0931", "0941", "0942"]
+        },
+        {
+          "month": 10,
+          "nameJa": "神無月",
+          "nameRomaji": "Kannazuki",
+          "flowerJa": "楓",
+          "flowerEn": "Maple",
+          "cardIds": ["1021", "1031", "1041", "1042"]
+        },
+        {
+          "month": 11,
+          "nameJa": "霜月",
+          "nameRomaji": "Shimotsuki",
+          "flowerJa": "柳",
+          "flowerEn": "Willow",
+          "cardIds": ["1111", "1121", "1131", "1141"]
+        },
+        {
+          "month": 12,
+          "nameJa": "師走",
+          "nameRomaji": "Shiwasu",
+          "flowerJa": "桐",
+          "flowerEn": "Paulownia",
+          "cardIds": ["1211", "1241", "1242", "1243"]
+        }
+      ]
+    },
+    {
+      "id": "card-types",
+      "title": "Card Types",
+      "defaultExpanded": false,
+      "introText": "Cards are classified into four types based on their value:",
+      "types": [
+        {
+          "typeId": "hikari",
+          "nameJa": "光札",
+          "nameEn": "Bright",
+          "points": 20,
+          "count": 5,
+          "description": "The most valuable cards featuring special illustrations",
+          "cardIds": ["0111", "0311", "0811", "1111", "1211"]
+        },
+        {
+          "typeId": "tane",
+          "nameJa": "種札",
+          "nameEn": "Animal/Object",
+          "points": 10,
+          "count": 9,
+          "description": "Cards featuring animals or objects",
+          "cardIds": ["0221", "0421", "0521", "0621", "0721", "0821", "0921", "1021", "1121"]
+        },
+        {
+          "typeId": "tanzaku",
+          "nameJa": "短冊",
+          "nameEn": "Ribbon",
+          "points": 5,
+          "count": 10,
+          "description": "Cards with decorative ribbons",
+          "cardIds": [],
+          "subTypes": [
+            {
+              "name": "Red Poetry Ribbons",
+              "nameJa": "赤短",
+              "cardIds": ["0131", "0231", "0331"]
+            },
+            {
+              "name": "Blue Ribbons",
+              "nameJa": "青短",
+              "cardIds": ["0631", "0931", "1031"]
+            },
+            {
+              "name": "Plain Ribbons",
+              "nameJa": "短冊",
+              "cardIds": ["0431", "0531", "0731", "1131"]
+            }
+          ]
+        },
+        {
+          "typeId": "kasu",
+          "nameJa": "かす札",
+          "nameEn": "Plain",
+          "points": 1,
+          "count": 24,
+          "description": "Basic cards with no special design",
+          "cardIds": []
+        }
+      ]
+    },
+    {
+      "id": "how-to-play",
+      "title": "How to Play",
+      "defaultExpanded": false,
+      "steps": [
+        {
+          "title": "Setup",
+          "content": [
+            { "type": "text", "content": "Deal " },
+            { "type": "keyword-en", "content": "8 cards" },
+            { "type": "text", "content": " to each player, place " },
+            { "type": "keyword-en", "content": "8 cards" },
+            { "type": "text", "content": " face-up on the field." }
+          ]
+        },
+        {
+          "title": "Turn",
+          "content": [
+            { "type": "text", "content": "On your turn:" }
+          ],
+          "subItems": [
+            [
+              { "type": "text", "content": "Play one card from your hand. If it " },
+              { "type": "keyword-en", "content": "matches the month" },
+              { "type": "text", "content": " of a card on the field, capture both cards." }
+            ],
+            [
+              { "type": "text", "content": "Draw one card from the deck. If it matches a card on the field, capture both cards." }
+            ]
+          ]
+        },
+        {
+          "title": "Matching",
+          "content": [
+            { "type": "text", "content": "Cards match if they belong to the same " },
+            { "type": "keyword-en", "content": "month" },
+            { "type": "text", "content": " (same flower/plant)." }
+          ]
+        },
+        {
+          "title": "Decision",
+          "content": [
+            { "type": "text", "content": "After forming a " },
+            { "type": "keyword-en", "content": "Yaku" },
+            { "type": "text", "content": ", choose to " },
+            { "type": "keyword-en", "content": "continue (Koi-Koi)" },
+            { "type": "text", "content": " or " },
+            { "type": "keyword-en", "content": "stop" },
+            { "type": "text", "content": "." }
+          ]
+        },
+        {
+          "title": "Round End",
+          "content": [
+            { "type": "text", "content": "The round ends when a player stops or all cards are played." }
+          ]
+        },
+        {
+          "title": "Scoring",
+          "content": [
+            { "type": "text", "content": "Calculate points based on " },
+            { "type": "keyword-en", "content": "Yaku" },
+            { "type": "text", "content": " formed. If you called " },
+            { "type": "keyword-en", "content": "Koi-Koi" },
+            { "type": "text", "content": " and opponent scores first, you get " },
+            { "type": "keyword-en", "content": "0 points" },
+            { "type": "text", "content": " and opponent " },
+            { "type": "keyword-en", "content": "doubles" },
+            { "type": "text", "content": " their score." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scoring-rules",
+      "title": "Scoring Rules",
+      "defaultExpanded": false,
+      "rules": [
+        [
+          { "type": "text", "content": "When you form a " },
+          { "type": "keyword-en", "content": "Yaku" },
+          { "type": "text", "content": ", you can choose to " },
+          { "type": "keyword-en", "content": "continue (Koi-Koi)" },
+          { "type": "text", "content": " or " },
+          { "type": "keyword-en", "content": "stop" },
+          { "type": "text", "content": "." }
+        ],
+        [
+          { "type": "text", "content": "If you choose to continue and your opponent forms a " },
+          { "type": "keyword-en", "content": "Yaku" },
+          { "type": "text", "content": " first, your score becomes " },
+          { "type": "keyword-en", "content": "0" },
+          { "type": "text", "content": " and your opponent's score " },
+          { "type": "keyword-en", "content": "doubles" },
+          { "type": "text", "content": "." }
+        ],
+        [
+          { "type": "text", "content": "If your total score is " },
+          { "type": "keyword-en", "content": "7 or more points" },
+          { "type": "text", "content": ", your final score " },
+          { "type": "keyword-en", "content": "doubles" },
+          { "type": "text", "content": "." }
+        ],
+        [
+          { "type": "text", "content": "After " },
+          { "type": "keyword-en", "content": "12 rounds" },
+          { "type": "text", "content": ", the player with the highest total score wins." }
+        ]
+      ]
+    }
+  ]
+}
