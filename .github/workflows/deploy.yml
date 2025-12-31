@@ -11,6 +11,9 @@ jobs:
   deploy:
     name: Deploy to Fly.io
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://hanafuda-koikoi.fly.dev
     defaults:
       run:
         working-directory: front-end
