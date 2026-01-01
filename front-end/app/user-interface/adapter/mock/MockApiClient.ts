@@ -8,13 +8,11 @@
  * @example
  * ```typescript
  * const client = new MockApiClient()
- * await client.joinGame() // 立即返回模擬資料
  * await client.playHandCard('0111')
  * ```
  */
 
 import type { SendCommandPort } from '~/user-interface/application/ports/output'
-import type { JoinGameRequest, JoinGameResponse } from '../api/types'
 
 /**
  * 延遲函數 (模擬網路延遲)
@@ -29,27 +27,6 @@ function delay(ms: number = 100): Promise<void> {
  * @implements {SendCommandPort}
  */
 export class MockApiClient implements SendCommandPort {
-  /**
-   * Mock joinGame
-   *
-   * @param request - 加入遊戲請求
-   * @returns 模擬的 JoinGameResponse
-   *
-   * @note session_token 不再包含在回應中，改為透過 HttpOnly Cookie 傳送
-   *       在 Mock 模式下，直接模擬 Cookie 已設定
-   */
-  async joinGame(request: JoinGameRequest): Promise<JoinGameResponse> {
-    await delay(50)
-
-
-    // Mock 模式：session_token 由 Cookie 管理，回應不包含 token
-    return {
-      game_id: 'mock-game-123',
-      player_id: request.player_id,
-      sse_endpoint: `/api/v1/games/mock-game-123/events`,
-    }
-  }
-
   /**
    * Mock leaveGame
    */

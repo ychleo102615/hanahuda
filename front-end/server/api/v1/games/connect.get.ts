@@ -35,7 +35,14 @@ import type {
   GameFinishedInfo,
 } from '#shared/contracts'
 import { connectionStore } from '~~/server/adapters/event-publisher/connectionStore'
-import { container } from '~~/server/utils/container'
+import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
+import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
+import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
+import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
+import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
+import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
+import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import { gameConfig } from '~~/server/utils/config'
 import { setSessionCookie, SESSION_COOKIE_NAME } from '~~/server/utils/sessionValidation'
 import {
@@ -93,6 +100,15 @@ function buildInitialStateEvent(
 }
 
 export default defineEventHandler(async (event) => {
+  // 0. 從 DI Container 取得依賴
+  const joinGameUseCase = resolve<JoinGameInputPort>(BACKEND_TOKENS.JoinGameInputPort)
+  const gameTimeoutManager = resolve<GameTimeoutPort>(BACKEND_TOKENS.GameTimeoutManager)
+  const gameLock = resolve<GameLockPort>(BACKEND_TOKENS.GameLock)
+  const gameStore = resolve<GameStorePort>(BACKEND_TOKENS.GameStore)
+  const gameRepository = resolve<GameRepositoryPort>(BACKEND_TOKENS.GameRepository)
+  const turnFlowService = resolve<TurnFlowService>(BACKEND_TOKENS.TurnFlowService)
+  const leaveGameUseCase = resolve<LeaveGameInputPort>(BACKEND_TOKENS.LeaveGameInputPort)
+
   // 1. 解析並驗證 Query Parameters
   const query = getQuery(event)
   const parseResult = ConnectQuerySchema.safeParse(query)
@@ -115,8 +131,7 @@ export default defineEventHandler(async (event) => {
   const sessionToken = getCookie(event, SESSION_COOKIE_NAME)
 
   // 3. 呼叫 JoinGameUseCase
-  const useCase = container.joinGameUseCase
-  const result = await useCase.execute({
+  const result = await joinGameUseCase.execute({
     playerId,
     playerName,
     sessionToken,
@@ -264,21 +279,21 @@ export default defineEventHandler(async (event) => {
       connectionStore.addConnection(effectiveGameId, playerId, handler)
 
       // 清除斷線超時（重連時）
-      container.gameTimeoutManager.clearDisconnectTimeout(effectiveGameId, playerId)
+      gameTimeoutManager.clearDisconnectTimeout(effectiveGameId, playerId)
 
       // 重連處理：若玩家之前是 DISCONNECTED 狀態，標記為重新連線
       // 使用悲觀鎖確保同一遊戲的操作互斥執行
-      container.gameLock.withLock(effectiveGameId, async () => {
-        const currentGame = container.gameStore.get(effectiveGameId)
+      gameLock.withLock(effectiveGameId, async () => {
+        const currentGame = gameStore.get(effectiveGameId)
         if (currentGame) {
           const connectionStatus = getPlayerConnectionStatus(currentGame, playerId)
           if (connectionStatus === 'DISCONNECTED') {
             const reconnectedGame = markPlayerReconnected(currentGame, playerId)
-            container.gameStore.set(reconnectedGame)
-            await container.gameRepository.save(reconnectedGame)
+            gameStore.set(reconnectedGame)
+            await gameRepository.save(reconnectedGame)
 
             // 處理重連計時器邏輯：清除加速計時器，保留操作計時器繼續倒數
-            container.turnFlowService.handlePlayerReconnected(effectiveGameId, playerId)
+            turnFlowService.handlePlayerReconnected(effectiveGameId, playerId)
           }
         }
       }).catch((err) => {
@@ -304,16 +319,16 @@ export default defineEventHandler(async (event) => {
         // 新邏輯（Phase 5）：標記玩家為 DISCONNECTED，不立即結束遊戲
         // 遊戲繼續進行（由系統代行，3秒超時），回合結束時檢查並決定是否結束遊戲
         // 使用悲觀鎖確保同一遊戲的操作互斥執行
-        container.gameLock.withLock(effectiveGameId, async () => {
-          const disconnectGame = container.gameStore.get(effectiveGameId)
+        gameLock.withLock(effectiveGameId, async () => {
+          const disconnectGame = gameStore.get(effectiveGameId)
           if (disconnectGame && disconnectGame.status === 'IN_PROGRESS') {
             // 檢查玩家是否已經是 LEFT 狀態（已主動離開）
             const status = getPlayerConnectionStatus(disconnectGame, playerId)
             if (status !== 'LEFT') {
               // 標記為 DISCONNECTED
               const disconnectedGame = markPlayerDisconnected(disconnectGame, playerId)
-              container.gameStore.set(disconnectedGame)
-              await container.gameRepository.save(disconnectedGame)
+              gameStore.set(disconnectedGame)
+              await gameRepository.save(disconnectedGame)
             }
           }
         }).catch((err) => {
@@ -322,21 +337,21 @@ export default defineEventHandler(async (event) => {
 
         // 啟動斷線超時計時器（用於在沒有活動的情況下的保護機制）
         // 若玩家在超時前重連，計時器會被清除
-        const disconnectGame = container.gameStore.get(effectiveGameId)
+        const disconnectGame = gameStore.get(effectiveGameId)
         if (disconnectGame && disconnectGame.status === 'IN_PROGRESS') {
-          container.gameTimeoutManager.startDisconnectTimeout(
+          gameTimeoutManager.startDisconnectTimeout(
             effectiveGameId,
             playerId,
             async () => {
               // 斷線超時後，若遊戲仍在進行且玩家仍斷線，標記為 LEFT
               // 這是一個保護機制，正常情況下回合結束時就會處理
               try {
-                const timeoutGame = container.gameStore.get(effectiveGameId)
+                const timeoutGame = gameStore.get(effectiveGameId)
                 if (timeoutGame && timeoutGame.status === 'IN_PROGRESS') {
                   const currentStatus = getPlayerConnectionStatus(timeoutGame, playerId)
                   if (currentStatus === 'DISCONNECTED') {
                     // 呼叫 leaveGameUseCase 標記為 LEFT
-                    await container.leaveGameUseCase.execute({
+                    await leaveGameUseCase.execute({
                       gameId: effectiveGameId,
                       playerId,
                     })

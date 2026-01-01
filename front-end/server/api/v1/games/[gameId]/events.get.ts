@@ -11,7 +11,9 @@
 import type { GameEvent } from '#shared/contracts'
 import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
 import { connectionStore } from '~~/server/adapters/event-publisher/connectionStore'
-import { container } from '~~/server/utils/container'
+import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
+import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
+import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
 import { gameConfig } from '~~/server/utils/config'
 import {
   HTTP_BAD_REQUEST,
@@ -106,7 +108,8 @@ export default defineEventHandler(async (event) => {
       connectionStore.addConnection(gameId, playerId, handler)
 
       // 清除斷線超時（重連時）
-      container.gameTimeoutManager.clearDisconnectTimeout(gameId, playerId)
+      const gameTimeoutManager = resolve<GameTimeoutPort>(BACKEND_TOKENS.GameTimeoutManager)
+      gameTimeoutManager.clearDisconnectTimeout(gameId, playerId)
 
       // 心跳計時器
       const heartbeatInterval = setInterval(() => {
@@ -127,12 +130,13 @@ export default defineEventHandler(async (event) => {
         // 啟動斷線超時（若超時未重連，對手獲勝）
         const currentGame = inMemoryGameStore.get(gameId)
         if (currentGame && currentGame.status === 'IN_PROGRESS') {
-          container.gameTimeoutManager.startDisconnectTimeout(
+          const leaveGameUseCase = resolve<LeaveGameInputPort>(BACKEND_TOKENS.LeaveGameInputPort)
+          gameTimeoutManager.startDisconnectTimeout(
             gameId,
             playerId,
             async () => {
               try {
-                await container.leaveGameUseCase.execute({
+                await leaveGameUseCase.execute({
                   gameId,
                   playerId,
                 })

@@ -9,8 +9,8 @@
  * 參考: specs/008-nuxt-backend-server/contracts/rest-api.md
  */
 
-import { LeaveGameError } from '~~/server/application/ports/input/leaveGameInputPort'
-import { container } from '~~/server/utils/container'
+import { LeaveGameError, type LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
+import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,
   SessionValidationError,
@@ -76,7 +76,7 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
     }
 
     // 3. 從容器取得 UseCase
-    const useCase = container.leaveGameUseCase
+    const useCase = resolve<LeaveGameInputPort>(BACKEND_TOKENS.LeaveGameInputPort)
 
     // 4. 執行用例
     const result = await useCase.execute({

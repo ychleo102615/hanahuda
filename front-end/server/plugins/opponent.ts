@@ -18,18 +18,24 @@
  */
 
 import { OpponentRegistry } from '~~/server/adapters/opponent/opponentRegistry'
-import { container } from '~~/server/utils/container'
+import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
+import type { InternalEventPublisherPort } from '~~/server/application/ports/output/internalEventPublisherPort'
+import type { JoinGameAsAiInputPort } from '~~/server/application/ports/input/joinGameAsAiInputPort'
+import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
+import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
+import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
 
 export default defineNitroPlugin(() => {
   // 建立 OpponentRegistry（注入依賴）
   // 注意：不再需要注入 actionTimeoutManager，Opponent BC 使用內部的 aiActionScheduler
   const opponentRegistry = new OpponentRegistry({
-    internalEventBus: container.internalEventBus,
-    joinGameAsAi: container.joinGameAsAiUseCase,
-    playHandCard: container.playHandCardUseCase,
-    selectTarget: container.selectTargetUseCase,
-    makeDecision: container.makeDecisionUseCase,
-    gameStore: container.gameStore,
+    internalEventBus: resolve<InternalEventPublisherPort>(BACKEND_TOKENS.InternalEventBus),
+    joinGameAsAi: resolve<JoinGameAsAiInputPort>(BACKEND_TOKENS.JoinGameAsAiInputPort),
+    playHandCard: resolve<PlayHandCardInputPort>(BACKEND_TOKENS.PlayHandCardInputPort),
+    selectTarget: resolve<SelectTargetInputPort>(BACKEND_TOKENS.SelectTargetInputPort),
+    makeDecision: resolve<MakeDecisionInputPort>(BACKEND_TOKENS.MakeDecisionInputPort),
+    gameStore: resolve<GameStorePort>(BACKEND_TOKENS.GameStore),
   })
 
   // 啟動 Registry（開始監聽 ROOM_CREATED 事件）

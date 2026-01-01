@@ -9,8 +9,8 @@
  */
 
 import { z } from 'zod'
-import { PlayHandCardError } from '~~/server/application/ports/input/playHandCardInputPort'
-import { container } from '~~/server/utils/container'
+import { PlayHandCardError, type PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
+import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,
   SessionValidationError,
@@ -100,7 +100,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
     const { card_id, target_card_id } = parseResult.data
 
     // 4. 從容器取得 UseCase
-    const useCase = container.playHandCardUseCase
+    const useCase = resolve<PlayHandCardInputPort>(BACKEND_TOKENS.PlayHandCardInputPort)
 
     // 5. 執行用例（命令日誌由 Use Case 內部記錄）
     await useCase.execute({

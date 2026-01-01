@@ -7,7 +7,7 @@ A Japanese Hanafuda card game showcasing **Clean Architecture**, **Domain-Driven
 | Area | Technical Implementation |
 |------|-------------------------|
 | **Architecture** | Strict Clean Architecture layering, DDD Bounded Contexts, Dependency Inversion |
-| **Frontend** | Nuxt 4 + Vue 3 + TypeScript, Custom DI Container, Event-driven UI updates |
+| **Frontend** | Nuxt 4 + Vue 3 + TypeScript, Custom DI Container, SVG Sprite optimization |
 | **Backend** | Nuxt 4 Nitro + Drizzle ORM + PostgreSQL, SSE real-time communication, Pessimistic locking |
 | **Game Logic** | Complete Yaku detection engine (12 hand types), Koi-Koi rule implementation, Special rule handling |
 | **State Management** | Reconnection mechanism, Operation timer, Page visibility state recovery |
@@ -160,6 +160,16 @@ function calculateFinalScore(baseScore: number, koiKoiMultipliers: KoiStatus[]):
 }
 ```
 
+### 5. Data Persistence
+
+Uses Drizzle ORM with PostgreSQL for game state management:
+
+| Table | Purpose |
+|-------|---------|
+| `games` | Game sessions (players, status, rounds, cumulative scores) |
+| `player_stats` | Player statistics (win rate, yaku counts, koi-koi calls) |
+| `game_logs` | Event logging for debugging and issue tracking |
+
 ---
 
 ## Key Technical Decisions
@@ -293,6 +303,7 @@ export function playHandCard(round: Round, ...): PlayHandCardResult {
 ```
 front-end/
 ├── app/                          # Nuxt 4 Frontend Application
+│   ├── assets/icons/            # Hanafuda card SVGs (50 files, sprite optimized)
 │   ├── pages/                    # Route Pages
 │   ├── user-interface/           # User Interface BC
 │   │   ├── domain/              # Frontend game logic (pure functions)
@@ -306,7 +317,8 @@ front-end/
 │   │   ├── round/              # Round Entity
 │   │   └── services/           # Yaku detection, scoring, matching
 │   ├── application/            # Use Cases & Ports
-│   └── adapters/               # DB, Event Publisher, Lock
+│   ├── adapters/               # DB, Event Publisher, Lock
+│   └── database/               # Drizzle schema & migrations
 │
 └── shared/                       # Shared contracts between frontend and backend
     └── contracts/               # SSE event types, API formats

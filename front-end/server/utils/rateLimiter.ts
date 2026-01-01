@@ -45,14 +45,9 @@ export interface RateLimitResult {
  * 預設的 Rate Limit 配置
  *
  * 依據 contracts/rest-api.md 規格：
- * - join: 10 req/min
  * - turns: 60 req/min
  */
 export const RATE_LIMITS: Record<string, RateLimitConfig> = {
-  join: {
-    windowMs: 60 * 1000,  // 1 分鐘
-    maxRequests: 10,
-  },
   turns: {
     windowMs: 60 * 1000,  // 1 分鐘
     maxRequests: 60,
