@@ -9,8 +9,8 @@
  */
 
 import { z } from 'zod'
-import { SelectTargetError } from '~~/server/application/ports/input/selectTargetInputPort'
-import { container } from '~~/server/utils/container'
+import { SelectTargetError, type SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
+import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,
   SessionValidationError,
@@ -100,7 +100,7 @@ export default defineEventHandler(async (event): Promise<SelectTargetResponse | 
     const { source_card_id, target_card_id } = parseResult.data
 
     // 4. 從容器取得 UseCase
-    const useCase = container.selectTargetUseCase
+    const useCase = resolve<SelectTargetInputPort>(BACKEND_TOKENS.SelectTargetInputPort)
 
     // 5. 執行用例
     await useCase.execute({

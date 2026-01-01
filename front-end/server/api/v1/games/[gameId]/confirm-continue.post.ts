@@ -9,8 +9,8 @@
  * 參考: specs/008-nuxt-backend-server/contracts/rest-api.md
  */
 
-import { ConfirmContinueError } from '~~/server/application/ports/input/confirmContinueInputPort'
-import { container } from '~~/server/utils/container'
+import { ConfirmContinueError, type ConfirmContinueInputPort } from '~~/server/application/ports/input/confirmContinueInputPort'
+import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,
   SessionValidationError,
@@ -91,7 +91,7 @@ export default defineEventHandler(async (event): Promise<ConfirmContinueResponse
     }
 
     // 4. 從容器取得 UseCase
-    const useCase = container.confirmContinueUseCase
+    const useCase = resolve<ConfirmContinueInputPort>(BACKEND_TOKENS.ConfirmContinueInputPort)
 
     // 5. 執行用例
     const result = await useCase.execute({

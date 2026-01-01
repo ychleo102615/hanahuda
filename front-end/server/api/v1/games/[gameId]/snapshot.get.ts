@@ -14,7 +14,11 @@
  */
 
 import { z } from 'zod'
-import { container } from '~~/server/utils/container'
+import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
+import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
+import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
+import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
+import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
 import type { SnapshotApiResponse } from '#shared/contracts'
 import { determineWinner } from '~~/server/domain/game'
 import {
@@ -87,7 +91,8 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
     }
 
     // 3. 嘗試從 gameStore（記憶體）取得遊戲
-    const game = container.gameStore.getBySessionToken(sessionToken!)
+    const gameStore = resolve<GameStorePort>(BACKEND_TOKENS.GameStore)
+    const game = gameStore.getBySessionToken(sessionToken!)
 
     // 4. 如果記憶體有遊戲 → 正常流程
     if (game) {
@@ -134,8 +139,10 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
       }
 
       // 4.4. 正常進行中的遊戲 → 返回快照
-      const remainingSeconds = container.gameTimeoutManager.getRemainingSeconds(gameId)
-      const snapshotEvent = container.eventMapper.toGameSnapshotRestoreEvent(
+      const gameTimeoutManager = resolve<GameTimeoutPort>(BACKEND_TOKENS.GameTimeoutManager)
+      const eventMapper = resolve<FullEventMapperPort>(BACKEND_TOKENS.EventMapper)
+      const remainingSeconds = gameTimeoutManager.getRemainingSeconds(gameId)
+      const snapshotEvent = eventMapper.toGameSnapshotRestoreEvent(
         game,
         remainingSeconds ?? undefined
       )
@@ -151,7 +158,8 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
     }
 
     // 5. 記憶體沒有遊戲 → 查詢資料庫
-    const dbGame = await container.gameRepository.findById(gameId)
+    const gameRepository = resolve<GameRepositoryPort>(BACKEND_TOKENS.GameRepository)
+    const dbGame = await gameRepository.findById(gameId)
 
     if (!dbGame) {
       // 5.1. 資料庫也沒有 → 404

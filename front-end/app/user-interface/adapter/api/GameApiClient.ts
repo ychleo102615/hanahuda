@@ -5,7 +5,6 @@
  * 實作 SendCommandPort 介面,負責發送命令到後端伺服器。
  *
  * 功能:
- * - joinGame (加入遊戲,支援重連)
  * - leaveGame (離開遊戲)
  * - playHandCard (打出手牌)
  * - selectTarget (選擇配對目標)
@@ -31,27 +30,6 @@ import {
   ApiError,
   createApiError,
 } from './errors'
-
-/**
- * JoinGameResponse 介面（後端回傳格式）
- *
- * @note session_token 不再包含在回應中，改為透過 HttpOnly Cookie 傳送
- */
-export interface JoinGameResponse {
-  game_id: string
-  player_id: string
-  sse_endpoint: string
-}
-
-/**
- * JoinGameRequest 介面
- */
-export interface JoinGameRequest {
-  player_id: string
-  player_name: string
-  session_token?: string
-  game_id?: string
-}
 
 /**
  * GameApiClient 建構選項
@@ -83,35 +61,6 @@ export class GameApiClient implements SendCommandPort {
     this.baseURL = baseURL
     this.sessionContext = sessionContext
     this.timeout = options?.timeout || 5000
-  }
-
-  /**
-   * 加入遊戲
-   *
-   * @param request - 加入遊戲請求（包含 player_id, player_name, 可選 session_token）
-   * @returns JoinGameResponse 物件
-   * @throws {NetworkError} 網路連線失敗
-   * @throws {ServerError} 伺服器錯誤
-   * @throws {TimeoutError} 請求超時
-   * @throws {ValidationError} 請求格式錯誤或遊戲不存在
-   */
-  async joinGame(request: JoinGameRequest): Promise<JoinGameResponse> {
-    const url = `${this.baseURL}/api/v1/games/join`
-    const body: Record<string, string> = {
-      player_id: request.player_id,
-      player_name: request.player_name,
-    }
-    if (request.session_token) {
-      body.session_token = request.session_token
-    }
-    if (request.game_id) {
-      body.game_id = request.game_id
-    }
-
-    // joinGame 不進行重試 (避免重複加入遊戲)
-    const response = await this.post(url, body)
-    // 後端包裝在 data 中
-    return response.data
   }
 
   /**

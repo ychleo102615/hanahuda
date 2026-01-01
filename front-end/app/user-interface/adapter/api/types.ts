@@ -7,34 +7,6 @@
  */
 
 /**
- * joinGame API 請求
- */
-export interface JoinGameRequest {
-  /** 玩家 ID (UUID) */
-  player_id: string
-  /** 玩家名稱 */
-  player_name: string
-  /** Session Token (可選,用於重連) */
-  session_token?: string
-  /** 遊戲 ID (可選,用於重連) - 若提供則為重連模式,會返回遊戲狀態 */
-  game_id?: string
-}
-
-/**
- * joinGame API 回應
- *
- * @note session_token 不再包含在回應中，改為透過 HttpOnly Cookie 傳送
- */
-export interface JoinGameResponse {
-  /** 遊戲 ID */
-  game_id: string
-  /** 玩家 ID */
-  player_id: string
-  /** SSE 端點 */
-  sse_endpoint: string
-}
-
-/**
  * 遊戲快照 (用於斷線重連)
  */
 export interface GameSnapshot {

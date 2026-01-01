@@ -4,7 +4,6 @@
  * @description
  * Nitro 中間件，為 API 端點實施請求限速。
  * 依據 contracts/rest-api.md 規格：
- * - join: 10 req/min
  * - turns: 60 req/min
  *
  * @example
@@ -43,14 +42,9 @@ function getClientKey(event: Parameters<typeof defineEventHandler>[0] extends (e
  * 判斷端點類型
  *
  * @param path - 請求路徑
- * @returns 端點類型：'join' | 'turns' | null
+ * @returns 端點類型：'turns' | null
  */
-function getEndpointType(path: string): 'join' | 'turns' | null {
-  // /api/v1/games/join
-  if (path.endsWith('/join')) {
-    return 'join'
-  }
-
+function getEndpointType(path: string): 'turns' | null {
   // /api/v1/games/{gameId}/turns/* 或 /api/v1/games/{gameId}/rounds/*
   if (path.includes('/turns/') || path.includes('/rounds/')) {
     return 'turns'

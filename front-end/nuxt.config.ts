@@ -98,4 +98,5 @@ export default defineNuxtConfig({
     '/game': { ssr: false },
     '/game/**': { ssr: false },
   },
+
 })

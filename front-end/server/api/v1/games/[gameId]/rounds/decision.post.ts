@@ -9,8 +9,8 @@
  */
 
 import { z } from 'zod'
-import { MakeDecisionError } from '~~/server/application/ports/input/makeDecisionInputPort'
-import { container } from '~~/server/utils/container'
+import { MakeDecisionError, type MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
+import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,
   SessionValidationError,
@@ -99,7 +99,7 @@ export default defineEventHandler(async (event): Promise<DecisionResponse | Erro
     const { decision } = parseResult.data
 
     // 4. 從容器取得 UseCase
-    const useCase = container.makeDecisionUseCase
+    const useCase = resolve<MakeDecisionInputPort>(BACKEND_TOKENS.MakeDecisionInputPort)
 
     // 5. 執行用例
     await useCase.execute({
