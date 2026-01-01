@@ -7,8 +7,8 @@
 **核心原則**:
 - ✅ **編排邏輯**: 協調 Domain Layer 的業務邏輯
 - ✅ **Port 定義**: 定義輸入/輸出介面，由 Adapter Layer 實作
-- ✅ **事務管理**: 確保操作的原子性
 - ✅ **事件發布**: 通過 Output Ports 發布 SSE 事件
+- ✅ **並發控制**: 使用 GameLockPort 確保操作互斥
 
 ---
 
@@ -16,245 +16,185 @@
 
 ### 1. JoinGameUseCase（加入遊戲/重連）
 
-#### Input Port
-```java
-public interface JoinGameCommand {
-  String getPlayerId();
-  String getSessionToken();  // 重連時提供
-}
-```
-
-#### Output Ports
-```java
-public interface LoadGamePort {
-  Game findBySessionToken(String sessionToken);
-}
-
-public interface SaveGamePort {
-  void save(Game game);
-}
-
-public interface PublishEventPort {
-  void publishGameStarted(GameStartedEvent event);
-  void publishGameSnapshotRestore(GameSnapshotRestoreEvent event);
-}
-```
-
 #### 流程
-1. 檢查 `session_token` 是否存在
-2. 若存在且有效：發送 `GameSnapshotRestore` 事件（重連）
-3. 若不存在：創建新遊戲，發送 `GameStarted` 事件
-4. 調用 `StartNewRoundUseCase` 開始第一局
+1. 檢查 Cookie 中的 `session_token`
+2. 若存在且有效：發送 Snapshot 事件（重連）
+3. 若不存在：創建新遊戲，啟動 AI 對手，發送 GameStarted 事件
+4. 開始第一局
+
+```typescript
+// server/application/use-cases/JoinGameUseCase.ts
+class JoinGameUseCase {
+  constructor(
+    private gameRepository: GameRepositoryPort,
+    private eventPublisher: EventPublisherPort,
+    private gameLock: GameLockPort
+  ) {}
+
+  async execute(input: JoinGameInput): Promise<JoinGameOutput>
+}
+```
 
 ---
 
 ### 2. PlayHandCardUseCase（打出手牌）
 
-#### Input Port
-```java
-public interface PlayHandCardCommand {
-  String getGameId();
-  String getPlayerId();
-  String getCardId();
-  String getTargetCardId();  // 可為 null
+#### 流程
+1. 獲取遊戲鎖
+2. 載入遊戲狀態
+3. 驗證操作合法性
+4. 執行手牌配對（調用 Domain 函數）
+5. 執行牌堆翻牌
+6. 檢查是否需要選擇配對目標
+   - 若需要：發送 SelectionRequired 事件
+7. 檢測役種
+   - 若有新役種：發送 DecisionRequired 事件
+8. 若無役種：發送 TurnCompleted 事件
+9. 切換行動玩家，若輪到 AI 則自動執行
+
+```typescript
+// server/application/use-cases/PlayHandCardUseCase.ts
+class PlayHandCardUseCase {
+  constructor(
+    private gameRepository: GameRepositoryPort,
+    private eventPublisher: EventPublisherPort,
+    private gameLock: GameLockPort,
+    private opponentStrategy: OpponentStrategyPort
+  ) {}
+
+  async execute(input: PlayHandCardInput): Promise<void>
 }
 ```
-
-#### 流程
-1. 載入 Game Aggregate
-2. 驗證操作合法性（調用 GameRuleService）
-3. 執行手牌配對（調用 Round.executeHandPlay）
-4. 執行牌堆翻牌（調用 Round.executeDeckFlip）
-5. 檢查是否需要選擇翻牌配對目標
-   - 若需要：發送 `SelectionRequired` 事件，結束流程
-6. 檢測役種（調用 YakuDetectionService）
-   - 若有新役種：發送 `DecisionRequired` 事件，結束流程
-7. 若無役種：發送 `TurnCompleted` 事件
-8. 切換行動玩家
-9. 若輪到對手：調用 `ExecuteOpponentTurnUseCase`
 
 ---
 
 ### 3. SelectMatchedCardUseCase（選擇配對目標）
 
-#### Input Port
-```java
-public interface SelectMatchedCardCommand {
-  String getGameId();
-  String getPlayerId();
-  String getSourceCardId();
-  String getTargetCardId();
+#### 流程
+1. 獲取遊戲鎖
+2. 驗證當前 FlowStage 是否為 `AWAITING_SELECTION`
+3. 執行翻牌配對選擇
+4. 檢測役種
+5. 發送對應事件
+
+```typescript
+// server/application/use-cases/SelectMatchedCardUseCase.ts
+class SelectMatchedCardUseCase {
+  async execute(input: SelectMatchedCardInput): Promise<void>
 }
 ```
-
-#### 流程
-1. 載入 Game Aggregate
-2. 驗證當前 FlowStage 是否為 `AWAITING_SELECTION`
-3. 執行翻牌配對選擇（調用 Round.executeSelectionForDeckFlip）
-4. 檢測役種
-   - 若有新役種：發送 `DecisionRequired` 事件
-   - 若無役種：發送 `TurnProgressAfterSelection` 事件
-5. 切換行動玩家
 
 ---
 
-### 4. MakeKoiKoiDecisionUseCase（Koi-Koi 決策）
-
-#### Input Port
-```java
-public interface MakeKoiKoiDecisionCommand {
-  String getGameId();
-  String getPlayerId();
-  KoiKoiDecision getDecision();  // KOI_KOI or END_ROUND
-}
-```
+### 4. MakeDecisionUseCase（Koi-Koi 決策）
 
 #### 流程
-1. 載入 Game Aggregate
+1. 獲取遊戲鎖
 2. 驗證當前 FlowStage 是否為 `AWAITING_DECISION`
-3. 若選擇 `END_ROUND`：
-   - 計算最終得分（調用 ScoreCalculationService）
+3. 若選擇 `STOP`：
+   - 計算最終得分
    - 更新累計分數
-   - 發送 `RoundScored` 事件
-   - 若達到總局數：發送 `GameFinished` 事件
-   - 否則：調用 `StartNewRoundUseCase`
+   - 發送 RoundEnded 事件
+   - 若達到總局數：發送 GameFinished 事件
 4. 若選擇 `KOI_KOI`：
    - 更新 Koi-Koi 倍率
-   - 發送 `DecisionMade` 事件
+   - 發送 TurnCompleted 事件
    - 切換行動玩家
 
----
-
-### 5. ExecuteOpponentTurnUseCase（執行對手回合）
-
-#### Input Port
-```java
-public interface ExecuteOpponentTurnCommand {
-  String getGameId();
+```typescript
+// server/application/use-cases/MakeDecisionUseCase.ts
+class MakeDecisionUseCase {
+  async execute(input: MakeDecisionInput): Promise<void>
 }
 ```
 
-#### 流程
-1. 載入 Game Aggregate
-2. 調用 Opponent BC 選擇手牌（通過 Port）
-3. 自動選擇配對目標（若有多張可配對牌）
-4. 執行手牌配對與翻牌
-5. 處理翻牌選擇（若需要）
-6. 檢測役種
-7. 若有役種：調用 Opponent BC 做 Koi-Koi 決策
-8. 發送對應事件
-9. 切換行動玩家
-
 ---
 
-### 6. DetectYakuUseCase（檢測役種）
-
-#### Input Port
-```java
-public interface DetectYakuCommand {
-  String getGameId();
-  String getPlayerId();
-}
-```
-
-#### 輸出
-```java
-public class YakuDetectionResult {
-  private List<Yaku> newlyFormedYaku;
-  private int baseScore;
-}
-```
+### 5. ExecuteOpponentTurnUseCase（執行 AI 回合）
 
 #### 流程
-1. 載入 Game Aggregate
-2. 獲取玩家已獲得牌
-3. 調用 YakuDetectionService 檢測所有役種
-4. 返回結果
+1. 調用 Opponent BC 選擇手牌
+2. 執行手牌配對與翻牌
+3. 處理配對選擇（若需要）
+4. 檢測役種
+5. 若有役種：調用 Opponent BC 做 Koi-Koi 決策
+6. 發送對應事件
+7. 切換行動玩家
 
----
-
-### 7. StartNewRoundUseCase（開始新局）
-
-#### 流程
-1. 載入 Game Aggregate
-2. 創建新的 Deck 並洗牌
-3. 創建新的 Round 並發牌
-4. 檢測 Teshi（手四）
-   - 若檢測到：發送 `RoundEndedInstantly` 事件，結算分數
-5. 檢測場牌流局
-   - 若檢測到：發送 `RoundEndedInstantly` 事件，重新發牌
-6. 若無特殊情況：發送 `RoundDealt` 事件
-7. 更新 FlowStage 為 `AWAITING_HAND_PLAY`
+```typescript
+// server/application/use-cases/ExecuteOpponentTurnUseCase.ts
+class ExecuteOpponentTurnUseCase {
+  async execute(gameId: string): Promise<void>
+}
+```
 
 ---
 
 ## Port 定義
 
-### Input Ports（由 REST Controller 調用）
+### Input Ports
 
-```java
-public interface JoinGameUseCase {
-  JoinGameResult execute(JoinGameCommand command);
+```typescript
+// server/application/ports/input/JoinGamePort.ts
+interface JoinGameInput {
+  playerId: string
+  playerName: string
+  sessionToken?: string
+  gameId?: string
 }
 
-public interface PlayHandCardUseCase {
-  void execute(PlayHandCardCommand command);
-}
-
-public interface SelectMatchedCardUseCase {
-  void execute(SelectMatchedCardCommand command);
-}
-
-public interface MakeKoiKoiDecisionUseCase {
-  void execute(MakeKoiKoiDecisionCommand command);
-}
-
-public interface ExecuteOpponentTurnUseCase {
-  void execute(ExecuteOpponentTurnCommand command);
-}
-
-public interface DetectYakuUseCase {
-  YakuDetectionResult execute(DetectYakuCommand command);
+interface JoinGameOutput {
+  status: 'game_waiting' | 'game_started' | 'snapshot' | 'game_finished' | 'game_expired'
+  gameId?: string
+  sessionToken?: string
 }
 ```
 
-### Output Ports（由 Adapter Layer 實作）
+### Output Ports
 
-```java
-// 資料持久化
-public interface LoadGamePort {
-  Game findById(GameId id);
-  Game findBySessionToken(String sessionToken);
+```typescript
+// server/application/ports/output/GameRepositoryPort.ts
+abstract class GameRepositoryPort {
+  abstract findById(gameId: string): Promise<Game | null>
+  abstract findBySessionToken(token: string): Promise<Game | null>
+  abstract save(game: Game): Promise<void>
 }
 
-public interface SaveGamePort {
-  void save(Game game);
+// server/application/ports/output/EventPublisherPort.ts
+abstract class EventPublisherPort {
+  abstract publish(gameId: string, event: SSEEvent): void
+  abstract getEventStream(gameId: string): EventStream
 }
 
-// 事件發布
-public interface PublishEventPort {
-  void publishGameStarted(GameStartedEvent event);
-  void publishRoundDealt(RoundDealtEvent event);
-  void publishRoundEndedInstantly(RoundEndedInstantlyEvent event);
-  void publishTurnCompleted(TurnCompletedEvent event);
-  void publishSelectionRequired(SelectionRequiredEvent event);
-  void publishTurnProgressAfterSelection(TurnProgressAfterSelectionEvent event);
-  void publishDecisionRequired(DecisionRequiredEvent event);
-  void publishDecisionMade(DecisionMadeEvent event);
-  void publishRoundScored(RoundScoredEvent event);
-  void publishRoundDrawn(RoundDrawnEvent event);
-  void publishGameFinished(GameFinishedEvent event);
-  void publishTurnError(TurnErrorEvent event);
-  void publishGameSnapshotRestore(GameSnapshotRestoreEvent event);
+// server/application/ports/output/GameLockPort.ts
+abstract class GameLockPort {
+  abstract withLock<T>(gameId: string, operation: () => Promise<T>): Promise<T>
 }
 
-// 對手策略（調用 Opponent BC）
-public interface OpponentStrategyPort {
-  String selectHandCard(String gameId, String opponentId);
-  String selectMatchTarget(String gameId, List<String> possibleTargets);
-  KoiKoiDecision makeKoiKoiDecision(String gameId, List<Yaku> currentYaku, int baseScore);
+// server/application/ports/output/OpponentStrategyPort.ts
+abstract class OpponentStrategyPort {
+  abstract selectHandCard(round: Round): string
+  abstract selectMatchTarget(options: string[]): string
+  abstract makeKoiKoiDecision(yakus: Yaku[], baseScore: number): 'KOI_KOI' | 'STOP'
 }
 ```
+
+---
+
+## 事件類型
+
+Use Cases 通過 EventPublisherPort 發送以下事件：
+
+| 事件 | 觸發時機 |
+|------|---------|
+| `initial_state` | 加入遊戲/重連 |
+| `round_dealt` | 發牌完成 |
+| `turn_completed` | 回合完成（無役種） |
+| `selection_required` | 需要選擇配對目標 |
+| `turn_progress_after_selection` | 選擇後繼續 |
+| `decision_required` | 有新役種，需要決策 |
+| `round_ended` | 局結束 |
+| `game_finished` | 遊戲結束 |
 
 ---
 
@@ -263,12 +203,10 @@ public interface OpponentStrategyPort {
 ### Use Case 測試
 
 - ✅ **JoinGameUseCase**: 測試加入遊戲與重連流程
-- ✅ **PlayHandCardUseCase**: 測試所有流程分支（無配對、單一配對、多重配對、役種形成）
-- ✅ **SelectMatchedCardUseCase**: 驗證選擇邏輯與後續流程
-- ✅ **MakeKoiKoiDecisionUseCase**: 測試繼續與結束兩種決策
-- ✅ **ExecuteOpponentTurnUseCase**: 驗證對手自動操作流程
-- ✅ **DetectYakuUseCase**: 測試役種檢測邏輯
-- ✅ **StartNewRoundUseCase**: 測試發牌、Teshi 檢測、場牌流局檢測
+- ✅ **PlayHandCardUseCase**: 測試所有流程分支
+- ✅ **SelectMatchedCardUseCase**: 驗證選擇邏輯
+- ✅ **MakeDecisionUseCase**: 測試繼續與結束兩種決策
+- ✅ **ExecuteOpponentTurnUseCase**: 驗證 AI 自動操作
 
 ### 測試策略
 
@@ -277,9 +215,8 @@ public interface OpponentStrategyPort {
 
 ### 測試框架
 
-- **工具**: JUnit 5
-- **Mock 工具**: Mockito
-- **斷言庫**: AssertJ
+- **工具**: Vitest
+- **Mock**: vi.mock / vi.fn
 
 ---
 

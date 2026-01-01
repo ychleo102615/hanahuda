@@ -2,14 +2,14 @@
 
 ## 職責
 
-實作花札遊戲的核心業務邏輯，提供純 Java POJO，不依賴任何框架。
+實作花札遊戲的核心業務邏輯，提供純 TypeScript 函數，不依賴任何框架。
 
 **核心原則**:
-- ✅ **純業務邏輯**: 不依賴 Spring、JPA 等任何框架
-- ✅ **Aggregate Root**: Game 是聚合根，所有對遊戲狀態的修改都通過 Game
-- ✅ **不可變性**: Value Object 不可變，確保狀態一致性
-- ✅ **領域服務**: 跨多個 Entity 的業務邏輯封裝在 Domain Service
-- ✅ **100% 測試覆蓋**: 所有業務邏輯必須有單元測試
+- ✅ **純業務邏輯**: 不依賴 Nuxt、Drizzle 等任何框架
+- ✅ **純函數設計**: 所有操作返回新物件，不修改輸入
+- ✅ **不可變性**: 使用 `Object.freeze()` 確保狀態不可變
+- ✅ **類型安全**: 完整的 TypeScript 類型定義
+- ✅ **高測試覆蓋**: 所有業務邏輯必須有單元測試
 
 ---
 
@@ -24,37 +24,44 @@
 - 維護累計分數
 - 協調 Round Entity
 
-#### 屬性
+#### 類型定義
 
-```java
-public class Game {
-  private GameId id;                        // 遊戲 ID (UUID)
-  private Ruleset ruleset;                  // 規則集（Value Object）
-  private List<Player> players;             // 玩家列表（通常為 2 人）
-  private Map<PlayerId, Integer> cumulativeScores;  // 累計分數
-  private int roundsPlayed;                 // 已進行局數
-  private Round currentRound;               // 當前局
-  private GameStatus status;                // 遊戲狀態（INITIALIZED, IN_PROGRESS, FINISHED）
+```typescript
+// server/domain/game/game.ts
+interface Game {
+  readonly id: string                     // 遊戲 ID (UUID)
+  readonly sessionToken: string           // Session Token
+  readonly players: readonly Player[]     // 玩家列表（2 人）
+  readonly cumulativeScores: readonly CumulativeScore[]  // 累計分數
+  readonly totalRounds: number            // 總局數
+  readonly roundsPlayed: number           // 已進行局數
+  readonly currentRound: Round | null     // 當前局
+  readonly status: GameStatus             // 遊戲狀態
+  readonly isPlayer2Ai: boolean           // 對手是否為 AI
 }
+
+type GameStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED'
 ```
 
-#### 核心方法
+#### 核心操作（純函數）
 
-```java
-// 初始化遊戲
-public static Game create(GameId id, Ruleset ruleset, List<Player> players)
+```typescript
+// server/domain/game/game-operations.ts
+
+// 創建新遊戲
+function createGame(params: CreateGameParams): Game
 
 // 開始新局
-public void startNewRound(PlayerId dealerId)
+function startNewRound(game: Game, dealerId: string): Game
 
 // 更新累計分數
-public void updateCumulativeScore(PlayerId playerId, int points)
+function updateCumulativeScore(game: Game, playerId: string, points: number): Game
 
 // 判斷遊戲是否結束
-public boolean isGameFinished()
+function isGameFinished(game: Game): boolean
 
 // 獲取勝者
-public PlayerId getWinner()
+function getWinner(game: Game): string | null
 ```
 
 ---
@@ -67,148 +74,92 @@ public PlayerId getWinner()
 - 管理回合流程（FlowStage 狀態機）
 - 管理 Koi-Koi 狀態
 
-#### 屬性
+#### 類型定義
 
-```java
-public class Round {
-  private RoundId id;                       // 局 ID
-  private PlayerId dealerId;                // 莊家 ID
-  private Map<PlayerId, List<Card>> hands;  // 手牌
-  private List<Card> field;                 // 場牌
-  private List<Card> deck;                  // 牌堆
-  private Map<PlayerId, List<Card>> depositories;  // 已獲得牌
-  private FlowStage flowStage;              // 流程狀態
-  private PlayerId activePlayerId;          // 當前行動玩家
-  private Map<PlayerId, KoiKoiStatus> koiKoiStatuses;  // Koi-Koi 狀態
-  private RoundStatus status;               // 局狀態（IN_PROGRESS, ENDED）
+```typescript
+// server/domain/round/round.ts
+interface Round {
+  readonly roundNumber: number            // 局數
+  readonly dealerId: string               // 莊家 ID
+  readonly hands: Readonly<Record<string, readonly string[]>>  // 手牌
+  readonly field: readonly string[]       // 場牌
+  readonly deck: readonly string[]        // 牌堆
+  readonly depositories: Readonly<Record<string, readonly string[]>>  // 已獲得牌
+  readonly flowStage: FlowStage           // 流程狀態
+  readonly activePlayerId: string         // 當前行動玩家
+  readonly koiKoiStatuses: readonly KoiKoiStatus[]  // Koi-Koi 狀態
+  readonly pendingDeckCard: string | null // 待處理的翻牌
+  readonly status: RoundStatus            // 局狀態
 }
+
+type RoundStatus = 'IN_PROGRESS' | 'ENDED'
 ```
 
-#### 核心方法
+#### 核心操作（純函數）
 
-```java
-// 發牌（從 Deck 創建 Round）
-public static Round deal(RoundId id, PlayerId dealerId, Deck shuffledDeck, List<PlayerId> playerIds)
+```typescript
+// server/domain/round/round-operations.ts
 
-// 檢測 Teshi（手四）
-public boolean detectTeshi(PlayerId playerId)
-
-// 檢測場牌流局
-public boolean detectFieldKuttsuki()
+// 創建新局並發牌
+function createRound(params: CreateRoundParams): Round
 
 // 執行打手牌操作
-public CardPlay executeHandPlay(PlayerId playerId, Card handCard, Card targetCard)
+function playHandCard(round: Round, playerId: string, cardId: string, targetId?: string): PlayHandCardResult
 
 // 執行翻牌操作
-public CardPlay executeDeckFlip()
-
-// 檢查翻牌是否需要選擇配對目標
-public boolean requiresSelectionForDeckFlip()
+function flipDeckCard(round: Round): FlipDeckCardResult
 
 // 執行翻牌配對選擇
-public CardPlay executeSelectionForDeckFlip(Card targetCard)
+function selectDeckTarget(round: Round, targetId: string): SelectDeckTargetResult
 
 // 更新 Koi-Koi 狀態
-public void updateKoiKoiStatus(PlayerId playerId, KoiKoiDecision decision)
+function updateKoiKoiStatus(round: Round, playerId: string, decision: KoiKoiDecision): Round
 
-// 判斷局是否結束
-public boolean isRoundOver()
+// 切換行動玩家
+function switchActivePlayer(round: Round): Round
 ```
 
 ---
 
-### 3. Player (Entity)
+### 3. Value Objects
 
-#### 職責
-- 代表玩家
-- 儲存玩家基本資訊（ID、名稱）
+#### Card（卡牌 ID 格式）
 
-#### 屬性
+```typescript
+// 卡牌 ID 格式: MMTI
+// MM: 月份 (01-12)
+// T: 類型 (1=光, 2=種, 3=短冊, 4=かす)
+// I: 索引 (1-4)
 
-```java
-public class Player {
-  private PlayerId id;          // 玩家 ID
-  private String name;          // 玩家名稱
-  private PlayerType type;      // 玩家類型（HUMAN, OPPONENT）
-}
-```
-
----
-
-### 4. Value Objects
-
-#### Card（卡牌）
-
-```java
-public class Card {
-  private final String cardId;       // 卡片 ID (MMTI 格式)
-  private final int month;           // 月份 (1-12)
-  private final CardType type;       // 卡牌類型 (BRIGHT, ANIMAL, RIBBON, DREG)
-  private final String displayName;  // 顯示名稱
-
-  // 不可變，僅提供 getters
-}
-```
-
-#### Yaku（役種）
-
-```java
-public class Yaku {
-  private final YakuType type;       // 役種類型 (GOKO, SHIKO, AKATAN, ...)
-  private final int basePoints;      // 基礎分數
-
-  // 不可變，僅提供 getters
-}
+// 例: "0111" = 1月光牌（松上鶴）
+// 例: "0341" = 3月かす
 ```
 
 #### FlowStage（流程狀態）
 
-```java
-public enum FlowStage {
-  AWAITING_HAND_PLAY,      // 等待打手牌
-  AWAITING_SELECTION,      // 等待選擇配對目標
-  AWAITING_DECISION        // 等待 Koi-Koi 決策
-}
+```typescript
+type FlowStage =
+  | 'AWAITING_HAND_PLAY'    // 等待打手牌
+  | 'AWAITING_SELECTION'    // 等待選擇配對目標（翻牌多重配對）
+  | 'AWAITING_DECISION'     // 等待 Koi-Koi 決策
 ```
 
 #### KoiKoiStatus（Koi-Koi 狀態）
 
-```java
-public class KoiKoiStatus {
-  private final PlayerId playerId;
-  private final int multiplier;      // 當前倍率
-  private final int calledCount;     // 呼叫 Koi-Koi 次數
-
-  // 不可變，僅提供 getters
-
-  // 創建新狀態（不修改現有對象）
-  public KoiKoiStatus incrementMultiplier(int increment) {
-    return new KoiKoiStatus(playerId, multiplier + increment, calledCount + 1);
-  }
+```typescript
+interface KoiKoiStatus {
+  readonly playerId: string
+  readonly calledCount: number    // 呼叫 Koi-Koi 次數
 }
 ```
 
-#### Ruleset（規則集）
+#### CardPlay（卡牌操作結果）
 
-```java
-public class Ruleset {
-  private final int totalRounds;          // 總局數
-  private final int koiKoiMultiplier;     // Koi-Koi 倍數增量
-  private final boolean sevenPointDouble; // 是否啟用 7 分倍增規則
-
-  // 不可變，僅提供 getters
-}
-```
-
-#### CardPlay（卡牌操作）
-
-```java
-public class CardPlay {
-  private final Card playedCard;          // 打出/翻開的卡片
-  private final List<Card> capturedCards; // 捕獲的卡片
-  private final boolean stayedInField;    // 是否留在場上（無配對時）
-
-  // 不可變，僅提供 getters
+```typescript
+interface CardPlay {
+  readonly playedCard: string           // 打出的卡片
+  readonly capturedCards: readonly string[]  // 捕獲的卡片
+  readonly matchType: 'single' | 'multiple' | 'none'  // 配對類型
 }
 ```
 
@@ -216,144 +167,126 @@ public class CardPlay {
 
 ## Domain Services
 
-### 1. GameRuleService（遊戲規則服務）
+### 1. matchingService（配對邏輯）
 
 #### 職責
-- 驗證操作合法性
-- 處理配對邏輯
-- 判斷遊戲結束條件
+- 找出可配對的場牌
+- 執行配對邏輯
 
-#### 核心方法
+#### 核心函數
 
-```java
-// 驗證打手牌操作
-public boolean isValidHandPlay(Round round, PlayerId playerId, Card handCard)
+```typescript
+// server/domain/services/matching-service.ts
 
 // 找出可配對的場牌
-public List<Card> findMatchableFieldCards(Card handCard, List<Card> fieldCards)
+function findMatchableCards(cardId: string, fieldCards: readonly string[]): string[]
 
-// 執行配對
-public CardPlay executeMatch(Card sourceCard, Card targetCard, List<Card> fieldCards)
+// 判斷兩張牌是否同月份
+function isSameMonth(cardId1: string, cardId2: string): boolean
 
-// 判斷回合是否結束
-public boolean isRoundOver(Round round)
-
-// 判斷遊戲是否結束
-public boolean isGameFinished(Game game)
+// 取得卡牌月份
+function getCardMonth(cardId: string): number
 ```
 
 ---
 
-### 2. YakuDetectionService（役種檢測服務）
+### 2. yakuDetectionService（役種檢測服務）
 
 #### 職責
 - 檢測已形成的役種
 - 計算基礎分數
-- 處理役種衝突
 
 #### MVP 實作 12 種常用役種
 
 **光牌系（4 種）**:
-- **五光 (15 點)**: 5 張光牌（0111, 0211, 0311, 0811, 1111）
-- **四光 (10 點)**: 4 張光牌（不含雨 1111）
-- **雨四光 (8 點)**: 4 張光牌（含雨 1111）
-- **三光 (6 點)**: 3 張光牌（不含雨 1111）
+- **五光 (15 點)**: 5 張光牌
+- **四光 (10 點)**: 4 張光牌（不含雨）
+- **雨四光 (8 點)**: 4 張光牌（含雨）
+- **三光 (6 點)**: 3 張光牌（不含雨）
 
 **短冊系（3 種）**:
-- **赤短 (5 點)**: 3 張紅色短冊（0131, 0231, 0331）
-- **青短 (5 點)**: 3 張藍色短冊（0631, 0931, 1031）
-- **短冊 (1 點)**: 5 張以上短冊（任意短冊）
+- **赤短 (5 點)**: 3 張紅色短冊
+- **青短 (5 點)**: 3 張藍色短冊
+- **短冊 (1 點)**: 5 張以上短冊
 
 **種牌系（4 種）**:
-- **豬鹿蝶 (5 點)**: 0721（萩豬）, 1021（紅葉鹿）, 0621（牡丹蝶）
-- **花見酒 (3 點)**: 0311（櫻幕）, 0921（菊盃）
-- **月見酒 (3 點)**: 0811（芒月）, 0921（菊盃）
-- **種 (1 點)**: 5 張以上種牌（任意種牌）
+- **豬鹿蝶 (5 點)**: 萩豬、紅葉鹿、牡丹蝶
+- **花見酒 (3 點)**: 櫻幕 + 菊盃
+- **月見酒 (3 點)**: 芒月 + 菊盃
+- **種 (1 點)**: 5 張以上種牌
 
 **かす系（1 種）**:
 - **かす (1 點)**: 10 張以上かす牌
 
-#### 核心方法
+#### 核心函數
 
-```java
+```typescript
+// server/domain/services/yaku-detection-service.ts
+
 // 檢測所有已形成的役種
-public List<Yaku> detectAllYaku(List<Card> depositoryCards)
+function detectYaku(depositoryCards: readonly string[], settings?: YakuSettings): Yaku[]
 
-// 檢測特定役種
-public boolean hasGoko(List<Card> cards)         // 五光
-public boolean hasShiko(List<Card> cards)        // 四光
-public boolean hasAmeShiko(List<Card> cards)     // 雨四光
-public boolean hasSanko(List<Card> cards)        // 三光
-public boolean hasAkatan(List<Card> cards)       // 赤短
-public boolean hasAotan(List<Card> cards)        // 青短
-public boolean hasTanzaku(List<Card> cards)      // 短冊
-public boolean hasInoshikacho(List<Card> cards)  // 豬鹿蝶
-public boolean hasHanami(List<Card> cards)       // 花見酒
-public boolean hasTsukimi(List<Card> cards)      // 月見酒
-public boolean hasTane(List<Card> cards)         // 種
-public boolean hasKasu(List<Card> cards)         // かす
-
-// 解決役種衝突
-public List<Yaku> resolveConflicts(List<Yaku> allYaku)
-
-// 計算基礎分數
-public int calculateBaseScore(List<Yaku> yakus)
+// 各役種檢測函數
+function hasGokou(cards: readonly string[]): boolean    // 五光
+function hasShikou(cards: readonly string[]): boolean   // 四光
+function hasAmeShikou(cards: readonly string[]): boolean // 雨四光
+function hasSankou(cards: readonly string[]): boolean   // 三光
+// ... 其他役種
 ```
 
 ---
 
-### 3. ScoreCalculationService（分數計算服務）
+### 3. scoringService（分數計算服務）
 
 #### 職責
 - 計算最終得分（含倍率）
 - 應用 Koi-Koi 倍率
 - 應用 7 分倍增規則
 
-#### 核心方法
+#### 核心函數
 
-```java
-// 計算最終得分
-public int calculateFinalScore(
-  List<Yaku> yakus,
-  KoiKoiStatus winnerKoiStatus,
-  KoiKoiStatus opponentKoiStatus,
-  boolean sevenPointDouble
-)
+```typescript
+// server/domain/services/scoring-service.ts
 
-// 計算倍率
-public int calculateTotalMultiplier(
-  int baseScore,
-  KoiKoiStatus winnerKoiStatus,
-  KoiKoiStatus opponentKoiStatus,
-  boolean sevenPointDouble
-)
+// 計算基礎分數
+function calculateBaseScore(yakus: readonly Yaku[]): number
+
+// 計算最終得分（含倍率）
+function calculateFinalScore(
+  baseScore: number,
+  koiKoiStatuses: readonly KoiKoiStatus[],
+  winnerId: string
+): number
 ```
 
 ---
 
-## Repository Interfaces（定義在 Domain Layer）
+## 不可變性保證
 
-### GameRepository
+所有 Domain 操作都返回新物件，確保不可變性：
 
-```java
-public interface GameRepository {
-  Game findById(GameId id);
-  void save(Game game);
-  void delete(GameId id);
+```typescript
+// 範例：打手牌操作
+function playHandCard(round: Round, playerId: string, cardId: string): PlayHandCardResult {
+  // 驗證操作...
+
+  // 返回新的 Round 物件（使用 Object.freeze）
+  const newRound = Object.freeze({
+    ...round,
+    hands: Object.freeze({
+      ...round.hands,
+      [playerId]: Object.freeze(round.hands[playerId].filter(c => c !== cardId))
+    }),
+    field: Object.freeze([...newField]),
+    depositories: Object.freeze({
+      ...round.depositories,
+      [playerId]: Object.freeze([...round.depositories[playerId], ...captured])
+    })
+  })
+
+  return { round: newRound, cardPlay }
 }
 ```
-
-### EventRepository
-
-```java
-public interface EventRepository {
-  void save(GameEvent event);
-  List<GameEvent> findByGameId(GameId gameId);
-  List<GameEvent> findByGameIdAfter(GameId gameId, long eventId);
-}
-```
-
-**實作由 Adapter Layer 提供（JPA）**
 
 ---
 
@@ -361,37 +294,28 @@ public interface EventRepository {
 
 ### 單元測試覆蓋率
 
-- ✅ **Game Aggregate**: 100% 覆蓋
-  - 初始化、開始新局、更新分數、判斷結束
+- ✅ **Game 操作**: 100% 覆蓋
+  - 創建遊戲、開始新局、更新分數、判斷結束
 
-- ✅ **Round Entity**: 100% 覆蓋
-  - 發牌、Teshi 檢測、場牌流局檢測
-  - 打手牌、翻牌、配對邏輯
+- ✅ **Round 操作**: 100% 覆蓋
+  - 發牌、打手牌、翻牌、配對選擇
   - FlowStage 狀態轉換
 
-- ✅ **Value Objects**: 100% 覆蓋
-  - Card、Yaku、Ruleset 的建立與驗證
-  - KoiKoiStatus 的狀態更新
+- ✅ **matchingService**: 100% 覆蓋
+  - 同月份判斷、配對邏輯
 
-- ✅ **GameRuleService**: 100% 覆蓋
-  - 所有驗證邏輯
-  - 配對邏輯的所有分支
-
-- ✅ **YakuDetectionService**: 100% 覆蓋
-  - 所有 12 種常用役種
-  - 役種衝突解決
+- ✅ **yakuDetectionService**: 100% 覆蓋
+  - 所有 12 種役種檢測
   - 邊界值測試
 
-- ✅ **ScoreCalculationService**: 100% 覆蓋
+- ✅ **scoringService**: 100% 覆蓋
   - Koi-Koi 倍率計算
   - 7 分倍增規則
-  - 倍率疊加
 
 ### 測試框架
 
-- **工具**: JUnit 5
-- **斷言庫**: AssertJ
-- **Mock 工具**: Mockito（僅用於 Repository 測試）
+- **工具**: Vitest
+- **斷言**: Vitest built-in assertions
 
 ---
 

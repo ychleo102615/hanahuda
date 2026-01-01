@@ -2,85 +2,95 @@
 
 ## 職責
 
-實作 `OpponentStrategyPort`，提供對手策略服務。
+提供 Opponent BC 與 Core Game BC 的整合介面。
 
----
-
-## OpponentStrategyAdapter
-
-### 實作範例
-
-```java
-@Component
-public class OpponentStrategyAdapter implements OpponentStrategyPort {
-
-  private final OpponentStrategy strategy;
-  private final LoadGamePort loadGamePort;
-
-  public OpponentStrategyAdapter(
-    OpponentStrategy strategy,
-    LoadGamePort loadGamePort
-  ) {
-    this.strategy = strategy;
-    this.loadGamePort = loadGamePort;
-  }
-
-  @Override
-  public String selectHandCard(String gameId, String opponentId) {
-    Game game = loadGamePort.findById(new GameId(gameId));
-    Round round = game.getCurrentRound();
-
-    List<String> hand = round.getHand(new PlayerId(opponentId));
-    List<String> field = round.getField();
-    List<String> depository = round.getDepository(new PlayerId(opponentId));
-
-    return strategy.selectHandCard(hand, field, depository);
-  }
-
-  @Override
-  public String selectMatchTarget(String gameId, List<String> possibleTargets) {
-    return strategy.selectMatchTarget(possibleTargets);
-  }
-
-  @Override
-  public KoiKoiDecision makeKoiKoiDecision(
-    String gameId,
-    List<Yaku> currentYaku,
-    int baseScore
-  ) {
-    Game game = loadGamePort.findById(new GameId(gameId));
-    Map<PlayerId, Integer> scores = game.getCumulativeScores();
-
-    // 獲取對手分數（簡化示範）
-    int opponentScore = scores.values().stream().findFirst().orElse(0);
-
-    return strategy.makeKoiKoiDecision(currentYaku, baseScore, opponentScore);
-  }
-}
-```
+**核心原則**:
+- ✅ **依賴注入**: 在 DI 配置中註冊 OpponentStrategyPort 實作
+- ✅ **策略工廠**: 根據配置選擇 AI 策略
 
 ---
 
 ## DI 配置
 
-```java
-@Configuration
-public class OpponentConfiguration {
+```typescript
+// server/utils/opponent-di.ts
+import { SimpleAIStrategy } from '../domain/opponent/simple-ai-strategy'
+import { OpponentStrategyAdapter } from '../application/opponent/OpponentStrategyAdapter'
 
-  @Bean
-  public OpponentStrategy opponentStrategy() {
-    return new RandomStrategy();  // MVP 使用隨機策略
-  }
+export function createOpponentStrategy(): OpponentStrategyPort {
+  const strategy = new SimpleAIStrategy()
+  return new OpponentStrategyAdapter(strategy)
+}
+```
 
-  @Bean
-  public OpponentStrategyPort opponentStrategyPort(
-    OpponentStrategy strategy,
-    LoadGamePort loadGamePort
-  ) {
-    return new OpponentStrategyAdapter(strategy, loadGamePort);
+---
+
+## 使用方式
+
+Core Game BC 的 Use Cases 透過依賴注入獲取 `OpponentStrategyPort`：
+
+```typescript
+// server/application/use-cases/ExecuteOpponentTurnUseCase.ts
+class ExecuteOpponentTurnUseCase {
+  constructor(
+    private opponentStrategy: OpponentStrategyPort
+  ) {}
+
+  // ...
+}
+
+// 在 API Route 中組裝
+const opponentStrategy = createOpponentStrategy()
+const executeOpponentTurnUseCase = new ExecuteOpponentTurnUseCase(
+  gameRepository,
+  eventPublisher,
+  gameLock,
+  opponentStrategy
+)
+```
+
+---
+
+## 未來擴展
+
+### 多難度支援
+
+```typescript
+type AIDifficulty = 'easy' | 'normal' | 'hard'
+
+function createOpponentStrategy(difficulty: AIDifficulty): OpponentStrategyPort {
+  const strategy = difficulty === 'hard'
+    ? new AdvancedAIStrategy()
+    : new SimpleAIStrategy()
+
+  return new OpponentStrategyAdapter(strategy)
+}
+```
+
+### 外部 AI 服務
+
+未來可擴展為調用外部 AI 服務：
+
+```typescript
+class RemoteAIStrategy implements OpponentStrategy {
+  constructor(private apiClient: AIServiceClient) {}
+
+  async selectHandCard(params: SelectHandCardParams): Promise<string> {
+    return this.apiClient.getMove(params)
   }
 }
 ```
+
+---
+
+## 測試要求
+
+- ✅ **DI 配置**: 驗證策略正確註冊
+- ✅ **策略工廠**: 測試不同難度的策略創建
+
+### 測試框架
+
+- **工具**: Vitest
 
 ---
 
