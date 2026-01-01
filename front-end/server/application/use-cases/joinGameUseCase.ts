@@ -16,8 +16,6 @@
 import { randomUUID } from 'crypto'
 import {
   createGame,
-  addSecondPlayerAndStart,
-  startRound,
   getDefaultRuleset,
   determineWinner,
   createPlayer,
@@ -31,7 +29,6 @@ import type { GameStorePort } from '~~/server/application/ports/output/gameStore
 import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
 import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
 import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
-import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
 import type {
   JoinGameInputPort,
   JoinGameInput,
@@ -40,19 +37,12 @@ import type {
   JoinGameStartedOutput,
   JoinGameSnapshotOutput,
 } from '~~/server/application/ports/input/joinGameInputPort'
-import { checkSpecialRules, type SpecialRuleResult } from '~~/server/domain/services/specialRulesService'
 import { gameConfig } from '~~/server/utils/config'
 import { logger } from '~~/server/utils/logger'
 import { GAME_ERROR_MESSAGES } from '#shared/contracts/errors'
 import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
 import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
-
-/**
- * 初始事件延遲（毫秒）
- *
- * 給予客戶端時間建立 SSE 連線
- */
-const INITIAL_EVENT_DELAY_MS = 100
+import type { GameStartService } from '~~/server/application/services/gameStartService'
 
 /**
  * JoinGameUseCase
@@ -64,8 +54,6 @@ const INITIAL_EVENT_DELAY_MS = 100
  * - 加入現有遊戲時 → 發布 GameStarted SSE 事件
  */
 export class JoinGameUseCase implements JoinGameInputPort {
-  private turnFlowService?: TurnFlowService
-
   constructor(
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
@@ -74,15 +62,9 @@ export class JoinGameUseCase implements JoinGameInputPort {
     private readonly internalEventPublisher: InternalEventPublisherPort,
     private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager: GameTimeoutPort,
-    private readonly gameLogRepository?: GameLogRepositoryPort
+    private readonly gameLogRepository: GameLogRepositoryPort | undefined,
+    private readonly gameStartService: GameStartService
   ) {}
-
-  /**
-   * 設定 TurnFlowService（用於解決循環依賴）
-   */
-  setTurnFlowService(service: TurnFlowService): void {
-    this.turnFlowService = service
-  }
 
   /**
    * 執行加入遊戲用例
@@ -128,6 +110,11 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * 當前端明確提供 gameId 時，表示要重連特定遊戲。
    * 此時需要檢查遊戲狀態，返回對應的結果。
    *
+   * 驗證順序：
+   * 1. sessionToken 存在性
+   * 2. sessionToken 對應正確的 gameId
+   * 3. playerId 在遊戲中
+   *
    * @param gameId - 要重連的遊戲 ID
    * @param playerId - 玩家 ID
    * @param playerName - 玩家名稱
@@ -140,40 +127,63 @@ export class JoinGameUseCase implements JoinGameInputPort {
     playerName: string,
     sessionToken?: string
   ): Promise<JoinGameOutput> {
-    // 1. 先查記憶體
-    const memoryGame = this.gameStore.get(gameId)
-    if (memoryGame) {
-      // 驗證玩家身份
-      const isPlayer = memoryGame.players.some((p) => p.id === playerId)
-      if (!isPlayer) {
-        // 玩家不屬於此遊戲，返回過期
-        logger.error('Game expired', { gameId, playerId, reason: 'player_not_in_game' })
-        this.gameLogRepository?.logAsync({
-          gameId,
-          playerId,
-          eventType: COMMAND_TYPES.ReconnectGameFailed,
-          payload: { reason: 'player_not_in_game' },
-        })
-        return { status: 'game_expired', gameId }
-      }
-
-      // 玩家身份驗證通過，執行重連
-      const token = sessionToken || this.findPlayerSessionToken(gameId, playerId)
-      if (!token) {
-        logger.error('Game expired', { gameId, playerId, reason: 'no_session_token' })
-        this.gameLogRepository?.logAsync({
-          gameId,
-          playerId,
-          eventType: COMMAND_TYPES.ReconnectGameFailed,
-          payload: { reason: 'no_session_token' },
-        })
-        return { status: 'game_expired', gameId }
-      }
-
-      return this.handleReconnection(memoryGame, playerId, playerName, token)
+    // 1. 驗證 sessionToken 存在
+    if (!sessionToken) {
+      logger.error('Game expired', { gameId, playerId, reason: 'no_session_token' })
+      this.gameLogRepository?.logAsync({
+        gameId,
+        playerId,
+        eventType: COMMAND_TYPES.ReconnectGameFailed,
+        payload: { reason: 'no_session_token' },
+      })
+      return { status: 'game_expired', gameId }
     }
 
-    // 2. 記憶體沒有，查資料庫
+    // 2. 驗證 sessionToken 對應正確的遊戲
+    const tokenGame = this.gameStore.getBySessionToken(sessionToken)
+    if (!tokenGame || tokenGame.id !== gameId) {
+      logger.error('Game expired', { gameId, playerId, reason: 'invalid_session_token' })
+      this.gameLogRepository?.logAsync({
+        gameId,
+        playerId,
+        eventType: COMMAND_TYPES.ReconnectGameFailed,
+        payload: { reason: 'invalid_session_token' },
+      })
+      return { status: 'game_expired', gameId }
+    }
+
+    // 3. 驗證玩家身份
+    const isPlayer = tokenGame.players.some((p) => p.id === playerId)
+    if (!isPlayer) {
+      logger.error('Game expired', { gameId, playerId, reason: 'player_not_in_game' })
+      this.gameLogRepository?.logAsync({
+        gameId,
+        playerId,
+        eventType: COMMAND_TYPES.ReconnectGameFailed,
+        payload: { reason: 'player_not_in_game' },
+      })
+      return { status: 'game_expired', gameId }
+    }
+
+    // 4. 驗證通過，執行重連
+    return this.handleReconnection(tokenGame, playerId, playerName, sessionToken)
+  }
+
+  /**
+   * 處理遊戲不在記憶體中的情況
+   *
+   * @description
+   * 當 sessionToken 在記憶體中找不到對應的遊戲時，
+   * 查詢資料庫確認遊戲是否已結束。
+   *
+   * 注意：此方法目前未使用，因為新的驗證邏輯要求 sessionToken 必須在記憶體中有效。
+   * 保留此方法以備未來需要擴展「查詢已結束遊戲」的功能。
+   */
+  private async handleGameNotInMemory(
+    gameId: string,
+    playerId: string
+  ): Promise<JoinGameOutput> {
+    // 查資料庫
     const dbGame = await this.gameRepository.findById(gameId)
     if (!dbGame) {
       logger.error('Game expired', { gameId, playerId, reason: 'not_found_in_db' })
@@ -186,7 +196,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       return { status: 'game_expired', gameId }
     }
 
-    // 3. 根據遊戲狀態返回結果
+    // 遊戲已結束
     if (dbGame.status === 'FINISHED') {
       const winnerId = determineWinner(dbGame)
       return {
@@ -202,7 +212,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       }
     }
 
-    // 4. 遊戲在 DB 但不在記憶體 → 已過期
+    // 遊戲在 DB 但不在記憶體 → 已過期
     logger.error('Game expired', { gameId, playerId, reason: 'in_db_not_in_memory' })
     this.gameLogRepository?.logAsync({
       gameId,
@@ -211,15 +221,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
       payload: { reason: 'in_db_not_in_memory' },
     })
     return { status: 'game_expired', gameId }
-  }
-
-  /**
-   * 查找玩家的 session token（從 gameStore 的 session map）
-   */
-  private findPlayerSessionToken(_gameId: string, _playerId: string): string | undefined {
-    // gameStore 可能有方法可以查詢，但目前沒有
-    // 這裡暫時返回 undefined，讓呼叫方處理
-    return undefined
   }
 
   /**
@@ -368,8 +369,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * 將遊戲狀態改為 IN_PROGRESS，發牌，並推送初始事件。
    * SSE-First 架構：返回 game_started 狀態。
    *
-   * 注意：scheduleInitialEvents 仍會執行，發送 GameStarted 和 RoundDealt 給所有玩家。
-   * InitialState 只是告訴當前連線的玩家初始狀態，GameStarted/RoundDealt 是廣播事件。
+   * 委託 GameStartService 處理共用的遊戲開始邏輯。
    */
   private async joinExistingGame(
     waitingGame: Game,
@@ -396,89 +396,32 @@ export class JoinGameUseCase implements JoinGameInputPort {
         isAi: false,
       })
 
-      // 加入遊戲並開始
-      let game = addSecondPlayerAndStart(currentGame, secondPlayer)
-
-      // 發牌並開始第一局（可使用測試牌組）
-      game = startRound(game, gameConfig.use_test_deck)
-
-      // 檢查特殊規則（手四、喰付、場上手四）
-      const specialRuleResult = this.checkAndHandleSpecialRules(game)
-
-      // 儲存 startingPlayerId（不論是否觸發特殊規則，都需要回傳）
-      const startingPlayerId = game.currentRound?.activePlayerId ?? game.players[0]?.id ?? ''
-
-      if (specialRuleResult.triggered && game.currentRound) {
-        // 特殊規則觸發：儲存遊戲狀態（確保 currentRound 存在以支援重連）
-        this.gameStore.set(game)
-        this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
-        await this.gameRepository.save(game)
-
-        // 排程初始事件（延遲讓客戶端建立 SSE 連線）
-        this.scheduleSpecialRuleEvents(game, specialRuleResult)
-      } else {
-        // 無特殊規則：正常流程
-        this.gameStore.set(game)
-        this.gameStore.addPlayerSession(sessionToken, game.id, playerId)
-        await this.gameRepository.save(game)
-
-        // 排程初始事件（延遲讓客戶端建立 SSE 連線）
-        // GameStarted 和 RoundDealt 會廣播給所有玩家
-        this.scheduleInitialEvents(game)
-      }
-
-      // 記錄加入遊戲命令
-      this.gameLogRepository?.logAsync({
-        gameId: game.id,
-        playerId,
-        eventType: COMMAND_TYPES.JoinExistingGame,
-        payload: { playerName },
+      // 委託 GameStartService 處理遊戲開始邏輯
+      const result = await this.gameStartService.startGameWithSecondPlayer({
+        waitingGame: currentGame,
+        secondPlayer,
+        sessionToken,
+        isAi: false,
+        playerName,
       })
 
       // SSE-First: 返回 game_started 狀態
       return {
         status: 'game_started',
-        gameId: game.id,
+        gameId: result.game.id,
         sessionToken,
         playerId,
-        players: game.players.map(p => ({
+        players: result.game.players.map(p => ({
           playerId: p.id,
           playerName: p.name,
           isAi: p.isAi,
         })),
         ruleset: {
-          totalRounds: game.ruleset.total_rounds,
+          totalRounds: result.game.ruleset.total_rounds,
         },
-        startingPlayerId,
+        startingPlayerId: result.startingPlayerId,
       }
     }) // end of withLock
-  }
-
-  /**
-   * 排程初始事件
-   *
-   * @param game - 遊戲狀態
-   */
-  private scheduleInitialEvents(game: Game): void {
-    setTimeout(() => {
-      try {
-        // 發送 GameStarted 事件
-        const gameStartedEvent = this.eventMapper.toGameStartedEvent(game)
-        this.eventPublisher.publishToGame(game.id, gameStartedEvent)
-
-        // 發送 RoundDealt 事件
-        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
-        this.eventPublisher.publishToGame(game.id, roundDealtEvent)
-
-        // 啟動第一位玩家的操作超時計時器
-        const firstPlayerId = game.currentRound?.activePlayerId
-        if (firstPlayerId) {
-          this.turnFlowService?.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
-        }
-      } catch (err) {
-        logger.error('Failed to publish initial events', { gameId: game.id, error: String(err) })
-      }
-    }, INITIAL_EVENT_DELAY_MS)
   }
 
   /**
@@ -512,63 +455,5 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
     // 清理：清除所有計時器（雖然應該只有配對超時計時器）
     this.gameTimeoutManager.clearAllForGame(gameId)
-  }
-
-  // ============================================================
-  // 特殊規則處理
-  // ============================================================
-
-  /**
-   * 檢查特殊規則
-   *
-   * @param game - 遊戲狀態
-   * @returns 特殊規則檢測結果
-   */
-  private checkAndHandleSpecialRules(game: Game): SpecialRuleResult {
-    if (!game.currentRound) {
-      return {
-        triggered: false,
-        type: null,
-        triggeredPlayerId: null,
-        awardedPoints: 0,
-        winnerId: null,
-        month: null,
-        months: null,
-      }
-    }
-
-    return checkSpecialRules(game.currentRound, game.ruleset.special_rules)
-  }
-
-  /**
-   * 排程特殊規則事件
-   *
-   * @description
-   * 委託 TurnFlowService 處理特殊規則：
-   * 1. 發送 GameStartedEvent
-   * 2. 呼叫 handleSpecialRuleTriggered（處理 RoundDealt、狀態更新、RoundEnded、回合轉換）
-   *
-   * @param game - 遊戲狀態（currentRound 存在）
-   * @param result - 特殊規則結果
-   */
-  private scheduleSpecialRuleEvents(
-    game: Game,
-    result: SpecialRuleResult
-  ): void {
-    setTimeout(() => {
-      try {
-        // 發送 GameStarted 事件
-        const gameStartedEvent = this.eventMapper.toGameStartedEvent(game)
-        this.eventPublisher.publishToGame(game.id, gameStartedEvent)
-
-        // 委託 TurnFlowService 處理特殊規則流程
-        this.turnFlowService?.handleSpecialRuleTriggered(game.id, game, result)
-          .catch(() => {
-            // Failed to handle special rule
-          })
-      } catch {
-        // Failed to schedule special rule events
-      }
-    }, INITIAL_EVENT_DELAY_MS)
   }
 }

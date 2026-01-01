@@ -47,29 +47,13 @@ import { ConfirmContinueUseCase } from '~~/server/application/use-cases/confirmC
 
 // Application Services
 import { TurnFlowService } from '~~/server/application/services/turnFlowService'
+import { GameStartService } from '~~/server/application/services/gameStartService'
 
-// Input Port Types
-import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
-import type { JoinGameAsAiInputPort } from '~~/server/application/ports/input/joinGameAsAiInputPort'
-import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
-import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
-import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
+// Input Port Types (only importing types used for explicit type annotations)
 import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
 import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
 import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
 import type { ConfirmContinueInputPort } from '~~/server/application/ports/input/confirmContinueInputPort'
-import type { TurnFlowService as TurnFlowServiceType } from '~~/server/application/services/turnFlowService'
-
-// Output Port Types
-import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
-import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
-import type { PlayerStatsRepositoryPort } from '~~/server/application/ports/output/playerStatsRepositoryPort'
-import type { GameLogRepositoryPort } from '~~/server/application/ports/output/gameLogRepositoryPort'
-import type { EventPublisherPort } from '~~/server/application/ports/output/eventPublisherPort'
-import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
-import type { InternalEventPublisherPort } from '~~/server/application/ports/output/internalEventPublisherPort'
-import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
-import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
 
 /**
  * 建立並設定 DI Container
@@ -153,6 +137,16 @@ function createBackendContainer(): DIContainer {
     gameLogRepository
   )
 
+  // 建立 GameStartService（共用邏輯）
+  const gameStartService = new GameStartService(
+    gameRepository,
+    compositeEventPublisher,
+    inMemoryGameStore,
+    eventMapper,
+    gameTimeoutManager,
+    gameLogRepository
+  )
+
   const joinGameUseCase = new JoinGameUseCase(
     gameRepository,
     compositeEventPublisher,
@@ -161,16 +155,14 @@ function createBackendContainer(): DIContainer {
     internalEventBus,
     inMemoryGameLock,
     gameTimeoutManager,
-    gameLogRepository
+    gameLogRepository,
+    gameStartService
   )
 
   const joinGameAsAiUseCase = new JoinGameAsAiUseCase(
-    gameRepository,
-    compositeEventPublisher,
     inMemoryGameStore,
-    eventMapper,
     inMemoryGameLock,
-    gameTimeoutManager
+    gameStartService
   )
 
   // 建立 AutoActionUseCase
@@ -193,12 +185,11 @@ function createBackendContainer(): DIContainer {
     recordGameStatsUseCase
   )
 
-  // 注入 TurnFlowService 到需要它的 Use Cases（Setter Injection）
+  // 注入 TurnFlowService 到需要它的 Use Cases 和 Services（Setter Injection）
   playHandCardUseCase.setTurnFlowService(turnFlowService)
   selectTargetUseCase.setTurnFlowService(turnFlowService)
   makeDecisionUseCase.setTurnFlowService(turnFlowService)
-  joinGameUseCase.setTurnFlowService(turnFlowService)
-  joinGameAsAiUseCase.setTurnFlowService(turnFlowService)
+  gameStartService.setTurnFlowService(turnFlowService)
 
   // 建立 ConfirmContinueUseCase（依賴 turnFlowService）
   const confirmContinueUseCase: ConfirmContinueInputPort = new ConfirmContinueUseCase(

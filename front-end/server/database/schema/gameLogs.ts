@@ -30,6 +30,7 @@ export const COMMAND_TYPES = {
   LeaveGame: 'LeaveGame',
   CreateGame: 'CreateGame',
   JoinExistingGame: 'JoinExistingGame',
+  JoinGameAsAi: 'JoinGameAsAi',
   ReconnectGame: 'ReconnectGame',
   ReconnectGameFailed: 'ReconnectGameFailed',
 } as const
