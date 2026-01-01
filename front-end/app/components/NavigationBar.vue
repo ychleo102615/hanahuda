@@ -105,7 +105,7 @@ onUnmounted(() => {
     role="navigation"
     aria-label="Main navigation"
     :class="[
-      'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
+      'fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-out',
       isSticky
         ? 'bg-primary-900/65 backdrop-blur-sm shadow-lg'
         : transparent

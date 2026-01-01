@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import type { HeroSectionProps } from '~/types'
+import HeroCardGrid from '~/components/HeroCardGrid.vue'
 
 // Props
 const props = defineProps<HeroSectionProps>()
@@ -13,6 +14,7 @@ const router = useRouter()
 const isNavigating = ref(false)
 const parallaxOffset = ref(0)
 const isVisible = ref(false)
+const isMaskFaded = ref(false)
 const showEntryAnimation = ref(true)
 
 // Methods
@@ -56,10 +58,15 @@ onMounted(() => {
   // Add scroll listener
   window.addEventListener('scroll', handleScroll, { passive: true })
 
-  // Trigger entry animation
+  // Trigger entry animation for text content
   setTimeout(() => {
     isVisible.value = true
   }, 100)
+
+  // Trigger mask fade after button animation completes (500ms delay + 600ms animation)
+  setTimeout(() => {
+    isMaskFaded.value = true
+  }, 1200)
 })
 
 onUnmounted(() => {
@@ -77,31 +84,19 @@ onUnmounted(() => {
     :style="backgroundImage ? `background-image: url('${backgroundImage}')` : ''"
     aria-labelledby="hero-title"
   >
-    <!-- Background decoration layer -->
-    <div class="absolute inset-0 bg-black/30" aria-hidden="true"></div>
+    <!-- Card grid background -->
+    <HeroCardGrid :parallax-offset="parallaxOffset" />
 
-    <!-- Japanese geometric decoration elements (parallax effect) -->
+    <!-- Dynamic mask layer - fades from dark to light with entry animation -->
     <div
-      class="decorative-elements"
-      :style="{ transform: `translateY(${parallaxOffset * 0.3}px)` }"
+      class="pointer-events-none absolute inset-0 bg-black transition-opacity duration-[2500ms] ease-out"
+      :class="isMaskFaded ? 'opacity-35' : 'opacity-80'"
       aria-hidden="true"
-    >
-      <!-- Large circle decorations -->
-      <div class="absolute -right-20 top-20 h-96 w-96 rounded-full border-2 border-white/10 md:-right-10 md:h-[500px] md:w-[500px]"></div>
-      <div class="absolute -left-32 bottom-10 h-80 w-80 rounded-full border-2 border-white/5 md:-left-20 md:h-96 md:w-96"></div>
-
-      <!-- Small circle decorations -->
-      <div class="absolute right-1/4 top-32 h-32 w-32 rounded-full bg-accent-pink/10 md:h-40 md:w-40"></div>
-      <div class="absolute bottom-32 left-1/3 h-24 w-24 rounded-full bg-accent-red/10 md:h-32 md:w-32"></div>
-
-      <!-- Line decorations -->
-      <div class="absolute left-1/4 top-40 h-1 w-32 rotate-45 bg-white/10 md:w-40"></div>
-      <div class="absolute bottom-40 right-1/4 h-1 w-24 -rotate-45 bg-white/5 md:w-32"></div>
-    </div>
+    />
 
     <!-- Main content -->
     <div
-      class="relative z-10 mx-auto max-w-4xl text-center"
+      class="pointer-events-none relative z-10 mx-auto max-w-4xl text-center"
       :style="{ transform: `translateY(${parallaxOffset * 0.1}px)` }"
     >
       <!-- Game title -->
@@ -144,7 +139,7 @@ onUnmounted(() => {
         :disabled="isNavigating"
         :aria-busy="isNavigating"
         :class="[
-          'inline-flex items-center rounded-lg bg-accent-red px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 cursor-pointer',
+          'pointer-events-auto inline-flex items-center rounded-lg bg-accent-red px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 cursor-pointer',
           'hover:scale-105 hover:bg-red-600 hover:shadow-xl',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-red',
           'disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100',

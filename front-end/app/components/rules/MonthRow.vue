@@ -46,7 +46,7 @@ defineProps<Props>();
 <style scoped>
 .month-row {
   padding: 0.75rem 0;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #3a4840;
 }
 
 .month-row:last-child {
@@ -63,34 +63,34 @@ defineProps<Props>();
 
 .month-number {
   font-weight: 700;
-  color: #c41e3a;
+  color: #f87171;
   min-width: 2.5rem;
 }
 
 .name-ja {
   font-family: var(--font-jp, 'Noto Sans JP', sans-serif);
   font-weight: 600;
-  color: #1f2937;
+  color: #f3f4f6;
 }
 
 .name-romaji {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #9ca3af;
 }
 
 .divider {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .flower-ja {
   font-family: var(--font-jp, 'Noto Sans JP', sans-serif);
-  color: #2c5f2d;
+  color: #86efac;
   font-weight: 500;
 }
 
 .flower-en {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #9ca3af;
 }
 
 .cards-row {
@@ -128,12 +128,12 @@ defineProps<Props>();
   font-family: var(--font-jp, 'Noto Sans JP', sans-serif);
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #1f2937;
+  color: #e5e7eb;
 }
 
 .card-name-en {
   font-size: 0.6875rem;
-  color: #6b7280;
+  color: #9ca3af;
 }
 
 @media (max-width: 640px) {

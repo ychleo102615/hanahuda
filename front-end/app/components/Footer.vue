@@ -12,8 +12,8 @@ const projectName = 'Hanafuda Koi-Koi こいこい'
 // 個人資訊
 const personalInfo = {
   name: 'Leo Huang',
-  email: 'leo102615@gmail.com',
-  projectUrl: 'https://github.com/ychleo102615/hanahuda'
+  projectUrl: 'https://github.com/ychleo102615/hanahuda',
+  linkedInUrl: 'https://www.linkedin.com/in/yaochanghuang102615'
 }
 
 // 第三方資源授權列表
@@ -97,10 +97,13 @@ const attributions = [
             <p class="font-medium text-white">{{ personalInfo.name }}</p>
             <p>
               <a
-                :href="`mailto:${personalInfo.email}`"
-                class="text-gray-300 hover:text-white transition-colors"
+                :href="personalInfo.linkedInUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-accent-pink hover:text-accent-red transition-colors"
               >
-                {{ personalInfo.email }}
+                <span>LinkedIn</span>
+                <ExternalLinkIcon />
               </a>
             </p>
             <p>

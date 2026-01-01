@@ -78,11 +78,12 @@ const getTypeGradient = (typeId: CardTypeId): string => {
 
 <style scoped>
 .type-block {
-  background: white;
+  background: #2a3530;
   border-radius: 0.75rem;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   margin-bottom: 1rem;
+  border: 1px solid #3a4840;
 }
 
 .type-block:last-child {
@@ -127,9 +128,9 @@ const getTypeGradient = (typeId: CardTypeId): string => {
 
 .type-description {
   padding: 1rem 1.25rem;
-  color: #4b5563;
+  color: #d1d5db;
   font-size: 0.9375rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #3a4840;
   margin: 0;
 }
 
@@ -148,17 +149,18 @@ const getTypeGradient = (typeId: CardTypeId): string => {
 
 .sub-types {
   padding: 1rem 1.25rem;
-  background: #f9fafb;
+  background: #222a25;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
 .sub-type {
-  background: white;
+  background: #303d35;
   border-radius: 0.5rem;
   padding: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  border: 1px solid #3a4840;
 }
 
 .sub-type-header {
@@ -171,12 +173,12 @@ const getTypeGradient = (typeId: CardTypeId): string => {
 .sub-name-ja {
   font-family: var(--font-jp, 'Noto Sans JP', sans-serif);
   font-weight: 600;
-  color: #c41e3a;
+  color: #f87171;
 }
 
 .sub-name-en {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #9ca3af;
 }
 
 .sub-cards {

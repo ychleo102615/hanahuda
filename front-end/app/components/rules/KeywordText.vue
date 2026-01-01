@@ -24,16 +24,13 @@ defineProps<Props>();
 
 <style scoped>
 .keyword-ja {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.375rem;
+  color: #4ade80;
   font-family: var(--font-jp, 'Noto Sans JP', sans-serif);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   white-space: nowrap;
 }
 
 .keyword-en {
-  color: #c41e3a;
+  color: #4ade80;
   font-weight: 600;
 }
 </style>
