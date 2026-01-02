@@ -9,7 +9,7 @@
 
 import { computed, ref, shallowRef, onMounted } from 'vue'
 import SvgIcon from '~/components/SvgIcon.vue'
-import { ALL_CARD_IDS } from '../../shared/constants/cardConstants'
+import { ALL_CARD_IDS } from '#shared/constants/cardConstants'
 import { getCardIconName } from '~/utils/cardMapping'
 
 interface Props {
