@@ -14,22 +14,18 @@
 - [HTTP 狀態碼](./shared/http-status-codes.md) - API 回應狀態碼與錯誤代碼定義
 
 ### 前端架構
-- [前端架構總覽](./frontend/architecture.md) - 前端技術棧與 BC 劃分
+- [前端架構總覽](./frontend/architecture.md) - 前端技術棧與 Clean Architecture 分層
 - **User Interface BC** (遊戲 UI 呈現層)
   - [Domain Layer](./frontend/user-interface/domain.md) - 卡片邏輯、配對驗證、役種檢測
   - [Application Layer](./frontend/user-interface/application.md) - SSE 事件處理 Use Cases
   - [Adapter Layer](./frontend/user-interface/adapter.md) - REST API 與 SSE 整合
-- **Local Game BC** (離線單機遊戲)
-  - [Domain Layer](./frontend/local-game/domain.md) - 完整遊戲引擎邏輯
-  - [Application Layer](./frontend/local-game/application.md) - 離線遊戲 Use Cases
-  - [Adapter Layer](./frontend/local-game/adapter.md) - 與 User Interface BC 的整合
 
 ### 後端架構
-- [後端架構總覽](./backend/architecture.md) - 後端技術棧與微服務預備架構
+- [後端架構總覽](./backend/architecture.md) - 後端技術棧與 Clean Architecture 分層
 - **Core Game BC** (核心遊戲服務)
   - [Domain Layer](./backend/core-game/domain.md) - Game Aggregate、遊戲規則引擎
   - [Application Layer](./backend/core-game/application.md) - 遊戲操作 Use Cases
-  - [Adapter Layer](./backend/core-game/adapter.md) - REST API、SSE、JPA 持久化
+  - [Adapter Layer](./backend/core-game/adapter.md) - REST API、SSE、Drizzle ORM 持久化
 - **Opponent BC** (對手策略)
   - [Domain Layer](./backend/opponent/domain.md) - 對手決策邏輯
   - [Application Layer](./backend/opponent/application.md) - 對手操作 Use Cases
@@ -71,10 +67,10 @@
 - **技術展示**: 完整的前後端分離架構，展示可擴展的分散式系統設計
 
 ### 1.4 技術棧
-- **前端**: Nuxt 4 + Vue 3 + TypeScript + Tailwind CSS v4
-- **後端**: Java (Spring Boot) + PostgreSQL
+- **前端**: Nuxt 4 + Vue 3 + TypeScript + Tailwind CSS v4 + Pinia
+- **後端**: Nuxt 4 Nitro + Drizzle ORM + PostgreSQL
 - **通訊**: REST API + Server-Sent Events (SSE)
-- **架構**: Clean Architecture + Domain-Driven Design + 微服務預備架構
+- **架構**: Clean Architecture + Domain-Driven Design
 
 ---
 
@@ -148,12 +144,6 @@
 - 支援斷線重連（快照模式恢復完整狀態）
 - 詳見 [protocol.md](./shared/protocol.md)
 
-#### 離線模式（單機遊戲）
-- 完整的遊戲引擎實作（發牌、配對、役種檢測、分數計算）
-- 簡易隨機對手策略（MVP）
-- 頁面重新載入後可恢復遊戲（可選）
-- 詳見 [Local Game BC](./frontend/local-game/)
-
 #### 視覺回饋與互動
 - **可選狀態**: 手牌 hover 時輕微放大、陰影效果
 - **選中狀態**: 選中的手牌明顯 highlight (如邊框發光)
@@ -219,22 +209,21 @@ Phase 3 (分散式):
 
 ### 3.4 安全性
 - **CORS 設定**: 僅允許前端網域
-- **API Rate Limiting** (預留): 可用 Redis + Bucket4j 實作
-- **Input Validation**: Bean Validation (JSR-380) / Zod (TypeScript)
-- **SQL Injection 防護**: 使用 JPA/Hibernate Prepared Statements
+- **API Rate Limiting** (預留): 可用 Redis 實作
+- **Input Validation**: Zod Schema Validation
+- **SQL Injection 防護**: 使用 Drizzle ORM Prepared Statements
 - **XSS 防護**: 前端 sanitize input，後端回傳適當的 Content-Type
 - **HTTPS 強制**: 生產環境強制 HTTPS
-- **敏感資料保護**: 密碼等使用環境變數，不寫入程式碼
+- **敏感資料保護**: 使用環境變數，不寫入程式碼
 
 ### 3.5 可觀測性 (Observability)
-- **日誌 (Logging)**: 使用 SLF4J + Logback (後端)、Console (前端)
-  - 結構化日誌 (JSON format)
+- **日誌 (Logging)**: 使用 Consola（後端）、Console（前端）
+  - 結構化日誌
   - 不同層級 (INFO, WARN, ERROR)
 - **監控 (Monitoring)** (預留):
-  - Spring Boot Actuator
   - Prometheus + Grafana
 - **追蹤 (Tracing)** (預留):
-  - 分散式追蹤 (如 Zipkin)
+  - 分散式追蹤
 
 ---
 
@@ -247,8 +236,8 @@ Phase 3 (分散式):
 ```
 ┌───────────────────────────────────────┐
 │  Framework & Drivers (最外層)         │
-│  ├─ Web (Spring MVC/Vue Router)       │
-│  ├─ Database (JPA/IndexedDB)          │
+│  ├─ Web (Nuxt Pages/Nitro Routes)     │
+│  ├─ Database (Drizzle ORM)            │
 │  └─ External APIs                     │
 │                                       │
 │  ┌──────────────────────────────────┐ │
@@ -313,11 +302,10 @@ Phase 3 (分散式):
 
 #### 前端
 - **User Interface BC**: 遊戲 UI 呈現層（卡片顯示、動畫、使用者操作）
-- **Local Game BC**: 離線單機遊戲引擎（完整遊戲邏輯）
 
 #### 後端
 - **Core Game BC**: 核心遊戲服務（遊戲會話、規則引擎、事件推送）
-- **Opponent BC**: 對手策略服務（決策邏輯）
+- **Opponent BC**: 對手策略服務（AI 決策邏輯）
 
 詳見 [前端架構總覽](./frontend/architecture.md) 與 [後端架構總覽](./backend/architecture.md)
 
@@ -472,9 +460,9 @@ Phase 3 (分散式):
 #### 技術文檔
 - **Clean Architecture** - Robert C. Martin
 - **Domain-Driven Design** - Eric Evans
-- **Spring Boot Documentation** - https://spring.io/projects/spring-boot
 - **Nuxt Documentation** - https://nuxt.com/
 - **Vue 3 Documentation** - https://vuejs.org/
+- **Drizzle ORM Documentation** - https://orm.drizzle.team/
 - **Server-Sent Events (MDN)** - https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
 
 ---

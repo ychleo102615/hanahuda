@@ -8,15 +8,17 @@
 - **狀態管理**: Pinia
 - **HTTP 客戶端**: $fetch（Nuxt 內置）/ Fetch API
 - **SSE 客戶端**: EventSource API
+- **動畫**: @vueuse/motion
+- **SVG 優化**: vite-plugin-svg-icons
 - **構建工具**: Nuxt 4（內建 Vite）
 
 ---
 
 ## Bounded Context 劃分
 
-前端採用 DDD 的 Bounded Context 概念，劃分為兩個獨立的上下文：
+前端採用 DDD 的 Bounded Context 概念，目前實作一個主要上下文：
 
-### 1. User Interface BC
+### User Interface BC
 
 **職責**: 遊戲 UI 呈現層
 
@@ -25,35 +27,15 @@
 - **Adapter Layer**: Pinia（狀態管理實作）、Vue 組件、路由、API 客戶端
 
 **核心功能**:
-- 遊戲介面渲染（首頁、遊戲頁面）
-- 卡片操作互動（點擊、拖拽、hover）
-- 動畫與視覺回饋
+- 遊戲介面渲染（首頁、大廳、遊戲頁面）
+- 卡片操作互動（點擊、hover）
+- 動畫與視覺回饋（使用 @vueuse/motion）
 - 即時 UI 狀態更新
+- SSE 事件接收與處理
 
 **依賴**:
-- 可以獨立運行（使用 local-game BC）
-- 也可以連接後端（使用 REST + SSE）
-
----
-
-### 2. Local Game BC
-
-**職責**: 完整的本地遊戲引擎（前端版後端）
-
-- **Domain Layer**: 遊戲規則引擎、牌組管理、回合控制
-- **Application Layer**: 遊戲流程編排 Use Cases、對手決策邏輯
-- **Adapter Layer**: 與 user-interface BC 的整合介面
-
-**核心功能**:
-- 完整的遊戲邏輯實作（發牌、配對、役種判定）
-- 本地對手策略（AI 邏輯）
-- 離線遊玩支援
-- 遊戲狀態管理
-
-**使用場景**:
-- 離線模式遊玩
-- 前端原型開發與測試
-- 快速迭代遊戲規則
+- 連接後端（使用 REST + SSE）
+- Mock 模式（開發測試用）
 
 ---
 
@@ -61,7 +43,7 @@
 
 ### Clean Architecture 分層
 
-兩個 BC 都遵循 Clean Architecture 的三層結構：
+User Interface BC 遵循 Clean Architecture 的三層結構：
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -85,23 +67,25 @@
 
 ---
 
-### BC 整合模式
+### 遊戲模式
 
-**模式 1: 離線模式**
-```
-User Interface BC → Local Game BC
-```
-- user-interface 呼叫 local-game 提供的遊戲引擎
-- 所有遊戲邏輯在前端執行
-- 無需後端連線
+前端支援兩種遊戲模式，透過 DI Container 切換：
 
-**模式 2: 線上模式**
+**Backend 模式**（預設）
 ```
 User Interface BC → Backend (REST + SSE)
 ```
-- user-interface 透過 API 與後端通訊
+- 透過 API 與後端通訊
 - 遊戲邏輯由後端執行
-- local-game BC 不參與
+- 支援斷線重連
+
+**Mock 模式**（開發測試用）
+```
+User Interface BC → MockApiClient + MockEventEmitter
+```
+- 使用 Mock 資料模擬後端回應
+- 無需啟動後端服務
+- 方便前端開發與測試
 
 ---
 
@@ -124,11 +108,11 @@ User Interface BC → Backend (REST + SSE)
 
 #### 1. 註冊依賴（Nuxt 4 Plugin）
 
-**檔案**：`plugins/01.di-container.client.ts`
+**檔案**：`app/plugins/01.di-container.client.ts`
 
 ```typescript
-import { container } from '~/src/user-interface/adapter/di/container'
-import { registerDependencies, type GameMode } from '~/src/user-interface/adapter/di/registry'
+import { container } from '~/user-interface/adapter/di/container'
+import { registerDependencies, type GameMode } from '~/user-interface/adapter/di/registry'
 
 export default defineNuxtPlugin(() => {
   // 僅在 client-side 執行（.client.ts 後綴已確保）
@@ -137,18 +121,13 @@ export default defineNuxtPlugin(() => {
     return
   }
 
-  // 從 sessionStorage 讀取遊戲模式（預設為 'mock'）
-  const gameMode: GameMode = (sessionStorage.getItem('gameMode') as GameMode) || 'mock'
-
-  console.info('[DI Plugin] Initializing DI container', { gameMode })
+  // 從 runtimeConfig 讀取遊戲模式（預設為 'backend'）
+  const runtimeConfig = useRuntimeConfig()
+  const gameMode: GameMode = runtimeConfig.public.gameMode as GameMode
 
   try {
     // 註冊所有依賴（統一由 registry.ts 管理）
     registerDependencies(container, gameMode)
-
-    console.info('[DI Plugin] DI container initialized successfully', {
-      registeredTokens: container.getRegisteredTokens().length,
-    })
   } catch (error) {
     console.error('[DI Plugin] Failed to initialize DI container:', error)
     throw error
@@ -165,8 +144,8 @@ export default defineNuxtPlugin(() => {
 
 **重點說明**：
 - **`.client.ts` 後綴**：確保此 plugin 僅在 client-side 運行（SSE 和 Pinia 僅支援 client-side）
-- **`01.` 前綴**：確保此 plugin 在其他 plugin 之後載入（Pinia 由 Nuxt 自動初始化）
-- **統一管理**：所有依賴註冊邏輯封裝在 `registry.ts` 中，支援 3 種遊戲模式（backend、mock、local）
+- **`01.` 前綴**：確保此 plugin 在 SVG 圖示 plugin（`00.svg-icons.client.ts`）之後載入
+- **統一管理**：所有依賴註冊邏輯封裝在 `registry.ts` 中，支援 backend 和 mock 兩種遊戲模式
 
 ---
 
@@ -241,8 +220,8 @@ function registerInputPorts(container: DIContainer): void {
 ```vue
 <!-- PlayerHandZone.vue -->
 <script setup lang="ts">
-import { TOKENS } from '~/src/user-interface/adapter/di/tokens'
-import type { PlayHandCardPort } from '~/src/user-interface/application/ports/input'
+import { TOKENS } from '~/user-interface/adapter/di/tokens'
+import type { PlayHandCardPort } from '~/user-interface/application/ports/input'
 
 // 使用 useDependency composable 解析依賴（基於 Symbol Token）
 const playHandCardUseCase = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
@@ -280,8 +259,8 @@ const handleCardClick = async (cardId: string) => {
 **useDependency Composable 實作**
 
 ```typescript
-// composables/useDependency.ts
-import { container } from '~/src/user-interface/adapter/di/container'
+// app/user-interface/adapter/composables/useDependency.ts
+import { container } from '~/user-interface/adapter/di/container'
 
 export function useDependency<T>(token: symbol): T {
   if (!container.has(token)) {
@@ -293,20 +272,22 @@ export function useDependency<T>(token: symbol): T {
 
 ---
 
-### 模式切換（線上 vs. 離線）
+### 模式切換（Backend vs. Mock）
+
+透過 `nuxt.config.ts` 的 `runtimeConfig.public.gameMode` 控制：
 
 ```typescript
-// 線上模式：使用 Backend API
-container.register('SendCommandPort', { useClass: GameApiClient })
-container.register('GameEventClient', { useClass: GameEventClient })
+// Backend 模式：使用真實 API
+container.register(TOKENS.GameApiClient, () => new GameApiClient())
+container.register(TOKENS.GameEventClient, () => new GameEventClient())
 
-// 離線模式：使用 Local Game BC
-container.register('SendCommandPort', { useClass: LocalGameAdapter })
-container.register('GameEventClient', { useClass: LocalGameEventEmitter })
+// Mock 模式：使用 Mock 實作
+container.register(TOKENS.GameApiClient, () => new MockApiClient())
+container.register(TOKENS.GameEventClient, () => new MockEventEmitter())
 ```
 
-**LocalGameAdapter**: 將命令轉發給 local-game BC
-**LocalGameEventEmitter**: 模擬 SSE 事件推送
+**GameApiClient**: 透過 REST API 與後端通訊
+**MockApiClient**: 模擬 API 回應，用於開發測試
 
 ---
 
@@ -351,54 +332,63 @@ container.register('GameEventClient', { useClass: LocalGameEventEmitter })
 
 ---
 
-## 目錄結構建議
+## 目錄結構
 
 Nuxt 4 採用約定式目錄結構，將 Clean Architecture 與框架慣例結合：
 
 ```
 front-end/
-├── nuxt.config.ts        # Nuxt 4 核心配置
-├── app.vue               # 根組件
-├── pages/                # 路由頁面（Nuxt 約定，自動路由）
-│   ├── index.vue         # 首頁 (/)
-│   ├── lobby.vue         # 大廳 (/lobby)
-│   └── game.vue          # 遊戲頁面 (/game)
-├── components/           # 全域組件（Nuxt 自動導入）
-├── composables/          # Vue 組合函式（Nuxt 自動導入）
-│   └── useDependency.ts  # DI 容器使用
-├── plugins/              # Nuxt 插件
-│   ├── 01.di-container.client.ts   # DI 容器初始化
-│   └── 02.svg-icons.client.ts      # SVG 圖示註冊
-├── middleware/           # 路由中間件（替代 guards）
-│   ├── game-page.ts
-│   └── lobby-page.ts
-├── stores/               # Pinia Stores（Nuxt 頂層目錄）
-├── src/                  # 原有代碼保留在 src/
-│   ├── user-interface/   # User Interface BC（保持不變）
-│   │   ├── domain/       # Domain Layer（純函數邏輯）
-│   │   ├── application/  # Application Layer（Use Cases）
-│   │   └── adapter/      # Adapter Layer
-│   │       ├── di/       # DI 容器
-│   │       ├── api/      # API 客戶端
-│   │       ├── sse/      # SSE 客戶端
-│   │       ├── animation/# 動畫適配器
-│   │       └── composables/ # Vue composables
-│   ├── local-game/       # Local Game BC
-│   │   ├── domain/       # 遊戲規則引擎
-│   │   ├── application/  # 遊戲流程 Use Cases
-│   │   └── adapter/      # 與 UI BC 的整合介面
-│   ├── assets/           # 靜態資源
-│   ├── data/             # 靜態資料
-│   ├── types/            # 全域類型
-│   └── constants/        # 常數
-└── tsconfig.json         # TypeScript 配置
+├── nuxt.config.ts              # Nuxt 4 核心配置
+├── app/                        # Nuxt 4 應用目錄
+│   ├── app.vue                 # 根組件
+│   ├── pages/                  # 路由頁面（自動路由）
+│   │   ├── index.vue           # 首頁 (/)
+│   │   ├── lobby.vue           # 大廳 (/lobby)
+│   │   └── game/
+│   │       ├── index.vue       # 遊戲頁面 (/game)
+│   │       └── components/     # 遊戲頁面專用組件
+│   ├── components/             # 全域組件（自動導入）
+│   │   └── SvgIcon.vue
+│   ├── composables/            # Vue 組合函式（自動導入）
+│   │   └── useScrollTo.ts
+│   ├── plugins/                # Nuxt 插件
+│   │   ├── 00.svg-icons.client.ts    # SVG 圖示初始化
+│   │   └── 01.di-container.client.ts # DI 容器初始化
+│   ├── middleware/             # 路由中間件
+│   │   ├── game.ts
+│   │   └── lobby.ts
+│   ├── assets/                 # 靜態資源
+│   │   ├── icons/              # 50 張花札卡片 SVG
+│   │   └── styles/             # CSS 樣式
+│   ├── utils/                  # 工具函式
+│   │   └── cardMapping.ts      # 卡片 ID 對應
+│   └── user-interface/         # User Interface BC
+│       ├── domain/             # Domain Layer（純函數）
+│       │   ├── card-info.ts
+│       │   ├── month-mapping.ts
+│       │   └── yaku-info.ts
+│       ├── application/        # Application Layer（Use Cases）
+│       │   ├── ports/          # Port 介面定義
+│       │   └── use-cases/      # Use Case 實作
+│       │       └── event-handlers/  # SSE 事件處理
+│       └── adapter/            # Adapter Layer
+│           ├── di/             # DI 容器
+│           ├── api/            # REST API 客戶端
+│           ├── sse/            # SSE 客戶端
+│           ├── animation/      # 動畫適配器
+│           ├── stores/         # Pinia Stores
+│           ├── mock/           # Mock 實作
+│           └── composables/    # Vue composables
+├── server/                     # Nitro 後端（獨立目錄）
+└── shared/                     # 前後端共用契約
+    └── contracts/
 ```
 
 **說明**：
-- **Nuxt 約定目錄**：`pages/`、`components/`、`plugins/`、`middleware/` 遵循 Nuxt 4 慣例
-- **Clean Architecture 保留**：`src/user-interface/` 和 `src/local-game/` 的 Domain/Application/Adapter 三層分離完整保留
-- **自動導入**：Nuxt 4 自動導入 `components/`、`composables/` 下的內容，無需手動 import
-- **約定式路由**：`pages/` 目錄自動生成路由，無需手動配置 Vue Router
+- **Nuxt 4 app 目錄**：所有前端代碼位於 `app/` 目錄下
+- **Clean Architecture 分層**：`user-interface/` 的 Domain/Application/Adapter 三層分離
+- **自動導入**：`components/`、`composables/` 下的內容自動導入
+- **約定式路由**：`pages/` 目錄自動生成路由
 
 ---
 
@@ -407,8 +397,5 @@ front-end/
 - [User Interface BC - Domain Layer](./user-interface/domain.md)
 - [User Interface BC - Application Layer](./user-interface/application.md)
 - [User Interface BC - Adapter Layer](./user-interface/adapter.md)
-- [Local Game BC - Domain Layer](./local-game/domain.md)
-- [Local Game BC - Application Layer](./local-game/application.md)
-- [Local Game BC - Adapter Layer](./local-game/adapter.md)
 - [共用數據契約](../shared/data-contracts.md)
 - [通訊協議](../shared/protocol.md)

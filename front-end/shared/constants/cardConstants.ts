@@ -1,5 +1,5 @@
 /**
- * Card Constants - Domain Layer
+ * Card Constants - Shared Constants
  *
  * @description
  * 花札牌組的卡片常數定義。
@@ -10,7 +10,7 @@
  * - T: 牌型 (1=光牌, 2=種牌, 3=短冊, 4=かす)
  * - I: 該月該牌型的序號 (1-4)
  *
- * @module server/domain/card/cardConstants
+ * @module shared/constants/cardConstants
  */
 
 /**

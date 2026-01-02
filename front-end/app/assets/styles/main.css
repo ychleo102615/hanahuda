@@ -18,6 +18,8 @@
   --color-accent-red: #dc2626;
   --color-accent-pink: #fbcfe8;
   --color-accent-green: #10b981;
+  /* 金色（用於高亮數字） */
+  --color-accent-gold: #D4AF37;
 
   /* 字體家族 */
   --font-sans: Inter, 'Noto Sans', sans-serif;
@@ -33,6 +35,11 @@
   --card-height-md: 6rem;     /* 96px */
   --card-height-lg: 8rem;     /* 128px */
   --card-height-min: 3rem;    /* 48px - 最小限制 */
+
+  /* Hero 卡片網格尺寸 */
+  --hero-card-size-sm: 3rem;
+  --hero-card-size-md: 4rem;
+  --hero-card-size-lg: 5rem;
 
   /* Game Page 佈局變數 */
   --game-topbar-height: 5rem;  /* 80px */
@@ -139,5 +146,22 @@
 
   .animate-fade-in {
     animation: fade-in 0.6s ease-out forwards;
+  }
+
+  /* Hero 卡片進場動畫 */
+  @keyframes card-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .animate-card-fade-in {
+    animation: card-fade-in 0.6s ease-out forwards;
+    animation-delay: var(--delay, 0ms);
   }
 }

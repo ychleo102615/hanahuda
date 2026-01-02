@@ -59,12 +59,23 @@ const getCardIconClass = (category: string): string => {
   }
   return 'h-32 w-auto drop-shadow-lg';
 };
+
+// Get category display name (matching RulesSection CardType naming)
+const getCategoryDisplayName = (category: string): string => {
+  const names: Record<string, string> = {
+    hikari: 'Bright',
+    tane: 'Animal/Object',
+    tanzaku: 'Ribbon',
+    kasu: 'Plain',
+  };
+  return names[category] || category;
+};
 </script>
 
 <template>
   <div class="relative w-full max-w-4xl mx-auto">
     <!-- Carousel Container -->
-    <div class="carousel-container relative overflow-hidden rounded-lg shadow-lg bg-white min-h-[560px] flex items-center">
+    <div class="carousel-container relative overflow-hidden rounded-lg shadow-lg bg-[#3a4840] border border-[#4a5850] min-h-[560px] flex items-center">
       <!-- Left Navigation Zone -->
       <button
         v-if="yakuList.length > 1"
@@ -81,9 +92,9 @@ const getCardIconClass = (category: string): string => {
       <div v-if="currentYaku" class="text-center space-y-6 w-full p-8">
         <!-- Yaku Name -->
         <div class="space-y-2">
-          <h4 class="text-3xl font-bold text-primary-900">
+          <h4 class="text-3xl font-bold text-white">
             {{ currentYaku.name }}
-            <span class="text-2xl text-primary-700">({{ currentYaku.nameJa }})</span>
+            <span class="text-2xl text-gray-300">({{ currentYaku.nameJa }})</span>
           </h4>
         </div>
 
@@ -93,18 +104,18 @@ const getCardIconClass = (category: string): string => {
             :class="getCategoryColor(currentYaku.category)"
             class="px-4 py-1 rounded-full text-sm font-semibold uppercase tracking-wide"
           >
-            {{ currentYaku.category }}
+            {{ getCategoryDisplayName(currentYaku.category) }}
           </span>
         </div>
 
         <!-- Points -->
-        <div class="text-5xl font-bold text-accent-red">
+        <div class="text-5xl font-bold text-emerald-400">
           {{ currentYaku.points }}
-          <span class="text-2xl text-gray-600">points</span>
+          <span class="text-2xl text-gray-400">points</span>
         </div>
 
         <!-- Description -->
-        <p class="text-lg text-gray-700 leading-relaxed max-w-2xl mx-auto">
+        <p class="text-lg text-gray-300 leading-relaxed max-w-2xl mx-auto">
           {{ formatDescription(currentYaku) }}
         </p>
 
@@ -121,7 +132,7 @@ const getCardIconClass = (category: string): string => {
       </div>
 
       <!-- Empty State -->
-      <div v-else class="text-center text-gray-500 py-12 w-full">
+      <div v-else class="text-center text-gray-400 py-12 w-full">
         No Yaku available
       </div>
 
@@ -148,8 +159,8 @@ const getCardIconClass = (category: string): string => {
         :class="[
           'w-3 h-3 rounded-full transition-all',
           index === currentIndex
-            ? 'bg-primary-900 w-8'
-            : 'bg-gray-300 hover:bg-gray-400',
+            ? 'bg-emerald-400 w-8'
+            : 'bg-gray-500 hover:bg-gray-400',
         ]"
       />
     </div>
@@ -186,16 +197,16 @@ const getCardIconClass = (category: string): string => {
 .nav-icon {
   width: 1.5rem;
   height: 1.5rem;
-  color: #d1d5db;
+  color: #6b7280;
   transition: color 0.2s ease;
 }
 
 .nav-zone:hover {
-  background-color: rgba(0, 0, 0, 0.08);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .nav-zone:hover .nav-icon {
-  color: #374151;
+  color: #d1d5db;
 }
 
 .nav-zone:active {

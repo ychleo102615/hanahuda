@@ -3,11 +3,12 @@
 ## 技術棧
 
 ### 核心框架
-- **Java 17+** (建議 Java 21 LTS)
-- **Spring Boot 3.x**
-- **Spring MVC** (REST API)
-- **Spring WebFlux** (SSE 支援)
+- **Nuxt 4 Nitro** (Server Engine)
+- **TypeScript 5.9+**
+- **H3** (HTTP 框架)
+- **Drizzle ORM** (資料庫 ORM)
 - **PostgreSQL 14+** (資料庫)
+- **Zod** (Schema Validation)
 
 ### 通訊協議
 - **REST API**: 處理客戶端命令（加入遊戲、打牌、選擇配對、Koi-Koi 決策）
@@ -16,7 +17,7 @@
 ### 架構設計
 - **Clean Architecture**: 嚴格分層（Domain → Application → Adapter → Framework）
 - **Domain-Driven Design (DDD)**: Bounded Context、Aggregate、Entity、Value Object
-- **微服務預備架構**: MVP 採用單體應用，但設計上預留微服務化路徑
+- **Nuxt 全棧架構**: 前後端整合於同一專案，共用 TypeScript 類型
 
 ---
 
@@ -48,13 +49,12 @@
 ### 2. Opponent BC（對手策略）
 
 **職責**:
-- 對手決策邏輯（選擇手牌、選擇配對目標、Koi-Koi 決策）
-- 策略模式實作（簡易隨機策略、進階策略）
+- AI 對手決策邏輯（選擇手牌、選擇配對目標、Koi-Koi 決策）
+- 策略模式實作（簡易隨機策略）
 
 **核心領域模型**:
 - **OpponentStrategy** (Interface): 對手策略介面
-- **RandomStrategy**: 簡易隨機策略（MVP）
-- **AdvancedStrategy**: 進階策略（Post-MVP）
+- **SimpleAIStrategy**: 簡易 AI 策略
 
 **詳細文檔**:
 - [Opponent BC - Domain Layer](./opponent/domain.md)
@@ -68,19 +68,18 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Framework & Drivers Layer (最外層)                         │
-│  ├─ Spring MVC (REST Controllers)                           │
-│  ├─ Spring WebFlux (SSE Controllers)                        │
-│  ├─ Spring Data JPA (PostgreSQL)                            │
-│  └─ External Libraries                                      │
+│  ├─ Nitro Server Routes (REST API)                          │
+│  ├─ SSE Event Stream Handler                                │
+│  ├─ Drizzle ORM (PostgreSQL)                                │
+│  └─ H3 HTTP Utilities                                       │
 │                                                              │
 │  ┌───────────────────────────────────────────────────────┐ │
 │  │  Adapter Layer (介面適配層)                           │ │
-│  │  ├─ REST Controllers (遊戲命令接收)                   │ │
-│  │  ├─ SSE Controllers (事件推送)                        │ │
+│  │  ├─ API Routes (遊戲命令接收)                         │ │
+│  │  ├─ SSE Publisher (事件推送)                          │ │
 │  │  ├─ DTOs (資料傳輸對象)                               │ │
-│  │  ├─ Repository Adapters (JPA 實作)                   │ │
-│  │  ├─ Event Publishers (SSE 實作)                      │ │
-│  │  └─ Mappers (Domain ↔ DTO 轉換)                      │ │
+│  │  ├─ Repository Adapters (Drizzle 實作)                │ │
+│  │  └─ Mappers (Domain ↔ DTO 轉換)                       │ │
 │  │                                                        │ │
 │  │  ┌─────────────────────────────────────────────────┐ │ │
 │  │  │  Application Layer (應用業務規則層)             │ │ │
@@ -88,16 +87,15 @@
 │  │  │  │  ├─ JoinGameUseCase                         │ │ │
 │  │  │  │  ├─ PlayHandCardUseCase                     │ │ │
 │  │  │  │  ├─ SelectMatchedCardUseCase                │ │ │
-│  │  │  │  ├─ MakeKoiKoiDecisionUseCase               │ │ │
-│  │  │  │  ├─ ExecuteOpponentTurnUseCase              │ │ │
-│  │  │  │  └─ DetectYakuUseCase                       │ │ │
+│  │  │  │  ├─ MakeDecisionUseCase                     │ │ │
+│  │  │  │  └─ ExecuteOpponentTurnUseCase              │ │ │
 │  │  │  ├─ Input Ports (命令介面)                      │ │ │
 │  │  │  └─ Output Ports (Repository、Event Publisher) │ │ │
 │  │  │                                                  │ │ │
 │  │  │  ┌───────────────────────────────────────────┐ │ │ │
 │  │  │  │  Domain Layer (企業業務規則層)           │ │ │ │
 │  │  │  │  ├─ Aggregates                           │ │ │ │
-│  │  │  │  │  └─ Game (Aggregate Root)            │ │ │ │
+│  │  │  │  │  └─ Game                              │ │ │ │
 │  │  │  │  ├─ Entities                             │ │ │ │
 │  │  │  │  │  ├─ Round                             │ │ │ │
 │  │  │  │  │  └─ Player                            │ │ │ │
@@ -105,12 +103,10 @@
 │  │  │  │  │  ├─ Card                              │ │ │ │
 │  │  │  │  │  ├─ Yaku                              │ │ │ │
 │  │  │  │  │  └─ FlowStage                         │ │ │ │
-│  │  │  │  ├─ Domain Services                      │ │ │ │
-│  │  │  │  │  ├─ GameRuleService                   │ │ │ │
-│  │  │  │  │  └─ YakuDetectionService              │ │ │ │
-│  │  │  │  └─ Repository Interfaces                │ │ │ │
-│  │  │  │     ├─ GameRepository                    │ │ │ │
-│  │  │  │     └─ EventRepository                   │ │ │ │
+│  │  │  │  └─ Domain Services                      │ │ │ │
+│  │  │  │     ├─ matchingService                   │ │ │ │
+│  │  │  │     ├─ yakuDetectionService              │ │ │ │
+│  │  │  │     └─ scoringService                    │ │ │ │
 │  │  │  └───────────────────────────────────────────┘ │ │ │
 │  │  └─────────────────────────────────────────────────┘ │ │
 │  └───────────────────────────────────────────────────────┘ │
@@ -120,226 +116,130 @@
 ### 依賴規則 (Dependency Rule)
 
 - ✅ **依賴箭頭只能由外層指向內層**
-- ✅ **Domain Layer 不依賴任何框架**（純 Java POJO）
+- ✅ **Domain Layer 不依賴任何框架**（純 TypeScript 函數）
 - ✅ **Application Layer 定義 Port 介面，Adapter Layer 實作**
 - ✅ **Adapter Layer 負責資料格式轉換**（Domain ↔ DTO）
+- ✅ **使用 `Object.freeze()` 確保 Domain 物件不可變**
 
 ---
 
-## 目錄結構建議
+## 目錄結構
 
 ```
-src/main/java/com/hanafuda/
-├─ domain/                          # Domain Layer
-│  ├─ game/                         # Game Aggregate
-│  │  ├─ Game.java                  # Aggregate Root
-│  │  ├─ Round.java                 # Entity
-│  │  ├─ Player.java                # Entity
-│  │  ├─ Card.java                  # Value Object
-│  │  ├─ Yaku.java                  # Value Object
-│  │  ├─ FlowStage.java             # Enum
-│  │  └─ GameRuleService.java       # Domain Service
-│  ├─ opponent/                     # Opponent Aggregate
-│  │  └─ OpponentStrategy.java      # Interface
-│  └─ repository/                   # Repository Interfaces
-│     ├─ GameRepository.java
-│     └─ EventRepository.java
+front-end/
+├── server/                           # Nitro 後端目錄
+│   ├── api/v1/                       # REST API Routes
+│   │   ├── games/
+│   │   │   ├── join.post.ts          # POST /api/v1/games/join
+│   │   │   └── [gameId]/
+│   │   │       ├── events.get.ts     # GET  /api/v1/games/:gameId/events (SSE)
+│   │   │       ├── snapshot.get.ts   # GET  /api/v1/games/:gameId/snapshot
+│   │   │       ├── leave.post.ts     # POST /api/v1/games/:gameId/leave
+│   │   │       ├── turns/
+│   │   │       │   ├── play-card.post.ts      # POST /api/v1/games/:gameId/turns/play-card
+│   │   │       │   └── select-match.post.ts   # POST /api/v1/games/:gameId/turns/select-match
+│   │   │       └── rounds/
+│   │   │           └── decision.post.ts       # POST /api/v1/games/:gameId/rounds/decision
+│   │   └── health.get.ts             # Health check
+│   │
+│   ├── domain/                       # Domain Layer
+│   │   ├── game/                     # Game Aggregate
+│   │   │   ├── game.ts               # Game 類型定義
+│   │   │   ├── game-factory.ts       # Game 工廠函數
+│   │   │   └── game-operations.ts    # Game 操作（純函數）
+│   │   ├── round/                    # Round Entity
+│   │   │   ├── round.ts              # Round 類型定義
+│   │   │   └── round-operations.ts   # Round 操作（純函數）
+│   │   ├── types/                    # 共用類型
+│   │   │   ├── card.ts
+│   │   │   ├── yaku.ts
+│   │   │   └── flow-stage.ts
+│   │   └── services/                 # Domain Services
+│   │       ├── matching-service.ts   # 配對邏輯
+│   │       ├── yaku-detection-service.ts  # 役種檢測
+│   │       └── scoring-service.ts    # 分數計算
+│   │
+│   ├── application/                  # Application Layer
+│   │   ├── ports/                    # Port 介面
+│   │   │   ├── input/                # Input Ports
+│   │   │   └── output/               # Output Ports
+│   │   └── use-cases/                # Use Cases
+│   │       ├── JoinGameUseCase.ts
+│   │       ├── PlayHandCardUseCase.ts
+│   │       ├── SelectMatchedCardUseCase.ts
+│   │       ├── MakeDecisionUseCase.ts
+│   │       └── ExecuteOpponentTurnUseCase.ts
+│   │
+│   ├── adapters/                     # Adapter Layer
+│   │   ├── persistence/              # 持久化
+│   │   │   ├── GameRepositoryAdapter.ts
+│   │   │   └── mappers/
+│   │   ├── event/                    # 事件發布
+│   │   │   ├── SSEEventPublisher.ts
+│   │   │   └── SSEConnectionRegistry.ts
+│   │   └── lock/                     # 並發控制
+│   │       └── InMemoryGameLock.ts
+│   │
+│   ├── database/                     # 資料庫
+│   │   ├── drizzle.config.ts
+│   │   ├── schema.ts                 # Drizzle Schema
+│   │   └── migrations/               # 資料庫遷移
+│   │
+│   └── utils/                        # 工具函式
+│       ├── db.ts                     # 資料庫連線
+│       └── session.ts                # Session 處理
 │
-├─ application/                     # Application Layer
-│  ├─ usecase/                      # Use Cases
-│  │  ├─ JoinGameUseCase.java
-│  │  ├─ PlayHandCardUseCase.java
-│  │  ├─ SelectMatchedCardUseCase.java
-│  │  ├─ MakeKoiKoiDecisionUseCase.java
-│  │  ├─ ExecuteOpponentTurnUseCase.java
-│  │  └─ DetectYakuUseCase.java
-│  └─ port/                         # Port Interfaces
-│     ├─ in/                        # Input Ports
-│     │  ├─ JoinGameCommand.java
-│     │  ├─ PlayHandCardCommand.java
-│     │  └─ ...
-│     └─ out/                       # Output Ports
-│        ├─ LoadGamePort.java
-│        ├─ SaveGamePort.java
-│        └─ PublishEventPort.java
-│
-├─ adapter/                         # Adapter Layer
-│  ├─ in/                           # Input Adapters
-│  │  └─ web/
-│  │     ├─ GameController.java     # REST API
-│  │     ├─ GameEventController.java # SSE
-│  │     └─ dto/
-│  │        ├─ JoinGameRequestDTO.java
-│  │        ├─ PlayCardRequestDTO.java
-│  │        └─ ...
-│  ├─ out/                          # Output Adapters
-│  │  ├─ persistence/
-│  │  │  ├─ GameRepositoryAdapter.java
-│  │  │  ├─ entity/
-│  │  │  │  ├─ GameEntity.java
-│  │  │  │  └─ EventEntity.java
-│  │  │  └─ mapper/
-│  │  │     └─ GameMapper.java
-│  │  └─ event/
-│  │     └─ SSEEventPublisher.java
-│  └─ config/
-│     └─ BeanConfiguration.java     # DI 配置
-│
-└─ HanafudaApplication.java         # Spring Boot 主類別
+└── shared/                           # 前後端共用
+    └── contracts/                    # 數據契約
+        ├── commands.ts               # 命令類型
+        ├── events.ts                 # 事件類型
+        └── game-state.ts             # 遊戲狀態類型
 ```
 
 ---
 
-## 微服務預備架構
+## 資料庫設計
 
-### MVP 階段：單體應用
+### 資料表結構
 
+使用 Drizzle ORM 定義的三個主要資料表：
+
+| 資料表 | 用途 |
+|--------|------|
+| `games` | 遊戲會話（玩家資訊、狀態、累計分數） |
+| `player_stats` | 玩家統計（勝率、役種計數、Koi-Koi 次數） |
+| `game_logs` | 事件日誌（用於 Debug 追溯問題） |
+
+```typescript
+// server/database/schema.ts
+export const games = pgTable("games", {
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  sessionToken: uuid("session_token").notNull().unique(),
+  player1Id: uuid("player1_id").notNull(),
+  player1Name: varchar("player1_name", { length: 50 }).notNull(),
+  player2Id: uuid("player2_id"),
+  player2Name: varchar("player2_name", { length: 50 }),
+  isPlayer2Ai: boolean("is_player2_ai").default(true).notNull(),
+  status: varchar({ length: 20 }).default('WAITING').notNull(),
+  totalRounds: integer("total_rounds").default(2).notNull(),
+  roundsPlayed: integer("rounds_played").default(0).notNull(),
+  cumulativeScores: jsonb("cumulative_scores").default([]).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+})
+
+export const gameLogs = pgTable("game_logs", {
+  id: bigserial({ mode: "bigint" }).primaryKey().notNull(),
+  gameId: uuid("game_id").notNull(),
+  playerId: varchar("player_id", { length: 100 }),
+  eventType: varchar("event_type", { length: 100 }).notNull(),
+  payload: jsonb().notNull(),
+  sequenceNumber: integer("sequence_number").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("idx_game_logs_game_id").using("btree", table.gameId),
+])
 ```
-┌─────────────────────────────────────┐
-│          Frontend (Vue 3)           │
-└──────────────┬──────────────────────┘
-               │ REST + SSE
-               ↓
-┌─────────────────────────────────────┐
-│     Backend (Spring Boot Monolith)  │
-│  ├─ Core Game BC                    │
-│  └─ Opponent BC                     │
-└──────────────┬──────────────────────┘
-               │ JDBC
-               ↓
-┌─────────────────────────────────────┐
-│         PostgreSQL                  │
-└─────────────────────────────────────┘
-```
-
-### Phase 2：微服務拆分（Post-MVP）
-
-```
-┌─────────────────────────────────────┐
-│          Frontend (Vue 3)           │
-└──────────────┬──────────────────────┘
-               │
-               ↓
-┌─────────────────────────────────────┐
-│         API Gateway (Spring Cloud)  │
-└──────┬──────────────┬───────────────┘
-       │              │
-       ↓              ↓
-┌─────────────┐  ┌─────────────────┐
-│ Game Service│  │ Opponent Service│
-│ (Core Game) │  │ (Strategies)    │
-└──────┬──────┘  └────────┬─────────┘
-       │                  │
-       └──────┬───────────┘
-              ↓
-┌─────────────────────────────────────┐
-│   Event Bus (Kafka / RabbitMQ)      │
-└──────────────┬──────────────────────┘
-               │
-               ↓
-┌─────────────────────────────────────┐
-│  PostgreSQL Cluster + Redis Cluster │
-└─────────────────────────────────────┘
-```
-
-### 微服務化路徑
-
-1. **Phase 1 (MVP)**: 單體應用，清晰的 BC 邊界
-2. **Phase 2**: 拆分 Opponent Service（獨立擴展對手策略）
-3. **Phase 3**: 引入 User Service（帳號系統）、Matchmaking Service（多人對戰）
-4. **Phase 4**: 完整分散式架構（Event Bus、分散式快取、資料庫分片）
-
----
-
-## DI 配置（Spring Boot）
-
-### 手動配置依賴注入
-
-使用 Spring 的 `@Configuration` 和 `@Bean` 手動配置依賴注入，確保依賴方向正確。
-
-```java
-@Configuration
-public class BeanConfiguration {
-
-  // Domain Layer - 不依賴任何框架
-  @Bean
-  public GameRuleService gameRuleService() {
-    return new GameRuleService();
-  }
-
-  @Bean
-  public YakuDetectionService yakuDetectionService() {
-    return new YakuDetectionService();
-  }
-
-  // Application Layer - Use Cases
-  @Bean
-  public JoinGameUseCase joinGameUseCase(
-      LoadGamePort loadGamePort,
-      SaveGamePort saveGamePort,
-      PublishEventPort publishEventPort
-  ) {
-    return new JoinGameUseCase(loadGamePort, saveGamePort, publishEventPort);
-  }
-
-  @Bean
-  public PlayHandCardUseCase playHandCardUseCase(
-      LoadGamePort loadGamePort,
-      SaveGamePort saveGamePort,
-      PublishEventPort publishEventPort,
-      GameRuleService gameRuleService
-  ) {
-    return new PlayHandCardUseCase(loadGamePort, saveGamePort, publishEventPort, gameRuleService);
-  }
-
-  // ... 其他 Use Cases
-
-  // Adapter Layer - Output Adapters
-  @Bean
-  public LoadGamePort loadGamePort(GameRepository gameRepository) {
-    return new GameRepositoryAdapter(gameRepository);
-  }
-
-  @Bean
-  public SaveGamePort saveGamePort(GameRepository gameRepository) {
-    return new GameRepositoryAdapter(gameRepository);
-  }
-
-  @Bean
-  public PublishEventPort publishEventPort(SSEEventPublisher eventPublisher) {
-    return eventPublisher;
-  }
-
-  // Spring Data JPA Repository (Framework Layer)
-  // GameRepository 會自動由 Spring 掃描並註冊
-}
-```
-
----
-
-## 資料庫設計原則
-
-### MVP 階段：簡化設計
-
-- **Game 表**: 儲存遊戲會話狀態（序列化為 JSON）
-- **Event 表**: 儲存所有 SSE 事件（用於審計與重建狀態）
-- **Session 表**: 儲存 session_token 與 game_id 映射（用於重連）
-
-**優點**: 實作簡單，快速迭代
-**缺點**: 查詢效能較低，不適合大規模擴展
-
-### Phase 2：正規化設計
-
-- **Game 表**: 儲存遊戲基本資訊
-- **Round 表**: 儲存局資訊
-- **Card 表**: 儲存卡牌狀態（手牌、場牌、已獲得牌）
-- **Event 表**: 儲存事件
-- **Session 表**: 儲存會話資訊
-
-**優點**: 查詢效能高，支援複雜查詢
-**缺點**: 實作複雜，資料庫遷移成本高
-
-**建議**: MVP 採用簡化設計，Phase 2 再進行正規化
 
 ---
 
@@ -369,6 +269,59 @@ public class BeanConfiguration {
 | `AWAITING_DECISION` | 等待玩家做 Koi-Koi 決策 | `RoundMakeDecision` |
 
 每個 SSE 事件包含 `next_state`，指示客戶端下一步應等待的命令。
+
+---
+
+## 並發控制
+
+### 悲觀鎖設計
+
+使用 Promise Chain 實現悲觀鎖，確保同一遊戲的操作互斥：
+
+```typescript
+// server/adapters/lock/InMemoryGameLock.ts
+export class InMemoryGameLock implements GameLockPort {
+  private locks: Map<string, Promise<void>> = new Map()
+
+  async withLock<T>(gameId: string, operation: () => Promise<T>): Promise<T> {
+    const currentLock = this.locks.get(gameId) ?? Promise.resolve()
+    const newLock = currentLock.then(() => operation())
+    this.locks.set(gameId, newLock.catch(() => {}))
+    return newLock
+  }
+}
+```
+
+**解決問題**:
+- 防止同一遊戲的並發操作（如兩個玩家同時打牌）
+- 確保遊戲狀態一致性
+
+---
+
+## SSE 事件推送
+
+### 連線管理
+
+```typescript
+// server/adapters/event/SSEConnectionRegistry.ts
+export class SSEConnectionRegistry {
+  private connections: Map<string, Set<EventStream>> = new Map()
+
+  register(gameId: string, stream: EventStream): void
+  unregister(gameId: string, stream: EventStream): void
+  broadcast(gameId: string, event: SSEEvent): void
+}
+```
+
+### 事件流程
+
+```
+Client → REST: POST /games/{id}/turns/play-card
+Server → SSE:  TurnCompleted { hand_card_play, draw_card_play, next_state }
+Server → SSE:  DecisionRequired { yaku_update, current_multipliers }
+Client → REST: POST /games/{id}/rounds/decision
+Server → SSE:  RoundScored { winner_id, final_points }
+```
 
 ---
 

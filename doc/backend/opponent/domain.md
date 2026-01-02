@@ -2,115 +2,127 @@
 
 ## 職責
 
-實作對手決策邏輯，提供策略模式介面。
+實作 AI 對手的決策邏輯，提供純 TypeScript 函數，不依賴任何框架。
+
+**核心原則**:
+- ✅ **純業務邏輯**: 不依賴 Nuxt、外部服務等
+- ✅ **策略模式**: 可擴展不同難度的 AI 策略
+- ✅ **純函數設計**: 所有決策邏輯為純函數
 
 ---
 
-## 核心介面
+## 核心領域模型
 
 ### OpponentStrategy（對手策略介面）
 
-```java
-public interface OpponentStrategy {
-  // 選擇手牌
-  String selectHandCard(
-    List<String> hand,
-    List<String> field,
-    List<String> depository
-  );
+```typescript
+// server/domain/opponent/opponent-strategy.ts
+interface OpponentStrategy {
+  // 選擇要打出的手牌
+  selectHandCard(params: SelectHandCardParams): string
 
-  // 選擇配對目標
-  String selectMatchTarget(List<String> possibleTargets);
+  // 當有多張可配對牌時，選擇目標
+  selectMatchTarget(params: SelectMatchTargetParams): string
 
-  // Koi-Koi 決策
-  KoiKoiDecision makeKoiKoiDecision(
-    List<Yaku> currentYaku,
-    int baseScore,
-    int opponentScore
-  );
+  // 做 Koi-Koi 決策
+  makeKoiKoiDecision(params: MakeDecisionParams): 'KOI_KOI' | 'STOP'
+}
+
+interface SelectHandCardParams {
+  handCards: readonly string[]
+  fieldCards: readonly string[]
+  depositoryCards: readonly string[]
+}
+
+interface SelectMatchTargetParams {
+  sourceCard: string
+  possibleTargets: readonly string[]
+  depositoryCards: readonly string[]
+}
+
+interface MakeDecisionParams {
+  currentYakus: readonly Yaku[]
+  baseScore: number
+  opponentKoiKoiCount: number
+  remainingCards: number
 }
 ```
 
 ---
 
-## MVP 實作：RandomStrategy
+## 策略實作
 
-### 簡易隨機策略
+### SimpleAIStrategy（簡易 AI 策略）
 
-```java
-public class RandomStrategy implements OpponentStrategy {
+目前實作的簡易 AI，採用隨機策略：
 
-  @Override
-  public String selectHandCard(
-    List<String> hand,
-    List<String> field,
-    List<String> depository
-  ) {
-    // 優先選擇能配對的牌，否則隨機選擇
-    List<String> matchableCards = hand.stream()
-      .filter(card -> hasMatch(card, field))
-      .collect(Collectors.toList());
+```typescript
+// server/domain/opponent/simple-ai-strategy.ts
+class SimpleAIStrategy implements OpponentStrategy {
+  selectHandCard(params: SelectHandCardParams): string {
+    const { handCards, fieldCards } = params
 
-    if (!matchableCards.isEmpty()) {
-      return randomSelect(matchableCards);
+    // 優先選擇可配對的牌
+    for (const cardId of handCards) {
+      const matches = findMatchableCards(cardId, fieldCards)
+      if (matches.length > 0) {
+        return cardId
+      }
     }
 
-    return randomSelect(hand);
+    // 若無可配對牌，隨機選擇
+    return handCards[Math.floor(Math.random() * handCards.length)]
   }
 
-  @Override
-  public String selectMatchTarget(List<String> possibleTargets) {
-    return randomSelect(possibleTargets);
+  selectMatchTarget(params: SelectMatchTargetParams): string {
+    const { possibleTargets } = params
+
+    // 隨機選擇配對目標
+    return possibleTargets[Math.floor(Math.random() * possibleTargets.length)]
   }
 
-  @Override
-  public KoiKoiDecision makeKoiKoiDecision(
-    List<Yaku> currentYaku,
-    int baseScore,
-    int opponentScore
-  ) {
-    // 簡單策略：基礎分數 < 5 繼續，>= 5 結束
-    return baseScore < 5 ? KoiKoiDecision.KOI_KOI : KoiKoiDecision.END_ROUND;
-  }
+  makeKoiKoiDecision(params: MakeDecisionParams): 'KOI_KOI' | 'STOP' {
+    const { baseScore, remainingCards } = params
 
-  private String randomSelect(List<String> cards) {
-    int index = ThreadLocalRandom.current().nextInt(cards.size());
-    return cards.get(index);
-  }
+    // 簡單策略：
+    // - 若分數 >= 7，結束（已達倍增門檻）
+    // - 若剩餘牌數 <= 4，結束
+    // - 其他情況，50% 機率繼續
 
-  private boolean hasMatch(String card, List<String> field) {
-    int month = getMonth(card);
-    return field.stream().anyMatch(f -> getMonth(f) == month);
-  }
+    if (baseScore >= 7) return 'STOP'
+    if (remainingCards <= 4) return 'STOP'
 
-  private int getMonth(String cardId) {
-    return Integer.parseInt(cardId.substring(0, 2));
+    return Math.random() < 0.5 ? 'KOI_KOI' : 'STOP'
   }
 }
 ```
 
 ---
 
-## Post-MVP 擴展：AdvancedStrategy
+## 未來擴展
 
-### 進階策略（未來實作）
+### AdvancedAIStrategy（進階 AI 策略）
 
-```java
-public class AdvancedStrategy implements OpponentStrategy {
+Post-MVP 可實作的進階策略：
 
-  @Override
-  public String selectHandCard(...) {
-    // 1. 計算每張牌的潛在價值（能否形成役種）
-    // 2. 評估風險與收益
-    // 3. 選擇價值最高的牌
+- 優先收集高價值卡牌
+- 考慮役種形成機率
+- 評估風險/收益比
+- 阻擋對手役種形成
+
+```typescript
+// 未來擴展
+class AdvancedAIStrategy implements OpponentStrategy {
+  selectHandCard(params: SelectHandCardParams): string {
+    // 評估每張牌的價值
+    // 考慮役種形成機率
+    // 選擇最優解
   }
 
-  @Override
-  public KoiKoiDecision makeKoiKoiDecision(...) {
-    // 1. 分析對手分數差距
-    // 2. 評估當前役種進度
-    // 3. 計算繼續遊戲的期望值
-    // 4. 做出決策
+  makeKoiKoiDecision(params: MakeDecisionParams): 'KOI_KOI' | 'STOP' {
+    // 計算繼續的期望值
+    // 評估對手可能的役種
+    // 基於機率做決策
   }
 }
 ```
@@ -119,8 +131,16 @@ public class AdvancedStrategy implements OpponentStrategy {
 
 ## 測試要求
 
-- ✅ **RandomStrategy**: 測試隨機選擇的正確性
-- ✅ **AdvancedStrategy**: 測試進階策略的正確性（Post-MVP）
+### 單元測試
+
+- ✅ **SimpleAIStrategy.selectHandCard**: 測試優先配對邏輯
+- ✅ **SimpleAIStrategy.selectMatchTarget**: 測試目標選擇
+- ✅ **SimpleAIStrategy.makeKoiKoiDecision**: 測試決策邏輯邊界值
+
+### 測試框架
+
+- **工具**: Vitest
+- **斷言**: Vitest built-in assertions
 
 ---
 
