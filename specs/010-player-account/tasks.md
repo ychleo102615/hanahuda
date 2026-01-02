@@ -80,6 +80,7 @@
 - [ ] T020 [P] [US1] Unit test for GuestToken value object at `front-end/tests/server/identity/domain/guest-token.test.ts`
 - [ ] T021 [P] [US1] Unit test for CreateGuestUseCase at `front-end/tests/server/identity/application/create-guest-use-case.test.ts`
 - [ ] T022 [P] [US1] Unit test for GetCurrentPlayerUseCase at `front-end/tests/server/identity/application/get-current-player-use-case.test.ts`
+- [ ] T022a [P] [US1] Unit test for Session sliding expiration (FR-012) at `front-end/tests/server/identity/domain/session.test.ts`
 
 ### 3.2 Backend Domain Layer for US1
 
@@ -146,6 +147,7 @@
 - [ ] T047 [P] [US2] Unit test for Account entity at `front-end/tests/server/identity/domain/account.test.ts`
 - [ ] T048 [P] [US2] Unit test for PasswordHash value object at `front-end/tests/server/identity/domain/password-hash.test.ts`
 - [ ] T049 [P] [US2] Unit test for RegisterAccountUseCase at `front-end/tests/server/identity/application/register-account-use-case.test.ts`
+- [ ] T049a [P] [US2] Unit test for guest data migration (FR-009) - verify guest Player converts to registered Player at `front-end/tests/server/identity/application/register-account-use-case.test.ts`
 
 ### 4.2 Backend Domain Layer for US2
 
@@ -275,13 +277,18 @@
 
 **Related FRs**: FR-022, FR-023
 
-### 7.1 Frontend Integration for US4
+**Note**: US4 為純 Adapter Layer (Vue Components) 整合工作。根據 Constitution V，Adapter Layer 測試為選擇性，但為遵循 Test-First 精神，仍將測試任務置於實作之前。
 
-- [ ] T094 [US4] Update game state store to include player display names
-- [ ] T095 [US4] Modify game page UI to show player name (訪客: Guest_XXXX, 註冊: 帳號名稱)
-- [ ] T096 [US4] Modify game page UI to show opponent name (AI: "Computer")
-- [ ] T097 [US4] Add player name display in game header/info area
-- [ ] T098 [US4] Integration test for player name display
+### 7.1 Tests for US4 (Optional per Constitution V - Adapter Layer)
+
+- [ ] T094 [US4] Integration test for player name display at `front-end/tests/app/identity/player-name-display.test.ts`
+
+### 7.2 Frontend Integration for US4
+
+- [ ] T095 [US4] Update game state store to include player display names
+- [ ] T096 [US4] Modify game page UI to show player name (訪客: Guest_XXXX, 註冊: 帳號名稱)
+- [ ] T097 [US4] Modify game page UI to show opponent name (AI: "Computer")
+- [ ] T098 [US4] Add player name display in game header/info area
 
 **Checkpoint**: US4 complete - 遊戲畫面正確顯示玩家與對手名稱
 
@@ -293,7 +300,7 @@
 
 - [ ] T099 [P] Add login failure logging (FR-013a) at `front-end/server/identity/adapters/logging/`
 - [ ] T100 [P] Add guest data cleanup scheduled task (FR-010a)
-- [ ] T101 Session sliding expiration logic verification
+- [ ] T101 Session sliding expiration integration verification (complements T022a unit test)
 - [ ] T102 Security review: Cookie settings (HTTP-only, Secure, SameSite)
 - [ ] T103 [P] Error handling standardization across all auth endpoints
 - [ ] T104 [P] Add integration tests for full auth flows
@@ -353,13 +360,13 @@ Phase 6 (US3 - OAuth)
 - T014-T018 must be sequential (schema dependencies)
 
 **Phase 3 (US1)**:
-- All tests (T019-T022) can run in parallel
+- All tests (T019-T022, T022a) can run in parallel
 - Domain models (T023-T026) can run in parallel
 - Port definitions (T027-T028) can run in parallel
 - Frontend domain/application (T036-T038) can run in parallel with backend
 
 **Phase 4 (US2)**:
-- All tests (T047-T049) can run in parallel
+- All tests (T047-T049, T049a) can run in parallel
 - Domain models (T050-T051) can run in parallel
 
 **Phase 5 (US5)**:
@@ -405,13 +412,13 @@ Phase 6 (US3 - OAuth)
 |-------|------------|----------|-------|-------|
 | 1 | Setup | - | 4 | 0 |
 | 2 | Foundational | - | 14 | 0 |
-| 3 | US1 - 訪客遊玩 | P1 🎯 | 24 | 4 |
-| 4 | US2 - 帳號註冊 | P2 | 11 | 3 |
+| 3 | US1 - 訪客遊玩 | P1 🎯 | 25 | 5 |
+| 4 | US2 - 帳號註冊 | P2 | 12 | 4 |
 | 5 | US5 - 帳號登入 | P2 | 8 | 2 |
 | 6 | US3 - OAuth 登入 | P2 | 20 | 4 |
-| 7 | US4 - 顯示名稱 | P3 | 5 | 0 |
+| 7 | US4 - 顯示名稱 | P3 | 5 | 1 |
 | 8 | Polish | - | 9 | 0 |
-| **Total** | | | **95** | **13** |
+| **Total** | | | **97** | **16** |
 
 ---
 
