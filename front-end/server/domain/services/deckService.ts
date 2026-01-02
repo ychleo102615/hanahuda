@@ -8,7 +8,7 @@
  * @module server/domain/services/deckService
  */
 
-import { ALL_CARD_IDS, TOTAL_DECK_SIZE, ALL_CARD_IDS_SET } from '../../../shared/constants/cardConstants'
+import { ALL_CARD_IDS, TOTAL_DECK_SIZE, ALL_CARD_IDS_SET } from '#shared/constants/cardConstants'
 import { DEAL_CONFIG } from '../card/dealConfig'
 import { getTestDeck } from './testDecks'
 
