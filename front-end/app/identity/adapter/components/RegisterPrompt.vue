@@ -9,13 +9,19 @@
  * 參考: specs/010-player-account/spec.md FR-017
  */
 
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useCurrentPlayer } from '../composables/use-current-player'
 
 const { displayName, shouldShowRegisterPrompt } = useCurrentPlayer()
 
 const isDismissed = ref(false)
 const skipPromptForSession = ref(false)
+
+// 延遲顯示以觸發 enter 動畫
+const isMounted = ref(false)
+onMounted(() => {
+  isMounted.value = true
+})
 
 /**
  * 關閉提示
@@ -40,7 +46,7 @@ const hasSkippedPrompt = typeof document !== 'undefined' &&
   document.cookie.includes('skip_register_prompt=1')
 
 const isVisible = computed(() =>
-  shouldShowRegisterPrompt.value && !isDismissed.value && !hasSkippedPrompt
+  isMounted.value && shouldShowRegisterPrompt.value && !isDismissed.value && !hasSkippedPrompt
 )
 </script>
 
