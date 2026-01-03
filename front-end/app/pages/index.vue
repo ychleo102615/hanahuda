@@ -4,6 +4,7 @@ import NavigationBar from '~/components/NavigationBar.vue'
 import HeroSection from '~/components/HeroSection.vue'
 import RulesSection from '~/components/RulesSection.vue'
 import Footer from '~/components/Footer.vue'
+import LoginModal from '~/identity/adapter/components/LoginModal.vue'
 import type { RuleCategoryUnion, YakuCard } from '~/types/rules'
 import type { NavigationLink } from '~/components/NavigationBar.vue'
 
@@ -12,11 +13,11 @@ import rulesDataJson from '~/data/rules.json'
 import yakuDataJson from '~/data/yaku.json'
 
 // Navigation Bar data
+// FR-024: Sign In 觸發 Modal，Sign Up 移除（透過 Modal 內的連結前往）
 const navigationLinks: NavigationLink[] = [
   { label: 'Rules', target: '#rules', isCta: false },
   { label: 'About', target: '#about', isCta: false },
   { label: 'Sign In', target: '/login', isCta: false },
-  { label: 'Sign Up', target: '/register', isCta: false },
   { label: 'Start Game', target: '/lobby', isCta: true },
 ]
 
@@ -41,6 +42,22 @@ const handleRulesClick = () => {
     rulesSectionRef.value.expandAll()
   }
 }
+
+// FR-024: Login Modal state
+const isLoginModalOpen = ref(false)
+
+const handleLoginClick = () => {
+  isLoginModalOpen.value = true
+}
+
+const handleLoginModalClose = () => {
+  isLoginModalOpen.value = false
+}
+
+const handleLoginSuccess = () => {
+  isLoginModalOpen.value = false
+  // Optionally navigate to lobby or refresh user state
+}
 </script>
 
 <template>
@@ -51,6 +68,14 @@ const handleRulesClick = () => {
       :links="navigationLinks"
       :transparent="false"
       @rules-click="handleRulesClick"
+      @login-click="handleLoginClick"
+    />
+
+    <!-- FR-024: Login Modal -->
+    <LoginModal
+      :is-open="isLoginModalOpen"
+      @close="handleLoginModalClose"
+      @success="handleLoginSuccess"
     />
 
     <main>

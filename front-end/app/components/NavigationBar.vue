@@ -28,6 +28,7 @@ defineProps<{
 // Emits
 const emit = defineEmits<{
   rulesClick: [];
+  loginClick: [];
 }>();
 
 // Composables
@@ -74,6 +75,10 @@ const handleLinkClick = (link: NavigationLink, event: Event) => {
 
     // Use useScrollTo composable for smooth scrolling
     scrollTo(targetId, NAV_HEIGHT);
+  } else if (link.target === '/login') {
+    // FR-024: Sign In triggers modal instead of navigation
+    event.preventDefault();
+    emit('loginClick');
   } else {
     // If route link, use Vue Router
     event.preventDefault();

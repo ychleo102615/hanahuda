@@ -52,6 +52,8 @@
     /* 防止 iOS Safari 過度捲動（橡皮筋效果） */
     overflow-x: hidden;
     overscroll-behavior: none;
+    /* 始終保留滾動條空間，避免 modal 開啟時內容跳動 */
+    scrollbar-gutter: stable;
     /* 防止雙擊放大，保留正常滾動和捏合縮放 */
     touch-action: manipulation;
     /* 背景色：消除 iOS Safari safe area 白邊（配合 TopInfoBar） */

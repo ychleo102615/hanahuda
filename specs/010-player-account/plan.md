@@ -199,6 +199,7 @@ front-end/
 │   │       │   └── use-current-player.ts
 │   │       └── components/
 │   │           ├── LoginForm.vue
+│   │           ├── LoginModal.vue        # (FR-024) Login Modal 覆蓋式登入
 │   │           ├── RegisterForm.vue
 │   │           ├── OAuthButtons.vue
 │   │           └── RegisterPrompt.vue

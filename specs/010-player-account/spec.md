@@ -158,6 +158,14 @@
 - **FR-022**: 遊戲畫面 MUST 顯示玩家名稱（訪客顯示預設名稱，註冊玩家顯示帳號名稱）
 - **FR-023**: 遊戲畫面 MUST 顯示對手名稱（AI 顯示「Computer」或對應名稱）
 
+#### 前端 - 登入體驗優化
+
+- **FR-024**: 首頁的「Sign In」按鈕 MUST 觸發 Login Modal 覆蓋顯示，而非跳轉至獨立頁面
+- **FR-024a**: Login Modal MUST 複用現有 LoginForm.vue 與 OAuthButtons.vue 元件
+- **FR-024b**: Login Modal MUST 提供「建立帳號」連結，點擊後導航至 /register 頁面
+- **FR-024c**: Login Modal MUST 在登入成功後自動關閉
+- **FR-024d**: Login Modal MUST 支援點擊背景或按 ESC 鍵關閉
+
 ### Key Entities
 
 - **Player**: 代表遊戲中的玩家身份，包含唯一識別碼、顯示名稱、建立時間、是否為訪客

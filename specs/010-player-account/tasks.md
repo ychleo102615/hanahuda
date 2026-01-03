@@ -312,6 +312,34 @@
 
 ---
 
+## Phase 9: Login Modal 體驗優化 (FR-024)
+
+**Purpose**: 將首頁登入改為 Modal 覆蓋式體驗，減少頁面跳轉
+
+**Related FRs**: FR-024, FR-024a, FR-024b, FR-024c, FR-024d
+
+### 9.1 LoginModal 元件開發
+
+- [x] T108 [FR-024a] Create LoginModal.vue at `front-end/app/identity/adapter/components/LoginModal.vue`
+  - 使用 Teleport 渲染至 body
+  - 套用 Transition 動畫
+  - 複用 LoginForm.vue 和 OAuthButtons.vue
+  - 提供「建立帳號」連結導向 /register
+
+### 9.2 Navigation 整合
+
+- [x] T109 [FR-024] Modify NavigationBar.vue to emit `loginClick` event for Sign In button
+- [x] T110 [FR-024c] Integrate LoginModal in `front-end/app/pages/index.vue` (handle open/close state)
+
+### 9.3 輔助功能
+
+- [x] T111 [FR-024d] Add ESC key listener and backdrop click handler for closing modal (included in T108)
+- [x] T112 [FR-024] Update /login page to handle direct navigation fallback (already works as standalone fallback)
+
+**Checkpoint**: Phase 9 complete - 首頁登入改為 Modal 覆蓋式體驗 ✅
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -325,6 +353,7 @@
   - US3 (Phase 6): Depends on US2 (extends Account with OAuthLink)
   - US4 (Phase 7): Depends on US1 (integration only)
 - **Polish (Phase 8)**: Depends on all desired user stories being complete
+- **Login Modal (Phase 9)**: Depends on Phase 5 (US5 - 帳號登入) completion
 
 ### User Story Dependencies
 
@@ -420,9 +449,10 @@ Phase 6 (US3 - OAuth)
 | 6 | US3 - OAuth 登入 | P2 | 20 | 4 | ✅ Complete |
 | 7 | US4 - 顯示名稱 | P3 | 5 | 1 | ✅ Complete |
 | 8 | Polish | - | 9 | 0 | ✅ Core Complete |
-| **Total** | | | **97** | **16** | **✅ DONE** |
+| 9 | Login Modal | UX | 5 | 0 | ✅ Complete |
+| **Total** | | | **102** | **16** | **✅ DONE** |
 
-**Final Status**: 610 tests passing, type-check passing
+**Final Status**: 610 tests passing, type-check passing, Phase 9 (Login Modal) complete
 
 ---
 
