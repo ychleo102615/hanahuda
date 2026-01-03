@@ -9,8 +9,8 @@
  */
 
 import { vi } from 'vitest'
-import type { GameStorePort } from '~/server/application/ports/output/gameStorePort'
-import type { Game } from '~/server/domain/game/game'
+import type { GameStorePort } from '~/server/core-game/application/ports/output/gameStorePort'
+import type { Game } from '~/server/core-game/domain/game/game'
 
 /**
  * GameStore Mock 類型

@@ -9,7 +9,7 @@
  */
 
 import { vi, type Mock } from 'vitest'
-import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
+import type { GameLockPort } from '~~/server/core-game/application/ports/output/gameLockPort'
 
 export interface MockGameLock extends GameLockPort {
   withLock: Mock

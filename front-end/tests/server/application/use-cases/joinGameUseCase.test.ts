@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { JoinGameUseCase } from '~/server/application/use-cases/joinGameUseCase'
+import { JoinGameUseCase } from '~/server/core-game/application/use-cases/joinGameUseCase'
 import {
   createGameRepositoryMock,
   createEventPublisherMock,

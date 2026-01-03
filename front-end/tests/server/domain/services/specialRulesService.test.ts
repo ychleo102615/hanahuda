@@ -14,7 +14,7 @@ import {
   getSpecialRulePoints,
   isSpecialRuleDraw,
   hasSpecialRuleWinner,
-} from '~/server/domain/services/specialRulesService'
+} from '~/server/core-game/domain/services/specialRulesService'
 import type { SpecialRules } from '#shared/contracts'
 import { TESHI_CARDS, KUTTSUKI_HAND, FIELD_TESHI_CARDS, HAND_STANDARD, FIELD_MIXED_CARDS } from '../../fixtures/cards'
 import { createTestRound, PLAYER_1_ID, PLAYER_2_ID } from '../../fixtures/games'

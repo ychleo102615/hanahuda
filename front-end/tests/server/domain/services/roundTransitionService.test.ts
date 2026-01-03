@@ -14,7 +14,7 @@ import {
   transitionAfterRoundDraw,
   transitionAfterPlayerLeave,
   canGameContinue,
-} from '~/server/domain/services/roundTransitionService'
+} from '~/server/core-game/domain/services/roundTransitionService'
 import {
   createTestInProgressGame,
   createMidGameState,

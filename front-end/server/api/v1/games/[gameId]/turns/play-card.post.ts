@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod'
-import { PlayHandCardError, type PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
+import { PlayHandCardError, type PlayHandCardInputPort } from '~~/server/core-game/application/ports/input/playHandCardInputPort'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,

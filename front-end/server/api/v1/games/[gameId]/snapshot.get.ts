@@ -15,12 +15,12 @@
 
 import { z } from 'zod'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
-import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
-import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
-import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
-import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
+import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
+import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
+import type { FullEventMapperPort } from '~~/server/core-game/application/ports/output/eventMapperPort'
+import type { GameRepositoryPort } from '~~/server/core-game/application/ports/output/gameRepositoryPort'
 import type { SnapshotApiResponse } from '#shared/contracts'
-import { determineWinner } from '~~/server/domain/game'
+import { determineWinner } from '~~/server/core-game/domain/game'
 import {
   HTTP_OK,
   HTTP_BAD_REQUEST,

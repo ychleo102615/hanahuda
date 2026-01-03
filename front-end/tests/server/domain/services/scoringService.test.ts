@@ -14,9 +14,9 @@ import {
   calculateFinalScore,
   calculateScoreFromYaku,
   getDoubleScoreThreshold,
-} from '~/server/domain/services/scoringService'
+} from '~/server/core-game/domain/services/scoringService'
 import type { Yaku } from '#shared/contracts'
-import type { KoiStatus } from '~/server/domain/round/koiStatus'
+import type { KoiStatus } from '~/server/core-game/domain/round/koiStatus'
 import { GOKOU_CARDS, AKATAN_CARDS, AOTAN_CARDS } from '../../fixtures/cards'
 
 describe('scoringService', () => {

@@ -8,9 +8,9 @@
  * @module server/__tests__/fixtures/games
  */
 
-import type { Game } from '~/server/domain/game/game'
-import type { Round, PlayerRoundState } from '~/server/domain/round/round'
-import type { KoiStatus } from '~/server/domain/round/koiStatus'
+import type { Game } from '~/server/core-game/domain/game/game'
+import type { Round, PlayerRoundState } from '~/server/core-game/domain/round/round'
+import type { KoiStatus } from '~/server/core-game/domain/round/koiStatus'
 import type { Ruleset, YakuSetting } from '#shared/contracts'
 import { HAND_STANDARD, FIELD_MIXED_CARDS } from './cards'
 

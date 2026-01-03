@@ -9,7 +9,7 @@
  * 參考: specs/008-nuxt-backend-server/contracts/rest-api.md
  */
 
-import { LeaveGameError, type LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
+import { LeaveGameError, type LeaveGameInputPort } from '~~/server/core-game/application/ports/input/leaveGameInputPort'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { InMemoryGameLock } from '~~/server/adapters/lock/inMemoryGameLock'
+import { InMemoryGameLock } from '~~/server/core-game/adapters/lock/inMemoryGameLock'
 
 describe('InMemoryGameLock', () => {
   let gameLock: InMemoryGameLock

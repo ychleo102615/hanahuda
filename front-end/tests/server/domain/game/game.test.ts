@@ -19,7 +19,7 @@ import {
   finishGame,
   getDefaultRuleset,
   createPlayer,
-} from '~/server/domain/game'
+} from '~/server/core-game/domain/game'
 import {
   createTestWaitingGame,
   createTestInProgressGame,

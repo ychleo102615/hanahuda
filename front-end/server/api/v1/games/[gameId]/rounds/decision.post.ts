@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod'
-import { MakeDecisionError, type MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
+import { MakeDecisionError, type MakeDecisionInputPort } from '~~/server/core-game/application/ports/input/makeDecisionInputPort'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,

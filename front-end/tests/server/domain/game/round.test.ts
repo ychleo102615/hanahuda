@@ -19,8 +19,8 @@ import {
   detectTeshi,
   detectKuttsuki,
   detectFieldTeshi,
-} from '~/server/domain/round'
-import type { DealResult } from '~/server/domain/services/deckService'
+} from '~/server/core-game/domain/round'
+import type { DealResult } from '~/server/core-game/domain/services/deckService'
 import {
   createTestRound,
   createRoundAwaitingSelection,

@@ -15,6 +15,8 @@ import yakuDataJson from '~/data/yaku.json'
 const navigationLinks: NavigationLink[] = [
   { label: 'Rules', target: '#rules', isCta: false },
   { label: 'About', target: '#about', isCta: false },
+  { label: 'Sign In', target: '/login', isCta: false },
+  { label: 'Sign Up', target: '/register', isCta: false },
   { label: 'Start Game', target: '/lobby', isCta: true },
 ]
 

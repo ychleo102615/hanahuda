@@ -15,9 +15,9 @@
 
 import type { H3Event } from 'h3'
 import { getCookie, setCookie, deleteCookie } from 'h3'
-import type { Game } from '~~/server/domain/game/game'
-import type { Player } from '~~/server/domain/game/player'
-import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
+import type { Game } from '~~/server/core-game/domain/game/game'
+import type { Player } from '~~/server/core-game/domain/game/player'
+import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
 import {
   HTTP_UNAUTHORIZED,
   HTTP_FORBIDDEN,

@@ -34,22 +34,22 @@ import type {
   GameSnapshotRestore,
   GameFinishedInfo,
 } from '#shared/contracts'
-import { connectionStore } from '~~/server/adapters/event-publisher/connectionStore'
+import { connectionStore } from '~~/server/core-game/adapters/event-publisher/connectionStore'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
-import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
-import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
-import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
-import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
-import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
-import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
-import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
+import type { JoinGameInputPort } from '~~/server/core-game/application/ports/input/joinGameInputPort'
+import type { LeaveGameInputPort } from '~~/server/core-game/application/ports/input/leaveGameInputPort'
+import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
+import type { GameLockPort } from '~~/server/core-game/application/ports/output/gameLockPort'
+import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
+import type { GameRepositoryPort } from '~~/server/core-game/application/ports/output/gameRepositoryPort'
+import type { TurnFlowService } from '~~/server/core-game/application/services/turnFlowService'
 import { gameConfig } from '~~/server/utils/config'
 import { setSessionCookie, SESSION_COOKIE_NAME } from '~~/server/utils/sessionValidation'
 import {
   markPlayerDisconnected,
   markPlayerReconnected,
   getPlayerConnectionStatus,
-} from '~~/server/domain/game/playerConnection'
+} from '~~/server/core-game/domain/game/playerConnection'
 import { HTTP_BAD_REQUEST } from '#shared/constants'
 import { logger } from '~~/server/utils/logger'
 

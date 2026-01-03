@@ -17,7 +17,7 @@ import {
   removeFromField,
   addToField,
   type MatchResult,
-} from '~/server/domain/services/matchingService'
+} from '~/server/core-game/domain/services/matchingService'
 import { FIELD_MIXED_CARDS } from '../../fixtures/cards'
 
 describe('matchingService', () => {

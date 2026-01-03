@@ -9,11 +9,11 @@
  */
 
 import type { GameEvent } from '#shared/contracts'
-import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
-import { connectionStore } from '~~/server/adapters/event-publisher/connectionStore'
+import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
+import { connectionStore } from '~~/server/core-game/adapters/event-publisher/connectionStore'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
-import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
-import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
+import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
+import type { LeaveGameInputPort } from '~~/server/core-game/application/ports/input/leaveGameInputPort'
 import { gameConfig } from '~~/server/utils/config'
 import {
   HTTP_BAD_REQUEST,

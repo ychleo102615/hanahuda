@@ -23,7 +23,6 @@ definePageMeta({
 })
 
 import { ref, computed, onMounted } from 'vue'
-import { v4 as uuidv4 } from 'uuid'
 import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
 import { useDependency } from '~/user-interface/adapter/composables/useDependency'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
@@ -32,9 +31,14 @@ import { RoomApiClient, type RoomType } from '~/user-interface/adapter/api/RoomA
 import ActionPanel from '~/components/ActionPanel.vue'
 import LobbyTopInfoBar from '~/components/LobbyTopInfoBar.vue'
 import type { ActionPanelItem } from '~/components/ActionPanel.vue'
+import RegisterPrompt from '~/identity/adapter/components/RegisterPrompt.vue'
+import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()
+
+// Identity BC - 使用後端提供的 playerId
+const { playerId, displayName } = useCurrentPlayer()
 
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
@@ -88,23 +92,21 @@ const handleBackToHome = () => {
   closePanel()
 }
 
-// 生成 UUID（使用 uuid 套件，相容非安全上下文）
-const generateUUID = (): string => uuidv4()
-
 // 選擇房間並開始配對
 const handleSelectRoom = (roomTypeId: string) => {
   if (!canStartMatchmaking.value) return
 
-  // 生成或取得 playerId
-  const playerId = sessionStorage.getItem('player_id') || generateUUID()
-  const playerName = 'Player' // 未來可由使用者輸入
+  // 使用 Identity BC 提供的 playerId (由後端 Session 管理)
+  const currentPlayerId = playerId.value
+  const playerName = displayName.value || 'Player'
 
-  // 儲存 playerId 到 sessionStorage（供重新整理後使用）
-  sessionStorage.setItem('player_id', playerId)
+  if (!currentPlayerId) {
+    console.error('No player ID available - auth middleware should have initialized this')
+    return
+  }
 
   // 儲存到 SessionContext（供 game page 使用）
-  sessionContext.setIdentity({ playerId, playerName, roomTypeId })
-
+  sessionContext.setIdentity({ playerId: currentPlayerId, playerName, roomTypeId })
 
   // 直接導航到遊戲頁面，SSE 連線在那裡建立
   navigateTo('/game')
@@ -224,6 +226,9 @@ const handleRetry = () => {
       :items="menuItems"
       @close="closePanel"
     />
+
+    <!-- 訪客註冊提示 -->
+    <RegisterPrompt />
   </div>
 </template>
 

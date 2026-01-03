@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod'
-import { SelectTargetError, type SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
+import { SelectTargetError, type SelectTargetInputPort } from '~~/server/core-game/application/ports/input/selectTargetInputPort'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,

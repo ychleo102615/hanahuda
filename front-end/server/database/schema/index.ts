@@ -6,11 +6,17 @@
  *
  * @example
  * ```typescript
- * import { games, playerStats } from '~/server/database/schema'
+ * import { games, playerStats, players } from '~/server/database/schema'
  * ```
  */
 
-// Tables
+// Core Game BC Tables
 export { games, type Game, type NewGame, type GameStatus } from './games'
 export { playerStats, type PlayerStat, type NewPlayerStat, type YakuCounts } from './playerStats'
 export { gameLogs, type GameLog, type NewGameLog, type GameLogEventType } from './gameLogs'
+
+// Identity BC Tables
+export { players, type Player, type NewPlayer } from './players'
+export { accounts, type Account, type NewAccount } from './accounts'
+export { oauthLinks, type OAuthLink, type NewOAuthLink, type OAuthProvider } from './oauthLinks'
+export { sessions, type Session, type NewSession } from './sessions'

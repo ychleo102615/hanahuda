@@ -17,14 +17,14 @@
  * @module server/plugins/opponent
  */
 
-import { OpponentRegistry } from '~~/server/adapters/opponent/opponentRegistry'
+import { OpponentRegistry } from '~~/server/core-game/adapters/opponent/opponentRegistry'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
-import type { InternalEventPublisherPort } from '~~/server/application/ports/output/internalEventPublisherPort'
-import type { JoinGameAsAiInputPort } from '~~/server/application/ports/input/joinGameAsAiInputPort'
-import type { PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
-import type { SelectTargetInputPort } from '~~/server/application/ports/input/selectTargetInputPort'
-import type { MakeDecisionInputPort } from '~~/server/application/ports/input/makeDecisionInputPort'
-import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
+import type { InternalEventPublisherPort } from '~~/server/core-game/application/ports/output/internalEventPublisherPort'
+import type { JoinGameAsAiInputPort } from '~~/server/core-game/application/ports/input/joinGameAsAiInputPort'
+import type { PlayHandCardInputPort } from '~~/server/core-game/application/ports/input/playHandCardInputPort'
+import type { SelectTargetInputPort } from '~~/server/core-game/application/ports/input/selectTargetInputPort'
+import type { MakeDecisionInputPort } from '~~/server/core-game/application/ports/input/makeDecisionInputPort'
+import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
 
 export default defineNitroPlugin(() => {
   // 建立 OpponentRegistry（注入依賴）

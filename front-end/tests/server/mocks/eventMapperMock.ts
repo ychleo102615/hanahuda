@@ -9,8 +9,8 @@
  */
 
 import { vi } from 'vitest'
-import type { FullEventMapperPort } from '~/server/application/ports/output/eventMapperPort'
-import type { Game } from '~/server/domain/game/game'
+import type { FullEventMapperPort } from '~/server/core-game/application/ports/output/eventMapperPort'
+import type { Game } from '~/server/core-game/domain/game/game'
 import type {
   GameStartedEvent,
   RoundDealtEvent,
