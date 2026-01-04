@@ -82,7 +82,7 @@ function fisherYatesShuffle<T>(array: readonly T[]): T[] {
 export function createShuffledDeck(useTestDeck = false): string[] {
   if (useTestDeck) {
     // 測試模式：返回固定順序的牌組
-    return getTestDeck('field_teshi')
+    return getTestDeck('yaku_before_selection')
   }
   return fisherYatesShuffle(ALL_CARD_IDS)
 }
