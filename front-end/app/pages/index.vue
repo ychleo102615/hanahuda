@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import NavigationBar from '~/components/NavigationBar.vue'
 import HeroSection from '~/components/HeroSection.vue'
 import RulesSection from '~/components/RulesSection.vue'
@@ -7,10 +7,16 @@ import Footer from '~/components/Footer.vue'
 import LoginModal from '~/identity/adapter/components/LoginModal.vue'
 import type { RuleCategoryUnion, YakuCard } from '~/types/rules'
 import type { NavigationLink } from '~/components/NavigationBar.vue'
-
-// Import JSON data
 import rulesDataJson from '~/data/rules.json'
 import yakuDataJson from '~/data/yaku.json'
+
+// 首頁專用：預留滾動條空間，避免 modal 開啟時內容跳動
+onMounted(() => {
+  document.documentElement.style.scrollbarGutter = 'stable'
+})
+onUnmounted(() => {
+  document.documentElement.style.scrollbarGutter = ''
+})
 
 // Navigation Bar data
 // FR-024: Sign In 觸發 Modal，Sign Up 移除（透過 Modal 內的連結前往）
