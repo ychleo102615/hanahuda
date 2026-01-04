@@ -39,8 +39,6 @@ export type GameStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED'
 export interface Game {
   /** 遊戲 ID (UUID v4) */
   readonly id: string
-  /** 會話 Token (UUID v4) */
-  readonly sessionToken: string
   /** 參與玩家列表 */
   readonly players: readonly Player[]
   /** 遊戲規則集 */
@@ -80,7 +78,6 @@ export function getDefaultRuleset(roomTypeId: RoomTypeId = DEFAULT_ROOM_TYPE_ID)
  */
 export interface CreateGameParams {
   readonly id: string
-  readonly sessionToken: string
   readonly player: Player
   readonly ruleset?: Ruleset
 }
@@ -94,13 +91,12 @@ export interface CreateGameParams {
  * @returns 新建立的遊戲
  */
 export function createGame(params: CreateGameParams): Game {
-  const { id, sessionToken, player, ruleset = getDefaultRuleset() } = params
+  const { id, player, ruleset = getDefaultRuleset() } = params
 
   const now = new Date()
 
   return Object.freeze({
     id,
-    sessionToken,
     players: Object.freeze([player]),
     ruleset,
     cumulativeScores: Object.freeze([{ player_id: player.id, score: 0 }]),

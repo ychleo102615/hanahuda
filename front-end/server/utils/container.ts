@@ -34,6 +34,9 @@ import { gameTimeoutManager } from '~~/server/core-game/adapters/timeout/gameTim
 // Adapters - Lock
 import { inMemoryGameLock } from '~~/server/core-game/adapters/lock/inMemoryGameLock'
 
+// Adapters - Identity (跨 BC 通訊)
+import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
+
 // Use Cases
 import { JoinGameUseCase } from '~~/server/core-game/application/use-cases/joinGameUseCase'
 import { JoinGameAsAiUseCase } from '~~/server/core-game/application/use-cases/joinGameAsAiUseCase'
@@ -70,6 +73,9 @@ function createBackendContainer(): DIContainer {
   diContainer.register(BACKEND_TOKENS.InternalEventBus, () => internalEventBus, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameTimeoutManager, () => gameTimeoutManager, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameLock, () => inMemoryGameLock, { singleton: true })
+
+  // ===== 1.5 註冊 Output Ports (跨 BC 通訊) =====
+  diContainer.register(BACKEND_TOKENS.PlayerIdentityPort, () => getIdentityPortAdapter(), { singleton: true })
 
   // ===== 2. 註冊 CompositeEventPublisher =====
   const compositeEventPublisher = createCompositeEventPublisher(gameLogRepository)

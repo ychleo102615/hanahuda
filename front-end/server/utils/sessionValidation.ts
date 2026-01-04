@@ -3,10 +3,11 @@
  *
  * @description
  * 提供會話驗證功能。
- * 優先從 HttpOnly Cookie 讀取 session_token，向後兼容 X-Session-Token header。
+ * 透過 Identity BC 的 session_id Cookie 取得玩家身份，
+ * 再透過 playerGameMap 查詢玩家所在的遊戲。
  *
  * 安全性設計：
- * - session_token 存放在 HttpOnly Cookie，防止 XSS 攻擊
+ * - session_id 由 Identity BC 管理，存放在 HttpOnly Cookie
  * - 生產環境強制使用 Secure Cookie（僅 HTTPS）
  * - SameSite=Lax 防止 CSRF 攻擊
  *
@@ -14,21 +15,16 @@
  */
 
 import type { H3Event } from 'h3'
-import { getCookie, setCookie, deleteCookie } from 'h3'
 import type { Game } from '~~/server/core-game/domain/game/game'
 import type { Player } from '~~/server/core-game/domain/game/player'
 import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
+import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 import {
   HTTP_UNAUTHORIZED,
   HTTP_FORBIDDEN,
   HTTP_INTERNAL_SERVER_ERROR,
 } from '#shared/constants'
 import { logger } from '~~/server/utils/logger'
-
-/**
- * Session Cookie 名稱
- */
-export const SESSION_COOKIE_NAME = 'session_token'
 
 /**
  * 會話驗證結果
@@ -57,83 +53,71 @@ export class SessionValidationError extends Error {
 }
 
 /**
- * 從請求中取得 session token
- *
- * 優先順序：
- * 1. HttpOnly Cookie (推薦，安全性較高)
- * 2. X-Session-Token header (向後兼容)
- *
- * @param event - H3 事件
- * @returns session token 或 null
- */
-export function getSessionToken(event: H3Event): string | null {
-  // 優先從 Cookie 讀取
-  const cookieToken = getCookie(event, SESSION_COOKIE_NAME)
-  if (cookieToken) {
-    return cookieToken
-  }
-
-  // 向後兼容：從 header 讀取
-  const headerToken = getHeader(event, 'x-session-token')
-  return headerToken || null
-}
-
-/**
  * 驗證會話並返回遊戲與玩家上下文
+ *
+ * @description
+ * 透過 Identity BC 取得 playerId，再查詢玩家所在的遊戲。
+ *
+ * 驗證流程：
+ * 1. 透過 PlayerIdentityPort 從請求中取得 playerId
+ * 2. 透過 playerGameMap 查詢玩家所在的遊戲
+ * 3. 驗證遊戲 ID 匹配
+ * 4. 驗證玩家是遊戲參與者
  *
  * @param event - H3 事件
  * @param gameId - 遊戲 ID
  * @returns 會話上下文
  * @throws SessionValidationError 如果驗證失敗
  */
-export function validateSession(event: H3Event, gameId: string): SessionContext {
-  // 1. 取得 session token（優先 Cookie，其次 header）
-  const token = getSessionToken(event)
+export async function validateSession(event: H3Event, gameId: string): Promise<SessionContext> {
+  // 1. 透過 PlayerIdentityPort 取得 playerId
+  const identityPort = getIdentityPortAdapter()
+  const playerId = await identityPort.getPlayerIdFromRequest(event)
 
-  if (!token) {
+  if (!playerId) {
     throw new SessionValidationError(
       'MISSING_TOKEN',
       HTTP_UNAUTHORIZED,
-      'Session token is required (via Cookie or X-Session-Token header)'
+      'Valid session is required'
     )
   }
 
-  // 2. 驗證會話
-  const game = inMemoryGameStore.getBySessionToken(token)
+  // 2. 透過 playerId 查詢遊戲
+  const game = inMemoryGameStore.getByPlayerId(playerId)
 
   if (!game) {
-    logger.error('Invalid session', { errorCode: 'INVALID_SESSION', sessionToken: token })
+    logger.error('No active game for player', { errorCode: 'GAME_NOT_FOUND', playerId })
     throw new SessionValidationError(
-      'INVALID_SESSION',
+      'GAME_NOT_FOUND',
       HTTP_UNAUTHORIZED,
-      'Invalid or expired session token'
+      'No active game found for this session'
     )
   }
 
   // 3. 驗證遊戲 ID 匹配
   if (game.id !== gameId) {
-    logger.error('Game mismatch', { errorCode: 'GAME_MISMATCH', gameId, expectedGameId: game.id, sessionToken: token })
+    logger.error('Game mismatch', { errorCode: 'GAME_MISMATCH', gameId, expectedGameId: game.id, playerId })
     throw new SessionValidationError(
       'GAME_MISMATCH',
       HTTP_FORBIDDEN,
-      'Session token does not match game ID'
+      'Session does not match game ID'
     )
   }
 
-  // 4. 取得人類玩家
-  const humanPlayer = game.players.find((player) => !player.isAi)
-  if (!humanPlayer) {
+  // 4. 取得玩家實體（驗證是遊戲參與者）
+  const player = game.players.find((p: Player) => p.id === playerId)
+  if (!player) {
     throw new SessionValidationError(
       'PLAYER_NOT_FOUND',
       HTTP_INTERNAL_SERVER_ERROR,
-      'No human player found in game'
+      'Player not found in game'
     )
   }
 
   return {
     game,
-    player: humanPlayer,
-    playerId: humanPlayer.id,
+    player,
+    playerId,
   }
 }
 
@@ -154,57 +138,4 @@ export function createSessionErrorResponse(error: SessionValidationError): {
     },
     timestamp: new Date().toISOString(),
   }
-}
-
-/**
- * Cookie 設定選項
- */
-export interface SessionCookieOptions {
-  /** Cookie 有效期（秒），預設 2 小時 */
-  maxAge?: number
-}
-
-/**
- * 設定 Session Cookie
- *
- * @description
- * 設定 HttpOnly Cookie 存放 session_token。
- * 安全性設定：
- * - HttpOnly: 防止 XSS 攻擊讀取 token
- * - Secure: 生產環境僅 HTTPS 傳送
- * - SameSite=Lax: 防止 CSRF，但允許從外部連結導航
- * - Path=/api: 只在 API 請求時傳送
- *
- * @param event - H3 事件
- * @param sessionToken - Session Token
- * @param options - Cookie 設定選項
- */
-export function setSessionCookie(
-  event: H3Event,
-  sessionToken: string,
-  options: SessionCookieOptions = {}
-): void {
-  const { maxAge = 60 * 60 * 2 } = options // 預設 2 小時
-
-  setCookie(event, SESSION_COOKIE_NAME, sessionToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/api',
-    maxAge,
-  })
-}
-
-/**
- * 清除 Session Cookie
- *
- * @description
- * 清除 session_token Cookie（用於登出或離開遊戲）。
- *
- * @param event - H3 事件
- */
-export function clearSessionCookie(event: H3Event): void {
-  deleteCookie(event, SESSION_COOKIE_NAME, {
-    path: '/api',
-  })
 }

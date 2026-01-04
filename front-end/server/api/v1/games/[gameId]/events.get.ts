@@ -3,14 +3,16 @@
  *
  * @description
  * SSE 連線端點。
- * 驗證會話並建立 SSE 連線，接收遊戲事件。
+ * 透過 Identity BC 驗證會話並建立 SSE 連線，接收遊戲事件。
  *
  * 參考: specs/008-nuxt-backend-server/contracts/sse-events.md
  */
 
 import type { GameEvent } from '#shared/contracts'
+import type { Player } from '~~/server/core-game/domain/game/player'
 import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
 import { connectionStore } from '~~/server/core-game/adapters/event-publisher/connectionStore'
+import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
 import type { LeaveGameInputPort } from '~~/server/core-game/application/ports/input/leaveGameInputPort'
@@ -52,36 +54,36 @@ export default defineEventHandler(async (event) => {
     return { error: { code: 'MISSING_GAME_ID', message: 'Game ID is required' } }
   }
 
-  // 從 Cookie 讀取 session_token（HttpOnly Cookie 由瀏覽器自動傳送）
-  const token = getCookie(event, 'session_token')
+  // 2. 透過 PlayerIdentityPort 取得 playerId
+  const identityPort = getIdentityPortAdapter()
+  const playerId = await identityPort.getPlayerIdFromRequest(event)
 
-  if (!token) {
+  if (!playerId) {
     setResponseStatus(event, HTTP_UNAUTHORIZED)
-    return { error: { code: 'MISSING_TOKEN', message: 'Session token is required' } }
+    return { error: { code: 'MISSING_TOKEN', message: 'Valid session is required' } }
   }
 
-  // 2. 驗證會話
-  const game = inMemoryGameStore.getBySessionToken(token)
+  // 3. 透過 playerId 查詢遊戲
+  const game = inMemoryGameStore.getByPlayerId(playerId)
 
   if (!game) {
     setResponseStatus(event, HTTP_UNAUTHORIZED)
-    return { error: { code: 'INVALID_SESSION', message: 'Invalid or expired session token' } }
+    return { error: { code: 'INVALID_SESSION', message: 'No active game found for this session' } }
   }
 
   if (game.id !== gameId) {
     setResponseStatus(event, HTTP_FORBIDDEN)
-    return { error: { code: 'GAME_MISMATCH', message: 'Session token does not match game ID' } }
+    return { error: { code: 'GAME_MISMATCH', message: 'Session does not match game ID' } }
   }
 
-  // 3. 取得玩家 ID（從會話驗證）
-  const humanPlayer = game.players.find((player) => !player.isAi)
-  if (!humanPlayer) {
+  // 4. 驗證玩家是遊戲參與者
+  const player = game.players.find((p: Player) => p.id === playerId)
+  if (!player) {
     setResponseStatus(event, HTTP_INTERNAL_SERVER_ERROR)
-    return { error: { code: 'NO_HUMAN_PLAYER', message: 'No human player found in game' } }
+    return { error: { code: 'PLAYER_NOT_FOUND', message: 'Player not found in game' } }
   }
-  const playerId = humanPlayer.id
 
-  // 4. 設定 SSE headers
+  // 5. 設定 SSE headers
   setHeaders(event, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -89,7 +91,7 @@ export default defineEventHandler(async (event) => {
     'X-Accel-Buffering': 'no', // Disable nginx buffering
   })
 
-  // 5. 建立 SSE 串流
+  // 6. 建立 SSE 串流
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder()
@@ -154,7 +156,7 @@ export default defineEventHandler(async (event) => {
     },
   })
 
-  // 6. 返回 SSE 串流
+  // 7. 返回 SSE 串流
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',

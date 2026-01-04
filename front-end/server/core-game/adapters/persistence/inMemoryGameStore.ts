@@ -62,13 +62,11 @@ class InMemoryGameStore implements GameStorePort {
 
   /**
    * 玩家 ID -> 遊戲 ID（用於快速查找玩家所在的遊戲）
+   *
+   * 注意：目前每位玩家同一時間只參與一場遊戲（1:1 關係）。
+   * TODO: 若未來支援多遊戲並行，需改為 Map<string, Set<string>>
    */
   private playerGameMap: Map<string, string> = new Map()
-
-  /**
-   * 會話 Token -> 遊戲 ID（用於驗證會話）
-   */
-  private sessionGameMap: Map<string, string> = new Map()
 
   /**
    * 取得遊戲狀態
@@ -84,18 +82,13 @@ class InMemoryGameStore implements GameStorePort {
    * 儲存遊戲狀態
    *
    * @param game 遊戲狀態
+   *
+   * @description
+   * 注意：此方法不會自動建立 playerGameMap 映射。
+   * 呼叫端需要在適當時機呼叫 addPlayerGame() 建立映射。
+   * 這是為了讓呼叫端能更精確控制何時建立映射（例如在玩家真正加入時）。
    */
   set(game: GameState): void {
-    const existingGame = this.games.get(game.id)
-
-    // 如果是新遊戲，建立索引
-    if (!existingGame) {
-      for (const player of game.players) {
-        this.playerGameMap.set(player.id, game.id)
-      }
-      this.sessionGameMap.set(game.sessionToken, game.id)
-    }
-
     this.games.set(game.id, game)
   }
 
@@ -107,11 +100,10 @@ class InMemoryGameStore implements GameStorePort {
   delete(gameId: string): void {
     const game = this.games.get(gameId)
     if (game) {
-      // 清除索引
+      // 清除 playerGameMap 索引
       for (const player of game.players) {
         this.playerGameMap.delete(player.id)
       }
-      this.sessionGameMap.delete(game.sessionToken)
       this.games.delete(gameId)
     }
   }
@@ -124,17 +116,6 @@ class InMemoryGameStore implements GameStorePort {
    */
   getByPlayerId(playerId: string): GameState | undefined {
     const gameId = this.playerGameMap.get(playerId)
-    return gameId ? this.games.get(gameId) : undefined
-  }
-
-  /**
-   * 透過會話 Token 取得遊戲狀態
-   *
-   * @param sessionToken 會話 Token
-   * @returns 遊戲狀態（若存在）
-   */
-  getBySessionToken(sessionToken: string): GameState | undefined {
-    const gameId = this.sessionGameMap.get(sessionToken)
     return gameId ? this.games.get(gameId) : undefined
   }
 
@@ -192,17 +173,26 @@ class InMemoryGameStore implements GameStorePort {
   }
 
   /**
-   * 為玩家新增 session 映射
+   * 為玩家新增遊戲映射
    *
-   * 用於第二位玩家加入遊戲時，建立其 session token 到 game 的映射。
+   * 用於玩家加入遊戲時，建立 playerId 到 gameId 的映射。
    *
-   * @param sessionToken - 玩家的 session token
+   * @param playerId - 玩家 ID
    * @param gameId - 遊戲 ID
+   */
+  addPlayerGame(playerId: string, gameId: string): void {
+    this.playerGameMap.set(playerId, gameId)
+  }
+
+  /**
+   * 移除玩家的遊戲映射
+   *
+   * 用於玩家離開遊戲時，移除 playerId 到 gameId 的映射。
+   *
    * @param playerId - 玩家 ID
    */
-  addPlayerSession(sessionToken: string, gameId: string, playerId: string): void {
-    this.sessionGameMap.set(sessionToken, gameId)
-    this.playerGameMap.set(playerId, gameId)
+  removePlayerGame(playerId: string): void {
+    this.playerGameMap.delete(playerId)
   }
 
   /**
@@ -211,7 +201,6 @@ class InMemoryGameStore implements GameStorePort {
   clear(): void {
     this.games.clear()
     this.playerGameMap.clear()
-    this.sessionGameMap.clear()
   }
 
   /**

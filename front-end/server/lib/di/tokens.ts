@@ -33,6 +33,9 @@ export const BACKEND_TOKENS = {
   // ===== Adapters - Lock =====
   GameLock: Symbol('GameLock'),
 
+  // ===== Output Ports (跨 BC 通訊) =====
+  PlayerIdentityPort: Symbol('PlayerIdentityPort'),
+
   // ===== Input Ports (Use Cases) =====
   JoinGameInputPort: Symbol('JoinGameInputPort'),
   JoinGameAsAiInputPort: Symbol('JoinGameAsAiInputPort'),

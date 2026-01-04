@@ -65,7 +65,7 @@ export default defineEventHandler(async (event): Promise<ConfirmContinueResponse
     // 2. 驗證會話
     let sessionContext
     try {
-      sessionContext = validateSession(event, gameId)
+      sessionContext = await validateSession(event, gameId)
     } catch (err) {
       if (err instanceof SessionValidationError) {
         setResponseStatus(event, err.statusCode)

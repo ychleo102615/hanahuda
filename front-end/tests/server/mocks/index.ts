@@ -73,3 +73,12 @@ export {
   createMockGameLock as createGameLockMock,
   type MockGameLock,
 } from './gameLockMock'
+
+// PlayerIdentityPort
+export {
+  createMockPlayerIdentityPort,
+  createMockPlayerIdentityPort as createPlayerIdentityPortMock,
+  createMockPlayerIdentityPortWithPlayer,
+  setPlayerIdForMock,
+  type MockPlayerIdentityPort,
+} from './playerIdentityPortMock'

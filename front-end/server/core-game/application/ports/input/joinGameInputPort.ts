@@ -18,12 +18,10 @@ import type { RoomTypeId } from '#shared/constants/roomTypes'
  * 加入遊戲輸入參數
  */
 export interface JoinGameInput {
-  /** 玩家 ID (UUID v4) */
+  /** 玩家 ID (UUID v4) - 來自 Identity BC 的 playerId */
   readonly playerId: string
   /** 玩家名稱 */
   readonly playerName: string
-  /** 會話 Token（用於重連） */
-  readonly sessionToken?: string
   /** 遊戲 ID（用於重連模式） - 若提供則為重連模式，會返回遊戲狀態 */
   readonly gameId?: string
   /** 房間類型（用於建立新遊戲） */
@@ -50,8 +48,6 @@ export interface JoinGameWaitingOutput {
   readonly status: 'game_waiting'
   /** 遊戲 ID */
   readonly gameId: string
-  /** 會話 Token */
-  readonly sessionToken: string
   /** 玩家 ID */
   readonly playerId: string
   /** 玩家名稱 */
@@ -72,8 +68,6 @@ export interface JoinGameStartedOutput {
   readonly status: 'game_started'
   /** 遊戲 ID */
   readonly gameId: string
-  /** 會話 Token */
-  readonly sessionToken: string
   /** 玩家 ID */
   readonly playerId: string
   /** 玩家列表 */
@@ -101,8 +95,6 @@ export interface JoinGameSnapshotOutput {
   readonly status: 'snapshot'
   /** 遊戲 ID */
   readonly gameId: string
-  /** 會話 Token */
-  readonly sessionToken: string
   /** 玩家 ID */
   readonly playerId: string
   /** 遊戲快照（由 EventMapper 轉換） */
@@ -119,8 +111,6 @@ export interface JoinGameSuccessOutput {
   readonly status: 'success'
   /** 遊戲 ID */
   readonly gameId: string
-  /** 會話 Token（該玩家的獨立 Token） */
-  readonly sessionToken: string
   /** 玩家 ID */
   readonly playerId: string
   /** SSE 端點路徑 */

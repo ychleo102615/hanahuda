@@ -29,9 +29,10 @@ export function createMockGameStore(): MockGameStore {
     get: vi.fn<(gameId: string) => Game | undefined>(),
     set: vi.fn<(game: Game) => void>(),
     delete: vi.fn<(gameId: string) => void>(),
-    getBySessionToken: vi.fn<(token: string) => Game | undefined>(),
+    getByPlayerId: vi.fn<(playerId: string) => Game | undefined>(),
     findWaitingGame: vi.fn<() => Game | undefined>(),
-    addPlayerSession: vi.fn<(sessionToken: string, gameId: string, playerId: string) => void>(),
+    addPlayerGame: vi.fn<(playerId: string, gameId: string) => void>(),
+    removePlayerGame: vi.fn<(playerId: string) => void>(),
   }
 }
 
@@ -44,6 +45,6 @@ export function createMockGameStore(): MockGameStore {
 export function createMockGameStoreWithGame(game: Game): MockGameStore {
   const mock = createMockGameStore()
   mock.get.mockReturnValue(game)
-  mock.getBySessionToken.mockReturnValue(game)
+  mock.getByPlayerId.mockReturnValue(game)
   return mock
 }

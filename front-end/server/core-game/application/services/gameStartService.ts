@@ -40,8 +40,6 @@ export interface StartGameParams {
   readonly waitingGame: Game
   /** 第二位玩家 */
   readonly secondPlayer: Player
-  /** 會話 Token（AI 不需要） */
-  readonly sessionToken?: string
   /** 是否為 AI 玩家 */
   readonly isAi: boolean
   /** 玩家名稱（用於日誌記錄） */
@@ -99,7 +97,7 @@ export class GameStartService {
    * @returns 開始遊戲結果
    */
   async startGameWithSecondPlayer(params: StartGameParams): Promise<StartGameResult> {
-    const { waitingGame, secondPlayer, sessionToken, isAi, playerName } = params
+    const { waitingGame, secondPlayer, isAi, playerName } = params
 
     // 1. 加入遊戲並開始
     let game = addSecondPlayerAndStart(waitingGame, secondPlayer)
@@ -117,10 +115,8 @@ export class GameStartService {
     this.gameStore.set(game)
     await this.gameRepository.save(game)
 
-    // 6. 建立 session 映射（人類玩家才需要）
-    if (!isAi && sessionToken) {
-      this.gameStore.addPlayerSession(sessionToken, game.id, secondPlayer.id)
-    }
+    // 6. 建立 playerId -> gameId 映射
+    this.gameStore.addPlayerGame(secondPlayer.id, game.id)
 
     // 7. 排程初始事件（延遲讓客戶端建立 SSE 連線）
     if (specialRuleResult.triggered && game.currentRound) {

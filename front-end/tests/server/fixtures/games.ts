@@ -23,7 +23,6 @@ export const PLAYER_2_ID = 'player-2'
 export const AI_PLAYER_ID = 'ai-opponent'
 
 export const GAME_ID = 'test-game-id'
-export const SESSION_TOKEN = 'test-session-token'
 
 // ============================================================
 // 役種設定
@@ -179,7 +178,6 @@ export function createTestWaitingGame(overrides: Partial<Game> = {}): Game {
   const now = new Date()
   const defaultGame: Game = {
     id: GAME_ID,
-    sessionToken: SESSION_TOKEN,
     players: Object.freeze([
       { id: PLAYER_1_ID, name: 'Player 1', isAi: false },
     ]),
@@ -212,7 +210,6 @@ export function createTestInProgressGame(overrides: Partial<Game> = {}): Game {
   const now = new Date()
   const defaultGame: Game = {
     id: GAME_ID,
-    sessionToken: SESSION_TOKEN,
     players: Object.freeze([
       { id: PLAYER_1_ID, name: 'Player 1', isAi: false },
       { id: PLAYER_2_ID, name: 'Player 2', isAi: false },
@@ -272,7 +269,6 @@ export function createTestFinishedGame(
   const now = new Date()
   const defaultGame: Game = {
     id: GAME_ID,
-    sessionToken: SESSION_TOKEN,
     players: Object.freeze([
       { id: PLAYER_1_ID, name: 'Player 1', isAi: false },
       { id: PLAYER_2_ID, name: 'Player 2', isAi: false },

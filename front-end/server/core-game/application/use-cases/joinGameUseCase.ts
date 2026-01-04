@@ -73,11 +73,11 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * @returns 遊戲資訊
    */
   async execute(input: JoinGameInput): Promise<JoinGameOutput> {
-    const { playerId, playerName, sessionToken, gameId, roomType } = input
+    const { playerId, playerName, gameId, roomType } = input
 
     // 1. 重連模式：如果提供了 gameId，明確表示要重連特定遊戲
     if (gameId) {
-      return this.handleReconnectionMode(gameId, playerId, playerName, sessionToken)
+      return this.handleReconnectionMode(gameId, playerId, playerName)
     }
 
     // 2. 新遊戲模式：沒有提供 gameId，開始新遊戲
@@ -111,50 +111,24 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * 此時需要檢查遊戲狀態，返回對應的結果。
    *
    * 驗證順序：
-   * 1. sessionToken 存在性
-   * 2. sessionToken 對應正確的 gameId
-   * 3. playerId 在遊戲中
+   * 1. 透過 playerId 查詢遊戲
+   * 2. 驗證查到的遊戲 ID 與傳入的 gameId 相符
    *
    * @param gameId - 要重連的遊戲 ID
-   * @param playerId - 玩家 ID
+   * @param playerId - 玩家 ID（來自 Identity BC）
    * @param playerName - 玩家名稱
-   * @param sessionToken - 會話 Token
    * @returns 加入遊戲結果
    */
   private async handleReconnectionMode(
     gameId: string,
     playerId: string,
-    playerName: string,
-    sessionToken?: string
+    playerName: string
   ): Promise<JoinGameOutput> {
-    // 1. 驗證 sessionToken 存在
-    if (!sessionToken) {
-      logger.error('Game expired', { gameId, playerId, reason: 'no_session_token' })
-      this.gameLogRepository?.logAsync({
-        gameId,
-        playerId,
-        eventType: COMMAND_TYPES.ReconnectGameFailed,
-        payload: { reason: 'no_session_token' },
-      })
-      return { status: 'game_expired', gameId }
-    }
+    // 1. 透過 playerId 查詢遊戲
+    const playerGame = this.gameStore.getByPlayerId(playerId)
 
-    // 2. 驗證 sessionToken 對應正確的遊戲
-    const tokenGame = this.gameStore.getBySessionToken(sessionToken)
-    if (!tokenGame || tokenGame.id !== gameId) {
-      logger.error('Game expired', { gameId, playerId, reason: 'invalid_session_token' })
-      this.gameLogRepository?.logAsync({
-        gameId,
-        playerId,
-        eventType: COMMAND_TYPES.ReconnectGameFailed,
-        payload: { reason: 'invalid_session_token' },
-      })
-      return { status: 'game_expired', gameId }
-    }
-
-    // 3. 驗證玩家身份
-    const isPlayer = tokenGame.players.some((p) => p.id === playerId)
-    if (!isPlayer) {
+    // 2. 驗證遊戲存在且 ID 相符
+    if (!playerGame || playerGame.id !== gameId) {
       logger.error('Game expired', { gameId, playerId, reason: 'player_not_in_game' })
       this.gameLogRepository?.logAsync({
         gameId,
@@ -165,8 +139,8 @@ export class JoinGameUseCase implements JoinGameInputPort {
       return { status: 'game_expired', gameId }
     }
 
-    // 4. 驗證通過，執行重連
-    return this.handleReconnection(tokenGame, playerId, playerName, sessionToken)
+    // 3. 驗證通過，執行重連
+    return this.handleReconnection(playerGame, playerId, playerName)
   }
 
   /**
@@ -234,14 +208,12 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * @param game - 遊戲
    * @param playerId - 玩家 ID
    * @param playerName - 玩家名稱
-   * @param sessionToken - 會話 Token
    * @returns 加入遊戲結果
    */
   private handleReconnection(
     game: Game,
     playerId: string,
-    playerName: string,
-    sessionToken: string
+    playerName: string
   ): JoinGameSnapshotOutput | JoinGameWaitingOutput {
     // 1. 若遊戲 WAITING → 返回 game_waiting（等待對手）
     if (game.status === 'WAITING') {
@@ -260,7 +232,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
       return {
         status: 'game_waiting',
         gameId: game.id,
-        sessionToken,
         playerId,
         playerName,
         timeoutSeconds: remainingSeconds,
@@ -288,7 +259,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     return {
       status: 'snapshot',
       gameId: game.id,
-      sessionToken,
       playerId,
       snapshot,
     }
@@ -310,7 +280,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     roomType?: RoomTypeId
   ): Promise<JoinGameWaitingOutput> {
     const gameId = randomUUID()
-    const sessionToken = randomUUID()
 
     const humanPlayer = createPlayer({
       id: playerId,
@@ -324,7 +293,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
     const game = createGame({
       id: gameId,
-      sessionToken, // Game 的 sessionToken 為第一位玩家的 token
       player: humanPlayer,
       ruleset,
     })
@@ -332,6 +300,9 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 儲存到記憶體和資料庫
     this.gameStore.set(game)
     await this.gameRepository.save(game)
+
+    // 建立 playerId -> gameId 映射
+    this.gameStore.addPlayerGame(playerId, gameId)
 
     // 發布 ROOM_CREATED 內部事件（通知 OpponentService 有新房間需要 AI 加入）
     this.internalEventPublisher.publishRoomCreated({
@@ -356,7 +327,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     return {
       status: 'game_waiting',
       gameId: game.id,
-      sessionToken,
       playerId,
       playerName,
       timeoutSeconds: gameConfig.matchmaking_timeout_seconds,
@@ -388,8 +358,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
       // 清除配對超時計時器（對手已加入）
       this.gameTimeoutManager.clearMatchmakingTimeout(waitingGame.id)
 
-      const sessionToken = randomUUID()
-
       const secondPlayer = createPlayer({
         id: playerId,
         name: playerName,
@@ -400,7 +368,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
       const result = await this.gameStartService.startGameWithSecondPlayer({
         waitingGame: currentGame,
         secondPlayer,
-        sessionToken,
         isAi: false,
         playerName,
       })
@@ -409,9 +376,8 @@ export class JoinGameUseCase implements JoinGameInputPort {
       return {
         status: 'game_started',
         gameId: result.game.id,
-        sessionToken,
         playerId,
-        players: result.game.players.map(p => ({
+        players: result.game.players.map((p: { id: string; name: string; isAi: boolean }) => ({
           playerId: p.id,
           playerName: p.name,
           isAi: p.isAi,

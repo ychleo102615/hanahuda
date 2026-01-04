@@ -43,12 +43,12 @@ export interface GameStorePort {
   delete(gameId: string): void
 
   /**
-   * 透過會話 Token 取得遊戲狀態
+   * 透過玩家 ID 取得遊戲狀態
    *
-   * @param token - 會話 Token
+   * @param playerId - 玩家 ID
    * @returns 遊戲狀態（若存在）
    */
-  getBySessionToken(token: string): Game | undefined
+  getByPlayerId(playerId: string): Game | undefined
 
   /**
    * 查找等待中的遊戲（用於配對）
@@ -58,11 +58,17 @@ export interface GameStorePort {
   findWaitingGame(): Game | undefined
 
   /**
-   * 為玩家新增 session 映射
+   * 為玩家新增遊戲映射
    *
-   * @param sessionToken - 玩家的 session token
+   * @param playerId - 玩家 ID
    * @param gameId - 遊戲 ID
+   */
+  addPlayerGame(playerId: string, gameId: string): void
+
+  /**
+   * 移除玩家的遊戲映射
+   *
    * @param playerId - 玩家 ID
    */
-  addPlayerSession(sessionToken: string, gameId: string, playerId: string): void
+  removePlayerGame(playerId: string): void
 }
