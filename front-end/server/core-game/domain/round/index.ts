@@ -36,6 +36,7 @@ export { detectTeshi, detectKuttsuki, detectFieldTeshi } from './roundDetection'
 // 回合操作
 export type {
   PlayHandCardResult,
+  PlayHandCardOptions,
   DrawResult,
   SelectTargetResult,
   DecisionResult,

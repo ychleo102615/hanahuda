@@ -172,12 +172,28 @@ function updateKoiStatus(
 // ============================================================
 
 /**
+ * 打手牌選項
+ */
+export interface PlayHandCardOptions {
+  /** 手牌配對目標（雙重配對時必須指定） */
+  readonly handTargetCardId?: string
+  /**
+   * 手牌操作前的役種狀態
+   *
+   * @description
+   * 用於 SelectTargetUseCase 檢測新役種時的基準。
+   * 當翻牌需要選擇配對目標時，此值會被存入 pendingSelection.previousYaku。
+   */
+  readonly previousYaku?: readonly Yaku[]
+}
+
+/**
  * 打出手牌（包含翻牌）
  *
  * @param round - 目前局狀態
  * @param playerId - 玩家 ID
  * @param cardId - 要打出的卡片 ID
- * @param handTargetCardId - 手牌配對目標（雙重配對時必須指定）
+ * @param options - 選項（手牌配對目標、前置役種狀態）
  * @returns 操作結果
  * @throws Error 如果操作無效
  */
@@ -185,8 +201,10 @@ export function playHandCard(
   round: Round,
   playerId: string,
   cardId: string,
-  handTargetCardId?: string
+  options?: PlayHandCardOptions
 ): PlayHandCardResult {
+  const handTargetCardId = options?.handTargetCardId
+  const previousYaku = options?.previousYaku ?? []
   // 驗證狀態
   if (round.flowState !== 'AWAITING_HAND_PLAY') {
     throw new Error(`Invalid flow state: ${round.flowState}. Expected AWAITING_HAND_PLAY.`)
@@ -369,6 +387,7 @@ export function playHandCard(
           drawnCard,
           possibleTargets: (drawMatchResult as { targets: readonly string[] }).targets,
           handCardPlay,
+          previousYaku,
         })
       : null,
   })

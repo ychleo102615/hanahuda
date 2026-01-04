@@ -137,9 +137,9 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
       throw new SelectTargetError('INVALID_SELECTION', `Source card mismatch: expected ${pending.drawnCard}, got ${sourceCardId}`)
     }
 
-    // 5. 取得操作前的役種（包含手牌階段捕獲的）
-    const previousDepository = getPlayerDepository(game.currentRound, playerId)
-    const previousYaku = detectYaku(previousDepository, game.ruleset.yaku_settings)
+    // 5. 取得手牌操作前的役種（從 pendingSelection 中取得，確保基準點正確）
+    // 這是修復 Bug 的關鍵：使用手牌操作前的役種作為基準，而非選擇配對前的役種
+    const previousYaku = pending.previousYaku
 
     // 6. 執行 Domain 操作
     let selectResult

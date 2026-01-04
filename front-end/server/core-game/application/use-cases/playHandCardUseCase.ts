@@ -131,10 +131,13 @@ export class PlayHandCardUseCase implements PlayHandCardInputPort {
     const previousDepository = getPlayerDepository(game.currentRound, playerId)
     const previousYaku = detectYaku(previousDepository, game.ruleset.yaku_settings)
 
-    // 5. 執行 Domain 操作
+    // 5. 執行 Domain 操作（傳入 previousYaku 供 pendingSelection 使用）
     let playResult
     try {
-      playResult = domainPlayHandCard(game.currentRound, playerId, cardId, targetCardId)
+      playResult = domainPlayHandCard(game.currentRound, playerId, cardId, {
+        handTargetCardId: targetCardId,
+        previousYaku,
+      })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
       if (message.includes('Card not in hand')) {

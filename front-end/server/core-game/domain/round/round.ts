@@ -40,6 +40,14 @@ export interface PendingSelection {
   readonly drawnCard: string
   readonly possibleTargets: readonly string[]
   readonly handCardPlay: CardPlay
+  /**
+   * 手牌操作前的役種狀態
+   *
+   * @description
+   * 用於 SelectTargetUseCase 檢測新役種時的基準。
+   * 確保在「手牌配對 → 翻牌選擇」流程中，手牌階段形成的役種也能正確觸發 DecisionRequired。
+   */
+  readonly previousYaku: readonly import('#shared/contracts').Yaku[]
 }
 
 /**
