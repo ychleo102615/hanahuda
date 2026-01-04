@@ -328,11 +328,16 @@ export class TurnFlowService {
    * @param gameId - 遊戲 ID
    * @param winnerId - 勝者 ID（可選，若無則視為平局）
    * @param reason - 結束原因
+   * @param statsData - 統計資料（僅正常結束時有值，用於記錄役種統計）
    */
   private async endGame(
     gameId: string,
     winnerId: string | undefined,
-    reason: GameEndedReason
+    reason: GameEndedReason,
+    statsData?: {
+      readonly yakuList: readonly import('#shared/contracts').Yaku[]
+      readonly koiMultiplier: number
+    }
   ): Promise<void> {
     const game = this.gameStore.get(gameId)
     if (!game) {
@@ -342,15 +347,17 @@ export class TurnFlowService {
     // 使用 Domain 函數結束遊戲
     const finishedGame = finishGame(game, winnerId)
 
-    // 記錄遊戲統計（非正常結束也需要記錄勝負）
+    // 記錄遊戲統計
+    // 若有 statsData（正常結束），使用其中的役種和倍率資訊
+    // 否則（非正常結束如斷線、超時），使用預設值
     if (this.recordGameStatsUseCase) {
       try {
         await this.recordGameStatsUseCase.execute({
           gameId,
           winnerId: winnerId ?? null,
           finalScores: finishedGame.cumulativeScores,
-          winnerYakuList: [], // 非正常結束沒有役種資訊
-          winnerKoiMultiplier: 1, // 非正常結束沒有倍率
+          winnerYakuList: statsData?.yakuList ?? [],
+          winnerKoiMultiplier: statsData?.koiMultiplier ?? 1,
           players: finishedGame.players,
         })
       } catch {
@@ -693,6 +700,9 @@ export class TurnFlowService {
       return
     }
 
+    // 在執行局轉換前，先提取統計資料（轉換後 currentRound 會變成 null）
+    const statsData = this.extractStatsDataFromRound(currentGame)
+
     try {
       // 執行實際的局轉換
       const transitionResult = finalizeRoundAndTransition(currentGame)
@@ -713,14 +723,46 @@ export class TurnFlowService {
           this.startTimeoutForPlayer(gameId, firstPlayerId, 'AWAITING_HAND_PLAY')
         }
       } else {
-        // 遊戲結束
+        // 遊戲結束，傳遞統計資料
         const winner = transitionResult.winner
         if (winner) {
-          await this.endGame(gameId, winner.winnerId ?? undefined, 'NORMAL')
+          await this.endGame(gameId, winner.winnerId ?? undefined, 'NORMAL', statsData)
         }
       }
     } catch {
       // Failed to finalize round
+    }
+  }
+
+  /**
+   * 從當前回合提取統計資料
+   *
+   * @description
+   * 在執行 finalizeRoundAndTransition() 之前呼叫，
+   * 因為轉換後 currentRound 會被設為 null，資料會遺失。
+   *
+   * @param game - 當前遊戲狀態
+   * @returns 統計資料，或 undefined（若無可用資料）
+   */
+  private extractStatsDataFromRound(game: Game): {
+    readonly yakuList: readonly import('#shared/contracts').Yaku[]
+    readonly koiMultiplier: number
+  } | undefined {
+    const round = game.currentRound
+    if (!round?.settlementInfo?.scoringData) {
+      return undefined
+    }
+
+    const { scoringData } = round.settlementInfo
+    const winnerId = scoringData.winner_id
+
+    // 從 koiStatuses 取得勝者的實際 Koi-Koi 倍率
+    const winnerKoiStatus = round.koiStatuses.find(ks => ks.player_id === winnerId)
+    const koiMultiplier = winnerKoiStatus?.koi_multiplier ?? 1
+
+    return {
+      yakuList: scoringData.yaku_list,
+      koiMultiplier,
     }
   }
 
