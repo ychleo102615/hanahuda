@@ -102,6 +102,19 @@ export class DrizzlePlayerStatsRepository implements PlayerStatsRepositoryPort {
   }
 
   /**
+   * 透過玩家 ID 刪除統計記錄
+   *
+   * 用於帳號刪除時清理相關資料。
+   *
+   * @param playerId - 玩家 ID
+   */
+  async deleteByPlayerId(playerId: string): Promise<void> {
+    await db
+      .delete(playerStats)
+      .where(eq(playerStats.playerId, playerId))
+  }
+
+  /**
    * 建構役種計數合併的 SQL 表達式
    *
    * 使用 PostgreSQL JSONB 運算符合併兩個 JSON 物件。

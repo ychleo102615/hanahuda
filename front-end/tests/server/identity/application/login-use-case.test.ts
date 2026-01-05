@@ -12,10 +12,10 @@ import { LoginUseCase } from '../../../../server/identity/application/use-cases/
 import type { PlayerRepositoryPort } from '../../../../server/identity/application/ports/output/player-repository-port'
 import type { AccountRepositoryPort } from '../../../../server/identity/application/ports/output/account-repository-port'
 import type { SessionStorePort } from '../../../../server/identity/application/ports/output/session-store-port'
+import type { PasswordHashPort } from '../../../../server/identity/application/ports/output/password-hash-port'
 import type { Player, PlayerId } from '../../../../server/identity/domain/player/player'
 import type { Account, AccountId } from '../../../../server/identity/domain/account/account'
 import type { PasswordHash } from '../../../../server/identity/domain/account/password-hash'
-import * as passwordHashModule from '../../../../server/identity/domain/account/password-hash'
 
 // =============================================================================
 // Mocks
@@ -76,6 +76,13 @@ function createMockSessionStore(): SessionStorePort {
   } as unknown as SessionStorePort
 }
 
+function createMockPasswordHasher(): PasswordHashPort {
+  return {
+    hash: vi.fn(),
+    verify: vi.fn(),
+  } as unknown as PasswordHashPort
+}
+
 // =============================================================================
 // Test Suite
 // =============================================================================
@@ -85,12 +92,14 @@ describe('LoginUseCase', () => {
   let playerRepository: PlayerRepositoryPort
   let accountRepository: AccountRepositoryPort
   let sessionStore: SessionStorePort
+  let passwordHasher: PasswordHashPort
 
   beforeEach(() => {
     playerRepository = createMockPlayerRepository()
     accountRepository = createMockAccountRepository()
     sessionStore = createMockSessionStore()
-    useCase = new LoginUseCase(playerRepository, accountRepository, sessionStore)
+    passwordHasher = createMockPasswordHasher()
+    useCase = new LoginUseCase(playerRepository, accountRepository, sessionStore, passwordHasher)
 
     // Reset all mocks
     vi.clearAllMocks()
@@ -101,7 +110,7 @@ describe('LoginUseCase', () => {
       // Arrange
       vi.mocked(accountRepository.findByUsername).mockResolvedValue(mockAccount)
       vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer)
-      vi.spyOn(passwordHashModule, 'verifyPassword').mockResolvedValue(true)
+      vi.mocked(passwordHasher.verify).mockResolvedValue(true)
       vi.mocked(sessionStore.save).mockResolvedValue({
         id: 'session-123' as any,
         playerId: mockPlayer.id,
@@ -129,7 +138,7 @@ describe('LoginUseCase', () => {
       // Arrange
       vi.mocked(accountRepository.findByUsername).mockResolvedValue(mockAccount)
       vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer)
-      vi.spyOn(passwordHashModule, 'verifyPassword').mockResolvedValue(true)
+      vi.mocked(passwordHasher.verify).mockResolvedValue(true)
       vi.mocked(sessionStore.save).mockResolvedValue({
         id: 'new-session-id' as any,
         playerId: mockPlayer.id,
@@ -155,7 +164,7 @@ describe('LoginUseCase', () => {
       // Arrange
       vi.mocked(accountRepository.findByUsername).mockResolvedValue(mockAccount)
       vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer)
-      vi.spyOn(passwordHashModule, 'verifyPassword').mockResolvedValue(true)
+      vi.mocked(passwordHasher.verify).mockResolvedValue(true)
       vi.mocked(sessionStore.deleteByPlayerId).mockResolvedValue()
       vi.mocked(sessionStore.save).mockResolvedValue({
         id: 'session-123' as any,
@@ -172,6 +181,28 @@ describe('LoginUseCase', () => {
 
       // Assert
       expect(sessionStore.deleteByPlayerId).toHaveBeenCalledWith(mockPlayer.id)
+    })
+
+    it('should call passwordHasher.verify with correct arguments', async () => {
+      // Arrange
+      vi.mocked(accountRepository.findByUsername).mockResolvedValue(mockAccount)
+      vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer)
+      vi.mocked(passwordHasher.verify).mockResolvedValue(true)
+      vi.mocked(sessionStore.save).mockResolvedValue({
+        id: 'session-123' as any,
+        playerId: mockPlayer.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(),
+      })
+
+      // Act
+      await useCase.execute({
+        username: 'testuser',
+        password: 'ValidPass123',
+      })
+
+      // Assert
+      expect(passwordHasher.verify).toHaveBeenCalledWith('ValidPass123', mockPasswordHash)
     })
   })
 
@@ -197,7 +228,7 @@ describe('LoginUseCase', () => {
     it('should fail when password is incorrect', async () => {
       // Arrange
       vi.mocked(accountRepository.findByUsername).mockResolvedValue(mockAccount)
-      vi.spyOn(passwordHashModule, 'verifyPassword').mockResolvedValue(false)
+      vi.mocked(passwordHasher.verify).mockResolvedValue(false)
 
       // Act
       const result = await useCase.execute({
@@ -224,7 +255,7 @@ describe('LoginUseCase', () => {
 
       // Arrange - Test wrong password
       vi.mocked(accountRepository.findByUsername).mockResolvedValue(mockAccount)
-      vi.spyOn(passwordHashModule, 'verifyPassword').mockResolvedValue(false)
+      vi.mocked(passwordHasher.verify).mockResolvedValue(false)
 
       const result2 = await useCase.execute({
         username: 'testuser',
@@ -275,7 +306,7 @@ describe('LoginUseCase', () => {
       // Arrange
       vi.mocked(accountRepository.findByUsername).mockResolvedValue(mockAccount)
       vi.mocked(playerRepository.findById).mockResolvedValue(null)
-      vi.spyOn(passwordHashModule, 'verifyPassword').mockResolvedValue(true)
+      vi.mocked(passwordHasher.verify).mockResolvedValue(true)
 
       // Act
       const result = await useCase.execute({

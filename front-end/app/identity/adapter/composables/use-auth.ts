@@ -42,6 +42,13 @@ export function useAuth() {
     logout: authStore.logout,
 
     /**
+     * 刪除帳號
+     *
+     * @param password - 密碼確認（已註冊帳號必填）
+     */
+    deleteAccount: authStore.deleteAccount,
+
+    /**
      * 更新當前玩家（用於登入/註冊後）
      */
     setCurrentPlayer: authStore.setCurrentPlayer,

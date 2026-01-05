@@ -14,8 +14,9 @@ import type { AccountRepositoryPort } from '~~/server/identity/application/ports
 import type { OAuthLinkRepositoryPort } from '~~/server/identity/application/ports/output/oauth-link-repository-port'
 import type { PlayerRepositoryPort } from '~~/server/identity/application/ports/output/player-repository-port'
 import type { SessionStorePort } from '~~/server/identity/application/ports/output/session-store-port'
+import type { PasswordHashPort } from '~~/server/identity/application/ports/output/password-hash-port'
 import { createAccount, type AccountId } from '~~/server/identity/domain/account/account'
-import { createPasswordHash } from '~~/server/identity/domain/account/password-hash'
+import type { PasswordHash } from '~~/server/identity/domain/account/password-hash'
 import { createRegisteredPlayer, type PlayerId } from '~~/server/identity/domain/player/player'
 import { createSession, type SessionId } from '~~/server/identity/domain/types/session'
 
@@ -64,6 +65,13 @@ function createMockSessionStore(): SessionStorePort {
   } as unknown as SessionStorePort
 }
 
+function createMockPasswordHasher(): PasswordHashPort {
+  return {
+    hash: vi.fn(),
+    verify: vi.fn(),
+  } as unknown as PasswordHashPort
+}
+
 // =============================================================================
 // Test Fixtures
 // =============================================================================
@@ -72,14 +80,18 @@ const now = new Date()
 const TEST_PLAYER_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' as PlayerId
 const TEST_ACCOUNT_ID = 'ffffffff-1111-4222-8333-444444444444' as AccountId
 
-async function createTestAccount() {
-  const passwordHash = await createPasswordHash('TestPass123')
+const testPasswordHash: PasswordHash = {
+  hash: '$2a$10$mockedhash',
+  algorithm: 'bcrypt',
+}
+
+function createTestAccount() {
   return createAccount({
     id: TEST_ACCOUNT_ID,
     playerId: TEST_PLAYER_ID,
     username: 'testuser',
     email: 'test@example.com',
-    passwordHash,
+    passwordHash: testPasswordHash,
     createdAt: now,
     updatedAt: now,
   })
@@ -108,30 +120,34 @@ describe('LinkAccountUseCase', () => {
   let mockAccountRepository: AccountRepositoryPort
   let mockOAuthLinkRepository: OAuthLinkRepositoryPort
   let mockSessionStore: SessionStorePort
+  let mockPasswordHasher: PasswordHashPort
 
   beforeEach(() => {
     mockPlayerRepository = createMockPlayerRepository()
     mockAccountRepository = createMockAccountRepository()
     mockOAuthLinkRepository = createMockOAuthLinkRepository()
     mockSessionStore = createMockSessionStore()
+    mockPasswordHasher = createMockPasswordHasher()
 
     useCase = new LinkAccountUseCase(
       mockPlayerRepository,
       mockAccountRepository,
       mockOAuthLinkRepository,
       mockSessionStore,
+      mockPasswordHasher,
     )
   })
 
   describe('成功連結', () => {
     it('應該在密碼驗證成功後建立 OAuth 連結', async () => {
       // Arrange
-      const account = await createTestAccount()
+      const account = createTestAccount()
       const player = createTestPlayer()
       const session = createTestSession(player.id)
 
       vi.mocked(mockAccountRepository.findByUsername).mockResolvedValue(account)
       vi.mocked(mockPlayerRepository.findById).mockResolvedValue(player)
+      vi.mocked(mockPasswordHasher.verify).mockResolvedValue(true)
       vi.mocked(mockSessionStore.save).mockResolvedValue(session)
       vi.mocked(mockOAuthLinkRepository.save).mockImplementation(async (link) => link)
 
@@ -164,12 +180,13 @@ describe('LinkAccountUseCase', () => {
 
     it('應該建立新的 Session', async () => {
       // Arrange
-      const account = await createTestAccount()
+      const account = createTestAccount()
       const player = createTestPlayer()
       const session = createTestSession(player.id)
 
       vi.mocked(mockAccountRepository.findByUsername).mockResolvedValue(account)
       vi.mocked(mockPlayerRepository.findById).mockResolvedValue(player)
+      vi.mocked(mockPasswordHasher.verify).mockResolvedValue(true)
       vi.mocked(mockSessionStore.save).mockResolvedValue(session)
       vi.mocked(mockOAuthLinkRepository.save).mockImplementation(async (link) => link)
 
@@ -216,9 +233,10 @@ describe('LinkAccountUseCase', () => {
 
     it('密碼錯誤時應返回錯誤', async () => {
       // Arrange
-      const account = await createTestAccount()
+      const account = createTestAccount()
 
       vi.mocked(mockAccountRepository.findByUsername).mockResolvedValue(account)
+      vi.mocked(mockPasswordHasher.verify).mockResolvedValue(false)
 
       const input: LinkAccountInput = {
         username: 'testuser',
@@ -241,10 +259,11 @@ describe('LinkAccountUseCase', () => {
 
     it('OAuth 已連結時應返回錯誤', async () => {
       // Arrange
-      const account = await createTestAccount()
+      const account = createTestAccount()
       const player = createTestPlayer()
 
       vi.mocked(mockAccountRepository.findByUsername).mockResolvedValue(account)
+      vi.mocked(mockPasswordHasher.verify).mockResolvedValue(true)
       vi.mocked(mockPlayerRepository.findById).mockResolvedValue(player)
       vi.mocked(mockOAuthLinkRepository.findByProviderUserId).mockResolvedValue({
         id: '11111111-2222-3333-4444-555555555555',
@@ -316,9 +335,10 @@ describe('LinkAccountUseCase', () => {
   describe('Player 查找錯誤', () => {
     it('Player 不存在時應返回錯誤', async () => {
       // Arrange
-      const account = await createTestAccount()
+      const account = createTestAccount()
 
       vi.mocked(mockAccountRepository.findByUsername).mockResolvedValue(account)
+      vi.mocked(mockPasswordHasher.verify).mockResolvedValue(true)
       vi.mocked(mockPlayerRepository.findById).mockResolvedValue(null)
 
       const input: LinkAccountInput = {

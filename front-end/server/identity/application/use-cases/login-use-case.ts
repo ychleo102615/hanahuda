@@ -8,11 +8,11 @@
  */
 
 import { createSession, type SessionId } from '../../domain/types/session'
-import { verifyPassword } from '../../domain/account/password-hash'
 import type { Player } from '../../domain/player/player'
 import type { PlayerRepositoryPort } from '../ports/output/player-repository-port'
 import type { AccountRepositoryPort } from '../ports/output/account-repository-port'
 import type { SessionStorePort } from '../ports/output/session-store-port'
+import type { PasswordHashPort } from '../ports/output/password-hash-port'
 import type { CommandResult, AuthError } from '#shared/contracts/auth-commands'
 import type { LoginRequest } from '#shared/contracts/identity-types'
 
@@ -45,6 +45,7 @@ export class LoginUseCase {
     private readonly playerRepository: PlayerRepositoryPort,
     private readonly accountRepository: AccountRepositoryPort,
     private readonly sessionStore: SessionStorePort,
+    private readonly passwordHasher: PasswordHashPort,
   ) {}
 
   /**
@@ -78,7 +79,7 @@ export class LoginUseCase {
       }
 
       // 3. 驗證密碼
-      const isPasswordValid = await verifyPassword(input.password, account.passwordHash)
+      const isPasswordValid = await this.passwordHasher.verify(input.password, account.passwordHash)
       if (!isPasswordValid) {
         // Security: 相同的錯誤訊息
         return {

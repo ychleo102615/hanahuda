@@ -437,6 +437,78 @@ Phase 6 (US3 - OAuth)
 
 ---
 
+## Phase 10: 登入回饋與玩家識別 (FR-025 ~ FR-028)
+
+**Purpose**: 增強登入回饋與首頁玩家身份顯示
+
+**Related FRs**: FR-025, FR-026, FR-027, FR-027a, FR-027b, FR-028
+
+### 10.1 登入成功 Toast
+
+- [x] T113 [US5] Add success toast in LoginForm.vue on login success (FR-025)
+
+### 10.2 PlayerProfilePopover 組件
+
+- [x] T114 [P] Create PlayerProfilePopover.vue at `app/components/PlayerProfilePopover.vue` (FR-027)
+
+### 10.3 NavigationBar 整合
+
+- [x] T115 [P] Add `player` prop and `playerClick` emit to NavigationBar.vue (FR-026, FR-028)
+- [x] T116 [P] Update NavigationBar.vue desktop layout to show player icon / Sign In
+- [x] T117 [P] Update NavigationBar.vue mobile menu to include player section
+
+### 10.4 首頁整合
+
+- [x] T118 [P] Update index.vue to compute player info and pass to NavigationBar
+- [x] T119 [P] Integrate PlayerProfilePopover in index.vue with state management
+- [x] T120 [P] Handle logout action in index.vue (call authStore.logout)
+
+### 10.5 規格文件更新
+
+- [x] T121 Update spec.md with new FRs (FR-025 ~ FR-028)
+- [x] T122 Update tasks.md with Phase 10
+
+**Checkpoint**: Phase 10 complete - 登入成功顯示 Toast，首頁顯示玩家 icon 與資訊卡 ✅
+
+---
+
+## Phase 11: 玩家選單與帳號刪除修正 (FR-027c, FR-029, FR-030)
+
+**Purpose**: 修正帳號刪除遺漏 player_stats、調整 Popover 定位、區分大廳/遊戲頁面玩家資訊顯示
+
+**Related FRs**: FR-027c, FR-029, FR-030, FR-030a, FR-030b
+
+### 11.1 player_stats 刪除修正 (FR-029)
+
+- [x] T123 [P] Add `deleteByPlayerId` method to PlayerStatsRepositoryPort
+- [x] T124 [P] Implement `deleteByPlayerId` in DrizzlePlayerStatsRepository
+- [x] T125 Update DeleteAccountUseCase to delete player_stats before Player
+- [x] T126 Update DI container to inject playerStatsRepository
+- [x] T127 [P] Add unit tests for player_stats deletion at `tests/server/identity/application/delete-account-use-case.test.ts`
+
+### 11.2 首頁 Popover 錨點定位 (FR-027c)
+
+- [x] T128 [P] Refactor PlayerProfilePopover.vue to accept `anchorRef` prop
+- [x] T129 [P] Update NavigationBar.vue to expose `playerBadgeRef`
+- [x] T130 Update index.vue to pass anchor ref to PlayerProfilePopover
+
+### 11.3 大廳/遊戲純資訊小卡 (FR-030)
+
+- [x] T131 [P] Create PlayerInfoCard.vue at `app/components/PlayerInfoCard.vue` (info-only, no action buttons)
+- [x] T132 [P] Update LobbyTopInfoBar.vue to emit `playerClick` and expose `playerBadgeRef`
+- [x] T133 [P] Update GameTopInfoBar.vue to add clickable avatar and emit `playerClick`
+- [x] T134 Integrate PlayerInfoCard in lobby.vue
+- [x] T135 Integrate PlayerInfoCard in game/index.vue
+
+### 11.4 規格文件更新
+
+- [x] T136 Update spec.md with FR-027c, FR-029, FR-030
+- [x] T137 Update tasks.md with Phase 11
+
+**Checkpoint**: Phase 11 complete - 帳號刪除正確刪除 player_stats，Popover 錨點定位，大廳/遊戲純資訊小卡 ✅
+
+---
+
 ## Summary
 
 | Phase | User Story | Priority | Tasks | Tests | Status |
@@ -450,9 +522,11 @@ Phase 6 (US3 - OAuth)
 | 7 | US4 - 顯示名稱 | P3 | 5 | 1 | ✅ Complete |
 | 8 | Polish | - | 9 | 0 | ✅ Core Complete |
 | 9 | Login Modal | UX | 5 | 0 | ✅ Complete |
-| **Total** | | | **102** | **16** | **✅ DONE** |
+| 10 | 登入回饋 | UX | 10 | 0 | ✅ Complete |
+| 11 | 選單與刪除修正 | Fix | 15 | 1 | ✅ Complete |
+| **Total** | | | **127** | **17** | **✅ DONE** |
 
-**Final Status**: 610 tests passing, type-check passing, Phase 9 (Login Modal) complete
+**Final Status**: Phase 11 (玩家選單與帳號刪除修正) complete
 
 ---
 

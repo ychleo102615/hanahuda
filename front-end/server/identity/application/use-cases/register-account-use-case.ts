@@ -10,11 +10,12 @@
 
 import { upgradeToRegistered, type Player } from '../../domain/player/player'
 import { createAccount, isValidUsername, isValidEmail, type AccountId } from '../../domain/account/account'
-import { createPasswordHash, isValidPassword } from '../../domain/account/password-hash'
+import { isValidPassword } from '../../domain/account/password-hash'
 import { isSessionExpired, type SessionId } from '../../domain/types/session'
 import type { PlayerRepositoryPort } from '../ports/output/player-repository-port'
 import type { AccountRepositoryPort } from '../ports/output/account-repository-port'
 import type { SessionStorePort } from '../ports/output/session-store-port'
+import type { PasswordHashPort } from '../ports/output/password-hash-port'
 import type { CommandResult, AuthError } from '#shared/contracts/auth-commands'
 import type { RegisterRequest } from '#shared/contracts/identity-types'
 
@@ -49,6 +50,7 @@ export class RegisterAccountUseCase {
     private readonly playerRepository: PlayerRepositoryPort,
     private readonly accountRepository: AccountRepositoryPort,
     private readonly sessionStore: SessionStorePort,
+    private readonly passwordHasher: PasswordHashPort,
   ) {}
 
   /**
@@ -115,7 +117,7 @@ export class RegisterAccountUseCase {
       }
 
       // 4. 建立密碼雜湊
-      const passwordHash = await createPasswordHash(input.password)
+      const passwordHash = await this.passwordHasher.hash(input.password)
 
       // 5. 升級訪客 Player 為註冊玩家 (FR-009)
       const upgradedPlayer = upgradeToRegistered(player, input.username)

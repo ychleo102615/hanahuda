@@ -28,24 +28,44 @@ import { useDependency } from '~/user-interface/adapter/composables/useDependenc
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output'
 import { RoomApiClient, type RoomType } from '~/user-interface/adapter/api/RoomApiClient'
-import ActionPanel from '~/components/ActionPanel.vue'
+import UnifiedPlayerMenu from '~/components/UnifiedPlayerMenu.vue'
+import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import LobbyTopInfoBar from '~/components/LobbyTopInfoBar.vue'
+import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
 import type { ActionPanelItem } from '~/components/ActionPanel.vue'
 import RegisterPrompt from '~/identity/adapter/components/RegisterPrompt.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
+import { useAuth } from '~/identity/adapter/composables/use-auth'
+import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()
 
 // Identity BC - 使用後端提供的 playerId
-const { playerId, displayName } = useCurrentPlayer()
+const { playerId, displayName, isGuest } = useCurrentPlayer()
+const { logout, deleteAccount } = useAuth()
 
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const roomApiClient = useDependency<RoomApiClient>(TOKENS.RoomApiClient)
 
-// Action Panel 狀態
+// Player Menu 狀態
 const isPanelOpen = ref(false)
+
+// Player Info Card 狀態
+const isPlayerInfoCardOpen = ref(false)
+const lobbyTopInfoBarRef = ref<InstanceType<typeof LobbyTopInfoBar> | null>(null)
+
+// 玩家資訊（傳給 UnifiedPlayerMenu）
+const playerInfo = computed(() => ({
+  displayName: displayName.value,
+  isGuest: isGuest.value,
+}))
+
+// Delete Account Modal 狀態
+const isDeleteAccountModalOpen = ref(false)
+const isDeleteAccountLoading = ref(false)
+const deleteAccountError = ref('')
 
 // 房間類型狀態
 const roomTypes = ref<RoomType[]>([])
@@ -61,7 +81,7 @@ const menuItems = computed<ActionPanelItem[]>(() => [
   {
     id: 'back-home',
     label: 'Back to Home',
-    icon: '🏠',
+    icon: 'home',
     onClick: handleBackToHome,
   },
 ])
@@ -86,10 +106,70 @@ const closePanel = () => {
   isPanelOpen.value = false
 }
 
+// 玩家資訊小卡控制
+const handlePlayerClick = () => {
+  isPlayerInfoCardOpen.value = !isPlayerInfoCardOpen.value
+}
+
+const handlePlayerInfoCardClose = () => {
+  isPlayerInfoCardOpen.value = false
+}
+
 // 返回首頁
 const handleBackToHome = () => {
   navigateTo('/')
   closePanel()
+}
+
+// 登出
+const handleLogout = async () => {
+  await logout()
+  const uiStore = useUIStateStore()
+  uiStore.addToast({
+    type: 'success',
+    message: 'You have been signed out',
+    duration: 3000,
+    dismissible: false,
+  })
+  navigateTo('/')
+}
+
+// 刪除帳號
+const handleOpenDeleteAccountModal = () => {
+  isDeleteAccountModalOpen.value = true
+  deleteAccountError.value = ''
+}
+
+const handleDeleteAccountCancel = () => {
+  isDeleteAccountModalOpen.value = false
+  deleteAccountError.value = ''
+}
+
+const handleDeleteAccountConfirm = async (password: string | undefined) => {
+  isDeleteAccountLoading.value = true
+  deleteAccountError.value = ''
+
+  try {
+    await deleteAccount(password)
+    isDeleteAccountModalOpen.value = false
+    const uiStore = useUIStateStore()
+    uiStore.addToast({
+      type: 'success',
+      message: 'Your account has been deleted',
+      duration: 3000,
+      dismissible: false,
+    })
+    navigateTo('/')
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'data' in error) {
+      const errorData = error as { data?: { message?: string } }
+      deleteAccountError.value = errorData.data?.message || 'Failed to delete account'
+    } else {
+      deleteAccountError.value = 'Failed to delete account'
+    }
+  } finally {
+    isDeleteAccountLoading.value = false
+  }
 }
 
 // 選擇房間並開始配對
@@ -123,7 +203,11 @@ const handleRetry = () => {
   <div class="min-h-screen bg-green-900 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
     <!-- 頂部資訊列 -->
     <header class="h-14 shrink-0">
-      <LobbyTopInfoBar @menu-click="togglePanel" />
+      <LobbyTopInfoBar
+        ref="lobbyTopInfoBarRef"
+        @menu-click="togglePanel"
+        @player-click="handlePlayerClick"
+      />
     </header>
 
     <!-- 主要內容區 -->
@@ -220,11 +304,33 @@ const handleRetry = () => {
       </div>
     </main>
 
-    <!-- Action Panel -->
-    <ActionPanel
+    <!-- Player Info Card (純資訊展示) -->
+    <PlayerInfoCard
+      :is-open="isPlayerInfoCardOpen"
+      :display-name="displayName"
+      :is-guest="isGuest"
+      :anchor-ref="lobbyTopInfoBarRef?.playerBadgeRef"
+      @close="handlePlayerInfoCardClose"
+    />
+
+    <!-- Unified Player Menu -->
+    <UnifiedPlayerMenu
       :is-open="isPanelOpen"
+      :player="playerInfo"
       :items="menuItems"
       @close="closePanel"
+      @logout="handleLogout"
+      @delete-account="handleOpenDeleteAccountModal"
+    />
+
+    <!-- Delete Account Modal -->
+    <DeleteAccountModal
+      :is-open="isDeleteAccountModalOpen"
+      :is-guest="isGuest"
+      :is-loading="isDeleteAccountLoading"
+      :error-message="deleteAccountError"
+      @confirm="handleDeleteAccountConfirm"
+      @cancel="handleDeleteAccountCancel"
     />
 
     <!-- 訪客註冊提示 -->

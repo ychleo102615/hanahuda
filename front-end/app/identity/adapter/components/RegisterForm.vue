@@ -132,7 +132,12 @@ async function handleSubmit() {
         placeholder="3-20 characters, letters, numbers, underscore"
       />
       <p v-if="username && !isUsernameValid" class="mt-1 text-xs text-red-400">
-        {{ VALIDATION_RULES.username.patternMessage }}
+        <template v-if="username.length < VALIDATION_RULES.username.minLength || username.length > VALIDATION_RULES.username.maxLength">
+          {{ VALIDATION_RULES.username.lengthMessage }}
+        </template>
+        <template v-else>
+          {{ VALIDATION_RULES.username.patternMessage }}
+        </template>
       </p>
     </div>
 
@@ -178,7 +183,12 @@ async function handleSubmit() {
         placeholder="At least 8 characters with letters and numbers"
       />
       <p v-if="password && !isPasswordValid" class="mt-1 text-xs text-red-400">
-        {{ VALIDATION_RULES.password.patternMessage }}
+        <template v-if="password.length < VALIDATION_RULES.password.minLength">
+          {{ VALIDATION_RULES.password.lengthMessage }}
+        </template>
+        <template v-else>
+          {{ VALIDATION_RULES.password.patternMessage }}
+        </template>
       </p>
     </div>
 

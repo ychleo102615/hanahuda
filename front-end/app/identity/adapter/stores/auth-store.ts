@@ -88,6 +88,32 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
+   * 刪除帳號
+   *
+   * @param password - 密碼確認（已註冊帳號必填）
+   * @returns 是否刪除成功
+   */
+  async function deleteAccount(password?: string): Promise<boolean> {
+    isLoading.value = true
+
+    try {
+      const authApi = useAuthApiClient()
+      const response = await authApi.deleteAccount(password)
+      if (response.success) {
+        currentPlayer.value = ANONYMOUS_PLAYER
+        isInitialized.value = false
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to delete account:', error)
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
    * 重置狀態（用於測試）
    */
   function $reset(): void {
@@ -112,6 +138,7 @@ export const useAuthStore = defineStore('auth', () => {
     // Actions
     initAuth,
     logout,
+    deleteAccount,
     setCurrentPlayer,
     $reset,
   }

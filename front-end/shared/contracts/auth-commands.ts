@@ -8,6 +8,7 @@ import type {
   RegisterRequest,
   LoginRequest,
   LinkAccountRequest,
+  DeleteAccountRequest,
   OAuthProvider,
 } from './identity-types'
 
@@ -69,6 +70,14 @@ export interface OAuthCallbackCommand {
  * 連結帳號命令
  */
 export interface LinkAccountCommand extends LinkAccountRequest {}
+
+/**
+ * 刪除帳號命令
+ */
+export interface DeleteAccountCommand extends DeleteAccountRequest {
+  /** Session ID（從 Cookie 取得） */
+  sessionId: string
+}
 
 // =============================================================================
 // Command Result Types

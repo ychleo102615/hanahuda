@@ -8,7 +8,7 @@
  * 參考: specs/010-player-account/plan.md - Frontend Application Layer
  */
 
-import type { PlayerInfo, AuthResponse } from '#shared/contracts/identity-types'
+import type { PlayerInfo, AuthResponse, DeleteAccountResponse } from '#shared/contracts/identity-types'
 
 /**
  * Auth API Port
@@ -37,4 +37,12 @@ export abstract class AuthApiPort {
    * POST /api/v1/auth/logout
    */
   abstract logout(): Promise<void>
+
+  /**
+   * 刪除帳號
+   *
+   * DELETE /api/v1/auth/delete-account
+   * @param password - 密碼確認（已註冊帳號必填）
+   */
+  abstract deleteAccount(password?: string): Promise<DeleteAccountResponse>
 }

@@ -13,6 +13,8 @@ import { DrizzlePlayerRepository } from '../persistence/drizzle-player-repositor
 import { DrizzleAccountRepository } from '../persistence/drizzle-account-repository'
 import { DrizzleOAuthLinkRepository } from '../persistence/drizzle-oauth-link-repository'
 import { getSessionStore } from '../session/in-memory-session-store'
+import { BcryptPasswordHasher } from '../crypto/bcrypt-password-hasher'
+import { playerStatsRepository } from '~~/server/core-game/adapters/persistence/drizzlePlayerStatsRepository'
 import { CreateGuestUseCase } from '../../application/use-cases/create-guest-use-case'
 import { GetCurrentPlayerUseCase } from '../../application/use-cases/get-current-player-use-case'
 import { RegisterAccountUseCase } from '../../application/use-cases/register-account-use-case'
@@ -20,10 +22,12 @@ import { LoginUseCase } from '../../application/use-cases/login-use-case'
 import { LogoutUseCase } from '../../application/use-cases/logout-use-case'
 import { OAuthLoginUseCase } from '../../application/use-cases/oauth-login-use-case'
 import { LinkAccountUseCase } from '../../application/use-cases/link-account-use-case'
+import { DeleteAccountUseCase } from '../../application/use-cases/delete-account-use-case'
 import type { PlayerRepositoryPort } from '../../application/ports/output/player-repository-port'
 import type { AccountRepositoryPort } from '../../application/ports/output/account-repository-port'
 import type { OAuthLinkRepositoryPort } from '../../application/ports/output/oauth-link-repository-port'
 import type { SessionStorePort } from '../../application/ports/output/session-store-port'
+import type { PasswordHashPort } from '../../application/ports/output/password-hash-port'
 
 // =============================================================================
 // Container Interface
@@ -38,6 +42,7 @@ export interface IdentityContainer {
   accountRepository: AccountRepositoryPort
   oauthLinkRepository: OAuthLinkRepositoryPort
   sessionStore: SessionStorePort
+  passwordHasher: PasswordHashPort
 
   // Use Cases
   createGuestUseCase: CreateGuestUseCase
@@ -47,6 +52,7 @@ export interface IdentityContainer {
   logoutUseCase: LogoutUseCase
   oauthLoginUseCase: OAuthLoginUseCase
   linkAccountUseCase: LinkAccountUseCase
+  deleteAccountUseCase: DeleteAccountUseCase
 }
 
 // =============================================================================
@@ -70,21 +76,24 @@ export function getIdentityContainer(): IdentityContainer {
   const accountRepository = new DrizzleAccountRepository(db)
   const oauthLinkRepository = new DrizzleOAuthLinkRepository(db)
   const sessionStore = getSessionStore()
+  const passwordHasher = new BcryptPasswordHasher()
 
   // 建立 Use Cases
   const createGuestUseCase = new CreateGuestUseCase(playerRepository, sessionStore)
   const getCurrentPlayerUseCase = new GetCurrentPlayerUseCase(playerRepository, sessionStore)
-  const registerAccountUseCase = new RegisterAccountUseCase(playerRepository, accountRepository, sessionStore)
-  const loginUseCase = new LoginUseCase(playerRepository, accountRepository, sessionStore)
+  const registerAccountUseCase = new RegisterAccountUseCase(playerRepository, accountRepository, sessionStore, passwordHasher)
+  const loginUseCase = new LoginUseCase(playerRepository, accountRepository, sessionStore, passwordHasher)
   const logoutUseCase = new LogoutUseCase(sessionStore)
   const oauthLoginUseCase = new OAuthLoginUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore)
-  const linkAccountUseCase = new LinkAccountUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore)
+  const linkAccountUseCase = new LinkAccountUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore, passwordHasher)
+  const deleteAccountUseCase = new DeleteAccountUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore, passwordHasher, playerStatsRepository)
 
   container = {
     playerRepository,
     accountRepository,
     oauthLinkRepository,
     sessionStore,
+    passwordHasher,
     createGuestUseCase,
     getCurrentPlayerUseCase,
     registerAccountUseCase,
@@ -92,6 +101,7 @@ export function getIdentityContainer(): IdentityContainer {
     logoutUseCase,
     oauthLoginUseCase,
     linkAccountUseCase,
+    deleteAccountUseCase,
   }
 
   return container

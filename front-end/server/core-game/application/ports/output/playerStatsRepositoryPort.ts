@@ -70,4 +70,13 @@ export interface PlayerStatsRepositoryPort {
    * @param input - 本場遊戲的統計增量數據
    */
   upsert(input: UpsertPlayerStatsInput): Promise<void>
+
+  /**
+   * 透過玩家 ID 刪除統計記錄
+   *
+   * 用於帳號刪除時清理相關資料。
+   *
+   * @param playerId - 玩家 ID
+   */
+  deleteByPlayerId(playerId: string): Promise<void>
 }

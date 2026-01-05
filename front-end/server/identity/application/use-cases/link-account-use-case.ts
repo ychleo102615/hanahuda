@@ -10,13 +10,14 @@
 
 import { createSession } from '../../domain/types/session'
 import { createOAuthLink, type OAuthLinkId, type OAuthProvider } from '../../domain/oauth-link/oauth-link'
-import { verifyPassword } from '../../domain/account/password-hash'
+import { isOAuthPasswordHash } from '../../domain/account/password-hash'
 import type { PlayerId } from '../../domain/player/player'
 import type { AccountId } from '../../domain/account/account'
 import type { PlayerRepositoryPort } from '../ports/output/player-repository-port'
 import type { AccountRepositoryPort } from '../ports/output/account-repository-port'
 import type { OAuthLinkRepositoryPort } from '../ports/output/oauth-link-repository-port'
 import type { SessionStorePort } from '../ports/output/session-store-port'
+import type { PasswordHashPort } from '../ports/output/password-hash-port'
 import type { CommandResult, AuthError } from '#shared/contracts/auth-commands'
 import type { PlayerInfo } from '#shared/contracts/identity-types'
 
@@ -61,6 +62,7 @@ export class LinkAccountUseCase {
     private readonly accountRepository: AccountRepositoryPort,
     private readonly oauthLinkRepository: OAuthLinkRepositoryPort,
     private readonly sessionStore: SessionStorePort,
+    private readonly passwordHasher: PasswordHashPort,
   ) {}
 
   /**
@@ -89,7 +91,7 @@ export class LinkAccountUseCase {
 
       // 2. 驗證密碼
       // 檢查是否為 OAuth 帳號（無法使用密碼連結）
-      if (account.passwordHash.hash.startsWith('$oauth$')) {
+      if (isOAuthPasswordHash(account.passwordHash)) {
         return {
           success: false,
           error: 'INVALID_CREDENTIALS',
@@ -97,7 +99,7 @@ export class LinkAccountUseCase {
         }
       }
 
-      const isValidPassword = await verifyPassword(password, account.passwordHash)
+      const isValidPassword = await this.passwordHasher.verify(password, account.passwordHash)
       if (!isValidPassword) {
         return {
           success: false,

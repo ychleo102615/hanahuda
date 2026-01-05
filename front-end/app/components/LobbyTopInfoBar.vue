@@ -9,10 +9,13 @@
 
   Events:
   - menuClick: 選單按鈕點擊事件
+  - playerClick: 玩家圖示點擊事件（顯示資訊小卡）
 -->
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import MenuButton from './MenuButton.vue'
+import PlayerBadge from './PlayerBadge.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 
 interface Props {
@@ -25,10 +28,19 @@ withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   menuClick: []
+  playerClick: []
 }>()
 
 // 取得玩家資訊
 const { displayName, isGuest } = useCurrentPlayer()
+
+// Ref for PlayerBadge container (for Popover positioning)
+const playerBadgeRef = ref<HTMLElement | null>(null)
+
+// Expose ref for parent to access
+defineExpose({
+  playerBadgeRef,
+})
 </script>
 
 <template>
@@ -38,11 +50,17 @@ const { displayName, isGuest } = useCurrentPlayer()
 
     <!-- Right: Player info + Menu -->
     <div class="flex items-center gap-3">
-      <!-- Player name -->
-      <div class="text-right">
-        <div class="text-sm font-medium">{{ displayName || 'Loading...' }}</div>
-        <div v-if="isGuest" class="text-xs text-gray-400">Guest</div>
+      <!-- Player badge (clickable to show info card) -->
+      <div v-if="displayName" ref="playerBadgeRef">
+        <PlayerBadge
+          :display-name="displayName"
+          :is-guest="isGuest"
+          :clickable="true"
+          size="md"
+          @click="emit('playerClick')"
+        />
       </div>
+      <span v-else class="text-sm text-gray-400">Loading...</span>
       <MenuButton @click="emit('menuClick')" />
     </div>
   </div>

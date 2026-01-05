@@ -11,7 +11,8 @@
 import { createSession } from '../../domain/types/session'
 import { createOAuthLink, type OAuthLinkId } from '../../domain/oauth-link/oauth-link'
 import { createRegisteredPlayer, type Player, type PlayerId } from '../../domain/player/player'
-import { createAccount, type AccountId } from '../../domain/account/account'
+import { createAccount, type Account, type AccountId } from '../../domain/account/account'
+import { createOAuthPasswordHash } from '../../domain/account/password-hash'
 import { canAutoLink } from '../../domain/services/account-linking-service'
 import type { PlayerRepositoryPort } from '../ports/output/player-repository-port'
 import type { AccountRepositoryPort } from '../ports/output/account-repository-port'
@@ -177,7 +178,7 @@ export class OAuthLoginUseCase {
    * 自動連結並登入 (FR-006a)
    */
   private async autoLinkAndLogin(
-    account: { id: string; playerId: string; username: string; email: string | null; passwordHash: { hash: string; algorithm: 'bcrypt' }; createdAt: Date; updatedAt: Date },
+    account: Account,
     provider: 'google' | 'line',
     userInfo: { providerUserId: string; email: string | null; displayName: string | null; avatarUrl: string | null }
   ): Promise<CommandResult<OAuthLoginResult, AuthError>> {
@@ -243,16 +244,13 @@ export class OAuthLoginUseCase {
     })
     await this.playerRepository.save(player)
 
-    // 建立 Account（使用隨機密碼，OAuth 用戶不需要密碼登入）
+    // 建立 Account（OAuth 用戶不需要密碼登入）
     const account = createAccount({
       id: crypto.randomUUID() as AccountId,
       playerId: player.id,
       username,
       email: userInfo.email,
-      passwordHash: {
-        hash: `$oauth$${provider}$${crypto.randomUUID()}`, // 標記為 OAuth 帳號
-        algorithm: 'bcrypt',
-      },
+      passwordHash: createOAuthPasswordHash(),
       createdAt: now,
       updatedAt: now,
     })

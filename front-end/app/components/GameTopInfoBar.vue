@@ -10,18 +10,34 @@
 
   Events:
   - menuClick: 選單按鈕點擊事件
+  - playerClick: 玩家圖示點擊事件（顯示資訊小卡）
 -->
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
+import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import MenuButton from './MenuButton.vue'
 
 const emit = defineEmits<{
   menuClick: []
+  playerClick: []
 }>()
+
+// 取得玩家資訊（用於資訊小卡）
+const { displayName, isGuest } = useCurrentPlayer()
+
+// Ref for player avatar (for Popover positioning)
+const playerAvatarRef = ref<HTMLElement | null>(null)
+
+// Expose ref for parent to access
+defineExpose({
+  playerAvatarRef,
+  displayName,
+  isGuest,
+})
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
@@ -187,6 +203,17 @@ const totalRounds = computed(() => ruleset.value?.total_rounds ?? 12)
           </span>
         </div>
       </div>
+      <!-- Clickable player avatar (for info card) -->
+      <button
+        ref="playerAvatarRef"
+        class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center hover:bg-gray-500 transition-colors"
+        @click="emit('playerClick')"
+        aria-label="View player info"
+      >
+        <svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+        </svg>
+      </button>
       <MenuButton @click="emit('menuClick')" />
     </div>
   </div>

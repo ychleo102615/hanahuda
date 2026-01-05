@@ -18,7 +18,7 @@ definePageMeta({
   middleware: 'game',
 })
 
-import { onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDependency, useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
 import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
 import type { SessionContextPort, GameConnectionPort } from '~/user-interface/application/ports/output'
@@ -37,13 +37,18 @@ import AnimationLayer from './components/AnimationLayer.vue'
 import GameAnnouncement from './components/GameAnnouncement.vue'
 import UnifiedToast from '~/components/UnifiedToast.vue'
 import ConfirmationHint from './components/ConfirmationHint.vue'
-import ActionPanel from '~/components/ActionPanel.vue'
+import UnifiedPlayerMenu from '~/components/UnifiedPlayerMenu.vue'
+import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import ConfirmDialog from '~/components/ConfirmDialog.vue'
+import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
 import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
 import { useGameMode } from '~/user-interface/adapter/composables/useGameMode'
 import { usePageVisibility } from '~/user-interface/adapter/composables/usePageVisibility'
+import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
+import { useAuth } from '~/identity/adapter/composables/use-auth'
+import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
@@ -89,6 +94,85 @@ const {
   requireConfirmation: true,
   onRestartGame: handleRestartGame,
 })
+
+// Identity BC - 玩家資訊
+const { displayName, isGuest } = useCurrentPlayer()
+const { logout, deleteAccount } = useAuth()
+
+// 玩家資訊（傳給 UnifiedPlayerMenu）
+const playerInfo = computed(() => ({
+  displayName: displayName.value,
+  isGuest: isGuest.value,
+}))
+
+// Delete Account Modal 狀態
+const isDeleteAccountModalOpen = ref(false)
+const isDeleteAccountLoading = ref(false)
+const deleteAccountError = ref('')
+
+// Player Info Card 狀態
+const isPlayerInfoCardOpen = ref(false)
+const gameTopInfoBarRef = ref<InstanceType<typeof GameTopInfoBar> | null>(null)
+
+// 登出
+const handleLogout = async () => {
+  await logout()
+  const uiStore = useUIStateStore()
+  uiStore.addToast({
+    type: 'success',
+    message: 'You have been signed out',
+    duration: 3000,
+    dismissible: false,
+  })
+  navigateTo('/')
+}
+
+// 刪除帳號
+const handleOpenDeleteAccountModal = () => {
+  isDeleteAccountModalOpen.value = true
+  deleteAccountError.value = ''
+}
+
+const handleDeleteAccountCancel = () => {
+  isDeleteAccountModalOpen.value = false
+  deleteAccountError.value = ''
+}
+
+const handleDeleteAccountConfirm = async (password: string | undefined) => {
+  isDeleteAccountLoading.value = true
+  deleteAccountError.value = ''
+
+  try {
+    await deleteAccount(password)
+    isDeleteAccountModalOpen.value = false
+    const uiStore = useUIStateStore()
+    uiStore.addToast({
+      type: 'success',
+      message: 'Your account has been deleted',
+      duration: 3000,
+      dismissible: false,
+    })
+    navigateTo('/')
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'data' in error) {
+      const errorData = error as { data?: { message?: string } }
+      deleteAccountError.value = errorData.data?.message || 'Failed to delete account'
+    } else {
+      deleteAccountError.value = 'Failed to delete account'
+    }
+  } finally {
+    isDeleteAccountLoading.value = false
+  }
+}
+
+// 玩家資訊小卡控制
+const handlePlayerClick = () => {
+  isPlayerInfoCardOpen.value = !isPlayerInfoCardOpen.value
+}
+
+const handlePlayerInfoCardClose = () => {
+  isPlayerInfoCardOpen.value = false
+}
 
 // GamePage 不再直接調用業務 Port，由子組件負責
 
@@ -142,7 +226,11 @@ onUnmounted(() => {
     <!-- 頂部資訊列 (fixed 定位，捲動時仍可見) -->
     <!-- 高度由 CSS 變數 --game-topbar-height 控制 -->
     <header class="fixed top-[env(safe-area-inset-top)] left-0 right-0 h-(--game-topbar-height) z-40">
-      <GameTopInfoBar @menu-click="toggleActionPanel" />
+      <GameTopInfoBar
+        ref="gameTopInfoBarRef"
+        @menu-click="toggleActionPanel"
+        @player-click="handlePlayerClick"
+      />
     </header>
 
     <!-- 佔位：補償 fixed header 的高度 -->
@@ -197,11 +285,33 @@ onUnmounted(() => {
     <!-- 底部提示：兩次點擊確認模式 -->
     <ConfirmationHint />
 
-    <!-- T043 [US3]: Action Panel -->
-    <ActionPanel
+    <!-- Player Info Card (純資訊展示) -->
+    <PlayerInfoCard
+      :is-open="isPlayerInfoCardOpen"
+      :display-name="displayName"
+      :is-guest="isGuest"
+      :anchor-ref="gameTopInfoBarRef?.playerAvatarRef"
+      @close="handlePlayerInfoCardClose"
+    />
+
+    <!-- T043 [US3]: Unified Player Menu -->
+    <UnifiedPlayerMenu
       :is-open="isActionPanelOpen"
+      :player="playerInfo"
       :items="menuItems"
       @close="closeActionPanel"
+      @logout="handleLogout"
+      @delete-account="handleOpenDeleteAccountModal"
+    />
+
+    <!-- Delete Account Modal -->
+    <DeleteAccountModal
+      :is-open="isDeleteAccountModalOpen"
+      :is-guest="isGuest"
+      :is-loading="isDeleteAccountLoading"
+      :error-message="deleteAccountError"
+      @confirm="handleDeleteAccountConfirm"
+      @cancel="handleDeleteAccountCancel"
     />
 
     <!-- T043 [US3]: Leave Game Confirmation Dialog -->

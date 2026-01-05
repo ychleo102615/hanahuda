@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import NavigationBar from '~/components/NavigationBar.vue'
 import HeroSection from '~/components/HeroSection.vue'
 import RulesSection from '~/components/RulesSection.vue'
 import Footer from '~/components/Footer.vue'
 import LoginModal from '~/identity/adapter/components/LoginModal.vue'
+import PlayerProfilePopover from '~/components/PlayerProfilePopover.vue'
+import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import type { RuleCategoryUnion, YakuCard } from '~/types/rules'
 import type { NavigationLink } from '~/components/NavigationBar.vue'
 import rulesDataJson from '~/data/rules.json'
 import yakuDataJson from '~/data/yaku.json'
+import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
+import { useAuth } from '~/identity/adapter/composables/use-auth'
+import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 
 // 首頁專用：預留滾動條空間，避免 modal 開啟時內容跳動
 onMounted(() => {
@@ -19,13 +24,91 @@ onUnmounted(() => {
 })
 
 // Navigation Bar data
-// FR-024: Sign In 觸發 Modal，Sign Up 移除（透過 Modal 內的連結前往）
-const navigationLinks: NavigationLink[] = [
+// FR-024, FR-026, FR-028: 根據登入狀態動態顯示導航連結與玩家 icon
+const { isRegistered, displayName, isGuest } = useCurrentPlayer()
+const { logout, deleteAccount } = useAuth()
+
+// 導航連結不再包含 Sign In（由 NavigationBar 的 player prop 控制）
+const navigationLinks = computed<NavigationLink[]>(() => [
   { label: 'Rules', target: '#rules', isCta: false },
   { label: 'About', target: '#about', isCta: false },
-  { label: 'Sign In', target: '/login', isCta: false },
   { label: 'Start Game', target: '/lobby', isCta: true },
-]
+])
+
+// 玩家資訊（傳給 NavigationBar）
+const playerInfo = computed(() => {
+  if (!isRegistered.value) return null
+  return {
+    displayName: displayName.value,
+    isGuest: isGuest.value,
+  }
+})
+
+// 玩家資訊卡 Popover 狀態
+const isPlayerPopoverOpen = ref(false)
+
+const handlePlayerClick = () => {
+  isPlayerPopoverOpen.value = !isPlayerPopoverOpen.value
+}
+
+const handlePlayerPopoverClose = () => {
+  isPlayerPopoverOpen.value = false
+}
+
+const handleLogout = async () => {
+  await logout()
+  // 顯示登出成功提示
+  const uiStore = useUIStateStore()
+  uiStore.addToast({
+    type: 'success',
+    message: 'You have been signed out',
+    duration: 3000,
+    dismissible: false,
+  })
+}
+
+// Delete Account Modal state
+const isDeleteAccountModalOpen = ref(false)
+const isDeleteAccountLoading = ref(false)
+const deleteAccountError = ref('')
+
+const handleOpenDeleteAccountModal = () => {
+  isDeleteAccountModalOpen.value = true
+  deleteAccountError.value = ''
+}
+
+const handleDeleteAccountCancel = () => {
+  isDeleteAccountModalOpen.value = false
+  deleteAccountError.value = ''
+}
+
+const handleDeleteAccountConfirm = async (password: string | undefined) => {
+  isDeleteAccountLoading.value = true
+  deleteAccountError.value = ''
+
+  try {
+    await deleteAccount(password)
+    isDeleteAccountModalOpen.value = false
+    // 顯示刪除成功提示
+    const uiStore = useUIStateStore()
+    uiStore.addToast({
+      type: 'success',
+      message: 'Your account has been deleted',
+      duration: 3000,
+      dismissible: false,
+    })
+  } catch (error: unknown) {
+    // 處理錯誤
+    if (error && typeof error === 'object' && 'data' in error) {
+      const errorData = error as { data?: { message?: string } }
+      deleteAccountError.value = errorData.data?.message || 'Failed to delete account'
+    } else {
+      deleteAccountError.value = 'Failed to delete account'
+    }
+  } finally {
+    isDeleteAccountLoading.value = false
+  }
+}
 
 // Hero Section data
 const heroData = {
@@ -41,6 +124,9 @@ const yakuList = ref<YakuCard[]>(yakuDataJson.yakuList as YakuCard[])
 
 // RulesSection ref for programmatic control
 const rulesSectionRef = ref<InstanceType<typeof RulesSection> | null>(null)
+
+// NavigationBar ref for accessing playerBadgeRef (for Popover positioning)
+const navBarRef = ref<InstanceType<typeof NavigationBar> | null>(null)
 
 // Handle rules link click - auto-expand all categories
 const handleRulesClick = () => {
@@ -70,11 +156,16 @@ const handleLoginSuccess = () => {
   <div class="min-h-screen">
     <!-- Navigation Bar -->
     <NavigationBar
+      ref="navBarRef"
       logo="Hanafuda Koi-Koi こいこい"
       :links="navigationLinks"
       :transparent="false"
+      :player="playerInfo"
       @rules-click="handleRulesClick"
       @login-click="handleLoginClick"
+      @player-click="handlePlayerClick"
+      @logout-click="handleLogout"
+      @delete-account-click="handleOpenDeleteAccountModal"
     />
 
     <!-- FR-024: Login Modal -->
@@ -82,6 +173,27 @@ const handleLoginSuccess = () => {
       :is-open="isLoginModalOpen"
       @close="handleLoginModalClose"
       @success="handleLoginSuccess"
+    />
+
+    <!-- FR-027: Player Profile Popover -->
+    <PlayerProfilePopover
+      :is-open="isPlayerPopoverOpen"
+      :display-name="displayName"
+      :is-guest="isGuest"
+      :anchor-ref="navBarRef?.playerBadgeRef"
+      @close="handlePlayerPopoverClose"
+      @logout="handleLogout"
+      @delete-account="handleOpenDeleteAccountModal"
+    />
+
+    <!-- Delete Account Modal -->
+    <DeleteAccountModal
+      :is-open="isDeleteAccountModalOpen"
+      :is-guest="isGuest"
+      :is-loading="isDeleteAccountLoading"
+      :error-message="deleteAccountError"
+      @confirm="handleDeleteAccountConfirm"
+      @cancel="handleDeleteAccountCancel"
     />
 
     <main>

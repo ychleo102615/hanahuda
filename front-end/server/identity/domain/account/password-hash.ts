@@ -2,45 +2,44 @@
  * PasswordHash Value Object
  *
  * @description
- * 密碼雜湊值，使用 bcryptjs 進行雜湊。
+ * 密碼雜湊的 Domain 型別定義與驗證邏輯。
+ * 不包含具體加密實作，符合 Clean Architecture 原則。
+ *
+ * 加密實作由 Adapter Layer 的 PasswordHashPort 提供。
  *
  * 參考: specs/010-player-account/research.md#2-密碼雜湊演算法
  */
 
-import bcrypt from 'bcryptjs'
 import { VALIDATION_RULES } from '#shared/contracts/identity-types'
-
-// =============================================================================
-// Constants
-// =============================================================================
-
-/**
- * bcrypt 成本因子（rounds）
- *
- * 10 rounds ≈ 100ms 在現代硬體上
- */
-const BCRYPT_ROUNDS = 10
 
 // =============================================================================
 // Types
 // =============================================================================
 
 /**
+ * 支援的雜湊演算法
+ */
+export type PasswordHashAlgorithm = 'bcrypt' | 'argon2'
+
+/**
  * 密碼雜湊資料結構
  */
 export interface PasswordHash {
   readonly hash: string
-  readonly algorithm: 'bcrypt'
+  readonly algorithm: PasswordHashAlgorithm
 }
 
 // =============================================================================
-// Password Functions
+// Password Validation Functions
 // =============================================================================
 
 /**
  * 驗證密碼強度
  *
  * 規則：至少 8 字元，包含字母與數字
+ *
+ * @param password - 要驗證的密碼
+ * @returns 密碼是否符合強度要求
  */
 export function isValidPassword(password: string): boolean {
   const { minLength, pattern } = VALIDATION_RULES.password
@@ -48,35 +47,25 @@ export function isValidPassword(password: string): boolean {
 }
 
 /**
- * 建立密碼雜湊
+ * 檢查是否為 OAuth 專用密碼雜湊
  *
- * @param password - 原始密碼
- * @returns PasswordHash 物件
- * @throws Error 如果密碼不符合強度要求
+ * OAuth 帳號使用特殊標記，無法進行密碼驗證
+ *
+ * @param passwordHash - 密碼雜湊
+ * @returns 是否為 OAuth 專用雜湊
  */
-export async function createPasswordHash(password: string): Promise<PasswordHash> {
-  if (!isValidPassword(password)) {
-    throw new Error('Invalid password: must be at least 8 characters with letters and numbers')
-  }
-
-  const hash = await bcrypt.hash(password, BCRYPT_ROUNDS)
-
-  return Object.freeze({
-    hash,
-    algorithm: 'bcrypt',
-  })
+export function isOAuthPasswordHash(passwordHash: PasswordHash): boolean {
+  return passwordHash.hash.startsWith('$oauth$')
 }
 
 /**
- * 驗證密碼是否正確
+ * 建立 OAuth 專用密碼雜湊
  *
- * @param password - 要驗證的密碼
- * @param passwordHash - 儲存的密碼雜湊
- * @returns 密碼是否正確
+ * @returns OAuth 專用的 PasswordHash
  */
-export async function verifyPassword(
-  password: string,
-  passwordHash: PasswordHash,
-): Promise<boolean> {
-  return bcrypt.compare(password, passwordHash.hash)
+export function createOAuthPasswordHash(): PasswordHash {
+  return Object.freeze({
+    hash: '$oauth$',
+    algorithm: 'bcrypt' as const,
+  })
 }

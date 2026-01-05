@@ -1,23 +1,23 @@
 /**
- * PasswordHash Value Object Tests
+ * PasswordHash Domain Tests
  *
  * @description
- * 測試密碼雜湊的建立與驗證。
- * 使用 bcryptjs 進行密碼雜湊。
+ * 測試密碼雜湊的 Domain 邏輯（驗證與類型）。
+ * 加密實作測試請見 adapters/crypto/bcrypt-password-hasher.test.ts
  *
  * 參考: specs/010-player-account/data-model.md#1.2-Account
  */
 
 import { describe, it, expect } from 'vitest'
 import {
-  createPasswordHash,
-  verifyPassword,
   isValidPassword,
+  isOAuthPasswordHash,
+  createOAuthPasswordHash,
   type PasswordHash,
 } from '~~/server/identity/domain/account/password-hash'
 
-describe('PasswordHash Value Object', () => {
-  describe('Password validation', () => {
+describe('PasswordHash Domain', () => {
+  describe('isValidPassword', () => {
     it('should accept valid passwords (8+ chars with letter and number)', () => {
       expect(isValidPassword('password1')).toBe(true)
       expect(isValidPassword('Pass1234')).toBe(true)
@@ -47,51 +47,36 @@ describe('PasswordHash Value Object', () => {
     })
   })
 
-  describe('createPasswordHash', () => {
-    it('should create a bcrypt hash', async () => {
-      const hash = await createPasswordHash('password123')
-
-      expect(hash.algorithm).toBe('bcrypt')
-      expect(hash.hash).toMatch(/^\$2[aby]\$\d+\$/)
+  describe('isOAuthPasswordHash', () => {
+    it('should return true for OAuth password hash', () => {
+      const oauthHash: PasswordHash = {
+        hash: '$oauth$',
+        algorithm: 'bcrypt',
+      }
+      expect(isOAuthPasswordHash(oauthHash)).toBe(true)
     })
 
-    it('should create different hashes for same password', async () => {
-      const hash1 = await createPasswordHash('password123')
-      const hash2 = await createPasswordHash('password123')
-
-      expect(hash1.hash).not.toBe(hash2.hash)
-    })
-
-    it('should throw error for invalid password', async () => {
-      await expect(createPasswordHash('short')).rejects.toThrow('Invalid password')
-      await expect(createPasswordHash('nodigits')).rejects.toThrow('Invalid password')
-      await expect(createPasswordHash('12345678')).rejects.toThrow('Invalid password')
+    it('should return false for regular bcrypt hash', () => {
+      const bcryptHash: PasswordHash = {
+        hash: '$2a$10$abcdefghijklmnopqrstuvwxyz',
+        algorithm: 'bcrypt',
+      }
+      expect(isOAuthPasswordHash(bcryptHash)).toBe(false)
     })
   })
 
-  describe('verifyPassword', () => {
-    it('should verify correct password', async () => {
-      const hash = await createPasswordHash('password123')
+  describe('createOAuthPasswordHash', () => {
+    it('should create an OAuth password hash', () => {
+      const hash = createOAuthPasswordHash()
 
-      const result = await verifyPassword('password123', hash)
-
-      expect(result).toBe(true)
+      expect(hash.hash).toBe('$oauth$')
+      expect(hash.algorithm).toBe('bcrypt')
     })
 
-    it('should reject incorrect password', async () => {
-      const hash = await createPasswordHash('password123')
+    it('should be frozen', () => {
+      const hash = createOAuthPasswordHash()
 
-      const result = await verifyPassword('wrongpassword1', hash)
-
-      expect(result).toBe(false)
-    })
-
-    it('should reject similar but different passwords', async () => {
-      const hash = await createPasswordHash('password123')
-
-      expect(await verifyPassword('Password123', hash)).toBe(false) // different case
-      expect(await verifyPassword('password1234', hash)).toBe(false) // extra char
-      expect(await verifyPassword('password12', hash)).toBe(false) // missing char
+      expect(Object.isFrozen(hash)).toBe(true)
     })
   })
 })

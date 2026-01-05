@@ -6,11 +6,12 @@
  * 帳號登入表單元件。
  * 支援帳號密碼登入與前端驗證。
  *
- * 參考: specs/010-player-account/spec.md FR-011, FR-012
+ * 參考: specs/010-player-account/spec.md FR-011, FR-012, FR-025
  */
 
 import { ref, computed } from 'vue'
 import { useAuth } from '../composables/use-auth'
+import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 
 const emit = defineEmits<{
   success: []
@@ -60,6 +61,15 @@ async function handleSubmit() {
       displayName: response.player.displayName,
       isGuest: response.player.isGuest,
       isAuthenticated: true,
+    })
+
+    // Show success toast (FR-025)
+    const uiStore = useUIStateStore()
+    uiStore.addToast({
+      type: 'success',
+      message: `Welcome back, ${response.player.displayName}!`,
+      duration: 3000,
+      dismissible: false,
     })
 
     emit('success')

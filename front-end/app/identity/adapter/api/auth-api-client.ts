@@ -8,7 +8,7 @@
  */
 
 import { AuthApiPort } from '../../application/ports/auth-api-port'
-import type { PlayerInfo, AuthResponse } from '#shared/contracts/identity-types'
+import type { PlayerInfo, AuthResponse, DeleteAccountResponse } from '#shared/contracts/identity-types'
 
 /**
  * Auth API Client
@@ -33,6 +33,13 @@ export class AuthApiClient extends AuthApiPort {
   async logout(): Promise<void> {
     await $fetch(`${this.baseUrl}/logout`, {
       method: 'POST',
+    })
+  }
+
+  async deleteAccount(password?: string): Promise<DeleteAccountResponse> {
+    return await $fetch<DeleteAccountResponse>(`${this.baseUrl}/delete-account`, {
+      method: 'DELETE',
+      body: password ? { password } : undefined,
     })
   }
 }

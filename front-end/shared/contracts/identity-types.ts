@@ -62,6 +62,14 @@ export interface LinkAccountRequest {
   oauthToken: string
 }
 
+/**
+ * 刪除帳號請求
+ */
+export interface DeleteAccountRequest {
+  /** 密碼確認（已註冊帳號必填，訪客可省略） */
+  password?: string
+}
+
 // =============================================================================
 // Auth Response Types
 // =============================================================================
@@ -81,6 +89,14 @@ export interface AuthResponse {
  */
 export interface LogoutResponse {
   success: boolean
+}
+
+/**
+ * 刪除帳號回應
+ */
+export interface DeleteAccountResponse {
+  success: boolean
+  message?: string
 }
 
 // =============================================================================
@@ -152,11 +168,13 @@ export const VALIDATION_RULES = {
     maxLength: 20,
     pattern: /^[a-zA-Z0-9_]+$/,
     patternMessage: 'Username can only contain letters, numbers, and underscores',
+    lengthMessage: 'Username must be 3-20 characters',
   },
   password: {
     minLength: 8,
     pattern: /^(?=.*[a-zA-Z])(?=.*[0-9]).+$/,
     patternMessage: 'Password must contain at least one letter and one number',
+    lengthMessage: 'Password must be at least 8 characters',
   },
   email: {
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,

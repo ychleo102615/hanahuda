@@ -60,7 +60,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
       items.push({
         id: 'restart-game',
         label: 'Restart Game',
-        icon: '🔄',
+        icon: 'refresh',
         onClick: () => {
           isActionPanelOpen.value = false
           options.onRestartGame?.()
@@ -73,7 +73,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
     items.push({
       id: 'leave-game',
       label: 'Leave Game',
-      icon: '🚪',
+      icon: 'door-exit',
       onClick: handleLeaveGameClick,
     })
 

@@ -13,15 +13,23 @@ import { RegisterAccountUseCase } from '~~/server/identity/application/use-cases
 import type { PlayerRepositoryPort } from '~~/server/identity/application/ports/output/player-repository-port'
 import type { AccountRepositoryPort } from '~~/server/identity/application/ports/output/account-repository-port'
 import type { SessionStorePort } from '~~/server/identity/application/ports/output/session-store-port'
+import type { PasswordHashPort } from '~~/server/identity/application/ports/output/password-hash-port'
 import type { Player, PlayerId } from '~~/server/identity/domain/player/player'
 import type { Account, AccountId } from '~~/server/identity/domain/account/account'
 import type { Session, SessionId } from '~~/server/identity/domain/types/session'
+import type { PasswordHash } from '~~/server/identity/domain/account/password-hash'
 
 describe('RegisterAccountUseCase', () => {
   let useCase: RegisterAccountUseCase
   let mockPlayerRepository: PlayerRepositoryPort
   let mockAccountRepository: AccountRepositoryPort
   let mockSessionStore: SessionStorePort
+  let mockPasswordHasher: PasswordHashPort
+
+  const mockPasswordHash: PasswordHash = {
+    hash: '$2a$10$mockedhashvalue',
+    algorithm: 'bcrypt',
+  }
 
   const mockGuestPlayer: Player = {
     id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' as PlayerId,
@@ -66,10 +74,16 @@ describe('RegisterAccountUseCase', () => {
       refresh: vi.fn(),
     }
 
+    mockPasswordHasher = {
+      hash: vi.fn().mockResolvedValue(mockPasswordHash),
+      verify: vi.fn().mockResolvedValue(true),
+    }
+
     useCase = new RegisterAccountUseCase(
       mockPlayerRepository,
       mockAccountRepository,
       mockSessionStore,
+      mockPasswordHasher,
     )
   })
 
@@ -106,7 +120,18 @@ describe('RegisterAccountUseCase', () => {
       )
     })
 
-    it('should hash the password', async () => {
+    it('should call passwordHasher.hash with password', async () => {
+      await useCase.execute({
+        sessionId: 'session-id-12345',
+        username: 'newuser',
+        password: 'password123',
+        confirmPassword: 'password123',
+      })
+
+      expect(mockPasswordHasher.hash).toHaveBeenCalledWith('password123')
+    })
+
+    it('should save account with hashed password', async () => {
       await useCase.execute({
         sessionId: 'session-id-12345',
         username: 'newuser',
@@ -116,10 +141,7 @@ describe('RegisterAccountUseCase', () => {
 
       expect(mockAccountRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
-          passwordHash: expect.objectContaining({
-            algorithm: 'bcrypt',
-            hash: expect.stringMatching(/^\$2[aby]\$/),
-          }),
+          passwordHash: mockPasswordHash,
         })
       )
     })
