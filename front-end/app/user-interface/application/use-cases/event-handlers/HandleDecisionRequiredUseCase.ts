@@ -84,8 +84,9 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
 
     // === 階段 2：處理翻牌操作 ===
     if (event.draw_card_play) {
+      const drawnCard = event.draw_card_play.played_card
       const drawCapturedCards = deriveCapturedCards(
-        event.draw_card_play.played_card,
+        drawnCard,
         event.draw_card_play.matched_cards
       )
       const drawMatchedCard = event.draw_card_play.matched_cards[0] ?? null
@@ -93,16 +94,36 @@ export class HandleDecisionRequiredUseCase implements HandleDecisionRequiredPort
         ? this.domainFacade.getCardTypeFromId(drawCapturedCards[0])
         : 'PLAIN'
 
-      await this.animation.playDrawCardSequence(
-        {
-          drawnCard: event.draw_card_play.played_card,
-          matchedCard: drawMatchedCard,
-          capturedCards: [...drawCapturedCards],
-          isOpponent,
-          targetCardType,
-        },
-        callbacks
-      )
+      // 檢查牌是否已在場上（來自之前的 SelectionRequired）
+      // 若已在場上，使用 playDrawnCardMatchSequence 只播放配對動畫，避免重複翻牌
+      const currentFieldCards = this.gameState.getFieldCards()
+      const isCardAlreadyOnField = currentFieldCards.includes(drawnCard)
+
+      if (isCardAlreadyOnField && drawMatchedCard !== null) {
+        // 牌已在場上且有配對：只播放配對動畫（跳過翻牌）
+        await this.animation.playDrawnCardMatchSequence(
+          {
+            drawnCard,
+            matchedCard: drawMatchedCard,
+            capturedCards: [...drawCapturedCards],
+            isOpponent,
+            targetCardType,
+          },
+          callbacks
+        )
+      } else {
+        // 正常流程：完整的翻牌 + 配對動畫
+        await this.animation.playDrawCardSequence(
+          {
+            drawnCard,
+            matchedCard: drawMatchedCard,
+            capturedCards: [...drawCapturedCards],
+            isOpponent,
+            targetCardType,
+          },
+          callbacks
+        )
+      }
     }
 
     // === 階段 3：更新遊戲狀態 ===

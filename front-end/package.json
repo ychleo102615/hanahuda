@@ -31,6 +31,8 @@
     "@pinia/nuxt": "^0.11.3",
     "@vueuse/motion": "^3.0.3",
     "@vueuse/nuxt": "^14.1.0",
+    "arctic": "^3.7.0",
+    "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.0",
     "nuxt": "^4.2.1",
     "pinia": "^3.0.4",

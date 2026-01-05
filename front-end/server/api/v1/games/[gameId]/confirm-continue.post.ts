@@ -9,7 +9,7 @@
  * 參考: specs/008-nuxt-backend-server/contracts/rest-api.md
  */
 
-import { ConfirmContinueError, type ConfirmContinueInputPort } from '~~/server/application/ports/input/confirmContinueInputPort'
+import { ConfirmContinueError, type ConfirmContinueInputPort } from '~~/server/core-game/application/ports/input/confirmContinueInputPort'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event): Promise<ConfirmContinueResponse
     // 2. 驗證會話
     let sessionContext
     try {
-      sessionContext = validateSession(event, gameId)
+      sessionContext = await validateSession(event, gameId)
     } catch (err) {
       if (err instanceof SessionValidationError) {
         setResponseStatus(event, err.statusCode)

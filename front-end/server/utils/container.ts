@@ -16,44 +16,47 @@
 import { DIContainer, BACKEND_TOKENS } from '~~/server/lib/di'
 
 // Adapters - Persistence
-import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
-import { gameRepository } from '~~/server/adapters/persistence/drizzleGameRepository'
-import { playerStatsRepository } from '~~/server/adapters/persistence/drizzlePlayerStatsRepository'
-import { gameLogRepository } from '~~/server/adapters/persistence/drizzleGameLogRepository'
+import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
+import { gameRepository } from '~~/server/core-game/adapters/persistence/drizzleGameRepository'
+import { playerStatsRepository } from '~~/server/core-game/adapters/persistence/drizzlePlayerStatsRepository'
+import { gameLogRepository } from '~~/server/core-game/adapters/persistence/drizzleGameLogRepository'
 
 // Adapters - Event Publisher
-import { internalEventBus } from '~~/server/adapters/event-publisher/internalEventBus'
-import { createCompositeEventPublisher } from '~~/server/adapters/event-publisher/compositeEventPublisher'
+import { internalEventBus } from '~~/server/core-game/adapters/event-publisher/internalEventBus'
+import { createCompositeEventPublisher } from '~~/server/core-game/adapters/event-publisher/compositeEventPublisher'
 
 // Adapters - Mappers
-import { eventMapper } from '~~/server/adapters/mappers/eventMapper'
+import { eventMapper } from '~~/server/core-game/adapters/mappers/eventMapper'
 
 // Adapters - Timeout
-import { gameTimeoutManager } from '~~/server/adapters/timeout/gameTimeoutManager'
+import { gameTimeoutManager } from '~~/server/core-game/adapters/timeout/gameTimeoutManager'
 
 // Adapters - Lock
-import { inMemoryGameLock } from '~~/server/adapters/lock/inMemoryGameLock'
+import { inMemoryGameLock } from '~~/server/core-game/adapters/lock/inMemoryGameLock'
+
+// Adapters - Identity (跨 BC 通訊)
+import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 
 // Use Cases
-import { JoinGameUseCase } from '~~/server/application/use-cases/joinGameUseCase'
-import { JoinGameAsAiUseCase } from '~~/server/application/use-cases/joinGameAsAiUseCase'
-import { PlayHandCardUseCase } from '~~/server/application/use-cases/playHandCardUseCase'
-import { SelectTargetUseCase } from '~~/server/application/use-cases/selectTargetUseCase'
-import { MakeDecisionUseCase } from '~~/server/application/use-cases/makeDecisionUseCase'
-import { LeaveGameUseCase } from '~~/server/application/use-cases/leaveGameUseCase'
-import { AutoActionUseCase } from '~~/server/application/use-cases/autoActionUseCase'
-import { RecordGameStatsUseCase } from '~~/server/application/use-cases/recordGameStatsUseCase'
-import { ConfirmContinueUseCase } from '~~/server/application/use-cases/confirmContinueUseCase'
+import { JoinGameUseCase } from '~~/server/core-game/application/use-cases/joinGameUseCase'
+import { JoinGameAsAiUseCase } from '~~/server/core-game/application/use-cases/joinGameAsAiUseCase'
+import { PlayHandCardUseCase } from '~~/server/core-game/application/use-cases/playHandCardUseCase'
+import { SelectTargetUseCase } from '~~/server/core-game/application/use-cases/selectTargetUseCase'
+import { MakeDecisionUseCase } from '~~/server/core-game/application/use-cases/makeDecisionUseCase'
+import { LeaveGameUseCase } from '~~/server/core-game/application/use-cases/leaveGameUseCase'
+import { AutoActionUseCase } from '~~/server/core-game/application/use-cases/autoActionUseCase'
+import { RecordGameStatsUseCase } from '~~/server/core-game/application/use-cases/recordGameStatsUseCase'
+import { ConfirmContinueUseCase } from '~~/server/core-game/application/use-cases/confirmContinueUseCase'
 
 // Application Services
-import { TurnFlowService } from '~~/server/application/services/turnFlowService'
-import { GameStartService } from '~~/server/application/services/gameStartService'
+import { TurnFlowService } from '~~/server/core-game/application/services/turnFlowService'
+import { GameStartService } from '~~/server/core-game/application/services/gameStartService'
 
 // Input Port Types (only importing types used for explicit type annotations)
-import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
-import type { AutoActionInputPort } from '~~/server/application/ports/input/autoActionInputPort'
-import type { RecordGameStatsInputPort } from '~~/server/application/ports/input/recordGameStatsInputPort'
-import type { ConfirmContinueInputPort } from '~~/server/application/ports/input/confirmContinueInputPort'
+import type { LeaveGameInputPort } from '~~/server/core-game/application/ports/input/leaveGameInputPort'
+import type { AutoActionInputPort } from '~~/server/core-game/application/ports/input/autoActionInputPort'
+import type { RecordGameStatsInputPort } from '~~/server/core-game/application/ports/input/recordGameStatsInputPort'
+import type { ConfirmContinueInputPort } from '~~/server/core-game/application/ports/input/confirmContinueInputPort'
 
 /**
  * 建立並設定 DI Container
@@ -70,6 +73,9 @@ function createBackendContainer(): DIContainer {
   diContainer.register(BACKEND_TOKENS.InternalEventBus, () => internalEventBus, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameTimeoutManager, () => gameTimeoutManager, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameLock, () => inMemoryGameLock, { singleton: true })
+
+  // ===== 1.5 註冊 Output Ports (跨 BC 通訊) =====
+  diContainer.register(BACKEND_TOKENS.PlayerIdentityPort, () => getIdentityPortAdapter(), { singleton: true })
 
   // ===== 2. 註冊 CompositeEventPublisher =====
   const compositeEventPublisher = createCompositeEventPublisher(gameLogRepository)

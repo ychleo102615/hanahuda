@@ -12,7 +12,7 @@ import { vi } from 'vitest'
 import type {
   InternalEventPublisherPort,
   RoomCreatedPayload,
-} from '~/server/application/ports/output/internalEventPublisherPort'
+} from '~/server/core-game/application/ports/output/internalEventPublisherPort'
 
 /**
  * InternalEventPublisher Mock 類型

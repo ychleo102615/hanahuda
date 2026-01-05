@@ -19,7 +19,7 @@ import {
   TANE_CARDS,
   TANZAKU_CARDS,
   KASU_CARDS,
-} from '~/server/domain/services/yakuDetectionService'
+} from '~/server/core-game/domain/services/yakuDetectionService'
 import {
   GOKOU_CARDS,
   SHIKOU_CARDS,

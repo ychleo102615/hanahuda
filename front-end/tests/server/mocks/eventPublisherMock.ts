@@ -9,7 +9,7 @@
  */
 
 import { vi } from 'vitest'
-import type { EventPublisherPort } from '~/server/application/ports/output/eventPublisherPort'
+import type { EventPublisherPort } from '~/server/core-game/application/ports/output/eventPublisherPort'
 import type { GameEvent, GameStartedEvent, RoundDealtEvent } from '#shared/contracts'
 
 /**

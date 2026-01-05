@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { MakeDecisionUseCase, MakeDecisionError } from '~/server/application/use-cases/makeDecisionUseCase'
+import { MakeDecisionUseCase, MakeDecisionError } from '~/server/core-game/application/use-cases/makeDecisionUseCase'
 import {
   createGameRepositoryMock,
   createEventPublisherMock,

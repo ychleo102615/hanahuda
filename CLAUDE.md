@@ -83,6 +83,7 @@
 - N/A (前端功能，狀態由 Pinia store 管理) (007-lobby-settings-panel)
 - TypeScript 5.9 + Nuxt 4 (Nitro), Drizzle ORM, Zod, H3 (008-nuxt-backend-server)
 - PostgreSQL 14+ (Drizzle ORM) (008-nuxt-backend-server)
+- TypeScript 5.9 + Nuxt 4 (Nitro), Vue 3.5, Pinia 3.x, Drizzle ORM 0.45+, Zod 4.x, H3 (010-player-account)
 
 ## Recent Changes
 - 003-ui-application-layer: Added TypeScript 5.9 + 無（Pure functions, 零框架依賴）

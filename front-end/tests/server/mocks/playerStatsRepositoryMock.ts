@@ -12,7 +12,7 @@ import { vi } from 'vitest'
 import type {
   PlayerStatsRepositoryPort,
   UpsertPlayerStatsInput,
-} from '~/server/application/ports/output/playerStatsRepositoryPort'
+} from '~/server/core-game/application/ports/output/playerStatsRepositoryPort'
 import type { PlayerStat } from '~/server/database/schema/playerStats'
 
 /**

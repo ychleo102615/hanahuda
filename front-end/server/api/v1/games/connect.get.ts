@@ -5,15 +5,15 @@
  * 統一 SSE 連線端點（SSE-First 架構）。
  * 整合遊戲加入/重連邏輯，第一個事件永遠是 InitialState。
  *
- * URL: GET /api/v1/games/connect?player_id=xxx&player_name=xxx[&game_id=xxx]
+ * URL: GET /api/v1/games/connect?player_name=xxx[&game_id=xxx]
  *
  * Query Parameters:
- * - player_id: 必填，玩家 UUID
  * - player_name: 必填，玩家名稱
  * - game_id: 可選，有值表示重連特定遊戲
+ * - room_type: 可選，房間類型
  *
  * 流程：
- * 1. 驗證 session_token Cookie
+ * 1. 透過 Identity BC 取得 playerId（從 session_id Cookie）
  * 2. 呼叫 JoinGameUseCase.execute()
  * 3. 建立 SSE 連線
  * 4. 發送 InitialState 事件（第一個事件）
@@ -34,30 +34,29 @@ import type {
   GameSnapshotRestore,
   GameFinishedInfo,
 } from '#shared/contracts'
-import { connectionStore } from '~~/server/adapters/event-publisher/connectionStore'
+import { connectionStore } from '~~/server/core-game/adapters/event-publisher/connectionStore'
+import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
-import type { JoinGameInputPort } from '~~/server/application/ports/input/joinGameInputPort'
-import type { LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
-import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
-import type { GameLockPort } from '~~/server/application/ports/output/gameLockPort'
-import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
-import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
-import type { TurnFlowService } from '~~/server/application/services/turnFlowService'
+import type { JoinGameInputPort } from '~~/server/core-game/application/ports/input/joinGameInputPort'
+import type { LeaveGameInputPort } from '~~/server/core-game/application/ports/input/leaveGameInputPort'
+import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
+import type { GameLockPort } from '~~/server/core-game/application/ports/output/gameLockPort'
+import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
+import type { GameRepositoryPort } from '~~/server/core-game/application/ports/output/gameRepositoryPort'
+import type { TurnFlowService } from '~~/server/core-game/application/services/turnFlowService'
 import { gameConfig } from '~~/server/utils/config'
-import { setSessionCookie, SESSION_COOKIE_NAME } from '~~/server/utils/sessionValidation'
 import {
   markPlayerDisconnected,
   markPlayerReconnected,
   getPlayerConnectionStatus,
-} from '~~/server/domain/game/playerConnection'
-import { HTTP_BAD_REQUEST } from '#shared/constants'
+} from '~~/server/core-game/domain/game/playerConnection'
+import { HTTP_BAD_REQUEST, HTTP_UNAUTHORIZED } from '#shared/constants'
 import { logger } from '~~/server/utils/logger'
 
 /**
  * Query Parameters Schema
  */
 const ConnectQuerySchema = z.object({
-  player_id: z.string().uuid('player_id must be a valid UUID'),
   player_name: z.string().min(1, 'player_name is required').max(50, 'player_name must be at most 50 characters'),
   game_id: z.string().uuid('game_id must be a valid UUID').optional(),
   room_type: z.enum(['QUICK', 'STANDARD', 'MARATHON']).optional(),
@@ -109,7 +108,22 @@ export default defineEventHandler(async (event) => {
   const turnFlowService = resolve<TurnFlowService>(BACKEND_TOKENS.TurnFlowService)
   const leaveGameUseCase = resolve<LeaveGameInputPort>(BACKEND_TOKENS.LeaveGameInputPort)
 
-  // 1. 解析並驗證 Query Parameters
+  // 1. 透過 Identity BC 取得 playerId
+  const identityPort = getIdentityPortAdapter()
+  const playerId = await identityPort.getPlayerIdFromRequest(event)
+
+  if (!playerId) {
+    setResponseStatus(event, HTTP_UNAUTHORIZED)
+    return {
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Valid session is required. Please login first.',
+      },
+      timestamp: new Date().toISOString(),
+    }
+  }
+
+  // 2. 解析並驗證 Query Parameters
   const query = getQuery(event)
   const parseResult = ConnectQuerySchema.safeParse(query)
 
@@ -125,16 +139,12 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const { player_id: playerId, player_name: playerName, game_id: gameId, room_type: roomType } = parseResult.data
-
-  // 2. 從 Cookie 讀取 session_token
-  const sessionToken = getCookie(event, SESSION_COOKIE_NAME)
+  const { player_name: playerName, game_id: gameId, room_type: roomType } = parseResult.data
 
   // 3. 呼叫 JoinGameUseCase
   const result = await joinGameUseCase.execute({
     playerId,
     playerName,
-    sessionToken,
     gameId,
     roomType,
   })
@@ -142,12 +152,10 @@ export default defineEventHandler(async (event) => {
   // 4. 建立 InitialState 事件資料
   let initialStateEvent: InitialStateEvent
   let effectiveGameId: string
-  let effectiveSessionToken: string
 
   switch (result.status) {
     case 'game_waiting': {
       effectiveGameId = result.gameId
-      effectiveSessionToken = result.sessionToken
       const waitingData: GameWaitingData = {
         game_id: result.gameId,
         player_id: result.playerId,
@@ -160,7 +168,6 @@ export default defineEventHandler(async (event) => {
 
     case 'game_started': {
       effectiveGameId = result.gameId
-      effectiveSessionToken = result.sessionToken
       const startedData: GameStartedData = {
         game_id: result.gameId,
         players: result.players.map(p => ({
@@ -182,7 +189,6 @@ export default defineEventHandler(async (event) => {
 
     case 'snapshot': {
       effectiveGameId = result.gameId
-      effectiveSessionToken = result.sessionToken
       // snapshot 已經是完整的 GameSnapshotRestore 事件
       initialStateEvent = buildInitialStateEvent(
         'snapshot',
@@ -195,7 +201,6 @@ export default defineEventHandler(async (event) => {
 
     case 'game_finished': {
       effectiveGameId = result.gameId
-      effectiveSessionToken = sessionToken || ''
       const finishedData: GameFinishedInfo = {
         game_id: result.gameId,
         winner_id: result.winnerId,
@@ -213,7 +218,6 @@ export default defineEventHandler(async (event) => {
     case 'game_expired': {
       logger.error('SSE connect: game_expired', { gameId: result.gameId, playerId })
       effectiveGameId = result.gameId
-      effectiveSessionToken = sessionToken || ''
       // game_expired 不需要 data，前端只需要 response_type 即可處理
       initialStateEvent = buildInitialStateEvent('game_expired', result.gameId, playerId, null)
       break
@@ -232,12 +236,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // 6. 設定 Session Cookie（如果是新 session）
-  if (effectiveSessionToken && effectiveSessionToken !== sessionToken) {
-    setSessionCookie(event, effectiveSessionToken)
-  }
-
-  // 7. 設定 SSE headers
+  // 5. 設定 SSE headers
   setHeaders(event, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -245,7 +244,7 @@ export default defineEventHandler(async (event) => {
     'X-Accel-Buffering': 'no', // Disable nginx buffering
   })
 
-  // 8. 建立 SSE 串流
+  // 6. 建立 SSE 串流
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder()
@@ -371,7 +370,7 @@ export default defineEventHandler(async (event) => {
     },
   })
 
-  // 9. 返回 SSE 串流
+  // 7. 返回 SSE 串流
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',

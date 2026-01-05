@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod'
-import { PlayHandCardError, type PlayHandCardInputPort } from '~~/server/application/ports/input/playHandCardInputPort'
+import { PlayHandCardError, type PlayHandCardInputPort } from '~~/server/core-game/application/ports/input/playHandCardInputPort'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,
@@ -72,7 +72,7 @@ export default defineEventHandler(async (event): Promise<PlayCardResponse | Erro
     // 2. 驗證會話
     let sessionContext
     try {
-      sessionContext = validateSession(event, gameId)
+      sessionContext = await validateSession(event, gameId)
     } catch (err) {
       if (err instanceof SessionValidationError) {
         setResponseStatus(event, err.statusCode)

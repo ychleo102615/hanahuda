@@ -9,7 +9,7 @@
  */
 
 import { vi } from 'vitest'
-import { GameTimeoutPort } from '~/server/application/ports/output/gameTimeoutPort'
+import { GameTimeoutPort } from '~/server/core-game/application/ports/output/gameTimeoutPort'
 
 /**
  * GameTimeout Mock 類型

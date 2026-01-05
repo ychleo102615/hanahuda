@@ -2,20 +2,17 @@
  * GET /api/v1/session - Framework Layer
  *
  * @description
- * Session API - 取得或建立 session_token。
- * 此 API 用於 Lobby 頁面，確保玩家有 session_token。
+ * Session API - 檢查是否有有效的 Identity BC session。
+ * 此 API 用於 Lobby 頁面，確保玩家已登入。
  *
  * 設計說明：
- * - 如果已有 session_token Cookie，直接返回成功
- * - 如果沒有，建立新的 session_token 並設定 Cookie
- * - 這是 MVP 版本，之後可能會擴展為完整的使用者認證
+ * - 透過 PlayerIdentityPort 檢查是否有有效的 session
+ * - Session 管理完全由 Identity BC 負責
  *
  * @module server/api/v1/session
  */
 
-import { randomUUID } from 'crypto'
-import { getCookie } from 'h3'
-import { setSessionCookie, SESSION_COOKIE_NAME } from '~~/server/utils/sessionValidation'
+import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 
 /**
  * 成功回應型別
@@ -24,34 +21,21 @@ interface SessionResponse {
   data: {
     /** 是否有有效的 session */
     has_session: boolean
-    /** 是否為新建立的 session */
-    is_new_session: boolean
+    /** 玩家 ID（若有 session） */
+    player_id: string | null
   }
   timestamp: string
 }
 
 export default defineEventHandler(async (event): Promise<SessionResponse> => {
-  // 1. 檢查是否已有 session_token Cookie
-  const existingToken = getCookie(event, SESSION_COOKIE_NAME)
-
-  if (existingToken) {
-    return {
-      data: {
-        has_session: true,
-        is_new_session: false,
-      },
-      timestamp: new Date().toISOString(),
-    }
-  }
-
-  // 2. 建立新的 session_token
-  const sessionToken = randomUUID()
-  setSessionCookie(event, sessionToken)
+  // 透過 PlayerIdentityPort 檢查是否有有效的 session
+  const identityPort = getIdentityPortAdapter()
+  const playerId = await identityPort.getPlayerIdFromRequest(event)
 
   return {
     data: {
-      has_session: true,
-      is_new_session: true,
+      has_session: playerId !== null,
+      player_id: playerId,
     },
     timestamp: new Date().toISOString(),
   }

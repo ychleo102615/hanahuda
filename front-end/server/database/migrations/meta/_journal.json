@@ -43,6 +43,13 @@
       "when": 1766570000000,
       "tag": "0005_schema_refactor",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1767427425153,
+      "tag": "0006_misty_timeslip",
+      "breakpoints": true
     }
   ]
 }

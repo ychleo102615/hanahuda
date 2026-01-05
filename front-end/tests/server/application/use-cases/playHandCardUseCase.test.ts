@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { PlayHandCardUseCase, PlayHandCardError } from '~/server/application/use-cases/playHandCardUseCase'
+import { PlayHandCardUseCase, PlayHandCardError } from '~/server/core-game/application/use-cases/playHandCardUseCase'
 import {
   createGameRepositoryMock,
   createEventPublisherMock,

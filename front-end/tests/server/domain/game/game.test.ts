@@ -19,14 +19,13 @@ import {
   finishGame,
   getDefaultRuleset,
   createPlayer,
-} from '~/server/domain/game'
+} from '~/server/core-game/domain/game'
 import {
   createTestWaitingGame,
   createTestInProgressGame,
   PLAYER_1_ID,
   PLAYER_2_ID,
   GAME_ID,
-  SESSION_TOKEN,
   DEFAULT_RULESET,
   createTestRound,
 } from '../../fixtures/games'
@@ -37,12 +36,10 @@ describe('Game Aggregate', () => {
       const player = createPlayer({ id: PLAYER_1_ID, name: 'Player 1', isAi: false })
       const game = createGame({
         id: GAME_ID,
-        sessionToken: SESSION_TOKEN,
         player,
       })
 
       expect(game.id).toBe(GAME_ID)
-      expect(game.sessionToken).toBe(SESSION_TOKEN)
       expect(game.status).toBe('WAITING')
       expect(game.players).toHaveLength(1)
       expect(game.players[0]?.id).toBe(PLAYER_1_ID)
@@ -52,7 +49,6 @@ describe('Game Aggregate', () => {
       const player = createPlayer({ id: PLAYER_1_ID, name: 'Player 1', isAi: false })
       const game = createGame({
         id: GAME_ID,
-        sessionToken: SESSION_TOKEN,
         player,
       })
 
@@ -65,7 +61,6 @@ describe('Game Aggregate', () => {
       const player = createPlayer({ id: PLAYER_1_ID, name: 'Player 1', isAi: false })
       const game = createGame({
         id: GAME_ID,
-        sessionToken: SESSION_TOKEN,
         player,
       })
 
@@ -78,7 +73,6 @@ describe('Game Aggregate', () => {
       const customRuleset = { ...DEFAULT_RULESET, total_rounds: 6 }
       const game = createGame({
         id: GAME_ID,
-        sessionToken: SESSION_TOKEN,
         player,
         ruleset: customRuleset,
       })
@@ -90,7 +84,6 @@ describe('Game Aggregate', () => {
       const player = createPlayer({ id: PLAYER_1_ID, name: 'Player 1', isAi: false })
       const game = createGame({
         id: GAME_ID,
-        sessionToken: SESSION_TOKEN,
         player,
       })
 

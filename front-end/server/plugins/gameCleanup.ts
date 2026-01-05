@@ -17,7 +17,7 @@
  * - WAITING/FINISHED 遊戲被清理視為正常（安全網生效）
  */
 
-import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
+import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
 import { logger } from '~~/server/utils/logger'
 
 /** 清理間隔（毫秒）：5 分鐘 */

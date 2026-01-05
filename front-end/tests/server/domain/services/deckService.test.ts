@@ -18,7 +18,7 @@ import {
   TOTAL_DECK_SIZE,
   ALL_CARD_IDS_SET,
   DEAL_CONFIG,
-} from '~/server/domain/services/deckService'
+} from '~/server/core-game/domain/services/deckService'
 import { PLAYER_1_ID, PLAYER_2_ID } from '../../fixtures/games'
 
 describe('deckService', () => {

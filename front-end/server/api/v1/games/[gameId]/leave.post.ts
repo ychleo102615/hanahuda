@@ -9,13 +9,12 @@
  * 參考: specs/008-nuxt-backend-server/contracts/rest-api.md
  */
 
-import { LeaveGameError, type LeaveGameInputPort } from '~~/server/application/ports/input/leaveGameInputPort'
+import { LeaveGameError, type LeaveGameInputPort } from '~~/server/core-game/application/ports/input/leaveGameInputPort'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import {
   validateSession,
   SessionValidationError,
   createSessionErrorResponse,
-  clearSessionCookie,
 } from '~~/server/utils/sessionValidation'
 import {
   HTTP_OK,
@@ -66,7 +65,7 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
     // 2. 驗證會話
     let sessionContext
     try {
-      sessionContext = validateSession(event, gameId)
+      sessionContext = await validateSession(event, gameId)
     } catch (err) {
       if (err instanceof SessionValidationError) {
         setResponseStatus(event, err.statusCode)
@@ -84,10 +83,8 @@ export default defineEventHandler(async (event): Promise<LeaveResponse | ErrorRe
       playerId: sessionContext.playerId,
     })
 
-    // 5. 清除 Session Cookie
-    clearSessionCookie(event)
-
-    // 6. 返回成功回應
+    // 5. 返回成功回應
+    // 注意：Session Cookie 由 Identity BC 管理，不在這裡清除
     setResponseStatus(event, HTTP_OK)
     return {
       data: {

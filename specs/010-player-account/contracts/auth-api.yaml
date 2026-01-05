@@ -1,0 +1,412 @@
+openapi: 3.0.3
+info:
+  title: Hanafuda Identity API
+  description: 玩家帳號功能 REST API 規格
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+tags:
+  - name: Auth
+    description: 認證相關操作
+  - name: OAuth
+    description: OAuth 2.0 社群登入
+
+paths:
+  /auth/register:
+    post:
+      summary: 帳號密碼註冊
+      tags: [Auth]
+      operationId: registerAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: 註冊成功
+          headers:
+            Set-Cookie:
+              description: Session Cookie
+              schema:
+                type: string
+                example: session_id=abc123; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: 輸入驗證失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '409':
+          description: 帳號已存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+
+  /auth/login:
+    post:
+      summary: 帳號密碼登入
+      tags: [Auth]
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登入成功
+          headers:
+            Set-Cookie:
+              description: Session Cookie
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: 帳號或密碼錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+
+  /auth/logout:
+    post:
+      summary: 登出
+      tags: [Auth]
+      operationId: logout
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: 登出成功
+          headers:
+            Set-Cookie:
+              description: 清除 Session Cookie
+              schema:
+                type: string
+                example: session_id=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+  /auth/me:
+    get:
+      summary: 取得當前玩家資訊
+      tags: [Auth]
+      operationId: getCurrentPlayer
+      security:
+        - sessionCookie: []
+        - guestCookie: []
+      responses:
+        '200':
+          description: 成功取得玩家資訊
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerInfo'
+        '401':
+          description: 未認證（無有效 Session 或 Guest Cookie）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+
+  /auth/guest:
+    post:
+      summary: 建立訪客身份
+      description: 為首次造訪的玩家建立臨時身份
+      tags: [Auth]
+      operationId: createGuest
+      responses:
+        '201':
+          description: 訪客身份建立成功
+          headers:
+            Set-Cookie:
+              description: Guest Cookie (30天有效)
+              schema:
+                type: string
+                example: guest_token=xyz789; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerInfo'
+
+  /auth/link-account:
+    post:
+      summary: 連結 OAuth 至現有帳號
+      description: 當 OAuth Email 與現有帳號不匹配時，手動連結需輸入密碼驗證
+      tags: [Auth]
+      operationId: linkAccount
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkAccountRequest'
+      responses:
+        '200':
+          description: 連結成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: 密碼驗證失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '409':
+          description: OAuth 帳號已綁定其他帳號
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+
+  # OAuth Endpoints
+  /auth/oauth/google:
+    get:
+      summary: 導向 Google 授權頁面
+      tags: [OAuth]
+      operationId: googleOAuthStart
+      parameters:
+        - name: redirect_uri
+          in: query
+          description: 授權完成後的導向 URI
+          schema:
+            type: string
+      responses:
+        '302':
+          description: 重導向至 Google 授權頁面
+
+  /auth/oauth/google/callback:
+    get:
+      summary: Google OAuth Callback
+      tags: [OAuth]
+      operationId: googleOAuthCallback
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: 授權成功，重導向至前端並設置 Session
+          headers:
+            Set-Cookie:
+              description: Session Cookie
+              schema:
+                type: string
+
+  /auth/oauth/line:
+    get:
+      summary: 導向 Line 授權頁面
+      tags: [OAuth]
+      operationId: lineOAuthStart
+      parameters:
+        - name: redirect_uri
+          in: query
+          description: 授權完成後的導向 URI
+          schema:
+            type: string
+      responses:
+        '302':
+          description: 重導向至 Line 授權頁面
+
+  /auth/oauth/line/callback:
+    get:
+      summary: Line OAuth Callback
+      tags: [OAuth]
+      operationId: lineOAuthCallback
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: 授權成功，重導向至前端並設置 Session
+          headers:
+            Set-Cookie:
+              description: Session Cookie
+              schema:
+                type: string
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session_id
+      description: 登入後的 Session Cookie
+    guestCookie:
+      type: apiKey
+      in: cookie
+      name: guest_token
+      description: 訪客識別 Cookie
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+        - confirmPassword
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: 帳號名稱（3-20字元，英文字母、數字、底線）
+          example: player_one
+        password:
+          type: string
+          minLength: 8
+          description: 密碼（至少8字元，包含字母與數字）
+          example: Password123
+        confirmPassword:
+          type: string
+          description: 確認密碼
+          example: Password123
+        email:
+          type: string
+          format: email
+          description: Email（選填）
+          example: player@example.com
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: 帳號名稱
+          example: player_one
+        password:
+          type: string
+          description: 密碼
+          example: Password123
+
+    LinkAccountRequest:
+      type: object
+      required:
+        - password
+        - oauthProvider
+        - oauthToken
+      properties:
+        password:
+          type: string
+          description: 現有帳號的密碼（用於驗證）
+        oauthProvider:
+          type: string
+          enum: [google, line]
+          description: OAuth Provider
+        oauthToken:
+          type: string
+          description: OAuth 暫存 Token（由 callback 返回）
+
+    AuthResponse:
+      type: object
+      properties:
+        player:
+          $ref: '#/components/schemas/PlayerInfo'
+        message:
+          type: string
+          example: Registration successful
+
+    PlayerInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Player UUID
+          example: 550e8400-e29b-41d4-a716-446655440000
+        displayName:
+          type: string
+          description: 顯示名稱
+          example: player_one
+        isGuest:
+          type: boolean
+          description: 是否為訪客
+          example: false
+        isAuthenticated:
+          type: boolean
+          description: 是否已認證（有有效 Session）
+          example: true
+
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Invalid input
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: username
+              message:
+                type: string
+                example: Username must be 3-20 characters
+
+    ConflictError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: CONFLICT
+        message:
+          type: string
+          example: Username already exists
+
+    UnauthorizedError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: UNAUTHORIZED
+        message:
+          type: string
+          example: Invalid username or password

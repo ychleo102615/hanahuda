@@ -8,8 +8,8 @@
  * @route GET /api/health
  */
 
-import { inMemoryGameStore } from '~~/server/adapters/persistence/inMemoryGameStore'
-import { connectionStore } from '~~/server/adapters/event-publisher/connectionStore'
+import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
+import { connectionStore } from '~~/server/core-game/adapters/event-publisher/connectionStore'
 
 /**
  * 健康檢查回應

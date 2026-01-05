@@ -14,17 +14,20 @@
  */
 
 import { z } from 'zod'
+import type { Player } from '~~/server/core-game/domain/game/player'
+import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
+import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
-import type { GameStorePort } from '~~/server/application/ports/output/gameStorePort'
-import type { GameTimeoutPort } from '~~/server/application/ports/output/gameTimeoutPort'
-import type { FullEventMapperPort } from '~~/server/application/ports/output/eventMapperPort'
-import type { GameRepositoryPort } from '~~/server/application/ports/output/gameRepositoryPort'
+import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
+import type { FullEventMapperPort } from '~~/server/core-game/application/ports/output/eventMapperPort'
+import type { GameRepositoryPort } from '~~/server/core-game/application/ports/output/gameRepositoryPort'
 import type { SnapshotApiResponse } from '#shared/contracts'
-import { determineWinner } from '~~/server/domain/game'
+import { determineWinner } from '~~/server/core-game/domain/game'
 import {
   HTTP_OK,
   HTTP_BAD_REQUEST,
   HTTP_UNAUTHORIZED,
+  HTTP_FORBIDDEN,
   HTTP_NOT_FOUND,
   HTTP_CONFLICT,
   HTTP_INTERNAL_SERVER_ERROR,
@@ -76,39 +79,52 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
 
     const { gameId } = paramsResult.data
 
-    // 2. 從 Cookie 讀取 session_token（HttpOnly Cookie 由瀏覽器自動傳送）
-    const sessionToken = getCookie(event, 'session_token')
+    // 2. 透過 PlayerIdentityPort 取得 playerId
+    const identityPort = getIdentityPortAdapter()
+    const playerId = await identityPort.getPlayerIdFromRequest(event)
 
-    if (!sessionToken) {
+    if (!playerId) {
       setResponseStatus(event, HTTP_UNAUTHORIZED)
       return {
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Missing or invalid session token',
+          message: 'Valid session is required',
         },
         timestamp: new Date().toISOString(),
       }
     }
 
     // 3. 嘗試從 gameStore（記憶體）取得遊戲
-    const gameStore = resolve<GameStorePort>(BACKEND_TOKENS.GameStore)
-    const game = gameStore.getBySessionToken(sessionToken!)
+    const game = inMemoryGameStore.getByPlayerId(playerId)
 
     // 4. 如果記憶體有遊戲 → 正常流程
     if (game) {
       // 4.1. 驗證 gameId 匹配
       if (game.id !== gameId) {
-        setResponseStatus(event, HTTP_NOT_FOUND)
+        setResponseStatus(event, HTTP_FORBIDDEN)
         return {
           error: {
-            code: 'GAME_NOT_FOUND',
-            message: 'Game not found',
+            code: 'GAME_MISMATCH',
+            message: 'Session does not match game ID',
           },
           timestamp: new Date().toISOString(),
         }
       }
 
-      // 4.2. 檢查遊戲狀態 - FINISHED
+      // 4.2. 驗證玩家是遊戲參與者
+      const player = game.players.find((p: Player) => p.id === playerId)
+      if (!player) {
+        setResponseStatus(event, HTTP_FORBIDDEN)
+        return {
+          error: {
+            code: 'PLAYER_NOT_FOUND',
+            message: 'Player not found in game',
+          },
+          timestamp: new Date().toISOString(),
+        }
+      }
+
+      // 4.3. 檢查遊戲狀態 - FINISHED
       if (game.status === 'FINISHED') {
         setResponseStatus(event, HTTP_OK)
         return {
@@ -126,7 +142,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
         }
       }
 
-      // 4.3. 檢查遊戲狀態 - WAITING
+      // 4.4. 檢查遊戲狀態 - WAITING
       if (game.status === 'WAITING') {
         setResponseStatus(event, HTTP_CONFLICT)
         return {
@@ -138,7 +154,7 @@ export default defineEventHandler(async (event): Promise<SnapshotResponseWrapper
         }
       }
 
-      // 4.4. 正常進行中的遊戲 → 返回快照
+      // 4.5. 正常進行中的遊戲 → 返回快照
       const gameTimeoutManager = resolve<GameTimeoutPort>(BACKEND_TOKENS.GameTimeoutManager)
       const eventMapper = resolve<FullEventMapperPort>(BACKEND_TOKENS.EventMapper)
       const remainingSeconds = gameTimeoutManager.getRemainingSeconds(gameId)

@@ -9,8 +9,8 @@
  */
 
 import { vi } from 'vitest'
-import type { GameRepositoryPort } from '~/server/application/ports/output/gameRepositoryPort'
-import type { Game, GameStatus } from '~/server/domain/game/game'
+import type { GameRepositoryPort } from '~/server/core-game/application/ports/output/gameRepositoryPort'
+import type { Game, GameStatus } from '~/server/core-game/domain/game/game'
 
 /**
  * GameRepository Mock 類型

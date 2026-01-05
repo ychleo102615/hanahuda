@@ -23,25 +23,39 @@ definePageMeta({
 })
 
 import { ref, computed, onMounted } from 'vue'
-import { v4 as uuidv4 } from 'uuid'
 import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
 import { useDependency } from '~/user-interface/adapter/composables/useDependency'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output'
 import { RoomApiClient, type RoomType } from '~/user-interface/adapter/api/RoomApiClient'
-import ActionPanel from '~/components/ActionPanel.vue'
+import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import LobbyTopInfoBar from '~/components/LobbyTopInfoBar.vue'
-import type { ActionPanelItem } from '~/components/ActionPanel.vue'
+import type { MenuItem } from '~/components/LobbyTopInfoBar.vue'
+import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
+import RegisterPrompt from '~/identity/adapter/components/RegisterPrompt.vue'
+import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
+import { useAuth } from '~/identity/adapter/composables/use-auth'
+import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()
+
+// Identity BC - 使用後端提供的 playerId
+const { playerId, displayName, isGuest } = useCurrentPlayer()
+const { logout, deleteAccount } = useAuth()
 
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const roomApiClient = useDependency<RoomApiClient>(TOKENS.RoomApiClient)
 
-// Action Panel 狀態
-const isPanelOpen = ref(false)
+// Player Info Card 狀態
+const isPlayerInfoCardOpen = ref(false)
+const lobbyTopInfoBarRef = ref<InstanceType<typeof LobbyTopInfoBar> | null>(null)
+
+// Delete Account Modal 狀態
+const isDeleteAccountModalOpen = ref(false)
+const isDeleteAccountLoading = ref(false)
+const deleteAccountError = ref('')
 
 // 房間類型狀態
 const roomTypes = ref<RoomType[]>([])
@@ -52,12 +66,12 @@ const loadError = ref<string | null>(null)
 const hasError = computed(() => matchmakingStore.status === 'error')
 const canStartMatchmaking = computed(() => matchmakingStore.canStartMatchmaking)
 
-// Action Panel 選單項目
-const menuItems = computed<ActionPanelItem[]>(() => [
+// 選單項目
+const menuItems = computed<MenuItem[]>(() => [
   {
     id: 'back-home',
     label: 'Back to Home',
-    icon: '🏠',
+    icon: 'home',
     onClick: handleBackToHome,
   },
 ])
@@ -73,38 +87,86 @@ onMounted(async () => {
   }
 })
 
-// 開啟/關閉 Action Panel
-const togglePanel = () => {
-  isPanelOpen.value = !isPanelOpen.value
+// 玩家資訊小卡控制
+const handlePlayerClick = () => {
+  isPlayerInfoCardOpen.value = !isPlayerInfoCardOpen.value
 }
 
-const closePanel = () => {
-  isPanelOpen.value = false
+const handlePlayerInfoCardClose = () => {
+  isPlayerInfoCardOpen.value = false
 }
 
 // 返回首頁
 const handleBackToHome = () => {
   navigateTo('/')
-  closePanel()
 }
 
-// 生成 UUID（使用 uuid 套件，相容非安全上下文）
-const generateUUID = (): string => uuidv4()
+// 登出
+const handleLogout = async () => {
+  await logout()
+  const uiStore = useUIStateStore()
+  uiStore.addToast({
+    type: 'success',
+    message: 'You have been signed out',
+    duration: 3000,
+    dismissible: false,
+  })
+  navigateTo('/')
+}
+
+// 刪除帳號
+const handleOpenDeleteAccountModal = () => {
+  isDeleteAccountModalOpen.value = true
+  deleteAccountError.value = ''
+}
+
+const handleDeleteAccountCancel = () => {
+  isDeleteAccountModalOpen.value = false
+  deleteAccountError.value = ''
+}
+
+const handleDeleteAccountConfirm = async (password: string | undefined) => {
+  isDeleteAccountLoading.value = true
+  deleteAccountError.value = ''
+
+  try {
+    await deleteAccount(password)
+    isDeleteAccountModalOpen.value = false
+    const uiStore = useUIStateStore()
+    uiStore.addToast({
+      type: 'success',
+      message: 'Your account has been deleted',
+      duration: 3000,
+      dismissible: false,
+    })
+    navigateTo('/')
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'data' in error) {
+      const errorData = error as { data?: { message?: string } }
+      deleteAccountError.value = errorData.data?.message || 'Failed to delete account'
+    } else {
+      deleteAccountError.value = 'Failed to delete account'
+    }
+  } finally {
+    isDeleteAccountLoading.value = false
+  }
+}
 
 // 選擇房間並開始配對
 const handleSelectRoom = (roomTypeId: string) => {
   if (!canStartMatchmaking.value) return
 
-  // 生成或取得 playerId
-  const playerId = sessionStorage.getItem('player_id') || generateUUID()
-  const playerName = 'Player' // 未來可由使用者輸入
+  // 使用 Identity BC 提供的 playerId (由後端 Session 管理)
+  const currentPlayerId = playerId.value
+  const playerName = displayName.value || 'Player'
 
-  // 儲存 playerId 到 sessionStorage（供重新整理後使用）
-  sessionStorage.setItem('player_id', playerId)
+  if (!currentPlayerId) {
+    console.error('No player ID available - auth middleware should have initialized this')
+    return
+  }
 
   // 儲存到 SessionContext（供 game page 使用）
-  sessionContext.setIdentity({ playerId, playerName, roomTypeId })
-
+  sessionContext.setIdentity({ playerId: currentPlayerId, playerName, roomTypeId })
 
   // 直接導航到遊戲頁面，SSE 連線在那裡建立
   navigateTo('/game')
@@ -121,7 +183,13 @@ const handleRetry = () => {
   <div class="min-h-screen bg-green-900 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
     <!-- 頂部資訊列 -->
     <header class="h-14 shrink-0">
-      <LobbyTopInfoBar @menu-click="togglePanel" />
+      <LobbyTopInfoBar
+        ref="lobbyTopInfoBarRef"
+        :menu-items="menuItems"
+        @player-click="handlePlayerClick"
+        @logout="handleLogout"
+        @delete-account="handleOpenDeleteAccountModal"
+      />
     </header>
 
     <!-- 主要內容區 -->
@@ -218,12 +286,27 @@ const handleRetry = () => {
       </div>
     </main>
 
-    <!-- Action Panel -->
-    <ActionPanel
-      :is-open="isPanelOpen"
-      :items="menuItems"
-      @close="closePanel"
+    <!-- Player Info Card (純資訊展示) -->
+    <PlayerInfoCard
+      :is-open="isPlayerInfoCardOpen"
+      :display-name="displayName"
+      :is-guest="isGuest"
+      :anchor-ref="lobbyTopInfoBarRef?.playerBadgeRef"
+      @close="handlePlayerInfoCardClose"
     />
+
+    <!-- Delete Account Modal -->
+    <DeleteAccountModal
+      :is-open="isDeleteAccountModalOpen"
+      :is-guest="isGuest"
+      :is-loading="isDeleteAccountLoading"
+      :error-message="deleteAccountError"
+      @confirm="handleDeleteAccountConfirm"
+      @cancel="handleDeleteAccountCancel"
+    />
+
+    <!-- 訪客註冊提示 -->
+    <RegisterPrompt />
   </div>
 </template>
 

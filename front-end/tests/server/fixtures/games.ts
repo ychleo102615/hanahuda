@@ -8,9 +8,9 @@
  * @module server/__tests__/fixtures/games
  */
 
-import type { Game } from '~/server/domain/game/game'
-import type { Round, PlayerRoundState } from '~/server/domain/round/round'
-import type { KoiStatus } from '~/server/domain/round/koiStatus'
+import type { Game } from '~/server/core-game/domain/game/game'
+import type { Round, PlayerRoundState } from '~/server/core-game/domain/round/round'
+import type { KoiStatus } from '~/server/core-game/domain/round/koiStatus'
 import type { Ruleset, YakuSetting } from '#shared/contracts'
 import { HAND_STANDARD, FIELD_MIXED_CARDS } from './cards'
 
@@ -23,7 +23,6 @@ export const PLAYER_2_ID = 'player-2'
 export const AI_PLAYER_ID = 'ai-opponent'
 
 export const GAME_ID = 'test-game-id'
-export const SESSION_TOKEN = 'test-session-token'
 
 // ============================================================
 // 役種設定
@@ -140,10 +139,48 @@ export function createRoundAwaitingSelection(overrides: Partial<Round> = {}): Ro
       drawnCard: '0131',
       possibleTargets: Object.freeze(['0131', '0141']),
       handCardPlay: {
-        played_card_id: '0142',
-        captured_card_ids: [],
-        placed_on_field: true,
+        played_card: '0142',
+        matched_cards: [],
       },
+      previousYaku: Object.freeze([]), // 預設無前置役種
+    },
+    ...overrides,
+  })
+}
+
+/**
+ * 建立等待選擇配對的 Round（手牌階段已形成役種）
+ *
+ * @description
+ * 用於測試 Bug 修復：手牌階段形成役種 + 翻牌雙配對的場景。
+ * 玩家獲得區已有花見酒所需的兩張牌（櫻幕 0311 + 菊盃 0921）。
+ */
+export function createRoundAwaitingSelectionWithYaku(overrides: Partial<Round> = {}): Round {
+  // 玩家獲得區包含花見酒所需的牌
+  const playerWithHanamiZake = createTestPlayerState(
+    PLAYER_1_ID,
+    ['0111', '0221', '0521', '0621', '0721', '0821'], // 手牌（不含櫻幕和菊盃）
+    ['0311', '0921', '0341', '0941'] // 獲得區：櫻幕、菊盃 + 配對的牌
+  )
+
+  return createTestRound({
+    flowState: 'AWAITING_SELECTION',
+    activePlayerId: PLAYER_1_ID,
+    playerStates: Object.freeze([
+      playerWithHanamiZake,
+      createTestPlayerState(PLAYER_2_ID),
+    ]),
+    // 場上有兩張 4 月牌供雙配對
+    field: Object.freeze(['0441', '0442', '0531', '0541', '0542', '0631']),
+    pendingSelection: {
+      drawnCard: '0431', // 翻出 4 月短冊
+      possibleTargets: Object.freeze(['0441', '0442']), // 場上兩張 4 月牌
+      handCardPlay: {
+        played_card: '0311', // 手牌打出櫻幕
+        matched_cards: ['0341'], // 與場上 3 月牌配對
+      },
+      // 關鍵：記錄手牌操作前的役種（空陣列，因為花見酒是這回合才形成的）
+      previousYaku: Object.freeze([]),
     },
     ...overrides,
   })
@@ -179,7 +216,6 @@ export function createTestWaitingGame(overrides: Partial<Game> = {}): Game {
   const now = new Date()
   const defaultGame: Game = {
     id: GAME_ID,
-    sessionToken: SESSION_TOKEN,
     players: Object.freeze([
       { id: PLAYER_1_ID, name: 'Player 1', isAi: false },
     ]),
@@ -212,7 +248,6 @@ export function createTestInProgressGame(overrides: Partial<Game> = {}): Game {
   const now = new Date()
   const defaultGame: Game = {
     id: GAME_ID,
-    sessionToken: SESSION_TOKEN,
     players: Object.freeze([
       { id: PLAYER_1_ID, name: 'Player 1', isAi: false },
       { id: PLAYER_2_ID, name: 'Player 2', isAi: false },
@@ -272,7 +307,6 @@ export function createTestFinishedGame(
   const now = new Date()
   const defaultGame: Game = {
     id: GAME_ID,
-    sessionToken: SESSION_TOKEN,
     players: Object.freeze([
       { id: PLAYER_1_ID, name: 'Player 1', isAi: false },
       { id: PLAYER_2_ID, name: 'Player 2', isAi: false },
