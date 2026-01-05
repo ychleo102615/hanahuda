@@ -13,7 +13,7 @@ import { DEAL_CONFIG } from '../card/dealConfig'
 import { getTestDeck } from './testDecks'
 
 // Re-export 維持向後相容
-export { ALL_CARD_IDS, TOTAL_DECK_SIZE, ALL_CARD_IDS_SET } from '../../../../shared/constants/cardConstants'
+export { ALL_CARD_IDS, TOTAL_DECK_SIZE, ALL_CARD_IDS_SET } from '#shared/constants/cardConstants'
 export { DEAL_CONFIG } from '../card/dealConfig'
 export { getTestDeck, type TestDeckType } from './testDecks'
 
