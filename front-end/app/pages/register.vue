@@ -10,6 +10,9 @@
  * 參考: specs/010-player-account/spec.md US2, US3
  */
 
+// Nuxt pages 使用檔案路徑作為元件名稱
+defineOptions({ name: 'RegisterPage' })
+
 import { useRouter } from 'vue-router'
 import { ENABLE_OAUTH_LOGIN } from '~/constants'
 import RegisterForm from '~/identity/adapter/components/RegisterForm.vue'

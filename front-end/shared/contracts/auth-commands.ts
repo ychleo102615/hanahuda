@@ -38,11 +38,9 @@ export interface LogoutCommand {
 }
 
 /**
- * 建立訪客命令
+ * 建立訪客命令（無參數，系統自動生成）
  */
-export interface CreateGuestCommand {
-  /** 無參數，系統自動生成 */
-}
+export type CreateGuestCommand = Record<string, never>
 
 /**
  * OAuth 登入開始命令

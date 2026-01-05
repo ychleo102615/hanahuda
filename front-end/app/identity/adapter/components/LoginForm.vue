@@ -27,14 +27,6 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 
 // Validation
-const isUsernameValid = computed(() => {
-  return username.value.length > 0
-})
-
-const isPasswordValid = computed(() => {
-  return password.value.length > 0
-})
-
 const isFormValid = computed(() => {
   return username.value && password.value
 })

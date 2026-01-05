@@ -9,8 +9,6 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
-  type Session,
-  type SessionId,
   type PlayerId,
   createSession,
   isSessionExpired,

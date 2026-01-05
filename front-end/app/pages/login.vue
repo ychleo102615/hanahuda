@@ -10,6 +10,9 @@
  * 參考: specs/010-player-account/spec.md US3, US5
  */
 
+// Nuxt pages 使用檔案路徑作為元件名稱
+defineOptions({ name: 'LoginPage' })
+
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ENABLE_OAUTH_LOGIN } from '~/constants'

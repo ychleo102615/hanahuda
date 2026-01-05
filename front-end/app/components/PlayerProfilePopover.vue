@@ -14,9 +14,8 @@
  * 參考: specs/010-player-account/spec.md FR-027, FR-027a, FR-027b
  */
 
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { Z_INDEX } from '~/constants/z-index'
-import PlayerBadge from '~/components/PlayerBadge.vue'
 
 interface Props {
   /** 是否顯示 */

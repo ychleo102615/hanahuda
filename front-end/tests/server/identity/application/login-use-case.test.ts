@@ -16,6 +16,7 @@ import type { PasswordHashPort } from '../../../../server/identity/application/p
 import type { Player, PlayerId } from '../../../../server/identity/domain/player/player'
 import type { Account, AccountId } from '../../../../server/identity/domain/account/account'
 import type { PasswordHash } from '../../../../server/identity/domain/account/password-hash'
+import type { SessionId } from '../../../../server/identity/domain/types/session'
 
 // =============================================================================
 // Mocks
@@ -112,7 +113,7 @@ describe('LoginUseCase', () => {
       vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer)
       vi.mocked(passwordHasher.verify).mockResolvedValue(true)
       vi.mocked(sessionStore.save).mockResolvedValue({
-        id: 'session-123' as any,
+        id: 'session-123' as SessionId,
         playerId: mockPlayer.id,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         createdAt: new Date(),
@@ -140,7 +141,7 @@ describe('LoginUseCase', () => {
       vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer)
       vi.mocked(passwordHasher.verify).mockResolvedValue(true)
       vi.mocked(sessionStore.save).mockResolvedValue({
-        id: 'new-session-id' as any,
+        id: 'new-session-id' as SessionId,
         playerId: mockPlayer.id,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         createdAt: new Date(),
@@ -167,7 +168,7 @@ describe('LoginUseCase', () => {
       vi.mocked(passwordHasher.verify).mockResolvedValue(true)
       vi.mocked(sessionStore.deleteByPlayerId).mockResolvedValue()
       vi.mocked(sessionStore.save).mockResolvedValue({
-        id: 'session-123' as any,
+        id: 'session-123' as SessionId,
         playerId: mockPlayer.id,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         createdAt: new Date(),
@@ -189,7 +190,7 @@ describe('LoginUseCase', () => {
       vi.mocked(playerRepository.findById).mockResolvedValue(mockPlayer)
       vi.mocked(passwordHasher.verify).mockResolvedValue(true)
       vi.mocked(sessionStore.save).mockResolvedValue({
-        id: 'session-123' as any,
+        id: 'session-123' as SessionId,
         playerId: mockPlayer.id,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         createdAt: new Date(),

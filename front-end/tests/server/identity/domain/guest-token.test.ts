@@ -9,7 +9,6 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import {
-  type GuestToken,
   type PlayerId,
   createGuestToken,
   isGuestTokenExpired,

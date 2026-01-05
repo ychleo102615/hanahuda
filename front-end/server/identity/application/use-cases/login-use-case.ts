@@ -7,7 +7,7 @@
  * 參考: specs/010-player-account/spec.md US5 - 帳號登入
  */
 
-import { createSession, type SessionId } from '../../domain/types/session'
+import { createSession } from '../../domain/types/session'
 import type { Player } from '../../domain/player/player'
 import type { PlayerRepositoryPort } from '../ports/output/player-repository-port'
 import type { AccountRepositoryPort } from '../ports/output/account-repository-port'

@@ -10,7 +10,7 @@
 
 import { createSession } from '../../domain/types/session'
 import { createOAuthLink, type OAuthLinkId } from '../../domain/oauth-link/oauth-link'
-import { createRegisteredPlayer, type Player, type PlayerId } from '../../domain/player/player'
+import { createRegisteredPlayer, type PlayerId } from '../../domain/player/player'
 import { createAccount, type Account, type AccountId } from '../../domain/account/account'
 import { createOAuthPasswordHash } from '../../domain/account/password-hash'
 import { canAutoLink } from '../../domain/services/account-linking-service'

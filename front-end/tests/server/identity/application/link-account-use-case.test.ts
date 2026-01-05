@@ -18,7 +18,7 @@ import type { PasswordHashPort } from '~~/server/identity/application/ports/outp
 import { createAccount, type AccountId } from '~~/server/identity/domain/account/account'
 import type { PasswordHash } from '~~/server/identity/domain/account/password-hash'
 import { createRegisteredPlayer, type PlayerId } from '~~/server/identity/domain/player/player'
-import { createSession, type SessionId } from '~~/server/identity/domain/types/session'
+import { createSession } from '~~/server/identity/domain/types/session'
 
 // =============================================================================
 // Mocks

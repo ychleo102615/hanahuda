@@ -89,7 +89,7 @@ describe('OAuthLink Entity', () => {
         createOAuthLink({
           id: 'link-123' as OAuthLinkId,
           accountId: 'account-123' as AccountId,
-          provider: 'facebook' as any,
+          provider: 'facebook' as 'google' | 'line',
           providerUserId: '123',
           providerEmail: null,
           createdAt: new Date(),

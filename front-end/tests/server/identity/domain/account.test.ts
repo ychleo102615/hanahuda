@@ -9,7 +9,6 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  type Account,
   type AccountId,
   type PlayerId,
   createAccount,

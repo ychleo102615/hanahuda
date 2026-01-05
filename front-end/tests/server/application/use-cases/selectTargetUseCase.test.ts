@@ -22,7 +22,6 @@ import {
   createTestInProgressGame,
   createRoundAwaitingSelection,
   createRoundAwaitingSelectionWithYaku,
-  createTestPlayerState,
   PLAYER_1_ID,
   PLAYER_2_ID,
   GAME_ID,

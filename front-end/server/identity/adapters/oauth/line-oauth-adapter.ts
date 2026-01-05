@@ -33,16 +33,6 @@ interface LineUserInfoResponse {
   pictureUrl?: string
 }
 
-/**
- * Line ID Token 解析結果
- */
-interface LineIdTokenPayload {
-  sub: string
-  name?: string
-  picture?: string
-  email?: string
-}
-
 // =============================================================================
 // Adapter
 // =============================================================================
