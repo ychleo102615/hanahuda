@@ -12,6 +12,7 @@
 
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { ENABLE_OAUTH_LOGIN } from '~/constants'
 import LoginForm from '~/identity/adapter/components/LoginForm.vue'
 import OAuthButtons from '~/identity/adapter/components/OAuthButtons.vue'
 
@@ -68,18 +69,21 @@ function handleCancel() {
           @cancel="handleCancel"
         />
 
-        <!-- Divider -->
-        <div class="relative my-6">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-700"></div>
+        <!-- OAuth Section (conditionally rendered) -->
+        <template v-if="ENABLE_OAUTH_LOGIN">
+          <!-- Divider -->
+          <div class="relative my-6">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-700"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-3 bg-gray-900/50 text-gray-500">Or continue with</span>
+            </div>
           </div>
-          <div class="relative flex justify-center text-sm">
-            <span class="px-3 bg-gray-900/50 text-gray-500">Or continue with</span>
-          </div>
-        </div>
 
-        <!-- OAuth Buttons -->
-        <OAuthButtons />
+          <!-- OAuth Buttons -->
+          <OAuthButtons />
+        </template>
       </div>
 
       <!-- Footer Links -->

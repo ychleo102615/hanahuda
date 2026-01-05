@@ -11,6 +11,7 @@
  */
 
 import { useRouter } from 'vue-router'
+import { ENABLE_OAUTH_LOGIN } from '~/constants'
 import RegisterForm from '~/identity/adapter/components/RegisterForm.vue'
 import OAuthButtons from '~/identity/adapter/components/OAuthButtons.vue'
 
@@ -40,18 +41,21 @@ function handleCancel() {
 
       <!-- Register Form Card -->
       <div class="bg-gray-900/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-800">
-        <!-- OAuth Buttons (Quick signup) -->
-        <OAuthButtons />
+        <!-- OAuth Section (conditionally rendered) -->
+        <template v-if="ENABLE_OAUTH_LOGIN">
+          <!-- OAuth Buttons (Quick signup) -->
+          <OAuthButtons />
 
-        <!-- Divider -->
-        <div class="relative my-6">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-700"></div>
+          <!-- Divider -->
+          <div class="relative my-6">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-700"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-3 bg-gray-900/50 text-gray-500">Or register with email</span>
+            </div>
           </div>
-          <div class="relative flex justify-center text-sm">
-            <span class="px-3 bg-gray-900/50 text-gray-500">Or register with email</span>
-          </div>
-        </div>
+        </template>
 
         <RegisterForm
           @success="handleSuccess"

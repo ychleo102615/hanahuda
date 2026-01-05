@@ -10,7 +10,7 @@
  */
 
 import { onMounted, onUnmounted, watch } from 'vue'
-import { Z_INDEX } from '~/constants'
+import { Z_INDEX, ENABLE_OAUTH_LOGIN } from '~/constants'
 import LoginForm from './LoginForm.vue'
 import OAuthButtons from './OAuthButtons.vue'
 
@@ -105,18 +105,21 @@ function handleCancel() {
             @cancel="handleCancel"
           />
 
-          <!-- Divider -->
-          <div class="relative my-6">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-700"></div>
+          <!-- OAuth Section (conditionally rendered) -->
+          <template v-if="ENABLE_OAUTH_LOGIN">
+            <!-- Divider -->
+            <div class="relative my-6">
+              <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-700"></div>
+              </div>
+              <div class="relative flex justify-center text-sm">
+                <span class="px-2 bg-gray-900 text-gray-400">Or continue with</span>
+              </div>
             </div>
-            <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-gray-900 text-gray-400">Or continue with</span>
-            </div>
-          </div>
 
-          <!-- FR-024a: OAuthButtons -->
-          <OAuthButtons />
+            <!-- FR-024a: OAuthButtons -->
+            <OAuthButtons />
+          </template>
 
           <!-- FR-024b: Create account link -->
           <div class="mt-6 text-center">

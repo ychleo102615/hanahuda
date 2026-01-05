@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useMotion } from '@vueuse/motion'
-import { Z_INDEX } from '~/constants'
+import { Z_INDEX, ENABLE_OAUTH_LOGIN } from '~/constants'
 
 // Props 定義
 interface Props {
@@ -182,7 +182,7 @@ watch(
                 </p>
                 <ul class="text-red-300/80 text-sm mt-2 list-disc list-inside">
                   <li>Your account credentials</li>
-                  <li>Linked OAuth accounts</li>
+                  <li v-if="ENABLE_OAUTH_LOGIN">Linked OAuth accounts</li>
                 </ul>
               </div>
             </div>
