@@ -195,7 +195,7 @@ onUnmounted(() => {
             <a
               v-if="link.isCta"
               :href="link.target"
-              class="px-4 py-2 text-sm font-medium transition-all duration-200 bg-accent-red text-white rounded-md hover:bg-accent-red/90 hover:shadow-lg hover:scale-105"
+              class="px-4 py-2 text-sm font-medium transition-all duration-200 bg-accent-red text-white rounded-md hover:bg-accent-red/90 hover:shadow-lg hover:scale-105 whitespace-nowrap"
               @click="handleLinkClick(link, $event)"
               @keydown.enter="handleLinkClick(link, $event)"
               tabindex="0"

@@ -2,43 +2,32 @@
  * useResponsiveMenu Composable
  *
  * @description
- * 提供響應式選單模式偵測。
- * - 電腦模式：側邊滑出（ActionPanel）
- * - 手機模式：從上方彈出（Popover）
- *
- * 使用 Tailwind 的 md 斷點 (768px) 作為分界
+ * 提供響應式選單模式偵測：
+ * - 電腦模式 (>=768px)：側邊滑出面板
+ * - 手機模式 (<768px)：向下展開 dropdown
  */
 
 import { ref, onMounted, onUnmounted } from 'vue'
 
-export type MenuMode = 'desktop' | 'mobile'
-
-const MOBILE_BREAKPOINT = 768 // Tailwind md breakpoint
+const MOBILE_BREAKPOINT = 768
 
 export function useResponsiveMenu() {
-  // 預設為 desktop（SSR 友善）
   const isMobile = ref(false)
-  const menuMode = ref<MenuMode>('desktop')
 
-  const updateMenuMode = () => {
-    const mobile = window.innerWidth < MOBILE_BREAKPOINT
-    isMobile.value = mobile
-    menuMode.value = mobile ? 'mobile' : 'desktop'
+  const checkMobile = () => {
+    isMobile.value = window.innerWidth < MOBILE_BREAKPOINT
   }
 
   onMounted(() => {
-    updateMenuMode()
-    window.addEventListener('resize', updateMenuMode)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
   })
 
   onUnmounted(() => {
-    window.removeEventListener('resize', updateMenuMode)
+    window.removeEventListener('resize', checkMobile)
   })
 
   return {
-    /** 是否為手機模式 */
     isMobile,
-    /** 選單模式：'desktop' | 'mobile' */
-    menuMode,
   }
 }

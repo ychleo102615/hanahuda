@@ -3,13 +3,17 @@
 
   @description
   遊戲頁面專用的狀態面板，顯示對手/玩家資訊、回合狀態、倒數計時等。
+  使用 ResponsiveMenu 組件處理選單邏輯。
+  注意：遊戲進行中禁止帳號操作（登出/刪除），需透過 Leave Game 離開。
 
   響應式設計：
   - 大螢幕 (>=640px)：完整顯示（名稱、分數、Cards left、Koi-Koi 狀態）
   - 小螢幕 (<640px)：隱藏 Cards left，保留名稱、分數、Koi-Koi 狀態
 
+  Props:
+  - menuItems: MenuItem[] - 選單項目列表
+
   Events:
-  - menuClick: 選單按鈕點擊事件
   - playerClick: 玩家圖示點擊事件（顯示資訊小卡）
 -->
 
@@ -19,10 +23,21 @@ import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
-import MenuButton from './MenuButton.vue'
+import ResponsiveMenu from './menu/ResponsiveMenu.vue'
+import type { MenuItem } from './menu/types'
+
+// Re-export MenuItem type for parent components
+export type { MenuItem }
+
+interface Props {
+  menuItems?: MenuItem[]
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  menuItems: () => [],
+})
 
 const emit = defineEmits<{
-  menuClick: []
   playerClick: []
 }>()
 
@@ -31,6 +46,9 @@ const { displayName, isGuest } = useCurrentPlayer()
 
 // Ref for player avatar (for Popover positioning)
 const playerAvatarRef = ref<HTMLElement | null>(null)
+
+// 選單開關狀態
+const isMenuOpen = ref(false)
 
 // Expose ref for parent to access
 defineExpose({
@@ -74,7 +92,6 @@ const actionTimeoutRemaining = computed(() => {
   }
   return null
 })
-
 
 // 統一狀態文字（單一行顯示）
 const statusText = computed(() => {
@@ -125,96 +142,146 @@ const countdownClass = computed(() => {
 
 // 總局數
 const totalRounds = computed(() => ruleset.value?.total_rounds ?? 12)
+
+// 切換選單
+const toggleMenu = () => {
+  isMenuOpen.value = !isMenuOpen.value
+}
+
+// 關閉選單
+const closeMenu = () => {
+  isMenuOpen.value = false
+}
 </script>
 
 <template>
-  <div class="h-full bg-gray-800 text-white px-4 py-2 flex items-center justify-between">
-    <!-- Left Section: 對手資訊 -->
-    <div class="flex items-center gap-2 sm:gap-4 shrink-0">
-      <!-- 分數欄 -->
-      <div class="text-center">
-        <!-- 名稱 + 莊家標記（小螢幕簡寫，大螢幕完整） -->
-        <div class="flex text-xs text-gray-400 items-center justify-center gap-1">
-          <span class="sm:hidden">Opp.</span>
-          <span class="hidden sm:inline">{{ opponentPlayerName || 'Opponent' }}</span>
-          <span v-if="isOpponentDealer" class="text-amber-500 font-bold" title="Dealer">(親)</span>
+  <div class="h-full bg-gray-800 text-white relative">
+    <!-- Header Bar -->
+    <div class="h-full px-4 py-2 flex items-center justify-between">
+      <!-- Left Section: 對手資訊 -->
+      <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+        <!-- 分數欄 -->
+        <div class="text-center">
+          <!-- 名稱 + 莊家標記（小螢幕簡寫，大螢幕完整） -->
+          <div class="flex text-xs text-gray-400 items-center justify-center gap-1">
+            <span class="sm:hidden">Opp.</span>
+            <span class="hidden sm:inline">{{ opponentPlayerName || 'Opponent' }}</span>
+            <span v-if="isOpponentDealer" class="text-amber-500 font-bold" title="Dealer">(親)</span>
+          </div>
+          <div class="text-xl font-bold">{{ opponentScore }}</div>
+          <!-- Koi-Koi 狀態 -->
+          <div class="flex h-4 items-center justify-center">
+            <span
+              v-if="opponentKoiKoiMultiplier > 1"
+              class="text-xs text-amber-400"
+            >
+              koikoi
+            </span>
+          </div>
         </div>
-        <div class="text-xl font-bold">{{ opponentScore }}</div>
-        <!-- Koi-Koi 狀態 -->
-        <div class="flex h-4 items-center justify-center">
-          <span
-            v-if="opponentKoiKoiMultiplier > 1"
-            class="text-xs text-amber-400"
-          >
-            koikoi
-          </span>
+        <!-- 手牌數欄：小螢幕隱藏 -->
+        <div class="hidden sm:flex flex-col items-center gap-1 text-gray-300" title="Opponent hand count">
+          <span class="text-sm text-gray-400 font-medium">Cards left</span>
+          <span class="text-sm font-medium">{{ opponentHandCount }}</span>
         </div>
       </div>
-      <!-- 手牌數欄：小螢幕隱藏 -->
-      <div class="hidden sm:flex flex-col items-center gap-1 text-gray-300" title="Opponent hand count">
-        <span class="text-sm text-gray-400 font-medium">Cards left</span>
-        <span class="text-sm font-medium">{{ opponentHandCount }}</span>
-      </div>
-    </div>
 
-    <!-- Center Section: 回合資訊 -->
-    <div class="flex flex-col items-center shrink min-w-0">
-      <!-- 局數顯示 -->
-      <div v-if="currentRound !== null" class="text-sm text-gray-400 whitespace-nowrap">
-        Round {{ currentRound }} / {{ totalRounds }}
-      </div>
-      <!-- Unified status text -->
-      <div
-        v-if="statusText"
-        class="text-lg font-medium truncate max-w-full"
-        :class="{ 'text-yellow-400': isMyTurnStatus }"
-      >
-        {{ statusText }}
-      </div>
-      <!-- Countdown Display (固定高度防止抖動) -->
-      <div class="h-7 flex items-center justify-center">
-        <span
-          v-if="actionTimeoutRemaining !== null"
-          class="text-xl font-bold"
-          :class="countdownClass"
+      <!-- Center Section: 回合資訊 -->
+      <div class="flex flex-col items-center shrink min-w-0">
+        <!-- 局數顯示 -->
+        <div v-if="currentRound !== null" class="text-sm text-gray-400 whitespace-nowrap">
+          Round {{ currentRound }} / {{ totalRounds }}
+        </div>
+        <!-- Unified status text -->
+        <div
+          v-if="statusText"
+          class="text-lg font-medium truncate max-w-full"
+          :class="{ 'text-yellow-400': isMyTurnStatus }"
         >
-          {{ actionTimeoutRemaining }}
-        </span>
-      </div>
-    </div>
-
-    <!-- Right Section: 玩家資訊 + 選單 -->
-    <div class="flex items-center gap-2 sm:gap-4 shrink-0">
-      <div class="text-center">
-        <!-- 名稱 + 莊家標記（小螢幕簡寫，大螢幕完整） -->
-        <div class="flex text-xs text-gray-400 items-center justify-center gap-1">
-          <span class="sm:hidden">You</span>
-          <span class="hidden sm:inline">{{ localPlayerName || 'You' }}</span>
-          <span v-if="isPlayerDealer" class="text-amber-500 font-bold" title="Dealer">(親)</span>
+          {{ statusText }}
         </div>
-        <div class="text-xl font-bold">{{ myScore }}</div>
-        <!-- Koi-Koi 狀態 -->
-        <div class="flex h-4 items-center justify-center">
+        <!-- Countdown Display (固定高度防止抖動) -->
+        <div class="h-7 flex items-center justify-center">
           <span
-            v-if="myKoiKoiMultiplier > 1"
-            class="text-xs text-amber-400"
+            v-if="actionTimeoutRemaining !== null"
+            class="text-xl font-bold"
+            :class="countdownClass"
           >
-            koikoi
+            {{ actionTimeoutRemaining }}
           </span>
         </div>
       </div>
-      <!-- Clickable player avatar (for info card) -->
-      <button
-        ref="playerAvatarRef"
-        class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center hover:bg-gray-500 transition-colors"
-        @click="emit('playerClick')"
-        aria-label="View player info"
-      >
-        <svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-        </svg>
-      </button>
-      <MenuButton @click="emit('menuClick')" />
+
+      <!-- Right Section: 玩家資訊 + 選單 -->
+      <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+        <div class="text-center">
+          <!-- 名稱 + 莊家標記（小螢幕簡寫，大螢幕完整） -->
+          <div class="flex text-xs text-gray-400 items-center justify-center gap-1">
+            <span class="sm:hidden">You</span>
+            <span class="hidden sm:inline">{{ localPlayerName || 'You' }}</span>
+            <span v-if="isPlayerDealer" class="text-amber-500 font-bold" title="Dealer">(親)</span>
+          </div>
+          <div class="text-xl font-bold">{{ myScore }}</div>
+          <!-- Koi-Koi 狀態 -->
+          <div class="flex h-4 items-center justify-center">
+            <span
+              v-if="myKoiKoiMultiplier > 1"
+              class="text-xs text-amber-400"
+            >
+              koikoi
+            </span>
+          </div>
+        </div>
+        <!-- Clickable player avatar (for info card) -->
+        <button
+          ref="playerAvatarRef"
+          class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center hover:bg-gray-500 transition-colors"
+          @click="emit('playerClick')"
+          aria-label="View player info"
+        >
+          <svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+          </svg>
+        </button>
+        <!-- Menu Button -->
+        <button
+          data-testid="menu-button"
+          aria-label="Toggle menu"
+          :aria-expanded="isMenuOpen"
+          class="p-2 rounded-lg hover:bg-white/10 transition-colors"
+          @click="toggleMenu"
+        >
+          <svg
+            class="h-6 w-6 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              v-if="!isMenuOpen"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+            <path
+              v-else
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
+
+    <!-- Responsive Menu (遊戲中禁止帳號操作) -->
+    <ResponsiveMenu
+      :is-open="isMenuOpen"
+      :menu-items="props.menuItems"
+      :show-player-actions="false"
+      @close="closeMenu"
+    />
   </div>
 </template>

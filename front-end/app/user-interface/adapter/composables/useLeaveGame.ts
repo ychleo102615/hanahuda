@@ -22,7 +22,7 @@ import { useMatchmakingStateStore } from '../stores/matchmakingState'
 import { useDependency } from './useDependency'
 import { TOKENS } from '../di/tokens'
 import type { SendCommandPort, NotificationPort, SessionContextPort } from '../../application/ports/output'
-import type { ActionPanelItem } from '~/components/ActionPanel.vue'
+import type { MenuItem } from '~/components/menu/types'
 
 export interface UseLeaveGameOptions {
   /** 是否需要確認對話框（預設: false） */
@@ -51,9 +51,9 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   const isConfirmDialogOpen = ref(false)
 
   // Menu Items (computed for dynamic disabled state)
-  const menuItems = computed<ActionPanelItem[]>(() => {
+  const menuItems = computed<MenuItem[]>(() => {
     const isFinished = gameEnded.value
-    const items: ActionPanelItem[] = []
+    const items: MenuItem[] = []
 
     // Restart Game (only shown if onRestartGame callback provided)
     if (options.onRestartGame) {

@@ -28,11 +28,10 @@ import { useDependency } from '~/user-interface/adapter/composables/useDependenc
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output'
 import { RoomApiClient, type RoomType } from '~/user-interface/adapter/api/RoomApiClient'
-import UnifiedPlayerMenu from '~/components/UnifiedPlayerMenu.vue'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import LobbyTopInfoBar from '~/components/LobbyTopInfoBar.vue'
+import type { MenuItem } from '~/components/LobbyTopInfoBar.vue'
 import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
-import type { ActionPanelItem } from '~/components/ActionPanel.vue'
 import RegisterPrompt from '~/identity/adapter/components/RegisterPrompt.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
@@ -49,18 +48,9 @@ const { logout, deleteAccount } = useAuth()
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const roomApiClient = useDependency<RoomApiClient>(TOKENS.RoomApiClient)
 
-// Player Menu 狀態
-const isPanelOpen = ref(false)
-
 // Player Info Card 狀態
 const isPlayerInfoCardOpen = ref(false)
 const lobbyTopInfoBarRef = ref<InstanceType<typeof LobbyTopInfoBar> | null>(null)
-
-// 玩家資訊（傳給 UnifiedPlayerMenu）
-const playerInfo = computed(() => ({
-  displayName: displayName.value,
-  isGuest: isGuest.value,
-}))
 
 // Delete Account Modal 狀態
 const isDeleteAccountModalOpen = ref(false)
@@ -76,8 +66,8 @@ const loadError = ref<string | null>(null)
 const hasError = computed(() => matchmakingStore.status === 'error')
 const canStartMatchmaking = computed(() => matchmakingStore.canStartMatchmaking)
 
-// Action Panel 選單項目
-const menuItems = computed<ActionPanelItem[]>(() => [
+// 選單項目
+const menuItems = computed<MenuItem[]>(() => [
   {
     id: 'back-home',
     label: 'Back to Home',
@@ -97,15 +87,6 @@ onMounted(async () => {
   }
 })
 
-// 開啟/關閉 Action Panel
-const togglePanel = () => {
-  isPanelOpen.value = !isPanelOpen.value
-}
-
-const closePanel = () => {
-  isPanelOpen.value = false
-}
-
 // 玩家資訊小卡控制
 const handlePlayerClick = () => {
   isPlayerInfoCardOpen.value = !isPlayerInfoCardOpen.value
@@ -118,7 +99,6 @@ const handlePlayerInfoCardClose = () => {
 // 返回首頁
 const handleBackToHome = () => {
   navigateTo('/')
-  closePanel()
 }
 
 // 登出
@@ -205,8 +185,10 @@ const handleRetry = () => {
     <header class="h-14 shrink-0">
       <LobbyTopInfoBar
         ref="lobbyTopInfoBarRef"
-        @menu-click="togglePanel"
+        :menu-items="menuItems"
         @player-click="handlePlayerClick"
+        @logout="handleLogout"
+        @delete-account="handleOpenDeleteAccountModal"
       />
     </header>
 
@@ -311,16 +293,6 @@ const handleRetry = () => {
       :is-guest="isGuest"
       :anchor-ref="lobbyTopInfoBarRef?.playerBadgeRef"
       @close="handlePlayerInfoCardClose"
-    />
-
-    <!-- Unified Player Menu -->
-    <UnifiedPlayerMenu
-      :is-open="isPanelOpen"
-      :player="playerInfo"
-      :items="menuItems"
-      @close="closePanel"
-      @logout="handleLogout"
-      @delete-account="handleOpenDeleteAccountModal"
     />
 
     <!-- Delete Account Modal -->
