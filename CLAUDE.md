@@ -84,6 +84,7 @@
 - TypeScript 5.9 + Nuxt 4 (Nitro), Drizzle ORM, Zod, H3 (008-nuxt-backend-server)
 - PostgreSQL 14+ (Drizzle ORM) (008-nuxt-backend-server)
 - TypeScript 5.9 + Nuxt 4 (Nitro), Vue 3.5, Pinia 3.x, Drizzle ORM 0.45+, Zod 4.x, H3 (010-player-account)
+- In-memory (InMemoryMatchmakingPool) for MVP, consistent with existing GameStore pattern (011-online-matchmaking)
 
 ## Recent Changes
 - 003-ui-application-layer: Added TypeScript 5.9 + 無（Pure functions, 零框架依賴）
