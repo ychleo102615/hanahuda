@@ -255,31 +255,83 @@ type RoomTypeId = 'QUICK' | 'STANDARD' | 'MARATHON'
 
 ## Relationship with Other BCs
 
+### Architecture Overview
+
 ```
-┌─────────────────┐     MATCH_FOUND      ┌─────────────────┐
-│                 │ ──────────────────►  │                 │
-│  Matchmaking BC │                      │  Core Game BC   │
-│                 │                      │                 │
-└────────┬────────┘                      └────────┬────────┘
-         │                                        │
-         │ uses playerId                          │ ROOM_CREATED
-         │                                        │ (for bot)
-         ▼                                        ▼
-┌─────────────────┐                      ┌─────────────────┐
-│                 │                      │                 │
-│  Identity BC    │                      │  Opponent BC    │
-│                 │                      │                 │
-└─────────────────┘                      └─────────────────┘
+                    ┌───────────────────────────────────────────┐
+                    │        Shared Infrastructure              │
+                    │  ┌─────────────────────────────────────┐  │
+                    │  │  server/shared/infrastructure/      │  │
+                    │  │  event-bus/                         │  │
+                    │  │  ├── types.ts (共用 Payload 定義)   │  │
+                    │  │  └── internalEventBus.ts            │  │
+                    │  └─────────────────────────────────────┘  │
+                    └─────────────────┬─────────────────────────┘
+                                      │
+          ┌───────────────────────────┼───────────────────────────┐
+          │                           │                           │
+          ▼                           ▼                           ▼
+┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
+│  Matchmaking BC │         │  Core Game BC   │         │  Opponent BC    │
+│                 │         │                 │         │                 │
+│  Publishes:     │         │  Subscribes:    │         │  Subscribes:    │
+│  MATCH_FOUND    │         │  MATCH_FOUND    │         │  ROOM_CREATED   │
+│                 │         │                 │         │                 │
+│  (透過自己的    │         │  Publishes:     │         │                 │
+│   Port+Adapter) │         │  ROOM_CREATED   │         │                 │
+└────────┬────────┘         └────────┬────────┘         └─────────────────┘
+         │                           │
+         │ uses playerId             │
+         ▼                           │
+┌─────────────────┐                  │
+│  Identity BC    │◄─────────────────┘
+│  (驗證玩家)     │
+└─────────────────┘
 ```
 
-**Communication Contracts**:
+### Key Design Principle: No Cross-BC Import
 
-1. **Matchmaking → Core Game** (via MATCH_FOUND event):
+- **錯誤做法**: Matchmaking BC import Core Game BC 的 `InternalEventPublisherPort`
+- **正確做法**: 所有 BC 只 import Shared Infrastructure 的共用類型定義
+
+```typescript
+// ✅ 正確：Matchmaking BC 只依賴 Shared Infrastructure
+import type { MatchFoundPayload } from '~/server/shared/infrastructure/event-bus/types'
+
+// ❌ 錯誤：Matchmaking BC 依賴 Core Game BC
+import { InternalEventPublisherPort } from '~/server/core-game/application/ports/...'
+```
+
+### Communication Contracts
+
+1. **Matchmaking → Core Game** (via Shared Event Bus):
+   - Matchmaking 透過自己的 `MatchmakingEventPublisherPort` 發布事件
+   - Adapter 委派給 `internalEventBus.publishMatchFound()`
+   - Core Game 的 `gameCreationHandler` 訂閱 `onMatchFound()`
    - Payload: `MatchFoundPayload { player1Id, player2Id, roomType, matchType }`
-   - Core Game creates game session with both players
 
-2. **Core Game → Opponent** (existing, via ROOM_CREATED):
-   - Used when matchType='BOT' - Matchmaking creates single-player game, triggers existing bot flow
+2. **Core Game → Opponent** (via Shared Event Bus, existing):
+   - Core Game 發布 `ROOM_CREATED` 事件
+   - Opponent BC 的 `opponentRegistry` 訂閱並建立 AI
 
 3. **Matchmaking ← Identity** (direct query):
    - Verify playerId exists and is valid before queue entry
+   - 這是同步查詢，非事件通訊
+
+### Microservice Migration Path
+
+```
+MVP (In-Memory):
+┌─────────────────────────────────────────────────┐
+│  Shared Infrastructure                          │
+│  └── internalEventBus.ts (EventEmitter)         │
+└─────────────────────────────────────────────────┘
+
+微服務 (Message Queue):
+┌─────────────────────────────────────────────────┐
+│  Shared Infrastructure                          │
+│  └── kafkaEventBus.ts (Kafka Producer/Consumer) │
+└─────────────────────────────────────────────────┘
+
+只需替換 Shared Infrastructure 實作，各 BC 程式碼完全不變！
+```

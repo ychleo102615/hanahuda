@@ -127,13 +127,23 @@ pnpm test:unit -- --watch --filter matchmaking
 
 ## Key Files to Modify
 
+### Shared Infrastructure (NEW)
+
+| File | Purpose |
+|------|---------|
+| `server/shared/infrastructure/event-bus/types.ts` | 共用事件 Payload 定義 (MatchFoundPayload, RoomCreatedPayload) |
+| `server/shared/infrastructure/event-bus/internalEventBus.ts` | Event Bus 實作 (MVP: in-memory) |
+| `server/shared/infrastructure/event-bus/index.ts` | 匯出單例 |
+
 ### Backend (Matchmaking BC)
 
 | File | Purpose |
 |------|---------|
 | `server/matchmaking/domain/matchmakingEntry.ts` | Entry entity |
 | `server/matchmaking/domain/matchmakingPool.ts` | Pool aggregate |
+| `server/matchmaking/application/ports/output/matchmakingEventPublisherPort.ts` | Matchmaking 自己的 Port |
 | `server/matchmaking/application/use-cases/enterMatchmakingUseCase.ts` | Enter queue logic |
+| `server/matchmaking/adapters/event-publisher/matchmakingEventBusAdapter.ts` | 委派給 shared event bus |
 | `server/matchmaking/adapters/registry/matchmakingRegistry.ts` | Timer management, matching |
 | `server/api/v1/matchmaking/enter.post.ts` | API endpoint |
 
@@ -141,8 +151,7 @@ pnpm test:unit -- --watch --filter matchmaking
 
 | File | Purpose |
 |------|---------|
-| `server/core-game/application/ports/output/internalEventPublisherPort.ts` | Add MATCH_FOUND event type |
-| `server/core-game/adapters/event-publisher/internalEventBus.ts` | Implement MATCH_FOUND |
+| `server/core-game/adapters/event-subscriber/gameCreationHandler.ts` | 訂閱 MATCH_FOUND 事件，建立遊戲 |
 
 ### Frontend
 
@@ -219,20 +228,39 @@ publishMatchFound(payload: MatchFoundPayload): void {
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Server (Nuxt/Nitro)                         │
 ├─────────────────────────────────────────────────────────────────────┤
-│  Matchmaking BC                Core Game BC                         │
-│  ┌─────────────────┐           ┌─────────────────┐                  │
-│  │ MatchmakingPool │           │ JoinGameUseCase │                  │
-│  │ (in-memory)     │           └────────┬────────┘                  │
-│  └────────┬────────┘                    │                           │
-│           │                             │                           │
-│           │ MATCH_FOUND event           │                           │
-│           └────────────────────────────►│                           │
-│                                         │                           │
-│                                         │ ROOM_CREATED (for bot)    │
-│                                         ▼                           │
-│                                   ┌─────────────────┐               │
-│                                   │ OpponentRegistry│               │
-│                                   │ (Opponent BC)   │               │
-│                                   └─────────────────┘               │
+│                                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │              Shared Infrastructure (Event Bus)                │  │
+│  │  server/shared/infrastructure/event-bus/                      │  │
+│  │  ├── types.ts (MatchFoundPayload, RoomCreatedPayload)         │  │
+│  │  └── internalEventBus.ts (MVP: in-memory EventEmitter)        │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│           ▲                    ▲                    ▲               │
+│           │ publish            │ subscribe          │ subscribe     │
+│           │ MATCH_FOUND        │ MATCH_FOUND        │ ROOM_CREATED  │
+│           │                    │                    │               │
+│  ┌────────┴────────┐  ┌───────┴─────────┐  ┌───────┴─────────┐     │
+│  │  Matchmaking BC │  │  Core Game BC   │  │  Opponent BC    │     │
+│  │                 │  │                 │  │                 │     │
+│  │ ┌─────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────────┐ │     │
+│  │ │ Matchmaking │ │  │ │ gameCreation│ │  │ │ opponent    │ │     │
+│  │ │ Pool        │ │  │ │ Handler     │ │  │ │ Registry    │ │     │
+│  │ └─────────────┘ │  │ └─────────────┘ │  │ └─────────────┘ │     │
+│  │        │        │  │        │        │  │                 │     │
+│  │        ▼        │  │        ▼        │  │                 │     │
+│  │ ┌─────────────┐ │  │ ┌─────────────┐ │  │                 │     │
+│  │ │ Matchmaking │ │  │ │ Game Event  │ │  │                 │     │
+│  │ │ EventBus    │ │  │ │ Bus Adapter │ │  │                 │     │
+│  │ │ Adapter     │ │  │ │ (publish    │ │  │                 │     │
+│  │ │ (委派)      │ │  │ │ ROOM_CREATED│ │  │                 │     │
+│  │ └─────────────┘ │  │ └─────────────┘ │  │                 │     │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘     │
+│                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
+
+Event Flow:
+1. Matchmaking BC finds match → publishes MATCH_FOUND via shared bus
+2. Core Game BC subscribes → creates game session
+3. Core Game BC publishes ROOM_CREATED (for bot) via shared bus
+4. Opponent BC subscribes → initializes AI opponent
 ```

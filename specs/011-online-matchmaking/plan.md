@@ -56,6 +56,13 @@ specs/011-online-matchmaking/
 ```text
 front-end/
 ├── server/
+│   ├── shared/                           # ★ NEW: Shared Infrastructure (不屬於任何 BC)
+│   │   └── infrastructure/
+│   │       └── event-bus/
+│   │           ├── internalEventBus.ts   # Event Bus 實作 (MVP: in-memory)
+│   │           ├── types.ts              # 共用事件 Payload 類型定義
+│   │           └── index.ts              # 匯出單例
+│   │
 │   ├── matchmaking/                      # ★ NEW: Matchmaking BC
 │   │   ├── domain/
 │   │   │   ├── matchmakingEntry.ts       # Entity: player in queue
@@ -71,7 +78,7 @@ front-end/
 │   │   │   │   │   └── checkMatchmakingStatusInputPort.ts
 │   │   │   │   └── output/
 │   │   │   │       ├── matchmakingPoolPort.ts
-│   │   │   │       └── matchmakingEventPublisherPort.ts
+│   │   │   │       └── matchmakingEventPublisherPort.ts  # Matchmaking 自己的 Port
 │   │   │   └── use-cases/
 │   │   │       ├── enterMatchmakingUseCase.ts
 │   │   │       ├── cancelMatchmakingUseCase.ts
@@ -81,7 +88,7 @@ front-end/
 │   │       ├── persistence/
 │   │       │   └── inMemoryMatchmakingPool.ts
 │   │       ├── event-publisher/
-│   │       │   └── matchmakingEventBus.ts
+│   │       │   └── matchmakingEventBusAdapter.ts  # 委派給 shared event bus
 │   │       ├── registry/
 │   │       │   └── matchmakingRegistry.ts    # Listens to events, processes queue
 │   │       └── mappers/
@@ -90,10 +97,15 @@ front-end/
 │   ├── core-game/
 │   │   ├── application/
 │   │   │   └── ports/output/
-│   │   │       └── internalEventPublisherPort.ts  # Add MATCH_FOUND event
+│   │   │       └── gameEventPublisherPort.ts     # Core Game 自己的 Port (重新命名)
 │   │   └── adapters/
 │   │       └── event-publisher/
-│   │           └── internalEventBus.ts            # Extend with new events
+│   │           └── gameEventBusAdapter.ts        # 委派給 shared event bus
+│   │
+│   ├── opponent/
+│   │   └── adapters/
+│   │       └── event-subscriber/
+│   │           └── opponentEventSubscriberAdapter.ts  # 訂閱 shared event bus
 │   │
 │   ├── api/v1/
 │   │   └── matchmaking/                   # ★ NEW: API routes
@@ -116,21 +128,33 @@ front-end/
             └── index.vue                  # Extend to handle matchmaking state
 ```
 
-**Structure Decision**: Web application structure with Matchmaking BC as a new server-side bounded context under `front-end/server/matchmaking/`, following the existing pattern of `core-game/` and `identity/`. Frontend additions are minimal as we reuse the existing game page's waiting state UI.
+**Structure Decision**:
+- **Shared Infrastructure**: Event Bus 移至 `server/shared/infrastructure/event-bus/`，作為框架級工具，不屬於任何 BC
+- **BC 獨立性**: 每個 BC 定義自己的 Event Publisher/Subscriber Port，透過 Adapter 委派給共用基礎設施
+- **微服務遷移**: 只需替換 `shared/infrastructure/event-bus/` 的實作（如 Kafka），各 BC 完全不變
+- **無跨 BC Import**: BC 之間不直接 import，僅透過共用事件類型溝通
 
 ## Complexity Tracking
 
-> **Required: Adding 4th Bounded Context**
+> **Required: Adding 4th Bounded Context + Shared Infrastructure Layer**
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | 4th BC (Matchmaking) | User requirement: "配對機制是另一外一個 BC，與 core-game, opponent BC 在檔案架構上就做好區別" + Future microservice migration path | Embedding in Core Game BC would violate SRP and make microservice extraction harder |
+| Shared Infrastructure Layer | Event Bus 不應屬於任何 BC，需獨立於所有 BC 之外 | 將 Event Bus 放在 Core Game BC 會導致其他 BC 依賴 Core Game，違反 BC 隔離原則 |
 
 **Justification Details**:
+
+**4th BC (Matchmaking)**:
 1. **Explicit User Requirement**: The spec explicitly requires Matchmaking to be a separate BC
 2. **Single Responsibility**: Matchmaking has distinct domain concepts (queue, timeout tiers, pool management) separate from game rules
 3. **Microservice Readiness**: The Constitution (VII) requires microservice-ready design; separate BC enables independent deployment
-4. **Event-Driven Communication**: Using InternalEventBus for MATCH_FOUND events enables future message queue migration
+
+**Shared Infrastructure Layer**:
+1. **BC Isolation**: Event Bus 若在 Core Game BC 內，Matchmaking BC 必須 import Core Game 的 Port，違反 Constitution VI
+2. **Framework-Level Concern**: Event Bus 是框架級工具，類似 Logger、Database Connection，不應屬於業務 BC
+3. **Microservice Migration**: 共用基礎設施設計讓替換 Event Bus 實作（如 Kafka）只需改一處，各 BC 完全不變
+4. **Symmetric Design**: 所有 BC 平等地使用共用基礎設施，無主從關係
 
 ---
 
@@ -145,11 +169,11 @@ front-end/
 | III. Server Authority | ✅ PASS | All matching logic in server; frontend receives SSE events only; no client-side queue management |
 | IV. Command-Event Architecture | ✅ PASS | REST commands (enter, cancel) + SSE events (MatchmakingStatus, MatchFound) per `contracts/matchmaking-api.yaml` |
 | V. Test-First Development | ✅ PASS | Domain/Application test files planned in structure; >80% coverage target maintained |
-| VI. Bounded Context Isolation | ✅ PASS | Separate `server/matchmaking/` directory; MATCH_FOUND event for cross-BC communication; no direct imports |
-| VII. Microservice-Ready Design | ✅ PASS | UUIDs for all IDs; InternalEventBus for event-driven communication; stateless API |
+| VI. Bounded Context Isolation | ✅ PASS | Event Bus 移至 Shared Infrastructure；每個 BC 定義自己的 Port；BC 之間無直接 import 依賴 |
+| VII. Microservice-Ready Design | ✅ PASS | UUIDs for all IDs; Shared Event Bus 可輕易替換為 Kafka/RabbitMQ; stateless API |
 | VIII. API Contract Adherence | ✅ PASS | OpenAPI 3.0 contract in `contracts/matchmaking-api.yaml` following existing conventions |
 
-**Complexity Justification**: 4th BC (Matchmaking) is justified per Complexity Tracking section above.
+**Complexity Justification**: 4th BC (Matchmaking) + Shared Infrastructure Layer are justified per Complexity Tracking section above.
 
 ---
 

@@ -5,26 +5,22 @@
 
 ## Research Topics
 
-### 1. InternalEventBus Extension Pattern
+### 1. Event Bus 架構設計
 
-**Question**: How to add new event types (PLAYER_ENTERED_QUEUE, MATCH_FOUND) to the existing InternalEventBus?
+**Question**: Event Bus 應該放在哪裡？如何讓各 BC 使用事件通訊而不違反 BC 隔離原則？
 
-**Decision**: Follow the existing ROOM_CREATED pattern - add methods to InternalEventPublisherPort interface and implement in InternalEventBus adapter.
+**Decision**: Event Bus 移至 Shared Infrastructure 層，不屬於任何 BC。每個 BC 定義自己的 Event Publisher/Subscriber Port，透過 Adapter 委派給共用基礎設施。
 
 **Rationale**:
-- Consistent with existing codebase patterns
-- Type-safe event definitions via TypeScript interfaces
-- Loose coupling enables future message queue migration
+- **BC 隔離**: Event Bus 若在 Core Game BC 內，其他 BC 必須 import Core Game 的 Port，違反 Constitution VI
+- **框架級工具**: Event Bus 是基礎設施，類似 Logger、Database Connection，不應屬於業務 BC
+- **對稱設計**: 所有 BC 平等地使用共用基礎設施，無主從關係
+- **微服務遷移**: 只需替換 Shared Infrastructure 實作（如 Kafka），各 BC 完全不變
 
 **Implementation Pattern**:
 ```typescript
-// 1. Define payload types
-export interface PlayerEnteredQueuePayload {
-  readonly playerId: string
-  readonly roomType: RoomTypeId
-  readonly enteredAt: Date
-}
-
+// ===== 1. Shared Infrastructure (不屬於任何 BC) =====
+// server/shared/infrastructure/event-bus/types.ts
 export interface MatchFoundPayload {
   readonly player1Id: string
   readonly player2Id: string
@@ -32,22 +28,60 @@ export interface MatchFoundPayload {
   readonly matchType: 'HUMAN' | 'BOT'
 }
 
-// 2. Extend port interface
-export interface InternalEventPublisherPort {
-  // Existing
-  publishRoomCreated(payload: RoomCreatedPayload): void
-  // New for Matchmaking
-  publishPlayerEnteredQueue(payload: PlayerEnteredQueuePayload): void
-  publishMatchFound(payload: MatchFoundPayload): void
-  onMatchFound(handler: (payload: MatchFoundPayload) => void): Unsubscribe
+export interface RoomCreatedPayload {
+  readonly gameId: string
+  readonly waitingPlayerId: string
 }
 
-// 3. Implement in InternalEventBus adapter
+// server/shared/infrastructure/event-bus/internalEventBus.ts
+class InternalEventBus {
+  private emitter = new EventEmitter()
+
+  publishMatchFound(payload: MatchFoundPayload): void {
+    this.emitter.emit('MATCH_FOUND', payload)
+  }
+
+  onMatchFound(handler: (p: MatchFoundPayload) => void): Unsubscribe {
+    this.emitter.on('MATCH_FOUND', handler)
+    return () => this.emitter.off('MATCH_FOUND', handler)
+  }
+
+  // 同理 ROOM_CREATED...
+}
+
+export const internalEventBus = new InternalEventBus()  // 單例
+
+// ===== 2. Matchmaking BC 自己的 Port =====
+// server/matchmaking/application/ports/output/matchmakingEventPublisherPort.ts
+import type { MatchFoundPayload } from '~/server/shared/infrastructure/event-bus/types'
+
+export abstract class MatchmakingEventPublisherPort {
+  abstract publishMatchFound(payload: MatchFoundPayload): void
+}
+
+// ===== 3. Matchmaking BC 的 Adapter =====
+// server/matchmaking/adapters/event-publisher/matchmakingEventBusAdapter.ts
+import { internalEventBus } from '~/server/shared/infrastructure/event-bus'
+
+export class MatchmakingEventBusAdapter extends MatchmakingEventPublisherPort {
+  publishMatchFound(payload: MatchFoundPayload): void {
+    internalEventBus.publishMatchFound(payload)  // 委派給共用基礎設施
+  }
+}
+
+// ===== 4. Core Game BC 訂閱事件 =====
+// server/core-game/adapters/event-subscriber/gameCreationHandler.ts
+import { internalEventBus } from '~/server/shared/infrastructure/event-bus'
+
+internalEventBus.onMatchFound(async (payload) => {
+  // 建立遊戲邏輯
+})
 ```
 
 **Alternatives Considered**:
-- Separate MatchmakingEventBus: Rejected - unnecessary complexity, InternalEventBus already handles cross-BC events
-- Direct method calls between BCs: Rejected - tight coupling, violates microservice-ready design
+- ❌ **將 Port 放在 Core Game BC**: Rejected - 其他 BC 必須 import Core Game，違反 BC 隔離
+- ❌ **每個 BC 有自己的 Event Bus**: Rejected - 無法跨 BC 通訊
+- ❌ **Direct method calls between BCs**: Rejected - 緊耦合，違反微服務設計
 
 ---
 
@@ -138,24 +172,43 @@ function clearMatchmakingTimers(entry: MatchmakingEntry): void {
 
 **Question**: How does Matchmaking BC trigger game creation after match found?
 
-**Decision**: Publish MATCH_FOUND event via InternalEventBus; Core Game BC subscribes and creates game.
+**Decision**: Matchmaking BC 透過自己的 `MatchmakingEventPublisherPort` 發布事件，Adapter 委派給 Shared Infrastructure 的 Event Bus；Core Game BC 訂閱事件並建立遊戲。
 
 **Rationale**:
-- Follows existing OpponentRegistry pattern (ROOM_CREATED → AI joins)
-- Loose coupling between BCs
-- Clear responsibility separation
+- **無跨 BC Import**: Matchmaking 不直接依賴 Core Game 的任何程式碼
+- **鬆耦合**: 透過共用事件類型定義通訊，BC 可獨立演化
+- **微服務遷移**: 只需將 Event Bus 替換為 Message Queue，BC 程式碼不變
 
 **Integration Flow**:
 ```
 1. MatchmakingRegistry finds match
    ↓
-2. Publish MATCH_FOUND event (player1Id, player2Id, roomType, matchType)
+2. MatchmakingEventPublisherPort.publishMatchFound(payload)
    ↓
-3. Core Game BC (GameCreationHandler) subscribes to MATCH_FOUND
+3. MatchmakingEventBusAdapter 委派給 internalEventBus.publishMatchFound()
    ↓
-4. GameCreationHandler creates game with both players
+4. Core Game BC 的 gameCreationHandler 監聽 internalEventBus.onMatchFound()
    ↓
-5. JoinGameUseCase returns 'game_started' to both SSE connections
+5. GameCreationHandler creates game with both players
+   ↓
+6. 透過 SSE 通知雙方玩家 'game_started'
+```
+
+**Dependency Direction**:
+```
+                    ┌──────────────────────────────┐
+                    │   Shared Infrastructure      │
+                    │   (Event Bus + Types)        │
+                    └──────────────────────────────┘
+                           ▲              ▲
+                           │              │
+              import types │              │ import types + bus
+                           │              │
+                    ┌──────┴──────┐ ┌─────┴──────┐
+                    │ Matchmaking │ │ Core Game  │
+                    │ BC          │ │ BC         │
+                    └─────────────┘ └────────────┘
+                    (無直接依賴)
 ```
 
 **Key Integration Point**:
@@ -163,8 +216,9 @@ function clearMatchmakingTimers(entry: MatchmakingEntry): void {
 - For bot fallback: Matchmaking publishes MATCH_FOUND with matchType='BOT', Core Game triggers OpponentRegistry via existing ROOM_CREATED flow
 
 **Alternatives Considered**:
-- Matchmaking directly calls JoinGameUseCase: Rejected - cross-BC direct calls violate isolation
-- Shared database write: Rejected - eventual consistency issues
+- ❌ Matchmaking directly calls JoinGameUseCase: Rejected - cross-BC direct calls violate isolation
+- ❌ Matchmaking imports Core Game's Port: Rejected - creates BC dependency
+- ❌ Shared database write: Rejected - eventual consistency issues
 
 ---
 
@@ -237,17 +291,48 @@ function enterMatchmaking(input: EnterMatchmakingInput): EnterMatchmakingOutput 
 
 | Topic | Decision | Key Benefit |
 |-------|----------|-------------|
-| Event Bus Extension | Extend InternalEventPublisherPort | Type-safe, consistent |
+| Event Bus 架構 | 移至 Shared Infrastructure，各 BC 定義自己的 Port | BC 隔離、微服務遷移容易 |
 | Queue Structure | In-memory Map by room type | Simple, fast matching |
 | Timer Management | Per-entry setTimeout cascade | Precise, cancelable |
-| Core Game Integration | MATCH_FOUND event | Loose coupling |
+| Core Game Integration | MATCH_FOUND event via shared bus | 鬆耦合、無跨 BC import |
 | SSE Architecture | Dedicated matchmaking endpoint | Clean lifecycle |
 | Duplicate Prevention | Reject at entry time | Spec-compliant |
 
 ## Dependencies Identified
 
-1. **InternalEventBus** - Must be extended with new event types
+1. **Shared Infrastructure (Event Bus)** - 新增 `server/shared/infrastructure/event-bus/`，提供跨 BC 事件通訊
 2. **Identity BC** - Player ID verification before queue entry
-3. **Core Game BC** - Subscribe to MATCH_FOUND, create game sessions
+3. **Core Game BC** - Subscribe to MATCH_FOUND (透過 Shared Event Bus), create game sessions
 4. **Opponent BC** - Triggered via existing ROOM_CREATED for bot fallback
 5. **Frontend UIStateStore** - Display matchmaking status messages
+
+## Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      Shared Infrastructure                              │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  server/shared/infrastructure/event-bus/                         │   │
+│  │  ├── types.ts           (MatchFoundPayload, RoomCreatedPayload)  │   │
+│  │  ├── internalEventBus.ts (MVP: in-memory EventEmitter)           │   │
+│  │  └── index.ts           (匯出單例)                               │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+         ┌───────────────────────┼───────────────────────┐
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  Matchmaking BC │     │  Core Game BC   │     │  Opponent BC    │
+│                 │     │                 │     │                 │
+│  Port:          │     │  Subscriber:    │     │  Subscriber:    │
+│  Matchmaking    │     │  gameCreation   │     │  opponent       │
+│  EventPublisher │     │  Handler        │     │  Registry       │
+│  Port           │     │                 │     │                 │
+│        │        │     │        ▲        │     │        ▲        │
+│        ▼        │     │        │        │     │        │        │
+│  Adapter:       │     │  onMatchFound() │     │  onRoomCreated()│
+│  委派給 shared  │     │                 │     │                 │
+│  event bus      │     │                 │     │                 │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+```
