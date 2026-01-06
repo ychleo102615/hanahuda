@@ -37,15 +37,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnterMatchmakingResponse'
         '400':
-          description: Already in matchmaking queue
+          description: Already in matchmaking queue or in an active game
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MatchmakingError'
-              example:
-                success: false
-                error_code: ALREADY_IN_QUEUE
-                message: You are already in the matchmaking queue
+              examples:
+                already_in_queue:
+                  summary: Player already in matchmaking queue
+                  value:
+                    success: false
+                    error_code: ALREADY_IN_QUEUE
+                    message: You are already in the matchmaking queue
+                already_in_game:
+                  summary: Player has an active game in progress
+                  value:
+                    success: false
+                    error_code: ALREADY_IN_GAME
+                    message: You have an active game in progress
         '401':
           description: Not authenticated
           content:
@@ -209,6 +218,7 @@ components:
           type: string
           enum:
             - ALREADY_IN_QUEUE
+            - ALREADY_IN_GAME
             - NOT_IN_QUEUE
             - INVALID_ROOM_TYPE
             - ENTRY_NOT_FOUND

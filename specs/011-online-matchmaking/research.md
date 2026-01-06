@@ -287,6 +287,69 @@ function enterMatchmaking(input: EnterMatchmakingInput): EnterMatchmakingOutput 
 
 ---
 
+### 7. Cross-BC Query: Player Active Game Status
+
+**Question**: Matchmaking BC 需要查詢「玩家是否有進行中的遊戲」，應該如何實作？
+
+**Decision**: Matchmaking BC 定義 `PlayerGameStatusPort` 抽象介面；Core Game BC 提供 `PlayerGameStatusAdapter` 實作。
+
+**Rationale**:
+- **業務知識歸屬**：「什麼是進行中的遊戲」是 Core Game BC 的領域知識
+- **BC 隔離**：Matchmaking 不需要知道 game table schema 或判斷邏輯
+- **Scale 責任分離**：Core Game BC 內部決定查詢實作（DB、Redis、Cache）
+- **效能足夠**：進入配對不是高頻操作，同步查詢延遲可接受
+
+**Implementation Pattern**:
+```typescript
+// ===== Matchmaking BC 定義需求（Port） =====
+// server/matchmaking/application/ports/output/playerGameStatusPort.ts
+export abstract class PlayerGameStatusPort {
+  abstract hasActiveGame(playerId: string): Promise<boolean>
+}
+
+// ===== Core Game BC 提供實作（Adapter） =====
+// server/core-game/adapters/query/playerGameStatusAdapter.ts
+import type { PlayerGameStatusPort } from '~/server/matchmaking/application/ports/output/playerGameStatusPort'
+
+export class PlayerGameStatusAdapter extends PlayerGameStatusPort {
+  constructor(private gameStore: GameStorePort) {}
+
+  async hasActiveGame(playerId: string): Promise<boolean> {
+    // Core Game BC 內部決定實作方式：
+    // - MVP: 查 in-memory store
+    // - 未來: 加 Redis cache、查 DB
+    const game = await this.gameStore.findActiveByPlayerId(playerId)
+    return game !== null
+  }
+}
+```
+
+**Dependency Direction**:
+```
+┌─────────────────┐                    ┌─────────────────┐
+│  Matchmaking BC │                    │  Core Game BC   │
+│                 │                    │                 │
+│ PlayerGame      │  ◄─── implements   │ PlayerGame      │
+│ StatusPort      │                    │ StatusAdapter   │
+│ (abstract)      │                    │                 │
+└─────────────────┘                    └─────────────────┘
+
+Matchmaking 定義介面，Core Game 提供實作
+（Dependency Inversion Principle）
+```
+
+**Why Not Direct Database Query?**
+- ❌ 違反 BC 隔離 — Matchmaking 需要知道 Core Game 的 schema
+- ❌ 業務邏輯外洩 — 「進行中」的判斷屬於 Core Game 領域知識
+- ❌ Schema 耦合 — Core Game 改 schema 會影響 Matchmaking
+
+**Why Not Event-Driven (Subscribe to GAME_STARTED/GAME_ENDED)?**
+- ❌ 資料同步風險 — 需維護重複狀態
+- ❌ 複雜度增加 — 需處理事件遺失、順序問題
+- ✅ 查詢是冪等的，同步調用簡單可靠
+
+---
+
 ## Summary of Decisions
 
 | Topic | Decision | Key Benefit |
@@ -297,12 +360,13 @@ function enterMatchmaking(input: EnterMatchmakingInput): EnterMatchmakingOutput 
 | Core Game Integration | MATCH_FOUND event via shared bus | 鬆耦合、無跨 BC import |
 | SSE Architecture | Dedicated matchmaking endpoint | Clean lifecycle |
 | Duplicate Prevention | Reject at entry time | Spec-compliant |
+| Cross-BC Query | Matchmaking 定義 Port，Core Game 提供 Adapter | 業務知識歸屬正確、Scale 責任分離 |
 
 ## Dependencies Identified
 
 1. **Shared Infrastructure (Event Bus)** - 新增 `server/shared/infrastructure/event-bus/`，提供跨 BC 事件通訊
 2. **Identity BC** - Player ID verification before queue entry
-3. **Core Game BC** - Subscribe to MATCH_FOUND (透過 Shared Event Bus), create game sessions
+3. **Core Game BC** - Subscribe to MATCH_FOUND (透過 Shared Event Bus), create game sessions; provide `PlayerGameStatusAdapter` for active game query
 4. **Opponent BC** - Triggered via existing ROOM_CREATED for bot fallback
 5. **Frontend UIStateStore** - Display matchmaking status messages
 
@@ -325,14 +389,22 @@ function enterMatchmaking(input: EnterMatchmakingInput): EnterMatchmakingOutput 
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  Matchmaking BC │     │  Core Game BC   │     │  Opponent BC    │
 │                 │     │                 │     │                 │
-│  Port:          │     │  Subscriber:    │     │  Subscriber:    │
-│  Matchmaking    │     │  gameCreation   │     │  opponent       │
-│  EventPublisher │     │  Handler        │     │  Registry       │
-│  Port           │     │                 │     │                 │
-│        │        │     │        ▲        │     │        ▲        │
-│        ▼        │     │        │        │     │        │        │
-│  Adapter:       │     │  onMatchFound() │     │  onRoomCreated()│
-│  委派給 shared  │     │                 │     │                 │
-│  event bus      │     │                 │     │                 │
+│  Ports:         │     │  Subscriber:    │     │  Subscriber:    │
+│  ├─ Matchmaking │     │  gameCreation   │     │  opponent       │
+│  │  EventPublish│     │  Handler        │     │  Registry       │
+│  │  erPort      │     │                 │     │                 │
+│  │      │       │     │        ▲        │     │        ▲        │
+│  │      ▼       │     │        │        │     │        │        │
+│  │  Adapter:    │     │  onMatchFound() │     │  onRoomCreated()│
+│  │  委派給 event│     │                 │     │                 │
+│  │  bus         │     │                 │     │                 │
+│  │              │     │                 │     │                 │
+│  └─ PlayerGame  │     │  Adapter:       │     │                 │
+│     StatusPort  │────►│  PlayerGame     │     │                 │
+│     (abstract)  │query│  StatusAdapter  │     │                 │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
+
+Communication Patterns:
+1. Event-Driven (Async): Matchmaking → Event Bus → Core Game (MATCH_FOUND)
+2. Query (Sync): Matchmaking → Core Game (PlayerGameStatusPort)
 ```

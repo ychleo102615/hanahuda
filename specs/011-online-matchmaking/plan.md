@@ -78,7 +78,8 @@ front-end/
 │   │   │   │   │   └── checkMatchmakingStatusInputPort.ts
 │   │   │   │   └── output/
 │   │   │   │       ├── matchmakingPoolPort.ts
-│   │   │   │       └── matchmakingEventPublisherPort.ts  # Matchmaking 自己的 Port
+│   │   │   │       ├── matchmakingEventPublisherPort.ts  # Matchmaking 自己的 Port
+│   │   │   │       └── playerGameStatusPort.ts           # 查詢玩家是否有進行中的遊戲
 │   │   │   └── use-cases/
 │   │   │       ├── enterMatchmakingUseCase.ts
 │   │   │       ├── cancelMatchmakingUseCase.ts
@@ -99,8 +100,12 @@ front-end/
 │   │   │   └── ports/output/
 │   │   │       └── gameEventPublisherPort.ts     # Core Game 自己的 Port (重新命名)
 │   │   └── adapters/
-│   │       └── event-publisher/
-│   │           └── gameEventBusAdapter.ts        # 委派給 shared event bus
+│   │       ├── event-publisher/
+│   │       │   └── gameEventBusAdapter.ts        # 委派給 shared event bus
+│   │       ├── event-subscriber/
+│   │       │   └── gameCreationHandler.ts        # 訂閱 MATCH_FOUND 事件
+│   │       └── query/
+│   │           └── playerGameStatusAdapter.ts    # 實作 Matchmaking BC 的 PlayerGameStatusPort
 │   │
 │   ├── opponent/
 │   │   └── adapters/

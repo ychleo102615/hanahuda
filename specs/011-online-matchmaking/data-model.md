@@ -80,6 +80,7 @@ type MatchmakingEntryStatus =
 
 **Business Rules**:
 - A player can only have one active entry at a time
+- A player cannot enter matchmaking while having an active game in progress
 - Entry is removed from queue when status changes to MATCHED, CANCELLED, or EXPIRED
 - Bot fallback ensures EXPIRED state should never occur in normal operation
 

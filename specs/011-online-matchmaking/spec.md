@@ -115,6 +115,9 @@ Players are only matched with others who selected the same room type (Quick/Stan
 - What happens if a player tries to matchmake while already in the queue (e.g., multiple browser tabs)?
   - System rejects the request at lobby stage with an error message; player must use existing session
 
+- What happens if a player tries to matchmake while already in an active game?
+  - System rejects the request at lobby stage with an error message; player must finish or abandon current game first
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -134,6 +137,7 @@ Players are only matched with others who selected the same room type (Quick/Stan
 - **FR-012**: System MUST use the existing frontend notification/status components to display matchmaking messages
 - **FR-013**: All user-facing matchmaking messages MUST be in English
 - **FR-015**: System MUST reject matchmaking requests from players already in the queue, showing an error at lobby stage
+- **FR-016**: System MUST reject matchmaking requests from players who have an active game in progress, showing an error at lobby stage
 
 ### Key Entities *(include if feature involves data)*
 
@@ -179,7 +183,7 @@ Players are only matched with others who selected the same room type (Quick/Stan
 ## Dependencies
 
 - Identity BC: Player authentication and identification
-- Core Game BC: Game session creation when match is found
+- Core Game BC: Game session creation when match is found; player active game status query (via `PlayerGameStatusPort`)
 - Opponent BC: Bot opponent spawning for fallback scenarios
 - Existing frontend notification system: Status message display
 
@@ -191,3 +195,5 @@ Players are only matched with others who selected the same room type (Quick/Stan
 - Q: How should Matchmaking BC communicate with Core Game BC when match found? → A: Event-driven - Matchmaking publishes "MatchFound" event, Core Game subscribes and creates game
 - Q: Can guest (unauthenticated) players participate in matchmaking? → A: Yes, both guests and registered players can matchmake together
 - Q: What if player attempts matchmaking while already in queue (e.g., multiple tabs)? → A: Reject at lobby stage with error message, player does not enter matchmaking phase
+- Q: What if player attempts matchmaking while already in an active game? → A: Reject at lobby stage with error message; one player can only participate in one game or one matchmaking at a time
+- Q: How does Matchmaking BC know if a player has an active game (cross-BC query)? → A: Matchmaking BC defines `PlayerGameStatusPort`; Core Game BC provides adapter implementation. This maintains BC isolation while allowing necessary queries.
