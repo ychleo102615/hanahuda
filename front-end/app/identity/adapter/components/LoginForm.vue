@@ -66,8 +66,10 @@ async function handleSubmit() {
 
     emit('success')
   } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'statusMessage' in error) {
-      errorMessage.value = (error as { statusMessage: string }).statusMessage
+    // H3 error 結構: error.data = { statusCode, statusMessage, data: { message } }
+    if (error && typeof error === 'object') {
+      const err = error as { data?: { data?: { message?: string }; statusMessage?: string } }
+      errorMessage.value = err.data?.data?.message || err.data?.statusMessage || 'Login failed. Please check your credentials and try again.'
     } else {
       errorMessage.value = 'Login failed. Please check your credentials and try again.'
     }

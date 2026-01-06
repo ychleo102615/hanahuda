@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import { useResponsiveMenu } from '~/composables/useResponsiveMenu'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
+import { Z_INDEX } from '~/constants'
 import PlayerBadge from '~/components/PlayerBadge.vue'
 import { type MenuItem, iconPaths } from './types'
 
@@ -77,9 +78,10 @@ const handleDeleteAccount = () => {
   <div
     v-if="isMobile"
     :class="[
-      'absolute left-0 right-0 top-full bg-gray-800 overflow-hidden transition-all duration-300 z-50 shadow-lg',
+      'absolute left-0 right-0 top-full bg-gray-800 overflow-hidden transition-all duration-300 shadow-lg',
       isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0',
     ]"
+    :style="{ zIndex: Z_INDEX.PANEL }"
   >
     <div class="py-4 space-y-2 border-t border-gray-700">
       <!-- Player Info Section -->
@@ -154,7 +156,8 @@ const handleDeleteAccount = () => {
   <!-- Mobile: Backdrop (when dropdown is open) -->
   <div
     v-if="isMobile && isOpen"
-    class="fixed inset-0 z-40"
+    class="fixed inset-0"
+    :style="{ zIndex: Z_INDEX.OVERLAY }"
     @click="closeMenu"
   />
 
@@ -163,7 +166,8 @@ const handleDeleteAccount = () => {
     <Transition name="fade">
       <div
         v-if="!isMobile && isOpen"
-        class="fixed inset-0 z-50"
+        class="fixed inset-0"
+        :style="{ zIndex: Z_INDEX.PANEL }"
       >
         <!-- Backdrop -->
         <div

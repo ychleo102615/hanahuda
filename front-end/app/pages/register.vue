@@ -22,7 +22,7 @@ const router = useRouter()
 
 function handleSuccess() {
   // 註冊成功後導向首頁或 lobby
-  router.push('/lobby')
+  router.push('/')
 }
 
 function handleCancel() {

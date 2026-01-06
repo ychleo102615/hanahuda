@@ -124,7 +124,7 @@ defineExpose({
     <ResponsiveMenu
       :is-open="isMenuOpen"
       :menu-items="props.menuItems"
-      :show-player-actions="true"
+      :show-player-actions="!isGuest"
       @close="closeMenu"
       @logout="emit('logout')"
       @delete-account="emit('deleteAccount')"
