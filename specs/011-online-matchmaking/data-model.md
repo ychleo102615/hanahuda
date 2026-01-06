@@ -115,14 +115,12 @@ The collection of all players currently waiting for matches, organized by room t
 
 ### MatchResult
 
-The outcome of a successful match between two players.
+The outcome of a successful match between two players. This is a Domain-level Value Object containing only core matching information.
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `player1Id` | `string` (UUID) | First player's ID |
 | `player2Id` | `string` (UUID) | Second player's ID |
-| `player1Name` | `string` | First player's name |
-| `player2Name` | `string` | Second player's name |
 | `roomType` | `RoomTypeId` | Room type for the match |
 | `matchType` | `MatchType` | Human vs Bot indicator |
 | `matchedAt` | `Date` | Timestamp of match |
@@ -131,6 +129,8 @@ The outcome of a successful match between two players.
 ```typescript
 type MatchType = 'HUMAN' | 'BOT'
 ```
+
+**Note**: `playerName` is intentionally excluded from this VO. Names are presentation-layer concerns and already exist in `MatchmakingEntry`. When publishing events (e.g., `MatchFoundPayload`), names are assembled from the entries at the Use Case/Adapter layer.
 
 ---
 
