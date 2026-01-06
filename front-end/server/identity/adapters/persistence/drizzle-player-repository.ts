@@ -7,7 +7,7 @@
  * 參考: specs/010-player-account/plan.md - Adapter Layer
  */
 
-import { eq, and, lt } from 'drizzle-orm'
+import { eq, and, lt, isNull } from 'drizzle-orm'
 import { PlayerRepositoryPort } from '../../application/ports/output/player-repository-port'
 import { players, type NewPlayer } from '~~/server/database/schema'
 import type { Player, PlayerId } from '../../domain/player/player'
@@ -63,7 +63,12 @@ export class DrizzlePlayerRepository extends PlayerRepositoryPort {
     const [record] = await this.db
       .select()
       .from(players)
-      .where(eq(players.id, id))
+      .where(
+        and(
+          eq(players.id, id),
+          isNull(players.deletedAt),
+        ),
+      )
       .limit(1)
 
     return record ? toDomainPlayer(record) : null
@@ -73,7 +78,12 @@ export class DrizzlePlayerRepository extends PlayerRepositoryPort {
     const [record] = await this.db
       .select()
       .from(players)
-      .where(eq(players.displayName, displayName))
+      .where(
+        and(
+          eq(players.displayName, displayName),
+          isNull(players.deletedAt),
+        ),
+      )
       .limit(1)
 
     return record ? toDomainPlayer(record) : null
@@ -98,19 +108,26 @@ export class DrizzlePlayerRepository extends PlayerRepositoryPort {
   }
 
   async delete(id: PlayerId): Promise<void> {
-    await this.db.delete(players).where(eq(players.id, id))
+    // 軟刪除：設定 deletedAt 時間戳
+    await this.db
+      .update(players)
+      .set({ deletedAt: new Date() })
+      .where(eq(players.id, id))
   }
 
   async deleteInactiveGuests(inactiveDays: number): Promise<number> {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - inactiveDays)
 
+    // 軟刪除：設定 deletedAt 時間戳
     const deleted = await this.db
-      .delete(players)
+      .update(players)
+      .set({ deletedAt: new Date() })
       .where(
         and(
           eq(players.isGuest, true),
           lt(players.updatedAt, cutoffDate),
+          isNull(players.deletedAt),
         ),
       )
       .returning({ id: players.id })

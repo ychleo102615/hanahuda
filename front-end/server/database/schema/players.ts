@@ -28,6 +28,9 @@ export const players = pgTable('players', {
 
   /** 更新時間 */
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+
+  /** 軟刪除時間（null = 未刪除） */
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
 })
 
 /**

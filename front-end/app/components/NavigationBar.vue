@@ -259,8 +259,8 @@ onUnmounted(() => {
                 <div class="text-xs text-gray-400">{{ player.isGuest ? 'Guest account' : 'Registered' }}</div>
               </div>
             </div>
-            <!-- Action buttons -->
-            <div class="mt-3 flex gap-4">
+            <!-- Action buttons (僅已註冊用戶顯示) -->
+            <div v-if="!player.isGuest" class="mt-3 flex gap-4">
               <button
                 @click="emit('logoutClick'); closeMobileMenu()"
                 class="text-sm text-gray-300 hover:text-white transition-colors flex items-center gap-1.5"

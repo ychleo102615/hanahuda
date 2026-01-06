@@ -119,23 +119,23 @@ export class DeleteAccountUseCase {
 
       // 4. 執行刪除（按順序處理外鍵約束）
 
-      // 4.1 刪除所有 Sessions
+      // 4.1 刪除所有 Sessions（硬刪除，安全考量）
       await this.sessionStore.deleteByPlayerId(player.id)
 
-      // 4.2 刪除 OAuth Links（若有帳號）
+      // 4.2 刪除 OAuth Links（硬刪除，若有帳號）
       if (account) {
         await this.oauthLinkRepository.deleteByAccountId(account.id)
       }
 
-      // 4.3 刪除 Account（若有）
+      // 4.3 刪除 Account（硬刪除，若有）
       if (account) {
         await this.accountRepository.delete(account.id)
       }
 
-      // 4.4 刪除 Player Stats（若有）
+      // 4.4 刪除 Player Stats（硬刪除，若有）
       await this.playerStatsRepository.deleteByPlayerId(player.id)
 
-      // 4.5 刪除 Player
+      // 4.5 軟刪除 Player（設定 deletedAt）
       await this.playerRepository.delete(player.id)
 
       // 5. 回傳結果

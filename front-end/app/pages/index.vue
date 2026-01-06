@@ -7,6 +7,7 @@ import Footer from '~/components/Footer.vue'
 import LoginModal from '~/identity/adapter/components/LoginModal.vue'
 import PlayerProfilePopover from '~/components/PlayerProfilePopover.vue'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
+import UnifiedToast from '~/components/UnifiedToast.vue'
 import type { RuleCategoryUnion, YakuCard } from '~/types/rules'
 import type { NavigationLink } from '~/components/NavigationBar.vue'
 import rulesDataJson from '~/data/rules.json'
@@ -289,6 +290,9 @@ const handleLoginSuccess = () => {
 
     <!-- Footer -->
     <Footer />
+
+    <!-- Toast Notifications -->
+    <UnifiedToast />
   </div>
 </template>
 
