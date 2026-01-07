@@ -18,7 +18,7 @@ definePageMeta({
   middleware: 'game',
 })
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useDependency, useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
 import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
 import type { SessionContextPort, GameConnectionPort } from '~/user-interface/application/ports/output'
@@ -39,12 +39,15 @@ import UnifiedToast from '~/components/UnifiedToast.vue'
 import ConfirmationHint from './components/ConfirmationHint.vue'
 import ConfirmDialog from '~/components/ConfirmDialog.vue'
 import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
+import MatchmakingStatusOverlay from './components/MatchmakingStatusOverlay.vue'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
 import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
 import { useGameMode } from '~/user-interface/adapter/composables/useGameMode'
 import { usePageVisibility } from '~/user-interface/adapter/composables/usePageVisibility'
+import { useMatchmakingConnection } from '~/user-interface/adapter/composables/useMatchmakingConnection'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
+import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
@@ -52,6 +55,10 @@ const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const gameMode = useGameMode()
+
+// 配對狀態（011-online-matchmaking）
+const matchmakingStore = useMatchmakingStateStore()
+const matchmakingConnection = useMatchmakingConnection()
 
 // 頁面可見性監控（自動重連）
 usePageVisibility()
@@ -106,12 +113,56 @@ const handlePlayerInfoCardClose = () => {
 
 // GamePage 不再直接調用業務 Port，由子組件負責
 
+// 011-online-matchmaking: 監聽配對狀態變化
+// 當配對成功（matched）時，轉換到遊戲 SSE
+watch(
+  () => matchmakingStore.status,
+  (newStatus) => {
+    if (newStatus === 'matched') {
+      // 配對成功，延遲後轉換到遊戲 SSE
+      setTimeout(() => {
+        // 清除配對狀態
+        sessionContext.clearMatchmaking()
+
+        // 從 matchmakingStore 取得 gameId 並設定到 sessionContext
+        const gameId = matchmakingStore.gameId
+        if (gameId) {
+          sessionContext.setGameId(gameId)
+        }
+
+        // 清除 matchmaking store
+        matchmakingStore.clearSession()
+
+        // 建立遊戲 SSE 連線
+        if (startGameUseCase) {
+          startGameUseCase.execute()
+        }
+      }, 1500) // 讓使用者看到配對成功訊息
+    }
+  }
+)
+
+// 011-online-matchmaking: 取消配對
+const handleCancelMatchmaking = async () => {
+  await matchmakingConnection.cancelMatchmaking()
+  navigateTo('/lobby')
+}
+
 onMounted(() => {
 
   // 檢查是否有 playerId
   const playerId = sessionContext.getPlayerId()
   if (!playerId) {
     navigateTo('/lobby')
+    return
+  }
+
+  // 檢查是否處於線上配對模式（011-online-matchmaking）
+  const isMatchmakingMode = sessionContext.isMatchmakingMode()
+
+  if (isMatchmakingMode) {
+    // 配對模式：連線到配對 SSE
+    matchmakingConnection.connect()
     return
   }
 
@@ -234,6 +285,9 @@ onUnmounted(() => {
       @confirm="handleLeaveGameConfirm"
       @cancel="handleLeaveGameCancel"
     />
+
+    <!-- 011-online-matchmaking: 配對狀態覆蓋層 -->
+    <MatchmakingStatusOverlay @cancel="handleCancelMatchmaking" />
   </div>
 </template>
 

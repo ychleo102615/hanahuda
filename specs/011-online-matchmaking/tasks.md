@@ -25,10 +25,10 @@
 
 **Purpose**: Create Event Bus infrastructure in Shared Infrastructure layer (required by all BCs)
 
-- [ ] T001 Create directory structure for Matchmaking BC in `front-end/server/matchmaking/` with domain/, application/, adapters/ subdirectories
-- [ ] T002 [P] Create Shared Infrastructure event bus types in `front-end/server/shared/infrastructure/event-bus/types.ts` (MatchFoundPayload, RoomCreatedPayload per research.md)
-- [ ] T003 [P] Implement InternalEventBus singleton in `front-end/server/shared/infrastructure/event-bus/internalEventBus.ts` (in-memory EventEmitter pattern)
-- [ ] T004 Create barrel export in `front-end/server/shared/infrastructure/event-bus/index.ts`
+- [X] T001 Create directory structure for Matchmaking BC in `front-end/server/matchmaking/` with domain/, application/, adapters/ subdirectories
+- [X] T002 [P] Create Shared Infrastructure event bus types in `front-end/server/shared/infrastructure/event-bus/types.ts` (MatchFoundPayload, RoomCreatedPayload per research.md)
+- [X] T003 [P] Implement InternalEventBus singleton in `front-end/server/shared/infrastructure/event-bus/internalEventBus.ts` (in-memory EventEmitter pattern)
+- [X] T004 Create barrel export in `front-end/server/shared/infrastructure/event-bus/index.ts`
 
 ---
 
@@ -40,26 +40,26 @@
 
 ### Domain Layer
 
-- [ ] T005 [P] Create MatchmakingEntry entity in `front-end/server/matchmaking/domain/matchmakingEntry.ts` (id, playerId, playerName, roomType, status, enteredAt per data-model.md)
-- [ ] T006 [P] Create MatchResult value object in `front-end/server/matchmaking/domain/matchResult.ts` (player1Id, player2Id, roomType, matchType, matchedAt)
-- [ ] T007 [P] Create MatchmakingStatus value object in `front-end/server/matchmaking/domain/matchmakingStatus.ts` (status, message, elapsedSeconds)
-- [ ] T008 [P] Create domain events in `front-end/server/matchmaking/domain/matchmakingEvents.ts` (PlayerEnteredQueue, MatchFound, PlayerLeftQueue)
-- [ ] T009 Create MatchmakingPool aggregate root in `front-end/server/matchmaking/domain/matchmakingPool.ts` (add, remove, findByPlayerId, findMatch, getByRoomType, updateStatus per data-model.md)
+- [X] T005 [P] Create MatchmakingEntry entity in `front-end/server/matchmaking/domain/matchmakingEntry.ts` (id, playerId, playerName, roomType, status, enteredAt per data-model.md)
+- [X] T006 [P] Create MatchResult value object in `front-end/server/matchmaking/domain/matchResult.ts` (player1Id, player2Id, roomType, matchType, matchedAt)
+- [X] T007 [P] Create MatchmakingStatus value object in `front-end/server/matchmaking/domain/matchmakingStatus.ts` (status, message, elapsedSeconds)
+- [X] T008 [P] Create domain events in `front-end/server/matchmaking/domain/matchmakingEvents.ts` (PlayerEnteredQueue, MatchFound, PlayerLeftQueue)
+- [X] T009 Create MatchmakingPool aggregate root in `front-end/server/matchmaking/domain/matchmakingPool.ts` (add, remove, findByPlayerId, findMatch, getByRoomType, updateStatus per data-model.md)
 
 ### Domain Layer Tests
 
-- [ ] T010 [P] Write unit tests for MatchmakingEntry in `front-end/server/matchmaking/domain/__tests__/matchmakingEntry.test.ts`
-- [ ] T011 [P] Write unit tests for MatchResult in `front-end/server/matchmaking/domain/__tests__/matchResult.test.ts`
-- [ ] T012 Write unit tests for MatchmakingPool in `front-end/server/matchmaking/domain/__tests__/matchmakingPool.test.ts` (FIFO ordering, no duplicate playerIds, room type grouping)
+- [X] T010 [P] Write unit tests for MatchmakingEntry in `front-end/tests/server/matchmaking/domain/matchmakingEntry.test.ts`
+- [X] T011 [P] Write unit tests for MatchResult in `front-end/tests/server/matchmaking/domain/matchResult.test.ts`
+- [X] T012 Write unit tests for MatchmakingPool in `front-end/tests/server/matchmaking/domain/matchmakingPool.test.ts` (FIFO ordering, no duplicate playerIds, room type grouping)
 
 ### Application Ports (Contracts)
 
-- [ ] T013 [P] Create EnterMatchmakingInputPort in `front-end/server/matchmaking/application/ports/input/enterMatchmakingInputPort.ts`
-- [ ] T014 [P] Create CancelMatchmakingInputPort in `front-end/server/matchmaking/application/ports/input/cancelMatchmakingInputPort.ts`
-- [ ] T015 [P] Create CheckMatchmakingStatusInputPort in `front-end/server/matchmaking/application/ports/input/checkMatchmakingStatusInputPort.ts`
-- [ ] T016 [P] Create MatchmakingPoolPort (output) in `front-end/server/matchmaking/application/ports/output/matchmakingPoolPort.ts`
-- [ ] T017 [P] Create MatchmakingEventPublisherPort in `front-end/server/matchmaking/application/ports/output/matchmakingEventPublisherPort.ts`
-- [ ] T018 [P] Create PlayerGameStatusPort in `front-end/server/matchmaking/application/ports/output/playerGameStatusPort.ts` (hasActiveGame method per research.md Section 7)
+- [X] T013 [P] Create EnterMatchmakingInputPort in `front-end/server/matchmaking/application/ports/input/enterMatchmakingInputPort.ts`
+- [X] T014 [P] Create CancelMatchmakingInputPort in `front-end/server/matchmaking/application/ports/input/cancelMatchmakingInputPort.ts`
+- [X] T015 [P] Create CheckMatchmakingStatusInputPort in `front-end/server/matchmaking/application/ports/input/checkMatchmakingStatusInputPort.ts`
+- [X] T016 [P] Create MatchmakingPoolPort (output) in `front-end/server/matchmaking/application/ports/output/matchmakingPoolPort.ts`
+- [X] T017 [P] Create MatchmakingEventPublisherPort in `front-end/server/matchmaking/application/ports/output/matchmakingEventPublisherPort.ts`
+- [X] T018 [P] Create PlayerGameStatusPort in `front-end/server/matchmaking/application/ports/output/playerGameStatusPort.ts` (hasActiveGame method per research.md Section 7)
 
 **Checkpoint**: Foundation ready - Domain contracts established, user story implementation can begin
 
@@ -73,20 +73,20 @@
 
 ### Tests for User Story 1
 
-- [ ] T019 Write unit tests for EnterMatchmakingUseCase in `front-end/server/matchmaking/application/use-cases/__tests__/enterMatchmakingUseCase.test.ts` (success, already in queue, already in game)
-- [ ] T020 [P] Write unit tests for ProcessMatchmakingUseCase in `front-end/server/matchmaking/application/use-cases/__tests__/processMatchmakingUseCase.test.ts` (human match found, no match available)
+- [X] T019 Write unit tests for EnterMatchmakingUseCase in `front-end/tests/server/matchmaking/application/use-cases/enterMatchmakingUseCase.test.ts` (success, already in queue, already in game)
+- [X] T020 [P] Write unit tests for ProcessMatchmakingUseCase in `front-end/tests/server/matchmaking/application/use-cases/processMatchmakingUseCase.test.ts` (human match found, no match available)
 
 ### Implementation for User Story 1
 
-- [ ] T021 Implement EnterMatchmakingUseCase in `front-end/server/matchmaking/application/use-cases/enterMatchmakingUseCase.ts` (validate player not in queue/game, add to pool, trigger matching)
-- [ ] T022 Implement ProcessMatchmakingUseCase in `front-end/server/matchmaking/application/use-cases/processMatchmakingUseCase.ts` (find match in same room type, publish MATCH_FOUND)
-- [ ] T023 Implement InMemoryMatchmakingPool adapter in `front-end/server/matchmaking/adapters/persistence/inMemoryMatchmakingPool.ts`
-- [ ] T024 [P] Implement MatchmakingEventBusAdapter in `front-end/server/matchmaking/adapters/event-publisher/matchmakingEventBusAdapter.ts` (delegate to shared event bus)
-- [ ] T025 [P] Create MatchmakingMapper in `front-end/server/matchmaking/adapters/mappers/matchmakingMapper.ts` (domain to DTO conversions)
-- [ ] T026 Implement gameCreationHandler in `front-end/server/core-game/adapters/event-subscriber/gameCreationHandler.ts` (subscribe to MATCH_FOUND, create game session)
-- [ ] T027 [P] Implement PlayerGameStatusAdapter in `front-end/server/core-game/adapters/query/playerGameStatusAdapter.ts` (check if player has active game)
-- [ ] T028 Implement POST /matchmaking/enter endpoint in `front-end/server/api/v1/matchmaking/enter.post.ts` (per contracts/matchmaking-api.yaml)
-- [ ] T029 Create Matchmaking plugin in `front-end/server/plugins/matchmaking.ts` (initialize adapters and registry)
+- [X] T021 Implement EnterMatchmakingUseCase in `front-end/server/matchmaking/application/use-cases/enterMatchmakingUseCase.ts` (validate player not in queue/game, add to pool, trigger matching)
+- [X] T022 Implement ProcessMatchmakingUseCase in `front-end/server/matchmaking/application/use-cases/processMatchmakingUseCase.ts` (find match in same room type, publish MATCH_FOUND)
+- [X] T023 Implement InMemoryMatchmakingPool adapter in `front-end/server/matchmaking/adapters/persistence/inMemoryMatchmakingPool.ts`
+- [X] T024 [P] Implement MatchmakingEventBusAdapter in `front-end/server/matchmaking/adapters/event-publisher/matchmakingEventBusAdapter.ts` (delegate to shared event bus)
+- [X] T025 [P] Create MatchmakingMapper in `front-end/server/matchmaking/adapters/mappers/matchmakingMapper.ts` (domain to DTO conversions)
+- [X] T026 Implement gameCreationHandler in `front-end/server/core-game/adapters/event-subscriber/gameCreationHandler.ts` (subscribe to MATCH_FOUND, create game session)
+- [X] T027 [P] Implement PlayerGameStatusAdapter in `front-end/server/core-game/adapters/query/playerGameStatusAdapter.ts` (check if player has active game)
+- [X] T028 Implement POST /matchmaking/enter endpoint in `front-end/server/api/v1/matchmaking/enter.post.ts` (per contracts/matchmaking-api.yaml)
+- [X] T029 Create Matchmaking plugin in `front-end/server/plugins/matchmaking.ts` (initialize adapters and registry)
 
 **Checkpoint**: Human-to-human matching works; two players can be matched together
 
@@ -100,14 +100,14 @@
 
 ### Tests for User Story 2
 
-- [ ] T030 Write unit tests for MatchmakingRegistry timer logic in `front-end/server/matchmaking/adapters/registry/__tests__/matchmakingRegistry.test.ts` (status transitions at 10s)
+- [X] T030 Write unit tests for MatchmakingRegistry timer logic in `front-end/tests/server/matchmaking/adapters/registry/matchmakingRegistry.test.ts` (status transitions at 10s)
 
 ### Implementation for User Story 2
 
-- [ ] T031 Implement MatchmakingRegistry in `front-end/server/matchmaking/adapters/registry/matchmakingRegistry.ts` (per-entry timers, 10s LOW_AVAILABILITY transition per research.md Section 3)
-- [ ] T032 Implement GET /matchmaking/status SSE endpoint in `front-end/server/api/v1/matchmaking/status.get.ts` (stream MatchmakingStatusEvent per contracts/)
-- [ ] T033 [P] Create HandleMatchmakingStatusUseCase in `front-end/app/user-interface/application/use-cases/matchmaking/HandleMatchmakingStatusUseCase.ts` (update UI state on status events)
-- [ ] T034 Extend game page in `front-end/app/pages/game/index.vue` to handle matchmaking state and display status messages
+- [X] T031 Implement MatchmakingRegistry in `front-end/server/matchmaking/adapters/registry/matchmakingRegistry.ts` (per-entry timers, 10s LOW_AVAILABILITY transition per research.md Section 3)
+- [X] T032 Implement GET /matchmaking/status SSE endpoint in `front-end/server/api/v1/matchmaking/status.get.ts` (stream MatchmakingStatusEvent per contracts/)
+- [X] T033 [P] Create HandleMatchmakingStatusUseCase in `front-end/app/user-interface/application/use-cases/matchmaking/HandleMatchmakingStatusUseCase.ts` (update UI state on status events)
+- [X] T034 Extend game page in `front-end/app/pages/game/index.vue` to handle matchmaking state and display status messages
 
 **Checkpoint**: Status messages update correctly at time thresholds
 
@@ -121,14 +121,14 @@
 
 ### Tests for User Story 3
 
-- [ ] T035 Write unit tests for bot fallback in `front-end/server/matchmaking/adapters/registry/__tests__/matchmakingRegistry.test.ts` (15s timeout triggers bot match)
+- [X] T035 Write unit tests for bot fallback in `front-end/tests/server/matchmaking/adapters/registry/matchmakingRegistry.test.ts` (15s timeout triggers bot match)
 
 ### Implementation for User Story 3
 
-- [ ] T036 Add 15s bot fallback timer logic to MatchmakingRegistry in `front-end/server/matchmaking/adapters/registry/matchmakingRegistry.ts` (publish MATCH_FOUND with matchType='BOT')
-- [ ] T037 Update gameCreationHandler in `front-end/server/core-game/adapters/event-subscriber/gameCreationHandler.ts` to trigger ROOM_CREATED for bot matches (existing Opponent BC flow)
-- [ ] T038 [P] Create HandleMatchFoundUseCase in `front-end/app/user-interface/application/use-cases/matchmaking/HandleMatchFoundUseCase.ts` (navigate to game SSE on match found)
-- [ ] T039 Update game page in `front-end/app/pages/game/index.vue` to transition from matchmaking SSE to game SSE on MatchFound event
+- [X] T036 Add 15s bot fallback timer logic to MatchmakingRegistry in `front-end/server/matchmaking/adapters/registry/matchmakingRegistry.ts` (publish MATCH_FOUND with matchType='BOT')
+- [X] T037 Update gameCreationHandler in `front-end/server/core-game/adapters/event-subscriber/gameCreationHandler.ts` to trigger ROOM_CREATED for bot matches (existing Opponent BC flow)
+- [X] T038 [P] Create HandleMatchFoundUseCase in `front-end/app/user-interface/application/use-cases/matchmaking/HandleMatchFoundUseCase.ts` (navigate to game SSE on match found)
+- [X] T039 Update game page in `front-end/app/pages/game/index.vue` to transition from matchmaking SSE to game SSE on MatchFound event
 
 **Checkpoint**: Bot fallback works; single player always gets a game after 15s
 
@@ -142,14 +142,14 @@
 
 ### Tests for User Story 4
 
-- [ ] T040 Write unit tests for CancelMatchmakingUseCase in `front-end/server/matchmaking/application/use-cases/__tests__/cancelMatchmakingUseCase.test.ts` (success, not in queue)
+- [X] T040 Write unit tests for CancelMatchmakingUseCase in `front-end/tests/server/matchmaking/application/use-cases/cancelMatchmakingUseCase.test.ts` (success, not in queue)
 
 ### Implementation for User Story 4
 
-- [ ] T041 Implement CancelMatchmakingUseCase in `front-end/server/matchmaking/application/use-cases/cancelMatchmakingUseCase.ts` (remove from pool, clear timers, publish PlayerLeftQueue)
-- [ ] T042 Implement POST /matchmaking/cancel endpoint in `front-end/server/api/v1/matchmaking/cancel.post.ts` (per contracts/matchmaking-api.yaml)
-- [ ] T043 Add cancel logic to MatchmakingRegistry in `front-end/server/matchmaking/adapters/registry/matchmakingRegistry.ts` (clearMatchmakingTimers, send MatchmakingCancelled event)
-- [ ] T044 Add cancel button and handler to game page in `front-end/app/pages/game/index.vue` (navigate back to lobby on cancel)
+- [X] T041 Implement CancelMatchmakingUseCase in `front-end/server/matchmaking/application/use-cases/cancelMatchmakingUseCase.ts` (remove from pool, clear timers, publish PlayerLeftQueue)
+- [X] T042 Implement POST /matchmaking/cancel endpoint in `front-end/server/api/v1/matchmaking/cancel.post.ts` (per contracts/matchmaking-api.yaml)
+- [X] T043 Add cancel logic to MatchmakingRegistry in `front-end/server/matchmaking/adapters/registry/matchmakingRegistry.ts` (clearMatchmakingTimers, send MatchmakingCancelled event)
+- [X] T044 Add cancel button and handler to game page in `front-end/app/pages/game/index.vue` (navigate back to lobby on cancel)
 
 **Checkpoint**: Cancel works at any matchmaking stage; player returns to lobby cleanly
 
@@ -163,12 +163,12 @@
 
 ### Tests for User Story 5
 
-- [ ] T045 Write unit tests for room type segregation in `front-end/server/matchmaking/domain/__tests__/matchmakingPool.test.ts` (players with different room types not matched)
+- [X] T045 Write unit tests for room type segregation in `front-end/tests/server/matchmaking/domain/matchmakingPool.test.ts` (players with different room types not matched)
 
 ### Implementation for User Story 5
 
-- [ ] T046 Verify MatchmakingPool.findMatch() respects room type in `front-end/server/matchmaking/domain/matchmakingPool.ts` (already designed, add explicit test assertions)
-- [ ] T047 Add integration test for cross-room-type rejection in `front-end/server/matchmaking/adapters/registry/__tests__/matchmakingRegistry.test.ts`
+- [X] T046 Verify MatchmakingPool.findMatch() respects room type in `front-end/server/matchmaking/domain/matchmakingPool.ts` (already designed, add explicit test assertions)
+- [X] T047 Add integration test for cross-room-type rejection in `front-end/tests/server/matchmaking/domain/matchmakingPool.test.ts`
 
 **Checkpoint**: Room type segregation works; 0% cross-room-type matches
 
@@ -296,18 +296,34 @@ Task T013-T018: "All input/output ports"
 
 ## Summary
 
-| Metric | Count |
-|--------|-------|
-| Total Tasks | 52 |
-| Phase 1 (Setup) | 4 |
-| Phase 2 (Foundational) | 14 |
-| Phase 3 (US1) | 11 |
-| Phase 4 (US2) | 5 |
-| Phase 5 (US3) | 5 |
-| Phase 6 (US4) | 5 |
-| Phase 7 (US5) | 3 |
-| Phase 8 (Polish) | 5 |
-| Parallelizable [P] | 18 |
+| Metric | Count | Completed |
+|--------|-------|-----------|
+| Total Tasks | 52 | 47 |
+| Phase 1 (Setup) | 4 | 4 ✅ |
+| Phase 2 (Foundational) | 14 | 14 ✅ |
+| Phase 3 (US1) | 11 | 11 ✅ |
+| Phase 4 (US2) | 5 | 5 ✅ |
+| Phase 5 (US3) | 5 | 5 ✅ |
+| Phase 6 (US4) | 5 | 5 ✅ |
+| Phase 7 (US5) | 3 | 3 ✅ |
+| Phase 8 (Polish) | 5 | 0 |
+| Parallelizable [P] | 18 | - |
 
-**MVP Scope**: Phases 1-5 (US1 + US2 + US3) = 39 tasks
+**MVP Scope**: Phases 1-7 (US1-US5) = 47 tasks ✅ Complete
 **Full Feature**: All 52 tasks
+
+### MVP Status: ✅ Complete (716 tests passing)
+- All API endpoints implemented (Backend + Frontend)
+- All Use Cases implemented
+- All Domain entities and aggregates
+- Event Bus integration complete
+- Room type segregation verified
+- Frontend matchmaking UI implemented
+- Cancel button and navigation working
+
+### Remaining Tasks (Phase 8: Polish):
+- T048: Disconnect handling
+- T049: Session expiry handling
+- T050: Human match priority at 15s
+- T051: End-to-end validation
+- T052: Type-check and lint verification

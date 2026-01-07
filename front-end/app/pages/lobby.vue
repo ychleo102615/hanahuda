@@ -28,6 +28,8 @@ import { useDependency } from '~/user-interface/adapter/composables/useDependenc
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output'
 import { RoomApiClient, type RoomType } from '~/user-interface/adapter/api/RoomApiClient'
+import { MatchmakingApiClient } from '~/user-interface/adapter/api/MatchmakingApiClient'
+import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import LobbyTopInfoBar from '~/components/LobbyTopInfoBar.vue'
 import type { MenuItem } from '~/components/LobbyTopInfoBar.vue'
@@ -47,6 +49,10 @@ const { logout, deleteAccount } = useAuth()
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const roomApiClient = useDependency<RoomApiClient>(TOKENS.RoomApiClient)
+const matchmakingApiClient = useDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
+
+// 配對中狀態
+const isMatchmaking = ref(false)
 
 // Player Info Card 狀態
 const isPlayerInfoCardOpen = ref(false)
@@ -64,7 +70,7 @@ const loadError = ref<string | null>(null)
 
 // Computed properties
 const hasError = computed(() => matchmakingStore.status === 'error')
-const canStartMatchmaking = computed(() => matchmakingStore.canStartMatchmaking)
+const canStartMatchmaking = computed(() => matchmakingStore.canStartMatchmaking && !isMatchmaking.value)
 
 // 選單項目
 const menuItems = computed<MenuItem[]>(() => [
@@ -153,8 +159,8 @@ const handleDeleteAccountConfirm = async (password: string | undefined) => {
 }
 
 // 選擇房間並開始配對
-const handleSelectRoom = (roomTypeId: string) => {
-  if (!canStartMatchmaking.value) return
+const handleSelectRoom = async (roomTypeId: string) => {
+  if (!canStartMatchmaking.value || isMatchmaking.value) return
 
   // 使用 Identity BC 提供的 playerId (由後端 Session 管理)
   const currentPlayerId = playerId.value
@@ -165,15 +171,35 @@ const handleSelectRoom = (roomTypeId: string) => {
     return
   }
 
-  // 儲存到 SessionContext（供 game page 使用）
-  sessionContext.setIdentity({ playerId: currentPlayerId, playerName, roomTypeId })
+  // 開始線上配對流程（011-online-matchmaking）
+  isMatchmaking.value = true
+  matchmakingStore.setStatus('finding')
 
-  // 直接導航到遊戲頁面，SSE 連線在那裡建立
-  navigateTo('/game')
+  try {
+    // 1. 呼叫配對 API 取得 entry_id
+    const entryId = await matchmakingApiClient.enterMatchmaking(roomTypeId as RoomTypeId)
+
+    // 2. 儲存到 SessionContext（供 game page 使用）
+    sessionContext.setIdentity({ playerId: currentPlayerId, playerName, roomTypeId })
+    sessionContext.setEntryId(entryId)
+
+    // 3. 導航到遊戲頁面，SSE 連線在那裡建立
+    navigateTo('/game')
+  } catch (error: unknown) {
+    // 配對失敗
+    isMatchmaking.value = false
+    matchmakingStore.setStatus('error')
+    if (error instanceof Error) {
+      matchmakingStore.setErrorMessage(error.message)
+    } else {
+      matchmakingStore.setErrorMessage('Failed to enter matchmaking')
+    }
+  }
 }
 
 // 重試配對
 const handleRetry = () => {
+  isMatchmaking.value = false
   matchmakingStore.clearSession()
   // 狀態已重置為 idle，使用者可以再次選擇房間
 }

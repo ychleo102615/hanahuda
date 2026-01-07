@@ -31,6 +31,22 @@ interface MatchmakingState {
 
   /** 錯誤訊息 */
   errorMessage: string | null
+
+  // === Online Matchmaking (011-online-matchmaking) ===
+  /** 配對條目 ID */
+  entryId: string | null
+
+  /** 配對經過秒數 */
+  elapsedSeconds: number
+
+  /** 狀態訊息 */
+  statusMessage: string | null
+
+  /** 對手名稱 */
+  opponentName: string | null
+
+  /** 是否為 Bot 對手 */
+  isBot: boolean
 }
 
 export const useMatchmakingStateStore = defineStore('matchmakingState', {
@@ -39,6 +55,12 @@ export const useMatchmakingStateStore = defineStore('matchmakingState', {
     sessionToken: null,
     gameId: null,
     errorMessage: null,
+    // Online Matchmaking
+    entryId: null,
+    elapsedSeconds: 0,
+    statusMessage: null,
+    opponentName: null,
+    isBot: false,
   }),
 
   getters: {
@@ -82,6 +104,31 @@ export const useMatchmakingStateStore = defineStore('matchmakingState', {
       this.sessionToken = null
       this.gameId = null
       this.errorMessage = null
+      // Online Matchmaking
+      this.entryId = null
+      this.elapsedSeconds = 0
+      this.statusMessage = null
+      this.opponentName = null
+      this.isBot = false
+    },
+
+    // === Online Matchmaking (011-online-matchmaking) ===
+
+    setEntryId(entryId: string | null): void {
+      this.entryId = entryId
+    },
+
+    setElapsedSeconds(seconds: number): void {
+      this.elapsedSeconds = seconds
+    },
+
+    setStatusMessage(message: string | null): void {
+      this.statusMessage = message
+    },
+
+    setOpponentInfo(name: string, isBot: boolean): void {
+      this.opponentName = name
+      this.isBot = isBot
     },
   },
 })

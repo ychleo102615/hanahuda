@@ -65,6 +65,7 @@ import { CountdownManager } from '../services/CountdownManager'
 import { OperationSessionManager } from '../abort/OperationSessionManager'
 import { SSEConnectionManager } from '../sse/SSEConnectionManager'
 import { RoomApiClient } from '../api/RoomApiClient'
+import { MatchmakingApiClient } from '../api/MatchmakingApiClient'
 import { createGameConnectionPortAdapter } from '../connection/GameConnectionPortAdapter'
 import type { GameConnectionPort } from '../../application/ports/output'
 import type { SSEEventType } from '#shared/contracts'
@@ -533,6 +534,13 @@ function registerBackendAdapters(container: DIContainer): void {
   container.register(
     TOKENS.RoomApiClient,
     () => new RoomApiClient(baseURL),
+    { singleton: true },
+  )
+
+  // MatchmakingApiClient: 線上配對 API（011-online-matchmaking）
+  container.register(
+    TOKENS.MatchmakingApiClient,
+    () => new MatchmakingApiClient(),
     { singleton: true },
   )
 

@@ -24,6 +24,8 @@ const STORAGE_KEYS = {
   playerName: 'player_name',
   roomTypeId: 'room_type_id',
   gameFinished: 'game_finished',
+  // Online Matchmaking (011-online-matchmaking)
+  entryId: 'matchmaking_entry_id',
 } as const
 
 /**
@@ -196,6 +198,55 @@ export class SessionContextAdapter extends SessionContextPort {
       return false
     }
     return sessionStorage.getItem(STORAGE_KEYS.gameFinished) === 'true'
+  }
+
+  // === Online Matchmaking (011-online-matchmaking) ===
+
+  /**
+   * 取得配對條目 ID
+   *
+   * @returns 配對條目 ID，若無則返回 null
+   */
+  getEntryId(): string | null {
+    if (typeof window === 'undefined') {
+      return null
+    }
+    return sessionStorage.getItem(STORAGE_KEYS.entryId)
+  }
+
+  /**
+   * 設定配對條目 ID
+   *
+   * @param entryId - 配對條目 ID，傳入 null 可清除
+   */
+  setEntryId(entryId: string | null): void {
+    if (typeof window === 'undefined') {
+      return
+    }
+    if (entryId === null) {
+      sessionStorage.removeItem(STORAGE_KEYS.entryId)
+    } else {
+      sessionStorage.setItem(STORAGE_KEYS.entryId, entryId)
+    }
+  }
+
+  /**
+   * 檢查是否處於線上配對模式
+   *
+   * @returns 是否有 entryId（線上配對中）
+   */
+  isMatchmakingMode(): boolean {
+    return this.getEntryId() !== null
+  }
+
+  /**
+   * 清除配對資訊
+   */
+  clearMatchmaking(): void {
+    if (typeof window === 'undefined') {
+      return
+    }
+    sessionStorage.removeItem(STORAGE_KEYS.entryId)
   }
 }
 

@@ -65,6 +65,7 @@ export const TOKENS = {
   OperationSessionManager: Symbol('OperationSessionManager'),
   SSEConnectionManager: Symbol('SSEConnectionManager'),
   RoomApiClient: Symbol('RoomApiClient'),
+  MatchmakingApiClient: Symbol('MatchmakingApiClient'),
 
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),

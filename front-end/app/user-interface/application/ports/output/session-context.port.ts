@@ -136,4 +136,35 @@ export abstract class SessionContextPort {
    * 用於在離開遊戲前檢查是否需要發送離開指令。
    */
   abstract isGameFinished(): boolean
+
+  // === Online Matchmaking (011-online-matchmaking) ===
+
+  /**
+   * 取得配對條目 ID
+   *
+   * @returns 配對條目 ID，若無則返回 null
+   */
+  abstract getEntryId(): string | null
+
+  /**
+   * 設定配對條目 ID
+   *
+   * @param entryId - 配對條目 ID，傳入 null 可清除
+   */
+  abstract setEntryId(entryId: string | null): void
+
+  /**
+   * 檢查是否處於線上配對模式
+   *
+   * @returns 是否有 entryId（線上配對中）
+   */
+  abstract isMatchmakingMode(): boolean
+
+  /**
+   * 清除配對資訊
+   *
+   * @description
+   * 配對完成或取消時清除 entryId
+   */
+  abstract clearMatchmaking(): void
 }
