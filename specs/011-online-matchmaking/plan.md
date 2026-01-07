@@ -121,16 +121,58 @@ front-end/
 │   └── plugins/
 │       └── matchmaking.ts                 # ★ NEW: Plugin to start registry
 │
+├── shared/
+│   └── contracts/
+│       └── matchmaking-events.ts         # ★ NEW: SSE event types SSOT
+│
 └── app/
     ├── user-interface/
-    │   └── application/
-    │       └── use-cases/
-    │           └── matchmaking/           # ★ NEW: Frontend use cases
-    │               ├── HandleMatchmakingStatusUseCase.ts
-    │               └── HandleMatchFoundUseCase.ts
+    │   ├── application/
+    │   │   ├── ports/
+    │   │   │   └── input/
+    │   │   │       └── matchmaking-event-handlers.port.ts  # ★ NEW: Input Ports
+    │   │   └── use-cases/
+    │   │       └── matchmaking/           # ★ NEW: Frontend use cases (implements Input Ports)
+    │   │           ├── HandleMatchmakingStatusUseCase.ts
+    │   │           ├── HandleMatchFoundUseCase.ts
+    │   │           ├── HandleMatchmakingCancelledUseCase.ts
+    │   │           └── HandleMatchmakingErrorUseCase.ts
+    │   └── adapter/
+    │       ├── sse/
+    │       │   ├── MatchmakingEventRouter.ts    # ★ NEW: Routes SSE events to Input Ports
+    │       │   └── MatchmakingEventClient.ts    # ★ NEW: SSE connection (addEventListener)
+    │       ├── di/
+    │       │   ├── tokens.ts                    # Updated: MatchmakingEventRouter, MatchmakingEventClient
+    │       │   └── registry.ts                  # Updated: registerMatchmakingEventRoutes()
+    │       └── composables/
+    │           └── useMatchmakingConnection.ts  # ★ Refactored: Only manages Vue state
     └── pages/
         └── game/
             └── index.vue                  # Extend to handle matchmaking state
+```
+
+**Frontend SSE Clean Architecture**:
+```
+[Vue Component]
+    │
+    ▼ (取得依賴)
+[DI Container]
+    │
+    ├──► [MatchmakingEventClient] ← Infrastructure: SSE 連線
+    │         │
+    │         │ addEventListener('MatchmakingStatus', ...)
+    │         │ addEventListener('MatchFound', ...)
+    │         │
+    │         ▼ (收到事件)
+    │    [MatchmakingEventRouter.route(eventType, payload)]
+    │         │
+    │         ▼ (查找 Input Port)
+    │    [HandleMatchmakingStatusPort / HandleMatchFoundPort]
+    │         │
+    │         ▼ (Use Case 實作)
+    │    透過 Output Ports 更新狀態
+    │
+    └──► [Vue 響應式自動更新 UI]
 ```
 
 **Structure Decision**:

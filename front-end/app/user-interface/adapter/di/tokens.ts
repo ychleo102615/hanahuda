@@ -67,6 +67,10 @@ export const TOKENS = {
   RoomApiClient: Symbol('RoomApiClient'),
   MatchmakingApiClient: Symbol('MatchmakingApiClient'),
 
+  // ===== Matchmaking Adapters =====
+  MatchmakingEventRouter: Symbol('MatchmakingEventRouter'),
+  MatchmakingEventClient: Symbol('MatchmakingEventClient'),
+
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),
 

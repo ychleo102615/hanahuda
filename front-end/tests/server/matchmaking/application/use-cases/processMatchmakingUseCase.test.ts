@@ -177,4 +177,52 @@ describe('ProcessMatchmakingUseCase', () => {
       }
     })
   })
+
+  describe('executeBotFallback', () => {
+    it('should create bot match and publish event', async () => {
+      const result = await useCase.executeBotFallback({
+        entryId: 'entry-1',
+        playerId: 'player-1',
+        playerName: 'TestPlayer',
+        roomType: 'QUICK',
+      })
+
+      expect(result.success).toBe(true)
+      expect(result.matchResult.player1Id).toBe('player-1')
+      expect(result.matchResult.player2Id).toBe('BOT')
+      expect(result.matchResult.matchType).toBe('BOT')
+      expect(result.matchResult.roomType).toBe('QUICK')
+    })
+
+    it('should update entry status to MATCHED', async () => {
+      await useCase.executeBotFallback({
+        entryId: 'entry-1',
+        playerId: 'player-1',
+        playerName: 'TestPlayer',
+        roomType: 'STANDARD',
+      })
+
+      expect(mockPoolPort.updateStatus).toHaveBeenCalledWith('entry-1', 'MATCHED')
+    })
+
+    it('should publish MatchFound event with BOT matchType', async () => {
+      await useCase.executeBotFallback({
+        entryId: 'entry-1',
+        playerId: 'player-1',
+        playerName: 'TestPlayer',
+        roomType: 'MARATHON',
+      })
+
+      expect(mockEventPublisher.publishMatchFound).toHaveBeenCalledWith(
+        expect.objectContaining({
+          player1Id: 'player-1',
+          player1Name: 'TestPlayer',
+          player2Id: 'BOT',
+          player2Name: 'Computer',
+          roomType: 'MARATHON',
+          matchType: 'BOT',
+        })
+      )
+    })
+  })
 })

@@ -53,6 +53,8 @@ import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
 import { MockEventEmitter } from '../mock/MockEventEmitter'
 import { EventRouter } from '../sse/EventRouter'
+import { MatchmakingEventRouter } from '../sse/MatchmakingEventRouter'
+import { MatchmakingEventClient } from '../sse/MatchmakingEventClient'
 import { GameApiClient } from '../api/GameApiClient'
 import { GameEventClient } from '../sse/GameEventClient'
 import { AnimationPortAdapter } from '../animation/AnimationPortAdapter'
@@ -69,6 +71,13 @@ import { MatchmakingApiClient } from '../api/MatchmakingApiClient'
 import { createGameConnectionPortAdapter } from '../connection/GameConnectionPortAdapter'
 import type { GameConnectionPort } from '../../application/ports/output'
 import type { SSEEventType } from '#shared/contracts'
+import { MATCHMAKING_EVENT_TYPES } from '#shared/contracts'
+import {
+  HandleMatchmakingStatusUseCase,
+  HandleMatchFoundUseCase,
+  HandleMatchmakingCancelledUseCase,
+  HandleMatchmakingErrorUseCase,
+} from '../../application/use-cases/matchmaking'
 
 /**
  * 遊戲模式
@@ -103,6 +112,11 @@ export function registerDependencies(container: DIContainer, mode: GameMode, pin
 
   // 5. 註冊事件路由 (必須在 Input Ports 之後)
   registerEventRoutes(container)
+
+  // 5.1 註冊配對事件路由 (僅 Backend 模式)
+  if (mode === 'backend') {
+    registerMatchmakingEventRoutes(container)
+  }
 
   // 6. 根據模式初始化事件發射器 (必須在事件路由之後)
   if (mode === 'mock') {
@@ -587,6 +601,25 @@ function registerBackendAdapters(container: DIContainer): void {
     },
     { singleton: true },
   )
+
+  // ===== Matchmaking SSE (011-online-matchmaking) =====
+
+  // MatchmakingEventRouter: 配對 SSE 事件路由器
+  container.register(
+    TOKENS.MatchmakingEventRouter,
+    () => new MatchmakingEventRouter(),
+    { singleton: true },
+  )
+
+  // MatchmakingEventClient: 配對 SSE 客戶端
+  container.register(
+    TOKENS.MatchmakingEventClient,
+    () => {
+      const router = container.resolve(TOKENS.MatchmakingEventRouter) as MatchmakingEventRouter
+      return new MatchmakingEventClient(router)
+    },
+    { singleton: true },
+  )
 }
 
 
@@ -721,4 +754,37 @@ function registerEventRoutes(container: DIContainer): void {
  */
 function registerLocalAdapters(container: DIContainer): void {
   registerMockAdapters(container)
+}
+
+/**
+ * 註冊配對事件路由
+ *
+ * @description
+ * 將配對 SSE 事件類型綁定到對應的 Input Ports (Use Cases)。
+ * 僅在 Backend 模式下呼叫。
+ *
+ * 事件類型:
+ * - MatchmakingStatus: 更新配對狀態（搜尋中、低可用性）
+ * - MatchFound: 配對成功，導航至遊戲
+ * - MatchmakingCancelled: 配對取消
+ * - MatchmakingError: 配對錯誤
+ */
+function registerMatchmakingEventRoutes(container: DIContainer): void {
+  const router = container.resolve(TOKENS.MatchmakingEventRouter) as MatchmakingEventRouter
+
+  // 取得 Output Ports
+  const matchmakingStatePort = container.resolve(TOKENS.MatchmakingStatePort) as MatchmakingStatePort
+  const navigationPort = container.resolve(TOKENS.NavigationPort) as NavigationPort
+
+  // 建立 Use Cases
+  const handleMatchmakingStatusUseCase = new HandleMatchmakingStatusUseCase(matchmakingStatePort)
+  const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort)
+  const handleMatchmakingCancelledUseCase = new HandleMatchmakingCancelledUseCase(matchmakingStatePort)
+  const handleMatchmakingErrorUseCase = new HandleMatchmakingErrorUseCase(matchmakingStatePort)
+
+  // 註冊事件處理器
+  router.register(MATCHMAKING_EVENT_TYPES.MatchmakingStatus, handleMatchmakingStatusUseCase)
+  router.register(MATCHMAKING_EVENT_TYPES.MatchFound, handleMatchFoundUseCase)
+  router.register(MATCHMAKING_EVENT_TYPES.MatchmakingCancelled, handleMatchmakingCancelledUseCase)
+  router.register(MATCHMAKING_EVENT_TYPES.MatchmakingError, handleMatchmakingErrorUseCase)
 }

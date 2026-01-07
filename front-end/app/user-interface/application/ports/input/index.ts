@@ -59,3 +59,11 @@ export { HandleInitialStatePort } from './handle-initial-state.port'
 
 // State Recovery Input Port (for SSE GameSnapshotRestore event)
 export { HandleStateRecoveryPort } from './handle-state-recovery.port'
+
+// Matchmaking Event Handlers Input Ports
+export type {
+  HandleMatchmakingStatusPort,
+  HandleMatchFoundPort,
+  HandleMatchmakingCancelledPort,
+  HandleMatchmakingErrorPort,
+} from './matchmaking-event-handlers.port'

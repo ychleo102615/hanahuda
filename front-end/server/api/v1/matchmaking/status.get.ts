@@ -25,7 +25,9 @@ import { z } from 'zod'
 import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 import { getInMemoryMatchmakingPool } from '~~/server/matchmaking/adapters/persistence/inMemoryMatchmakingPool'
 import { getMatchmakingRegistry } from '~~/server/matchmaking/adapters/registry/matchmakingRegistrySingleton'
+import type { BotFallbackInfo } from '~~/server/matchmaking/adapters/registry/matchmakingRegistry'
 import { MatchmakingMapper } from '~~/server/matchmaking/adapters/mappers/matchmakingMapper'
+import { getMatchmakingContainer } from '~~/server/matchmaking/adapters/di/container'
 import {
   HTTP_BAD_REQUEST,
   HTTP_UNAUTHORIZED,
@@ -109,7 +111,19 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // 5. 設定 SSE headers
+  // 5. 檢查條目狀態是否可配對
+  // 只有 SEARCHING 或 LOW_AVAILABILITY 狀態才能建立 SSE 連線
+  // 這防止已配對/取消/過期的 entry 被重複連線導致計時器錯誤
+  if (!entry.isMatchable()) {
+    setResponseStatus(event, HTTP_BAD_REQUEST)
+    return {
+      success: false,
+      error_code: 'ENTRY_NOT_MATCHABLE',
+      message: `Matchmaking entry is in ${entry.status} status and cannot be used for matchmaking`,
+    }
+  }
+
+  // 6. 設定 SSE headers
   setHeaders(event, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -117,11 +131,45 @@ export default defineEventHandler(async (event) => {
     'X-Accel-Buffering': 'no',
   })
 
-  // 6. 建立 SSE 串流
+  // 7. 建立 SSE 串流
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder()
       let isClosed = false
+      let heartbeatInterval: NodeJS.Timeout | null = null
+      let unsubscribeMatchFound: (() => void) | null = null
+      const registry = getMatchmakingRegistry()
+
+      /**
+       * 統一的清理函數
+       * 確保所有清理操作只執行一次，避免重複關閉 controller
+       */
+      const cleanup = () => {
+        if (isClosed) return
+        isClosed = true
+
+        // 清除心跳計時器
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval)
+          heartbeatInterval = null
+        }
+
+        // 取消訂閱 MATCH_FOUND 事件
+        if (unsubscribeMatchFound) {
+          unsubscribeMatchFound()
+          unsubscribeMatchFound = null
+        }
+
+        // 從 Registry 取消註冊（清除配對計時器）
+        registry.unregisterEntry(entryId)
+
+        // 關閉 SSE 連線
+        try {
+          controller.close()
+        } catch {
+          // Controller 可能已經關閉，忽略錯誤
+        }
+      }
 
       // 狀態更新回調（由 MatchmakingRegistry 觸發）
       const statusCallback = (update: {
@@ -143,7 +191,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // 監聽 MATCH_FOUND 事件
-      const unsubscribeMatchFound = internalEventBus.onMatchFound((payload: MatchFoundPayload) => {
+      unsubscribeMatchFound = internalEventBus.onMatchFound((payload: MatchFoundPayload) => {
         if (isClosed) return
         // 檢查是否是當前玩家的配對
         if (payload.player1Id !== playerId && payload.player2Id !== playerId) {
@@ -165,19 +213,20 @@ export default defineEventHandler(async (event) => {
 
             // 注意：此時還沒有 game_id，需要從其他地方取得
             // 這是一個臨時解決方案，實際應該從 GameCreationHandler 取得
-            const eventDto = MatchmakingMapper.toMatchFoundEventDto(
-              'pending', // game_id 會由前端從 snapshot endpoint 取得
-              opponentName,
-              isBot
-            )
-            controller.enqueue(encoder.encode(formatSSE('MatchFound', eventDto)))
+            try {
+              const eventDto = MatchmakingMapper.toMatchFoundEventDto(
+                'pending', // game_id 會由前端從 snapshot endpoint 取得
+                opponentName,
+                isBot
+              )
+              controller.enqueue(encoder.encode(formatSSE('MatchFound', eventDto)))
+            } catch {
+              // Connection closed
+            }
 
             // 配對成功後關閉連線
             setTimeout(() => {
-              if (!isClosed) {
-                isClosed = true
-                controller.close()
-              }
+              cleanup()
             }, 100)
           }, 200) // 給 GameCreationHandler 一點時間建立遊戲
         } catch {
@@ -185,30 +234,48 @@ export default defineEventHandler(async (event) => {
         }
       })
 
+      // Bot Fallback 回調（由 Application Layer 定義）
+      // 符合 Clean Architecture：Adapter 只負責計時，業務事件由 Use Case 發布
+      const { processMatchmakingUseCase } = getMatchmakingContainer()
+      const botFallbackCallback = async (info: BotFallbackInfo) => {
+        if (isClosed) return
+        try {
+          await processMatchmakingUseCase.executeBotFallback({
+            entryId: info.entryId,
+            playerId: info.playerId,
+            playerName: info.playerName,
+            roomType: info.roomType,
+          })
+        } catch (error) {
+          console.error('Bot fallback failed:', error)
+        }
+      }
+
       // 向 Registry 註冊條目（設定計時器）
-      const registry = getMatchmakingRegistry()
-      registry.registerEntry(entry, statusCallback)
+      registry.registerEntry(entry, statusCallback, botFallbackCallback)
 
       // 心跳計時器
-      const heartbeatInterval = setInterval(() => {
+      heartbeatInterval = setInterval(() => {
         if (isClosed) {
-          clearInterval(heartbeatInterval)
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval)
+            heartbeatInterval = null
+          }
           return
         }
         try {
           controller.enqueue(encoder.encode(formatHeartbeat()))
         } catch {
-          clearInterval(heartbeatInterval)
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval)
+            heartbeatInterval = null
+          }
         }
       }, 15_000) // 15 秒心跳
 
       // 監聽連線關閉
       event.node.req.on('close', () => {
-        isClosed = true
-        clearInterval(heartbeatInterval)
-        unsubscribeMatchFound()
-        registry.unregisterEntry(entryId)
-        controller.close()
+        cleanup()
       })
 
       // 發送初始連線成功訊息
@@ -217,7 +284,7 @@ export default defineEventHandler(async (event) => {
     },
   })
 
-  // 7. 返回 SSE 串流
+  // 8. 返回 SSE 串流
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',

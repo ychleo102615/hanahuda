@@ -15,6 +15,15 @@
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 
 /**
+ * Bot Player ID 常數
+ *
+ * @description
+ * Bot 配對時使用的預設玩家 ID。
+ * 由於 MatchResult 需要兩個有效的 playerId，Bot 使用此固定 ID。
+ */
+export const BOT_PLAYER_ID = 'BOT'
+
+/**
  * Match Type - 配對類型
  */
 export type MatchType = 'HUMAN' | 'BOT'
@@ -103,16 +112,19 @@ export class MatchResult {
 
   /**
    * 建立機器人配對結果
+   *
+   * @param playerId 玩家 ID
+   * @param roomType 房間類型
+   * @param matchedAt 配對時間（可選，預設為當前時間）
    */
   static createBotMatch(
     playerId: string,
-    botId: string,
     roomType: RoomTypeId,
     matchedAt?: Date
   ): MatchResult {
     return MatchResult.create({
       player1Id: playerId,
-      player2Id: botId,
+      player2Id: BOT_PLAYER_ID,
       roomType,
       matchType: 'BOT',
       matchedAt,

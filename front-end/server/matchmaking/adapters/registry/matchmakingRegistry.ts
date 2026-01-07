@@ -18,10 +18,10 @@
  */
 
 import type { MatchmakingPoolPort } from '../../application/ports/output/matchmakingPoolPort'
-import type { MatchmakingEventPublisherPort } from '../../application/ports/output/matchmakingEventPublisherPort'
 import type { MatchmakingEntry } from '../../domain/matchmakingEntry'
 import type { MatchmakingStatusCode } from '../../domain/matchmakingStatus'
 import { STATUS_MESSAGES } from '../../domain/matchmakingStatus'
+import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 
 /**
  * 計時器配置常數
@@ -47,15 +47,39 @@ export interface MatchmakingStatusUpdate {
 export type StatusCallback = (update: MatchmakingStatusUpdate) => void
 
 /**
+ * Bot Fallback 資訊
+ *
+ * @description
+ * 當玩家等待超過 15 秒仍未配對到人類對手時，
+ * Registry 透過此資訊通知 Application Layer 執行 Bot Fallback。
+ */
+export interface BotFallbackInfo {
+  readonly entryId: string
+  readonly playerId: string
+  readonly playerName: string
+  readonly roomType: RoomTypeId
+}
+
+/**
+ * Bot Fallback 回調類型
+ *
+ * @description
+ * 由 SSE Endpoint 定義，呼叫 ProcessMatchmakingUseCase.executeBotFallback()。
+ * 確保所有 MATCH_FOUND 事件由 Application Layer 發布，符合 Clean Architecture。
+ */
+export type BotFallbackCallback = (info: BotFallbackInfo) => void
+
+/**
  * Entry 計時器資訊
  */
 interface EntryTimers {
   readonly entryId: string
   readonly playerId: string
   readonly playerName: string
-  readonly roomType: 'QUICK' | 'STANDARD' | 'MARATHON'
+  readonly roomType: RoomTypeId
   readonly enteredAt: Date
   readonly statusCallback: StatusCallback
+  readonly botFallbackCallback: BotFallbackCallback
   lowAvailabilityTimer: NodeJS.Timeout | null
   botFallbackTimer: NodeJS.Timeout | null
 }
@@ -69,18 +93,30 @@ interface EntryTimers {
 export class MatchmakingRegistry {
   private readonly entries: Map<string, EntryTimers> = new Map()
 
-  constructor(
-    private readonly poolPort: MatchmakingPoolPort,
-    private readonly eventPublisher: MatchmakingEventPublisherPort
-  ) {}
+  constructor(private readonly poolPort: MatchmakingPoolPort) {}
 
   /**
    * 註冊配對條目
    *
    * @description
    * 為條目設定計時器並發送初始狀態。
+   * 此方法具有冪等性：如果條目已存在，會先清除舊的計時器再重新設定。
+   *
+   * @param entry 配對條目
+   * @param statusCallback SSE 狀態更新回調
+   * @param botFallbackCallback Bot Fallback 回調（由 Application Layer 定義）
    */
-  registerEntry(entry: MatchmakingEntry, statusCallback: StatusCallback): void {
+  registerEntry(
+    entry: MatchmakingEntry,
+    statusCallback: StatusCallback,
+    botFallbackCallback: BotFallbackCallback
+  ): void {
+    // 冪等性保護：如果條目已存在，先清除舊的計時器
+    const existingEntry = this.entries.get(entry.id)
+    if (existingEntry) {
+      this.clearTimers(existingEntry)
+    }
+
     const entryTimers: EntryTimers = {
       entryId: entry.id,
       playerId: entry.playerId,
@@ -88,6 +124,7 @@ export class MatchmakingRegistry {
       roomType: entry.roomType,
       enteredAt: entry.enteredAt,
       statusCallback,
+      botFallbackCallback,
       lowAvailabilityTimer: null,
       botFallbackTimer: null,
     }
@@ -162,6 +199,10 @@ export class MatchmakingRegistry {
 
   /**
    * 處理 15 秒 Bot Fallback 超時
+   *
+   * @description
+   * 透過 callback 通知 Application Layer 執行 Bot Fallback。
+   * 符合 Clean Architecture：Adapter 只負責計時，業務事件由 Use Case 發布。
    */
   private handleBotFallbackTimeout(entryId: string): void {
     const entryTimers = this.entries.get(entryId)
@@ -169,15 +210,12 @@ export class MatchmakingRegistry {
       return
     }
 
-    // 發布 Bot 配對事件
-    this.eventPublisher.publishMatchFound({
-      player1Id: entryTimers.playerId,
-      player1Name: entryTimers.playerName,
-      player2Id: '', // Bot 沒有 player ID
-      player2Name: 'Computer',
+    // 透過 callback 通知 Application Layer 執行 Bot Fallback
+    entryTimers.botFallbackCallback({
+      entryId: entryTimers.entryId,
+      playerId: entryTimers.playerId,
+      playerName: entryTimers.playerName,
       roomType: entryTimers.roomType,
-      matchType: 'BOT',
-      matchedAt: new Date(),
     })
 
     // 清除條目

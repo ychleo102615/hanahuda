@@ -10,7 +10,8 @@
 
 import type { MatchmakingPoolPort } from '../ports/output/matchmakingPoolPort'
 import type { MatchmakingEventPublisherPort } from '../ports/output/matchmakingEventPublisherPort'
-import { MatchResult } from '../../domain/matchResult'
+import type { RoomTypeId } from '~~/shared/constants/roomTypes'
+import { MatchResult, BOT_PLAYER_ID } from '../../domain/matchResult'
 
 /**
  * Process Matchmaking Input
@@ -41,6 +42,27 @@ export interface ProcessMatchmakingNotMatchedOutput {
 export type ProcessMatchmakingOutput =
   | ProcessMatchmakingMatchedOutput
   | ProcessMatchmakingNotMatchedOutput
+
+/**
+ * Bot Fallback Input
+ *
+ * @description
+ * 當玩家等待超過 15 秒仍未配對到人類對手時使用。
+ */
+export interface BotFallbackInput {
+  readonly entryId: string
+  readonly playerId: string
+  readonly playerName: string
+  readonly roomType: RoomTypeId
+}
+
+/**
+ * Bot Fallback Output
+ */
+export interface BotFallbackOutput {
+  readonly success: true
+  readonly matchResult: MatchResult
+}
 
 /**
  * Process Matchmaking Use Case
@@ -101,6 +123,43 @@ export class ProcessMatchmakingUseCase {
 
     return {
       matched: true,
+      matchResult,
+    }
+  }
+
+  /**
+   * 執行 Bot Fallback 配對
+   *
+   * @description
+   * 當玩家等待超過 15 秒仍未配對到人類對手時，
+   * 系統自動與 Bot 配對。
+   *
+   * 此方法由 MatchmakingRegistry 透過 callback 機制觸發，
+   * 確保所有 MATCH_FOUND 事件都由 Application Layer 發布。
+   */
+  async executeBotFallback(input: BotFallbackInput): Promise<BotFallbackOutput> {
+    // 1. 建立 Bot 配對結果
+    const matchResult = MatchResult.createBotMatch(
+      input.playerId,
+      input.roomType
+    )
+
+    // 2. 更新條目狀態為 MATCHED
+    await this.poolPort.updateStatus(input.entryId, 'MATCHED')
+
+    // 3. 發布配對成功事件
+    this.eventPublisher.publishMatchFound({
+      player1Id: input.playerId,
+      player1Name: input.playerName,
+      player2Id: BOT_PLAYER_ID,
+      player2Name: 'Computer',
+      roomType: input.roomType,
+      matchType: 'BOT',
+      matchedAt: matchResult.matchedAt,
+    })
+
+    return {
+      success: true,
       matchResult,
     }
   }

@@ -111,6 +111,22 @@
 
 **Checkpoint**: Status messages update correctly at time thresholds
 
+### Clean Architecture Supplementary Tasks (Frontend SSE)
+
+**Purpose**: Refactor frontend matchmaking SSE to follow Clean Architecture patterns (GameEventClient + EventRouter + EventHandlerPort)
+
+- [X] T033a [P] Create matchmaking SSE event types SSOT in `front-end/shared/contracts/matchmaking-events.ts` (MATCHMAKING_EVENT_TYPES, event interfaces)
+- [X] T033b [P] Create matchmaking Input Ports in `front-end/app/user-interface/application/ports/input/matchmaking-event-handlers.port.ts`
+- [X] T033c [P] Create HandleMatchmakingCancelledUseCase in `front-end/app/user-interface/application/use-cases/matchmaking/HandleMatchmakingCancelledUseCase.ts`
+- [X] T033d [P] Create HandleMatchmakingErrorUseCase in `front-end/app/user-interface/application/use-cases/matchmaking/HandleMatchmakingErrorUseCase.ts`
+- [X] T033e Create MatchmakingEventRouter in `front-end/app/user-interface/adapter/sse/MatchmakingEventRouter.ts`
+- [X] T033f Create MatchmakingEventClient in `front-end/app/user-interface/adapter/sse/MatchmakingEventClient.ts` (uses addEventListener for named events)
+- [X] T033g Update DI tokens in `front-end/app/user-interface/adapter/di/tokens.ts` (add MatchmakingEventRouter, MatchmakingEventClient)
+- [X] T033h Update DI registry in `front-end/app/user-interface/adapter/di/registry.ts` (registerMatchmakingEventRoutes function)
+- [X] T033i Refactor useMatchmakingConnection in `front-end/app/user-interface/adapter/composables/useMatchmakingConnection.ts` (delegate to MatchmakingEventClient, only manage Vue state)
+
+**Key Design Decision**: Original implementation mixed 4 responsibilities in useMatchmakingConnection (Infrastructure, Input Adapter, Presentation, direct Use Case instantiation). Refactored to follow existing GameEventClient + EventRouter pattern for Clean Architecture compliance.
+
 ---
 
 ## Phase 5: User Story 3 - Automatic Bot Fallback (Priority: P1)
@@ -298,19 +314,20 @@ Task T013-T018: "All input/output ports"
 
 | Metric | Count | Completed |
 |--------|-------|-----------|
-| Total Tasks | 52 | 47 |
+| Total Tasks | 61 | 56 |
 | Phase 1 (Setup) | 4 | 4 ✅ |
 | Phase 2 (Foundational) | 14 | 14 ✅ |
 | Phase 3 (US1) | 11 | 11 ✅ |
 | Phase 4 (US2) | 5 | 5 ✅ |
+| Phase 4 (CA Supplement) | 9 | 9 ✅ |
 | Phase 5 (US3) | 5 | 5 ✅ |
 | Phase 6 (US4) | 5 | 5 ✅ |
 | Phase 7 (US5) | 3 | 3 ✅ |
 | Phase 8 (Polish) | 5 | 0 |
-| Parallelizable [P] | 18 | - |
+| Parallelizable [P] | 22 | - |
 
-**MVP Scope**: Phases 1-7 (US1-US5) = 47 tasks ✅ Complete
-**Full Feature**: All 52 tasks
+**MVP Scope**: Phases 1-7 (US1-US5 + CA Supplement) = 56 tasks ✅ Complete
+**Full Feature**: All 61 tasks
 
 ### MVP Status: ✅ Complete (716 tests passing)
 - All API endpoints implemented (Backend + Frontend)
@@ -320,6 +337,7 @@ Task T013-T018: "All input/output ports"
 - Room type segregation verified
 - Frontend matchmaking UI implemented
 - Cancel button and navigation working
+- **Frontend SSE Clean Architecture refactored** (T033a-T033i)
 
 ### Remaining Tasks (Phase 8: Polish):
 - T048: Disconnect handling

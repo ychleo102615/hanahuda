@@ -81,12 +81,12 @@ describe('MatchResult', () => {
   })
 
   describe('createBotMatch', () => {
-    it('should create a bot match result', () => {
-      const result = MatchResult.createBotMatch('player-1', 'bot-1', 'MARATHON')
+    it('should create a bot match result with BOT_PLAYER_ID', () => {
+      const result = MatchResult.createBotMatch('player-1', 'MARATHON')
 
       expect(result.matchType).toBe('BOT')
       expect(result.player1Id).toBe('player-1')
-      expect(result.player2Id).toBe('bot-1')
+      expect(result.player2Id).toBe('BOT')
       expect(result.roomType).toBe('MARATHON')
     })
   })
@@ -94,7 +94,7 @@ describe('MatchResult', () => {
   describe('isHumanMatch and isBotMatch', () => {
     it('should identify human match correctly', () => {
       const humanMatch = MatchResult.createHumanMatch('p1', 'p2', 'STANDARD')
-      const botMatch = MatchResult.createBotMatch('p1', 'bot', 'STANDARD')
+      const botMatch = MatchResult.createBotMatch('p1', 'STANDARD')
 
       expect(humanMatch.isHumanMatch()).toBe(true)
       expect(humanMatch.isBotMatch()).toBe(false)

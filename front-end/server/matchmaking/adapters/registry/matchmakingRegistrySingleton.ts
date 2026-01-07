@@ -9,7 +9,6 @@
 
 import { MatchmakingRegistry } from './matchmakingRegistry'
 import { getInMemoryMatchmakingPool } from '../persistence/inMemoryMatchmakingPool'
-import { getMatchmakingEventBusAdapter } from '../event-publisher/matchmakingEventBusAdapter'
 
 /**
  * 單例實例
@@ -22,8 +21,7 @@ let instance: MatchmakingRegistry | null = null
 export function getMatchmakingRegistry(): MatchmakingRegistry {
   if (!instance) {
     const poolPort = getInMemoryMatchmakingPool()
-    const eventPublisher = getMatchmakingEventBusAdapter()
-    instance = new MatchmakingRegistry(poolPort, eventPublisher)
+    instance = new MatchmakingRegistry(poolPort)
   }
   return instance
 }

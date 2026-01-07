@@ -11,22 +11,15 @@
  */
 
 import type { MatchmakingStatePort, MatchmakingStatus } from '../../ports/output'
-
-/**
- * MatchmakingStatus SSE 事件
- */
-export interface MatchmakingStatusEvent {
-  readonly event_type: 'MatchmakingStatus'
-  readonly entry_id: string
-  readonly status: 'SEARCHING' | 'LOW_AVAILABILITY'
-  readonly message: string
-  readonly elapsed_seconds: number
-}
+import type { HandleMatchmakingStatusPort, ExecuteOptions } from '../../ports/input'
+import type { MatchmakingStatusEvent } from '#shared/contracts'
 
 /**
  * HandleMatchmakingStatusUseCase
+ *
+ * 實作 HandleMatchmakingStatusPort Input Port
  */
-export class HandleMatchmakingStatusUseCase {
+export class HandleMatchmakingStatusUseCase implements HandleMatchmakingStatusPort {
   constructor(
     private readonly matchmakingState: MatchmakingStatePort
   ) {}
@@ -34,7 +27,7 @@ export class HandleMatchmakingStatusUseCase {
   /**
    * 處理 MatchmakingStatus 事件
    */
-  execute(event: MatchmakingStatusEvent): void {
+  execute(event: MatchmakingStatusEvent, _options?: ExecuteOptions): void {
     // 1. 轉換狀態
     const status: MatchmakingStatus = event.status === 'SEARCHING'
       ? 'searching'

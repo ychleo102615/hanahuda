@@ -13,21 +13,15 @@
  */
 
 import type { MatchmakingStatePort, NavigationPort } from '../../ports/output'
-
-/**
- * MatchFound SSE 事件
- */
-export interface MatchFoundEvent {
-  readonly event_type: 'MatchFound'
-  readonly game_id: string
-  readonly opponent_name: string
-  readonly is_bot: boolean
-}
+import type { HandleMatchFoundPort, ExecuteOptions } from '../../ports/input'
+import type { MatchFoundEvent } from '#shared/contracts'
 
 /**
  * HandleMatchFoundUseCase
+ *
+ * 實作 HandleMatchFoundPort Input Port
  */
-export class HandleMatchFoundUseCase {
+export class HandleMatchFoundUseCase implements HandleMatchFoundPort {
   constructor(
     private readonly matchmakingState: MatchmakingStatePort,
     private readonly navigation: NavigationPort
@@ -36,7 +30,7 @@ export class HandleMatchFoundUseCase {
   /**
    * 處理 MatchFound 事件
    */
-  execute(event: MatchFoundEvent): void {
+  execute(event: MatchFoundEvent, _options?: ExecuteOptions): void {
     // 1. 更新狀態
     this.matchmakingState.setStatus('matched')
     this.matchmakingState.setOpponentInfo(event.opponent_name, event.is_bot)
