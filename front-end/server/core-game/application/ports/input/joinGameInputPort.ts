@@ -102,24 +102,6 @@ export interface JoinGameSnapshotOutput {
 }
 
 /**
- * 舊版成功輸出（向後兼容）
- *
- * @deprecated 請使用 JoinGameWaitingOutput 或 JoinGameStartedOutput
- */
-export interface JoinGameSuccessOutput {
-  /** 結果類型 */
-  readonly status: 'success'
-  /** 遊戲 ID */
-  readonly gameId: string
-  /** 玩家 ID */
-  readonly playerId: string
-  /** SSE 端點路徑 */
-  readonly sseEndpoint: string
-  /** 是否為重連 */
-  readonly reconnected: boolean
-}
-
-/**
  * 加入遊戲失敗 - 遊戲已結束
  */
 export interface JoinGameFinishedOutput {
@@ -156,7 +138,6 @@ export interface JoinGameExpiredOutput {
  * - snapshot: 重連快照恢復
  * - game_finished: 遊戲已結束
  * - game_expired: 遊戲已過期
- * - success: 舊版相容（將被移除）
  */
 export type JoinGameOutput =
   | JoinGameWaitingOutput
@@ -164,7 +145,6 @@ export type JoinGameOutput =
   | JoinGameSnapshotOutput
   | JoinGameFinishedOutput
   | JoinGameExpiredOutput
-  | JoinGameSuccessOutput
 
 // ============================================================
 // Input Port

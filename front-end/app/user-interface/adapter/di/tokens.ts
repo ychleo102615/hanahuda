@@ -53,7 +53,6 @@ export const TOKENS = {
 
   // ===== Adapters =====
   GameApiClient: Symbol('GameApiClient'),
-  GameEventClient: Symbol('GameEventClient'),
   EventRouter: Symbol('EventRouter'),
 
   // ===== Stores =====
@@ -66,13 +65,11 @@ export const TOKENS = {
   // ===== Services =====
   CountdownManager: Symbol('CountdownManager'),
   OperationSessionManager: Symbol('OperationSessionManager'),
-  SSEConnectionManager: Symbol('SSEConnectionManager'),
   RoomApiClient: Symbol('RoomApiClient'),
   MatchmakingApiClient: Symbol('MatchmakingApiClient'),
 
   // ===== Matchmaking Adapters =====
   MatchmakingEventRouter: Symbol('MatchmakingEventRouter'),
-  MatchmakingEventClient: Symbol('MatchmakingEventClient'),
 
   // ===== Gateway Adapters =====
   GatewayEventRouter: Symbol('GatewayEventRouter'),

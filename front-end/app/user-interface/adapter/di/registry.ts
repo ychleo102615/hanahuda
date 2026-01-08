@@ -54,11 +54,9 @@ import { MockApiClient } from '../mock/MockApiClient'
 import { MockEventEmitter } from '../mock/MockEventEmitter'
 import { EventRouter } from '../sse/EventRouter'
 import { MatchmakingEventRouter } from '../sse/MatchmakingEventRouter'
-import { MatchmakingEventClient } from '../sse/MatchmakingEventClient'
 import { GatewayEventRouter } from '../sse/GatewayEventRouter'
 import { GatewayEventClient } from '../sse/GatewayEventClient'
 import { GameApiClient } from '../api/GameApiClient'
-import { GameEventClient } from '../sse/GameEventClient'
 import { AnimationPortAdapter } from '../animation/AnimationPortAdapter'
 import { zoneRegistry } from '../animation/ZoneRegistry'
 import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
@@ -67,11 +65,9 @@ import { createNavigationPortAdapter } from '../router/NavigationPortAdapter'
 import { createApiErrorHandler } from '../api/ApiErrorHandler'
 import { CountdownManager } from '../services/CountdownManager'
 import { OperationSessionManager } from '../abort/OperationSessionManager'
-import { SSEConnectionManager } from '../sse/SSEConnectionManager'
 import { RoomApiClient } from '../api/RoomApiClient'
 import { MatchmakingApiClient } from '../api/MatchmakingApiClient'
-import { createGameConnectionPortAdapter } from '../connection/GameConnectionPortAdapter'
-import type { GameConnectionPort } from '../../application/ports/output'
+import { GameConnectionPort, type GameConnectionParams } from '../../application/ports/output'
 import type { SSEEventType } from '#shared/contracts'
 import { MATCHMAKING_EVENT_TYPES } from '#shared/contracts'
 import {
@@ -581,53 +577,12 @@ function registerBackendAdapters(container: DIContainer): void {
     { singleton: true },
   )
 
-  // GameEventClient
-  container.register(
-    TOKENS.GameEventClient,
-    () => {
-      const router = container.resolve(TOKENS.EventRouter) as EventRouter
-      return new GameEventClient(baseURL, router)
-    },
-    { singleton: true },
-  )
+  // ===== Matchmaking Event Router =====
 
-  // SSEConnectionManager: 協調 GameEventClient 與 UIStateStore
-  container.register(
-    TOKENS.SSEConnectionManager,
-    () => {
-      const gameEventClient = container.resolve(TOKENS.GameEventClient) as GameEventClient
-      const uiStateStore = container.resolve(TOKENS.UIStateStore) as ReturnType<typeof useUIStateStore>
-      return new SSEConnectionManager(gameEventClient, uiStateStore)
-    },
-    { singleton: true },
-  )
-
-  // GameConnectionPort: 包裝 SSEConnectionManager
-  container.register(
-    TOKENS.GameConnectionPort,
-    () => {
-      const sseConnectionManager = container.resolve(TOKENS.SSEConnectionManager) as SSEConnectionManager
-      return createGameConnectionPortAdapter(sseConnectionManager)
-    },
-    { singleton: true },
-  )
-
-  // ===== Matchmaking SSE (011-online-matchmaking) =====
-
-  // MatchmakingEventRouter: 配對 SSE 事件路由器
+  // MatchmakingEventRouter: 配對事件路由器
   container.register(
     TOKENS.MatchmakingEventRouter,
     () => new MatchmakingEventRouter(),
-    { singleton: true },
-  )
-
-  // MatchmakingEventClient: 配對 SSE 客戶端
-  container.register(
-    TOKENS.MatchmakingEventClient,
-    () => {
-      const router = container.resolve(TOKENS.MatchmakingEventRouter) as MatchmakingEventRouter
-      return new MatchmakingEventClient(router)
-    },
     { singleton: true },
   )
 
@@ -652,6 +607,32 @@ function registerBackendAdapters(container: DIContainer): void {
     () => {
       const router = container.resolve(TOKENS.GatewayEventRouter) as GatewayEventRouter
       return new GatewayEventClient(router)
+    },
+    { singleton: true },
+  )
+
+  // GameConnectionPort: 包裝 GatewayEventClient 提供 Application Layer 介面
+  // Gateway 架構下，connect() 參數由 Cookie 身份驗證取代
+  container.register(
+    TOKENS.GameConnectionPort,
+    () => {
+      const gatewayClient = container.resolve(TOKENS.GatewayEventClient) as GatewayEventClient
+
+      // 建立內聯 Adapter，將 GatewayEventClient 適配為 GameConnectionPort
+      return new (class extends GameConnectionPort {
+        connect(_params: GameConnectionParams): void {
+          // Gateway 架構：身份由 Cookie 驗證，不需要傳遞參數
+          gatewayClient.connect()
+        }
+
+        disconnect(): void {
+          gatewayClient.disconnect()
+        }
+
+        isConnected(): boolean {
+          return gatewayClient.isConnected()
+        }
+      })()
     },
     { singleton: true },
   )

@@ -144,25 +144,6 @@ export function addSecondPlayerAndStart(game: Game, player: Player): Game {
 }
 
 /**
- * 加入 AI 對手並開始遊戲
- *
- * 將 AI 對手加入遊戲，並將狀態改為進行中。
- * 此函數為向後兼容保留，內部呼叫 addSecondPlayerAndStart。
- *
- * @param game - 等待中的遊戲
- * @param aiPlayer - AI 玩家實體
- * @returns 更新後的遊戲（狀態改為 IN_PROGRESS）
- * @deprecated 使用 addSecondPlayerAndStart 替代
- */
-export function addAiOpponentAndStart(game: Game, aiPlayer: Player): Game {
-  if (!aiPlayer.isAi) {
-    throw new Error('Expected AI player')
-  }
-
-  return addSecondPlayerAndStart(game, aiPlayer)
-}
-
-/**
  * 開始新局
  *
  * 洗牌、發牌，建立新的 Round

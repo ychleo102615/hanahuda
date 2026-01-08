@@ -19,7 +19,6 @@ export {
   getDefaultRuleset,
   createGame,
   addSecondPlayerAndStart,
-  addAiOpponentAndStart,
   startRound,
   updateRound,
   finishRound,
