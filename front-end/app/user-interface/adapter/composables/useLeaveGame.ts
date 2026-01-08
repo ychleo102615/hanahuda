@@ -119,13 +119,13 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
       isActionPanelOpen.value = false
 
       // 檢查遊戲是否已結束 - 若已結束，跳過 API 調用
-      if (gameEnded.value || sessionContext.isGameFinished()) {
+      if (gameEnded.value) {
         clearLocalStateAndNavigate()
         return
       }
 
-      // 從 SessionContext 取得 gameId
-      const gameId = sessionContext.getGameId()
+      // 從 gameState 取得 currentGameId
+      const gameId = gameState.currentGameId
       if (!gameId) {
         // 即使沒有 gameId，仍然清除本地狀態並導航回首頁
         clearLocalStateAndNavigate()
@@ -191,13 +191,10 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
       // 1. 隱藏 GameFinishedModal
       uiState.hideGameFinishedModal()
 
-      // 2. 重置遊戲狀態（保留 identity 和 roomTypeId）
+      // 2. 重置遊戲狀態（保留 roomTypeId）
       gameState.$reset()
       uiState.$reset()
       matchmakingState.$reset()
-
-      // 3. 清除舊的 gameId（防止事件混淆）
-      sessionContext.setGameId(null)
 
       // 4. 設定配對狀態
       matchmakingState.setStatus('finding')
@@ -232,9 +229,8 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   }
 
   function clearLocalStateAndNavigate() {
-    // 清除 SessionContext 中的 session 識別資訊
-    // 注意：session_token Cookie 已由後端 API 清除
-    sessionContext.clearIdentity()
+    // 清除 SessionContext 中的會話資訊（roomTypeId、entryId）
+    sessionContext.clearSession()
 
     // 清理通知系統資源（倒數計時器等）
     notification.cleanup()

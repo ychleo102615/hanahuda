@@ -471,4 +471,39 @@ export interface GameStatePort {
    * ```
    */
   setGameEnded(ended: boolean): void
+
+  // ===== 遊戲 ID 管理 =====
+
+  /**
+   * 取得當前遊戲 ID
+   *
+   * @description
+   * 遊戲 ID 的單一真相來源（SSOT）。
+   * 由 Gateway 事件設定，不需要 sessionStorage。
+   *
+   * @returns 當前遊戲 ID，若無則返回 null
+   *
+   * @example
+   * ```typescript
+   * const gameId = gameState.getCurrentGameId()
+   * ```
+   */
+  getCurrentGameId(): string | null
+
+  /**
+   * 設定當前遊戲 ID
+   *
+   * @param gameId - 遊戲 ID，傳入 null 可清除
+   *
+   * @description
+   * 由 Gateway 事件（GatewayConnected、MatchFound）設定，
+   * 或在遊戲結束/離開時清除。
+   *
+   * @example
+   * ```typescript
+   * gameState.setCurrentGameId('game-123')
+   * gameState.setCurrentGameId(null) // 清除
+   * ```
+   */
+  setCurrentGameId(gameId: string | null): void
 }

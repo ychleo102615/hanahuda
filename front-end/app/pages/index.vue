@@ -15,10 +15,18 @@ import yakuDataJson from '~/data/yaku.json'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
+import { useDependency } from '~/user-interface/adapter/composables/useDependency'
+import { TOKENS } from '~/user-interface/adapter/di/tokens'
+import type { ClearOrphanedSessionPort } from '~/user-interface/application/ports/input'
 
 // 首頁專用：預留滾動條空間，避免 modal 開啟時內容跳動
 onMounted(() => {
   document.documentElement.style.scrollbarGutter = 'stable'
+
+  // 清除孤立的會話資訊（roomTypeId、entryId）
+  // 如果沒有活躍的遊戲，進入首頁時應清除所有配對相關資訊
+  const clearOrphanedSession = useDependency<ClearOrphanedSessionPort>(TOKENS.ClearOrphanedSessionPort)
+  clearOrphanedSession.execute()
 })
 onUnmounted(() => {
   document.documentElement.style.scrollbarGutter = ''

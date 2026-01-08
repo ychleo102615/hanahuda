@@ -29,6 +29,9 @@ export const TOKENS = {
   // ===== Input Ports - State Recovery =====
   HandleStateRecoveryPort: Symbol('HandleStateRecoveryPort'),
 
+  // ===== Input Ports - Session Management =====
+  ClearOrphanedSessionPort: Symbol('ClearOrphanedSessionPort'),
+
   // ===== Input Ports - Player Operations (3 個) =====
   PlayHandCardPort: Symbol('PlayHandCardPort'),
   SelectMatchTargetPort: Symbol('SelectMatchTargetPort'),

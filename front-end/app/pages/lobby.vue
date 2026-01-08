@@ -206,7 +206,7 @@ const handleSelectRoom = async (roomTypeId: string) => {
     const entryId = await matchmakingApiClient.enterMatchmaking(roomTypeId as RoomTypeId)
 
     // 2. 儲存到 SessionContext（供 game page 使用）
-    sessionContext.setIdentity({ playerId: currentPlayerId, playerName, roomTypeId })
+    sessionContext.setRoomTypeId(roomTypeId)
     sessionContext.setEntryId(entryId)
 
     // 3. 導航到遊戲頁面，SSE 連線在那裡建立

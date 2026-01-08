@@ -77,6 +77,7 @@ import {
   HandleMatchmakingErrorUseCase,
 } from '../../application/use-cases/matchmaking'
 import { HandleGatewayConnectedUseCase } from '../../application/use-cases/HandleGatewayConnectedUseCase'
+import { ClearOrphanedSessionUseCase } from '../../application/use-cases/ClearOrphanedSessionUseCase'
 
 /**
  * 遊戲模式
@@ -465,7 +466,7 @@ function registerInputPorts(container: DIContainer): void {
   // T084 [US4]: 註冊 GameFinished 事件處理器
   container.register(
     TOKENS.HandleGameFinishedPort,
-    () => new HandleGameFinishedUseCase(notificationPort, uiStatePort, sessionContextPort, gameStatePort),
+    () => new HandleGameFinishedUseCase(notificationPort, uiStatePort, gameStatePort),
     { singleton: true }
   )
 
@@ -480,7 +481,7 @@ function registerInputPorts(container: DIContainer): void {
   // GameError 是各 Use Case 的 fallback，統一顯示錯誤 Modal
   container.register(
     TOKENS.HandleGameErrorPort,
-    () => new HandleGameErrorUseCase(notificationPort, sessionContextPort, matchmakingStatePort),
+    () => new HandleGameErrorUseCase(notificationPort, gameStatePort, matchmakingStatePort, sessionContextPort),
     { singleton: true }
   )
 
@@ -495,7 +496,7 @@ function registerInputPorts(container: DIContainer): void {
         navigationPort,
         animationPort,
         matchmakingStatePort,
-        sessionContextPort,
+        gameStatePort,
         operationSession
       )
     },
@@ -516,7 +517,14 @@ function registerInputPorts(container: DIContainer): void {
   // Gateway: 註冊 HandleGatewayConnectedPort（處理 Gateway 連線後的初始狀態）
   container.register(
     TOKENS.HandleGatewayConnectedPort,
-    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, navigationPort),
+    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, navigationPort, gameStatePort),
+    { singleton: true }
+  )
+
+  // Session Management: 註冊 ClearOrphanedSessionPort（清除孤立會話）
+  container.register(
+    TOKENS.ClearOrphanedSessionPort,
+    () => new ClearOrphanedSessionUseCase(gameStatePort, sessionContextPort, matchmakingStatePort),
     { singleton: true }
   )
 
@@ -540,12 +548,12 @@ function registerBackendAdapters(container: DIContainer): void {
   // Nuxt 同域，使用空字串作為 baseURL
   const baseURL = ''
 
-  // SendCommandPort: GameApiClient（注入 SessionContextPort）
+  // SendCommandPort: GameApiClient（注入 GameStatePort）
   container.register(
     TOKENS.SendCommandPort,
     () => {
-      const sessionContext = container.resolve(TOKENS.SessionContextPort) as SessionContextPort
-      return new GameApiClient(baseURL, sessionContext)
+      const gameState = container.resolve(TOKENS.GameStatePort) as GameStatePort
+      return new GameApiClient(baseURL, gameState)
     },
     { singleton: true },
   )
@@ -796,12 +804,13 @@ function registerMatchmakingEventRoutes(container: DIContainer): void {
   // 取得 Output Ports
   const matchmakingStatePort = container.resolve(TOKENS.MatchmakingStatePort) as MatchmakingStatePort
   const navigationPort = container.resolve(TOKENS.NavigationPort) as NavigationPort
+  const gameStatePort = container.resolve(TOKENS.GameStatePort) as GameStatePort
   const sessionContextPort = container.resolve(TOKENS.SessionContextPort) as SessionContextPort
 
   // 建立 Use Cases
   const handleMatchmakingStatusUseCase = new HandleMatchmakingStatusUseCase(matchmakingStatePort)
-  const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, sessionContextPort)
-  const handleMatchmakingCancelledUseCase = new HandleMatchmakingCancelledUseCase(matchmakingStatePort)
+  const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, gameStatePort, sessionContextPort)
+  const handleMatchmakingCancelledUseCase = new HandleMatchmakingCancelledUseCase(matchmakingStatePort, sessionContextPort)
   const handleMatchmakingErrorUseCase = new HandleMatchmakingErrorUseCase(matchmakingStatePort)
 
   // 註冊事件處理器

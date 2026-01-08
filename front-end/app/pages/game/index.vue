@@ -24,6 +24,7 @@ import { useDependency, useOptionalDependency } from '~/user-interface/adapter/c
 import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
 import type { SessionContextPort } from '~/user-interface/application/ports/output'
 import type { MatchmakingApiClient } from '~/user-interface/adapter/api/MatchmakingApiClient'
+import { useAuthStore } from '~/identity/adapter/stores/auth-store'
 import GameTopInfoBar from '~/components/GameTopInfoBar.vue'
 import FieldZone from './components/FieldZone.vue'
 import PlayerHandZone from './components/PlayerHandZone.vue'
@@ -56,6 +57,9 @@ const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const gameMode = useGameMode()
+
+// Auth Store（用於檢查登入狀態）
+const authStore = useAuthStore()
 
 // 配對狀態（011-online-matchmaking）
 const matchmakingStore = useMatchmakingStateStore()
@@ -109,7 +113,8 @@ const handleCancelMatchmaking = async () => {
     try {
       await matchmakingApiClient.cancelMatchmaking(entryId)
     } finally {
-      sessionContext.clearMatchmaking()
+      // 清除所有配對相關資訊（roomTypeId + entryId）
+      sessionContext.clearSession()
       matchmakingStore.clearSession()
       navigateTo('/lobby')
     }
@@ -117,9 +122,8 @@ const handleCancelMatchmaking = async () => {
 }
 
 onMounted(() => {
-  // 檢查是否有 playerId
-  const playerId = sessionContext.getPlayerId()
-  if (!playerId) {
+  // 檢查是否已登入
+  if (!authStore.isLoggedIn) {
     navigateTo('/lobby')
     return
   }

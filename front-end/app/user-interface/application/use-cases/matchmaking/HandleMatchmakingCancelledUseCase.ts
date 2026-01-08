@@ -4,10 +4,14 @@
  * @description
  * 處理 MatchmakingCancelled SSE 事件，更新 UI 狀態。
  *
+ * 清理項目：
+ * - MatchmakingState: 重置為 idle 狀態
+ * - SessionContext: 清除 roomTypeId 和 entryId
+ *
  * @module app/user-interface/application/use-cases/matchmaking/HandleMatchmakingCancelledUseCase
  */
 
-import type { MatchmakingStatePort } from '../../ports/output'
+import type { MatchmakingStatePort, SessionContextPort } from '../../ports/output'
 import type { HandleMatchmakingCancelledPort, ExecuteOptions } from '../../ports/input'
 import type { MatchmakingCancelledEvent } from '#shared/contracts'
 
@@ -18,7 +22,8 @@ import type { MatchmakingCancelledEvent } from '#shared/contracts'
  */
 export class HandleMatchmakingCancelledUseCase implements HandleMatchmakingCancelledPort {
   constructor(
-    private readonly matchmakingState: MatchmakingStatePort
+    private readonly matchmakingState: MatchmakingStatePort,
+    private readonly sessionContext: SessionContextPort
   ) {}
 
   /**
@@ -29,5 +34,8 @@ export class HandleMatchmakingCancelledUseCase implements HandleMatchmakingCance
   execute(event: MatchmakingCancelledEvent, _options?: ExecuteOptions): void {
     this.matchmakingState.setStatusMessage(event.message)
     this.matchmakingState.clearSession()
+
+    // 清除 SessionContext 中的 roomTypeId 和 entryId
+    this.sessionContext.clearSession()
   }
 }

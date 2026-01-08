@@ -12,7 +12,7 @@
  */
 
 import type { EventHandlerPort, ExecuteOptions } from '../ports/input'
-import type { MatchmakingStatePort, SessionContextPort, NavigationPort } from '../ports/output'
+import type { MatchmakingStatePort, SessionContextPort, NavigationPort, GameStatePort } from '../ports/output'
 
 /**
  * GatewayConnected 事件 Payload
@@ -39,14 +39,16 @@ export class HandleGatewayConnectedUseCase implements EventHandlerPort<GatewayCo
   constructor(
     private readonly matchmakingState: MatchmakingStatePort,
     private readonly sessionContext: SessionContextPort,
-    private readonly navigation: NavigationPort
+    private readonly navigation: NavigationPort,
+    private readonly gameState: GameStatePort
   ) {}
 
   async execute(payload: GatewayConnectedPayload, _options?: ExecuteOptions): Promise<void> {
     switch (payload.status) {
       case 'IDLE':
-        // 閒置狀態：清除配對狀態
+        // 閒置狀態：清除配對狀態和 SessionContext
         this.matchmakingState.clearSession()
+        this.sessionContext.clearSession()
         break
 
       case 'MATCHMAKING':
@@ -59,9 +61,9 @@ export class HandleGatewayConnectedUseCase implements EventHandlerPort<GatewayCo
         break
 
       case 'IN_GAME':
-        // 遊戲中：設定 gameId，後續會收到遊戲事件
+        // 遊戲中：設定 currentGameId，後續會收到遊戲事件
         if (payload.gameId) {
-          this.sessionContext.setGameId(payload.gameId)
+          this.gameState.setCurrentGameId(payload.gameId)
         }
         break
     }

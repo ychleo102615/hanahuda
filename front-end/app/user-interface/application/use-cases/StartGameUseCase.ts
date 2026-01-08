@@ -6,11 +6,11 @@
  *
  * SSE-First Architecture：
  * - 連線建立後，後端透過 InitialState 事件決定遊戲狀態
- * - 所有必要資訊從 SessionContextPort 取得
- * - 調用者只需表達業務意圖（是否新遊戲）
+ * - playerId、playerName 由呼叫端提供（來自 authStore）
+ * - roomTypeId 從 SessionContextPort 取得
  *
  * 業務流程（順序至關重要！）：
- * 1. 如果 isNewGame 為 true，清除 SessionContext 中的 gameId
+ * 1. 如果 isNewGame 為 true，清除 gameState 中的 currentGameId
  * 2. **首先斷開現有連線**：停止接收舊事件，並清空事件處理鏈
  * 3. 中斷所有進行中的操作和動畫（避免重連時視覺混亂）
  * 4. 重置遊戲狀態和 UI 狀態
@@ -23,7 +23,7 @@
  *
  * 依賴的 Output Ports：
  * - GameConnectionPort: 管理 SSE 連線
- * - SessionContextPort: 管理會話資訊
+ * - SessionContextPort: 管理房間選擇資訊
  * - GameStatePort: 管理遊戲狀態
  * - NotificationPort: 管理 UI 通知狀態
  * - AnimationPort: 中斷動畫、清除隱藏卡片
@@ -32,10 +32,17 @@
  * @example
  * ```typescript
  * // 進入遊戲頁面
- * startGameUseCase.execute()
+ * startGameUseCase.execute({
+ *   playerId: authStore.playerId,
+ *   playerName: authStore.displayName
+ * })
  *
  * // 開始新遊戲
- * startGameUseCase.execute({ isNewGame: true })
+ * startGameUseCase.execute({
+ *   playerId: authStore.playerId,
+ *   playerName: authStore.displayName,
+ *   isNewGame: true
+ * })
  * ```
  */
 
@@ -59,23 +66,14 @@ export class StartGameUseCase implements StartGamePort {
     private readonly operationSession: OperationSessionManager,
   ) {}
 
-  execute(options?: StartGameOptions): void {
-    const isNewGame = options?.isNewGame ?? false
-
-    // 從 SessionContext 取得必要資訊
-    const playerId = this.sessionContext.getPlayerId()
-    const playerName = this.sessionContext.getPlayerName() || 'Player'
+  execute(options: StartGameOptions): void {
+    const { playerId, playerName = 'Player', isNewGame = false } = options
     const roomTypeId = this.sessionContext.getRoomTypeId()
 
-    if (!playerId) {
-      throw new Error('No player ID found in session')
-    }
-
-
-    // 1. 新遊戲：清除 gameId 和遊戲結束標記
+    // 1. 新遊戲：清除 currentGameId 和遊戲結束標記
     if (isNewGame) {
-      this.sessionContext.setGameId(null)
-      this.sessionContext.setGameFinished(false)
+      this.gameState.setCurrentGameId(null)
+      this.gameState.setGameEnded(false)
     }
 
     // 2. **首先**斷開現有連線（停止接收舊事件 + 清空事件鏈）
@@ -95,7 +93,7 @@ export class StartGameUseCase implements StartGamePort {
     this.notification.resetUITemporaryState()
 
     // 5. 建立新連線
-    const gameId = this.sessionContext.getGameId()
+    const gameId = this.gameState.getCurrentGameId()
     this.gameConnection.connect({
       playerId,
       playerName,

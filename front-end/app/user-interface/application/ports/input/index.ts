@@ -67,3 +67,6 @@ export type {
   HandleMatchmakingCancelledPort,
   HandleMatchmakingErrorPort,
 } from './matchmaking-event-handlers.port'
+
+// Session Management Input Ports
+export { ClearOrphanedSessionPort } from './clear-orphaned-session.port'

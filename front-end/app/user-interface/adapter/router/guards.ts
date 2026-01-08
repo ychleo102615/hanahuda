@@ -46,7 +46,7 @@ export function gamePageGuard(
   next: NavigationGuardNext
 ): void {
 
-  if (!sessionContext.hasActiveSession()) {
+  if (!sessionContext.hasRoomSelection()) {
     next({ name: 'lobby' })
     return
   }
@@ -85,8 +85,9 @@ export function lobbyPageGuard(
   from: RouteLocationNormalized,
   next: NavigationGuardNext
 ): void {
-  // 若遊戲會話已建立，重定向至遊戲畫面
-  if (sessionContext.hasActiveSession()) {
+  // 若已選擇房間類型，重定向至遊戲畫面
+  // 注意：此檔案主要用於測試，實際應使用 gameState.currentGameId 判斷
+  if (sessionContext.hasRoomSelection()) {
     next({ name: 'game' })
     return
   }

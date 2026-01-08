@@ -30,7 +30,7 @@ import { useDependency } from './useDependency'
 import { useGameMode } from './useGameMode'
 import { TOKENS } from '../di/tokens'
 import type { GatewayEventClient } from '../sse/GatewayEventClient'
-import type { SessionContextPort } from '../../application/ports/output'
+import { useAuthStore } from '~/identity/adapter/stores/auth-store'
 
 /** 防抖間隔（毫秒）- iOS 上 visibilitychange 可能短時間內觸發多次 */
 const RECONNECT_DEBOUNCE_MS = 2000
@@ -51,7 +51,7 @@ export function usePageVisibility(): void {
   }
 
   const gatewayClient = useDependency<GatewayEventClient>(TOKENS.GatewayEventClient)
-  const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
+  const authStore = useAuthStore()
 
   // 防抖：記錄上次觸發時間，避免 iOS 上多次觸發
   let lastTriggerTime = 0
@@ -74,9 +74,8 @@ export function usePageVisibility(): void {
     }
     lastTriggerTime = now
 
-    // 檢查是否有 playerId（表示已登入）
-    const playerId = sessionContext.getPlayerId()
-    if (!playerId) {
+    // 檢查是否已登入
+    if (!authStore.isLoggedIn) {
       return
     }
 
