@@ -7,10 +7,11 @@
  * - 大螢幕：各區域按比例填滿 viewport（100vh）
  * - 小螢幕：各區域使用最小高度，頁面可垂直滾動
  *
- * SSE-First Architecture:
- * - 頁面載入時建立 SSE 連線
- * - 後端推送 InitialState 事件決定顯示內容
- * - 重連由 SSEConnectionManager 自動處理
+ * Gateway Architecture:
+ * - 頁面載入時建立單一 Gateway SSE 連線
+ * - Gateway 自動處理配對和遊戲事件
+ * - 後端推送 GatewayConnected 事件決定初始狀態
+ * - 重連由 GatewayEventClient 自動處理
  */
 
 // Nuxt 4: 定義頁面 middleware
@@ -18,11 +19,11 @@ definePageMeta({
   middleware: 'game',
 })
 
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useDependency, useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
 import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
-import type { SessionContextPort, GameConnectionPort } from '~/user-interface/application/ports/output'
-import type { StartGamePort } from '~/user-interface/application/ports/input'
+import type { SessionContextPort } from '~/user-interface/application/ports/output'
+import type { MatchmakingApiClient } from '~/user-interface/adapter/api/MatchmakingApiClient'
 import GameTopInfoBar from '~/components/GameTopInfoBar.vue'
 import FieldZone from './components/FieldZone.vue'
 import PlayerHandZone from './components/PlayerHandZone.vue'
@@ -45,7 +46,7 @@ import { useZoneRegistration } from '~/user-interface/adapter/composables/useZon
 import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
 import { useGameMode } from '~/user-interface/adapter/composables/useGameMode'
 import { usePageVisibility } from '~/user-interface/adapter/composables/usePageVisibility'
-import { useMatchmakingConnection } from '~/user-interface/adapter/composables/useMatchmakingConnection'
+import { useGatewayConnection } from '~/user-interface/adapter/composables/useGatewayConnection'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
 
@@ -58,31 +59,22 @@ const gameMode = useGameMode()
 
 // 配對狀態（011-online-matchmaking）
 const matchmakingStore = useMatchmakingStateStore()
-const matchmakingConnection = useMatchmakingConnection()
+
+// MatchmakingApiClient（用於取消配對）
+const matchmakingApiClient = gameMode === 'backend'
+  ? useOptionalDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
+  : null
+
+// Gateway SSE 連線（Backend 模式）
+const gatewayConnection = gameMode === 'backend' ? useGatewayConnection() : null
 
 // 頁面可見性監控（自動重連）
 usePageVisibility()
-
-// StartGameUseCase（Backend 模式）
-const startGameUseCase = gameMode === 'backend'
-  ? useOptionalDependency<StartGamePort>(TOKENS.StartGamePort)
-  : null
-
-// GameConnectionPort（用於 onUnmounted 斷開連線）
-const gameConnection = gameMode === 'backend'
-  ? useOptionalDependency<GameConnectionPort>(TOKENS.GameConnectionPort)
-  : null
 
 // Mock Event Emitter 注入（僅 Mock 模式）
 const mockEventEmitter = gameMode === 'mock'
   ? useOptionalDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
   : null
-
-// Restart Game 處理函數
-function handleRestartGame() {
-  if (!startGameUseCase) return
-  startGameUseCase.execute({ isNewGame: true })
-}
 
 // T043 [US3]: Leave Game 功能
 const {
@@ -92,7 +84,6 @@ const {
   handleLeaveGameCancel,
 } = useLeaveGame({
   requireConfirmation: true,
-  onRestartGame: handleRestartGame,
 })
 
 // Identity BC - 玩家資訊
@@ -111,45 +102,21 @@ const handlePlayerInfoCardClose = () => {
   isPlayerInfoCardOpen.value = false
 }
 
-// GamePage 不再直接調用業務 Port，由子組件負責
-
-// 011-online-matchmaking: 監聽配對狀態變化
-// 當配對成功（matched）時，轉換到遊戲 SSE
-watch(
-  () => matchmakingStore.status,
-  (newStatus) => {
-    if (newStatus === 'matched') {
-      // 配對成功，延遲後轉換到遊戲 SSE
-      setTimeout(() => {
-        // 清除配對狀態
-        sessionContext.clearMatchmaking()
-
-        // 從 matchmakingStore 取得 gameId 並設定到 sessionContext
-        const gameId = matchmakingStore.gameId
-        if (gameId) {
-          sessionContext.setGameId(gameId)
-        }
-
-        // 清除 matchmaking store
-        matchmakingStore.clearSession()
-
-        // 建立遊戲 SSE 連線
-        if (startGameUseCase) {
-          startGameUseCase.execute()
-        }
-      }, 1500) // 讓使用者看到配對成功訊息
+// 取消配對
+const handleCancelMatchmaking = async () => {
+  const entryId = sessionContext.getEntryId()
+  if (entryId && matchmakingApiClient) {
+    try {
+      await matchmakingApiClient.cancelMatchmaking(entryId)
+    } finally {
+      sessionContext.clearMatchmaking()
+      matchmakingStore.clearSession()
+      navigateTo('/lobby')
     }
   }
-)
-
-// 011-online-matchmaking: 取消配對
-const handleCancelMatchmaking = async () => {
-  await matchmakingConnection.cancelMatchmaking()
-  navigateTo('/lobby')
 }
 
 onMounted(() => {
-
   // 檢查是否有 playerId
   const playerId = sessionContext.getPlayerId()
   if (!playerId) {
@@ -157,20 +124,11 @@ onMounted(() => {
     return
   }
 
-  // 檢查是否處於線上配對模式（011-online-matchmaking）
-  const isMatchmakingMode = sessionContext.isMatchmakingMode()
-
-  if (isMatchmakingMode) {
-    // 配對模式：連線到配對 SSE
-    matchmakingConnection.connect()
-    return
-  }
-
   // 根據模式建立連線
-  if (gameMode === 'backend' && startGameUseCase) {
-    // Backend 模式：使用 StartGameUseCase 建立 SSE 連線
-    // UseCase 會從 SessionContext 取得所有必要資訊
-    startGameUseCase.execute()
+  if (gameMode === 'backend' && gatewayConnection) {
+    // Backend 模式：建立 Gateway SSE 連線
+    // Gateway 自動處理配對和遊戲事件
+    gatewayConnection.connect()
   } else if (gameMode === 'mock' && mockEventEmitter) {
     // Mock 模式：啟動事件腳本
     mockEventEmitter.start()
@@ -178,9 +136,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  // 斷開連線（Backend 模式）
-  if (gameConnection) {
-    gameConnection.disconnect()
+  // 斷開 Gateway 連線（Backend 模式）
+  if (gatewayConnection) {
+    gatewayConnection.disconnect()
   }
 
   // 重置 Mock 事件發射器（Mock 模式）
@@ -188,10 +146,6 @@ onUnmounted(() => {
     mockEventEmitter.reset()
   }
 })
-
-
-// GamePage 只作為協調者，不處理業務邏輯
-// 所有場牌點擊邏輯已移至 FieldZone 組件內部處理
 </script>
 
 <template>

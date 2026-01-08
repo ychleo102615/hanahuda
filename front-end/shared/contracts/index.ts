@@ -101,3 +101,11 @@ export type {
   MatchmakingSSEEventType,
 } from './matchmaking-events'
 export { MATCHMAKING_EVENT_TYPES, SSE_MATCHMAKING_EVENT_TYPES } from './matchmaking-events'
+
+// Gateway Events
+export type {
+  GatewayEvent,
+  GatewayEventDomain,
+  GatewaySSEEventType,
+} from './gateway-events'
+export { GATEWAY_DOMAINS, GATEWAY_SSE_EVENT_TYPES } from './gateway-events'

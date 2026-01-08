@@ -22,6 +22,9 @@ import { z } from 'zod'
 import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 import { getIdentityContainer } from '~~/server/identity/adapters/di/container'
 import { getMatchmakingContainer } from '~~/server/matchmaking/adapters/di/container'
+import { getMatchmakingRegistry } from '~~/server/matchmaking/adapters/registry/matchmakingRegistrySingleton'
+import { getInMemoryMatchmakingPool } from '~~/server/matchmaking/adapters/persistence/inMemoryMatchmakingPool'
+import type { BotFallbackInfo } from '~~/server/matchmaking/adapters/registry/matchmakingRegistry'
 import { isValidRoomTypeId, type RoomTypeId } from '~~/shared/constants/roomTypes'
 import type { PlayerId } from '~~/server/identity/domain/player/player'
 import {
@@ -118,6 +121,37 @@ export default defineEventHandler(async (event): Promise<EnterMatchmakingRespons
 
   // 6. 回傳結果
   if (result.success) {
+    // 檢查是否為等待配對狀態（未立即配對成功）
+    // 如果是，註冊到 MatchmakingRegistry 以啟動計時器和狀態追蹤
+    const isWaitingForMatch = result.message.includes('Searching')
+
+    if (isWaitingForMatch && result.entryId) {
+      const registry = getMatchmakingRegistry()
+      const pool = getInMemoryMatchmakingPool()
+      const entry = await pool.findById(result.entryId)
+
+      if (entry) {
+        // Bot Fallback 回調：15 秒後觸發 Bot 配對
+        const { processMatchmakingUseCase } = matchmakingContainer
+        const botFallbackCallback = async (info: BotFallbackInfo) => {
+          try {
+            await processMatchmakingUseCase.executeBotFallback({
+              entryId: info.entryId,
+              playerId: info.playerId,
+              playerName: info.playerName,
+              roomType: info.roomType,
+            })
+          } catch (error) {
+            console.error('Bot fallback failed:', error)
+          }
+        }
+
+        // 註冊到 Registry（啟動計時器）
+        // statusCallback 為空函數，因為 sendStatusUpdate 已透過 PlayerEventBus 發送
+        registry.registerEntry(entry, () => {}, botFallbackCallback)
+      }
+    }
+
     return {
       success: true,
       entry_id: result.entryId!,

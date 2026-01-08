@@ -55,6 +55,8 @@ import { MockEventEmitter } from '../mock/MockEventEmitter'
 import { EventRouter } from '../sse/EventRouter'
 import { MatchmakingEventRouter } from '../sse/MatchmakingEventRouter'
 import { MatchmakingEventClient } from '../sse/MatchmakingEventClient'
+import { GatewayEventRouter } from '../sse/GatewayEventRouter'
+import { GatewayEventClient } from '../sse/GatewayEventClient'
 import { GameApiClient } from '../api/GameApiClient'
 import { GameEventClient } from '../sse/GameEventClient'
 import { AnimationPortAdapter } from '../animation/AnimationPortAdapter'
@@ -78,6 +80,7 @@ import {
   HandleMatchmakingCancelledUseCase,
   HandleMatchmakingErrorUseCase,
 } from '../../application/use-cases/matchmaking'
+import { HandleGatewayConnectedUseCase } from '../../application/use-cases/HandleGatewayConnectedUseCase'
 
 /**
  * 遊戲模式
@@ -514,6 +517,13 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
+  // Gateway: 註冊 HandleGatewayConnectedPort（處理 Gateway 連線後的初始狀態）
+  container.register(
+    TOKENS.HandleGatewayConnectedPort,
+    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, navigationPort),
+    { singleton: true }
+  )
+
 }
 
 /**
@@ -617,6 +627,31 @@ function registerBackendAdapters(container: DIContainer): void {
     () => {
       const router = container.resolve(TOKENS.MatchmakingEventRouter) as MatchmakingEventRouter
       return new MatchmakingEventClient(router)
+    },
+    { singleton: true },
+  )
+
+  // ===== Gateway SSE (Game Gateway 統一架構) =====
+
+  // GatewayEventRouter: 統一 Gateway 事件路由器
+  // 整合 EventRouter (遊戲) 與 MatchmakingEventRouter (配對)
+  container.register(
+    TOKENS.GatewayEventRouter,
+    () => {
+      const gameRouter = container.resolve(TOKENS.EventRouter) as EventRouter
+      const matchmakingRouter = container.resolve(TOKENS.MatchmakingEventRouter) as MatchmakingEventRouter
+      return new GatewayEventRouter(gameRouter, matchmakingRouter)
+    },
+    { singleton: true },
+  )
+
+  // GatewayEventClient: 統一 Gateway SSE 客戶端
+  // 連線到 /api/v1/events，接收所有遊戲相關事件
+  container.register(
+    TOKENS.GatewayEventClient,
+    () => {
+      const router = container.resolve(TOKENS.GatewayEventRouter) as GatewayEventRouter
+      return new GatewayEventClient(router)
     },
     { singleton: true },
   )
@@ -741,6 +776,11 @@ function registerEventRoutes(container: DIContainer): void {
   const gameErrorPort = container.resolve(TOKENS.HandleGameErrorPort) as { execute: (payload: unknown) => void }
   router.register('GameError', gameErrorPort)
 
+  // Gateway: 綁定 GatewayConnected 事件（Gateway SSE 連線後的初始狀態）
+  const gatewayConnectedPort = container.resolve(TOKENS.HandleGatewayConnectedPort) as { execute: (payload: unknown) => void }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  router.register('GatewayConnected' as any, gatewayConnectedPort)
+
 }
 
 /**
@@ -775,10 +815,11 @@ function registerMatchmakingEventRoutes(container: DIContainer): void {
   // 取得 Output Ports
   const matchmakingStatePort = container.resolve(TOKENS.MatchmakingStatePort) as MatchmakingStatePort
   const navigationPort = container.resolve(TOKENS.NavigationPort) as NavigationPort
+  const sessionContextPort = container.resolve(TOKENS.SessionContextPort) as SessionContextPort
 
   // 建立 Use Cases
   const handleMatchmakingStatusUseCase = new HandleMatchmakingStatusUseCase(matchmakingStatePort)
-  const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort)
+  const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, sessionContextPort)
   const handleMatchmakingCancelledUseCase = new HandleMatchmakingCancelledUseCase(matchmakingStatePort)
   const handleMatchmakingErrorUseCase = new HandleMatchmakingErrorUseCase(matchmakingStatePort)
 

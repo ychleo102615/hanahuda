@@ -1,6 +1,11 @@
 /**
  * GET /api/v1/matchmaking/status - Framework Layer
  *
+ * @deprecated
+ * 此端點已被統一的 Gateway SSE 端點取代：GET /api/v1/events
+ * 新架構提供單一 SSE 連線接收所有遊戲相關事件。
+ * 此端點保留用於向後兼容，未來版本將移除。
+ *
  * @description
  * SSE 端點，用於接收配對狀態更新。
  *
@@ -18,6 +23,7 @@
  * - 15s+: MatchFound with bot opponent
  *
  * @see specs/011-online-matchmaking/contracts/matchmaking-api.yaml
+ * @see GET /api/v1/events - 新的統一 Gateway SSE 端點
  * @module server/api/v1/matchmaking/status
  */
 

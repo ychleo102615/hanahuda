@@ -27,6 +27,13 @@ export abstract class PlayerGameStatusPort {
    *
    * @param playerId - 玩家 ID
    * @returns true 若玩家有進行中的遊戲，否則 false
+   *
+   * @implementation
+   * 實作者應使用記憶體狀態（GameStorePort / inMemoryGameStore）查詢，
+   * 因為活躍遊戲由 inMemoryGameStore 管理，是 SSOT。
+   * 不應查詢資料庫（GameRepositoryPort），避免：
+   * 1. 效能問題（DB 查詢較慢）
+   * 2. 資料不一致（DB 可能有已結束但未清理的記錄）
    */
   abstract hasActiveGame(playerId: string): Promise<boolean>
 }

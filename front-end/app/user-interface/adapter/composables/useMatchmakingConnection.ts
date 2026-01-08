@@ -1,6 +1,11 @@
 /**
  * useMatchmakingConnection - 配對 SSE 連線管理 Composable
  *
+ * @deprecated
+ * 此 Composable 已被 useGatewayConnection 取代。
+ * 新架構使用單一 SSE 連線接收所有遊戲相關事件。
+ * 此函數保留用於向後兼容，未來版本將移除。
+ *
  * @description
  * 僅負責 Vue 響應式狀態管理，委託 MatchmakingEventClient 處理 SSE 連線。
  * 符合 Clean Architecture：Composable 只管理 Presentation 層狀態。
@@ -8,6 +13,8 @@
  * 控制流：
  * - MatchmakingEventClient → MatchmakingEventRouter → Use Cases → Output Ports
  * - 此 Composable 只監聽連線狀態回調
+ *
+ * @see useGatewayConnection - 新的統一連線管理 Composable
  *
  * @module app/user-interface/adapter/composables/useMatchmakingConnection
  */

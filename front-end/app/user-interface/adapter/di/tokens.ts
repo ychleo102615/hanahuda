@@ -34,6 +34,9 @@ export const TOKENS = {
   SelectMatchTargetPort: Symbol('SelectMatchTargetPort'),
   MakeKoiKoiDecisionPort: Symbol('MakeKoiKoiDecisionPort'),
 
+  // ===== Input Ports - Gateway Event Handlers =====
+  HandleGatewayConnectedPort: Symbol('HandleGatewayConnectedPort'),
+
   // ===== Input Ports - Event Handlers (16 個) =====
   HandleGameStartedPort: Symbol('HandleGameStartedPort'),
   HandleRoundDealtPort: Symbol('HandleRoundDealtPort'),
@@ -70,6 +73,10 @@ export const TOKENS = {
   // ===== Matchmaking Adapters =====
   MatchmakingEventRouter: Symbol('MatchmakingEventRouter'),
   MatchmakingEventClient: Symbol('MatchmakingEventClient'),
+
+  // ===== Gateway Adapters =====
+  GatewayEventRouter: Symbol('GatewayEventRouter'),
+  GatewayEventClient: Symbol('GatewayEventClient'),
 
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),

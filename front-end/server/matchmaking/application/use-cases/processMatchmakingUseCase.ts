@@ -106,9 +106,9 @@ export class ProcessMatchmakingUseCase {
       entry.roomType
     )
 
-    // 5. 更新兩個條目的狀態
-    await this.poolPort.updateStatus(entry.id, 'MATCHED')
-    await this.poolPort.updateStatus(opponent.id, 'MATCHED')
+    // 5. 從 Pool 移除兩個條目（配對完成，不再需要）
+    await this.poolPort.remove(entry.id)
+    await this.poolPort.remove(opponent.id)
 
     // 6. 發布配對成功事件
     this.eventPublisher.publishMatchFound({
@@ -144,8 +144,8 @@ export class ProcessMatchmakingUseCase {
       input.roomType
     )
 
-    // 2. 更新條目狀態為 MATCHED
-    await this.poolPort.updateStatus(input.entryId, 'MATCHED')
+    // 2. 從 Pool 移除條目（配對完成，不再需要）
+    await this.poolPort.remove(input.entryId)
 
     // 3. 發布配對成功事件
     this.eventPublisher.publishMatchFound({

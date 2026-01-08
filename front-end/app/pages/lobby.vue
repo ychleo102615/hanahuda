@@ -22,13 +22,13 @@ definePageMeta({
   middleware: 'lobby',
 })
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
 import { useDependency } from '~/user-interface/adapter/composables/useDependency'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output'
 import { RoomApiClient, type RoomType } from '~/user-interface/adapter/api/RoomApiClient'
-import { MatchmakingApiClient } from '~/user-interface/adapter/api/MatchmakingApiClient'
+import { MatchmakingApiClient, MatchmakingError } from '~/user-interface/adapter/api/MatchmakingApiClient'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import LobbyTopInfoBar from '~/components/LobbyTopInfoBar.vue'
@@ -72,6 +72,25 @@ const loadError = ref<string | null>(null)
 const hasError = computed(() => matchmakingStore.status === 'error')
 const canStartMatchmaking = computed(() => matchmakingStore.canStartMatchmaking && !isMatchmaking.value)
 
+// Error title mapping based on error code
+const errorTitle = computed(() => {
+  const code = matchmakingStore.errorCode
+  switch (code) {
+    case 'ALREADY_IN_QUEUE':
+      return 'Already in Queue'
+    case 'ALREADY_IN_GAME':
+      return 'Already in Game'
+    case 'INVALID_ROOM_TYPE':
+      return 'Invalid Room Type'
+    case 'UNAUTHORIZED':
+      return 'Session Expired'
+    case 'NETWORK_ERROR':
+      return 'Connection Error'
+    default:
+      return 'Matchmaking Failed'
+  }
+})
+
 // 選單項目
 const menuItems = computed<MenuItem[]>(() => [
   {
@@ -90,6 +109,13 @@ onMounted(async () => {
     loadError.value = 'Failed to load room types'
   } finally {
     isLoadingRooms.value = false
+  }
+})
+
+// 離開頁面時清理錯誤狀態
+onBeforeUnmount(() => {
+  if (matchmakingStore.status === 'error') {
+    matchmakingStore.clearSession()
   }
 })
 
@@ -189,10 +215,13 @@ const handleSelectRoom = async (roomTypeId: string) => {
     // 配對失敗
     isMatchmaking.value = false
     matchmakingStore.setStatus('error')
-    if (error instanceof Error) {
-      matchmakingStore.setErrorMessage(error.message)
+
+    if (error instanceof MatchmakingError) {
+      matchmakingStore.setError(error.errorCode, error.message)
+    } else if (error instanceof Error) {
+      matchmakingStore.setError('UNKNOWN_ERROR', error.message)
     } else {
-      matchmakingStore.setErrorMessage('Failed to enter matchmaking')
+      matchmakingStore.setError('UNKNOWN_ERROR', 'Failed to enter matchmaking')
     }
   }
 }
@@ -291,7 +320,7 @@ const handleRetry = () => {
                 />
               </svg>
               <div class="flex-1">
-                <h3 class="text-sm font-medium text-red-300">Matchmaking Failed</h3>
+                <h3 class="text-sm font-medium text-red-300">{{ errorTitle }}</h3>
                 <p class="mt-1 text-sm text-red-400">
                   {{ matchmakingStore.errorMessage || 'An error occurred. Please try again.' }}
                 </p>

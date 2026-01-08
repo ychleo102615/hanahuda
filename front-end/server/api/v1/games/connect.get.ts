@@ -1,6 +1,11 @@
 /**
  * GET /api/v1/games/connect - Framework Layer
  *
+ * @deprecated
+ * 此端點已被統一的 Gateway SSE 端點取代：GET /api/v1/events
+ * 新架構提供單一 SSE 連線接收所有遊戲相關事件。
+ * 此端點保留用於向後兼容，未來版本將移除。
+ *
  * @description
  * 統一 SSE 連線端點（SSE-First 架構）。
  * 整合遊戲加入/重連邏輯，第一個事件永遠是 InitialState。
@@ -19,6 +24,7 @@
  * 4. 發送 InitialState 事件（第一個事件）
  * 5. 註冊連線，接收後續遊戲事件
  *
+ * @see GET /api/v1/events - 新的統一 Gateway SSE 端點
  * @module server/api/v1/games/connect
  */
 

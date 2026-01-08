@@ -17,7 +17,7 @@ export type {
 } from './types'
 export { EVENT_TYPES } from './types'
 
-// Event Bus
+// Internal Event Bus (BC 間內部通訊)
 export type {
   IInternalEventBus,
   Unsubscribe,
@@ -25,3 +25,18 @@ export type {
   RoomCreatedHandler,
 } from './internalEventBus'
 export { internalEventBus } from './internalEventBus'
+
+// Player Event Bus (Gateway 發送事件給前端)
+export type {
+  GatewayEvent,
+  GatewayEventDomain,
+  PlayerEventHandler,
+  IPlayerEventBus,
+  Unsubscribe as PlayerUnsubscribe,
+} from './playerEventBus'
+export {
+  playerEventBus,
+  createGatewayEvent,
+  createMatchmakingEvent,
+  createGameEvent,
+} from './playerEventBus'

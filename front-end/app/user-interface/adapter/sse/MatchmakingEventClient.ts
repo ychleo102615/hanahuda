@@ -1,6 +1,11 @@
 /**
  * MatchmakingEventClient - 配對 SSE 客戶端
  *
+ * @deprecated
+ * 此客戶端已被統一的 GatewayEventClient 取代。
+ * 新架構使用單一 SSE 連線接收所有遊戲相關事件。
+ * 此類別保留用於向後兼容，未來版本將移除。
+ *
  * @description
  * 使用原生 EventSource API 建立配對 SSE 連線，接收配對事件並路由到對應的 Input Port。
  * 參照 GameEventClient 設計，只負責 SSE 連線管理。
@@ -9,6 +14,9 @@
  * - 使用 addEventListener 監聽命名事件（而非 onmessage）
  * - 透過 MatchmakingEventRouter 路由事件到 Input Ports
  * - 配對 SSE 不需要自動重連，由上層處理
+ *
+ * @see GatewayEventClient - 新的統一 SSE 客戶端
+ * @see useGatewayConnection - 新的連線管理 Composable
  *
  * @example
  * ```typescript

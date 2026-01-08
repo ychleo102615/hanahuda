@@ -1,0 +1,69 @@
+/**
+ * HandleGatewayConnectedUseCase - 處理 Gateway 連線成功事件
+ *
+ * @description
+ * 處理 Gateway SSE 連線建立後的初始狀態事件。
+ * 根據玩家狀態決定後續行為：
+ * - IDLE: 閒置狀態，可進入大廳
+ * - MATCHMAKING: 配對中，顯示配對 UI
+ * - IN_GAME: 遊戲中，恢復遊戲狀態
+ *
+ * @module app/user-interface/application/use-cases/HandleGatewayConnectedUseCase
+ */
+
+import type { EventHandlerPort, ExecuteOptions } from '../ports/input'
+import type { MatchmakingStatePort, SessionContextPort, NavigationPort } from '../ports/output'
+
+/**
+ * GatewayConnected 事件 Payload
+ */
+export interface GatewayConnectedPayload {
+  readonly player_id: string
+  readonly status: 'IDLE' | 'MATCHMAKING' | 'IN_GAME'
+  // MATCHMAKING 狀態
+  readonly entryId?: string
+  readonly roomType?: string
+  readonly elapsedSeconds?: number
+  // IN_GAME 狀態
+  readonly gameId?: string
+  readonly gameStatus?: string
+}
+
+/**
+ * HandleGatewayConnectedUseCase
+ *
+ * @description
+ * 處理 Gateway 連線成功事件，根據玩家狀態設定 UI。
+ */
+export class HandleGatewayConnectedUseCase implements EventHandlerPort<GatewayConnectedPayload> {
+  constructor(
+    private readonly matchmakingState: MatchmakingStatePort,
+    private readonly sessionContext: SessionContextPort,
+    private readonly navigation: NavigationPort
+  ) {}
+
+  async execute(payload: GatewayConnectedPayload, _options?: ExecuteOptions): Promise<void> {
+    switch (payload.status) {
+      case 'IDLE':
+        // 閒置狀態：清除配對狀態
+        this.matchmakingState.clearSession()
+        break
+
+      case 'MATCHMAKING':
+        // 配對中：恢復配對狀態
+        if (payload.entryId) {
+          this.matchmakingState.setEntryId(payload.entryId)
+          this.matchmakingState.setStatus('searching')
+          this.sessionContext.setEntryId(payload.entryId)
+        }
+        break
+
+      case 'IN_GAME':
+        // 遊戲中：設定 gameId，後續會收到遊戲事件
+        if (payload.gameId) {
+          this.sessionContext.setGameId(payload.gameId)
+        }
+        break
+    }
+  }
+}

@@ -22,6 +22,12 @@ import type { MatchmakingEntry } from '../../domain/matchmakingEntry'
 import type { MatchmakingStatusCode } from '../../domain/matchmakingStatus'
 import { STATUS_MESSAGES } from '../../domain/matchmakingStatus'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
+import {
+  playerEventBus,
+  createMatchmakingEvent,
+  internalEventBus,
+  type Unsubscribe,
+} from '~~/server/shared/infrastructure/event-bus'
 
 /**
  * 計時器配置常數
@@ -92,8 +98,33 @@ interface EntryTimers {
  */
 export class MatchmakingRegistry {
   private readonly entries: Map<string, EntryTimers> = new Map()
+  private readonly playerIdToEntryId: Map<string, string> = new Map()
+  private matchFoundUnsubscribe: Unsubscribe | null = null
 
-  constructor(private readonly poolPort: MatchmakingPoolPort) {}
+  constructor(private readonly poolPort: MatchmakingPoolPort) {
+    // 訂閱 MATCH_FOUND 事件，清理已配對玩家的計時器
+    this.matchFoundUnsubscribe = internalEventBus.onMatchFound((payload) => {
+      this.handleMatchFoundEvent(payload.player1Id, payload.player2Id)
+    })
+  }
+
+  /**
+   * 處理 MATCH_FOUND 事件
+   *
+   * @description
+   * 清理已配對玩家的 Registry entries（計時器）。
+   */
+  private handleMatchFoundEvent(player1Id: string, player2Id: string): void {
+    const entry1Id = this.playerIdToEntryId.get(player1Id)
+    const entry2Id = this.playerIdToEntryId.get(player2Id)
+
+    if (entry1Id) {
+      this.unregisterEntry(entry1Id)
+    }
+    if (entry2Id) {
+      this.unregisterEntry(entry2Id)
+    }
+  }
 
   /**
    * 註冊配對條目
@@ -143,6 +174,7 @@ export class MatchmakingRegistry {
     }, TIMERS.BOT_FALLBACK_MS)
 
     this.entries.set(entry.id, entryTimers)
+    this.playerIdToEntryId.set(entry.playerId, entry.id)
   }
 
   /**
@@ -159,6 +191,7 @@ export class MatchmakingRegistry {
 
     this.clearTimers(entryTimers)
     this.entries.delete(entryId)
+    this.playerIdToEntryId.delete(entryTimers.playerId)
   }
 
   /**
@@ -172,13 +205,21 @@ export class MatchmakingRegistry {
   }
 
   /**
-   * 停止所有計時器
+   * 停止所有計時器並清理資源
    */
   stop(): void {
+    // 取消 MATCH_FOUND 事件訂閱
+    if (this.matchFoundUnsubscribe) {
+      this.matchFoundUnsubscribe()
+      this.matchFoundUnsubscribe = null
+    }
+
+    // 清除所有計時器
     for (const entryTimers of this.entries.values()) {
       this.clearTimers(entryTimers)
     }
     this.entries.clear()
+    this.playerIdToEntryId.clear()
   }
 
   /**
@@ -224,18 +265,29 @@ export class MatchmakingRegistry {
 
   /**
    * 發送 SSE 狀態更新
+   *
+   * @description
+   * 1. 呼叫傳統 statusCallback（向後兼容舊 SSE 端點）
+   * 2. 發布到 PlayerEventBus（新 Gateway 架構）
    */
   private sendStatusUpdate(entryTimers: EntryTimers, status: MatchmakingStatusCode): void {
     const now = new Date()
     const elapsedMs = now.getTime() - entryTimers.enteredAt.getTime()
     const elapsedSeconds = Math.floor(elapsedMs / 1000)
 
-    entryTimers.statusCallback({
+    const update: MatchmakingStatusUpdate = {
       entry_id: entryTimers.entryId,
       status,
       message: STATUS_MESSAGES[status],
       elapsed_seconds: elapsedSeconds,
-    })
+    }
+
+    // 1. 傳統 statusCallback（向後兼容）
+    entryTimers.statusCallback(update)
+
+    // 2. 發布到 PlayerEventBus（新 Gateway 架構）
+    const gatewayEvent = createMatchmakingEvent('MatchmakingStatus', update)
+    playerEventBus.publishToPlayer(entryTimers.playerId, gatewayEvent)
   }
 
   /**

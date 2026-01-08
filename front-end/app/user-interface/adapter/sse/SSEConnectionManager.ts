@@ -1,6 +1,11 @@
 /**
  * SSEConnectionManager - SSE 連線管理器
  *
+ * @deprecated
+ * 此管理器已被 GatewayEventClient + useGatewayConnection 取代。
+ * 新架構使用單一 SSE 連線接收所有遊戲相關事件。
+ * 此類別保留用於向後兼容，未來版本將移除。
+ *
  * @description
  * 管理 SSE 連線的建立、狀態同步與斷開。
  * 協調 GameEventClient 與 UIStateStore 的互動。
@@ -14,6 +19,9 @@
  * - 連線即觸發 join/reconnect（由後端處理）
  * - 第一個事件永遠是 InitialState
  * - 前端根據 response_type 決定顯示邏輯
+ *
+ * @see GatewayEventClient - 新的統一 SSE 客戶端
+ * @see useGatewayConnection - 新的連線管理 Composable
  *
  * @note session_token 由 HttpOnly Cookie 自動傳送，無需手動傳遞
  *

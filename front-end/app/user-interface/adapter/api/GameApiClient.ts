@@ -79,7 +79,7 @@ export class GameApiClient implements SendCommandPort {
    */
   async leaveGame(gameId: string): Promise<void> {
     if (!gameId) {
-      throw new ValidationError('遊戲 ID 不可為空')
+      throw new ValidationError('Game ID cannot be empty')
     }
 
     const url = `${this.baseURL}/api/v1/games/${gameId}/leave`
@@ -159,7 +159,7 @@ export class GameApiClient implements SendCommandPort {
   async makeDecision(decision: 'KOI_KOI' | 'END_ROUND'): Promise<void> {
     // 驗證輸入
     if (decision !== 'KOI_KOI' && decision !== 'END_ROUND') {
-      throw new ValidationError(`無效的決策值: ${decision}`)
+      throw new ValidationError(`Invalid decision: ${decision}`)
     }
 
     // 取得 gameId
@@ -329,7 +329,7 @@ export class GameApiClient implements SendCommandPort {
    */
   private validateCardId(cardId: string): void {
     if (!/^\d{4}$/.test(cardId)) {
-      throw new ValidationError(`無效的卡片 ID: ${cardId}`)
+      throw new ValidationError(`Invalid card ID: ${cardId}`)
     }
   }
 
@@ -348,10 +348,10 @@ export class GameApiClient implements SendCommandPort {
     const playerId = this.sessionContext.getPlayerId()
 
     if (!gameId) {
-      throw new ValidationError('遊戲尚未初始化')
+      throw new ValidationError('Game not initialized')
     }
     if (!playerId) {
-      throw new ValidationError('玩家 ID 未設定')
+      throw new ValidationError('Player ID not set')
     }
 
     return { gameId, playerId }

@@ -320,10 +320,11 @@ export class TurnFlowService {
    * @description
    * 統一處理遊戲結束的所有邏輯：
    * 1. 使用 Domain 函數設定遊戲為 FINISHED
-   * 2. 清除所有計時器
-   * 3. 發送 GameFinished 事件
-   * 4. 從記憶體移除
-   * 5. 發送事件（DB 成功後才通知前端）
+   * 2. 記錄遊戲統計
+   * 3. 寫入資料庫（確保持久化成功）
+   * 4. 清除所有計時器
+   * 5. 發送 GameFinished 事件（必須在刪除遊戲前發送）
+   * 6. 從記憶體移除
    *
    * @param gameId - 遊戲 ID
    * @param winnerId - 勝者 ID（可選，若無則視為平局）
@@ -371,16 +372,16 @@ export class TurnFlowService {
     // 2. 清除計時器
     this.gameTimeoutManager.clearAllForGame(gameId)
 
-    // 3. 從記憶體移除
-    this.gameStore.delete(gameId)
-
-    // 4. 最後發送事件（DB 成功後才通知前端）
+    // 3. 發送事件（必須在刪除遊戲前發送，因為 publishToGame 需要從 gameStore 取得玩家 ID）
     const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
       winnerId ?? null,
       finishedGame.cumulativeScores,
       reason
     )
     this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
+
+    // 4. 最後從記憶體移除
+    this.gameStore.delete(gameId)
   }
 
   /**

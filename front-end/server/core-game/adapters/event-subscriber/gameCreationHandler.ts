@@ -13,6 +13,8 @@
 
 import {
   internalEventBus,
+  playerEventBus,
+  createMatchmakingEvent,
   type MatchFoundPayload,
   type Unsubscribe,
 } from '~~/server/shared/infrastructure/event-bus'
@@ -73,6 +75,7 @@ export class GameCreationHandler {
    * @description
    * 1. Player1 建立遊戲 (WAITING 狀態)
    * 2. Player2 加入遊戲 (IN_PROGRESS 狀態)
+   * 3. 發布 MatchFound 到 PlayerEventBus（包含有效 game_id）
    */
   private async handleHumanMatch(payload: MatchFoundPayload): Promise<void> {
     // Player1 建立遊戲
@@ -99,9 +102,28 @@ export class GameCreationHandler {
       return
     }
 
+    // 遊戲建立成功後，發布 MatchFound 到 PlayerEventBus（解決 game_id 時序問題）
+    const gameId = player1Result.gameId
+
+    // 通知 Player1
+    const event1 = createMatchmakingEvent('MatchFound', {
+      game_id: gameId,
+      opponent_name: payload.player2Name,
+      is_bot: false,
+    })
+    playerEventBus.publishToPlayer(payload.player1Id, event1)
+
+    // 通知 Player2
+    const event2 = createMatchmakingEvent('MatchFound', {
+      game_id: gameId,
+      opponent_name: payload.player1Name,
+      is_bot: false,
+    })
+    playerEventBus.publishToPlayer(payload.player2Id, event2)
+
     console.info(
       '[GameCreationHandler] Human match game created:',
-      player1Result.gameId,
+      gameId,
       `(${payload.player1Name} vs ${payload.player2Name})`
     )
   }
@@ -112,6 +134,7 @@ export class GameCreationHandler {
    * @description
    * 1. Player 建立遊戲 (WAITING 狀態)
    * 2. 發布 ROOM_CREATED 事件，觸發 Opponent BC 加入
+   * 3. 發布 MatchFound 到 PlayerEventBus（包含有效 game_id）
    */
   private async handleBotMatch(payload: MatchFoundPayload): Promise<void> {
     // Player 建立遊戲
@@ -126,11 +149,15 @@ export class GameCreationHandler {
       return
     }
 
-    // 發布 ROOM_CREATED 事件，觸發 Opponent BC
-    this.internalEventPublisher.publishRoomCreated({
-      gameId: result.gameId,
-      waitingPlayerId: payload.player1Id,
+    // 注意：ROOM_CREATED 事件已由 JoinGameUseCase 發布，此處不需重複發布
+
+    // 遊戲建立成功後，發布 MatchFound 到 PlayerEventBus
+    const matchFoundEvent = createMatchmakingEvent('MatchFound', {
+      game_id: result.gameId,
+      opponent_name: 'Computer',
+      is_bot: true,
     })
+    playerEventBus.publishToPlayer(payload.player1Id, matchFoundEvent)
 
     console.info(
       '[GameCreationHandler] Bot match game created:',
