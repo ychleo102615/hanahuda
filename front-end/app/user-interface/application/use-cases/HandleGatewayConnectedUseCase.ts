@@ -64,6 +64,8 @@ export class HandleGatewayConnectedUseCase implements EventHandlerPort<GatewayCo
         // 遊戲中：設定 currentGameId，後續會收到遊戲事件
         if (payload.gameId) {
           this.gameState.setCurrentGameId(payload.gameId)
+          // 同步到 SessionContext（確保頁面刷新後可重連）
+          this.sessionContext.setCurrentGameId(payload.gameId)
         }
         break
     }

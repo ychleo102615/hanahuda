@@ -11,7 +11,6 @@ import { useDependency } from '~/user-interface/adapter/composables/useDependenc
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output/session-context.port'
 import { useAuthStore } from '~/identity/adapter/stores/auth-store'
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
 
 export default defineNuxtRouteMiddleware((_to, _from) => {
   // Nuxt 4: 只在 client-side 執行
@@ -25,18 +24,14 @@ export default defineNuxtRouteMiddleware((_to, _from) => {
     return navigateTo('/lobby')
   }
 
-  // 從 SessionContext 檢查是否有房間選擇
+  // 從 SessionContext 檢查是否有有效會話
   const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
-  // SSE-First 架構：檢查是否有房間選擇資訊（roomTypeId）
-  if (!sessionContext.hasRoomSelection()) {
-    return navigateTo('/lobby')
-  }
-
-  // 如果遊戲已結束，清除 session 並返回大廳
-  const gameState = useGameStateStore()
-  if (gameState.gameEnded) {
-    sessionContext.clearSession()
+  // 檢查是否正在配對中或已有遊戲（使用持久化的 sessionStorage）
+  // - isMatchmakingMode(): 有 entryId（配對中）
+  // - hasActiveGame(): 有 currentGameId（遊戲中）
+  // 注意：使用 sessionContext 而非 gameState，因為頁面刷新後 Pinia store 會被重置
+  if (!sessionContext.isMatchmakingMode() && !sessionContext.hasActiveGame()) {
     return navigateTo('/lobby')
   }
 

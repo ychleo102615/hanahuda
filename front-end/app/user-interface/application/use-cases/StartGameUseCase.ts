@@ -7,7 +7,7 @@
  * SSE-First Architecture：
  * - 連線建立後，後端透過 InitialState 事件決定遊戲狀態
  * - playerId、playerName 由呼叫端提供（來自 authStore）
- * - roomTypeId 從 SessionContextPort 取得
+ * - roomTypeId 由 SSE 事件（GameStarted/GameSnapshotRestore）提供，存入 gameState
  *
  * 業務流程（順序至關重要！）：
  * 1. 如果 isNewGame 為 true，清除 gameState 中的 currentGameId
@@ -23,7 +23,6 @@
  *
  * 依賴的 Output Ports：
  * - GameConnectionPort: 管理 SSE 連線
- * - SessionContextPort: 管理房間選擇資訊
  * - GameStatePort: 管理遊戲狀態
  * - NotificationPort: 管理 UI 通知狀態
  * - AnimationPort: 中斷動畫、清除隱藏卡片
@@ -49,7 +48,6 @@
 import type { StartGamePort, StartGameOptions } from '../ports/input'
 import type {
   GameConnectionPort,
-  SessionContextPort,
   GameStatePort,
   NotificationPort,
   AnimationPort,
@@ -59,7 +57,6 @@ import type { OperationSessionManager } from '../../adapter/abort'
 export class StartGameUseCase implements StartGamePort {
   constructor(
     private readonly gameConnection: GameConnectionPort,
-    private readonly sessionContext: SessionContextPort,
     private readonly gameState: GameStatePort,
     private readonly notification: NotificationPort,
     private readonly animation: AnimationPort,
@@ -68,7 +65,6 @@ export class StartGameUseCase implements StartGamePort {
 
   execute(options: StartGameOptions): void {
     const { playerId, playerName = 'Player', isNewGame = false } = options
-    const roomTypeId = this.sessionContext.getRoomTypeId()
 
     // 1. 新遊戲：清除 currentGameId 和遊戲結束標記
     if (isNewGame) {
@@ -98,7 +94,6 @@ export class StartGameUseCase implements StartGamePort {
       playerId,
       playerName,
       gameId: gameId ?? undefined,
-      roomTypeId: roomTypeId ?? undefined,
     })
   }
 }

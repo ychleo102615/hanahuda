@@ -160,13 +160,13 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
    * @description
    * 1. 隱藏 GameFinishedModal
    * 2. 重置遊戲狀態（保留 identity）
-   * 3. 從 SessionContext 取得 roomTypeId
+   * 3. 從 gameState 取得 roomTypeId（透過 SSE 事件傳送）
    * 4. 呼叫配對 API
    * 5. MatchmakingStatusOverlay 會自動顯示
    */
   async function handleRematch(): Promise<void> {
-    // 取得 roomTypeId
-    const roomTypeId = sessionContext.getRoomTypeId()
+    // 取得 roomTypeId（從 gameState，由 SSE 事件設定）
+    const roomTypeId = gameState.roomTypeId
     if (!roomTypeId) {
       // 沒有 roomTypeId，導航回 lobby
       uiState.addToast({
@@ -232,7 +232,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   }
 
   function clearLocalStateAndNavigate() {
-    // 清除 SessionContext 中的會話資訊（roomTypeId、entryId）
+    // 清除 SessionContext 中的會話資訊（entryId）
     sessionContext.clearSession()
 
     // 清理通知系統資源（倒數計時器等）

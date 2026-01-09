@@ -2,19 +2,23 @@
  * SessionContext Output Port
  *
  * @description
- * 定義使用者選擇資訊的存取介面（需跨頁面刷新保留）。
- * 僅儲存使用者主動選擇的資訊：房間類型、配對條目。
+ * 定義會話資訊的存取介面（需跨頁面刷新保留）。
+ * 儲存配對條目 ID 和遊戲 ID，讓頁面刷新後可以恢復遊戲。
+ *
+ * 管理的資訊：
+ * - entryId: 配對條目 ID（用於取消配對）
+ * - currentGameId: 遊戲 ID（用於頁面刷新後重連）
  *
  * 不在此介面中管理的資訊：
+ * - roomTypeId: 由 gameState.roomTypeId 管理（來自 SSE 事件）
  * - playerId/playerName: 由 useAuthStore 管理（來自 auth/me API）
- * - gameId: 由 gameState.currentGameId 管理（來自 Gateway 事件）
  * - gameFinished: 由 gameState.gameEnded 管理
  * - session_token: 由 HttpOnly Cookie 管理
  *
  * 設計原則：
- * - 單一真相來源（SSOT）：只存使用者主動選擇的資訊
+ * - 單一真相來源（SSOT）
  * - 非響應式資料：不需要驅動 UI 更新
- * - 跨頁面刷新保留：用於重連、Rematch、取消配對
+ * - 跨頁面刷新保留：用於重連遊戲和取消配對
  *
  * @module user-interface/application/ports/output/session-context.port
  */
@@ -23,35 +27,32 @@
  * SessionContext Output Port
  *
  * @description
- * 提供使用者選擇資訊的讀寫介面。
+ * 提供配對相關資訊的讀寫介面。
  * 實作應使用 sessionStorage 儲存資料。
  */
 export abstract class SessionContextPort {
-  // === Room Selection ===
+  // === Game Session ===
 
   /**
-   * 取得房間類型 ID
+   * 取得當前遊戲 ID
    *
-   * @returns 房間類型 ID，若無則返回 null
+   * @returns 遊戲 ID，若無則返回 null
    */
-  abstract getRoomTypeId(): string | null
+  abstract getCurrentGameId(): string | null
 
   /**
-   * 設定房間類型 ID
+   * 設定當前遊戲 ID
    *
-   * @param roomTypeId - 房間類型 ID，傳入 null 可清除
+   * @param gameId - 遊戲 ID，傳入 null 可清除
    */
-  abstract setRoomTypeId(roomTypeId: string | null): void
+  abstract setCurrentGameId(gameId: string | null): void
 
   /**
-   * 檢查是否有房間選擇
+   * 檢查是否有進行中的遊戲
    *
-   * @returns 是否有 roomTypeId
-   *
-   * @description
-   * 用於路由守衛檢查使用者是否已選擇房間類型。
+   * @returns 是否有 currentGameId
    */
-  abstract hasRoomSelection(): boolean
+  abstract hasActiveGame(): boolean
 
   // === Online Matchmaking ===
 
@@ -90,7 +91,7 @@ export abstract class SessionContextPort {
    * 清除所有會話資訊
    *
    * @description
-   * 離開遊戲時清除所有 sessionStorage 資料
+   * 離開遊戲時清除所有 sessionStorage 資料（entryId + currentGameId）
    */
   abstract clearSession(): void
 }

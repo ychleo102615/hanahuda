@@ -61,6 +61,7 @@ export interface GameStatePort {
    * GameStarted 事件時呼叫，設定遊戲基本資訊。
    *
    * @param gameId - 遊戲 ID
+   * @param roomTypeId - 房間類型 ID（用於 Rematch 功能）
    * @param players - 玩家資訊列表
    * @param ruleset - 遊戲規則集
    *
@@ -68,6 +69,7 @@ export interface GameStatePort {
    * ```typescript
    * gameState.initializeGameContext(
    *   'game-123',
+   *   'QUICK',
    *   [
    *     { player_id: 'p1', player_name: 'Alice', is_ai: false },
    *     { player_id: 'p2', player_name: 'Bot', is_ai: true }
@@ -76,7 +78,7 @@ export interface GameStatePort {
    * )
    * ```
    */
-  initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void
+  initializeGameContext(gameId: string, roomTypeId: string, players: PlayerInfo[], ruleset: Ruleset): void
 
   /**
    * 恢復完整遊戲狀態

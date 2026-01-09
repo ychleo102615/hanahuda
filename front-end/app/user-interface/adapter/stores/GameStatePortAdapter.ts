@@ -26,8 +26,8 @@ export function createGameStatePortAdapter(): GameStatePort {
 
   return {
     // ===== 初始化 =====
-    initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void {
-      store.initializeGameContext(gameId, players, ruleset)
+    initializeGameContext(gameId: string, roomTypeId: string, players: PlayerInfo[], ruleset: Ruleset): void {
+      store.initializeGameContext(gameId, roomTypeId, players, ruleset)
     },
 
     restoreGameState(snapshot: GameSnapshotRestore): void {

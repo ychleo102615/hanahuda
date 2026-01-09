@@ -79,6 +79,7 @@ export class EventMapper implements FullEventMapperPort {
       event_id: createEventId(),
       timestamp: createTimestamp(),
       game_id: game.id,
+      room_type_id: game.roomTypeId,
       players: toPlayerInfoList(game.players),
       ruleset: game.ruleset,
       starting_player_id: game.currentRound.activePlayerId,
@@ -510,6 +511,7 @@ export class EventMapper implements FullEventMapperPort {
       event_id: createEventId(),
       timestamp: createTimestamp(),
       game_id: snapshot.game_id,
+      room_type_id: game.roomTypeId,
       players: snapshot.players.map(p => ({
         player_id: p.player_id,
         player_name: p.player_name,

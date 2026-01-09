@@ -2,15 +2,15 @@
  * SessionContext Adapter
  *
  * @description
- * 實作 SessionContextPort，使用 sessionStorage 儲存使用者選擇資訊。
+ * 實作 SessionContextPort，使用 sessionStorage 儲存會話資訊。
  *
- * 僅儲存需跨頁面刷新保留的使用者選擇：
- * - roomTypeId: 房間類型選擇（用於 Rematch）
+ * 儲存：
  * - entryId: 配對條目 ID（用於取消配對）
+ * - currentGameId: 遊戲 ID（用於頁面刷新後重連）
  *
  * 不在此模組中管理的資訊：
+ * - roomTypeId: 由 gameState.roomTypeId 管理（來自 SSE 事件）
  * - playerId/playerName: 由 useAuthStore 管理（來自 auth/me API）
- * - gameId: 由 gameState.currentGameId 管理（來自 Gateway 事件）
  * - gameFinished: 由 gameState.gameEnded 管理
  * - session_token: 由 HttpOnly Cookie 管理
  *
@@ -23,7 +23,7 @@ import { SessionContextPort } from '../../application/ports/output/session-conte
  * sessionStorage 鍵名常數
  */
 const STORAGE_KEYS = {
-  roomTypeId: 'room_type_id',
+  currentGameId: 'current_game_id',
   entryId: 'matchmaking_entry_id',
 } as const
 
@@ -34,43 +34,43 @@ const STORAGE_KEYS = {
  * 封裝 sessionStorage 操作，提供型別安全的 session 資訊存取。
  */
 export class SessionContextAdapter extends SessionContextPort {
-  // === Room Selection ===
+  // === Game Session ===
 
   /**
-   * 取得房間類型 ID
+   * 取得當前遊戲 ID
    *
-   * @returns 房間類型 ID，若無則返回 null
+   * @returns 遊戲 ID，若無則返回 null
    */
-  getRoomTypeId(): string | null {
+  getCurrentGameId(): string | null {
     if (typeof window === 'undefined') {
       return null
     }
-    return sessionStorage.getItem(STORAGE_KEYS.roomTypeId)
+    return sessionStorage.getItem(STORAGE_KEYS.currentGameId)
   }
 
   /**
-   * 設定房間類型 ID
+   * 設定當前遊戲 ID
    *
-   * @param roomTypeId - 房間類型 ID，傳入 null 可清除
+   * @param gameId - 遊戲 ID，傳入 null 可清除
    */
-  setRoomTypeId(roomTypeId: string | null): void {
+  setCurrentGameId(gameId: string | null): void {
     if (typeof window === 'undefined') {
       return
     }
-    if (roomTypeId === null) {
-      sessionStorage.removeItem(STORAGE_KEYS.roomTypeId)
+    if (gameId === null) {
+      sessionStorage.removeItem(STORAGE_KEYS.currentGameId)
     } else {
-      sessionStorage.setItem(STORAGE_KEYS.roomTypeId, roomTypeId)
+      sessionStorage.setItem(STORAGE_KEYS.currentGameId, gameId)
     }
   }
 
   /**
-   * 檢查是否有房間選擇
+   * 檢查是否有進行中的遊戲
    *
-   * @returns 是否有 roomTypeId
+   * @returns 是否有 currentGameId
    */
-  hasRoomSelection(): boolean {
-    return this.getRoomTypeId() !== null
+  hasActiveGame(): boolean {
+    return this.getCurrentGameId() !== null
   }
 
   // === Online Matchmaking ===
@@ -128,14 +128,14 @@ export class SessionContextAdapter extends SessionContextPort {
    * 清除所有會話資訊
    *
    * @description
-   * 離開遊戲時清除所有 sessionStorage 資料
+   * 離開遊戲時清除所有 sessionStorage 資料（entryId + currentGameId）
    */
   clearSession(): void {
     if (typeof window === 'undefined') {
       return
     }
-    sessionStorage.removeItem(STORAGE_KEYS.roomTypeId)
     sessionStorage.removeItem(STORAGE_KEYS.entryId)
+    sessionStorage.removeItem(STORAGE_KEYS.currentGameId)
   }
 }
 

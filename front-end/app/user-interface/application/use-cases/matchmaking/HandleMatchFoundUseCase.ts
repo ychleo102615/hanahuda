@@ -43,7 +43,10 @@ export class HandleMatchFoundUseCase implements HandleMatchFoundPort {
     // GameApiClient 會從 GameStatePort 讀取 gameId
     this.gameState.setCurrentGameId(event.game_id)
 
-    // 3. 清除 SessionContext 中的 entryId（配對完成後不再需要）
+    // 3. 設定 SessionContext 的 currentGameId（持久化，供頁面刷新後重連使用）
+    this.sessionContext.setCurrentGameId(event.game_id)
+
+    // 4. 清除 SessionContext 中的 entryId（配對完成後不再需要）
     this.sessionContext.clearMatchmaking()
   }
 }

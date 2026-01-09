@@ -53,6 +53,7 @@ export interface GroupedDepository {
 export interface GameStateStoreState {
   // 遊戲上下文
   currentGameId: string | null // 當前遊戲 ID（SSOT）
+  roomTypeId: string | null // 房間類型 ID（用於 Rematch 功能）
   localPlayerId: string | null
   opponentPlayerId: string | null
   localPlayerName: string | null
@@ -129,6 +130,7 @@ export const useGameStateStore = defineStore('gameState', {
   state: (): GameStateStoreState => ({
     // 遊戲上下文
     currentGameId: null,
+    roomTypeId: null,
     localPlayerId: null,
     opponentPlayerId: null,
     localPlayerName: null,
@@ -299,11 +301,13 @@ export const useGameStateStore = defineStore('gameState', {
      * 初始化遊戲上下文（GameStarted 使用）
      *
      * @param gameId - 遊戲 ID（由 SSE 事件傳入）
+     * @param roomTypeId - 房間類型 ID（用於 Rematch 功能）
      * @param players - 玩家資訊列表
      * @param ruleset - 遊戲規則集
      */
-    initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void {
+    initializeGameContext(gameId: string, roomTypeId: string, players: PlayerInfo[], ruleset: Ruleset): void {
       this.currentGameId = gameId
+      this.roomTypeId = roomTypeId
       this.ruleset = ruleset
 
       // 辨識本地玩家（非 AI 玩家）
@@ -331,6 +335,7 @@ export const useGameStateStore = defineStore('gameState', {
     restoreGameState(snapshot: GameSnapshotRestore): void {
       // 快照恢復：完全覆蓋所有狀態
       this.currentGameId = snapshot.game_id
+      this.roomTypeId = snapshot.room_type_id
 
       // 初始化 localPlayerId 和 opponentPlayerId（頁面重新整理後這些值為 null）
       // 從 authStore 取得本地玩家 ID，然後從 snapshot.players 辨識對手
@@ -550,6 +555,7 @@ export const useGameStateStore = defineStore('gameState', {
      */
     reset(): void {
       this.currentGameId = null
+      this.roomTypeId = null
       this.localPlayerId = null
       this.opponentPlayerId = null
       this.localPlayerName = null

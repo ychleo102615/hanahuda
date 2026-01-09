@@ -321,6 +321,8 @@ export interface GameWaitingData {
 export interface GameStartedData {
   /** 遊戲 ID */
   readonly game_id: string
+  /** 房間類型 ID（用於 Rematch 功能） */
+  readonly room_type_id: string
   /** 玩家列表 */
   readonly players: ReadonlyArray<PlayerInfo>
   /** 遊戲規則集 */

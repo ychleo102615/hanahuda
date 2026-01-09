@@ -127,7 +127,7 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     this.notification.stopCountdown()
 
     // 3. 設定遊戲初始狀態
-    this.updateUIState.initializeGameContext(data.game_id, [...data.players], data.ruleset)
+    this.updateUIState.initializeGameContext(data.game_id, data.room_type_id, [...data.players], data.ruleset)
 
   }
 
