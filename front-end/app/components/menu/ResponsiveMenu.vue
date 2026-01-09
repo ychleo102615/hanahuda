@@ -163,114 +163,111 @@ const handleDeleteAccount = () => {
 
   <!-- Desktop: Side Panel (右側滑出) -->
   <Teleport to="body">
+    <!-- Backdrop (獨立 fade) -->
     <Transition name="fade">
       <div
         v-if="!isMobile && isOpen"
-        class="fixed inset-0"
+        class="fixed inset-0 bg-black/50"
         :style="{ zIndex: Z_INDEX.PANEL }"
+        @click="closeMenu"
+      />
+    </Transition>
+
+    <!-- Side Panel (獨立 slide) -->
+    <Transition name="slide">
+      <div
+        v-if="!isMobile && isOpen"
+        class="fixed right-0 top-0 h-full w-80 bg-gray-800 shadow-2xl flex flex-col"
+        :style="{ zIndex: Z_INDEX.PANEL + 1 }"
+        role="dialog"
+        aria-label="Menu"
       >
-        <!-- Backdrop -->
-        <div
-          class="absolute inset-0 bg-black/50 transition-opacity"
-          @click="closeMenu"
-        />
-
-        <!-- Side Panel -->
-        <Transition name="slide">
-          <div
-            v-if="isOpen"
-            class="absolute right-0 top-0 h-full w-80 bg-gray-800 shadow-2xl flex flex-col"
-            role="dialog"
-            aria-label="Menu"
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 border-b border-gray-700">
+          <h2 class="text-lg font-semibold text-white">Menu</h2>
+          <button
+            aria-label="Close menu"
+            class="p-2 rounded-lg hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
+            @click="closeMenu"
           >
-            <!-- Header -->
-            <div class="flex items-center justify-between p-4 border-b border-gray-700">
-              <h2 class="text-lg font-semibold text-white">Menu</h2>
-              <button
-                aria-label="Close menu"
-                class="p-2 rounded-lg hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
-                @click="closeMenu"
-              >
-                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </div>
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
 
-            <!-- Player Info -->
-            <div v-if="displayName" class="p-4 border-b border-gray-700">
-              <div class="flex items-center gap-3 mb-3">
-                <PlayerBadge
-                  :display-name="displayName"
-                  :is-guest="isGuest"
-                  :show-guest-label="true"
-                  size="lg"
-                />
-              </div>
-              <!-- Action buttons (only if showPlayerActions is true) -->
-              <div v-if="showPlayerActions" class="space-y-2">
-                <button
-                  @click="handleLogout"
-                  class="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-3"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  Sign Out
-                </button>
-                <button
-                  @click="handleDeleteAccount"
-                  class="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-900/30 rounded-lg transition-colors flex items-center gap-3"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Delete Account
-                </button>
-              </div>
-            </div>
-
-            <!-- Menu Items -->
-            <nav v-if="props.menuItems.length > 0" class="flex-1 overflow-y-auto p-2">
-              <ul class="space-y-1">
-                <li v-for="item in props.menuItems" :key="item.id">
-                  <button
-                    class="w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center space-x-3"
-                    :class="item.disabled
-                      ? 'cursor-not-allowed opacity-50'
-                      : 'hover:bg-gray-700 cursor-pointer'"
-                    :disabled="item.disabled"
-                    @click="handleItemClick(item)"
-                  >
-                    <!-- SVG icon -->
-                    <svg
-                      v-if="item.icon && iconPaths[item.icon]"
-                      class="w-5 h-5 text-gray-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        :d="iconPaths[item.icon]"
-                      />
-                    </svg>
-                    <!-- Fallback: emoji -->
-                    <span v-else-if="item.icon" class="text-xl">{{ item.icon }}</span>
-                    <span class="text-base font-medium text-white">{{ item.label }}</span>
-                  </button>
-                </li>
-              </ul>
-            </nav>
-
-            <!-- Footer -->
-            <div class="p-4 border-t border-gray-700 text-xs text-gray-500 text-center">
-              Hanafuda Koi-Koi
-            </div>
+        <!-- Player Info -->
+        <div v-if="displayName" class="p-4 border-b border-gray-700">
+          <div class="flex items-center gap-3 mb-3">
+            <PlayerBadge
+              :display-name="displayName"
+              :is-guest="isGuest"
+              :show-guest-label="true"
+              size="lg"
+            />
           </div>
-        </Transition>
+          <!-- Action buttons (only if showPlayerActions is true) -->
+          <div v-if="showPlayerActions" class="space-y-2">
+            <button
+              @click="handleLogout"
+              class="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-3"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
+            </button>
+            <button
+              @click="handleDeleteAccount"
+              class="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-900/30 rounded-lg transition-colors flex items-center gap-3"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete Account
+            </button>
+          </div>
+        </div>
+
+        <!-- Menu Items -->
+        <nav v-if="props.menuItems.length > 0" class="flex-1 overflow-y-auto p-2">
+          <ul class="space-y-1">
+            <li v-for="item in props.menuItems" :key="item.id">
+              <button
+                class="w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center space-x-3"
+                :class="item.disabled
+                  ? 'cursor-not-allowed opacity-50'
+                  : 'hover:bg-gray-700 cursor-pointer'"
+                :disabled="item.disabled"
+                @click="handleItemClick(item)"
+              >
+                <!-- SVG icon -->
+                <svg
+                  v-if="item.icon && iconPaths[item.icon]"
+                  class="w-5 h-5 text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    :d="iconPaths[item.icon]"
+                  />
+                </svg>
+                <!-- Fallback: emoji -->
+                <span v-else-if="item.icon" class="text-xl">{{ item.icon }}</span>
+                <span class="text-base font-medium text-white">{{ item.label }}</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Footer -->
+        <div class="p-4 border-t border-gray-700 text-xs text-gray-500 text-center">
+          Hanafuda Koi-Koi
+        </div>
       </div>
     </Transition>
   </Teleport>

@@ -237,7 +237,7 @@ onUnmounted(() => {
     <ConfirmDialog
       :is-open="isConfirmDialogOpen"
       title="Leave Game"
-      message="Are you sure you want to leave this game? Your progress will be lost."
+      message="The game is still in progress. Are you sure you want to leave?"
       confirm-text="Leave"
       cancel-text="Cancel"
       @confirm="handleLeaveGameConfirm"

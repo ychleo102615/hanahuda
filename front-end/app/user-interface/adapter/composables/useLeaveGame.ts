@@ -9,7 +9,7 @@
  * const { handleRematch, handleLeaveGame, menuItems } = useLeaveGame()
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../stores/gameState'
@@ -58,6 +58,16 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   const isActionPanelOpen = ref(false)
   const isConfirmDialogOpen = ref(false)
   const isRematching = ref(false)
+
+  // 監聽遊戲結束 modal，自動關閉離開確認對話框
+  watch(
+    () => uiState.gameFinishedModalVisible || uiState.roundScoredModalVisible || uiState.roundDrawnModalVisible || uiState.roundEndedInstantlyModalVisible,
+    (isAnyEndModalVisible) => {
+      if (isAnyEndModalVisible && isConfirmDialogOpen.value) {
+        isConfirmDialogOpen.value = false
+      }
+    }
+  )
 
   // Menu Items (computed for dynamic state)
   const menuItems = computed<MenuItem[]>(() => {
