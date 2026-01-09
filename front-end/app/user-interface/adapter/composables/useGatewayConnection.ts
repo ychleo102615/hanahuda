@@ -18,10 +18,12 @@
  */
 
 import { ref, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useDependency } from './useDependency'
 import { TOKENS } from '../di/tokens'
 import type { GatewayEventClient } from '../sse/GatewayEventClient'
 import type { useUIStateStore } from '../stores/uiState'
+import type { SessionContextPort } from '../../application/ports/output'
 
 /**
  * Gateway 連線狀態
@@ -39,6 +41,17 @@ export interface GatewayConnectionState {
 }
 
 /**
+ * Gateway 連線 Composable 選項
+ */
+export interface UseGatewayConnectionOptions {
+  /**
+   * 連線永久失敗時是否導向首頁
+   * @default true
+   */
+  navigateHomeOnFailure?: boolean
+}
+
+/**
  * Gateway 連線 Composable
  *
  * @description
@@ -49,11 +62,18 @@ export interface GatewayConnectionState {
  * - 啟動/關閉 Gateway SSE 連線
  * - 管理 Vue 響應式連線狀態
  * - 同步連線狀態到 UIStateStore
+ * - 連線永久失敗時導向首頁（可選）
  */
-export function useGatewayConnection() {
+export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) {
+  const { navigateHomeOnFailure = true } = options
+
+  // Vue Router
+  const router = useRouter()
+
   // DI - 取得已組裝好的元件
   const gatewayClient = useDependency<GatewayEventClient>(TOKENS.GatewayEventClient)
   const uiStateStore = useDependency<ReturnType<typeof useUIStateStore>>(TOKENS.UIStateStore)
+  const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
   // Vue 響應式狀態
   const state = ref<GatewayConnectionState>({
@@ -80,7 +100,23 @@ export function useGatewayConnection() {
     state.value.status = 'disconnected'
     state.value.errorMessage = 'Connection failed'
     uiStateStore.setConnectionStatus('disconnected')
-    uiStateStore.showErrorMessage('Unable to connect to game server')
+
+    if (navigateHomeOnFailure) {
+      // 連線永久失敗：顯示 Toast 並導向首頁
+      uiStateStore.addToast({
+        type: 'error',
+        message: 'Connection lost. You may have opened the game in another window.',
+        duration: 5000,
+        dismissible: true,
+      })
+      // 清除 SessionContext
+      sessionContext.clearSession()
+      // 導向首頁
+      router.push('/')
+    } else {
+      // 只顯示錯誤訊息
+      uiStateStore.showErrorMessage('Unable to connect to game server')
+    }
   })
 
   /**

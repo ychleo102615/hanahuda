@@ -148,6 +148,7 @@ export class DrizzleGameRepository implements GameRepositoryPort {
 
     return {
       id: game.id,
+      roomTypeId: game.roomTypeId,
       player1Id: player1.id,
       player2Id: player2?.id ?? null,
       isPlayer2Ai: player2?.isAi ?? true,
@@ -199,12 +200,8 @@ export class DrizzleGameRepository implements GameRepositoryPort {
       })
     }
 
-    // 使用預設 ruleset，但覆寫 total_rounds 以匹配 DB 記錄
-    const baseRuleset = getDefaultRuleset()
-    const ruleset = Object.freeze({
-      ...baseRuleset,
-      total_rounds: record.totalRounds,
-    })
+    // 使用 DB 儲存的 roomTypeId 取得完整 ruleset
+    const ruleset = getDefaultRuleset(record.roomTypeId)
 
     // 初始化玩家連線狀態（從 DB 恢復時預設為 CONNECTED）
     const playerConnectionStatuses = players.map(p => ({
@@ -214,7 +211,7 @@ export class DrizzleGameRepository implements GameRepositoryPort {
 
     return Object.freeze({
       id: record.id,
-      sessionToken: randomUUID(), // 臨時 sessionToken（DB 不再儲存）
+      roomTypeId: record.roomTypeId,
       players: Object.freeze(players),
       ruleset,
       cumulativeScores: Object.freeze(cumulativeScores),

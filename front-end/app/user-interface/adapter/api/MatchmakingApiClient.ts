@@ -29,6 +29,48 @@ export interface CancelMatchmakingResponse {
 }
 
 /**
+ * Player Status - IDLE
+ */
+export interface PlayerStatusIdle {
+  readonly status: 'IDLE'
+}
+
+/**
+ * Player Status - MATCHMAKING
+ */
+export interface PlayerStatusMatchmaking {
+  readonly status: 'MATCHMAKING'
+  readonly entryId: string
+  readonly roomType: RoomTypeId
+  readonly elapsedSeconds: number
+}
+
+/**
+ * Player Status - IN_GAME
+ */
+export interface PlayerStatusInGame {
+  readonly status: 'IN_GAME'
+  readonly gameId: string
+  readonly gameStatus: 'WAITING' | 'IN_PROGRESS'
+  readonly roomTypeId: RoomTypeId
+}
+
+/**
+ * Player Status Union
+ */
+export type PlayerStatus = PlayerStatusIdle | PlayerStatusMatchmaking | PlayerStatusInGame
+
+/**
+ * Get Player Status Response
+ */
+export interface GetPlayerStatusResponse {
+  readonly success: boolean
+  readonly status?: PlayerStatus
+  readonly error_code?: string
+  readonly message?: string
+}
+
+/**
  * Matchmaking Error
  *
  * @description
@@ -132,6 +174,47 @@ export class MatchmakingApiClient {
   createStatusConnection(entryId: string): EventSource {
     const url = `/api/v1/matchmaking/status?entry_id=${encodeURIComponent(entryId)}`
     return new EventSource(url)
+  }
+
+  /**
+   * 取得玩家狀態
+   *
+   * @description
+   * 查詢玩家目前的狀態（閒置、配對中、遊戲中）。
+   * 主要用於 ALREADY_IN_GAME 錯誤處理，取得 roomTypeId 後導向遊戲頁面。
+   *
+   * @returns 玩家狀態
+   * @throws {MatchmakingError} 查詢失敗時拋出錯誤
+   */
+  async getPlayerStatus(): Promise<PlayerStatus> {
+    try {
+      const response = await $fetch<GetPlayerStatusResponse>('/api/v1/matchmaking/status', {
+        method: 'GET',
+      })
+
+      if (!response.success || !response.status) {
+        throw new MatchmakingError(
+          response.error_code || 'UNKNOWN_ERROR',
+          response.message || 'Failed to get player status'
+        )
+      }
+
+      return response.status
+    } catch (error) {
+      // Already a MatchmakingError, re-throw
+      if (error instanceof MatchmakingError) {
+        throw error
+      }
+
+      // Extract server error from FetchError
+      const serverError = extractServerError(error)
+      if (serverError) {
+        throw new MatchmakingError(serverError.errorCode, serverError.message)
+      }
+
+      // Network or unknown error
+      throw new MatchmakingError('NETWORK_ERROR', 'Unable to connect to server')
+    }
   }
 }
 

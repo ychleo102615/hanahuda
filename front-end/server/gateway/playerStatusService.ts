@@ -37,6 +37,7 @@ export interface PlayerStatusInGame {
   readonly status: 'IN_GAME'
   readonly gameId: string
   readonly gameStatus: GameStatus
+  readonly roomTypeId: RoomTypeId
 }
 
 /**
@@ -84,6 +85,7 @@ class PlayerStatusService implements IPlayerStatusService {
         status: 'IN_GAME',
         gameId: game.id,
         gameStatus: game.status,
+        roomTypeId: game.roomTypeId,
       }
     }
 

@@ -37,10 +37,12 @@ import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
 import RegisterPrompt from '~/identity/adapter/components/RegisterPrompt.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
+import { useAuthStore } from '~/identity/adapter/stores/auth-store'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()
+const authStore = useAuthStore()
 
 // Identity BC - 使用後端提供的 playerId
 const { playerId, displayName, isGuest } = useCurrentPlayer()
@@ -79,15 +81,30 @@ const errorTitle = computed(() => {
     case 'ALREADY_IN_QUEUE':
       return 'Already in Queue'
     case 'ALREADY_IN_GAME':
-      return 'Already in Game'
+      return 'Game in Progress'
     case 'INVALID_ROOM_TYPE':
       return 'Invalid Room Type'
-    case 'UNAUTHORIZED':
+    case 'SESSION_EXPIRED':
       return 'Session Expired'
+    case 'RECOVERY_FAILED':
+      return 'Connection Lost'
     case 'NETWORK_ERROR':
       return 'Connection Error'
     default:
       return 'Matchmaking Failed'
+  }
+})
+
+// Error action type mapping
+const errorActionType = computed(() => {
+  const code = matchmakingStore.errorCode
+  switch (code) {
+    case 'ALREADY_IN_GAME':
+      return 'back-to-game'
+    case 'SESSION_EXPIRED':
+      return 'back-to-home'
+    default:
+      return 'retry'
   }
 })
 
@@ -214,15 +231,70 @@ const handleSelectRoom = async (roomTypeId: string) => {
   } catch (error: unknown) {
     // 配對失敗
     isMatchmaking.value = false
-    matchmakingStore.setStatus('error')
 
     if (error instanceof MatchmakingError) {
-      matchmakingStore.setError(error.errorCode, error.message)
+      const errorCode = error.errorCode
+
+      // ALREADY_IN_QUEUE: 自動導向 Game 頁面
+      if (errorCode === 'ALREADY_IN_QUEUE') {
+        navigateTo('/game')
+        return
+      }
+
+      // UNAUTHORIZED: 根據用戶類型處理
+      if (errorCode === 'UNAUTHORIZED') {
+        if (isGuest.value) {
+          // 訪客：自動重建 Session 並重試
+          await handleGuestSessionRecovery(roomTypeId)
+          return
+        } else {
+          // 註冊用戶：顯示錯誤並提供返回首頁按鈕
+          matchmakingStore.setStatus('error')
+          matchmakingStore.setError('SESSION_EXPIRED', '您的登入已過期，請重新登入')
+          return
+        }
+      }
+
+      // ALREADY_IN_GAME: 顯示「回到遊戲」按鈕
+      if (errorCode === 'ALREADY_IN_GAME') {
+        matchmakingStore.setStatus('error')
+        matchmakingStore.setError(errorCode, error.message)
+        return
+      }
+
+      // 其他錯誤：顯示重試按鈕
+      matchmakingStore.setStatus('error')
+      matchmakingStore.setError(errorCode, error.message)
     } else if (error instanceof Error) {
+      matchmakingStore.setStatus('error')
       matchmakingStore.setError('UNKNOWN_ERROR', error.message)
     } else {
+      matchmakingStore.setStatus('error')
       matchmakingStore.setError('UNKNOWN_ERROR', 'Failed to enter matchmaking')
     }
+  }
+}
+
+/**
+ * 訪客 Session 恢復
+ *
+ * 當訪客遇到 UNAUTHORIZED 錯誤時，自動重建 Session 並重試配對
+ */
+async function handleGuestSessionRecovery(roomTypeId: string): Promise<void> {
+  try {
+    // 強制重新初始化 auth（會自動建立新訪客 Session）
+    await authStore.reinitAuth()
+
+    // 重試配對
+    const entryId = await matchmakingApiClient.enterMatchmaking(roomTypeId as RoomTypeId)
+    sessionContext.setRoomTypeId(roomTypeId)
+    sessionContext.setEntryId(entryId)
+    navigateTo('/game')
+  } catch (_retryError) {
+    // 恢復失敗，顯示錯誤
+    matchmakingStore.setStatus('error')
+    matchmakingStore.setError('RECOVERY_FAILED', '無法恢復連線，請重新整理頁面')
+    isMatchmaking.value = false
   }
 }
 
@@ -231,6 +303,33 @@ const handleRetry = () => {
   isMatchmaking.value = false
   matchmakingStore.clearSession()
   // 狀態已重置為 idle，使用者可以再次選擇房間
+}
+
+/**
+ * 返回遊戲
+ *
+ * @description
+ * 當玩家已在遊戲中時，取得 roomTypeId 後導向遊戲頁面。
+ */
+const handleBackToGame = async () => {
+  try {
+    // 取得玩家狀態（包含 roomTypeId）
+    const status = await matchmakingApiClient.getPlayerStatus()
+
+    if (status.status === 'IN_GAME') {
+      // 設定 roomTypeId 到 SessionContext
+      sessionContext.setRoomTypeId(status.roomTypeId)
+      // 導向遊戲頁面
+      navigateTo('/game')
+    } else {
+      // 玩家已不在遊戲中，清除錯誤狀態
+      matchmakingStore.clearSession()
+    }
+  } catch (_error) {
+    // 取得狀態失敗，顯示錯誤
+    matchmakingStore.setStatus('error')
+    matchmakingStore.setError('NETWORK_ERROR', 'Unable to retrieve game status')
+  }
 }
 </script>
 
@@ -327,8 +426,25 @@ const handleRetry = () => {
               </div>
             </div>
 
-            <!-- 重試按鈕 -->
+            <!-- 錯誤操作按鈕 -->
             <button
+              v-if="errorActionType === 'back-to-game'"
+              data-testid="back-to-game-button"
+              class="mt-4 w-full bg-primary-600 hover:bg-primary-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+              @click="handleBackToGame"
+            >
+              Back to Game
+            </button>
+            <button
+              v-else-if="errorActionType === 'back-to-home'"
+              data-testid="back-to-home-button"
+              class="mt-4 w-full bg-primary-600 hover:bg-primary-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+              @click="navigateTo('/')"
+            >
+              Back to Home
+            </button>
+            <button
+              v-else
               data-testid="retry-button"
               class="mt-4 w-full bg-primary-600 hover:bg-primary-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
               @click="handleRetry"

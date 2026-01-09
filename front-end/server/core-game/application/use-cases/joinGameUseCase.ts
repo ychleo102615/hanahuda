@@ -17,7 +17,6 @@ import { randomUUID } from 'crypto'
 import {
   createGame,
   getDefaultRuleset,
-  determineWinner,
   createPlayer,
   type Game,
 } from '~~/server/core-game/domain/game'
@@ -144,60 +143,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
   }
 
   /**
-   * 處理遊戲不在記憶體中的情況
-   *
-   * @description
-   * 當 sessionToken 在記憶體中找不到對應的遊戲時，
-   * 查詢資料庫確認遊戲是否已結束。
-   *
-   * 注意：此方法目前未使用，因為新的驗證邏輯要求 sessionToken 必須在記憶體中有效。
-   * 保留此方法以備未來需要擴展「查詢已結束遊戲」的功能。
-   */
-  private async handleGameNotInMemory(
-    gameId: string,
-    playerId: string
-  ): Promise<JoinGameOutput> {
-    // 查資料庫
-    const dbGame = await this.gameRepository.findById(gameId)
-    if (!dbGame) {
-      logger.error('Game expired', { gameId, playerId, reason: 'not_found_in_db' })
-      this.gameLogRepository?.logAsync({
-        gameId,
-        playerId,
-        eventType: COMMAND_TYPES.ReconnectGameFailed,
-        payload: { reason: 'not_found_in_db' },
-      })
-      return { status: 'game_expired', gameId }
-    }
-
-    // 遊戲已結束
-    if (dbGame.status === 'FINISHED') {
-      const winnerId = determineWinner(dbGame)
-      return {
-        status: 'game_finished',
-        gameId: dbGame.id,
-        winnerId,
-        finalScores: dbGame.cumulativeScores.map((s) => ({
-          playerId: s.player_id,
-          score: s.score,
-        })),
-        roundsPlayed: dbGame.roundsPlayed,
-        totalRounds: dbGame.totalRounds,
-      }
-    }
-
-    // 遊戲在 DB 但不在記憶體 → 已過期
-    logger.error('Game expired', { gameId, playerId, reason: 'in_db_not_in_memory' })
-    this.gameLogRepository?.logAsync({
-      gameId,
-      playerId,
-      eventType: COMMAND_TYPES.ReconnectGameFailed,
-      payload: { reason: 'in_db_not_in_memory' },
-    })
-    return { status: 'game_expired', gameId }
-  }
-
-  /**
    * 處理重連
    *
    * SSE-First 架構：
@@ -293,6 +238,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
     const game = createGame({
       id: gameId,
+      roomTypeId: effectiveRoomType,
       player: humanPlayer,
       ruleset,
     })

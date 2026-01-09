@@ -57,6 +57,13 @@
       "when": 1767682443162,
       "tag": "0007_spicy_mother_askani",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1767946656793,
+      "tag": "0008_light_emma_frost",
+      "breakpoints": true
     }
   ]
 }
