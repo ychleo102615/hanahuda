@@ -205,6 +205,9 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
       // 6. 儲存 entryId（供取消配對使用）
       sessionContext.setEntryId(entryId)
 
+      // 7. 配對請求成功，重置 isRematching（配對中會顯示 overlay，不需要再禁用按鈕）
+      isRematching.value = false
+
       // MatchmakingStatusOverlay 會自動顯示（因為 matchmakingState.status === 'finding'）
     } catch (error: unknown) {
       isRematching.value = false

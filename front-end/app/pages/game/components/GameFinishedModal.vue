@@ -7,7 +7,7 @@
       aria-modal="true"
       aria-labelledby="game-finished-title"
       :style="{ zIndex: Z_INDEX.MODAL }"
-      @click.self="handleClose"
+      @click.self="handleDismiss"
     >
       <div
         class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all"
@@ -84,9 +84,9 @@
           <button
             type="button"
             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-            @click="handleClose"
+            @click="handleDismiss"
           >
-            Leave
+            Close
           </button>
           <button
             type="button"
@@ -126,8 +126,8 @@ import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
 const uiStateStore = useUIStateStore()
 const gameStateStore = useGameStateStore()
 
-// 使用 useLeaveGame 處理 Rematch 和 Leave 邏輯
-const { handleRematch, isRematching, handleLeaveGameConfirm } = useLeaveGame()
+// 使用 useLeaveGame 處理 Rematch 邏輯
+const { handleRematch, isRematching } = useLeaveGame()
 
 /**
  * 取得玩家名稱
@@ -142,11 +142,11 @@ function getPlayerName(playerId: string): string {
 }
 
 /**
- * 關閉 Modal 並離開遊戲
+ * 關閉 Modal（只關閉，不離開遊戲）
+ * 用戶可透過 TopBar 選單的 "Leave Game" 離開遊戲
  */
-function handleClose(): void {
+function handleDismiss(): void {
   uiStateStore.hideGameFinishedModal()
-  handleLeaveGameConfirm()
 }
 </script>
 
