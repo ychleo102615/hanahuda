@@ -30,6 +30,7 @@ user-invocable: true
 2. **Bounded Context**：識別各個 BC 的邊界（通常是頂層模組目錄）
 3. **Ports 目錄**：尋找 `ports/input/`、`ports/output/` 結構
 4. **共用契約**：尋找 `shared/`、`contracts/`、`common/` 等目錄
+5. **DI Container 位置**：尋找 `di/`、`container`、`bootstrap/`、`plugins/` 目錄
 
 ### 步驟 2：確認命名慣例
 
@@ -38,6 +39,7 @@ user-invocable: true
 - Application：`application/`、`use-cases/`、`usecases/`
 - Adapter：`adapter/`、`adapters/`、`infrastructure/`、`infra/`
 - Ports：`ports/`、`interfaces/`、`boundaries/`
+- DI Container：`di/`、`ioc/`、`container/`、`bootstrap/`、`composition-root/`
 
 ---
 
@@ -48,32 +50,43 @@ user-invocable: true
 **CA 核心原則**：依賴箭頭只能由外層指向內層
 
 ```
-┌─────────────────────────────────┐
-│  Adapter / Infrastructure       │  ← 最外層
-│  ┌───────────────────────────┐  │
-│  │  Application / Use Cases  │  │
-│  │  ┌─────────────────────┐  │  │
-│  │  │  Domain / Core      │  │  │  ← 最內層
-│  │  └─────────────────────┘  │  │
-│  └───────────────────────────┘  │
-└─────────────────────────────────┘
+┌───────────────────────────────────────┐
+│  Framework / Composition Root         │  ← 最外層（最髒）
+│  (App Container, Plugins, Config)     │
+│  ┌─────────────────────────────────┐  │
+│  │  Adapter / Infrastructure       │  │
+│  │  (BC Container, Controllers,    │  │
+│  │   Repositories, Mappers)        │  │
+│  │  ┌───────────────────────────┐  │  │
+│  │  │  Application / Use Cases  │  │  │
+│  │  │  (Ports, Use Cases)       │  │  │
+│  │  │  ┌─────────────────────┐  │  │  │
+│  │  │  │  Domain / Core      │  │  │  │  ← 最內層（最乾淨）
+│  │  │  │  (Entities, VOs)    │  │  │  │
+│  │  │  └─────────────────────┘  │  │  │
+│  │  └───────────────────────────┘  │  │
+│  └─────────────────────────────────┘  │
+└───────────────────────────────────────┘
 ```
 
 | 違反類型 | 嚴重程度 | 說明 |
 |---------|---------|------|
 | Domain → Application | 🔴 Critical | Domain 層 import Application 層 |
 | Domain → Adapter | 🔴 Critical | Domain 層 import Adapter/Infrastructure 層 |
-| Application → Adapter | 🔴 Critical | Application 層 import Adapter 層 |
 | Domain → Framework | 🔴 Critical | Domain 層 import 框架（ORM、Web Framework 等） |
+| Domain → DI Container | 🔴 Critical | Domain 層 import DI Container |
+| Application → Adapter | 🔴 Critical | Application 層 import Adapter 層 |
 | Application → Framework | 🟠 High | Application 層 import 框架 |
+| Application → DI Container | 🔴 Critical | Application 層 import DI Container |
+| Adapter → App Container | 🟡 Medium | BC Adapter 不應直接 import App Container |
 
 **檢查方法**：
 ```bash
 # 掃描 domain/ 目錄的 import
-grep -r "from.*application\|from.*adapter\|from.*infrastructure" domain/
+grep -r "from.*application\|from.*adapter\|from.*infrastructure\|from.*di\|from.*container\|from.*bootstrap" domain/
 
 # 掃描 application/ 目錄的 import
-grep -r "from.*adapter\|from.*infrastructure" application/
+grep -r "from.*adapter\|from.*infrastructure\|from.*di\|from.*container\|from.*bootstrap" application/
 ```
 
 ---
@@ -335,6 +348,182 @@ BC-A                          BC-B
 | 重複定義相同結構的類型 | 🟡 Medium | 應 import 共用定義 |
 | 過度使用 any/unknown | 🟡 Medium | 失去類型安全 |
 | 缺乏錯誤邊界 | 🟡 Medium | 錯誤應在適當層級處理 |
+
+---
+
+### 8. DI Container / Composition Root 違反
+
+**核心概念**：
+- **Composition Root**：應用程式中唯一知道所有具體實作的地方（「最髒」的地方）
+- **BC Container**：每個 BC 內部的組裝點，只暴露 Input Ports
+- **App Container**：組裝所有 BC，處理跨 BC 依賴
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      App Container (Composition Root)            │
+│                         「最髒」的地方                            │
+│    知道：所有具體類別、框架、配置、跨 BC 連接方式                  │
+│         ┌─────────────────────┼─────────────────────┐           │
+│         ▼                     ▼                     ▼           │
+│  ┌─────────────┐      ┌─────────────┐      ┌─────────────┐     │
+│  │ BC-A        │      │ BC-B        │      │ BC-C        │     │
+│  │ Container   │      │ Container   │      │ Container   │     │
+│  └─────────────┘      └─────────────┘      └─────────────┘     │
+│         │                     │                     │           │
+│         ▼                     ▼                     ▼           │
+│      Adapter               Adapter               Adapter        │
+│         │                     │                     │           │
+│         ▼                     ▼                     ▼           │
+│     Application           Application           Application     │
+│         │                     │                     │           │
+│         ▼                     ▼                     ▼           │
+│       Domain                Domain                Domain        │
+│                                                                 │
+│  依賴知識：多 ─────────────────────────────────────────→ 少     │
+│  乾淨程度：髒 ─────────────────────────────────────────→ 乾淨   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+| 違反類型 | 嚴重程度 | 說明 |
+|---------|---------|------|
+| Domain/Application 引用 Container | 🔴 Critical | 內層不應知道 DI Container 的存在 |
+| Container 位置錯誤 | 🟠 High | Container 應在 Adapter 層或 Framework 層 |
+| BC Container 暴露具體類別 | 🟠 High | 應只暴露 Input Ports（抽象介面） |
+| BC Container 暴露 Output Port | 🟠 High | Output Port 是內部實作細節 |
+| UseCase 內部 new 具體類別 | 🟠 High | 應透過 Constructor Injection |
+| 跨 BC 直接 import 具體類別 | 🔴 Critical | 應透過 Port 在 Container 層注入 |
+| Container 組裝順序錯誤 | 🟡 Medium | 應先建 Driven Adapters，後建 Use Cases |
+
+**Container 位置原則**：
+
+| 層級 | 可以知道的內容 | Container 位置 |
+|------|---------------|----------------|
+| Domain | 只有業務規則 | ❌ 不可有 |
+| Application | Port 介面 | ❌ 不可有 |
+| Adapter | 框架、具體實作 | ✅ BC Container |
+| Framework | 一切 | ✅ App Container |
+
+**錯誤範例**：
+
+```typescript
+// ❌ Domain 層引用 Container
+// domain/services/pricing.ts
+import { container } from '../../adapter/di/container'  // 違反！
+
+export function calculatePrice() {
+  const config = container.getConfig()  // Domain 不應知道 Container
+}
+
+// ❌ Application 層引用 Container
+// application/use-cases/create-order.ts
+import { container } from '../../adapter/di/container'  // 違反！
+
+export class CreateOrderUseCase {
+  execute() {
+    const repo = container.get(OrderRepository)  // 違反！應透過 Constructor
+  }
+}
+
+// ❌ BC Container 暴露具體類別
+// adapter/di/container.ts
+export function createOrderContainer() {
+  return {
+    createOrder: new CreateOrderUseCase(...),
+    repository: new PostgresOrderRepository(...),  // 違反！不應暴露 Repository
+  }
+}
+
+// ❌ BC Container 暴露 Output Port
+export interface OrderContainer {
+  createOrder: CreateOrderInputPort      // ✅ Input Port
+  orderRepository: OrderRepositoryPort   // ❌ Output Port 是內部細節
+}
+
+// ❌ 跨 BC 直接 import 具體類別
+// bc-b/adapter/di/container.ts
+import { CreateOrderUseCase } from '../../bc-a/application/use-cases/create-order'  // 違反！
+
+export function createBcBContainer() {
+  return {
+    process: new ProcessUseCase(
+      new CreateOrderUseCase(...)  // 違反！應透過 Port 注入
+    )
+  }
+}
+```
+
+**正確範例**：
+
+```typescript
+// ✅ BC Container 只暴露 Input Ports
+// bc-a/adapter/di/container.ts
+export interface OrderContainer {
+  // 只暴露 Input Ports
+  readonly createOrder: CreateOrderInputPort
+  readonly cancelOrder: CancelOrderInputPort
+}
+
+export function createOrderContainer(deps: OrderContainerDeps): OrderContainer {
+  // 內部知道具體實作
+  const repository = new PostgresOrderRepository(deps.db)
+  const eventPublisher = new EventBusPublisher(deps.eventBus)
+
+  // 對外只暴露 Port
+  return {
+    createOrder: new CreateOrderUseCase(repository, eventPublisher),
+    cancelOrder: new CancelOrderUseCase(repository),
+  }
+}
+
+// ✅ 跨 BC 依賴透過 Port 注入
+// bootstrap/di/container.ts (App Container)
+export function createAppContainer(deps: AppContainerDeps) {
+  // BC-A 不依賴其他 BC
+  const orderBC = createOrderContainer({
+    db: deps.db,
+    eventBus: deps.eventBus,
+  })
+
+  // BC-B 透過 Port 依賴 BC-A
+  const paymentBC = createPaymentContainer({
+    db: deps.db,
+    // 注入的是 Input Port，不是具體類別
+    orderService: orderBC.createOrder,
+  })
+
+  return { orderBC, paymentBC }
+}
+
+// ✅ UseCase 透過 Constructor Injection
+// application/use-cases/create-order.ts
+export class CreateOrderUseCase implements CreateOrderInputPort {
+  constructor(
+    // 依賴透過 constructor 注入，不是自己 new 或從 container 取
+    private readonly repository: OrderRepositoryPort,
+    private readonly eventPublisher: EventPublisherPort,
+  ) {}
+
+  execute(input: CreateOrderInput): Promise<CreateOrderOutput> {
+    // 使用注入的依賴
+  }
+}
+```
+
+**檢查方法**：
+
+```bash
+# 檢查 Domain 層是否引用 container
+grep -r "container\|Container" domain/
+
+# 檢查 Application 層是否引用 container
+grep -r "container\|Container" application/
+
+# 檢查 UseCase 是否有 new Adapter
+grep -r "new.*Repository\|new.*Adapter\|new.*Client" application/use-cases/
+
+# 檢查 BC Container 是否暴露 Output Port
+grep -r "Repository.*Port\|Publisher.*Port" adapter/di/container.ts
+```
 
 ---
 
