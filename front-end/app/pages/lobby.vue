@@ -274,7 +274,7 @@ const handleRetry = () => {
           </div>
 
           <!-- 房間類型列表 -->
-          <div v-else class="grid gap-6 px-6">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <button
               v-for="room in roomTypes"
               :key="room.id"

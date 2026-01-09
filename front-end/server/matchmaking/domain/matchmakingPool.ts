@@ -212,6 +212,7 @@ export class MatchmakingPool {
    */
   getStatistics(): PoolStatistics {
     const entriesByRoomType: Record<RoomTypeId, number> = {
+      SINGLE: 0,
       QUICK: 0,
       STANDARD: 0,
       MARATHON: 0,
