@@ -310,9 +310,19 @@ export const useGameStateStore = defineStore('gameState', {
       this.roomTypeId = roomTypeId
       this.ruleset = ruleset
 
-      // 辨識本地玩家（非 AI 玩家）
-      const localPlayer = players.find((p) => !p.is_ai)
+      // 從 authStore 取得本地玩家 ID（SSOT）
+      const authStore = useAuthStore()
+      const localId = authStore.playerId
+
+      if (!localId) {
+        console.error('[GameStateStore] Cannot initialize: playerId not found in authStore')
+        return
+      }
+
+      // 從 players 陣列中找到本地玩家
+      const localPlayer = players.find((p) => p.player_id === localId)
       if (!localPlayer) {
+        console.error('[GameStateStore] Cannot initialize: local player not found in players list', { localId, players })
         return
       }
 
