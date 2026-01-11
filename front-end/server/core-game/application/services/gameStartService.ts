@@ -170,13 +170,16 @@ export class GameStartService {
   private scheduleInitialEvents(game: Game): void {
     setTimeout(() => {
       try {
-        // 發送 GameStarted 事件
+        // 發送 GameStarted 事件（所有人相同）
         const gameStartedEvent = this.eventMapper.toGameStartedEvent(game)
         this.eventPublisher.publishToGame(game.id, gameStartedEvent)
 
-        // 發送 RoundDealt 事件
-        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
-        this.eventPublisher.publishToGame(game.id, roundDealtEvent)
+        // 發送 RoundDealt 事件（每個玩家收到過濾後的版本）
+        // 業務規則：自己的手牌完整，對手只有數量
+        for (const player of game.players) {
+          const filteredEvent = this.eventMapper.toRoundDealtEventForPlayer(game, player.id)
+          this.eventPublisher.publishToPlayer(game.id, player.id, filteredEvent)
+        }
 
         // 啟動第一位玩家的操作超時計時器
         const firstPlayerId = game.currentRound?.activePlayerId

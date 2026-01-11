@@ -385,10 +385,10 @@ export const useGameStateStore = defineStore('gameState', {
         this.myHandCards = [...myHand.cards]
       }
 
-      // 更新對手手牌數量
+      // 更新對手手牌數量（優先使用 card_count，向下相容 cards.length）
       const opponentHand = snapshot.player_hands.find((h) => h.player_id === this.opponentPlayerId)
       if (opponentHand) {
-        this.opponentHandCount = opponentHand.cards.length
+        this.opponentHandCount = opponentHand.card_count ?? opponentHand.cards.length
       }
 
       // 更新獲得區

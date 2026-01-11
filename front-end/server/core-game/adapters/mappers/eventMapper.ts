@@ -117,6 +117,40 @@ export class EventMapper implements FullEventMapperPort {
   }
 
   /**
+   * 將 Game 轉換為針對特定玩家的 RoundDealtEvent
+   *
+   * @description
+   * 過濾手牌資訊：自己的手牌完整，對手只有數量。
+   *
+   * @param game - 遊戲聚合根
+   * @param forPlayerId - 接收事件的玩家 ID
+   * @returns RoundDealtEvent
+   * @throws Error 如果 currentRound 不存在
+   */
+  toRoundDealtEventForPlayer(game: Game, forPlayerId: string): RoundDealtEvent {
+    if (!game.currentRound) {
+      throw new Error('Cannot create RoundDealtEvent: currentRound is null')
+    }
+
+    const round = game.currentRound
+    const hands = this.toPlayerHandsForPlayer(round, forPlayerId)
+    const nextState = createNextState(round.flowState, round.activePlayerId)
+
+    return {
+      event_type: 'RoundDealt',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      current_round: game.roundsPlayed + 1,
+      dealer_id: round.dealerId,
+      field: [...round.field],
+      hands,
+      deck_remaining: round.deck.length,
+      next_state: nextState,
+      timeout_seconds: gameConfig.turn_timeout_seconds,
+    }
+  }
+
+  /**
    * 將 Game 轉換為特殊規則觸發時的 RoundDealtEvent
    *
    * @description
@@ -151,7 +185,40 @@ export class EventMapper implements FullEventMapperPort {
   }
 
   /**
-   * 從 Round 提取玩家手牌資訊
+   * 將 Game 轉換為針對特定玩家的特殊規則 RoundDealtEvent
+   *
+   * @description
+   * 特殊規則觸發時使用，同時過濾手牌資訊。
+   *
+   * @param game - 遊戲聚合根
+   * @param forPlayerId - 接收事件的玩家 ID
+   * @returns RoundDealtEvent
+   * @throws Error 如果 currentRound 不存在
+   */
+  toRoundDealtEventForSpecialRuleForPlayer(game: Game, forPlayerId: string): RoundDealtEvent {
+    if (!game.currentRound) {
+      throw new Error('Cannot create RoundDealtEvent for special rule: currentRound is null')
+    }
+
+    const round = game.currentRound
+    const hands = this.toPlayerHandsForPlayer(round, forPlayerId)
+
+    return {
+      event_type: 'RoundDealt',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      current_round: game.roundsPlayed + 1,
+      dealer_id: round.dealerId,
+      field: [...round.field],
+      hands,
+      deck_remaining: round.deck.length,
+      next_state: null,
+      timeout_seconds: 0,
+    }
+  }
+
+  /**
+   * 從 Round 提取玩家手牌資訊（完整版，供日誌記錄）
    *
    * @param round - 局狀態
    * @returns PlayerHand 陣列
@@ -161,6 +228,36 @@ export class EventMapper implements FullEventMapperPort {
       player_id: playerState.playerId,
       cards: [...playerState.hand],
     }))
+  }
+
+  /**
+   * 針對特定玩家過濾手牌資訊
+   *
+   * @description
+   * 自己的手牌：完整卡片 ID 陣列
+   * 對手的手牌：空陣列，僅包含 card_count
+   *
+   * @param round - 局狀態
+   * @param forPlayerId - 接收事件的玩家 ID
+   * @returns 過濾後的 PlayerHand 陣列
+   */
+  private toPlayerHandsForPlayer(round: Round, forPlayerId: string): PlayerHand[] {
+    return round.playerStates.map((playerState) => {
+      if (playerState.playerId === forPlayerId) {
+        // 自己的手牌：完整資訊
+        return {
+          player_id: playerState.playerId,
+          cards: [...playerState.hand],
+        }
+      } else {
+        // 對手的手牌：只有數量，cards 為空陣列
+        return {
+          player_id: playerState.playerId,
+          cards: [],
+          card_count: playerState.hand.length,
+        }
+      }
+    })
   }
 
   // ============================================================
@@ -524,6 +621,125 @@ export class EventMapper implements FullEventMapperPort {
         player_id: h.player_id,
         cards: [...h.cards],
       })),
+      player_depositories: snapshot.player_depositories.map(d => ({
+        player_id: d.player_id,
+        cards: [...d.cards],
+      })),
+      player_scores: snapshot.player_scores.map(s => ({
+        player_id: s.player_id,
+        score: s.score,
+      })),
+      current_flow_stage: snapshot.current_flow_stage,
+      active_player_id: snapshot.active_player_id,
+      current_round: snapshot.current_round,
+      dealer_id: snapshot.dealer_id,
+      koi_statuses: snapshot.koi_statuses.map(ks => ({
+        player_id: ks.player_id,
+        koi_multiplier: ks.koi_multiplier,
+        times_continued: ks.times_continued,
+      })),
+      timeout_seconds: remainingSeconds ?? gameConfig.turn_timeout_seconds,
+    }
+
+    // 加入可選的上下文欄位
+    if (snapshot.selection_context) {
+      return {
+        ...baseEvent,
+        selection_context: {
+          drawn_card: snapshot.selection_context.drawn_card,
+          possible_targets: [...snapshot.selection_context.possible_targets],
+        },
+      }
+    }
+
+    if (snapshot.decision_context) {
+      return {
+        ...baseEvent,
+        decision_context: {
+          all_active_yaku: snapshot.decision_context.all_active_yaku.map(y => ({
+            yaku_type: y.yaku_type,
+            base_points: y.base_points,
+            contributing_cards: [...y.contributing_cards],
+          })),
+          current_multipliers: {
+            koi_koi_applied: snapshot.decision_context.current_multipliers.koi_koi_applied,
+            is_score_doubled: snapshot.decision_context.current_multipliers.is_score_doubled,
+          },
+        },
+      }
+    }
+
+    if (snapshot.round_end_info) {
+      return {
+        ...baseEvent,
+        round_end_info: {
+          reason: snapshot.round_end_info.reason,
+          winner_id: snapshot.round_end_info.winner_id,
+          awarded_points: snapshot.round_end_info.awarded_points,
+          scoring_data: snapshot.round_end_info.scoring_data,
+          instant_data: snapshot.round_end_info.instant_data,
+          timeout_remaining_seconds: snapshot.round_end_info.timeout_remaining_seconds,
+        },
+      }
+    }
+
+    return baseEvent
+  }
+
+  /**
+   * 將遊戲狀態轉換為針對特定玩家的 GameSnapshotRestore 事件
+   *
+   * @description
+   * 過濾手牌資訊：自己的手牌完整，對手只有數量。
+   *
+   * @param game - 遊戲聚合根
+   * @param forPlayerId - 接收事件的玩家 ID
+   * @param remainingSeconds - 操作剩餘秒數（可選，預設使用 config 值）
+   * @returns GameSnapshotRestore 事件
+   * @throws Error 如果遊戲無法建立快照（currentRound 為 null）
+   */
+  toGameSnapshotRestoreEventForPlayer(
+    game: Game,
+    forPlayerId: string,
+    remainingSeconds?: number
+  ): GameSnapshotRestore {
+    const snapshot = toSnapshot(game)
+
+    if (!snapshot) {
+      throw new Error('Cannot create GameSnapshotRestore: unable to create snapshot (currentRound is null)')
+    }
+
+    // 過濾手牌：自己完整，對手只有數量
+    const filteredHands = snapshot.player_hands.map(h => {
+      if (h.player_id === forPlayerId) {
+        return {
+          player_id: h.player_id,
+          cards: [...h.cards],
+        }
+      } else {
+        return {
+          player_id: h.player_id,
+          cards: [] as string[],
+          card_count: h.cards.length,
+        }
+      }
+    })
+
+    const baseEvent: GameSnapshotRestore = {
+      event_type: 'GameSnapshotRestore',
+      event_id: createEventId(),
+      timestamp: createTimestamp(),
+      game_id: snapshot.game_id,
+      room_type_id: game.roomTypeId,
+      players: snapshot.players.map(p => ({
+        player_id: p.player_id,
+        player_name: p.player_name,
+        is_ai: p.is_ai,
+      })),
+      ruleset: snapshot.ruleset,
+      field_cards: [...snapshot.field_cards],
+      deck_remaining: snapshot.deck_remaining,
+      player_hands: filteredHands,
       player_depositories: snapshot.player_depositories.map(d => ({
         player_id: d.player_id,
         cards: [...d.cards],

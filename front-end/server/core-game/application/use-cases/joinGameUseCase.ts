@@ -191,9 +191,10 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 取得剩餘超時秒數
     const remainingSeconds = this.gameTimeoutManager.getRemainingSeconds(game.id)
 
-    // 建立遊戲快照
-    const snapshot = this.eventMapper.toGameSnapshotRestoreEvent(
+    // 建立遊戲快照（過濾手牌：自己完整，對手只有數量）
+    const snapshot = this.eventMapper.toGameSnapshotRestoreEventForPlayer(
       game,
+      playerId,
       remainingSeconds ?? undefined
     )
 

@@ -51,9 +51,21 @@ export interface EventMapperPort {
   toGameStartedEvent(game: Game): GameStartedEvent
 
   /**
-   * 轉換為 RoundDealt 事件
+   * 轉換為 RoundDealt 事件（包含所有玩家手牌，僅供日誌記錄使用）
    */
   toRoundDealtEvent(game: Game): RoundDealtEvent
+
+  /**
+   * 轉換為針對特定玩家的 RoundDealt 事件
+   *
+   * @description
+   * 過濾手牌資訊：自己的手牌完整，對手只有數量。
+   * 此為業務規則，由 Application Service 呼叫。
+   *
+   * @param game - 遊戲聚合根
+   * @param forPlayerId - 接收事件的玩家 ID
+   */
+  toRoundDealtEventForPlayer(game: Game, forPlayerId: string): RoundDealtEvent
 
   /**
    * 轉換為特殊規則觸發時的 RoundDealt 事件
@@ -68,12 +80,35 @@ export interface EventMapperPort {
   toRoundDealtEventForSpecialRule(game: Game): RoundDealtEvent
 
   /**
-   * 轉換為 GameSnapshotRestore 事件
+   * 轉換為針對特定玩家的特殊規則 RoundDealt 事件
+   *
+   * @description
+   * 特殊規則觸發時使用，同時過濾手牌資訊。
+   *
+   * @param game - 遊戲聚合根
+   * @param forPlayerId - 接收事件的玩家 ID
+   */
+  toRoundDealtEventForSpecialRuleForPlayer(game: Game, forPlayerId: string): RoundDealtEvent
+
+  /**
+   * 轉換為 GameSnapshotRestore 事件（包含所有玩家手牌，僅供日誌記錄使用）
    *
    * @param game - 遊戲聚合根
    * @param remainingSeconds - 操作剩餘秒數（可選，預設使用 config 值）
    */
   toGameSnapshotRestoreEvent(game: Game, remainingSeconds?: number): GameSnapshotRestore
+
+  /**
+   * 轉換為針對特定玩家的 GameSnapshotRestore 事件
+   *
+   * @description
+   * 過濾手牌資訊：自己的手牌完整，對手只有數量。
+   *
+   * @param game - 遊戲聚合根
+   * @param forPlayerId - 接收事件的玩家 ID
+   * @param remainingSeconds - 操作剩餘秒數（可選，預設使用 config 值）
+   */
+  toGameSnapshotRestoreEventForPlayer(game: Game, forPlayerId: string, remainingSeconds?: number): GameSnapshotRestore
 
   /**
    * 轉換為 GameError 事件
