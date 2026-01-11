@@ -9,7 +9,6 @@
  */
 
 import { eq } from 'drizzle-orm'
-import { randomUUID } from 'node:crypto'
 import type { Game, GameStatus } from '~~/server/core-game/domain/game/game'
 import { getDefaultRuleset } from '~~/server/core-game/domain/game/game'
 import type { Player } from '~~/server/core-game/domain/game/player'

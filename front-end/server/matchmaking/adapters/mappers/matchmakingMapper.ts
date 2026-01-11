@@ -178,7 +178,7 @@ export const MatchmakingMapper = {
     gameId: string,
     forPlayerId: string
   ): MatchFoundEventDto {
-    const opponentId = matchResult.getOpponentId(forPlayerId)
+    const _opponentId = matchResult.getOpponentId(forPlayerId)
     // Note: 對手名稱需要從外部提供，因為 MatchResult 不包含名稱
     return {
       event_type: 'MatchFound',
