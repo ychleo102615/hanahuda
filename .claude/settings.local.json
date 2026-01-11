@@ -73,6 +73,11 @@
       "Bash(wc:*)",
       "Bash(pnpm type-check:*)",
       "Bash(pnpm --prefix front-end lint:*)",
+      "Bash(git grep:*)",
+      "Bash(pnpm --prefix front-end type-check:*)",
+      "Bash(pnpm --prefix front-end test:unit:*)",
+      "Bash(pnpm --prefix front-end lint:*)",
+      "Bash(pnpm --prefix front-end build:*)",
       "Skill(architecture-check)",
       "Bash(cd:*)"
     ],
