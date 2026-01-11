@@ -252,6 +252,7 @@ export function createMockGameStatePort(): GameStatePort {
     resetKoiKoiMultipliers: vi.fn(),
     reset: vi.fn(),
     setGameEnded: vi.fn(),
+    setCurrentGameId: vi.fn(),
   }
 }
 

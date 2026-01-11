@@ -8,7 +8,6 @@ import type { GameFinishedEvent } from '#shared/contracts'
 import {
   createMockNotificationPort,
   createMockUIStatePort,
-  createMockSessionContextPort,
   createMockGameStatePort,
 } from '../../test-helpers/mock-factories'
 import type { NotificationPort, UIStatePort, GameStatePort } from '@/user-interface/application/ports'
@@ -16,16 +15,14 @@ import type { NotificationPort, UIStatePort, GameStatePort } from '@/user-interf
 describe('HandleGameFinishedUseCase', () => {
   let mockNotification: NotificationPort
   let mockUIState: UIStatePort
-  let mockSessionContext: ReturnType<typeof createMockSessionContextPort>
   let mockGameState: GameStatePort
   let useCase: HandleGameFinishedUseCase
 
   beforeEach(() => {
     mockNotification = createMockNotificationPort()
     mockUIState = createMockUIStatePort()
-    mockSessionContext = createMockSessionContextPort()
     mockGameState = createMockGameStatePort()
-    useCase = new HandleGameFinishedUseCase(mockNotification, mockUIState, mockSessionContext, mockGameState)
+    useCase = new HandleGameFinishedUseCase(mockNotification, mockUIState, mockGameState)
   })
 
   it('當玩家獲勝時，isPlayerWinner 應為 true', () => {
