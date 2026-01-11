@@ -91,9 +91,10 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
       this.gameState.updateHandCards([...playerHand.cards])
     }
 
-    // 更新對手手牌數量
+    // 更新對手手牌數量（優先使用 card_count，向下相容 cards.length）
     if (opponentHand) {
-      this.gameState.updateOpponentHandCount(opponentHand.cards.length)
+      const count = opponentHand.card_count ?? opponentHand.cards.length
+      this.gameState.updateOpponentHandCount(count)
     }
 
     // 2. 標記發牌動畫開始
@@ -101,10 +102,11 @@ export class HandleRoundDealtUseCase implements HandleRoundDealtPort {
 
     // 3. 播放發牌動畫（T059/T061/T062）
     // 每張牌發完後更新牌堆數量，配合視覺效果
+    const opponentCount = opponentHand ? (opponentHand.card_count ?? opponentHand.cards.length) : 0
     await this.animation.playDealAnimation({
       fieldCards: [...event.field],
       playerHandCards: playerHand ? [...playerHand.cards] : [],
-      opponentHandCount: opponentHand ? opponentHand.cards.length : 0,
+      opponentHandCount: opponentCount,
       isPlayerDealer,
       onCardDealt: () => {
         const current = this.gameState.getDeckRemaining()

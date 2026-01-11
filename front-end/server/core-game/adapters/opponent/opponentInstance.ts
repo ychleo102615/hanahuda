@@ -52,19 +52,37 @@ export interface OpponentInstanceDependencies {
 }
 
 /**
+ * OpponentInstance 設定
+ */
+export interface OpponentInstanceOptions {
+  /**
+   * 清理回調
+   *
+   * @description
+   * 當 OpponentInstance 銷毀時呼叫（遊戲結束）。
+   * 用於讓 OpponentRegistry 清理 instances Map 和 opponentStore。
+   */
+  readonly onCleanup?: () => void
+}
+
+/**
  * OpponentInstance
  *
  * 單一遊戲的 AI 對手實例。
  */
 export class OpponentInstance {
   private isDisposed = false
+  private readonly onCleanup?: () => void
 
   constructor(
     private readonly gameId: string,
     private readonly playerId: string,
     private readonly strategyType: AiStrategyType,
-    private readonly deps: OpponentInstanceDependencies
-  ) {}
+    private readonly deps: OpponentInstanceDependencies,
+    options?: OpponentInstanceOptions
+  ) {
+    this.onCleanup = options?.onCleanup
+  }
 
   /**
    * 處理遊戲事件
@@ -99,8 +117,14 @@ export class OpponentInstance {
       return
     }
 
-    // 終止事件處理：當回合或遊戲結束時，取消已排程的 AI 操作
-    if (this.isTerminalEvent(event.event_type)) {
+    // 終止事件處理：當遊戲結束時，銷毀實例
+    if (event.event_type === 'GameFinished') {
+      this.dispose()
+      return
+    }
+
+    // 回合結束時，取消已排程的 AI 操作（但不銷毀實例）
+    if (event.event_type === 'RoundEnded') {
       aiActionScheduler.cancel(this.gameId)
       return
     }
@@ -333,35 +357,19 @@ export class OpponentInstance {
   }
 
   /**
-   * 判斷是否為終止事件
-   *
-   * @description
-   * 終止事件表示回合或遊戲結束，AI 不需要再執行任何操作。
-   * 收到這些事件時應取消所有已排程的操作。
-   *
-   * @param eventType - 事件類型
-   * @returns 是否為終止事件
-   */
-  private isTerminalEvent(eventType: string): boolean {
-    const terminalEvents = [
-      'RoundEnded', // 統一的回合結束事件（取代 RoundScored、RoundDrawn、RoundEndedInstantly）
-      'GameFinished', // 遊戲結束
-    ] as const
-
-    return terminalEvents.includes(eventType as (typeof terminalEvents)[number])
-  }
-
-  /**
    * 銷毀實例
    *
    * @description
-   * 清理資源，停止接收事件。
+   * 清理資源，停止接收事件，並通知外部進行清理。
    */
   dispose(): void {
     if (this.isDisposed) return
 
     this.isDisposed = true
     aiActionScheduler.cancel(this.gameId)
+
+    // 通知 OpponentRegistry 清理 instances Map 和 opponentStore
+    this.onCleanup?.()
   }
 
   /**

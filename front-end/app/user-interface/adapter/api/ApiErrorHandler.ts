@@ -68,10 +68,11 @@ export function createApiErrorHandler(deps: ApiErrorHandlerDependencies): ApiErr
    *
    * @description
    * 當遊戲無效時，清理所有 session 相關狀態。
+   * 注意：gameId 由 Use Cases 透過 GameStatePort 管理，此處只清理 session 和 matchmaking 狀態。
    */
   function cleanupSession(): void {
     notification.cleanup()
-    sessionContext.setGameId(null)
+    sessionContext.clearSession()
     matchmakingState.clearSession()
   }
 

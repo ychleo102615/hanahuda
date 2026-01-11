@@ -7,10 +7,11 @@
  * - 大螢幕：各區域按比例填滿 viewport（100vh）
  * - 小螢幕：各區域使用最小高度，頁面可垂直滾動
  *
- * SSE-First Architecture:
- * - 頁面載入時建立 SSE 連線
- * - 後端推送 InitialState 事件決定顯示內容
- * - 重連由 SSEConnectionManager 自動處理
+ * Gateway Architecture:
+ * - 頁面載入時建立單一 Gateway SSE 連線
+ * - Gateway 自動處理配對和遊戲事件
+ * - 後端推送 GatewayConnected 事件決定初始狀態
+ * - 重連由 GatewayEventClient 自動處理
  */
 
 // Nuxt 4: 定義頁面 middleware
@@ -21,8 +22,9 @@ definePageMeta({
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useDependency, useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
 import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
-import type { SessionContextPort, GameConnectionPort } from '~/user-interface/application/ports/output'
-import type { StartGamePort } from '~/user-interface/application/ports/input'
+import type { SessionContextPort } from '~/user-interface/application/ports/output'
+import type { MatchmakingApiClient } from '~/user-interface/adapter/api/MatchmakingApiClient'
+import { useAuthStore } from '~/identity/adapter/stores/auth-store'
 import GameTopInfoBar from '~/components/GameTopInfoBar.vue'
 import FieldZone from './components/FieldZone.vue'
 import PlayerHandZone from './components/PlayerHandZone.vue'
@@ -39,12 +41,15 @@ import UnifiedToast from '~/components/UnifiedToast.vue'
 import ConfirmationHint from './components/ConfirmationHint.vue'
 import ConfirmDialog from '~/components/ConfirmDialog.vue'
 import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
+import MatchmakingStatusOverlay from './components/MatchmakingStatusOverlay.vue'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
 import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
 import { useGameMode } from '~/user-interface/adapter/composables/useGameMode'
 import { usePageVisibility } from '~/user-interface/adapter/composables/usePageVisibility'
+import { useGatewayConnection } from '~/user-interface/adapter/composables/useGatewayConnection'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
+import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
@@ -53,29 +58,27 @@ const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const gameMode = useGameMode()
 
+// Auth Store（用於檢查登入狀態）
+const authStore = useAuthStore()
+
+// 配對狀態（011-online-matchmaking）
+const matchmakingStore = useMatchmakingStateStore()
+
+// MatchmakingApiClient（用於取消配對）
+const matchmakingApiClient = gameMode === 'backend'
+  ? useOptionalDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
+  : null
+
+// Gateway SSE 連線（Backend 模式）
+const gatewayConnection = gameMode === 'backend' ? useGatewayConnection() : null
+
 // 頁面可見性監控（自動重連）
 usePageVisibility()
-
-// StartGameUseCase（Backend 模式）
-const startGameUseCase = gameMode === 'backend'
-  ? useOptionalDependency<StartGamePort>(TOKENS.StartGamePort)
-  : null
-
-// GameConnectionPort（用於 onUnmounted 斷開連線）
-const gameConnection = gameMode === 'backend'
-  ? useOptionalDependency<GameConnectionPort>(TOKENS.GameConnectionPort)
-  : null
 
 // Mock Event Emitter 注入（僅 Mock 模式）
 const mockEventEmitter = gameMode === 'mock'
   ? useOptionalDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
   : null
-
-// Restart Game 處理函數
-function handleRestartGame() {
-  if (!startGameUseCase) return
-  startGameUseCase.execute({ isNewGame: true })
-}
 
 // T043 [US3]: Leave Game 功能
 const {
@@ -85,7 +88,6 @@ const {
   handleLeaveGameCancel,
 } = useLeaveGame({
   requireConfirmation: true,
-  onRestartGame: handleRestartGame,
 })
 
 // Identity BC - 玩家資訊
@@ -104,22 +106,33 @@ const handlePlayerInfoCardClose = () => {
   isPlayerInfoCardOpen.value = false
 }
 
-// GamePage 不再直接調用業務 Port，由子組件負責
+// 取消配對
+const handleCancelMatchmaking = async () => {
+  const entryId = sessionContext.getEntryId()
+  if (entryId && matchmakingApiClient) {
+    try {
+      await matchmakingApiClient.cancelMatchmaking(entryId)
+    } finally {
+      // 清除所有配對相關資訊（roomTypeId + entryId）
+      sessionContext.clearSession()
+      matchmakingStore.clearSession()
+      navigateTo('/lobby')
+    }
+  }
+}
 
 onMounted(() => {
-
-  // 檢查是否有 playerId
-  const playerId = sessionContext.getPlayerId()
-  if (!playerId) {
+  // 檢查是否已登入
+  if (!authStore.isLoggedIn) {
     navigateTo('/lobby')
     return
   }
 
   // 根據模式建立連線
-  if (gameMode === 'backend' && startGameUseCase) {
-    // Backend 模式：使用 StartGameUseCase 建立 SSE 連線
-    // UseCase 會從 SessionContext 取得所有必要資訊
-    startGameUseCase.execute()
+  if (gameMode === 'backend' && gatewayConnection) {
+    // Backend 模式：建立 Gateway SSE 連線
+    // Gateway 自動處理配對和遊戲事件
+    gatewayConnection.connect()
   } else if (gameMode === 'mock' && mockEventEmitter) {
     // Mock 模式：啟動事件腳本
     mockEventEmitter.start()
@@ -127,9 +140,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  // 斷開連線（Backend 模式）
-  if (gameConnection) {
-    gameConnection.disconnect()
+  // 斷開 Gateway 連線（Backend 模式）
+  if (gatewayConnection) {
+    gatewayConnection.disconnect()
   }
 
   // 重置 Mock 事件發射器（Mock 模式）
@@ -137,10 +150,6 @@ onUnmounted(() => {
     mockEventEmitter.reset()
   }
 })
-
-
-// GamePage 只作為協調者，不處理業務邏輯
-// 所有場牌點擊邏輯已移至 FieldZone 組件內部處理
 </script>
 
 <template>
@@ -228,12 +237,15 @@ onUnmounted(() => {
     <ConfirmDialog
       :is-open="isConfirmDialogOpen"
       title="Leave Game"
-      message="Are you sure you want to leave this game? Your progress will be lost."
+      message="The game is still in progress. Are you sure you want to leave?"
       confirm-text="Leave"
       cancel-text="Cancel"
       @confirm="handleLeaveGameConfirm"
       @cancel="handleLeaveGameCancel"
     />
+
+    <!-- 011-online-matchmaking: 配對狀態覆蓋層 -->
+    <MatchmakingStatusOverlay @cancel="handleCancelMatchmaking" />
   </div>
 </template>
 

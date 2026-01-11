@@ -98,6 +98,53 @@ export interface MatchmakingStatePort {
    * ```
    */
   clearSession(): void
+
+  // === Online Matchmaking (011-online-matchmaking) ===
+
+  /**
+   * 設定配對條目 ID
+   */
+  setEntryId(entryId: string | null): void
+
+  /**
+   * 取得配對條目 ID
+   */
+  readonly entryId: string | null
+
+  /**
+   * 設定配對經過秒數
+   */
+  setElapsedSeconds(seconds: number): void
+
+  /**
+   * 取得配對經過秒數
+   */
+  readonly elapsedSeconds: number
+
+  /**
+   * 設定狀態訊息
+   */
+  setStatusMessage(message: string | null): void
+
+  /**
+   * 取得狀態訊息
+   */
+  readonly statusMessage: string | null
+
+  /**
+   * 設定對手資訊 (配對成功後)
+   */
+  setOpponentInfo(name: string, isBot: boolean): void
+
+  /**
+   * 取得對手名稱
+   */
+  readonly opponentName: string | null
+
+  /**
+   * 取得是否為 Bot 對手
+   */
+  readonly isBot: boolean
 }
 
 /**
@@ -108,3 +155,23 @@ export type MatchmakingStatus =
   | 'finding' // 配對中（顯示 "Finding match..." 載入提示）
   | 'waiting' // 等待對手（遊戲已建立，等待對手加入）
   | 'error' // 錯誤狀態（顯示錯誤訊息）
+  // === Online Matchmaking (011-online-matchmaking) ===
+  | 'searching' // 搜尋對手中 (0-10s)
+  | 'low_availability' // 低可用性狀態 (10-15s)
+  | 'matched' // 已配對成功
+
+/**
+ * OnlineMatchmakingState - 線上配對狀態
+ */
+export interface OnlineMatchmakingState {
+  /** 配對條目 ID (從 POST /matchmaking/enter 取得) */
+  readonly entryId: string | null
+  /** 配對經過秒數 */
+  readonly elapsedSeconds: number
+  /** 狀態訊息 */
+  readonly statusMessage: string | null
+  /** 對手名稱 (配對成功後) */
+  readonly opponentName: string | null
+  /** 是否為 Bot 對手 */
+  readonly isBot: boolean
+}

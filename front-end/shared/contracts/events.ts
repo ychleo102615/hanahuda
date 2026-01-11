@@ -99,6 +99,8 @@ export interface BaseEvent {
 export interface GameStartedEvent extends BaseEvent {
   readonly event_type: typeof EVENT_TYPES.GameStarted
   readonly game_id: string
+  /** 房間類型 ID（用於 Rematch 功能） */
+  readonly room_type_id: string
   readonly players: ReadonlyArray<PlayerInfo>
   readonly ruleset: Ruleset
   readonly starting_player_id: string
@@ -421,6 +423,8 @@ export interface RoundEndInfo {
 export interface GameSnapshotRestore extends BaseEvent {
   readonly event_type: typeof EVENT_TYPES.GameSnapshotRestore
   readonly game_id: string
+  /** 房間類型 ID（用於 Rematch 功能） */
+  readonly room_type_id: string
   readonly players: ReadonlyArray<PlayerInfo>
   readonly ruleset: Ruleset
   readonly field_cards: ReadonlyArray<string>

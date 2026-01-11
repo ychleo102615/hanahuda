@@ -2,138 +2,96 @@
  * SessionContext Output Port
  *
  * @description
- * 定義遊戲會話識別資訊的存取介面。
- * 管理非敏感的識別資訊（gameId、playerId），
- * session_token 由 HttpOnly Cookie 管理，不在此介面中。
+ * 定義會話資訊的存取介面（需跨頁面刷新保留）。
+ * 儲存配對條目 ID 和遊戲 ID，讓頁面刷新後可以恢復遊戲。
+ *
+ * 管理的資訊：
+ * - entryId: 配對條目 ID（用於取消配對）
+ * - currentGameId: 遊戲 ID（用於頁面刷新後重連）
+ *
+ * 不在此介面中管理的資訊：
+ * - roomTypeId: 由 gameState.roomTypeId 管理（來自 SSE 事件）
+ * - playerId/playerName: 由 useAuthStore 管理（來自 auth/me API）
+ * - gameFinished: 由 gameState.gameEnded 管理
+ * - session_token: 由 HttpOnly Cookie 管理
  *
  * 設計原則：
- * - 單一真相來源（SSOT）：識別資訊只存在 sessionStorage
+ * - 單一真相來源（SSOT）
  * - 非響應式資料：不需要驅動 UI 更新
- * - 跨頁面刷新保留：用於重連功能
+ * - 跨頁面刷新保留：用於重連遊戲和取消配對
  *
  * @module user-interface/application/ports/output/session-context.port
  */
 
 /**
- * 非敏感的遊戲會話識別資訊
- *
- * @note session_token 由 HttpOnly Cookie 管理，不在此介面中
- */
-export interface SessionIdentity {
-  /** 玩家 ID */
-  playerId: string
-  /** 玩家名稱（可選） */
-  playerName?: string
-  /** 遊戲 ID（可選，新遊戲時無） */
-  gameId?: string
-  /** 房間類型 ID（可選） */
-  roomTypeId?: string
-}
-
-/**
  * SessionContext Output Port
  *
  * @description
- * 提供遊戲會話識別資訊的讀寫介面。
+ * 提供配對相關資訊的讀寫介面。
  * 實作應使用 sessionStorage 儲存資料。
  */
 export abstract class SessionContextPort {
+  // === Game Session ===
+
   /**
-   * 取得遊戲 ID
+   * 取得當前遊戲 ID
    *
    * @returns 遊戲 ID，若無則返回 null
    */
-  abstract getGameId(): string | null
+  abstract getCurrentGameId(): string | null
 
   /**
-   * 設定遊戲 ID
+   * 設定當前遊戲 ID
    *
    * @param gameId - 遊戲 ID，傳入 null 可清除
+   */
+  abstract setCurrentGameId(gameId: string | null): void
+
+  /**
+   * 檢查是否有進行中的遊戲
+   *
+   * @returns 是否有 currentGameId
+   */
+  abstract hasActiveGame(): boolean
+
+  // === Online Matchmaking ===
+
+  /**
+   * 取得配對條目 ID
+   *
+   * @returns 配對條目 ID，若無則返回 null
+   */
+  abstract getEntryId(): string | null
+
+  /**
+   * 設定配對條目 ID
+   *
+   * @param entryId - 配對條目 ID，傳入 null 可清除
+   */
+  abstract setEntryId(entryId: string | null): void
+
+  /**
+   * 檢查是否處於線上配對模式
+   *
+   * @returns 是否有 entryId（線上配對中）
+   */
+  abstract isMatchmakingMode(): boolean
+
+  /**
+   * 清除配對資訊
    *
    * @description
-   * 用於 SSE 連線後收到 InitialState 時設定遊戲 ID，
-   * 或遊戲結束/過期時清除遊戲 ID。
+   * 配對完成或取消時清除 entryId
    */
-  abstract setGameId(gameId: string | null): void
+  abstract clearMatchmaking(): void
+
+  // === Session Cleanup ===
 
   /**
-   * 取得玩家 ID
-   *
-   * @returns 玩家 ID，若無則返回 null
-   */
-  abstract getPlayerId(): string | null
-
-  /**
-   * 取得玩家名稱
-   *
-   * @returns 玩家名稱，若無則返回 null
-   */
-  abstract getPlayerName(): string | null
-
-  /**
-   * 設定會話識別資訊
-   *
-   * @param identity - 會話識別資訊
-   */
-  abstract setIdentity(identity: SessionIdentity): void
-
-  /**
-   * 清除會話識別資訊
+   * 清除所有會話資訊
    *
    * @description
-   * 用於離開遊戲時清除本地儲存的識別資訊
+   * 離開遊戲時清除所有 sessionStorage 資料（entryId + currentGameId）
    */
-  abstract clearIdentity(): void
-
-  /**
-   * 檢查是否有活躍的會話
-   *
-   * @returns 是否有完整的會話識別資訊（playerId 和 gameId）
-   */
-  abstract hasActiveSession(): boolean
-
-  /**
-   * 取得房間類型 ID
-   *
-   * @returns 房間類型 ID，若無則返回 null
-   */
-  abstract getRoomTypeId(): string | null
-
-  /**
-   * 設定房間類型 ID
-   *
-   * @param roomTypeId - 房間類型 ID，傳入 null 可清除
-   */
-  abstract setRoomTypeId(roomTypeId: string | null): void
-
-  /**
-   * 檢查是否有房間選擇資訊
-   *
-   * @returns 是否有 playerId 和 roomTypeId
-   *
-   * @description
-   * 用於 SSE-First 架構下的路由守衛。
-   * 新遊戲時只有 playerId 和 roomTypeId，gameId 要等 SSE 連線後才會設定。
-   */
-  abstract hasRoomSelection(): boolean
-
-  /**
-   * 設定遊戲是否已結束
-   *
-   * @param finished - 遊戲是否已結束
-   *
-   * @description
-   * 用於標記遊戲已結束，避免在遊戲結束後發送不必要的離開指令。
-   */
-  abstract setGameFinished(finished: boolean): void
-
-  /**
-   * 檢查遊戲是否已結束
-   *
-   * @returns 遊戲是否已結束
-   *
-   * @description
-   * 用於在離開遊戲前檢查是否需要發送離開指令。
-   */
-  abstract isGameFinished(): boolean
+  abstract clearSession(): void
 }

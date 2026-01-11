@@ -29,10 +29,16 @@ export const TOKENS = {
   // ===== Input Ports - State Recovery =====
   HandleStateRecoveryPort: Symbol('HandleStateRecoveryPort'),
 
+  // ===== Input Ports - Session Management =====
+  ClearOrphanedSessionPort: Symbol('ClearOrphanedSessionPort'),
+
   // ===== Input Ports - Player Operations (3 個) =====
   PlayHandCardPort: Symbol('PlayHandCardPort'),
   SelectMatchTargetPort: Symbol('SelectMatchTargetPort'),
   MakeKoiKoiDecisionPort: Symbol('MakeKoiKoiDecisionPort'),
+
+  // ===== Input Ports - Gateway Event Handlers =====
+  HandleGatewayConnectedPort: Symbol('HandleGatewayConnectedPort'),
 
   // ===== Input Ports - Event Handlers (16 個) =====
   HandleGameStartedPort: Symbol('HandleGameStartedPort'),
@@ -50,7 +56,6 @@ export const TOKENS = {
 
   // ===== Adapters =====
   GameApiClient: Symbol('GameApiClient'),
-  GameEventClient: Symbol('GameEventClient'),
   EventRouter: Symbol('EventRouter'),
 
   // ===== Stores =====
@@ -63,8 +68,15 @@ export const TOKENS = {
   // ===== Services =====
   CountdownManager: Symbol('CountdownManager'),
   OperationSessionManager: Symbol('OperationSessionManager'),
-  SSEConnectionManager: Symbol('SSEConnectionManager'),
   RoomApiClient: Symbol('RoomApiClient'),
+  MatchmakingApiClient: Symbol('MatchmakingApiClient'),
+
+  // ===== Matchmaking Adapters =====
+  MatchmakingEventRouter: Symbol('MatchmakingEventRouter'),
+
+  // ===== Gateway Adapters =====
+  GatewayEventRouter: Symbol('GatewayEventRouter'),
+  GatewayEventClient: Symbol('GatewayEventClient'),
 
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),

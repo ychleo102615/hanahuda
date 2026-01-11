@@ -9,6 +9,7 @@
  */
 
 import { pgTable, uuid, varchar, timestamp, boolean, integer } from 'drizzle-orm/pg-core'
+import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 
 /**
  * 遊戲狀態
@@ -21,6 +22,9 @@ export type GameStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED'
 export const games = pgTable('games', {
   /** 遊戲 ID (UUID v4) */
   id: uuid('id').primaryKey().defaultRandom(),
+
+  /** 房間類型 ID */
+  roomTypeId: varchar('room_type_id', { length: 20 }).$type<RoomTypeId>().notNull().default('QUICK'),
 
   /** 玩家 1 ID */
   player1Id: uuid('player1_id').notNull(),

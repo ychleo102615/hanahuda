@@ -7,7 +7,7 @@
       aria-modal="true"
       aria-labelledby="game-finished-title"
       :style="{ zIndex: Z_INDEX.MODAL }"
-      @click.self="handleClose"
+      @click.self="handleDismiss"
     >
       <div
         class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all"
@@ -84,16 +84,17 @@
           <button
             type="button"
             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-            @click="handleClose"
+            @click="handleDismiss"
           >
             Close
           </button>
           <button
             type="button"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            @click="handleNewGame"
+            :disabled="isRematching"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="handleRematch"
           >
-            New Game
+            {{ isRematching ? 'Finding...' : 'Rematch' }}
           </button>
         </div>
       </div>
@@ -112,7 +113,7 @@
  * Features:
  * - 顯示勝者
  * - 顯示最終分數
- * - 支援「關閉」和「新遊戲」操作
+ * - 支援「關閉」和「Rematch」操作
  * - 淡入/淡出動畫
  * - 根據勝負顯示不同顏色主題
  */
@@ -120,15 +121,13 @@
 import { Z_INDEX } from '~/constants'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useDependency } from '~/user-interface/adapter/composables/useDependency'
-import type { StartGamePort } from '~/user-interface/application/ports/input'
-import { TOKENS } from '~/user-interface/adapter/di/tokens'
+import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
 
 const uiStateStore = useUIStateStore()
 const gameStateStore = useGameStateStore()
 
-// DI 注入
-const startGameUseCase = useDependency<StartGamePort>(TOKENS.StartGamePort)
+// 使用 useLeaveGame 處理 Rematch 邏輯
+const { handleRematch, isRematching } = useLeaveGame()
 
 /**
  * 取得玩家名稱
@@ -143,20 +142,11 @@ function getPlayerName(playerId: string): string {
 }
 
 /**
- * 關閉 Modal
+ * 關閉 Modal（只關閉，不離開遊戲）
+ * 用戶可透過 TopBar 選單的 "Leave Game" 離開遊戲
  */
-function handleClose(): void {
+function handleDismiss(): void {
   uiStateStore.hideGameFinishedModal()
-}
-
-/**
- * 開始新遊戲
- *
- * 使用 StartGameUseCase 重置狀態並重新建立 SSE 連線。
- */
-function handleNewGame(): void {
-  uiStateStore.hideGameFinishedModal()
-  startGameUseCase.execute({ isNewGame: true })
 }
 </script>
 

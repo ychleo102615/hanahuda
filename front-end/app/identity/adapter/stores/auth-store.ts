@@ -60,6 +60,16 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
+   * 強制重新初始化認證狀態
+   *
+   * 用於 Session 失效後的恢復（訪客會自動建立新 Session）
+   */
+  async function reinitAuth(): Promise<void> {
+    isInitialized.value = false
+    await initAuth()
+  }
+
+  /**
    * 登出
    */
   async function logout(): Promise<void> {
@@ -137,6 +147,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Actions
     initAuth,
+    reinitAuth,
     logout,
     deleteAccount,
     setCurrentPlayer,

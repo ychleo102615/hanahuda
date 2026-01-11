@@ -320,10 +320,11 @@ export class TurnFlowService {
    * @description
    * 統一處理遊戲結束的所有邏輯：
    * 1. 使用 Domain 函數設定遊戲為 FINISHED
-   * 2. 清除所有計時器
-   * 3. 發送 GameFinished 事件
-   * 4. 從記憶體移除
-   * 5. 發送事件（DB 成功後才通知前端）
+   * 2. 記錄遊戲統計
+   * 3. 寫入資料庫（確保持久化成功）
+   * 4. 清除所有計時器
+   * 5. 發送 GameFinished 事件（必須在刪除遊戲前發送）
+   * 6. 從記憶體移除
    *
    * @param gameId - 遊戲 ID
    * @param winnerId - 勝者 ID（可選，若無則視為平局）
@@ -371,16 +372,16 @@ export class TurnFlowService {
     // 2. 清除計時器
     this.gameTimeoutManager.clearAllForGame(gameId)
 
-    // 3. 從記憶體移除
-    this.gameStore.delete(gameId)
-
-    // 4. 最後發送事件（DB 成功後才通知前端）
+    // 3. 發送事件（必須在刪除遊戲前發送，因為 publishToGame 需要從 gameStore 取得玩家 ID）
     const gameFinishedEvent = this.eventMapper.toGameFinishedEvent(
       winnerId ?? null,
       finishedGame.cumulativeScores,
       reason
     )
     this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
+
+    // 4. 最後從記憶體移除
+    this.gameStore.delete(gameId)
   }
 
   /**
@@ -479,8 +480,11 @@ export class TurnFlowService {
       // 不需要確認且有下一局：啟動 display timeout
       const firstPlayerId = updatedGame.currentRound?.activePlayerId
       this.startDisplayTimeout(gameId, displayTimeoutSeconds!, () => {
-        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(updatedGame)
-        this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+        // 發送 RoundDealt 事件（每個玩家收到過濾後的版本）
+        for (const player of updatedGame.players) {
+          const filteredEvent = this.eventMapper.toRoundDealtEventForPlayer(updatedGame, player.id)
+          this.eventPublisher.publishToPlayer(gameId, player.id, filteredEvent)
+        }
 
         // 啟動新回合第一位玩家的超時
         if (firstPlayerId) {
@@ -556,8 +560,11 @@ export class TurnFlowService {
       // 延遲發送 RoundDealt 事件（讓前端顯示結算畫面）
       const firstPlayerId = game.currentRound?.activePlayerId
       this.startDisplayTimeout(gameId, displayTimeoutSeconds, () => {
-        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(game)
-        this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+        // 發送 RoundDealt 事件（每個玩家收到過濾後的版本）
+        for (const player of game.players) {
+          const filteredEvent = this.eventMapper.toRoundDealtEventForPlayer(game, player.id)
+          this.eventPublisher.publishToPlayer(gameId, player.id, filteredEvent)
+        }
 
         // 啟動新回合第一位玩家的超時
         if (firstPlayerId) {
@@ -713,9 +720,11 @@ export class TurnFlowService {
       await this.gameRepository.save(updatedGame)
 
       if (transitionResult.transitionType === 'NEXT_ROUND') {
-        // 發送 RoundDealt 事件
-        const roundDealtEvent = this.eventMapper.toRoundDealtEvent(updatedGame)
-        this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+        // 發送 RoundDealt 事件（每個玩家收到過濾後的版本）
+        for (const player of updatedGame.players) {
+          const filteredEvent = this.eventMapper.toRoundDealtEventForPlayer(updatedGame, player.id)
+          this.eventPublisher.publishToPlayer(gameId, player.id, filteredEvent)
+        }
 
         // 啟動新回合第一位玩家的超時
         const firstPlayerId = updatedGame.currentRound?.activePlayerId
@@ -788,8 +797,11 @@ export class TurnFlowService {
 
     // 1. 發送 RoundDealtEvent（特殊規則版本：next_state = null, timeout = 0）
     //    前端會開始發牌動畫，但不啟動倒數、不允許操作
-    const roundDealtEvent = this.eventMapper.toRoundDealtEventForSpecialRule(game)
-    this.eventPublisher.publishToGame(gameId, roundDealtEvent)
+    //    每個玩家收到過濾後的版本
+    for (const player of game.players) {
+      const filteredEvent = this.eventMapper.toRoundDealtEventForSpecialRuleForPlayer(game, player.id)
+      this.eventPublisher.publishToPlayer(gameId, player.id, filteredEvent)
+    }
 
     // 2. 判斷是否為最後一局
     const lastRound = isLastRound(game)

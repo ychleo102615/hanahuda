@@ -90,3 +90,23 @@ export type {
 // SSE Event Types Constant (for runtime use)
 export { SSE_EVENT_TYPES, EVENT_TYPES } from './events'
 export type { EventTypeValue } from './events'
+
+// Matchmaking Events
+export type {
+  MatchmakingStatusEvent,
+  MatchFoundEvent,
+  MatchmakingCancelledEvent,
+  MatchmakingErrorEvent,
+  MatchFailedEvent,
+  MatchmakingEvent,
+  MatchmakingSSEEventType,
+} from './matchmaking-events'
+export { MATCHMAKING_EVENT_TYPES, SSE_MATCHMAKING_EVENT_TYPES } from './matchmaking-events'
+
+// Gateway Events
+export type {
+  GatewayEvent,
+  GatewayEventDomain,
+  GatewaySSEEventType,
+} from './gateway-events'
+export { GATEWAY_DOMAINS, GATEWAY_SSE_EVENT_TYPES } from './gateway-events'

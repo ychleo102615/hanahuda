@@ -43,7 +43,7 @@ describe('RegisterAccountUseCase', () => {
     id: 'session-id-12345' as SessionId,
     playerId: mockGuestPlayer.id,
     createdAt: new Date('2026-01-01T00:00:00Z'),
-    expiresAt: new Date('2026-01-08T00:00:00Z'),
+    expiresAt: new Date('2126-01-08T00:00:00Z'),
     lastAccessedAt: new Date('2026-01-01T00:00:00Z'),
   }
 

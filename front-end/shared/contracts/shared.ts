@@ -39,10 +39,17 @@ export interface PlayerConnectionInfo {
 
 /**
  * 玩家手牌
+ *
+ * @description
+ * 設計規範（doc/shared/protocol.md）：
+ * - 自己的手牌：cards 包含完整卡片 ID 陣列
+ * - 對手的手牌：cards 為空陣列，card_count 包含數量
  */
 export interface PlayerHand {
   readonly player_id: string
   readonly cards: ReadonlyArray<string>
+  /** 手牌數量（對手時使用，自己時可省略） */
+  readonly card_count?: number
 }
 
 /**
@@ -321,6 +328,8 @@ export interface GameWaitingData {
 export interface GameStartedData {
   /** 遊戲 ID */
   readonly game_id: string
+  /** 房間類型 ID（用於 Rematch 功能） */
+  readonly room_type_id: string
   /** 玩家列表 */
   readonly players: ReadonlyArray<PlayerInfo>
   /** 遊戲規則集 */

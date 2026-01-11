@@ -25,7 +25,7 @@ import type { SelectTargetInputPort } from '~~/server/core-game/application/port
 import type { MakeDecisionInputPort } from '~~/server/core-game/application/ports/input/makeDecisionInputPort'
 import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
 import { opponentStore } from './opponentStore'
-import { OpponentInstance, type OpponentInstanceDependencies } from './opponentInstance'
+import { OpponentInstance, type OpponentInstanceDependencies, type OpponentInstanceOptions } from './opponentInstance'
 import type { Unsubscribe } from './types'
 
 /**
@@ -118,6 +118,8 @@ export class OpponentRegistry {
    * @param payload - 房間建立事件 Payload
    */
   private async handleRoomCreated(payload: RoomCreatedPayload): Promise<void> {
+    console.info('[OpponentRegistry] Received ROOM_CREATED event:', payload.gameId)
+
     // 1. 建立 AI 玩家 ID
     const aiPlayerId = randomUUID()
     const aiPlayerName = 'Computer'
@@ -131,11 +133,21 @@ export class OpponentRegistry {
       gameStore: this.deps.gameStore,
     }
 
+    // 清理回調：當遊戲結束時，從 instances Map 和 opponentStore 移除
+    const instanceOptions: OpponentInstanceOptions = {
+      onCleanup: () => {
+        this.instances.delete(payload.gameId)
+        opponentStore.unregister(payload.gameId)
+        console.info('[OpponentRegistry] AI opponent cleaned up for game:', payload.gameId)
+      },
+    }
+
     const instance = new OpponentInstance(
       payload.gameId,
       aiPlayerId,
       strategyType,
-      instanceDeps
+      instanceDeps,
+      instanceOptions
     )
 
     // 3. 在 OpponentStore 註冊（讓 CompositeEventPublisher 可以發送事件）
@@ -156,6 +168,7 @@ export class OpponentRegistry {
     await this.delay(joinDelay)
 
     try {
+      console.info('[OpponentRegistry] AI attempting to join game:', payload.gameId)
       const result = await this.deps.joinGameAsAi.execute({
         playerId: aiPlayerId,
         playerName: aiPlayerName,
@@ -164,9 +177,13 @@ export class OpponentRegistry {
       })
 
       if (!result.success) {
+        console.warn('[OpponentRegistry] AI failed to join game:', payload.gameId)
         this.cleanupGame(payload.gameId)
+      } else {
+        console.info('[OpponentRegistry] AI successfully joined game:', payload.gameId)
       }
-    } catch {
+    } catch (error) {
+      console.error('[OpponentRegistry] Error joining game:', payload.gameId, error)
       this.cleanupGame(payload.gameId)
     }
   }
@@ -174,15 +191,17 @@ export class OpponentRegistry {
   /**
    * 清理遊戲相關資源
    *
+   * @description
+   * 呼叫 dispose() 觸發 onCleanup 回調，自動清理 instances Map 和 opponentStore。
+   *
    * @param gameId - 遊戲 ID
    */
   private cleanupGame(gameId: string): void {
     const instance = this.instances.get(gameId)
     if (instance) {
       instance.dispose()
-      this.instances.delete(gameId)
+      // onCleanup 回調會處理 instances.delete() 和 opponentStore.unregister()
     }
-    opponentStore.unregister(gameId)
   }
 
   /**

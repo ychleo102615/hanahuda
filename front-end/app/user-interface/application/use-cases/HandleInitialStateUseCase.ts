@@ -29,7 +29,7 @@ import type {
   NavigationPort,
   AnimationPort,
   MatchmakingStatePort,
-  SessionContextPort,
+  GameStatePort,
 } from '../ports/output'
 import { HandleInitialStatePort } from '../ports/input/handle-initial-state.port'
 import type { OperationSessionManager } from '../../adapter/abort'
@@ -41,7 +41,7 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     private readonly navigation: NavigationPort,
     private readonly animationPort: AnimationPort,
     private readonly matchmakingState: MatchmakingStatePort,
-    private readonly sessionContext: SessionContextPort,
+    private readonly gameState: GameStatePort,
     private readonly operationSession: OperationSessionManager
   ) {
     super()
@@ -55,8 +55,8 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
    */
   execute(event: InitialStateEvent, _signal?: AbortSignal): void {
 
-    // 儲存遊戲 ID 到 SessionContext
-    this.sessionContext.setGameId(event.game_id)
+    // 儲存遊戲 ID 到 GameState
+    this.gameState.setCurrentGameId(event.game_id)
 
     switch (event.response_type) {
       case 'game_waiting':
@@ -127,7 +127,7 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     this.notification.stopCountdown()
 
     // 3. 設定遊戲初始狀態
-    this.updateUIState.initializeGameContext(data.game_id, [...data.players], data.ruleset)
+    this.updateUIState.initializeGameContext(data.game_id, data.room_type_id, [...data.players], data.ruleset)
 
   }
 
@@ -306,7 +306,7 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     this.matchmakingState.clearSession()
 
     // 2. 清除遊戲 ID
-    this.sessionContext.setGameId(null)
+    this.gameState.setCurrentGameId(null)
 
     // 3. 建構訊息
     const winnerMsg = result.winner_id
@@ -333,7 +333,7 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     this.matchmakingState.clearSession()
 
     // 2. 清除遊戲 ID
-    this.sessionContext.setGameId(null)
+    this.gameState.setCurrentGameId(null)
 
     // 3. 顯示錯誤訊息
     this.notification.showErrorMessage('Your game session has expired. Please start a new game.')

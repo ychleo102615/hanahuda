@@ -55,6 +55,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
       const waitingGame = this.gameStore.get(gameId)
 
       if (!waitingGame) {
+        console.warn('[JoinGameAsAiUseCase] Game not found:', gameId)
         return {
           gameId,
           playerId,
@@ -63,6 +64,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
       }
 
       if (waitingGame.status !== 'WAITING') {
+        console.warn('[JoinGameAsAiUseCase] Game not in WAITING status:', gameId, 'status:', waitingGame.status)
         return {
           gameId,
           playerId,

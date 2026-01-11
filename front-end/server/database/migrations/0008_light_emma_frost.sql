@@ -1,0 +1,1 @@
+ALTER TABLE "games" ADD COLUMN "room_type_id" varchar(20) DEFAULT 'QUICK' NOT NULL;

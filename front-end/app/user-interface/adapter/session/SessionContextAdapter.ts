@@ -2,200 +2,140 @@
  * SessionContext Adapter
  *
  * @description
- * 實作 SessionContextPort，使用 sessionStorage 儲存非敏感的識別資訊。
- * session_token 由 HttpOnly Cookie 管理，不在此模組中。
+ * 實作 SessionContextPort，使用 sessionStorage 儲存會話資訊。
  *
- * 設計原則：
- * - 單一真相來源（SSOT）：識別資訊只存在 sessionStorage
- * - 非響應式資料：不需要驅動 UI 更新
- * - 跨頁面刷新保留：用於重連功能
+ * 儲存：
+ * - entryId: 配對條目 ID（用於取消配對）
+ * - currentGameId: 遊戲 ID（用於頁面刷新後重連）
+ *
+ * 不在此模組中管理的資訊：
+ * - roomTypeId: 由 gameState.roomTypeId 管理（來自 SSE 事件）
+ * - playerId/playerName: 由 useAuthStore 管理（來自 auth/me API）
+ * - gameFinished: 由 gameState.gameEnded 管理
+ * - session_token: 由 HttpOnly Cookie 管理
  *
  * @module user-interface/adapter/session/SessionContextAdapter
  */
 
-import { SessionContextPort, type SessionIdentity } from '../../application/ports/output/session-context.port'
+import { SessionContextPort } from '../../application/ports/output/session-context.port'
 
 /**
  * sessionStorage 鍵名常數
  */
 const STORAGE_KEYS = {
-  gameId: 'game_id',
-  playerId: 'player_id',
-  playerName: 'player_name',
-  roomTypeId: 'room_type_id',
-  gameFinished: 'game_finished',
+  currentGameId: 'current_game_id',
+  entryId: 'matchmaking_entry_id',
 } as const
 
 /**
  * SessionContext Adapter
  *
  * @description
- * 封裝 sessionStorage 操作，提供型別安全的 session 識別資訊存取。
+ * 封裝 sessionStorage 操作，提供型別安全的 session 資訊存取。
  */
 export class SessionContextAdapter extends SessionContextPort {
+  // === Game Session ===
+
   /**
-   * 取得遊戲 ID
+   * 取得當前遊戲 ID
    *
    * @returns 遊戲 ID，若無則返回 null
    */
-  getGameId(): string | null {
+  getCurrentGameId(): string | null {
     if (typeof window === 'undefined') {
       return null
     }
-    return sessionStorage.getItem(STORAGE_KEYS.gameId)
+    return sessionStorage.getItem(STORAGE_KEYS.currentGameId)
   }
 
   /**
-   * 設定遊戲 ID
+   * 設定當前遊戲 ID
    *
    * @param gameId - 遊戲 ID，傳入 null 可清除
    */
-  setGameId(gameId: string | null): void {
+  setCurrentGameId(gameId: string | null): void {
     if (typeof window === 'undefined') {
       return
     }
     if (gameId === null) {
-      sessionStorage.removeItem(STORAGE_KEYS.gameId)
+      sessionStorage.removeItem(STORAGE_KEYS.currentGameId)
     } else {
-      sessionStorage.setItem(STORAGE_KEYS.gameId, gameId)
+      sessionStorage.setItem(STORAGE_KEYS.currentGameId, gameId)
     }
   }
 
   /**
-   * 取得玩家 ID
+   * 檢查是否有進行中的遊戲
    *
-   * @returns 玩家 ID，若無則返回 null
+   * @returns 是否有 currentGameId
    */
-  getPlayerId(): string | null {
+  hasActiveGame(): boolean {
+    return this.getCurrentGameId() !== null
+  }
+
+  // === Online Matchmaking ===
+
+  /**
+   * 取得配對條目 ID
+   *
+   * @returns 配對條目 ID，若無則返回 null
+   */
+  getEntryId(): string | null {
     if (typeof window === 'undefined') {
       return null
     }
-    return sessionStorage.getItem(STORAGE_KEYS.playerId)
+    return sessionStorage.getItem(STORAGE_KEYS.entryId)
   }
 
   /**
-   * 取得玩家名稱
+   * 設定配對條目 ID
    *
-   * @returns 玩家名稱，若無則返回 null
+   * @param entryId - 配對條目 ID，傳入 null 可清除
    */
-  getPlayerName(): string | null {
-    if (typeof window === 'undefined') {
-      return null
-    }
-    return sessionStorage.getItem(STORAGE_KEYS.playerName)
-  }
-
-  /**
-   * 設定會話識別資訊
-   *
-   * @param identity - 會話識別資訊（playerId 必填，playerName、gameId、roomTypeId 可選）
-   */
-  setIdentity(identity: SessionIdentity): void {
+  setEntryId(entryId: string | null): void {
     if (typeof window === 'undefined') {
       return
     }
-    sessionStorage.setItem(STORAGE_KEYS.playerId, identity.playerId)
-    if (identity.playerName !== undefined) {
-      sessionStorage.setItem(STORAGE_KEYS.playerName, identity.playerName)
-    }
-    if (identity.gameId !== undefined) {
-      sessionStorage.setItem(STORAGE_KEYS.gameId, identity.gameId)
-    }
-    if (identity.roomTypeId !== undefined) {
-      sessionStorage.setItem(STORAGE_KEYS.roomTypeId, identity.roomTypeId)
+    if (entryId === null) {
+      sessionStorage.removeItem(STORAGE_KEYS.entryId)
+    } else {
+      sessionStorage.setItem(STORAGE_KEYS.entryId, entryId)
     }
   }
 
   /**
-   * 清除會話識別資訊
+   * 檢查是否處於線上配對模式
+   *
+   * @returns 是否有 entryId（線上配對中）
+   */
+  isMatchmakingMode(): boolean {
+    return this.getEntryId() !== null
+  }
+
+  /**
+   * 清除配對資訊
+   */
+  clearMatchmaking(): void {
+    if (typeof window === 'undefined') {
+      return
+    }
+    sessionStorage.removeItem(STORAGE_KEYS.entryId)
+  }
+
+  // === Session Cleanup ===
+
+  /**
+   * 清除所有會話資訊
    *
    * @description
-   * 用於離開遊戲時清除本地儲存的識別資訊。
-   * 注意：session_token Cookie 由後端 API 清除。
+   * 離開遊戲時清除所有 sessionStorage 資料（entryId + currentGameId）
    */
-  clearIdentity(): void {
+  clearSession(): void {
     if (typeof window === 'undefined') {
       return
     }
-    sessionStorage.removeItem(STORAGE_KEYS.gameId)
-    sessionStorage.removeItem(STORAGE_KEYS.playerId)
-    sessionStorage.removeItem(STORAGE_KEYS.playerName)
-    sessionStorage.removeItem(STORAGE_KEYS.roomTypeId)
-    sessionStorage.removeItem(STORAGE_KEYS.gameFinished)
-  }
-
-  /**
-   * 檢查是否有活躍的會話
-   *
-   * @returns 是否有完整的會話識別資訊
-   */
-  hasActiveSession(): boolean {
-    return this.getGameId() !== null && this.getPlayerId() !== null
-  }
-
-  /**
-   * 取得房間類型 ID
-   *
-   * @returns 房間類型 ID，若無則返回 null
-   */
-  getRoomTypeId(): string | null {
-    if (typeof window === 'undefined') {
-      return null
-    }
-    return sessionStorage.getItem(STORAGE_KEYS.roomTypeId)
-  }
-
-  /**
-   * 設定房間類型 ID
-   *
-   * @param roomTypeId - 房間類型 ID，傳入 null 可清除
-   */
-  setRoomTypeId(roomTypeId: string | null): void {
-    if (typeof window === 'undefined') {
-      return
-    }
-    if (roomTypeId === null) {
-      sessionStorage.removeItem(STORAGE_KEYS.roomTypeId)
-    } else {
-      sessionStorage.setItem(STORAGE_KEYS.roomTypeId, roomTypeId)
-    }
-  }
-
-  /**
-   * 檢查是否有房間選擇資訊
-   *
-   * @returns 是否有 playerId 和 roomTypeId
-   */
-  hasRoomSelection(): boolean {
-    return this.getPlayerId() !== null && this.getRoomTypeId() !== null
-  }
-
-  /**
-   * 設定遊戲是否已結束
-   *
-   * @param finished - 遊戲是否已結束
-   */
-  setGameFinished(finished: boolean): void {
-    if (typeof window === 'undefined') {
-      return
-    }
-    if (finished) {
-      sessionStorage.setItem(STORAGE_KEYS.gameFinished, 'true')
-    } else {
-      sessionStorage.removeItem(STORAGE_KEYS.gameFinished)
-    }
-  }
-
-  /**
-   * 檢查遊戲是否已結束
-   *
-   * @returns 遊戲是否已結束
-   */
-  isGameFinished(): boolean {
-    if (typeof window === 'undefined') {
-      return false
-    }
-    return sessionStorage.getItem(STORAGE_KEYS.gameFinished) === 'true'
+    sessionStorage.removeItem(STORAGE_KEYS.entryId)
+    sessionStorage.removeItem(STORAGE_KEYS.currentGameId)
   }
 }
 

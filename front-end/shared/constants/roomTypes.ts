@@ -13,7 +13,7 @@ import type { Ruleset, YakuSetting, SpecialRules } from '../contracts/shared'
 /**
  * 房間類型 ID
  */
-export type RoomTypeId = 'QUICK' | 'STANDARD' | 'MARATHON'
+export type RoomTypeId = 'SINGLE' | 'QUICK' | 'STANDARD' | 'MARATHON'
 
 /**
  * 房間類型配置
@@ -82,6 +82,12 @@ function createRuleset(totalRounds: number): Ruleset {
  * 房間類型配置表
  */
 export const ROOM_TYPES: Readonly<Record<RoomTypeId, RoomTypeConfig>> = Object.freeze({
+  SINGLE: Object.freeze({
+    id: 'SINGLE',
+    name: 'Single Round',
+    description: '1 round, fastest game',
+    ruleset: createRuleset(1),
+  }),
   QUICK: Object.freeze({
     id: 'QUICK',
     name: 'Quick Match',
@@ -114,7 +120,7 @@ export const DEFAULT_ROOM_TYPE_ID: RoomTypeId = 'QUICK'
  * @returns 是否為有效的房間類型 ID
  */
 export function isValidRoomTypeId(id: string): id is RoomTypeId {
-  return id === 'QUICK' || id === 'STANDARD' || id === 'MARATHON'
+  return id === 'SINGLE' || id === 'QUICK' || id === 'STANDARD' || id === 'MARATHON'
 }
 
 /**

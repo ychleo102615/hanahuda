@@ -49,6 +49,7 @@ describe('HandleGameStartedUseCase', () => {
         event_id: 'evt-001',
         timestamp: '2025-01-15T10:00:00Z',
         game_id: 'game-123',
+        room_type_id: 'STANDARD',
         players: [
           { player_id: 'player-1', player_name: 'Alice', is_ai: false },
           { player_id: 'player-2', player_name: 'Bob', is_ai: true },
@@ -74,6 +75,7 @@ describe('HandleGameStartedUseCase', () => {
       // Assert
       expect(mockUIState.initializeGameContext).toHaveBeenCalledWith(
         'game-123',
+        'STANDARD',
         [
           { player_id: 'player-1', player_name: 'Alice', is_ai: false },
           { player_id: 'player-2', player_name: 'Bob', is_ai: true },
@@ -100,6 +102,7 @@ describe('HandleGameStartedUseCase', () => {
         event_id: 'evt-002',
         timestamp: '2025-01-15T10:00:00Z',
         game_id: 'game-456',
+        room_type_id: 'QUICK',
         players: [
           { player_id: 'p1', player_name: 'Player 1', is_ai: false },
           { player_id: 'p2', player_name: 'AI Opponent', is_ai: true },
@@ -122,6 +125,7 @@ describe('HandleGameStartedUseCase', () => {
       // Assert
       expect(mockUIState.initializeGameContext).toHaveBeenCalledWith(
         'game-456',
+        'QUICK',
         [
           { player_id: 'p1', player_name: 'Player 1', is_ai: false },
           { player_id: 'p2', player_name: 'AI Opponent', is_ai: true },
@@ -173,6 +177,7 @@ describe('HandleGameStartedUseCase', () => {
         event_id: 'evt-004',
         timestamp: '2025-01-15T10:00:00Z',
         game_id: 'game-ai-only',
+        room_type_id: 'SINGLE',
         players: [
           { player_id: 'ai-1', player_name: 'AI 1', is_ai: true },
           { player_id: 'ai-2', player_name: 'AI 2', is_ai: true },
@@ -200,6 +205,7 @@ describe('HandleGameStartedUseCase', () => {
         event_id: 'evt-005',
         timestamp: '2025-01-15T10:00:00Z',
         game_id: 'game-no-yaku',
+        room_type_id: 'MARATHON',
         players: [
           { player_id: 'p1', player_name: 'Player 1', is_ai: false },
           { player_id: 'p2', player_name: 'AI', is_ai: true },
@@ -222,6 +228,7 @@ describe('HandleGameStartedUseCase', () => {
       // Assert: 應該正常處理空的 yaku_settings
       expect(mockUIState.initializeGameContext).toHaveBeenCalledWith(
         'game-no-yaku',
+        'MARATHON',
         expect.any(Array),
         expect.objectContaining({
           yaku_settings: [],

@@ -31,9 +31,10 @@ export class HandleGameStartedUseCase implements HandleGameStartedPort {
     this.notification.hideWaitingMessage()
     this.notification.stopCountdown()
 
-    // 2. 初始化遊戲上下文（game_id, players, ruleset）
+    // 2. 初始化遊戲上下文（game_id, room_type_id, players, ruleset）
     this.updateUIState.initializeGameContext(
       event.game_id,
+      event.room_type_id,
       [...event.players], // Convert readonly array to mutable
       event.ruleset
     )

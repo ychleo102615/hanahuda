@@ -66,7 +66,9 @@
       "WebSearch",
       "Bash(grep:*)",
       "Bash(rm:*)",
-      "Bash(pnpm test:unit:*)"
+      "Bash(pnpm test:unit:*)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
+      "Bash(git grep:*)"
     ],
     "deny": [],
     "ask": []

@@ -21,7 +21,7 @@
  */
 
 import type { SendCommandPort } from '../../application/ports/output/send-command.port'
-import type { SessionContextPort } from '../../application/ports/output/session-context.port'
+import type { GameStatePort } from '../../application/ports/output/game-state.port'
 import {
   NetworkError,
   ServerError,
@@ -49,17 +49,17 @@ function sleep(ms: number): Promise<void> {
  * GameApiClient 類別
  *
  * @description
- * 透過 DI 注入 SessionContextPort，用於取得 gameId, playerId。
+ * 透過 DI 注入 GameStatePort，用於取得 currentGameId。
  * session_token 由 HttpOnly Cookie 自動傳送，無需手動處理。
  */
 export class GameApiClient implements SendCommandPort {
   private baseURL: string
   private timeout: number
-  private sessionContext: SessionContextPort
+  private gameState: GameStatePort
 
-  constructor(baseURL: string, sessionContext: SessionContextPort, options?: GameApiClientOptions) {
+  constructor(baseURL: string, gameState: GameStatePort, options?: GameApiClientOptions) {
     this.baseURL = baseURL
-    this.sessionContext = sessionContext
+    this.gameState = gameState
     this.timeout = options?.timeout || 5000
   }
 
@@ -79,7 +79,7 @@ export class GameApiClient implements SendCommandPort {
    */
   async leaveGame(gameId: string): Promise<void> {
     if (!gameId) {
-      throw new ValidationError('遊戲 ID 不可為空')
+      throw new ValidationError('Game ID cannot be empty')
     }
 
     const url = `${this.baseURL}/api/v1/games/${gameId}/leave`
@@ -159,7 +159,7 @@ export class GameApiClient implements SendCommandPort {
   async makeDecision(decision: 'KOI_KOI' | 'END_ROUND'): Promise<void> {
     // 驗證輸入
     if (decision !== 'KOI_KOI' && decision !== 'END_ROUND') {
-      throw new ValidationError(`無效的決策值: ${decision}`)
+      throw new ValidationError(`Invalid decision: ${decision}`)
     }
 
     // 取得 gameId
@@ -329,31 +329,27 @@ export class GameApiClient implements SendCommandPort {
    */
   private validateCardId(cardId: string): void {
     if (!/^\d{4}$/.test(cardId)) {
-      throw new ValidationError(`無效的卡片 ID: ${cardId}`)
+      throw new ValidationError(`Invalid card ID: ${cardId}`)
     }
   }
 
   /**
-   * 取得遊戲上下文 (gameId, playerId)
+   * 取得遊戲上下文 (gameId)
    *
    * @description
-   * 從 SessionContext 取得 session 識別資訊。
-   * session_token 由 HttpOnly Cookie 自動傳送，無需在此處理。
+   * 從 GameStatePort 取得 currentGameId。
+   * session_token 由 HttpOnly Cookie 自動傳送，用於驗證玩家身份。
    *
    * @returns 遊戲上下文
-   * @throws {ValidationError} gameId 或 playerId 未初始化
+   * @throws {ValidationError} gameId 未初始化
    */
-  private getGameContext(): { gameId: string; playerId: string } {
-    const gameId = this.sessionContext.getGameId()
-    const playerId = this.sessionContext.getPlayerId()
+  private getGameContext(): { gameId: string } {
+    const gameId = this.gameState.getCurrentGameId()
 
     if (!gameId) {
-      throw new ValidationError('遊戲尚未初始化')
-    }
-    if (!playerId) {
-      throw new ValidationError('玩家 ID 未設定')
+      throw new ValidationError('Game not initialized')
     }
 
-    return { gameId, playerId }
+    return { gameId }
   }
 }

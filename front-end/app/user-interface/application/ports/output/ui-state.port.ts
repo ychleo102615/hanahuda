@@ -40,6 +40,7 @@ export interface UIStatePort {
    * 初始化遊戲上下文（GameStarted 使用）
    *
    * @param gameId - 遊戲 ID
+   * @param roomTypeId - 房間類型 ID（用於 Rematch 功能）
    * @param players - 玩家資訊列表
    * @param ruleset - 遊戲規則集
    *
@@ -47,12 +48,13 @@ export interface UIStatePort {
    * ```typescript
    * updateUIState.initializeGameContext(
    *   'game-123',
+   *   'QUICK',
    *   [{ player_id: 'p1', player_name: 'Alice', is_ai: false }],
    *   { target_score: 100, yaku_settings: [...], special_rules: {...} }
    * )
    * ```
    */
-  initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void
+  initializeGameContext(gameId: string, roomTypeId: string, players: PlayerInfo[], ruleset: Ruleset): void
 
   /**
    * 恢復完整遊戲狀態（GameSnapshotRestore 使用，靜默恢復無動畫）

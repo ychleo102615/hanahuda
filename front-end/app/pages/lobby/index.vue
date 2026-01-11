@@ -22,23 +22,28 @@ definePageMeta({
   middleware: 'lobby',
 })
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
 import { useDependency } from '~/user-interface/adapter/composables/useDependency'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output'
 import { RoomApiClient, type RoomType } from '~/user-interface/adapter/api/RoomApiClient'
+import { MatchmakingApiClient, MatchmakingError } from '~/user-interface/adapter/api/MatchmakingApiClient'
+import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import LobbyTopInfoBar from '~/components/LobbyTopInfoBar.vue'
 import type { MenuItem } from '~/components/LobbyTopInfoBar.vue'
 import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
 import RegisterPrompt from '~/identity/adapter/components/RegisterPrompt.vue'
+import MatchmakingErrorModal from './components/MatchmakingErrorModal.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
+import { useAuthStore } from '~/identity/adapter/stores/auth-store'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()
+const authStore = useAuthStore()
 
 // Identity BC - 使用後端提供的 playerId
 const { playerId, displayName, isGuest } = useCurrentPlayer()
@@ -47,6 +52,14 @@ const { logout, deleteAccount } = useAuth()
 // DI 注入
 const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const roomApiClient = useDependency<RoomApiClient>(TOKENS.RoomApiClient)
+const matchmakingApiClient = useDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
+
+// 配對中狀態
+const isMatchmaking = ref(false)
+
+// ALREADY_IN_QUEUE 時，儲存正在配對的房間類型（用於顯示和取消後重試）
+const pendingRoomTypeId = ref<string | null>(null)
+const conflictingEntryId = ref<string | null>(null)
 
 // Player Info Card 狀態
 const isPlayerInfoCardOpen = ref(false)
@@ -64,7 +77,45 @@ const loadError = ref<string | null>(null)
 
 // Computed properties
 const hasError = computed(() => matchmakingStore.status === 'error')
-const canStartMatchmaking = computed(() => matchmakingStore.canStartMatchmaking)
+
+// === 共用函數 ===
+
+/**
+ * 設定配對錯誤狀態
+ */
+function setMatchmakingError(error: unknown, fallbackMessage: string): void {
+  matchmakingStore.setStatus('error')
+  if (error instanceof MatchmakingError) {
+    matchmakingStore.setError(error.errorCode, error.message)
+  } else {
+    matchmakingStore.setError('NETWORK_ERROR', fallbackMessage)
+  }
+}
+
+/**
+ * 清除本地配對狀態
+ */
+function clearLocalMatchmakingState(): void {
+  matchmakingStore.clearSession()
+  pendingRoomTypeId.value = null
+  conflictingEntryId.value = null
+}
+
+/**
+ * 導航到遊戲頁面（配對中）
+ */
+function navigateToGameWithEntry(entryId: string): void {
+  sessionContext.setEntryId(entryId)
+  navigateTo('/game')
+}
+
+/**
+ * 導航到遊戲頁面（遊戲中）
+ */
+function navigateToGameWithGameId(gameId: string): void {
+  sessionContext.setCurrentGameId(gameId)
+  navigateTo('/game')
+}
 
 // 選單項目
 const menuItems = computed<MenuItem[]>(() => [
@@ -78,12 +129,24 @@ const menuItems = computed<MenuItem[]>(() => [
 
 // 載入房間類型
 onMounted(async () => {
+  // 重設本地狀態（確保從其他頁面返回時按鈕可點擊）
+  isMatchmaking.value = false
+  pendingRoomTypeId.value = null
+  conflictingEntryId.value = null
+
   try {
     roomTypes.value = await roomApiClient.getRoomTypes()
   } catch (_error) {
     loadError.value = 'Failed to load room types'
   } finally {
     isLoadingRooms.value = false
+  }
+})
+
+// 離開頁面時清理錯誤狀態
+onBeforeUnmount(() => {
+  if (matchmakingStore.status === 'error') {
+    matchmakingStore.clearSession()
   }
 })
 
@@ -153,29 +216,184 @@ const handleDeleteAccountConfirm = async (password: string | undefined) => {
 }
 
 // 選擇房間並開始配對
-const handleSelectRoom = (roomTypeId: string) => {
-  if (!canStartMatchmaking.value) return
+const handleSelectRoom = async (roomTypeId: string) => {
+  // 防止重複呼叫（API 呼叫中）
+  if (isMatchmaking.value) return
+
+  // 點擊時自動清除錯誤狀態（允許用戶重試）
+  if (hasError.value) {
+    clearLocalMatchmakingState()
+  }
 
   // 使用 Identity BC 提供的 playerId (由後端 Session 管理)
   const currentPlayerId = playerId.value
-  const playerName = displayName.value || 'Player'
 
   if (!currentPlayerId) {
     console.error('No player ID available - auth middleware should have initialized this')
     return
   }
 
-  // 儲存到 SessionContext（供 game page 使用）
-  sessionContext.setIdentity({ playerId: currentPlayerId, playerName, roomTypeId })
+  // 開始線上配對流程
+  isMatchmaking.value = true
+  matchmakingStore.setStatus('finding')
 
-  // 直接導航到遊戲頁面，SSE 連線在那裡建立
-  navigateTo('/game')
+  try {
+    const entryId = await matchmakingApiClient.enterMatchmaking(roomTypeId as RoomTypeId)
+    navigateToGameWithEntry(entryId)
+  } catch (error: unknown) {
+    isMatchmaking.value = false
+
+    if (error instanceof MatchmakingError) {
+      const errorCode = error.errorCode
+
+      // ALREADY_IN_QUEUE: 比較房間類型，決定是否直接導向或顯示選項
+      if (errorCode === 'ALREADY_IN_QUEUE') {
+        try {
+          const status = await matchmakingApiClient.getPlayerStatus()
+          if (status.status === 'MATCHMAKING') {
+            if (status.roomType === roomTypeId) {
+              // 相同房間：直接導向遊戲頁面
+              navigateToGameWithEntry(status.entryId)
+            } else {
+              // 不同房間：顯示訊息讓用戶選擇
+              pendingRoomTypeId.value = roomTypeId
+              conflictingEntryId.value = status.entryId
+              matchmakingStore.setStatus('error')
+              matchmakingStore.setError('ALREADY_IN_QUEUE', `You are already queuing for "${status.roomType}"`)
+            }
+          } else if (status.status === 'IN_GAME') {
+            navigateToGameWithGameId(status.gameId)
+          }
+        } catch {
+          setMatchmakingError(null, 'Unable to retrieve matchmaking status')
+        }
+        return
+      }
+
+      // UNAUTHORIZED: 根據用戶類型處理
+      if (errorCode === 'UNAUTHORIZED') {
+        if (isGuest.value) {
+          await handleGuestSessionRecovery(roomTypeId)
+          return
+        } else {
+          matchmakingStore.setStatus('error')
+          matchmakingStore.setError('SESSION_EXPIRED', '您的登入已過期，請重新登入')
+          return
+        }
+      }
+
+      // 其他錯誤（含 ALREADY_IN_GAME）：顯示 server 訊息
+      setMatchmakingError(error, 'Failed to enter matchmaking')
+    } else {
+      setMatchmakingError(error, 'Failed to enter matchmaking')
+    }
+  }
+}
+
+/**
+ * 訪客 Session 恢復
+ *
+ * 當訪客遇到 UNAUTHORIZED 錯誤時，自動重建 Session 並重試配對
+ */
+async function handleGuestSessionRecovery(roomTypeId: string): Promise<void> {
+  try {
+    await authStore.reinitAuth()
+    const entryId = await matchmakingApiClient.enterMatchmaking(roomTypeId as RoomTypeId)
+    navigateToGameWithEntry(entryId)
+  } catch {
+    matchmakingStore.setStatus('error')
+    matchmakingStore.setError('RECOVERY_FAILED', '無法恢復連線，請重新整理頁面')
+    isMatchmaking.value = false
+  }
 }
 
 // 重試配對
 const handleRetry = () => {
-  matchmakingStore.clearSession()
-  // 狀態已重置為 idle，使用者可以再次選擇房間
+  isMatchmaking.value = false
+  clearLocalMatchmakingState()
+}
+
+/**
+ * 繼續當前配對
+ *
+ * @description
+ * 當用戶選擇不同房間但已在配對中時，選擇繼續當前配對。
+ * 需要先檢查玩家狀態，因為配對可能在這段時間內已經成功。
+ */
+const handleContinueQueue = async () => {
+  try {
+    const status = await matchmakingApiClient.getPlayerStatus()
+
+    if (status.status === 'MATCHMAKING') {
+      navigateToGameWithEntry(status.entryId)
+    } else if (status.status === 'IN_GAME') {
+      // 配對已成功，嘗試進入配對來觸發 server 返回 ALREADY_IN_GAME 錯誤
+      pendingRoomTypeId.value = null
+      conflictingEntryId.value = null
+      await matchmakingApiClient.enterMatchmaking(status.roomTypeId)
+    } else {
+      // IDLE - 配對被取消或超時
+      clearLocalMatchmakingState()
+    }
+  } catch (error: unknown) {
+    setMatchmakingError(error, 'Unable to retrieve matchmaking status')
+  }
+}
+
+/**
+ * 取消當前配對並切換到新房間
+ *
+ * @description
+ * 當用戶選擇不同房間但已在配對中時，取消當前配對並重新配對新房間。
+ * 不預先檢查狀態，讓 server 返回錯誤（如 ALREADY_IN_GAME）。
+ */
+const handleCancelAndSwitch = async () => {
+  if (!pendingRoomTypeId.value) return
+
+  try {
+    // 嘗試取消當前配對（如果有）
+    if (conflictingEntryId.value) {
+      try {
+        await matchmakingApiClient.cancelMatchmaking(conflictingEntryId.value)
+      } catch {
+        // 取消失敗（可能配對已成功或被取消），繼續嘗試配對新房間
+      }
+    }
+
+    // 清除狀態並取得新房間 ID
+    matchmakingStore.clearSession()
+    conflictingEntryId.value = null
+    const newRoomTypeId = pendingRoomTypeId.value
+    pendingRoomTypeId.value = null
+
+    // 重新配對新房間（如果已在遊戲中，server 會返回 ALREADY_IN_GAME 錯誤）
+    const entryId = await matchmakingApiClient.enterMatchmaking(newRoomTypeId as RoomTypeId)
+    navigateToGameWithEntry(entryId)
+  } catch (error: unknown) {
+    setMatchmakingError(error, 'Failed to switch room. Please try again.')
+  }
+}
+
+/**
+ * 返回遊戲
+ *
+ * @description
+ * 當玩家已在遊戲中時，直接導向遊戲頁面。
+ * roomTypeId 由 SSE GameSnapshotRestore 事件提供。
+ */
+const handleBackToGame = async () => {
+  try {
+    const status = await matchmakingApiClient.getPlayerStatus()
+
+    if (status.status === 'IN_GAME') {
+      navigateToGameWithGameId(status.gameId)
+    } else {
+      // 玩家已不在遊戲中，清除錯誤狀態
+      clearLocalMatchmakingState()
+    }
+  } catch (error: unknown) {
+    setMatchmakingError(error, 'Unable to retrieve game status')
+  }
 }
 </script>
 
@@ -219,11 +437,11 @@ const handleRetry = () => {
           </div>
 
           <!-- 房間類型列表 -->
-          <div v-else class="grid gap-6 px-6">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <button
               v-for="room in roomTypes"
               :key="room.id"
-              :disabled="!canStartMatchmaking || hasError"
+              :disabled="isLoadingRooms"
               class="bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-xl p-6 border border-gray-700 text-left transition-all duration-200 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500 hover:bg-gray-800/90 active:scale-[0.98] active:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:translate-y-0 disabled:hover:shadow-xl disabled:hover:border-gray-700"
               @click="handleSelectRoom(room.id)"
             >
@@ -241,44 +459,6 @@ const handleRetry = () => {
               <div class="text-xs text-gray-500 pt-4 border-t border-gray-600/50">
                 <span>{{ room.rounds }} rounds</span>
               </div>
-            </button>
-          </div>
-
-          <!-- 錯誤訊息 -->
-          <div
-            v-if="hasError"
-            data-testid="error-message"
-            role="alert"
-            class="mt-6 bg-red-900/30 border border-red-700 rounded-lg p-4"
-          >
-            <div class="flex items-start">
-              <svg
-                class="h-5 w-5 text-red-400 mt-0.5 mr-3 flex-shrink-0"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-              <div class="flex-1">
-                <h3 class="text-sm font-medium text-red-300">Matchmaking Failed</h3>
-                <p class="mt-1 text-sm text-red-400">
-                  {{ matchmakingStore.errorMessage || 'An error occurred. Please try again.' }}
-                </p>
-              </div>
-            </div>
-
-            <!-- 重試按鈕 -->
-            <button
-              data-testid="retry-button"
-              class="mt-4 w-full bg-primary-600 hover:bg-primary-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-              @click="handleRetry"
-            >
-              Retry
             </button>
           </div>
 
@@ -307,6 +487,19 @@ const handleRetry = () => {
 
     <!-- 訪客註冊提示 -->
     <RegisterPrompt />
+
+    <!-- 配對錯誤 Modal -->
+    <MatchmakingErrorModal
+      :visible="hasError"
+      :error-code="matchmakingStore.errorCode"
+      :error-message="matchmakingStore.errorMessage"
+      @dismiss="handleRetry"
+      @retry="handleRetry"
+      @back-to-game="handleBackToGame"
+      @back-to-home="navigateTo('/')"
+      @continue-queue="handleContinueQueue"
+      @cancel-and-switch="handleCancelAndSwitch"
+    />
   </div>
 </template>
 

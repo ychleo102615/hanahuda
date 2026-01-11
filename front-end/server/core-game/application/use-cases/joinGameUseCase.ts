@@ -17,7 +17,6 @@ import { randomUUID } from 'crypto'
 import {
   createGame,
   getDefaultRuleset,
-  determineWinner,
   createPlayer,
   type Game,
 } from '~~/server/core-game/domain/game'
@@ -104,17 +103,15 @@ export class JoinGameUseCase implements JoinGameInputPort {
   }
 
   /**
-   * 處理重連模式
+   * 處理重連或加入模式
    *
    * @description
-   * 當前端明確提供 gameId 時，表示要重連特定遊戲。
-   * 此時需要檢查遊戲狀態，返回對應的結果。
+   * 當明確提供 gameId 時，區分兩種情況：
+   * - 情況 A: 玩家已在遊戲中 → 重連
+   * - 情況 B: 玩家不在遊戲中，但遊戲存在且 WAITING → 加入
+   * - 情況 C: 遊戲不存在或不是 WAITING → 錯誤
    *
-   * 驗證順序：
-   * 1. 透過 playerId 查詢遊戲
-   * 2. 驗證查到的遊戲 ID 與傳入的 gameId 相符
-   *
-   * @param gameId - 要重連的遊戲 ID
+   * @param gameId - 要加入或重連的遊戲 ID
    * @param playerId - 玩家 ID（來自 Identity BC）
    * @param playerName - 玩家名稱
    * @returns 加入遊戲結果
@@ -124,75 +121,27 @@ export class JoinGameUseCase implements JoinGameInputPort {
     playerId: string,
     playerName: string
   ): Promise<JoinGameOutput> {
-    // 1. 透過 playerId 查詢遊戲
+    // 1. 透過 playerId 查詢遊戲（重連模式）
     const playerGame = this.gameStore.getByPlayerId(playerId)
 
-    // 2. 驗證遊戲存在且 ID 相符
-    if (!playerGame || playerGame.id !== gameId) {
-      logger.error('Game expired', { gameId, playerId, reason: 'player_not_in_game' })
-      this.gameLogRepository?.logAsync({
-        gameId,
-        playerId,
-        eventType: COMMAND_TYPES.ReconnectGameFailed,
-        payload: { reason: 'player_not_in_game' },
-      })
-      return { status: 'game_expired', gameId }
+    // 情況 A: 玩家已在遊戲中，且 ID 相符 → 重連
+    if (playerGame && playerGame.id === gameId) {
+      return this.handleReconnection(playerGame, playerId, playerName)
     }
 
-    // 3. 驗證通過，執行重連
-    return this.handleReconnection(playerGame, playerId, playerName)
-  }
-
-  /**
-   * 處理遊戲不在記憶體中的情況
-   *
-   * @description
-   * 當 sessionToken 在記憶體中找不到對應的遊戲時，
-   * 查詢資料庫確認遊戲是否已結束。
-   *
-   * 注意：此方法目前未使用，因為新的驗證邏輯要求 sessionToken 必須在記憶體中有效。
-   * 保留此方法以備未來需要擴展「查詢已結束遊戲」的功能。
-   */
-  private async handleGameNotInMemory(
-    gameId: string,
-    playerId: string
-  ): Promise<JoinGameOutput> {
-    // 查資料庫
-    const dbGame = await this.gameRepository.findById(gameId)
-    if (!dbGame) {
-      logger.error('Game expired', { gameId, playerId, reason: 'not_found_in_db' })
-      this.gameLogRepository?.logAsync({
-        gameId,
-        playerId,
-        eventType: COMMAND_TYPES.ReconnectGameFailed,
-        payload: { reason: 'not_found_in_db' },
-      })
-      return { status: 'game_expired', gameId }
+    // 情況 B: 玩家不在遊戲中 → 嘗試加入指定遊戲
+    const targetGame = this.gameStore.get(gameId)
+    if (targetGame && targetGame.status === 'WAITING') {
+      return this.joinExistingGame(targetGame, playerId, playerName)
     }
 
-    // 遊戲已結束
-    if (dbGame.status === 'FINISHED') {
-      const winnerId = determineWinner(dbGame)
-      return {
-        status: 'game_finished',
-        gameId: dbGame.id,
-        winnerId,
-        finalScores: dbGame.cumulativeScores.map((s) => ({
-          playerId: s.player_id,
-          score: s.score,
-        })),
-        roundsPlayed: dbGame.roundsPlayed,
-        totalRounds: dbGame.totalRounds,
-      }
-    }
-
-    // 遊戲在 DB 但不在記憶體 → 已過期
-    logger.error('Game expired', { gameId, playerId, reason: 'in_db_not_in_memory' })
+    // 情況 C: 遊戲不存在或不是 WAITING 狀態
+    logger.error('Game expired', { gameId, playerId, reason: 'game_not_available' })
     this.gameLogRepository?.logAsync({
       gameId,
       playerId,
       eventType: COMMAND_TYPES.ReconnectGameFailed,
-      payload: { reason: 'in_db_not_in_memory' },
+      payload: { reason: 'game_not_available' },
     })
     return { status: 'game_expired', gameId }
   }
@@ -242,9 +191,10 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 取得剩餘超時秒數
     const remainingSeconds = this.gameTimeoutManager.getRemainingSeconds(game.id)
 
-    // 建立遊戲快照
-    const snapshot = this.eventMapper.toGameSnapshotRestoreEvent(
+    // 建立遊戲快照（過濾手牌：自己完整，對手只有數量）
+    const snapshot = this.eventMapper.toGameSnapshotRestoreEventForPlayer(
       game,
+      playerId,
       remainingSeconds ?? undefined
     )
 
@@ -293,6 +243,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
     const game = createGame({
       id: gameId,
+      roomTypeId: effectiveRoomType,
       player: humanPlayer,
       ruleset,
     })

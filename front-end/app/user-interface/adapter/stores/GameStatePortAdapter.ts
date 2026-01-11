@@ -26,8 +26,8 @@ export function createGameStatePortAdapter(): GameStatePort {
 
   return {
     // ===== 初始化 =====
-    initializeGameContext(gameId: string, players: PlayerInfo[], ruleset: Ruleset): void {
-      store.initializeGameContext(gameId, players, ruleset)
+    initializeGameContext(gameId: string, roomTypeId: string, players: PlayerInfo[], ruleset: Ruleset): void {
+      store.initializeGameContext(gameId, roomTypeId, players, ruleset)
     },
 
     restoreGameState(snapshot: GameSnapshotRestore): void {
@@ -149,6 +149,15 @@ export function createGameStatePortAdapter(): GameStatePort {
 
     setGameEnded(ended: boolean): void {
       store.setGameEnded(ended)
+    },
+
+    // ===== 遊戲 ID 管理 =====
+    getCurrentGameId(): string | null {
+      return store.currentGameId
+    },
+
+    setCurrentGameId(gameId: string | null): void {
+      store.setCurrentGameId(gameId)
     },
   }
 }

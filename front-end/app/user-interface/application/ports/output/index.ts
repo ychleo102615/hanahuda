@@ -22,9 +22,9 @@ export type { SendCommandPort } from './send-command.port'
 export type { GameStatePort } from './game-state.port'
 export type { AnimationPort, DealAnimationParams } from './animation.port'
 export type { NotificationPort } from './notification.port'
-export type { MatchmakingStatePort, MatchmakingStatus } from './matchmaking-state.port'
+export type { MatchmakingStatePort, MatchmakingStatus, OnlineMatchmakingState } from './matchmaking-state.port'
 export type { NavigationPort } from './navigation.port'
-export { SessionContextPort, type SessionIdentity } from './session-context.port'
+export { SessionContextPort } from './session-context.port'
 
 // Game Connection
 export { GameConnectionPort, type GameConnectionParams } from './game-connection.port'
