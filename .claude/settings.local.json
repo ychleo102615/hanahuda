@@ -73,7 +73,8 @@
       "Bash(wc:*)",
       "Bash(pnpm type-check:*)",
       "Bash(pnpm --prefix front-end lint:*)",
-      "Skill(architecture-check)"
+      "Skill(architecture-check)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": []

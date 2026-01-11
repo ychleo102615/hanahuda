@@ -18,7 +18,7 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Z_INDEX } from '~/constants'
-import { useUIStateStore, type ToastData, type ToastType } from '~/user-interface/adapter/stores/uiState'
+import { useUIStateStore, type ToastData, type ToastType } from '~/game-client/adapter/stores/uiState'
 
 const uiStore = useUIStateStore()
 const { activeToasts } = storeToRefs(uiStore)

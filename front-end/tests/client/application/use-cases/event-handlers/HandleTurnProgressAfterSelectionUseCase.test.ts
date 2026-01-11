@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { HandleTurnProgressAfterSelectionUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
+import { HandleTurnProgressAfterSelectionUseCase } from '@/game-client/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
 import type { TurnProgressAfterSelectionEvent } from '#shared/contracts'
 import {
   createMockGameStatePort,
@@ -22,8 +22,8 @@ import {
   createMockNotificationPort,
   createMockDelayPort,
 } from '../../test-helpers/mock-factories'
-import type { GameStatePort, AnimationPort, NotificationPort, DelayPort } from '@/user-interface/application/ports'
-import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
+import type { GameStatePort, AnimationPort, NotificationPort, DelayPort } from '@/game-client/application/ports'
+import type { DomainFacade } from '@/game-client/application/types/domain-facade'
 
 describe('HandleTurnProgressAfterSelectionUseCase', () => {
   let mockGameState: GameStatePort

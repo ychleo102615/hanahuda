@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
-import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
+import { useMatchmakingStateStore } from '~/game-client/adapter/stores/matchmakingState'
 
 const matchmakingStore = useMatchmakingStateStore()
 

@@ -14,10 +14,10 @@ import rulesDataJson from '~/data/rules.json'
 import yakuDataJson from '~/data/yaku.json'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
-import { resolveDependency } from '~/user-interface/adapter/di/resolver'
-import { TOKENS } from '~/user-interface/adapter/di/tokens'
-import type { ClearOrphanedSessionPort } from '~/user-interface/application/ports/input'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { resolveDependency } from '~/game-client/adapter/di/resolver'
+import { TOKENS } from '~/game-client/adapter/di/tokens'
+import type { ClearOrphanedSessionPort } from '~/game-client/application/ports/input'
 
 // 首頁專用：預留滾動條空間，避免 modal 開啟時內容跳動
 onMounted(() => {

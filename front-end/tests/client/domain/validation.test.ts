@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { validateCardExists, validateTargetInList } from '@/user-interface/domain/validation'
+import { validateCardExists, validateTargetInList } from '@/game-client/domain/validation'
 import {
   MATSU_HIKARI,
   MATSU_AKATAN,
@@ -17,8 +17,8 @@ import {
   UME_AKATAN,
   SAKURA_HIKARI,
   SAKURA_AKATAN,
-} from '@/user-interface/domain/card-database'
-import type { Card } from '@/user-interface/domain/types'
+} from '@/game-client/domain/card-database'
+import type { Card } from '@/game-client/domain/types'
 
 describe('validation.ts', () => {
   describe('validateCardExists()', () => {

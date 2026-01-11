@@ -6,12 +6,12 @@
  * 檔名使用 `.client.ts` 後綴確保僅在 client-side 運行。
  * 檔名前綴 `01.` 確保此 plugin 優先載入（在 Pinia 之後）。
  *
- * @see /Users/leo-huang/Projects/vue/hanahuda/front-end/src/user-interface/adapter/di/registry.ts
+ * @see /Users/leo-huang/Projects/vue/hanahuda/front-end/src/game-client/adapter/di/registry.ts
  */
 
 import type { Pinia } from 'pinia'
-import { container } from '~/user-interface/adapter/di/container'
-import { registerDependencies, type GameMode } from '~/user-interface/adapter/di/registry'
+import { container } from '~/game-client/adapter/di/container'
+import { registerDependencies, type GameMode } from '~/game-client/adapter/di/registry'
 
 export default defineNuxtPlugin({ dependsOn: ['pinia'], setup(nuxtApp) {
   // 僅在 client-side 執行（.client.ts 後綴已確保，此檢查為額外保險）

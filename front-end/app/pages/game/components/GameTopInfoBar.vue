@@ -20,8 +20,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
+import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import ResponsiveMenu from '~/components/menu/ResponsiveMenu.vue'
 import type { MenuItem } from '~/components/menu/types'

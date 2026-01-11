@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 import { YAKU_GRADIENTS, KOIKOI_GRADIENT, type YakuCategory } from '~/constants/announcement-styles'
 import { Z_INDEX } from '~/constants'
 

@@ -3,10 +3,10 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { HandleTurnErrorUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnErrorUseCase'
+import { HandleTurnErrorUseCase } from '@/game-client/application/use-cases/event-handlers/HandleTurnErrorUseCase'
 import type { TurnErrorEvent } from '#shared/contracts'
 import { createMockTriggerUIEffectPort, createMockNotificationPort } from '../../test-helpers/mock-factories'
-import type { TriggerUIEffectPort, NotificationPort } from '@/user-interface/application/ports'
+import type { TriggerUIEffectPort, NotificationPort } from '@/game-client/application/ports'
 
 describe('HandleTurnErrorUseCase', () => {
   let mockTriggerUIEffect: TriggerUIEffectPort

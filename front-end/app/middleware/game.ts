@@ -7,9 +7,9 @@
  * 注意：遊戲模式（gameMode）不在此處理，由 DI Plugin 透過 runtimeConfig 統一管理。
  */
 
-import { resolveDependency } from '~/user-interface/adapter/di/resolver'
-import { TOKENS } from '~/user-interface/adapter/di/tokens'
-import type { SessionContextPort } from '~/user-interface/application/ports/output/session-context.port'
+import { resolveDependency } from '~/game-client/adapter/di/resolver'
+import { TOKENS } from '~/game-client/adapter/di/tokens'
+import type { SessionContextPort } from '~/game-client/application/ports/output/session-context.port'
 import { useAuthStore } from '~/identity/adapter/stores/auth-store'
 
 export default defineNuxtRouteMiddleware((_to, _from) => {

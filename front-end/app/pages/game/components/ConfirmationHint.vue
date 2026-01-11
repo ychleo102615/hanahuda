@@ -9,7 +9,7 @@
 
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 
 const uiState = useUIStateStore()
 const { handCardConfirmationMode, matchCount } = storeToRefs(uiState)

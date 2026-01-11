@@ -67,10 +67,10 @@ Game Gateway 架構將原本分散的配對 SSE 和遊戲 SSE 整合為單一統
 | 檔案 | 說明 |
 |------|------|
 | `shared/contracts/gateway-events.ts` | Gateway 事件類型定義 |
-| `app/user-interface/adapter/sse/GatewayEventRouter.ts` | 統一事件路由器 |
-| `app/user-interface/adapter/sse/GatewayEventClient.ts` | 統一 SSE 客戶端 |
-| `app/user-interface/adapter/composables/useGatewayConnection.ts` | Gateway 連線 Composable |
-| `app/user-interface/application/use-cases/HandleGatewayConnectedUseCase.ts` | Gateway 連線事件處理 |
+| `app/game-client/adapter/sse/GatewayEventRouter.ts` | 統一事件路由器 |
+| `app/game-client/adapter/sse/GatewayEventClient.ts` | 統一 SSE 客戶端 |
+| `app/game-client/adapter/composables/useGatewayConnection.ts` | Gateway 連線 Composable |
+| `app/game-client/application/use-cases/HandleGatewayConnectedUseCase.ts` | Gateway 連線事件處理 |
 
 ### Phase 4: Deprecated 標記
 
@@ -147,7 +147,7 @@ gameConnection.connect() // SSE 2
 
 ```typescript
 // ✅ 新方式：單一連線
-import { useGatewayConnection } from '~/user-interface/adapter/composables/useGatewayConnection'
+import { useGatewayConnection } from '~/game-client/adapter/composables/useGatewayConnection'
 
 const gateway = useGatewayConnection()
 
@@ -164,7 +164,7 @@ onUnmounted(() => {
 
 ```vue
 <script setup>
-import { useGatewayConnection } from '~/user-interface/adapter/composables/useGatewayConnection'
+import { useGatewayConnection } from '~/game-client/adapter/composables/useGatewayConnection'
 import { onMounted, onUnmounted } from 'vue'
 
 const gateway = useGatewayConnection()

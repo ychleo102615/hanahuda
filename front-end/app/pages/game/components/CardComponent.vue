@@ -12,7 +12,7 @@ import { computed, shallowRef, watch } from 'vue'
 import SvgIcon from '~/components/SvgIcon.vue'
 import { getCardIconName, CARD_BACK_ICON_NAME } from '~/utils/cardMapping'
 import { useMotion } from '@vueuse/motion'
-import { useAnimationLayerStore } from '~/user-interface/adapter/stores'
+import { useAnimationLayerStore } from '~/game-client/adapter/stores'
 
 interface Props {
   cardId: string

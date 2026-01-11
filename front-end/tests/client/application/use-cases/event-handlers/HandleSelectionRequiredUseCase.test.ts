@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { HandleSelectionRequiredUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase'
+import { HandleSelectionRequiredUseCase } from '@/game-client/application/use-cases/event-handlers/HandleSelectionRequiredUseCase'
 import type { SelectionRequiredEvent } from '#shared/contracts'
 import {
   createMockNotificationPort,
@@ -22,8 +22,8 @@ import {
   createMockDomainFacade,
   createMockLayoutPort,
 } from '../../test-helpers/mock-factories'
-import type { NotificationPort, GameStatePort, AnimationPort, LayoutPort } from '@/user-interface/application/ports'
-import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
+import type { NotificationPort, GameStatePort, AnimationPort, LayoutPort } from '@/game-client/application/ports'
+import type { DomainFacade } from '@/game-client/application/types/domain-facade'
 
 describe('HandleSelectionRequiredUseCase', () => {
   let mockNotification: NotificationPort

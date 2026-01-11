@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { HandleGameStartedUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleGameStartedUseCase'
+import { HandleGameStartedUseCase } from '@/game-client/application/use-cases/event-handlers/HandleGameStartedUseCase'
 import type { GameStartedEvent } from '#shared/contracts'
 import {
   createMockUIStatePort,
@@ -20,7 +20,7 @@ import {
   createMockMatchmakingStatePort,
   createMockNavigationPort,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, TriggerUIEffectPort, GameStatePort, NotificationPort, MatchmakingStatePort, NavigationPort } from '@/user-interface/application/ports'
+import type { UIStatePort, TriggerUIEffectPort, GameStatePort, NotificationPort, MatchmakingStatePort, NavigationPort } from '@/game-client/application/ports'
 
 describe('HandleGameStartedUseCase', () => {
   let mockUIState: UIStatePort

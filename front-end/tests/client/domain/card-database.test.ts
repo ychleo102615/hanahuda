@@ -19,7 +19,7 @@ import {
   KIRI_HIKARI,
   MATSU_KASU_1,
   KIRI_KASU_3,
-} from '@/user-interface/domain/card-database'
+} from '@/game-client/domain/card-database'
 
 describe('card-database.ts', () => {
   describe('語義化常數定義', () => {

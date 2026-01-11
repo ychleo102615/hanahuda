@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { HandleTurnCompletedUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnCompletedUseCase'
+import { HandleTurnCompletedUseCase } from '@/game-client/application/use-cases/event-handlers/HandleTurnCompletedUseCase'
 import type { TurnCompletedEvent } from '#shared/contracts'
 import {
   createMockGameStatePort,
@@ -22,8 +22,8 @@ import {
   createMockNotificationPort,
   createMockDomainFacade,
 } from '../../test-helpers/mock-factories'
-import type { GameStatePort, AnimationPort, NotificationPort } from '@/user-interface/application/ports'
-import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
+import type { GameStatePort, AnimationPort, NotificationPort } from '@/game-client/application/ports'
+import type { DomainFacade } from '@/game-client/application/types/domain-facade'
 
 describe('HandleTurnCompletedUseCase', () => {
   let mockGameState: GameStatePort

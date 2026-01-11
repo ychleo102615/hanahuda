@@ -23,12 +23,12 @@ definePageMeta({
 })
 
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
-import { resolveDependency } from '~/user-interface/adapter/di/resolver'
-import { TOKENS } from '~/user-interface/adapter/di/tokens'
-import type { SessionContextPort } from '~/user-interface/application/ports/output'
-import { RoomApiClient, type RoomType } from '~/user-interface/adapter/api/RoomApiClient'
-import { MatchmakingApiClient, MatchmakingError } from '~/user-interface/adapter/api/MatchmakingApiClient'
+import { useMatchmakingStateStore } from '~/game-client/adapter/stores/matchmakingState'
+import { resolveDependency } from '~/game-client/adapter/di/resolver'
+import { TOKENS } from '~/game-client/adapter/di/tokens'
+import type { SessionContextPort } from '~/game-client/application/ports/output'
+import { RoomApiClient, type RoomType } from '~/game-client/adapter/api/RoomApiClient'
+import { MatchmakingApiClient, MatchmakingError } from '~/game-client/adapter/api/MatchmakingApiClient'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import LobbyTopInfoBar from './components/LobbyTopInfoBar.vue'
@@ -39,7 +39,7 @@ import MatchmakingErrorModal from './components/MatchmakingErrorModal.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
 import { useAuthStore } from '~/identity/adapter/stores/auth-store'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()

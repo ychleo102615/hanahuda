@@ -13,8 +13,8 @@
 
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
+import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
+import { useZoneRegistration } from '~/game-client/adapter/composables/useZoneRegistration'
 import SvgIcon from '~/components/SvgIcon.vue'
 import { CARD_BACK_ICON_NAME } from '~/utils/cardMapping'
 

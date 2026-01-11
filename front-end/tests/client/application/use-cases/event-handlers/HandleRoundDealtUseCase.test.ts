@@ -13,14 +13,14 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { HandleRoundDealtUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleRoundDealtUseCase'
+import { HandleRoundDealtUseCase } from '@/game-client/application/use-cases/event-handlers/HandleRoundDealtUseCase'
 import type { RoundDealtEvent } from '#shared/contracts'
 import {
   createMockGameStatePort,
   createMockAnimationPort,
   createMockNotificationPort,
 } from '../../test-helpers/mock-factories'
-import type { GameStatePort, AnimationPort, NotificationPort } from '@/user-interface/application/ports'
+import type { GameStatePort, AnimationPort, NotificationPort } from '@/game-client/application/ports'
 
 describe('HandleRoundDealtUseCase', () => {
   let mockGameState: GameStatePort

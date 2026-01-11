@@ -119,9 +119,9 @@
  */
 
 import { Z_INDEX } from '~/constants'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
+import { useLeaveGame } from '~/game-client/adapter/composables/useLeaveGame'
 
 const uiStateStore = useUIStateStore()
 const gameStateStore = useGameStateStore()

@@ -3,7 +3,7 @@
  *
  * 測試 yaku-progress.ts 中的所有函數,確保役種進度計算邏輯正確。
  *
- * @module __tests__/user-interface/domain/yaku-progress
+ * @module __tests__/game-client/domain/yaku-progress
  * @since 2025-11-14
  */
 
@@ -12,7 +12,7 @@ import {
   calculateYakuProgress,
   calculateDynamicYakuProgress,
   calculateSankoProgress,
-} from '@/user-interface/domain/yaku-progress'
+} from '@/game-client/domain/yaku-progress'
 import {
   // 赤短 (AKATAN)
   MATSU_AKATAN,
@@ -57,8 +57,8 @@ import {
   FUJI_KASU_2,
   AYAME_KASU_1,
   AYAME_KASU_2,
-} from '@/user-interface/domain/card-database'
-import type { Card } from '@/user-interface/domain/types'
+} from '@/game-client/domain/card-database'
+import type { Card } from '@/game-client/domain/types'
 
 describe('yaku-progress.ts', () => {
   // ==========================================================================
