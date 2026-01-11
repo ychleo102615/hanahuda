@@ -129,7 +129,7 @@ describe('EnterMatchmakingUseCase', () => {
   })
 
   describe('matching logic', () => {
-    it('should transition both entries to MATCHED when match found', async () => {
+    it('should remove both entries from pool when match found', async () => {
       const existingEntry = MatchmakingEntry.create({
         id: 'entry-existing',
         playerId: 'player-existing',
@@ -147,8 +147,9 @@ describe('EnterMatchmakingUseCase', () => {
 
       await useCase.execute(input)
 
-      // Both entries should be updated to MATCHED
-      expect(mockPoolPort.updateStatus).toHaveBeenCalledWith(existingEntry.id, 'MATCHED')
+      // Both entries should be removed from pool (not just marked as MATCHED)
+      expect(mockPoolPort.remove).toHaveBeenCalledTimes(2)
+      expect(mockPoolPort.remove).toHaveBeenCalledWith(existingEntry.id)
     })
 
     it('should publish MatchFound event with correct payload', async () => {

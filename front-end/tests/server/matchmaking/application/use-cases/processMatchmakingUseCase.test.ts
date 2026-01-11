@@ -93,7 +93,7 @@ describe('ProcessMatchmakingUseCase', () => {
       )
     })
 
-    it('should update both entries to MATCHED status', async () => {
+    it('should remove both entries from pool when match found', async () => {
       const entry1 = MatchmakingEntry.create({
         id: 'entry-1',
         playerId: 'player-1',
@@ -113,8 +113,8 @@ describe('ProcessMatchmakingUseCase', () => {
 
       await useCase.execute({ entryId: 'entry-1' })
 
-      expect(mockPoolPort.updateStatus).toHaveBeenCalledWith('entry-1', 'MATCHED')
-      expect(mockPoolPort.updateStatus).toHaveBeenCalledWith('entry-2', 'MATCHED')
+      expect(mockPoolPort.remove).toHaveBeenCalledWith('entry-1')
+      expect(mockPoolPort.remove).toHaveBeenCalledWith('entry-2')
     })
   })
 
@@ -194,7 +194,7 @@ describe('ProcessMatchmakingUseCase', () => {
       expect(result.matchResult.roomType).toBe('QUICK')
     })
 
-    it('should update entry status to MATCHED', async () => {
+    it('should remove entry from pool', async () => {
       await useCase.executeBotFallback({
         entryId: 'entry-1',
         playerId: 'player-1',
@@ -202,7 +202,7 @@ describe('ProcessMatchmakingUseCase', () => {
         roomType: 'STANDARD',
       })
 
-      expect(mockPoolPort.updateStatus).toHaveBeenCalledWith('entry-1', 'MATCHED')
+      expect(mockPoolPort.remove).toHaveBeenCalledWith('entry-1')
     })
 
     it('should publish MatchFound event with BOT matchType', async () => {
