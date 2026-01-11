@@ -49,10 +49,10 @@
  */
 
 import { computed } from 'vue'
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
+import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
+import { useZoneRegistration } from '~/game-client/adapter/composables/useZoneRegistration'
 import CardComponent from './CardComponent.vue'
-import type { CardType } from '~/user-interface/domain/types'
+import type { CardType } from '~/game-client/domain/types'
 
 const gameStateStore = useGameStateStore()
 

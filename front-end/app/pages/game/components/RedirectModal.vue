@@ -76,7 +76,7 @@
 
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { Z_INDEX } from '~/constants'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 
 const uiStateStore = useUIStateStore()
 const router = useRouter()

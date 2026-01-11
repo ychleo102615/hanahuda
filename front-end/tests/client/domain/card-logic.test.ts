@@ -8,9 +8,9 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { isValidCard, getCardById, areCardsEqual, getCardTypeFromId } from '@/user-interface/domain/card-logic'
-import { MATSU_HIKARI, UME_AKATAN, SAKURA_HIKARI } from '@/user-interface/domain/card-database'
-import type { Card } from '@/user-interface/domain/types'
+import { isValidCard, getCardById, areCardsEqual, getCardTypeFromId } from '@/game-client/domain/card-logic'
+import { MATSU_HIKARI, UME_AKATAN, SAKURA_HIKARI } from '@/game-client/domain/card-database'
+import type { Card } from '@/game-client/domain/types'
 
 describe('card-logic.ts', () => {
   describe('isValidCard()', () => {

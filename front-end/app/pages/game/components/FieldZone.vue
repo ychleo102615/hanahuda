@@ -14,13 +14,13 @@
 
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
-import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
-import { useDependency } from '~/user-interface/adapter/composables/useDependency'
+import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { useZoneRegistration } from '~/game-client/adapter/composables/useZoneRegistration'
+import { resolveDependency } from '~/game-client/adapter/di/resolver'
 import CardComponent from './CardComponent.vue'
-import { TOKENS } from '~/user-interface/adapter/di/tokens'
-import type { SelectMatchTargetPort, PlayHandCardPort } from '~/user-interface/application/ports/input'
+import { TOKENS } from '~/game-client/adapter/di/tokens'
+import type { SelectMatchTargetPort, PlayHandCardPort } from '~/game-client/application/ports/input'
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
@@ -51,8 +51,8 @@ const {
 const canSelectFieldCard = computed(() => !isActionTimeoutExpired.value)
 
 // 注入 Ports
-const selectMatchTargetPort = useDependency<SelectMatchTargetPort>(TOKENS.SelectMatchTargetPort)
-const playHandCardPort = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
+const selectMatchTargetPort = resolveDependency<SelectMatchTargetPort>(TOKENS.SelectMatchTargetPort)
+const playHandCardPort = resolveDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
 
 // 判斷卡片是否為懸浮預覽高亮（紫色框）
 function isPreviewHighlighted(cardId: string): boolean {

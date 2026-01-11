@@ -13,22 +13,24 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { HandleTurnProgressAfterSelectionUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
+import { HandleTurnProgressAfterSelectionUseCase } from '@/game-client/application/use-cases/event-handlers/HandleTurnProgressAfterSelectionUseCase'
 import type { TurnProgressAfterSelectionEvent } from '#shared/contracts'
 import {
   createMockGameStatePort,
   createMockAnimationPort,
   createMockDomainFacade,
   createMockNotificationPort,
+  createMockDelayPort,
 } from '../../test-helpers/mock-factories'
-import type { GameStatePort, AnimationPort, NotificationPort } from '@/user-interface/application/ports'
-import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
+import type { GameStatePort, AnimationPort, NotificationPort, DelayPort } from '@/game-client/application/ports'
+import type { DomainFacade } from '@/game-client/application/types/domain-facade'
 
 describe('HandleTurnProgressAfterSelectionUseCase', () => {
   let mockGameState: GameStatePort
   let mockAnimation: AnimationPort
   let mockDomainFacade: DomainFacade
   let mockNotification: NotificationPort
+  let mockDelay: DelayPort
   let useCase: HandleTurnProgressAfterSelectionUseCase
 
   beforeEach(() => {
@@ -36,11 +38,13 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
     mockAnimation = createMockAnimationPort()
     mockDomainFacade = createMockDomainFacade()
     mockNotification = createMockNotificationPort()
+    mockDelay = createMockDelayPort()
     useCase = new HandleTurnProgressAfterSelectionUseCase(
       mockGameState,
       mockAnimation,
       mockDomainFacade,
-      mockNotification
+      mockNotification,
+      mockDelay
     )
   })
 

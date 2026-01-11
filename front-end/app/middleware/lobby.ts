@@ -10,7 +10,7 @@
  * - 否則允許進入大廳
  */
 
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
+import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
 
 export default defineNuxtRouteMiddleware((_to, _from) => {
   // Nuxt 4: 只在 client-side 執行

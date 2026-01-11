@@ -66,8 +66,8 @@ export default defineConfig({
       include: [
         'server/domain/**/*.ts',
         'server/application/**/*.ts',
-        'app/user-interface/domain/**/*.ts',
-        'app/user-interface/application/**/*.ts',
+        'app/game-client/domain/**/*.ts',
+        'app/game-client/application/**/*.ts',
       ],
       exclude: [
         'server/adapters/**',

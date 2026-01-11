@@ -11,7 +11,7 @@
  * @example
  * ```typescript
  * import { describe, it, expect } from 'vitest'
- * import { PlayHandCardUseCase } from '@/user-interface/application'
+ * import { PlayHandCardUseCase } from '@/game-client/application'
  * import {
  *   createMockSendCommandPort,
  *   createMockTriggerUIEffectPort,
@@ -51,8 +51,12 @@ import type {
   NavigationPort,
   ErrorHandlerPort,
   SessionContextPort,
-} from '@/user-interface/application/ports'
-import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
+  DelayPort,
+  LayoutPort,
+} from '@/game-client/application/ports'
+import type { DomainFacade } from '@/game-client/application/types/domain-facade'
+import type { ToastNotificationPort } from '@/shared/ports/toast-notification.port'
+import type { CurrentPlayerContextPort } from '@/shared/ports/current-player-context.port'
 
 /**
  * 建立 Mock SendCommandPort
@@ -454,4 +458,98 @@ export function createMockSessionContextPort(): SessionContextPort {
     setGameFinished: vi.fn(),
     isGameFinished: vi.fn().mockReturnValue(false),
   } as SessionContextPort
+}
+
+/**
+ * 建立 Mock DelayPort
+ *
+ * @description
+ * `delay` 預設返回 resolved Promise。
+ *
+ * @example
+ * ```typescript
+ * const mockDelay = createMockDelayPort()
+ *
+ * // 驗證方法調用
+ * await mockDelay.delay(100)
+ * expect(mockDelay.delay).toHaveBeenCalledWith(100)
+ * ```
+ */
+export function createMockDelayPort(): DelayPort {
+  return {
+    delay: vi.fn().mockResolvedValue(undefined),
+  }
+}
+
+/**
+ * 建立 Mock LayoutPort
+ *
+ * @description
+ * `waitForLayout` 預設返回 resolved Promise。
+ *
+ * @example
+ * ```typescript
+ * const mockLayout = createMockLayoutPort()
+ *
+ * // 驗證方法調用
+ * await mockLayout.waitForLayout(2)
+ * expect(mockLayout.waitForLayout).toHaveBeenCalledWith(2)
+ * ```
+ */
+export function createMockLayoutPort(): LayoutPort {
+  return {
+    waitForLayout: vi.fn().mockResolvedValue(undefined),
+  }
+}
+
+/**
+ * 建立 Mock ToastNotificationPort
+ *
+ * @description
+ * `addToast` 預設返回唯一 ID。
+ *
+ * @example
+ * ```typescript
+ * const mockToast = createMockToastNotificationPort()
+ *
+ * // 驗證方法調用
+ * mockToast.addToast({ type: 'success', message: 'Welcome!' })
+ * expect(mockToast.addToast).toHaveBeenCalledWith({ type: 'success', message: 'Welcome!' })
+ * ```
+ */
+export function createMockToastNotificationPort(): ToastNotificationPort {
+  return {
+    addToast: vi.fn().mockReturnValue('toast-1'),
+  }
+}
+
+/**
+ * 建立 Mock CurrentPlayerContextPort
+ *
+ * @description
+ * `getContext` 預設返回已登入玩家狀態。
+ *
+ * @example
+ * ```typescript
+ * const mockPlayerContext = createMockCurrentPlayerContextPort()
+ *
+ * // 驗證方法調用
+ * const context = mockPlayerContext.getContext()
+ * expect(context.playerId).toBe('player-1')
+ * expect(context.isLoggedIn).toBe(true)
+ *
+ * // 模擬未登入狀態
+ * mockPlayerContext.getContext = vi.fn().mockReturnValue({
+ *   playerId: null,
+ *   isLoggedIn: false,
+ * })
+ * ```
+ */
+export function createMockCurrentPlayerContextPort(): CurrentPlayerContextPort {
+  return {
+    getContext: vi.fn().mockReturnValue({
+      playerId: 'player-1',
+      isLoggedIn: true,
+    }),
+  }
 }

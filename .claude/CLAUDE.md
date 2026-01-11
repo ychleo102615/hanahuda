@@ -14,7 +14,7 @@
 - `/create-bounded-context` - 建立新 BC 的模板與指導（目錄結構、檔案模板、DI Container 設計）
 
 ## Key Directories
-- `front-end/app/user-interface` - 前端使用者介面 BC
+- `front-end/app/game-client` - 前端遊戲客戶端 BC
 - `front-end/server/gateway` - 後端入口
 - `front-end/server/identity` - 後端使用者身份 BC
 - `front-end/server/core-game` - 後端核心遊戲 BC

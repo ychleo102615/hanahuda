@@ -257,8 +257,8 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Z_INDEX } from '~/constants'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
 
 const uiState = useUIStateStore()
 const gameState = useGameStateStore()

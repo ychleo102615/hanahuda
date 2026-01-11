@@ -13,13 +13,13 @@
  */
 
 import { ref, reactive, watch } from 'vue'
-import { useAnimationLayerStore } from '~/user-interface/adapter/stores'
+import { useAnimationLayerStore } from '~/game-client/adapter/stores'
 import CardComponent from './CardComponent.vue'
 import { Z_INDEX } from '~/constants'
-import { useAbortableMotion } from '~/user-interface/adapter/abort'
-import { container, TOKENS } from '~/user-interface/adapter/di'
-import type { OperationSessionManager } from '~/user-interface/adapter/abort'
-import { AbortOperationError } from '~/user-interface/application/types/abort'
+import { useAbortableMotion } from '~/game-client/adapter/abort'
+import { container, TOKENS } from '~/game-client/adapter/di'
+import type { OperationSessionManager } from '~/game-client/adapter/abort'
+import { AbortOperationError } from '~/game-client/application/types/abort'
 
 const store = useAnimationLayerStore()
 

@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import NavigationBar from '~/components/NavigationBar.vue'
-import HeroSection from '~/components/HeroSection.vue'
-import RulesSection from '~/components/RulesSection.vue'
+import NavigationBar from '~/pages/index/components/NavigationBar.vue'
+import HeroSection from '~/pages/index/components/HeroSection.vue'
+import RulesSection from '~/pages/index/components/RulesSection.vue'
 import Footer from '~/components/Footer.vue'
 import LoginModal from '~/identity/adapter/components/LoginModal.vue'
-import PlayerProfilePopover from '~/components/PlayerProfilePopover.vue'
+import PlayerProfilePopover from '~/pages/index/components/PlayerProfilePopover.vue'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import UnifiedToast from '~/components/UnifiedToast.vue'
 import type { RuleCategoryUnion, YakuCard } from '~/types/rules'
-import type { NavigationLink } from '~/components/NavigationBar.vue'
+import type { NavigationLink } from '~/pages/index/components/NavigationBar.vue'
 import rulesDataJson from '~/data/rules.json'
 import yakuDataJson from '~/data/yaku.json'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
-import { useDependency } from '~/user-interface/adapter/composables/useDependency'
-import { TOKENS } from '~/user-interface/adapter/di/tokens'
-import type { ClearOrphanedSessionPort } from '~/user-interface/application/ports/input'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { resolveDependency } from '~/game-client/adapter/di/resolver'
+import { TOKENS } from '~/game-client/adapter/di/tokens'
+import type { ClearOrphanedSessionPort } from '~/game-client/application/ports/input'
 
 // 首頁專用：預留滾動條空間，避免 modal 開啟時內容跳動
 onMounted(() => {
@@ -25,7 +25,7 @@ onMounted(() => {
 
   // 清除孤立的會話資訊（roomTypeId、entryId）
   // 如果沒有活躍的遊戲，進入首頁時應清除所有配對相關資訊
-  const clearOrphanedSession = useDependency<ClearOrphanedSessionPort>(TOKENS.ClearOrphanedSessionPort)
+  const clearOrphanedSession = resolveDependency<ClearOrphanedSessionPort>(TOKENS.ClearOrphanedSessionPort)
   clearOrphanedSession.execute()
 })
 onUnmounted(() => {

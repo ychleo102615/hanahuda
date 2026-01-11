@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { SelectMatchTargetUseCase } from '@/user-interface/application/use-cases/player-operations/SelectMatchTargetUseCase'
+import { SelectMatchTargetUseCase } from '@/game-client/application/use-cases/player-operations/SelectMatchTargetUseCase'
 import {
   createMockSendCommandPort,
   createMockDomainFacade,

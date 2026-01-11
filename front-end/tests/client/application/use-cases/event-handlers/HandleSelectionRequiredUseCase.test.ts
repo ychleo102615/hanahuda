@@ -13,22 +13,24 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { HandleSelectionRequiredUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleSelectionRequiredUseCase'
+import { HandleSelectionRequiredUseCase } from '@/game-client/application/use-cases/event-handlers/HandleSelectionRequiredUseCase'
 import type { SelectionRequiredEvent } from '#shared/contracts'
 import {
   createMockNotificationPort,
   createMockGameStatePort,
   createMockAnimationPort,
   createMockDomainFacade,
+  createMockLayoutPort,
 } from '../../test-helpers/mock-factories'
-import type { NotificationPort, GameStatePort, AnimationPort } from '@/user-interface/application/ports'
-import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
+import type { NotificationPort, GameStatePort, AnimationPort, LayoutPort } from '@/game-client/application/ports'
+import type { DomainFacade } from '@/game-client/application/types/domain-facade'
 
 describe('HandleSelectionRequiredUseCase', () => {
   let mockNotification: NotificationPort
   let mockGameState: GameStatePort
   let mockAnimation: AnimationPort
   let mockDomainFacade: DomainFacade
+  let mockLayout: LayoutPort
   let useCase: HandleSelectionRequiredUseCase
 
   beforeEach(() => {
@@ -36,7 +38,14 @@ describe('HandleSelectionRequiredUseCase', () => {
     mockGameState = createMockGameStatePort()
     mockAnimation = createMockAnimationPort()
     mockDomainFacade = createMockDomainFacade()
-    useCase = new HandleSelectionRequiredUseCase(mockGameState, mockAnimation, mockDomainFacade, mockNotification)
+    mockLayout = createMockLayoutPort()
+    useCase = new HandleSelectionRequiredUseCase(
+      mockGameState,
+      mockAnimation,
+      mockDomainFacade,
+      mockNotification,
+      mockLayout
+    )
   })
 
   describe('觸發手牌移動動畫', () => {

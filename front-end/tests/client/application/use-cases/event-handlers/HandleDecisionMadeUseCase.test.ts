@@ -11,14 +11,14 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { HandleDecisionMadeUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleDecisionMadeUseCase'
+import { HandleDecisionMadeUseCase } from '@/game-client/application/use-cases/event-handlers/HandleDecisionMadeUseCase'
 import type { DecisionMadeEvent } from '#shared/contracts'
 import {
   createMockUIStatePort,
   createMockNotificationPort,
   createMockGameStatePort,
 } from '../../test-helpers/mock-factories'
-import type { UIStatePort, NotificationPort, GameStatePort } from '@/user-interface/application/ports'
+import type { UIStatePort, NotificationPort, GameStatePort } from '@/game-client/application/ports'
 
 describe('HandleDecisionMadeUseCase', () => {
   let mockUIState: UIStatePort

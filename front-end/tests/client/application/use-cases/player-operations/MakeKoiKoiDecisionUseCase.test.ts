@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { MakeKoiKoiDecisionUseCase } from '@/user-interface/application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
+import { MakeKoiKoiDecisionUseCase } from '@/game-client/application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
 import {
   createMockSendCommandPort,
   createMockDomainFacade,

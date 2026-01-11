@@ -14,12 +14,12 @@
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { Z_INDEX } from '~/constants'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useDependency } from '~/user-interface/adapter/composables/useDependency'
-import { TOKENS } from '~/user-interface/adapter/di/tokens'
-import type { MakeKoiKoiDecisionPort } from '~/user-interface/application/ports/input'
-import { getYakuInfo } from '~/user-interface/domain/yaku-info'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
+import { resolveDependency } from '~/game-client/adapter/di/resolver'
+import { TOKENS } from '~/game-client/adapter/di/tokens'
+import type { MakeKoiKoiDecisionPort } from '~/game-client/application/ports/input'
+import { getYakuInfo } from '~/game-client/domain/yaku-info'
 
 const uiState = useUIStateStore()
 const gameState = useGameStateStore()
@@ -35,7 +35,7 @@ const displayTimeoutRemaining = computed(() => {
 const { myDepository, myKoiKoiMultiplier } = storeToRefs(gameState)
 
 // T074 [US3]: Inject MakeKoiKoiDecisionPort
-const makeKoiKoiDecisionPort = useDependency<MakeKoiKoiDecisionPort>(TOKENS.MakeKoiKoiDecisionPort)
+const makeKoiKoiDecisionPort = resolveDependency<MakeKoiKoiDecisionPort>(TOKENS.MakeKoiKoiDecisionPort)
 
 // T020 [US2]: Warning color logic (red when <= 5 seconds)
 const countdownClass = computed(() => {

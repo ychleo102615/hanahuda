@@ -68,7 +68,13 @@
       "Bash(rm:*)",
       "Bash(pnpm test:unit:*)",
       "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
-      "Bash(git grep:*)"
+      "Bash(git grep:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(pnpm type-check:*)",
+      "Bash(pnpm --prefix front-end lint:*)",
+      "Skill(architecture-check)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": []

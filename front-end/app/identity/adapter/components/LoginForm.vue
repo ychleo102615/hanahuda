@@ -11,7 +11,7 @@
 
 import { ref, computed } from 'vue'
 import { useAuth } from '../composables/use-auth'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
+import { createToastNotificationAdapter } from '~/shared/adapters'
 
 const emit = defineEmits<{
   success: []
@@ -56,8 +56,8 @@ async function handleSubmit() {
     })
 
     // Show success toast (FR-025)
-    const uiStore = useUIStateStore()
-    uiStore.addToast({
+    const toastNotification = createToastNotificationAdapter()
+    toastNotification.addToast({
       type: 'success',
       message: `Welcome back, ${response.player.displayName}!`,
       duration: 3000,

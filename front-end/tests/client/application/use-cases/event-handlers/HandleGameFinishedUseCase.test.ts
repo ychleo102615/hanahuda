@@ -3,14 +3,14 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { HandleGameFinishedUseCase } from '@/user-interface/application/use-cases/event-handlers/HandleGameFinishedUseCase'
+import { HandleGameFinishedUseCase } from '@/game-client/application/use-cases/event-handlers/HandleGameFinishedUseCase'
 import type { GameFinishedEvent } from '#shared/contracts'
 import {
   createMockNotificationPort,
   createMockUIStatePort,
   createMockGameStatePort,
 } from '../../test-helpers/mock-factories'
-import type { NotificationPort, UIStatePort, GameStatePort } from '@/user-interface/application/ports'
+import type { NotificationPort, UIStatePort, GameStatePort } from '@/game-client/application/ports'
 
 describe('HandleGameFinishedUseCase', () => {
   let mockNotification: NotificationPort

@@ -20,12 +20,12 @@ definePageMeta({
 })
 
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useDependency, useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
-import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
-import type { SessionContextPort } from '~/user-interface/application/ports/output'
-import type { MatchmakingApiClient } from '~/user-interface/adapter/api/MatchmakingApiClient'
+import { resolveDependency, tryResolveDependency } from '~/game-client/adapter/di/resolver'
+import type { MockEventEmitter } from '~/game-client/adapter/mock/MockEventEmitter'
+import type { SessionContextPort } from '~/game-client/application/ports/output'
+import type { MatchmakingApiClient } from '~/game-client/adapter/api/MatchmakingApiClient'
 import { useAuthStore } from '~/identity/adapter/stores/auth-store'
-import GameTopInfoBar from '~/components/GameTopInfoBar.vue'
+import GameTopInfoBar from './components/GameTopInfoBar.vue'
 import FieldZone from './components/FieldZone.vue'
 import PlayerHandZone from './components/PlayerHandZone.vue'
 import OpponentDepositoryZone from './components/OpponentDepositoryZone.vue'
@@ -42,20 +42,20 @@ import ConfirmationHint from './components/ConfirmationHint.vue'
 import ConfirmDialog from '~/components/ConfirmDialog.vue'
 import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
 import MatchmakingStatusOverlay from './components/MatchmakingStatusOverlay.vue'
-import { TOKENS } from '~/user-interface/adapter/di/tokens'
-import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
-import { useLeaveGame } from '~/user-interface/adapter/composables/useLeaveGame'
-import { useGameMode } from '~/user-interface/adapter/composables/useGameMode'
-import { usePageVisibility } from '~/user-interface/adapter/composables/usePageVisibility'
-import { useGatewayConnection } from '~/user-interface/adapter/composables/useGatewayConnection'
+import { TOKENS } from '~/game-client/adapter/di/tokens'
+import { useZoneRegistration } from '~/game-client/adapter/composables/useZoneRegistration'
+import { useLeaveGame } from '~/game-client/adapter/composables/useLeaveGame'
+import { useGameMode } from '~/game-client/adapter/composables/useGameMode'
+import { usePageVisibility } from '~/game-client/adapter/composables/usePageVisibility'
+import { useGatewayConnection } from '~/game-client/adapter/composables/useGatewayConnection'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
-import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
+import { useMatchmakingStateStore } from '~/game-client/adapter/stores/matchmakingState'
 
 // 虛擬對手手牌區域（在 viewport 上方，用於發牌動畫目標）
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
 
 // DI 注入
-const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
+const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const gameMode = useGameMode()
 
 // Auth Store（用於檢查登入狀態）
@@ -66,7 +66,7 @@ const matchmakingStore = useMatchmakingStateStore()
 
 // MatchmakingApiClient（用於取消配對）
 const matchmakingApiClient = gameMode === 'backend'
-  ? useOptionalDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
+  ? tryResolveDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
   : null
 
 // Gateway SSE 連線（Backend 模式）
@@ -77,7 +77,7 @@ usePageVisibility()
 
 // Mock Event Emitter 注入（僅 Mock 模式）
 const mockEventEmitter = gameMode === 'mock'
-  ? useOptionalDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
+  ? tryResolveDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
   : null
 
 // T043 [US3]: Leave Game 功能

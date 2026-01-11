@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { canMatch, findMatchableCards } from '@/user-interface/domain/matching'
+import { canMatch, findMatchableCards } from '@/game-client/domain/matching'
 import {
   MATSU_HIKARI,
   MATSU_AKATAN,
@@ -22,7 +22,7 @@ import {
   SAKURA_AKATAN,
   FUJI_HOTOTOGISU,
   KIKU_SAKAZUKI,
-} from '@/user-interface/domain/card-database'
+} from '@/game-client/domain/card-database'
 
 describe('matching.ts', () => {
   describe('canMatch()', () => {

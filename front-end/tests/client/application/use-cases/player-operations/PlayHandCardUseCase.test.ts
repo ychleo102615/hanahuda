@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { PlayHandCardUseCase } from '@/user-interface/application/use-cases/player-operations/PlayHandCardUseCase'
+import { PlayHandCardUseCase } from '@/game-client/application/use-cases/player-operations/PlayHandCardUseCase'
 import {
   createMockSendCommandPort,
   createMockNotificationPort,
@@ -21,7 +21,7 @@ import {
   createMockAnimationPort,
   createMockErrorHandlerPort,
 } from '../../test-helpers/mock-factories'
-import type { Card } from '@/user-interface/domain'
+import type { Card } from '@/game-client/domain'
 
 describe('PlayHandCardUseCase', () => {
   // Test fixtures

@@ -9,16 +9,16 @@
 
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
-import { useAnimationLayerStore } from '~/user-interface/adapter/stores/animationLayerStore'
-import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
-import { useDependency } from '~/user-interface/adapter/composables/useDependency'
+import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { useAnimationLayerStore } from '~/game-client/adapter/stores/animationLayerStore'
+import { useZoneRegistration } from '~/game-client/adapter/composables/useZoneRegistration'
+import { resolveDependency } from '~/game-client/adapter/di/resolver'
 import CardComponent from './CardComponent.vue'
-import { TOKENS } from '~/user-interface/adapter/di/tokens'
-import type { PlayHandCardPort } from '~/user-interface/application/ports/input'
-import type { DomainFacade } from '~/user-interface/application/types/domain-facade'
-import { getCardById } from '~/user-interface/domain'
+import { TOKENS } from '~/game-client/adapter/di/tokens'
+import type { PlayHandCardPort } from '~/game-client/application/ports/input'
+import type { DomainFacade } from '~/game-client/application/types/domain-facade'
+import { getCardById } from '~/game-client/domain'
 
 const gameState = useGameStateStore()
 const uiState = useUIStateStore()
@@ -31,10 +31,10 @@ const { handCardAwaitingConfirmation, isActionTimeoutExpired, isSubmittingAction
 const { isAnimating } = storeToRefs(animationLayerStore)
 
 // T058 [US2]: 注入 PlayHandCardPort
-const playHandCardPort = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
+const playHandCardPort = resolveDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
 
 // 通過 DI 獲取 DomainFacade
-const domainFacade = useDependency<DomainFacade>(TOKENS.DomainFacade)
+const domainFacade = resolveDependency<DomainFacade>(TOKENS.DomainFacade)
 
 // 從 gameState 取得 flowStage（用於 canPlayerAct 判斷）
 const { flowStage, possibleTargetCardIds } = storeToRefs(gameState)
