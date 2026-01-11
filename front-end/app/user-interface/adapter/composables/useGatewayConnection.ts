@@ -19,7 +19,7 @@
 
 import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useDependency } from './useDependency'
+import { resolveDependency } from '../di/resolver'
 import { TOKENS } from '../di/tokens'
 import type { GatewayEventClient } from '../sse/GatewayEventClient'
 import type { useUIStateStore } from '../stores/uiState'
@@ -71,9 +71,9 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
   const router = useRouter()
 
   // DI - 取得已組裝好的元件
-  const gatewayClient = useDependency<GatewayEventClient>(TOKENS.GatewayEventClient)
-  const uiStateStore = useDependency<ReturnType<typeof useUIStateStore>>(TOKENS.UIStateStore)
-  const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
+  const gatewayClient = resolveDependency<GatewayEventClient>(TOKENS.GatewayEventClient)
+  const uiStateStore = resolveDependency<ReturnType<typeof useUIStateStore>>(TOKENS.UIStateStore)
+  const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
   // Vue 響應式狀態
   const state = ref<GatewayConnectionState>({

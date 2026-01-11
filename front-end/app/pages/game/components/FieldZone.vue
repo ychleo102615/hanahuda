@@ -17,7 +17,7 @@ import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
-import { useDependency } from '~/user-interface/adapter/composables/useDependency'
+import { resolveDependency } from '~/user-interface/adapter/di/resolver'
 import CardComponent from './CardComponent.vue'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SelectMatchTargetPort, PlayHandCardPort } from '~/user-interface/application/ports/input'
@@ -51,8 +51,8 @@ const {
 const canSelectFieldCard = computed(() => !isActionTimeoutExpired.value)
 
 // 注入 Ports
-const selectMatchTargetPort = useDependency<SelectMatchTargetPort>(TOKENS.SelectMatchTargetPort)
-const playHandCardPort = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
+const selectMatchTargetPort = resolveDependency<SelectMatchTargetPort>(TOKENS.SelectMatchTargetPort)
+const playHandCardPort = resolveDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
 
 // 判斷卡片是否為懸浮預覽高亮（紫色框）
 function isPreviewHighlighted(cardId: string): boolean {

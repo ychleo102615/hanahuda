@@ -20,12 +20,11 @@
 
 import type { TurnProgressAfterSelectionEvent } from '#shared/contracts'
 import { deriveCapturedCards } from '#shared/contracts'
-import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
+import type { GameStatePort, AnimationPort, NotificationPort, DelayPort } from '../../ports/output'
 import type { CardPlayStateCallbacks } from '../../ports/output/animation.port'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleTurnProgressAfterSelectionPort, ExecuteOptions } from '../../ports/input'
 import { AbortOperationError } from '../../types'
-import { delay } from '../../../adapter/abort'
 import { getYakuInfo } from '../../../domain/yaku-info'
 
 export class HandleTurnProgressAfterSelectionUseCase
@@ -35,7 +34,8 @@ export class HandleTurnProgressAfterSelectionUseCase
     private readonly gameState: GameStatePort,
     private readonly animation: AnimationPort,
     private readonly domainFacade: DomainFacade,
-    private readonly notification: NotificationPort
+    private readonly notification: NotificationPort,
+    private readonly delay: DelayPort
   ) {}
 
   /**
@@ -124,7 +124,7 @@ export class HandleTurnProgressAfterSelectionUseCase
 
       // 等待 TransitionGroup FLIP 動畫完成（300ms + 50ms buffer = 350ms）
       // 讓剩餘場牌滑順地重新排列填補空位
-      await delay(350)
+      await this.delay.delay(350)
 
     } else {
       // === 處理無配對的情況（翻牌已在場上，不需要額外處理）===

@@ -24,13 +24,18 @@ export type { AnimationPort, DealAnimationParams } from './animation.port'
 export type { NotificationPort } from './notification.port'
 export type { MatchmakingStatePort, MatchmakingStatus, OnlineMatchmakingState } from './matchmaking-state.port'
 export type { NavigationPort } from './navigation.port'
-export { SessionContextPort } from './session-context.port'
+export type { SessionContextPort } from './session-context.port'
 
-// Game Connection
+// Game Connection (GameConnectionPort is an abstract class, needs value export)
 export { GameConnectionPort, type GameConnectionParams } from './game-connection.port'
 
 // Error Handling
 export type { ErrorHandlerPort } from './error-handler.port'
+
+// Operation & Timing Ports
+export type { OperationSessionPort } from './operation-session.port'
+export type { DelayPort } from './delay.port'
+export type { LayoutPort } from './layout.port'
 
 // Legacy Output Ports
 export type { UIStatePort } from './ui-state.port'

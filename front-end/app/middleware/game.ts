@@ -7,7 +7,7 @@
  * 注意：遊戲模式（gameMode）不在此處理，由 DI Plugin 透過 runtimeConfig 統一管理。
  */
 
-import { useDependency } from '~/user-interface/adapter/composables/useDependency'
+import { resolveDependency } from '~/user-interface/adapter/di/resolver'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output/session-context.port'
 import { useAuthStore } from '~/identity/adapter/stores/auth-store'
@@ -25,7 +25,7 @@ export default defineNuxtRouteMiddleware((_to, _from) => {
   }
 
   // 從 SessionContext 檢查是否有有效會話
-  const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
+  const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
   // 檢查是否正在配對中或已有遊戲（使用持久化的 sessionStorage）
   // - isMatchmakingMode(): 有 entryId（配對中）

@@ -17,6 +17,11 @@ export const TOKENS = {
   GameConnectionPort: Symbol('GameConnectionPort'),
   ErrorHandlerPort: Symbol('ErrorHandlerPort'),
 
+  // ===== Output Ports - Operation & Timing =====
+  OperationSessionPort: Symbol('OperationSessionPort'),
+  DelayPort: Symbol('DelayPort'),
+  LayoutPort: Symbol('LayoutPort'),
+
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
 

@@ -24,15 +24,15 @@ definePageMeta({
 
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchmakingState'
-import { useDependency } from '~/user-interface/adapter/composables/useDependency'
+import { resolveDependency } from '~/user-interface/adapter/di/resolver'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { SessionContextPort } from '~/user-interface/application/ports/output'
 import { RoomApiClient, type RoomType } from '~/user-interface/adapter/api/RoomApiClient'
 import { MatchmakingApiClient, MatchmakingError } from '~/user-interface/adapter/api/MatchmakingApiClient'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
-import LobbyTopInfoBar from '~/components/LobbyTopInfoBar.vue'
-import type { MenuItem } from '~/components/LobbyTopInfoBar.vue'
+import LobbyTopInfoBar from './components/LobbyTopInfoBar.vue'
+import type { MenuItem } from './components/LobbyTopInfoBar.vue'
 import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
 import RegisterPrompt from '~/identity/adapter/components/RegisterPrompt.vue'
 import MatchmakingErrorModal from './components/MatchmakingErrorModal.vue'
@@ -50,9 +50,9 @@ const { playerId, displayName, isGuest } = useCurrentPlayer()
 const { logout, deleteAccount } = useAuth()
 
 // DI 注入
-const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
-const roomApiClient = useDependency<RoomApiClient>(TOKENS.RoomApiClient)
-const matchmakingApiClient = useDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
+const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
+const roomApiClient = resolveDependency<RoomApiClient>(TOKENS.RoomApiClient)
+const matchmakingApiClient = resolveDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
 
 // 配對中狀態
 const isMatchmaking = ref(false)

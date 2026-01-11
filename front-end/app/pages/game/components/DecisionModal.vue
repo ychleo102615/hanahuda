@@ -16,7 +16,7 @@ import { computed } from 'vue'
 import { Z_INDEX } from '~/constants'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
-import { useDependency } from '~/user-interface/adapter/composables/useDependency'
+import { resolveDependency } from '~/user-interface/adapter/di/resolver'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { MakeKoiKoiDecisionPort } from '~/user-interface/application/ports/input'
 import { getYakuInfo } from '~/user-interface/domain/yaku-info'
@@ -35,7 +35,7 @@ const displayTimeoutRemaining = computed(() => {
 const { myDepository, myKoiKoiMultiplier } = storeToRefs(gameState)
 
 // T074 [US3]: Inject MakeKoiKoiDecisionPort
-const makeKoiKoiDecisionPort = useDependency<MakeKoiKoiDecisionPort>(TOKENS.MakeKoiKoiDecisionPort)
+const makeKoiKoiDecisionPort = resolveDependency<MakeKoiKoiDecisionPort>(TOKENS.MakeKoiKoiDecisionPort)
 
 // T020 [US2]: Warning color logic (red when <= 5 seconds)
 const countdownClass = computed(() => {

@@ -13,7 +13,7 @@ import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 import { useAnimationLayerStore } from '~/user-interface/adapter/stores/animationLayerStore'
 import { useZoneRegistration } from '~/user-interface/adapter/composables/useZoneRegistration'
-import { useDependency } from '~/user-interface/adapter/composables/useDependency'
+import { resolveDependency } from '~/user-interface/adapter/di/resolver'
 import CardComponent from './CardComponent.vue'
 import { TOKENS } from '~/user-interface/adapter/di/tokens'
 import type { PlayHandCardPort } from '~/user-interface/application/ports/input'
@@ -31,10 +31,10 @@ const { handCardAwaitingConfirmation, isActionTimeoutExpired, isSubmittingAction
 const { isAnimating } = storeToRefs(animationLayerStore)
 
 // T058 [US2]: 注入 PlayHandCardPort
-const playHandCardPort = useDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
+const playHandCardPort = resolveDependency<PlayHandCardPort>(TOKENS.PlayHandCardPort)
 
 // 通過 DI 獲取 DomainFacade
-const domainFacade = useDependency<DomainFacade>(TOKENS.DomainFacade)
+const domainFacade = resolveDependency<DomainFacade>(TOKENS.DomainFacade)
 
 // 從 gameState 取得 flowStage（用於 canPlayerAct 判斷）
 const { flowStage, possibleTargetCardIds } = storeToRefs(gameState)

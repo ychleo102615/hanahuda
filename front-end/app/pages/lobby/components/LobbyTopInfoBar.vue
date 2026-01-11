@@ -17,10 +17,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import PlayerBadge from './PlayerBadge.vue'
-import ResponsiveMenu from './menu/ResponsiveMenu.vue'
+import PlayerBadge from '~/components/PlayerBadge.vue'
+import ResponsiveMenu from '~/components/menu/ResponsiveMenu.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
-import type { MenuItem } from './menu/types'
+import type { MenuItem } from '~/components/menu/types'
 
 // Re-export MenuItem type for parent components
 export type { MenuItem }

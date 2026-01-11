@@ -64,10 +64,12 @@ import { createGameStatePortAdapter } from '../stores/GameStatePortAdapter'
 import { createNavigationPortAdapter } from '../router/NavigationPortAdapter'
 import { createApiErrorHandler } from '../api/ApiErrorHandler'
 import { CountdownManager } from '../services/CountdownManager'
-import { OperationSessionManager } from '../abort/OperationSessionManager'
+import { OperationSessionManager, OperationSessionPortAdapter, DelayPortAdapter, LayoutPortAdapter } from '../abort'
+import type { OperationSessionPort, DelayPort, LayoutPort } from '../../application/ports/output'
 import { RoomApiClient } from '../api/RoomApiClient'
 import { MatchmakingApiClient } from '../api/MatchmakingApiClient'
-import { GameConnectionPort, type GameConnectionParams } from '../../application/ports/output'
+import { GameConnectionPort } from '../../application/ports/output'
+import type { GameConnectionParams } from '../../application/ports/output'
 import type { SSEEventType } from '#shared/contracts'
 import { MATCHMAKING_EVENT_TYPES } from '#shared/contracts'
 import {
@@ -303,6 +305,32 @@ function registerOutputPorts(container: DIContainer): void {
 
   // SendCommandPort: 根據模式由不同的 Adapter 實作
   // 在 registerBackendAdapters / registerMockAdapters 中註冊
+
+  // ===== Operation & Timing Ports =====
+
+  // OperationSessionPort: 管理全域 AbortController，協調可取消操作
+  container.register(
+    TOKENS.OperationSessionPort,
+    () => {
+      const manager = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
+      return new OperationSessionPortAdapter(manager)
+    },
+    { singleton: true },
+  )
+
+  // DelayPort: 提供可取消的延遲函數
+  container.register(
+    TOKENS.DelayPort,
+    () => new DelayPortAdapter(),
+    { singleton: true },
+  )
+
+  // LayoutPort: 提供等待瀏覽器 layout 的函數
+  container.register(
+    TOKENS.LayoutPort,
+    () => new LayoutPortAdapter(),
+    { singleton: true },
+  )
 }
 
 /**
@@ -327,23 +355,27 @@ function registerInputPorts(container: DIContainer): void {
   // SessionContextPort: 管理 session 識別資訊
   const sessionContextPort = container.resolve(TOKENS.SessionContextPort) as SessionContextPort
 
+  // Operation & Timing Ports
+  const operationSessionPort = container.resolve(TOKENS.OperationSessionPort) as OperationSessionPort
+  const delayPort = container.resolve(TOKENS.DelayPort) as DelayPort
+  const layoutPort = container.resolve(TOKENS.LayoutPort) as LayoutPort
+
   // SendCommandPort: 用於玩家操作 Use Cases
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
 
   // 註冊 StartGamePort（SSE-First Architecture）
-  // 依賴 GameConnectionPort、GameStatePort、NotificationPort、AnimationPort、OperationSessionManager
+  // 依賴 GameConnectionPort、GameStatePort、NotificationPort、AnimationPort、OperationSessionPort
   container.register(
     TOKENS.StartGamePort,
     () => {
       const gameConnectionPort = container.resolve(TOKENS.GameConnectionPort) as GameConnectionPort
-      const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
       return new StartGameUseCase(
         gameConnectionPort,
         gameStatePort,
         notificationPort,
         animationPort,
-        operationSession,
+        operationSessionPort,
       )
     },
     { singleton: true }
@@ -416,24 +448,25 @@ function registerInputPorts(container: DIContainer): void {
   // T051 [US2]: 註冊 SelectionRequired 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort + DomainFacade（場牌選擇 UI 架構重構）
   // Phase 9: 加入 NotificationPort（倒數計時整合）
-  // Phase 10: 改用 AbortableDelay（Use Case 內部 import delay）
+  // 改用 LayoutPort 取代直接 import waitForLayout
   container.register(
     TOKENS.HandleSelectionRequiredPort,
-    () => new HandleSelectionRequiredUseCase(gameStatePort, animationPort, domainFacade, notificationPort),
+    () => new HandleSelectionRequiredUseCase(gameStatePort, animationPort, domainFacade, notificationPort, layoutPort),
     { singleton: true }
   )
 
   // T052 [US2]: 註冊 TurnProgressAfterSelection 事件處理器
   // Phase 7: 使用 GameStatePort + AnimationPort（配對動畫整合）
   // Phase 9: 加入 NotificationPort（倒數計時整合）
-  // Phase 10: 改用 AbortableDelay（Use Case 內部 import delay）
+  // 改用 DelayPort 取代直接 import delay
   container.register(
     TOKENS.HandleTurnProgressAfterSelectionPort,
     () => new HandleTurnProgressAfterSelectionUseCase(
       gameStatePort,
       animationPort,
       domainFacade,
-      notificationPort
+      notificationPort,
+      delayPort
     ),
     { singleton: true }
   )
@@ -486,31 +519,26 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // SSE-First: 註冊 HandleInitialStatePort（處理 SSE 連線後的第一個事件）
+  // 改用 OperationSessionPort 取代 OperationSessionManager
   container.register(
     TOKENS.HandleInitialStatePort,
-    () => {
-      const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
-      return new HandleInitialStateUseCase(
-        uiStatePort,
-        notificationPort,
-        navigationPort,
-        animationPort,
-        matchmakingStatePort,
-        gameStatePort,
-        operationSession
-      )
-    },
+    () => new HandleInitialStateUseCase(
+      uiStatePort,
+      notificationPort,
+      navigationPort,
+      animationPort,
+      matchmakingStatePort,
+      gameStatePort,
+      operationSessionPort
+    ),
     { singleton: true }
   )
 
   // 註冊 HandleStateRecoveryPort（統一處理快照恢復）
-  // Phase 10: 改用 OperationSessionManager 取代 DelayManagerPort
+  // 改用 OperationSessionPort 取代 OperationSessionManager
   container.register(
     TOKENS.HandleStateRecoveryPort,
-    () => {
-      const operationSession = container.resolve(TOKENS.OperationSessionManager) as OperationSessionManager
-      return new HandleStateRecoveryUseCase(uiStatePort, notificationPort, navigationPort, animationPort, matchmakingStatePort, operationSession)
-    },
+    () => new HandleStateRecoveryUseCase(uiStatePort, notificationPort, navigationPort, animationPort, matchmakingStatePort, operationSessionPort),
     { singleton: true }
   )
 

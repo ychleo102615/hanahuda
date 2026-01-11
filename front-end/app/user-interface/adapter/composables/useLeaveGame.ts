@@ -15,12 +15,12 @@ import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../stores/gameState'
 import { useUIStateStore } from '../stores/uiState'
 import { useMatchmakingStateStore } from '../stores/matchmakingState'
-import { useDependency, useOptionalDependency } from './useDependency'
+import { resolveDependency, tryResolveDependency } from '../di/resolver'
 import { TOKENS } from '../di/tokens'
 import type { SendCommandPort, NotificationPort, SessionContextPort } from '../../application/ports/output'
 import { MatchmakingError, type MatchmakingApiClient } from '../api/MatchmakingApiClient'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
-import type { MenuItem } from '~/components/menu/types'
+import type { MenuItem } from '../types/menu-item'
 
 /**
  * 配對錯誤代碼對應的使用者友善訊息
@@ -46,10 +46,10 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   const gameState = useGameStateStore()
   const uiState = useUIStateStore()
   const matchmakingState = useMatchmakingStateStore()
-  const gameApiClient = useDependency<SendCommandPort>(TOKENS.SendCommandPort)
-  const notification = useDependency<NotificationPort>(TOKENS.NotificationPort)
-  const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
-  const matchmakingApiClient = useOptionalDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
+  const gameApiClient = resolveDependency<SendCommandPort>(TOKENS.SendCommandPort)
+  const notification = resolveDependency<NotificationPort>(TOKENS.NotificationPort)
+  const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
+  const matchmakingApiClient = tryResolveDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
 
   // 響應式狀態
   const { gameEnded } = storeToRefs(gameState)

@@ -16,19 +16,19 @@
 
 import type { SelectionRequiredEvent } from '#shared/contracts'
 import { deriveCapturedCards } from '#shared/contracts'
-import type { GameStatePort, AnimationPort, NotificationPort } from '../../ports/output'
+import type { GameStatePort, AnimationPort, NotificationPort, LayoutPort } from '../../ports/output'
 import type { CardPlayStateCallbacks } from '../../ports/output/animation.port'
 import type { DomainFacade } from '../../types/domain-facade'
 import type { HandleSelectionRequiredPort, ExecuteOptions } from '../../ports/input'
 import { AbortOperationError } from '../../types'
-import { waitForLayout } from '../../../adapter/abort'
 
 export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPort {
   constructor(
     private readonly gameState: GameStatePort,
     private readonly animation: AnimationPort,
     private readonly domainFacade: DomainFacade,
-    private readonly notification: NotificationPort
+    private readonly notification: NotificationPort,
+    private readonly layout: LayoutPort
   ) {}
 
   execute(event: SelectionRequiredEvent, options: ExecuteOptions): Promise<void> {
@@ -97,7 +97,7 @@ export class HandleSelectionRequiredUseCase implements HandleSelectionRequiredPo
     }
 
     // 等待 DOM 布局完成
-    await waitForLayout(1)
+    await this.layout.waitForLayout(1)
 
     // 播放翻牌動畫（從牌堆飛到場牌）
     await this.animation.playFlipFromDeckAnimation(event.drawn_card)

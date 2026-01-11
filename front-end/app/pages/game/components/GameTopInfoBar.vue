@@ -23,8 +23,8 @@ import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '~/user-interface/adapter/stores/gameState'
 import { useUIStateStore } from '~/user-interface/adapter/stores/uiState'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
-import ResponsiveMenu from './menu/ResponsiveMenu.vue'
-import type { MenuItem } from './menu/types'
+import ResponsiveMenu from '~/components/menu/ResponsiveMenu.vue'
+import type { MenuItem } from '~/components/menu/types'
 
 // Re-export MenuItem type for parent components
 export type { MenuItem }

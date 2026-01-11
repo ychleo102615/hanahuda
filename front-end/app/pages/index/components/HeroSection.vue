@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import type { HeroSectionProps } from '~/types'
-import HeroCardGrid from '~/components/HeroCardGrid.vue'
+import HeroCardGrid from './HeroCardGrid.vue'
 
 // Props
 const props = defineProps<HeroSectionProps>()

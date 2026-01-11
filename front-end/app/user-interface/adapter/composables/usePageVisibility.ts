@@ -26,7 +26,7 @@
  */
 
 import { onMounted, onUnmounted } from 'vue'
-import { useDependency } from './useDependency'
+import { resolveDependency } from '../di/resolver'
 import { useGameMode } from './useGameMode'
 import { TOKENS } from '../di/tokens'
 import type { GatewayEventClient } from '../sse/GatewayEventClient'
@@ -50,7 +50,7 @@ export function usePageVisibility(): void {
     return
   }
 
-  const gatewayClient = useDependency<GatewayEventClient>(TOKENS.GatewayEventClient)
+  const gatewayClient = resolveDependency<GatewayEventClient>(TOKENS.GatewayEventClient)
   const authStore = useAuthStore()
 
   // 防抖：記錄上次觸發時間，避免 iOS 上多次觸發

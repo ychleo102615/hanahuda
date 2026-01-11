@@ -30,9 +30,9 @@ import type {
   AnimationPort,
   MatchmakingStatePort,
   GameStatePort,
+  OperationSessionPort,
 } from '../ports/output'
 import { HandleInitialStatePort } from '../ports/input/handle-initial-state.port'
-import type { OperationSessionManager } from '../../adapter/abort'
 
 export class HandleInitialStateUseCase extends HandleInitialStatePort {
   constructor(
@@ -42,7 +42,7 @@ export class HandleInitialStateUseCase extends HandleInitialStatePort {
     private readonly animationPort: AnimationPort,
     private readonly matchmakingState: MatchmakingStatePort,
     private readonly gameState: GameStatePort,
-    private readonly operationSession: OperationSessionManager
+    private readonly operationSession: OperationSessionPort
   ) {
     super()
   }

@@ -20,8 +20,9 @@ import {
   createMockAnimationPort,
   createMockDomainFacade,
   createMockNotificationPort,
+  createMockDelayPort,
 } from '../../test-helpers/mock-factories'
-import type { GameStatePort, AnimationPort, NotificationPort } from '@/user-interface/application/ports'
+import type { GameStatePort, AnimationPort, NotificationPort, DelayPort } from '@/user-interface/application/ports'
 import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
 
 describe('HandleTurnProgressAfterSelectionUseCase', () => {
@@ -29,6 +30,7 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
   let mockAnimation: AnimationPort
   let mockDomainFacade: DomainFacade
   let mockNotification: NotificationPort
+  let mockDelay: DelayPort
   let useCase: HandleTurnProgressAfterSelectionUseCase
 
   beforeEach(() => {
@@ -36,11 +38,13 @@ describe('HandleTurnProgressAfterSelectionUseCase', () => {
     mockAnimation = createMockAnimationPort()
     mockDomainFacade = createMockDomainFacade()
     mockNotification = createMockNotificationPort()
+    mockDelay = createMockDelayPort()
     useCase = new HandleTurnProgressAfterSelectionUseCase(
       mockGameState,
       mockAnimation,
       mockDomainFacade,
-      mockNotification
+      mockNotification,
+      mockDelay
     )
   })
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import type { YakuCard } from '~/types/rules';
-import SvgIcon from './SvgIcon.vue';
+import SvgIcon from '~/components/SvgIcon.vue';
 import { getCardIconName } from '~/utils/cardMapping';
 
 interface Props {

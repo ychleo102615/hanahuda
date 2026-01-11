@@ -20,12 +20,12 @@ definePageMeta({
 })
 
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useDependency, useOptionalDependency } from '~/user-interface/adapter/composables/useDependency'
+import { resolveDependency, tryResolveDependency } from '~/user-interface/adapter/di/resolver'
 import type { MockEventEmitter } from '~/user-interface/adapter/mock/MockEventEmitter'
 import type { SessionContextPort } from '~/user-interface/application/ports/output'
 import type { MatchmakingApiClient } from '~/user-interface/adapter/api/MatchmakingApiClient'
 import { useAuthStore } from '~/identity/adapter/stores/auth-store'
-import GameTopInfoBar from '~/components/GameTopInfoBar.vue'
+import GameTopInfoBar from './components/GameTopInfoBar.vue'
 import FieldZone from './components/FieldZone.vue'
 import PlayerHandZone from './components/PlayerHandZone.vue'
 import OpponentDepositoryZone from './components/OpponentDepositoryZone.vue'
@@ -55,7 +55,7 @@ import { useMatchmakingStateStore } from '~/user-interface/adapter/stores/matchm
 const { elementRef: opponentHandRef } = useZoneRegistration('opponent-hand')
 
 // DI 注入
-const sessionContext = useDependency<SessionContextPort>(TOKENS.SessionContextPort)
+const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const gameMode = useGameMode()
 
 // Auth Store（用於檢查登入狀態）
@@ -66,7 +66,7 @@ const matchmakingStore = useMatchmakingStateStore()
 
 // MatchmakingApiClient（用於取消配對）
 const matchmakingApiClient = gameMode === 'backend'
-  ? useOptionalDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
+  ? tryResolveDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
   : null
 
 // Gateway SSE 連線（Backend 模式）
@@ -77,7 +77,7 @@ usePageVisibility()
 
 // Mock Event Emitter 注入（僅 Mock 模式）
 const mockEventEmitter = gameMode === 'mock'
-  ? useOptionalDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
+  ? tryResolveDependency<MockEventEmitter>(TOKENS.MockEventEmitter)
   : null
 
 // T043 [US3]: Leave Game 功能

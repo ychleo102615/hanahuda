@@ -26,7 +26,7 @@
  * - GameStatePort: 管理遊戲狀態
  * - NotificationPort: 管理 UI 通知狀態
  * - AnimationPort: 中斷動畫、清除隱藏卡片
- * - OperationSessionManager: 中斷進行中的 Use Cases
+ * - OperationSessionPort: 中斷進行中的 Use Cases
  *
  * @example
  * ```typescript
@@ -51,8 +51,8 @@ import type {
   GameStatePort,
   NotificationPort,
   AnimationPort,
+  OperationSessionPort,
 } from '../ports/output'
-import type { OperationSessionManager } from '../../adapter/abort'
 
 export class StartGameUseCase implements StartGamePort {
   constructor(
@@ -60,7 +60,7 @@ export class StartGameUseCase implements StartGamePort {
     private readonly gameState: GameStatePort,
     private readonly notification: NotificationPort,
     private readonly animation: AnimationPort,
-    private readonly operationSession: OperationSessionManager,
+    private readonly operationSession: OperationSessionPort,
   ) {}
 
   execute(options: StartGameOptions): void {

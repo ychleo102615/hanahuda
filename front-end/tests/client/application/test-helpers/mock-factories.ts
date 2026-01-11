@@ -51,6 +51,8 @@ import type {
   NavigationPort,
   ErrorHandlerPort,
   SessionContextPort,
+  DelayPort,
+  LayoutPort,
 } from '@/user-interface/application/ports'
 import type { DomainFacade } from '@/user-interface/application/types/domain-facade'
 
@@ -454,4 +456,46 @@ export function createMockSessionContextPort(): SessionContextPort {
     setGameFinished: vi.fn(),
     isGameFinished: vi.fn().mockReturnValue(false),
   } as SessionContextPort
+}
+
+/**
+ * 建立 Mock DelayPort
+ *
+ * @description
+ * `delay` 預設返回 resolved Promise。
+ *
+ * @example
+ * ```typescript
+ * const mockDelay = createMockDelayPort()
+ *
+ * // 驗證方法調用
+ * await mockDelay.delay(100)
+ * expect(mockDelay.delay).toHaveBeenCalledWith(100)
+ * ```
+ */
+export function createMockDelayPort(): DelayPort {
+  return {
+    delay: vi.fn().mockResolvedValue(undefined),
+  }
+}
+
+/**
+ * 建立 Mock LayoutPort
+ *
+ * @description
+ * `waitForLayout` 預設返回 resolved Promise。
+ *
+ * @example
+ * ```typescript
+ * const mockLayout = createMockLayoutPort()
+ *
+ * // 驗證方法調用
+ * await mockLayout.waitForLayout(2)
+ * expect(mockLayout.waitForLayout).toHaveBeenCalledWith(2)
+ * ```
+ */
+export function createMockLayoutPort(): LayoutPort {
+  return {
+    waitForLayout: vi.fn().mockResolvedValue(undefined),
+  }
 }

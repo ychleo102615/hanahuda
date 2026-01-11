@@ -36,7 +36,7 @@ export default defineNuxtPlugin({ dependsOn: ['pinia'], setup(nuxtApp) {
     throw error
   }
 
-  // 提供全域 diContainer（可選，通常組件使用 useDependency composable）
+  // 提供全域 diContainer（可選，通常組件使用 resolveDependency）
   return {
     provide: {
       diContainer: container,

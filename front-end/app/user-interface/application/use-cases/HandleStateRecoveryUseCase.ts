@@ -32,9 +32,9 @@ import type {
   NavigationPort,
   AnimationPort,
   MatchmakingStatePort,
+  OperationSessionPort,
 } from '../ports/output'
 import { HandleStateRecoveryPort, type SnapshotError } from '../ports/input/handle-state-recovery.port'
-import type { OperationSessionManager } from '../../adapter/abort'
 
 export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
   constructor(
@@ -43,7 +43,7 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
     private readonly navigation: NavigationPort,
     private readonly animationPort: AnimationPort,
     private readonly matchmakingState: MatchmakingStatePort,
-    private readonly operationSession: OperationSessionManager
+    private readonly operationSession: OperationSessionPort
   ) {
     super()
   }
