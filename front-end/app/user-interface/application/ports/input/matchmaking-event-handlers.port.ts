@@ -20,6 +20,7 @@ import type {
   MatchFoundEvent,
   MatchmakingCancelledEvent,
   MatchmakingErrorEvent,
+  MatchFailedEvent,
 } from '#shared/contracts'
 
 /**
@@ -61,3 +62,13 @@ export interface HandleMatchmakingCancelledPort
  */
 export interface HandleMatchmakingErrorPort
   extends EventHandlerPort<MatchmakingErrorEvent> {}
+
+/**
+ * HandleMatchFailedPort - Input Port
+ *
+ * @description
+ * 處理 MatchFailed SSE 事件（配對成功但遊戲創建失敗）。
+ * 更新錯誤狀態並清除 session。
+ */
+export interface HandleMatchFailedPort
+  extends EventHandlerPort<MatchFailedEvent> {}

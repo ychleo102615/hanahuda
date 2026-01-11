@@ -68,9 +68,10 @@ export class EnterMatchmakingUseCase extends EnterMatchmakingInputPort {
     const matchedEntry = await this.poolPort.findMatch(entry)
 
     if (matchedEntry) {
-      // 找到對手 - 發布配對成功事件
-      await this.poolPort.updateStatus(entry.id, 'MATCHED')
-      await this.poolPort.updateStatus(matchedEntry.id, 'MATCHED')
+      // 找到對手 - 從 Pool 移除兩個條目（配對完成，不再需要）
+      // 注意：必須在發布 MatchFound 前移除，避免玩家重新點擊時觸發 ALREADY_IN_QUEUE
+      await this.poolPort.remove(entry.id)
+      await this.poolPort.remove(matchedEntry.id)
 
       this.eventPublisher.publishMatchFound({
         player1Id: matchedEntry.playerId,

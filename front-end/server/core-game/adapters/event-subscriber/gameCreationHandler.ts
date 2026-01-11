@@ -20,6 +20,8 @@ import {
 } from '~~/server/shared/infrastructure/event-bus'
 import type { JoinGameInputPort } from '../../application/ports/input/joinGameInputPort'
 import type { InternalEventPublisherPort } from '../../application/ports/output/internalEventPublisherPort'
+import { inMemoryGameStore } from '../persistence/inMemoryGameStore'
+import { gameTimeoutManager } from '../timeout/gameTimeoutManager'
 
 /**
  * Game Creation Handler
@@ -87,6 +89,7 @@ export class GameCreationHandler {
 
     if (player1Result.status !== 'game_waiting') {
       console.error('[GameCreationHandler] Failed to create game for player1:', player1Result)
+      this.notifyMatchFailed(payload.player1Id, payload.player2Id, 'GAME_CREATION_FAILED')
       return
     }
 
@@ -99,6 +102,9 @@ export class GameCreationHandler {
 
     if (player2Result.status !== 'game_started') {
       console.error('[GameCreationHandler] Failed to join game for player2:', player2Result)
+      // 清理 player1 的遊戲並通知兩個玩家
+      this.cleanupFailedGame(player1Result.gameId)
+      this.notifyMatchFailed(payload.player1Id, payload.player2Id, 'OPPONENT_JOIN_FAILED')
       return
     }
 
@@ -126,6 +132,29 @@ export class GameCreationHandler {
       gameId,
       `(${payload.player1Name} vs ${payload.player2Name})`
     )
+  }
+
+  /**
+   * 通知配對失敗
+   */
+  private notifyMatchFailed(player1Id: string, player2Id: string, reason: string): void {
+    const errorEvent = createMatchmakingEvent('MatchFailed', {
+      reason,
+      message: 'Failed to create game. Please try again.',
+    })
+    playerEventBus.publishToPlayer(player1Id, errorEvent)
+    playerEventBus.publishToPlayer(player2Id, errorEvent)
+  }
+
+  /**
+   * 清理創建失敗的遊戲
+   */
+  private cleanupFailedGame(gameId: string): void {
+    // 清除配對超時計時器
+    gameTimeoutManager.clearMatchmakingTimeout(gameId)
+    // 從 GameStore 移除遊戲
+    inMemoryGameStore.delete(gameId)
+    console.info('[GameCreationHandler] Cleaned up failed game:', gameId)
   }
 
   /**

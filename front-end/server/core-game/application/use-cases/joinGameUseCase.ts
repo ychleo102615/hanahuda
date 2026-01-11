@@ -103,17 +103,15 @@ export class JoinGameUseCase implements JoinGameInputPort {
   }
 
   /**
-   * 處理重連模式
+   * 處理重連或加入模式
    *
    * @description
-   * 當前端明確提供 gameId 時，表示要重連特定遊戲。
-   * 此時需要檢查遊戲狀態，返回對應的結果。
+   * 當明確提供 gameId 時，區分兩種情況：
+   * - 情況 A: 玩家已在遊戲中 → 重連
+   * - 情況 B: 玩家不在遊戲中，但遊戲存在且 WAITING → 加入
+   * - 情況 C: 遊戲不存在或不是 WAITING → 錯誤
    *
-   * 驗證順序：
-   * 1. 透過 playerId 查詢遊戲
-   * 2. 驗證查到的遊戲 ID 與傳入的 gameId 相符
-   *
-   * @param gameId - 要重連的遊戲 ID
+   * @param gameId - 要加入或重連的遊戲 ID
    * @param playerId - 玩家 ID（來自 Identity BC）
    * @param playerName - 玩家名稱
    * @returns 加入遊戲結果
@@ -123,23 +121,29 @@ export class JoinGameUseCase implements JoinGameInputPort {
     playerId: string,
     playerName: string
   ): Promise<JoinGameOutput> {
-    // 1. 透過 playerId 查詢遊戲
+    // 1. 透過 playerId 查詢遊戲（重連模式）
     const playerGame = this.gameStore.getByPlayerId(playerId)
 
-    // 2. 驗證遊戲存在且 ID 相符
-    if (!playerGame || playerGame.id !== gameId) {
-      logger.error('Game expired', { gameId, playerId, reason: 'player_not_in_game' })
-      this.gameLogRepository?.logAsync({
-        gameId,
-        playerId,
-        eventType: COMMAND_TYPES.ReconnectGameFailed,
-        payload: { reason: 'player_not_in_game' },
-      })
-      return { status: 'game_expired', gameId }
+    // 情況 A: 玩家已在遊戲中，且 ID 相符 → 重連
+    if (playerGame && playerGame.id === gameId) {
+      return this.handleReconnection(playerGame, playerId, playerName)
     }
 
-    // 3. 驗證通過，執行重連
-    return this.handleReconnection(playerGame, playerId, playerName)
+    // 情況 B: 玩家不在遊戲中 → 嘗試加入指定遊戲
+    const targetGame = this.gameStore.get(gameId)
+    if (targetGame && targetGame.status === 'WAITING') {
+      return this.joinExistingGame(targetGame, playerId, playerName)
+    }
+
+    // 情況 C: 遊戲不存在或不是 WAITING 狀態
+    logger.error('Game expired', { gameId, playerId, reason: 'game_not_available' })
+    this.gameLogRepository?.logAsync({
+      gameId,
+      playerId,
+      eventType: COMMAND_TYPES.ReconnectGameFailed,
+      payload: { reason: 'game_not_available' },
+    })
+    return { status: 'game_expired', gameId }
   }
 
   /**

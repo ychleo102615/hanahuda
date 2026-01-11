@@ -75,6 +75,7 @@ import {
   HandleMatchFoundUseCase,
   HandleMatchmakingCancelledUseCase,
   HandleMatchmakingErrorUseCase,
+  HandleMatchFailedUseCase,
 } from '../../application/use-cases/matchmaking'
 import { HandleGatewayConnectedUseCase } from '../../application/use-cases/HandleGatewayConnectedUseCase'
 import { ClearOrphanedSessionUseCase } from '../../application/use-cases/ClearOrphanedSessionUseCase'
@@ -811,10 +812,12 @@ function registerMatchmakingEventRoutes(container: DIContainer): void {
   const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, gameStatePort, sessionContextPort)
   const handleMatchmakingCancelledUseCase = new HandleMatchmakingCancelledUseCase(matchmakingStatePort, sessionContextPort)
   const handleMatchmakingErrorUseCase = new HandleMatchmakingErrorUseCase(matchmakingStatePort)
+  const handleMatchFailedUseCase = new HandleMatchFailedUseCase(matchmakingStatePort, sessionContextPort)
 
   // 註冊事件處理器
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingStatus, handleMatchmakingStatusUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchFound, handleMatchFoundUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingCancelled, handleMatchmakingCancelledUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingError, handleMatchmakingErrorUseCase)
+  router.register(MATCHMAKING_EVENT_TYPES.MatchFailed, handleMatchFailedUseCase)
 }

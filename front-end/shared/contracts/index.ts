@@ -97,6 +97,7 @@ export type {
   MatchFoundEvent,
   MatchmakingCancelledEvent,
   MatchmakingErrorEvent,
+  MatchFailedEvent,
   MatchmakingEvent,
   MatchmakingSSEEventType,
 } from './matchmaking-events'

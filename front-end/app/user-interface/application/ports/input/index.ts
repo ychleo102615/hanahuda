@@ -66,6 +66,7 @@ export type {
   HandleMatchFoundPort,
   HandleMatchmakingCancelledPort,
   HandleMatchmakingErrorPort,
+  HandleMatchFailedPort,
 } from './matchmaking-event-handlers.port'
 
 // Session Management Input Ports
