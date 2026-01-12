@@ -5,7 +5,7 @@
  * Telegram Mini App 整合的 Composable。
  * 提供響應式狀態和便捷方法，讓元件可以輕鬆整合 Telegram 功能。
  *
- * 此 Composable 透過 DI Container 取得 TelegramAuthPort 和 TelegramSdkAdapter，
+ * 此 Composable 透過 DI Container 取得 TelegramAuthPort 和 TelegramSdkClient，
  * 遵循 CA 架構原則，不直接呼叫 API。
  *
  * @example
@@ -30,7 +30,7 @@
 
 import { ref, computed } from 'vue'
 import { getTelegramAuthAdapter } from '~/game-client/adapter/api/TelegramAuthAdapter'
-import { getTelegramSdkAdapter, type TelegramUserInfo } from '~/game-client/adapter/telegram/TelegramSdkAdapter'
+import { getTelegramSdkClient, type TelegramUserInfo } from '~/game-client/adapter/telegram/TelegramSdkClient'
 
 // =============================================================================
 // State
@@ -54,7 +54,7 @@ export function useTelegram() {
 
   // 從 Plugin 取得環境資訊
   const telegramEnv = nuxtApp.$telegramEnv
-  const telegramSdk = nuxtApp.$telegramSdk ?? getTelegramSdkAdapter()
+  const telegramSdk = nuxtApp.$telegramSdk ?? getTelegramSdkClient()
 
   // 從 DI 取得 Auth Adapter
   const authAdapter = getTelegramAuthAdapter()

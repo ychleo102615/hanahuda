@@ -20,7 +20,6 @@ import { GetCurrentPlayerUseCase } from '../../application/use-cases/get-current
 import { RegisterAccountUseCase } from '../../application/use-cases/register-account-use-case'
 import { LoginUseCase } from '../../application/use-cases/login-use-case'
 import { LogoutUseCase } from '../../application/use-cases/logout-use-case'
-import { OAuthLoginUseCase } from '../../application/use-cases/oauth-login-use-case'
 import { ExternalAuthLoginUseCase } from '../../application/use-cases/external-auth-login-use-case'
 import { LinkAccountUseCase } from '../../application/use-cases/link-account-use-case'
 import { DeleteAccountUseCase } from '../../application/use-cases/delete-account-use-case'
@@ -53,7 +52,6 @@ export interface IdentityContainer {
   loginUseCase: LoginUseCase
   logoutUseCase: LogoutUseCase
   externalAuthLoginUseCase: ExternalAuthLoginUseCase
-  oauthLoginUseCase: OAuthLoginUseCase
   linkAccountUseCase: LinkAccountUseCase
   deleteAccountUseCase: DeleteAccountUseCase
 
@@ -99,9 +97,6 @@ export function getIdentityContainer(): IdentityContainer {
     sessionStore
   )
 
-  // OAuthLoginUseCase 現在委派給 ExternalAuthLoginUseCase
-  const oauthLoginUseCase = new OAuthLoginUseCase(externalAuthLoginUseCase)
-
   const linkAccountUseCase = new LinkAccountUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore, passwordHasher)
   const deleteAccountUseCase = new DeleteAccountUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore, passwordHasher, playerStatsRepository)
 
@@ -123,7 +118,6 @@ export function getIdentityContainer(): IdentityContainer {
     loginUseCase,
     logoutUseCase,
     externalAuthLoginUseCase,
-    oauthLoginUseCase,
     linkAccountUseCase,
     deleteAccountUseCase,
     telegramValidator,

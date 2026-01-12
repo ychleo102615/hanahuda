@@ -503,8 +503,6 @@ const handleBackToGame = async () => {
       @cancel-and-switch="handleCancelAndSwitch"
     />
 
-    <!-- Telegram Debug Panel（除錯用） -->
-    <TelegramDebugPanel />
   </div>
 </template>
 

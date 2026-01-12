@@ -79,7 +79,11 @@
       "Bash(pnpm --prefix front-end lint:*)",
       "Bash(pnpm --prefix front-end build:*)",
       "Skill(architecture-check)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(pkill:*)",
+      "Bash(cloudflared tunnel:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm build:*)"
     ],
     "deny": [],
     "ask": []

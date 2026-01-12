@@ -1,16 +1,24 @@
 /**
- * TelegramSdkAdapter
+ * TelegramSdkClient
  *
  * @description
- * Telegram WebApp SDK Adapter。
+ * Telegram WebApp SDK Client。
  * 封裝 Telegram WebApp SDK 操作，提供統一的介面給應用程式使用。
  *
- * @module app/game-client/adapter/telegram/TelegramSdkAdapter
+ * 注意：這是工具類（SDK 封裝），不是 Clean Architecture 中的 Adapter。
+ * 命名為 Client 以避免與 Ports & Adapters 模式混淆。
+ *
+ * @module app/game-client/adapter/telegram/TelegramSdkClient
  */
 
 // =============================================================================
 // Types
 // =============================================================================
+
+/**
+ * 從 window.Telegram.WebApp 取得型別
+ */
+type TelegramWebApp = NonNullable<Window['Telegram']>['WebApp']
 
 /**
  * Telegram 環境資訊
@@ -60,7 +68,7 @@ export interface TelegramUserInfo {
  * - Alert/Confirm 對話框
  * - 主題設定
  */
-export class TelegramSdkAdapter {
+export class TelegramSdkClient {
   private webApp: TelegramWebApp | null = null
   private _isInitialized = false
 
@@ -276,14 +284,14 @@ export class TelegramSdkAdapter {
 // Singleton
 // =============================================================================
 
-let instance: TelegramSdkAdapter | null = null
+let instance: TelegramSdkClient | null = null
 
 /**
- * 取得 TelegramSdkAdapter 單例
+ * 取得 TelegramSdkClient 單例
  */
-export function getTelegramSdkAdapter(): TelegramSdkAdapter {
+export function getTelegramSdkClient(): TelegramSdkClient {
   if (!instance) {
-    instance = new TelegramSdkAdapter()
+    instance = new TelegramSdkClient()
   }
   return instance
 }

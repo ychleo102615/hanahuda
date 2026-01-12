@@ -1,6 +1,18 @@
 /**
  * OAuth Provider Port
  *
+ * @deprecated
+ * 此 Port 已不再被 Application Layer 使用。
+ * OAuth Adapter 現在直接被 API Endpoint 呼叫，不經過 UseCase。
+ *
+ * 保留原因：
+ * - GoogleOAuthAdapter / LineOAuthAdapter 仍 extends 此類別
+ * - 提供共用的類型定義（AuthorizationUrlOptions、CodeExchangeOptions 等）
+ *
+ * 未來計畫：
+ * - 將 Adapter 重新命名為 Client（如 GoogleOAuthClient）
+ * - 移除此 Port，讓 Client 成為獨立的工具類
+ *
  * @description
  * OAuth Provider 的 Output Port 介面。
  * 由 Adapter Layer 實作（Google, Line 等）。
