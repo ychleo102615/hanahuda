@@ -326,6 +326,16 @@ front-end/
 
 ---
 
+## Current Version
+
+**v1.0.0** (2024-12-01)
+
+This is the initial release of Hanafuda Koi-Koi Web Game.
+
+[View Full Changelog](./CHANGELOG.md)
+
+---
+
 ## Quick Start
 
 ### Requirements
