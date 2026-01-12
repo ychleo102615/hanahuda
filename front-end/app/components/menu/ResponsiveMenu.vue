@@ -78,14 +78,15 @@ const handleDeleteAccount = () => {
   <div
     v-if="isMobile"
     :class="[
-      'absolute left-0 right-0 top-full bg-gray-800 overflow-hidden transition-all duration-300 shadow-lg',
+      'absolute left-0 right-0 top-full overflow-hidden transition-all duration-300 shadow-lg',
+      'bg-gray-900/95 backdrop-blur-md border-t border-gold-dark/20',
       isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0',
     ]"
     :style="{ zIndex: Z_INDEX.PANEL }"
   >
-    <div class="py-4 space-y-2 border-t border-gray-700">
+    <div class="py-4 space-y-2">
       <!-- Player Info Section -->
-      <div v-if="displayName" class="px-4 py-3 mb-2 border-b border-gray-700">
+      <div v-if="displayName" class="px-4 py-3 mb-2 border-b border-gold-dark/15">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
             <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
@@ -126,7 +127,7 @@ const handleDeleteAccount = () => {
           class="block w-full text-left px-4 py-3 text-sm font-medium rounded-md transition-colors flex items-center gap-3"
           :class="item.disabled
             ? 'cursor-not-allowed opacity-50 text-gray-500'
-            : 'text-white hover:bg-gray-700'"
+            : 'text-white hover:bg-white/10'"
           :disabled="item.disabled"
           @click="handleItemClick(item)"
         >
@@ -177,17 +178,17 @@ const handleDeleteAccount = () => {
     <Transition name="slide">
       <div
         v-if="!isMobile && isOpen"
-        class="fixed right-0 top-0 h-full w-80 bg-gray-800 shadow-2xl flex flex-col"
+        class="fixed right-0 top-0 h-full w-80 shadow-2xl flex flex-col bg-gray-900/95 backdrop-blur-md border-l border-gold-dark/20"
         :style="{ zIndex: Z_INDEX.PANEL + 1 }"
         role="dialog"
         aria-label="Menu"
       >
         <!-- Header -->
-        <div class="flex items-center justify-between p-4 border-b border-gray-700">
+        <div class="flex items-center justify-between p-4 border-b border-gold-dark/15">
           <h2 class="text-lg font-semibold text-white">Menu</h2>
           <button
             aria-label="Close menu"
-            class="p-2 rounded-lg hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
+            class="p-2 rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
             @click="closeMenu"
           >
             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -197,7 +198,7 @@ const handleDeleteAccount = () => {
         </div>
 
         <!-- Player Info -->
-        <div v-if="displayName" class="p-4 border-b border-gray-700">
+        <div v-if="displayName" class="p-4 border-b border-gold-dark/15">
           <div class="flex items-center gap-3 mb-3">
             <PlayerBadge
               :display-name="displayName"
@@ -210,7 +211,7 @@ const handleDeleteAccount = () => {
           <div v-if="showPlayerActions" class="space-y-2">
             <button
               @click="handleLogout"
-              class="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-3"
+              class="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-3"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -237,7 +238,7 @@ const handleDeleteAccount = () => {
                 class="w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center space-x-3"
                 :class="item.disabled
                   ? 'cursor-not-allowed opacity-50'
-                  : 'hover:bg-gray-700 cursor-pointer'"
+                  : 'hover:bg-white/10 cursor-pointer'"
                 :disabled="item.disabled"
                 @click="handleItemClick(item)"
               >
@@ -265,7 +266,7 @@ const handleDeleteAccount = () => {
         </nav>
 
         <!-- Footer -->
-        <div class="p-4 border-t border-gray-700 text-xs text-gray-500 text-center">
+        <div class="p-4 border-t border-gold-dark/15 text-xs text-gray-500 text-center">
           Hanafuda Koi-Koi
         </div>
       </div>

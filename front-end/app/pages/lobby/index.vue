@@ -398,7 +398,7 @@ const handleBackToGame = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-green-900 flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+  <div class="min-h-screen lobby-bg flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
     <!-- 頂部資訊列 -->
     <header class="h-14 shrink-0">
       <LobbyTopInfoBar
@@ -413,23 +413,25 @@ const handleBackToGame = async () => {
     <!-- 主要內容區 -->
     <main class="flex-1 flex items-center justify-center p-4">
       <div class="max-w-4xl w-full">
-        <!-- 卡片清單容器 -->
-        <div class="border-2 border-gray-700/50 rounded-xl p-6 bg-gray-900/20">
-          <!-- 標題 -->
-          <h1 class="text-2xl font-bold text-white mb-6 text-center">
-            Select Game Mode
+        <!-- 卡片清單容器 - 金箔蒔絵風格 -->
+        <div class="lobby-card rounded-xl p-6 md:p-8">
+          <!-- 標題 - 金色字體 -->
+          <h1 class="text-2xl md:text-3xl font-bold text-center mb-8">
+            <span class="bg-gradient-to-r from-gold-pale via-gold-light to-gold bg-clip-text text-transparent">
+              Select Game Mode
+            </span>
           </h1>
 
           <!-- 載入中 -->
           <div v-if="isLoadingRooms" class="flex justify-center py-12">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white" />
+            <div class="animate-spin rounded-full h-12 w-12 border-2 border-gold-dark border-t-gold-light" />
           </div>
 
           <!-- 載入錯誤 -->
           <div v-else-if="loadError" class="text-center py-12">
             <p class="text-red-400 mb-4">{{ loadError }}</p>
             <button
-              class="bg-primary-600 hover:bg-primary-500 text-white font-semibold py-2 px-4 rounded-lg"
+              class="bg-gold-dark hover:bg-gold text-white font-semibold py-2 px-6 rounded-lg transition-colors"
               @click="$router.go(0)"
             >
               Retry
@@ -442,21 +444,21 @@ const handleBackToGame = async () => {
               v-for="room in roomTypes"
               :key="room.id"
               :disabled="isLoadingRooms"
-              class="bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-xl p-6 border border-gray-700 text-left transition-all duration-200 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-2xl hover:border-primary-500 hover:bg-gray-800/90 active:scale-[0.98] active:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:translate-y-0 disabled:hover:shadow-xl disabled:hover:border-gray-700"
+              class="group lobby-card rounded-lg p-6 text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
               @click="handleSelectRoom(room.id)"
             >
-              <!-- 房間名稱 -->
-              <h2 class="text-xl font-bold text-white mb-2">
+              <!-- 房間名稱 - 金色漸層 -->
+              <h2 class="text-xl font-bold mb-2 bg-gradient-to-r from-gold-light to-gold-pale bg-clip-text text-transparent group-hover:from-gold-bright group-hover:to-gold-light transition-all">
                 {{ room.name }}
               </h2>
 
               <!-- 房間描述 -->
-              <p class="text-gray-400 text-sm mb-4">
+              <p class="text-gray-400 text-sm mb-4 leading-relaxed">
                 {{ room.description }}
               </p>
 
-              <!-- 房間規格 -->
-              <div class="text-xs text-gray-500 pt-4 border-t border-gray-600/50">
+              <!-- 房間規格 - 金色分隔線 -->
+              <div class="text-xs text-gold-dark pt-4 border-t border-gold-dark/30">
                 <span>{{ room.rounds }} rounds</span>
               </div>
             </button>

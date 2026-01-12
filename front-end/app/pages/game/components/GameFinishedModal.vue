@@ -10,15 +10,15 @@
       @click.self="handleDismiss"
     >
       <div
-        class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all"
+        class="modal-panel rounded-lg max-w-md w-full mx-4 overflow-hidden transform transition-all"
       >
         <!-- Header -->
         <div
           :class="[
-            'px-6 py-5 text-white',
+            'px-6 py-5 text-white modal-header',
             uiStateStore.gameFinishedModalData.isPlayerWinner
-              ? 'bg-gradient-to-r from-green-500 to-green-600'
-              : 'bg-gradient-to-r from-blue-500 to-blue-600',
+              ? 'bg-gradient-to-r from-green-600/80 to-green-700/80'
+              : 'bg-gradient-to-r from-blue-600/80 to-blue-700/80',
           ]"
         >
           <h2 id="game-finished-title" class="text-2xl font-bold text-center">
@@ -33,7 +33,7 @@
         <!-- Body -->
         <div class="px-6 py-6 space-y-4">
           <!-- Winner Announcement -->
-          <p class="text-center text-lg font-medium text-gray-800">
+          <p class="text-center text-lg font-medium text-white">
             {{
               uiStateStore.gameFinishedModalData.winnerId === null
                 ? "It's a draw!"
@@ -44,23 +44,23 @@
           </p>
 
           <!-- Final Scores -->
-          <div class="bg-gray-50 rounded-lg p-4 space-y-2">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">
+          <div class="modal-section rounded-lg p-4 space-y-2">
+            <h3 class="text-sm font-semibold text-gray-300 mb-3">
               Final Scores
             </h3>
             <div
               v-for="score in uiStateStore.gameFinishedModalData.finalScores"
               :key="score.player_id"
-              class="flex items-center justify-between py-2 border-b border-gray-200 last:border-0"
+              class="flex items-center justify-between py-2 border-b border-gray-600/50 last:border-0"
             >
-              <span class="text-gray-700 font-medium">
+              <span class="text-gray-200 font-medium">
                 {{ getPlayerName(score.player_id) }}
                 <span
                   v-if="
                     score.player_id ===
                     uiStateStore.gameFinishedModalData.winnerId
                   "
-                  class="ml-2 text-xs text-green-600 font-bold"
+                  class="ml-2 text-xs text-amber-400 font-bold"
                 >
                   👑 Winner
                 </span>
@@ -69,8 +69,8 @@
                 :class="[
                   'text-xl font-bold',
                   score.player_id === uiStateStore.gameFinishedModalData.winnerId
-                    ? 'text-green-600'
-                    : 'text-gray-600',
+                    ? 'text-amber-400'
+                    : 'text-gray-300',
                 ]"
               >
                 {{ score.score }}
@@ -80,10 +80,10 @@
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-4 bg-gray-50 flex gap-3 justify-end">
+        <div class="px-6 py-4 modal-footer flex gap-3 justify-end">
           <button
             type="button"
-            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            class="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
             @click="handleDismiss"
           >
             Close
@@ -91,7 +91,7 @@
           <button
             type="button"
             :disabled="isRematching"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             @click="handleRematch"
           >
             {{ isRematching ? 'Finding...' : 'Rematch' }}
@@ -165,11 +165,11 @@ function handleDismiss(): void {
   opacity: 0;
 }
 
-.modal-fade-enter-active .bg-white {
+.modal-fade-enter-active .modal-panel {
   animation: modal-scale-up 0.3s ease;
 }
 
-.modal-fade-leave-active .bg-white {
+.modal-fade-leave-active .modal-panel {
   animation: modal-scale-down 0.2s ease;
 }
 

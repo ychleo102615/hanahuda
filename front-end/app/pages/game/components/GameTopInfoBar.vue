@@ -155,7 +155,7 @@ const closeMenu = () => {
 </script>
 
 <template>
-  <div class="h-full bg-gray-800 text-white relative">
+  <div class="h-full topbar-glass text-white relative">
     <!-- Header Bar -->
     <div class="h-full px-4 py-2 flex items-center justify-between">
       <!-- Left Section: 對手資訊 -->
