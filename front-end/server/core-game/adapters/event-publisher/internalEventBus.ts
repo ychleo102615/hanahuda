@@ -61,7 +61,6 @@ class InternalEventBus implements InternalEventPublisherPort {
    * @param payload 房間建立事件 Payload
    */
   publishRoomCreated(payload: RoomCreatedPayload): void {
-    console.info('[InternalEventBus] Publishing ROOM_CREATED:', payload.gameId)
     this.emitter.emit('ROOM_CREATED', payload)
   }
 }

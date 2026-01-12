@@ -118,8 +118,6 @@ export class OpponentRegistry {
    * @param payload - 房間建立事件 Payload
    */
   private async handleRoomCreated(payload: RoomCreatedPayload): Promise<void> {
-    console.info('[OpponentRegistry] Received ROOM_CREATED event:', payload.gameId)
-
     // 1. 建立 AI 玩家 ID
     const aiPlayerId = randomUUID()
     const aiPlayerName = 'Computer'
@@ -138,7 +136,6 @@ export class OpponentRegistry {
       onCleanup: () => {
         this.instances.delete(payload.gameId)
         opponentStore.unregister(payload.gameId)
-        console.info('[OpponentRegistry] AI opponent cleaned up for game:', payload.gameId)
       },
     }
 
@@ -168,7 +165,6 @@ export class OpponentRegistry {
     await this.delay(joinDelay)
 
     try {
-      console.info('[OpponentRegistry] AI attempting to join game:', payload.gameId)
       const result = await this.deps.joinGameAsAi.execute({
         playerId: aiPlayerId,
         playerName: aiPlayerName,
@@ -179,8 +175,6 @@ export class OpponentRegistry {
       if (!result.success) {
         console.warn('[OpponentRegistry] AI failed to join game:', payload.gameId)
         this.cleanupGame(payload.gameId)
-      } else {
-        console.info('[OpponentRegistry] AI successfully joined game:', payload.gameId)
       }
     } catch (error) {
       console.error('[OpponentRegistry] Error joining game:', payload.gameId, error)

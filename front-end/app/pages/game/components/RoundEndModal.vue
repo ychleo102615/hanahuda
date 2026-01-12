@@ -22,13 +22,13 @@
       @click.self="handleClose"
     >
       <div
-        class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all flex flex-col max-h-[85vh]"
+        class="modal-panel rounded-lg max-w-md w-full mx-4 overflow-hidden transform transition-all flex flex-col max-h-[85vh]"
         @click.stop
       >
         <!-- Header -->
         <div
           :class="[
-            'px-6 py-5 text-white',
+            'px-6 py-5 text-white modal-header',
             headerClass,
           ]"
         >
@@ -41,22 +41,22 @@
         <div class="px-6 py-6 space-y-4 overflow-y-auto flex-1 min-h-0">
           <!-- RoundDrawn Content -->
           <div v-if="panelType === 'roundDrawn'" class="text-center">
-            <p class="text-lg font-medium text-gray-800 mb-4">
+            <p class="text-lg font-medium text-white mb-4">
               引き分け (Draw)
             </p>
-            <div class="bg-gray-50 rounded-lg p-4 space-y-2">
-              <h3 class="text-sm font-semibold text-gray-700 mb-3">
+            <div class="modal-section rounded-lg p-4 space-y-2">
+              <h3 class="text-sm font-semibold text-gray-300 mb-3">
                 Current Scores
               </h3>
               <div
                 v-for="score in uiState.roundDrawnModalScores"
                 :key="score.player_id"
-                class="flex items-center justify-between py-2 border-b border-gray-200 last:border-0"
+                class="flex items-center justify-between py-2 border-b border-gray-600/50 last:border-0"
               >
-                <span class="text-gray-700 font-medium">
+                <span class="text-gray-200 font-medium">
                   {{ getPlayerName(score.player_id) }}
                 </span>
-                <span class="text-xl font-bold text-gray-600">
+                <span class="text-xl font-bold text-gray-300">
                   {{ score.score }}
                 </span>
               </div>
@@ -66,63 +66,63 @@
           <!-- RoundScored Content -->
           <div v-else-if="panelType === 'roundScored' && roundScoredModalData" class="text-center">
             <!-- Winner -->
-            <p class="text-lg font-medium text-gray-800 mb-4">
+            <p class="text-lg font-medium text-white mb-4">
               {{ getPlayerName(roundScoredModalData.winnerId) }} won this round!
             </p>
 
             <!-- Yaku List -->
-            <div class="bg-yellow-50 rounded-lg p-4 mb-4">
-              <h3 class="text-sm font-semibold text-yellow-800 mb-3">Yaku Achieved</h3>
+            <div class="modal-section-highlight rounded-lg p-4 mb-4">
+              <h3 class="text-sm font-semibold text-amber-400 mb-3">Yaku Achieved</h3>
               <div class="space-y-2">
                 <div
                   v-for="yaku in roundScoredModalData.yakuList"
                   :key="yaku.yaku_type"
-                  class="flex items-center justify-between py-2 border-b border-yellow-200 last:border-0"
+                  class="flex items-center justify-between py-2 border-b border-amber-500/30 last:border-0"
                 >
-                  <span class="text-gray-700 font-medium">{{ getYakuName(yaku.yaku_type) }}</span>
-                  <span class="text-lg font-bold text-yellow-700">{{ yaku.base_points }} pts</span>
+                  <span class="text-gray-200 font-medium">{{ getYakuName(yaku.yaku_type) }}</span>
+                  <span class="text-lg font-bold text-amber-400">{{ yaku.base_points }} pts</span>
                 </div>
               </div>
             </div>
 
             <!-- Score Summary -->
-            <div class="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div class="modal-section rounded-lg p-4 space-y-2">
               <div class="flex items-center justify-between py-1">
-                <span class="text-sm text-gray-600">Base Score:</span>
-                <span class="text-lg font-semibold text-gray-700">{{ roundScoredModalData.baseScore }}</span>
+                <span class="text-sm text-gray-400">Base Score:</span>
+                <span class="text-lg font-semibold text-gray-200">{{ roundScoredModalData.baseScore }}</span>
               </div>
               <!-- Koi-Koi Bonus（有人喊過 Koi-Koi 時顯示） -->
               <div
                 v-if="roundScoredModalData.multipliers.koi_koi_applied"
                 class="flex items-center justify-between py-1"
               >
-                <span class="text-sm text-gray-600">Koi-Koi Bonus:</span>
-                <span class="text-lg font-semibold text-gray-700">×2</span>
+                <span class="text-sm text-gray-400">Koi-Koi Bonus:</span>
+                <span class="text-lg font-semibold text-gray-200">×2</span>
               </div>
               <!-- 7+ Score Bonus（基礎分數 ≥ 7 時顯示） -->
               <div
                 v-if="roundScoredModalData.multipliers.is_score_doubled"
                 class="flex items-center justify-between py-1"
               >
-                <span class="text-sm text-gray-600">7+ Score Bonus:</span>
-                <span class="text-lg font-semibold text-gray-700">×2</span>
+                <span class="text-sm text-gray-400">7+ Score Bonus:</span>
+                <span class="text-lg font-semibold text-gray-200">×2</span>
               </div>
-              <div class="flex items-center justify-between py-2 border-t-2 border-gray-300">
-                <span class="text-base font-bold text-gray-800">Final Score:</span>
-                <span class="text-2xl font-bold text-yellow-600">{{ roundScoredModalData.finalScore }}</span>
+              <div class="flex items-center justify-between py-2 border-t border-gray-600">
+                <span class="text-base font-bold text-white">Final Score:</span>
+                <span class="text-2xl font-bold text-amber-400">{{ roundScoredModalData.finalScore }}</span>
               </div>
             </div>
 
             <!-- Total Scores -->
-            <div class="bg-gray-50 rounded-lg p-4 mt-4">
-              <h3 class="text-sm font-semibold text-gray-700 mb-3">Total Scores</h3>
+            <div class="modal-section rounded-lg p-4 mt-4">
+              <h3 class="text-sm font-semibold text-gray-300 mb-3">Total Scores</h3>
               <div
                 v-for="score in roundScoredModalData.updatedTotalScores"
                 :key="score.player_id"
-                class="flex items-center justify-between py-2 border-b border-gray-200 last:border-0"
+                class="flex items-center justify-between py-2 border-b border-gray-600/50 last:border-0"
               >
-                <span class="text-gray-700 font-medium">{{ getPlayerName(score.player_id) }}</span>
-                <span class="text-xl font-bold text-gray-600">{{ score.score }}</span>
+                <span class="text-gray-200 font-medium">{{ getPlayerName(score.player_id) }}</span>
+                <span class="text-xl font-bold text-gray-300">{{ score.score }}</span>
               </div>
             </div>
           </div>
@@ -130,64 +130,64 @@
           <!-- RoundEndedInstantly Content -->
           <div v-else-if="panelType === 'roundEndedInstantly' && roundEndedInstantlyModalData" class="text-center">
             <!-- Reason -->
-            <p class="text-lg font-medium text-gray-800 mb-4">
+            <p class="text-lg font-medium text-white mb-4">
               {{ getRoundEndReasonText(roundEndedInstantlyModalData.reason) }}
             </p>
 
             <!-- Winner and Points (if any) -->
-            <div v-if="roundEndedInstantlyModalData.winnerId" class="bg-blue-50 rounded-lg p-4 mb-4">
-              <p class="text-base text-gray-700 mb-2">
-                <span class="font-bold text-blue-700">{{ getPlayerName(roundEndedInstantlyModalData.winnerId) }}</span>
+            <div v-if="roundEndedInstantlyModalData.winnerId" class="modal-section-highlight rounded-lg p-4 mb-4">
+              <p class="text-base text-gray-200 mb-2">
+                <span class="font-bold text-blue-400">{{ getPlayerName(roundEndedInstantlyModalData.winnerId) }}</span>
                 received
-                <span class="font-bold text-blue-700">{{ roundEndedInstantlyModalData.awardedPoints }} points</span>
+                <span class="font-bold text-blue-400">{{ roundEndedInstantlyModalData.awardedPoints }} points</span>
               </p>
             </div>
 
             <!-- Total Scores -->
-            <div class="bg-gray-50 rounded-lg p-4">
-              <h3 class="text-sm font-semibold text-gray-700 mb-3">Total Scores</h3>
+            <div class="modal-section rounded-lg p-4">
+              <h3 class="text-sm font-semibold text-gray-300 mb-3">Total Scores</h3>
               <div
                 v-for="score in roundEndedInstantlyModalData.updatedTotalScores"
                 :key="score.player_id"
-                class="flex items-center justify-between py-2 border-b border-gray-200 last:border-0"
+                class="flex items-center justify-between py-2 border-b border-gray-600/50 last:border-0"
               >
-                <span class="text-gray-700 font-medium">{{ getPlayerName(score.player_id) }}</span>
-                <span class="text-xl font-bold text-gray-600">{{ score.score }}</span>
+                <span class="text-gray-200 font-medium">{{ getPlayerName(score.player_id) }}</span>
+                <span class="text-xl font-bold text-gray-300">{{ score.score }}</span>
               </div>
             </div>
           </div>
 
           <!-- Fallback -->
-          <div v-else class="text-center text-gray-600">
+          <div v-else class="text-center text-gray-400">
             <p>Round ended</p>
           </div>
         </div>
 
         <!-- Footer: Countdown Display, Confirm Button, or Continue Button -->
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex-shrink-0 min-h-[10vh]">
+        <div class="px-6 py-4 modal-footer flex-shrink-0 min-h-[10vh]">
           <!-- 確認繼續遊戲 - 等待玩家輸入 -->
           <template v-if="continueConfirmationState === 'AWAITING_INPUT'">
             <div class="flex flex-col items-center gap-3">
-              <p class="text-sm text-gray-600 text-center">
+              <p class="text-sm text-gray-400 text-center">
                 Confirm to continue playing.
               </p>
               <div class="flex gap-3">
                 <button
                   type="button"
-                  class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  class="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-500 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
                   @click="handleConfirmContinue('CONTINUE')"
                 >
                   Continue
                 </button>
                 <button
                   type="button"
-                  class="px-6 py-2 bg-gray-500 text-white font-medium rounded-lg hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  class="px-6 py-2 bg-gray-700 text-gray-200 font-medium rounded-lg hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                   @click="handleConfirmContinue('LEAVE')"
                 >
                   Leave Game
                 </button>
               </div>
-              <div class="flex items-center gap-2 text-gray-500">
+              <div class="flex items-center gap-2 text-gray-400">
                 <span class="text-xs">Auto-end in:</span>
                 <span
                   :class="[
@@ -204,7 +204,7 @@
           <!-- 確認繼續遊戲 - 等待伺服器回應 -->
           <template v-else-if="continueConfirmationState === 'AWAITING_SERVER'">
             <div class="flex flex-col items-center gap-2">
-              <div class="flex items-center gap-2 text-gray-600">
+              <div class="flex items-center gap-2 text-gray-300">
                 <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -216,7 +216,7 @@
           </template>
           <!-- 有倒數時顯示倒數 -->
           <template v-else-if="displayTimeoutRemaining !== null">
-            <div class="flex items-center justify-center gap-2 text-gray-700">
+            <div class="flex items-center justify-center gap-2 text-gray-300">
               <span class="text-sm font-medium">Next round in:</span>
               <span
                 :class="[
@@ -237,7 +237,7 @@
             <div class="flex flex-col items-center gap-2">
               <button
                 type="button"
-                class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                 @click="handleContinue"
               >
                 Continue
@@ -319,13 +319,13 @@ const displayCountdown = computed(() => {
 const headerClass = computed(() => {
   switch (panelType.value) {
     case 'roundScored':
-      return 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+      return 'bg-gradient-to-r from-amber-600/80 to-amber-700/80'
     case 'roundEndedInstantly':
-      return 'bg-gradient-to-r from-blue-500 to-blue-600'
+      return 'bg-gradient-to-r from-blue-600/80 to-blue-700/80'
     case 'roundDrawn':
-      return 'bg-gradient-to-r from-gray-500 to-gray-600'
+      return 'bg-gradient-to-r from-gray-600/80 to-gray-700/80'
     default:
-      return 'bg-gradient-to-r from-gray-500 to-gray-600'
+      return 'bg-gradient-to-r from-gray-600/80 to-gray-700/80'
   }
 })
 
@@ -350,7 +350,7 @@ const headerTitle = computed(() => {
  */
 const countdownWarningClass = computed(() => {
   const remaining = displayTimeoutRemaining.value ?? 0
-  return remaining < 5 ? 'text-red-500' : 'text-gray-800'
+  return remaining < 5 ? 'text-red-400' : 'text-white'
 })
 
 /**
@@ -455,13 +455,13 @@ function handleClose(): void {
   opacity: 0;
 }
 
-.modal-fade-enter-active .bg-white,
-.modal-fade-leave-active .bg-white {
+.modal-fade-enter-active .modal-panel,
+.modal-fade-leave-active .modal-panel {
   transition: transform 0.3s ease;
 }
 
-.modal-fade-enter-from .bg-white,
-.modal-fade-leave-to .bg-white {
+.modal-fade-enter-from .modal-panel,
+.modal-fade-leave-to .modal-panel {
   transform: scale(0.9);
 }
 

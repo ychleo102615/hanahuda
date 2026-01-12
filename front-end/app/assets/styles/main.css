@@ -21,6 +21,26 @@
   /* 金色（用於高亮數字） */
   --color-accent-gold: #D4AF37;
 
+  /* 金箔蒔絵 (Kinpaku Maki-e) 設計系統 */
+  /* 深翠綠遊戲桌 */
+  --color-game-table: #0d1f17;
+  --color-game-table-light: #163028;
+  --color-game-felt: #1a3a2a;
+
+  /* 金色階層 */
+  --color-gold-dark: #8B6914;
+  --color-gold: #B8860B;
+  --color-gold-light: #D4AF37;
+  --color-gold-bright: #FFD700;
+  --color-gold-pale: #F0E68C;
+
+  /* 漆器深色 */
+  --color-lacquer-black: #1a1a1a;
+  --color-lacquer-red: #8B0000;
+
+  /* 和紙象牙色 */
+  --color-washi: #FAF8F0;
+
   /* 字體家族 */
   --font-sans: Inter, 'Noto Sans', sans-serif;
   --font-serif: 'Noto Serif', serif;
@@ -54,8 +74,8 @@
     overscroll-behavior: none;
     /* 防止雙擊放大，保留正常滾動和捏合縮放 */
     touch-action: manipulation;
-    /* 背景色：消除 iOS Safari safe area 白邊（配合 TopInfoBar） */
-    background-color: #1f2937; /* gray-800 */
+    /* 背景色：深色調配合 TopInfoBar 毛玻璃效果 */
+    background-color: #111827; /* gray-900 */
   }
 
   body {
@@ -65,8 +85,8 @@
     /* 防止 iOS Safari 過度捲動（橡皮筋效果） */
     overflow-x: hidden;
     overscroll-behavior: none;
-    /* 背景色：消除 iOS Safari safe area 白邊（配合 TopInfoBar） */
-    background-color: #1f2937; /* gray-800 */
+    /* 背景色：深色調配合 TopInfoBar 毛玻璃效果 */
+    background-color: #111827; /* gray-900 */
   }
 
   /* Focus visible styles for accessibility */
@@ -163,5 +183,350 @@
   .animate-card-fade-in {
     animation: card-fade-in 0.6s ease-out forwards;
     animation-delay: var(--delay, 0ms);
+  }
+
+  /* ============================================
+   * 金箔蒔絵 (Kinpaku Maki-e) 遊戲介面設計
+   * ============================================ */
+
+  /* 遊戲桌背景 - 深翠綠毛氈質感 */
+  .game-table-bg {
+    background:
+      /* 細微噪點紋理 */
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E"),
+      /* 青海波紋樣 (淡淡的) */
+      url("data:image/svg+xml,%3Csvg width='100' height='50' viewBox='0 0 100 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 25 Q25 0 50 25 T100 25' fill='none' stroke='%231a3a2a' stroke-width='0.5' opacity='0.3'/%3E%3Cpath d='M0 35 Q25 10 50 35 T100 35' fill='none' stroke='%231a3a2a' stroke-width='0.5' opacity='0.2'/%3E%3Cpath d='M0 45 Q25 20 50 45 T100 45' fill='none' stroke='%231a3a2a' stroke-width='0.5' opacity='0.1'/%3E%3C/svg%3E"),
+      /* 漸層背景 */
+      radial-gradient(ellipse at 50% 0%, var(--color-game-felt) 0%, var(--color-game-table) 70%);
+    background-size: 200px 200px, 100px 50px, 100% 100%;
+  }
+
+  /* 大廳背景 - 和風屏風質感 */
+  .lobby-bg {
+    background:
+      /* 麻の葉紋樣 (Asanoha) */
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='0.3' opacity='0.08'%3E%3Cpath d='M30 0 L30 60 M0 30 L60 30'/%3E%3Cpath d='M30 0 L0 30 L30 60 L60 30 Z'/%3E%3Cpath d='M15 15 L30 0 L45 15 L30 30 Z'/%3E%3Cpath d='M15 45 L30 30 L45 45 L30 60 Z'/%3E%3Cpath d='M0 30 L15 15 L30 30 L15 45 Z'/%3E%3Cpath d='M30 30 L45 15 L60 30 L45 45 Z'/%3E%3C/g%3E%3C/svg%3E"),
+      /* 深綠漸層 */
+      linear-gradient(180deg, var(--color-game-table) 0%, #0a1810 100%);
+    background-size: 60px 60px, 100% 100%;
+  }
+
+  /* 金框區塊 - 內嵌效果 */
+  .kinpaku-frame {
+    position: relative;
+    /* 多層邊框效果 */
+    border: 1px solid var(--color-gold-dark);
+    box-shadow:
+      /* 外層金色光暈 */
+      0 0 1px var(--color-gold),
+      /* 內嵌陰影 - 上方較深 */
+      inset 0 2px 4px rgba(0, 0, 0, 0.4),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+      /* 內側金色邊線 */
+      inset 0 0 0 1px rgba(212, 175, 55, 0.15);
+    /* 毛氈質感背景 */
+    background:
+      linear-gradient(180deg,
+        rgba(0, 0, 0, 0.15) 0%,
+        transparent 20%,
+        transparent 80%,
+        rgba(0, 0, 0, 0.1) 100%
+      );
+  }
+
+  /* 金框區塊 - 角落裝飾 */
+  .kinpaku-frame::before,
+  .kinpaku-frame::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--color-gold-light);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .kinpaku-frame::before {
+    top: 4px;
+    left: 4px;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .kinpaku-frame::after {
+    bottom: 4px;
+    right: 4px;
+    border-left: none;
+    border-top: none;
+  }
+
+  /* 對角角落裝飾 (需要額外 wrapper) */
+  .kinpaku-frame-corners::before,
+  .kinpaku-frame-corners::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--color-gold-light);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .kinpaku-frame-corners::before {
+    top: 4px;
+    right: 4px;
+    border-left: none;
+    border-bottom: none;
+  }
+
+  .kinpaku-frame-corners::after {
+    bottom: 4px;
+    left: 4px;
+    border-right: none;
+    border-top: none;
+  }
+
+  /* 場區金框 - 較顯眼 */
+  .kinpaku-frame-field {
+    position: relative;
+    border: 1.5px solid var(--color-gold);
+    box-shadow:
+      0 0 2px var(--color-gold),
+      0 0 8px rgba(212, 175, 55, 0.2),
+      inset 0 3px 6px rgba(0, 0, 0, 0.35),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      inset 0 0 0 2px rgba(212, 175, 55, 0.1);
+    background:
+      linear-gradient(180deg,
+        rgba(0, 0, 0, 0.2) 0%,
+        transparent 15%,
+        transparent 85%,
+        rgba(0, 0, 0, 0.15) 100%
+      ),
+      radial-gradient(ellipse at 50% 50%, var(--color-game-felt) 0%, var(--color-game-table) 100%);
+  }
+
+  .kinpaku-frame-field::before,
+  .kinpaku-frame-field::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--color-gold-light);
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .kinpaku-frame-field::before {
+    top: 6px;
+    left: 6px;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .kinpaku-frame-field::after {
+    bottom: 6px;
+    right: 6px;
+    border-left: none;
+    border-top: none;
+  }
+
+  /* 獲得牌區金框 - 深色調 */
+  .kinpaku-frame-depository {
+    position: relative;
+    border: 1px solid rgba(139, 105, 20, 0.6);
+    box-shadow:
+      inset 0 2px 6px rgba(0, 0, 0, 0.5),
+      inset 0 -1px 3px rgba(0, 0, 0, 0.3),
+      inset 0 0 0 1px rgba(212, 175, 55, 0.08);
+    background:
+      linear-gradient(180deg,
+        rgba(0, 0, 0, 0.25) 0%,
+        transparent 30%,
+        transparent 70%,
+        rgba(0, 0, 0, 0.15) 100%
+      ),
+      linear-gradient(180deg, #1a1a1a 0%, #252525 100%);
+  }
+
+  .kinpaku-frame-depository::before,
+  .kinpaku-frame-depository::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--color-gold-dark);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .kinpaku-frame-depository::before {
+    top: 3px;
+    left: 3px;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .kinpaku-frame-depository::after {
+    bottom: 3px;
+    right: 3px;
+    border-left: none;
+    border-top: none;
+  }
+
+  /* 手牌區金框 */
+  .kinpaku-frame-hand {
+    position: relative;
+    border: 1px solid rgba(139, 105, 20, 0.5);
+    box-shadow:
+      inset 0 2px 8px rgba(0, 0, 0, 0.45),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.25),
+      inset 0 0 0 1px rgba(212, 175, 55, 0.1);
+    background:
+      linear-gradient(180deg,
+        rgba(0, 0, 0, 0.2) 0%,
+        transparent 25%,
+        transparent 75%,
+        rgba(0, 0, 0, 0.1) 100%
+      ),
+      linear-gradient(180deg, #1f1f1f 0%, #2a2a2a 100%);
+  }
+
+  .kinpaku-frame-hand::before,
+  .kinpaku-frame-hand::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--color-gold-dark);
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  .kinpaku-frame-hand::before {
+    top: 3px;
+    left: 3px;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .kinpaku-frame-hand::after {
+    bottom: 3px;
+    right: 3px;
+    border-left: none;
+    border-top: none;
+  }
+
+  /* ============================================
+   * TopInfoBar 統一樣式 - 半透明毛玻璃
+   * ============================================ */
+
+  /* ============================================
+   * Modal 統一樣式 - 深色毛玻璃
+   * ============================================ */
+
+  /* Modal 面板 - 深色毛玻璃效果 */
+  .modal-panel {
+    background: rgba(17, 24, 39, 0.95); /* gray-900/95 */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(139, 105, 20, 0.2);
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(212, 175, 55, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Modal Header - 金色漸層邊框 */
+  .modal-header {
+    position: relative;
+    border-bottom: 1px solid rgba(139, 105, 20, 0.2);
+  }
+
+  .modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.3) 50%,
+      transparent 100%
+    );
+  }
+
+  /* Modal 內部區塊 - 半透明深色 */
+  .modal-section {
+    background: rgba(31, 41, 55, 0.5); /* gray-800/50 */
+    border: 1px solid rgba(75, 85, 99, 0.3); /* gray-600/30 */
+  }
+
+  /* Modal 高亮區塊（用於役種等） */
+  .modal-section-highlight {
+    background: rgba(139, 105, 20, 0.15);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+  }
+
+  /* Modal Footer - 微妙分隔 */
+  .modal-footer {
+    background: rgba(17, 24, 39, 0.5);
+    border-top: 1px solid rgba(139, 105, 20, 0.15);
+  }
+
+  /* TopInfoBar 毛玻璃效果 - 與 NavigationBar sticky 狀態一致 */
+  .topbar-glass {
+    position: relative;
+    /* z-index 由組件 inline style 設定，使用 Z_INDEX 常數 */
+    background: rgba(17, 24, 39, 0.88); /* gray-900/88 */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    /* 金色底部邊線 */
+    border-bottom: 1px solid rgba(139, 105, 20, 0.25);
+    /* 微妙陰影 */
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.3),
+      inset 0 -1px 0 rgba(212, 175, 55, 0.08);
+  }
+
+  /* 大廳卡片 - 金邊裝飾 */
+  .lobby-card {
+    position: relative;
+    z-index: 0; /* 確保不會蓋過選單 overlay */
+    border: 1px solid rgba(139, 105, 20, 0.4);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      inset 0 0 0 1px rgba(212, 175, 55, 0.05);
+    background:
+      linear-gradient(180deg,
+        rgba(255, 255, 255, 0.02) 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.1) 100%
+      ),
+      linear-gradient(180deg, #1a1a1a 0%, #141414 100%);
+    transition: all 0.3s ease;
+  }
+
+  .lobby-card:hover {
+    border-color: var(--color-gold);
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.5),
+      0 0 12px rgba(212, 175, 55, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      inset 0 0 0 1px rgba(212, 175, 55, 0.1);
+  }
+
+  .lobby-card::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    border: 1px solid rgba(212, 175, 55, 0.1);
+    pointer-events: none;
   }
 }

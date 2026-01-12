@@ -153,7 +153,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-[max(100dvh,730px)] w-full flex flex-col bg-green-900 overflow-y-auto overflow-x-hidden overscroll-x-none relative pt-[env(safe-area-inset-top)]">
+  <div class="h-[max(100dvh,730px)] w-full flex flex-col game-table-bg overflow-y-auto overflow-x-hidden overscroll-x-none relative pt-[env(safe-area-inset-top)]">
     <!-- 虛擬對手手牌區域（viewport 上方，用於發牌動畫目標） -->
     <div
       ref="opponentHandRef"
@@ -176,26 +176,26 @@ onUnmounted(() => {
     <div class="h-(--game-topbar-height) shrink-0" />
 
     <!-- 主遊戲區域：填滿剩餘空間，四區按 15:30:15:30 比例分配 -->
-    <div class="flex-1 flex flex-col min-h-0">
-      <!-- 對手已獲得牌區 (flex-[15]) -->
-      <section class="flex-15 bg-gray-700/50 overflow-x-auto min-h-0">
+    <div class="flex-1 flex flex-col min-h-0 p-1 gap-1">
+      <!-- 對手已獲得牌區 (flex-[15]) - 金箔蒔絵框 -->
+      <section class="flex-15 kinpaku-frame-depository rounded overflow-x-auto min-h-0">
         <OpponentDepositoryZone />
       </section>
 
-      <!-- 場中央牌區 (flex-[30]) -->
-      <section class="flex-30 bg-green-800/50 flex min-h-0">
+      <!-- 場中央牌區 (flex-[30]) - 金箔蒔絵框（主要區域） -->
+      <section class="flex-30 kinpaku-frame-field rounded flex min-h-0">
         <FieldZone class="flex-1" />
         <!-- DeckZone：大螢幕正常顯示，小螢幕 fixed 定位（內部響應式處理） -->
         <DeckZone />
       </section>
 
-      <!-- 玩家已獲得牌區 (flex-[15]) -->
-      <section class="flex-15 bg-gray-700/50 overflow-x-auto min-h-0">
+      <!-- 玩家已獲得牌區 (flex-[15]) - 金箔蒔絵框 -->
+      <section class="flex-15 kinpaku-frame-depository rounded overflow-x-auto min-h-0">
         <PlayerDepositoryZone />
       </section>
 
-      <!-- 玩家手牌區 (flex-[30]) -->
-      <section class="flex-30 bg-gray-800/50 min-h-0">
+      <!-- 玩家手牌區 (flex-[30]) - 金箔蒔絵框 -->
+      <section class="flex-30 kinpaku-frame-hand rounded min-h-0">
         <PlayerHandZone />
       </section>
     </div>

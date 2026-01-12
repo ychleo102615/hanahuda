@@ -9,11 +9,11 @@
       :style="{ zIndex: Z_INDEX.MODAL }"
     >
       <div
-        class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all"
+        class="modal-panel rounded-lg max-w-md w-full mx-4 overflow-hidden transform transition-all"
       >
         <!-- Header -->
         <div
-          class="px-6 py-5 text-white"
+          class="px-6 py-5 text-white modal-header"
           :class="headerGradientClass"
         >
           <h2 id="redirect-modal-title" class="text-2xl font-bold text-center">
@@ -23,17 +23,17 @@
 
         <!-- Body -->
         <div class="px-6 py-6 space-y-4">
-          <p class="text-center text-lg text-gray-800">
+          <p class="text-center text-lg text-white">
             {{ modalMessage }}
           </p>
 
           <!-- Countdown -->
-          <p class="text-center text-sm text-gray-600">
+          <p class="text-center text-sm text-gray-400">
             {{ countdownText }}
             <span
               :class="[
                 'font-bold',
-                countdown <= 3 ? 'text-red-600' : 'text-gray-800',
+                countdown <= 3 ? 'text-red-400' : 'text-white',
               ]"
             >
               {{ countdown }}
@@ -43,7 +43,7 @@
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-4 bg-gray-50 flex justify-center">
+        <div class="px-6 py-4 modal-footer flex justify-center">
           <button
             type="button"
             class="px-6 py-2 text-white rounded-lg transition-colors font-medium"
@@ -108,8 +108,8 @@ const buttonText = computed(() =>
 
 const headerGradientClass = computed(() =>
   redirectTarget.value === 'home'
-    ? 'bg-gradient-to-r from-orange-500 to-orange-600'
-    : 'bg-gradient-to-r from-red-500 to-red-600'
+    ? 'bg-gradient-to-r from-orange-600/80 to-orange-700/80'
+    : 'bg-gradient-to-r from-red-600/80 to-red-700/80'
 )
 
 const buttonClass = computed(() =>
@@ -187,11 +187,11 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-.modal-fade-enter-active .bg-white {
+.modal-fade-enter-active .modal-panel {
   animation: modal-scale-up 0.3s ease;
 }
 
-.modal-fade-leave-active .bg-white {
+.modal-fade-leave-active .modal-panel {
   animation: modal-scale-down 0.2s ease;
 }
 

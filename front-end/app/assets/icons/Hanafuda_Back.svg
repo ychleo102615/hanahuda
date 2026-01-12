@@ -1,53 +1,142 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 976 1600">
-  <!-- 背景底色 -->
-  <rect width="100%" height="100%" fill="#0B3D2E"/>
-  <!-- 細邊框 -->
-  <rect x="24" y="24" width="928" height="1552" rx="36" ry="36" fill="none" stroke="#F6E7D7" stroke-width="12"/>
-  <!-- 外層花紋帶 -->
-  <g transform="translate(0,0)">
-    <defs>
-      <pattern id="wave" x="0" y="0" width="120" height="80" patternUnits="userSpaceOnUse">
-        <path d="M0 40 C30 10, 90 10, 120 40 L120 80 L0 80 Z" fill="#0A2B23" />
-        <path d="M0 40 C30 70, 90 70, 120 40" fill="none" stroke="#F6E7D7" stroke-width="2"/>
-      </pattern>
-    </defs>
-    <rect x="48" y="96" width="880" height="1408" rx="24" ry="24" fill="url(#wave)" opacity="0.15"/>
+  <!-- 黑色外框（仿花牌邊框） -->
+  <g id="Card_Frame">
+    <path d="M0 20v1560a20 20 0 0 0 20 20h936a20 20 0 0 0 20-20V20a20 20 0 0 0-20-20H20A20 20 0 0 0 0 20zm924 1528H52V52h872z" style="fill:#000"/>
+    <path d="m952.1 15.41-23.41 23.42a4 4 0 0 1-2.83 1.17H50.14a4 4 0 0 1-2.83-1.17L23.9 15.41A2 2 0 0 1 25.31 12h925.38a2 2 0 0 1 1.41 3.41zM40 1549.86V50.14a4 4 0 0 0-1.17-2.83L15.41 23.9A2 2 0 0 0 12 25.31v1549.38a2 2 0 0 0 3.41 1.41l23.42-23.41a4 4 0 0 0 1.17-2.83zM936 50.14v1499.72a4 4 0 0 0 1.17 2.83l23.42 23.41a2 2 0 0 0 3.41-1.41V25.31a2 2 0 0 0-3.41-1.41l-23.42 23.41a4 4 0 0 0-1.17 2.83zM925.86 1560H50.14a4 4 0 0 0-2.83 1.17l-20 20a4 4 0 0 0 2.83 6.83h920.55a2 2 0 0 0 1.41-3.41l-23.41-23.42a4 4 0 0 0-2.83-1.17z" style="fill:#000"/>
   </g>
 
-  <!-- 中央對稱徽章 -->
-  <g transform="translate(488,800)">
-    <!-- 徽章外圈 -->
-    <circle r="220" fill="#084733"/>
-    <circle r="190" fill="none" stroke="#F6E7D7" stroke-width="8"/>
-    <!-- 花朵放射 -->
-    <g id="petals">
-      <g transform="rotate(0)">
-        <path d="M0,-140 C30,-110 60,-110 80,-80 C40,-95 10,-95 0,-140 Z" fill="#E85D4A" />
+  <!-- 內容區域（位於黑框內） -->
+  <g transform="translate(52,52)">
+    <defs>
+      <!-- 深紅漸層背景 -->
+      <radialGradient id="redGradient" cx="50%" cy="50%" r="70%">
+        <stop offset="0%" stop-color="#8B0000"/>
+        <stop offset="100%" stop-color="#4A0000"/>
+      </radialGradient>
+
+      <!-- 雲紋圖案 -->
+      <pattern id="cloudPattern" x="0" y="0" width="120" height="80" patternUnits="userSpaceOnUse">
+        <path d="M20 40 Q30 25 50 30 Q70 20 80 35 Q100 30 100 45 Q95 55 80 50 Q60 60 40 55 Q25 60 20 50 Q10 45 20 40Z"
+              fill="none" stroke="#6B0000" stroke-width="1" opacity="0.4"/>
+        <path d="M70 70 Q80 60 95 65 Q105 55 110 65 Q115 75 105 78 Q90 85 75 80 Q65 82 70 70Z"
+              fill="none" stroke="#6B0000" stroke-width="1" opacity="0.3"/>
+      </pattern>
+
+      <!-- 菊花瓣形狀 -->
+      <path id="chrysanthemumPetal" d="M0,-140 C12,-135 20,-100 22,-60 C24,-30 20,0 0,30 C-20,0 -24,-30 -22,-60 C-20,-100 -12,-135 0,-140Z"/>
+    </defs>
+
+    <!-- 背景底色（深紅漸層） -->
+    <rect width="872" height="1496" fill="url(#redGradient)"/>
+
+    <!-- 雲紋底紋 -->
+    <rect width="872" height="1496" fill="url(#cloudPattern)" opacity="0.5"/>
+
+    <!-- 金色細邊框 -->
+    <rect x="20" y="20" width="832" height="1456" rx="24" ry="24" fill="none" stroke="#C79B4A" stroke-width="6"/>
+    <rect x="32" y="32" width="808" height="1432" rx="18" ry="18" fill="none" stroke="#F6E7D7" stroke-width="2"/>
+
+    <!-- 四角唐草紋裝飾 -->
+    <g fill="none" stroke="#C79B4A" stroke-width="2.5" opacity="0.7">
+      <!-- 左上角 -->
+      <g transform="translate(70,100)">
+        <path d="M0,0 Q40,10 50,50 Q55,80 40,100"/>
+        <path d="M50,50 Q70,40 90,60 Q100,80 85,95"/>
+        <path d="M0,0 Q10,30 30,40 Q50,45 60,30"/>
+        <circle cx="50" cy="50" r="8" fill="#C79B4A"/>
+      </g>
+      <!-- 右上角 -->
+      <g transform="translate(802,100) scale(-1,1)">
+        <path d="M0,0 Q40,10 50,50 Q55,80 40,100"/>
+        <path d="M50,50 Q70,40 90,60 Q100,80 85,95"/>
+        <path d="M0,0 Q10,30 30,40 Q50,45 60,30"/>
+        <circle cx="50" cy="50" r="8" fill="#C79B4A"/>
+      </g>
+      <!-- 左下角 -->
+      <g transform="translate(70,1396) scale(1,-1)">
+        <path d="M0,0 Q40,10 50,50 Q55,80 40,100"/>
+        <path d="M50,50 Q70,40 90,60 Q100,80 85,95"/>
+        <path d="M0,0 Q10,30 30,40 Q50,45 60,30"/>
+        <circle cx="50" cy="50" r="8" fill="#C79B4A"/>
+      </g>
+      <!-- 右下角 -->
+      <g transform="translate(802,1396) scale(-1,-1)">
+        <path d="M0,0 Q40,10 50,50 Q55,80 40,100"/>
+        <path d="M50,50 Q70,40 90,60 Q100,80 85,95"/>
+        <path d="M0,0 Q10,30 30,40 Q50,45 60,30"/>
+        <circle cx="50" cy="50" r="8" fill="#C79B4A"/>
       </g>
     </g>
-    <!-- 複製花瓣 -->
-    <g>
-      <!-- 8 片對稱花瓣 -->
-      <g transform="rotate(0)"><use href="#petals" /></g>
-      <g transform="rotate(45)"><use href="#petals" /></g>
-      <g transform="rotate(90)"><use href="#petals" /></g>
-      <g transform="rotate(135)"><use href="#petals" /></g>
-      <g transform="rotate(180)"><use href="#petals" /></g>
-      <g transform="rotate(225)"><use href="#petals" /></g>
-      <g transform="rotate(270)"><use href="#petals" /></g>
-      <g transform="rotate(315)"><use href="#petals" /></g>
-    </g>
-    <!-- 中心圓 -->
-    <circle r="60" fill="#F6E7D7"/>
-    <circle r="34" fill="#0B3D2E"/>
-    <!-- 細節金邊 -->
-    <circle r="208" fill="none" stroke="#C79B4A" stroke-width="6"/>
-  </g>
 
-  <!-- 底層幾何線條增豐富感 -->
-  <g stroke="#C79B4A" stroke-width="2" opacity="0.12" fill="none">
-    <path d="M144 400 Q488 200 832 400" />
-    <path d="M144 1200 Q488 1000 832 1200" />
+    <!-- 中央菊花紋章 -->
+    <g transform="translate(436,748)">
+      <!-- 外圈光暈 -->
+      <circle r="220" fill="#5A0000" opacity="0.5"/>
+
+      <!-- 十六瓣菊花 - 外層（較長花瓣） -->
+      <g fill="#C79B4A">
+        <use href="#chrysanthemumPetal" transform="rotate(0)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(22.5)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(45)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(67.5)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(90)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(112.5)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(135)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(157.5)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(180)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(202.5)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(225)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(247.5)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(270)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(292.5)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(315)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(337.5)"/>
+      </g>
+
+      <!-- 十六瓣菊花 - 內層（較短花瓣，錯開11.25度） -->
+      <g fill="#D4A84B" transform="scale(0.65)">
+        <use href="#chrysanthemumPetal" transform="rotate(11.25)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(33.75)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(56.25)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(78.75)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(101.25)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(123.75)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(146.25)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(168.75)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(191.25)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(213.75)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(236.25)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(258.75)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(281.25)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(303.75)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(326.25)"/>
+        <use href="#chrysanthemumPetal" transform="rotate(348.75)"/>
+      </g>
+
+      <!-- 中心圓 -->
+      <circle r="35" fill="#F6E7D7"/>
+      <circle r="25" fill="#C79B4A"/>
+      <circle r="12" fill="#8B0000"/>
+
+      <!-- 金色外圈描邊 -->
+      <circle r="175" fill="none" stroke="#C79B4A" stroke-width="3" opacity="0.6"/>
+    </g>
+
+    <!-- 上下裝飾線 -->
+    <g stroke="#C79B4A" stroke-width="2" fill="none" opacity="0.4">
+      <path d="M150 280 Q436 200 722 280"/>
+      <path d="M150 1216 Q436 1296 722 1216"/>
+    </g>
+
+    <!-- 金箔碎片點綴 -->
+    <g fill="#C79B4A" opacity="0.3">
+      <circle cx="150" cy="400" r="3"/>
+      <circle cx="720" cy="450" r="2"/>
+      <circle cx="200" cy="1100" r="2.5"/>
+      <circle cx="680" cy="1050" r="3"/>
+      <circle cx="100" cy="750" r="2"/>
+      <circle cx="770" cy="700" r="2.5"/>
+    </g>
   </g>
 </svg>

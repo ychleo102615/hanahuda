@@ -40,9 +40,9 @@ const makeKoiKoiDecisionPort = resolveDependency<MakeKoiKoiDecisionPort>(TOKENS.
 // T020 [US2]: Warning color logic (red when <= 5 seconds)
 const countdownClass = computed(() => {
   if (displayTimeoutRemaining.value !== null && displayTimeoutRemaining.value <= 5) {
-    return 'text-red-500'
+    return 'text-red-400'
   }
-  return 'text-gray-800'
+  return 'text-white'
 })
 
 // 將 yaku_type 轉換為可讀的名稱
@@ -105,9 +105,9 @@ function handleEndRound() {
         :style="{ zIndex: Z_INDEX.MODAL }"
       >
         <!-- T073 [US3]: Modal content -->
-        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-2xl mx-4">
+        <div class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg modal-panel p-6 mx-4">
           <!-- Title -->
-          <h2 class="mb-4 text-center text-2xl font-bold text-yellow-600">
+          <h2 class="mb-4 text-center text-2xl font-bold text-amber-400">
             Yaku Achieved!
           </h2>
 
@@ -116,7 +116,7 @@ function handleEndRound() {
             v-if="displayTimeoutRemaining !== null"
             class="mb-4 text-center"
           >
-            <div class="text-sm text-gray-600 mb-1">Time Remaining</div>
+            <div class="text-sm text-gray-400 mb-1">Time Remaining</div>
             <div
               data-testid="decision-countdown"
               class="text-3xl font-bold"
@@ -131,21 +131,21 @@ function handleEndRound() {
             <div
               v-for="yaku in displayYakuList"
               :key="yaku.yakuType"
-              class="flex items-center justify-between rounded bg-yellow-50 px-4 py-2"
+              class="flex items-center justify-between rounded-lg modal-section-highlight px-4 py-2"
             >
               <div class="flex flex-col">
-                <span class="font-medium text-gray-800">{{ yaku.name }}</span>
-                <span v-if="yaku.nameJa" class="text-sm text-gray-500">{{ yaku.nameJa }}</span>
+                <span class="font-medium text-white">{{ yaku.name }}</span>
+                <span v-if="yaku.nameJa" class="text-sm text-gray-400">{{ yaku.nameJa }}</span>
               </div>
-              <span class="text-yellow-700 font-semibold">{{ yaku.basePoints }} pts</span>
+              <span class="text-amber-400 font-semibold">{{ yaku.basePoints }} pts</span>
             </div>
           </div>
 
           <!-- Score information -->
-          <div class="mb-6 rounded bg-gray-50 p-4">
+          <div class="mb-6 rounded-lg modal-section p-4">
             <div class="mb-2 flex items-center justify-between">
-              <span class="text-gray-600">Current Score:</span>
-              <span class="text-xl font-bold text-gray-800">
+              <span class="text-gray-400">Current Score:</span>
+              <span class="text-xl font-bold text-white">
                 {{ decisionModalData.currentScore }} pts
               </span>
             </div>
@@ -153,15 +153,15 @@ function handleEndRound() {
               v-if="decisionModalData.potentialScore"
               class="flex items-center justify-between"
             >
-              <span class="text-gray-600">Potential Score:</span>
-              <span class="text-xl font-bold text-green-600">
+              <span class="text-gray-400">Potential Score:</span>
+              <span class="text-xl font-bold text-green-400">
                 {{ decisionModalData.potentialScore }} pts
               </span>
             </div>
           </div>
 
           <!-- Decision explanation -->
-          <p class="mb-6 text-center text-sm text-gray-600">
+          <p class="mb-6 text-center text-sm text-gray-400">
             Choose "Koi-Koi" to continue and increase multiplier, but opponent may catch up.
             <br />
             Choose "End Round" to get your current score immediately.
@@ -170,13 +170,13 @@ function handleEndRound() {
           <!-- T076 [US3]: Decision buttons -->
           <div class="grid grid-cols-2 gap-4">
             <button
-              class="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+              class="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
               @click="handleKoiKoi"
             >
               Koi-Koi
             </button>
             <button
-              class="rounded-lg bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+              class="rounded-lg bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
               @click="handleEndRound"
             >
               End Round
@@ -184,7 +184,7 @@ function handleEndRound() {
           </div>
 
           <!-- Risk warning -->
-          <p class="mt-4 text-center text-xs text-gray-600">
+          <p class="mt-4 text-center text-xs text-gray-500">
             ⚠️ If you choose Koi-Koi and opponent scores first, you lose all points
           </p>
         </div>

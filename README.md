@@ -10,6 +10,8 @@ A Japanese Hanafuda card game showcasing **Clean Architecture**, **Domain-Driven
 | **Frontend** | Nuxt 4 + Vue 3 + TypeScript, Custom DI Container, SVG Sprite optimization |
 | **Backend** | Nuxt 4 Nitro + Drizzle ORM + PostgreSQL, SSE real-time communication, Pessimistic locking |
 | **Game Logic** | Complete Yaku detection engine (12 hand types), Koi-Koi rule implementation, Special rule handling |
+| **Matchmaking** | Online human vs human, AI opponent matching, Room type management, PlayerEventBus |
+| **Identity** | Player accounts, Guest mode, Soft delete mechanism, Session management |
 | **State Management** | Reconnection mechanism, Operation timer, Page visibility state recovery |
 | **Animation System** | Interruptible animations, AbortController integration, Dynamic coordinate calculation |
 
@@ -56,8 +58,10 @@ This project strictly follows Clean Architecture with four-layer structure on bo
 
 | Context | Responsibility | Layer |
 |---------|---------------|-------|
-| **User Interface BC** | Game UI rendering, animations, user interactions | Frontend |
+| **Game Client BC** | Game UI rendering, animations, user interactions | Frontend |
 | **Core Game BC** | Game rule engine, turn control, scoring | Backend |
+| **Identity BC** | Player accounts, authentication, guest mode | Backend |
+| **Matchmaking BC** | Online matchmaking, room management | Backend |
 | **Opponent BC** | AI opponent decision logic | Backend |
 
 ---
@@ -169,6 +173,31 @@ Uses Drizzle ORM with PostgreSQL for game state management:
 | `games` | Game sessions (players, status, rounds, cumulative scores) |
 | `player_stats` | Player statistics (win rate, yaku counts, koi-koi calls) |
 | `game_logs` | Event logging for debugging and issue tracking |
+
+### 6. Online Matchmaking System
+
+**Design Decision**: Event-driven matchmaking with dedicated PlayerEventBus
+
+```typescript
+// Matchmaking flow
+Player → REST: POST /matchmaking/enter { roomType: 'SINGLE' | 'HUMAN' }
+Server → PlayerEventBus: MatchFound { game_id, opponent_name, is_bot }
+Player → SSE: Connect to /games/{id}/join
+```
+
+**Architecture Highlights**:
+- **MatchmakingPool**: Manages waiting players per room type
+- **PlayerEventBus**: Dedicated SSE channel for pre-game events (separate from GameEventBus)
+- **GameCreationHandler**: Subscribes to MATCH_FOUND, creates game via JoinGameUseCase
+- **Room Types**: SINGLE (vs AI), HUMAN (vs player)
+
+```typescript
+// PlayerEventBus - broadcasts to specific player before game starts
+class PlayerEventBus {
+  publishToPlayer(playerId: string, event: MatchmakingEvent): void
+  subscribePlayer(playerId: string): ReadableStream
+}
+```
 
 ---
 
@@ -296,6 +325,36 @@ export function playHandCard(round: Round, ...): PlayHandCardResult {
 
 **Solution**: Calculate deal animation duration and deduct from operation timeout
 
+### 9. PlayerEventBus vs GameEventBus Separation
+
+**Problem**: Matchmaking events (MatchFound, MatchFailed) need to reach players before game exists
+
+**Solution**: Separate event buses for different lifecycle phases
+
+```typescript
+// PlayerEventBus: Pre-game events (keyed by playerId)
+// - MatchFound, MatchFailed, MatchCancelled
+// - Player subscribes immediately after entering matchmaking
+
+// GameEventBus: In-game events (keyed by gameId)
+// - TurnCompleted, DecisionRequired, RoundScored
+// - Player subscribes after game creation
+```
+
+### 10. Matchmaking Race Condition Prevention
+
+**Problem**: When match is found, game_id must be included in MatchFound event, but game doesn't exist yet
+
+**Solution**: GameCreationHandler creates game first, then publishes MatchFound with valid game_id
+
+```typescript
+// GameCreationHandler flow
+1. Receive MATCH_FOUND from MatchmakingPool
+2. Create game via JoinGameUseCase (Player1)
+3. Join game via JoinGameUseCase (Player2 or AI)
+4. Publish MatchFound to PlayerEventBus with game_id
+```
+
 ---
 
 ## Project Structure
@@ -305,24 +364,44 @@ front-end/
 ├── app/                          # Nuxt 4 Frontend Application
 │   ├── assets/icons/            # Hanafuda card SVGs (50 files, sprite optimized)
 │   ├── pages/                    # Route Pages
-│   ├── user-interface/           # User Interface BC
+│   ├── game-client/             # Game Client BC (Frontend)
 │   │   ├── domain/              # Frontend game logic (pure functions)
 │   │   ├── application/         # Use Cases & Event Handlers
 │   │   └── adapter/             # Pinia, SSE, Animation, DI
 │   └── plugins/                  # DI Container initialization
 │
 ├── server/                       # Nuxt 4 Nitro Backend
-│   ├── domain/                  # Core Game BC Domain
-│   │   ├── game/               # Game Aggregate Root
-│   │   ├── round/              # Round Entity
-│   │   └── services/           # Yaku detection, scoring, matching
-│   ├── application/            # Use Cases & Ports
-│   ├── adapters/               # DB, Event Publisher, Lock
-│   └── database/               # Drizzle schema & migrations
+│   ├── core-game/               # Core Game BC
+│   │   ├── domain/             # Game Aggregate Root, Round Entity
+│   │   ├── application/        # Use Cases & Ports
+│   │   └── adapters/           # DB, Event Publisher, Lock, Opponent
+│   ├── identity/                # Identity BC
+│   │   ├── domain/             # Player Entity, OAuth Link
+│   │   ├── application/        # Auth Use Cases
+│   │   └── adapters/           # Session, Logging
+│   ├── matchmaking/             # Matchmaking BC
+│   │   ├── domain/             # MatchmakingPool
+│   │   ├── application/        # Enter/Cancel Matchmaking Use Cases
+│   │   └── adapters/           # Registry, PlayerEventBus
+│   └── database/                # Drizzle schema & migrations
 │
 └── shared/                       # Shared contracts between frontend and backend
     └── contracts/               # SSE event types, API formats
 ```
+
+---
+
+## Current Version
+
+**v1.1.0** (2025-01-12)
+
+### Recent Changes
+- 線上配對功能（人類對戰與 AI 對戰）
+- 玩家帳號系統（註冊、登入、訪客模式）
+- 重新設計牌背為菊花紋章
+- 套用金箔蒔絵設計系統
+
+[View Full Changelog](./CHANGELOG.md)
 
 ---
 
@@ -374,13 +453,13 @@ pnpm type-check
 
 ### Near-term Tasks
 
-- [ ] Player user information feature (account system)
-- [ ] Online matchmaking feature (match with other players)
+- [x] Player user information feature (account system) ✅ v1.1.0
+- [x] Online matchmaking feature (match with other players) ✅ v1.1.0
+- [x] Homepage beautification and dynamic effects ✅ v1.1.0
 - [ ] Custom rule settings
 - [ ] Graceful server shutdown handling
 - [ ] Remove CardPlay.captured_cards redundant field
 - [ ] Refactor UI Ports interface design
-- [ ] Homepage beautification and dynamic effects
 - [ ] Remove event/command IDs (business rules can already prevent duplicate calls)
 
 ### Mid-term Plans
