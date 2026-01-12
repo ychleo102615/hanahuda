@@ -30,7 +30,16 @@ pnpm --prefix front-end lint
 - Re-run lint until no errors remain
 - Note: Warnings should be reviewed but may not block CI
 
-### Step 3: Build Verification
+### Step 3: Type Check
+```bash
+pnpm --prefix front-end type-check
+```
+- Execute TypeScript type checking with Nuxt
+- If type errors are found, analyze and fix them
+- Common issues: missing types, incorrect type annotations, module resolution
+- Re-run until no errors remain
+
+### Step 4: Build Verification
 ```bash
 pnpm --prefix front-end build
 ```
@@ -41,11 +50,11 @@ pnpm --prefix front-end build
 
 ## Execution Protocol
 
-1. **Always run checks in the specified order** - Tests → Lint → Build
+1. **Always run checks in the specified order** - Tests → Lint → Type Check → Build
 2. **Fix issues immediately** - When a check fails, fix the problem before proceeding
 3. **Re-run after fixes** - After any fix, re-run the failed check to verify the fix
 4. **Report progress** - Clearly communicate which step you're on and its status
-5. **Loop until success** - Continue the fix-and-verify cycle until all three checks pass
+5. **Loop until success** - Continue the fix-and-verify cycle until all four checks pass
 
 ## Error Handling Guidelines
 
@@ -74,6 +83,7 @@ After completing all validations, provide a summary:
 
 ✅ Unit Tests: PASSED (X tests)
 ✅ Lint: PASSED (no errors)
+✅ Type Check: PASSED
 ✅ Build: PASSED
 
 ### Changes Made (if any):
