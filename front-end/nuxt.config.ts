@@ -25,6 +25,11 @@ export default defineNuxtConfig({
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
       ],
+      script: [
+        // Telegram WebApp SDK（用於 Telegram Mini App 整合）
+        // 注意：不使用 defer，確保 SDK 在 Plugin 執行前載入
+        { src: 'https://telegram.org/js/telegram-web-app.js' },
+      ],
     },
   },
 

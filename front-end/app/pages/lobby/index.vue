@@ -502,6 +502,9 @@ const handleBackToGame = async () => {
       @continue-queue="handleContinueQueue"
       @cancel-and-switch="handleCancelAndSwitch"
     />
+
+    <!-- Telegram Debug Panel（除錯用） -->
+    <TelegramDebugPanel />
   </div>
 </template>
 

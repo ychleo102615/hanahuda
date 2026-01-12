@@ -21,8 +21,10 @@ import { RegisterAccountUseCase } from '../../application/use-cases/register-acc
 import { LoginUseCase } from '../../application/use-cases/login-use-case'
 import { LogoutUseCase } from '../../application/use-cases/logout-use-case'
 import { OAuthLoginUseCase } from '../../application/use-cases/oauth-login-use-case'
+import { ExternalAuthLoginUseCase } from '../../application/use-cases/external-auth-login-use-case'
 import { LinkAccountUseCase } from '../../application/use-cases/link-account-use-case'
 import { DeleteAccountUseCase } from '../../application/use-cases/delete-account-use-case'
+import { TelegramInitDataValidator } from '../telegram/telegram-init-data-validator'
 import type { PlayerRepositoryPort } from '../../application/ports/output/player-repository-port'
 import type { AccountRepositoryPort } from '../../application/ports/output/account-repository-port'
 import type { OAuthLinkRepositoryPort } from '../../application/ports/output/oauth-link-repository-port'
@@ -50,9 +52,13 @@ export interface IdentityContainer {
   registerAccountUseCase: RegisterAccountUseCase
   loginUseCase: LoginUseCase
   logoutUseCase: LogoutUseCase
+  externalAuthLoginUseCase: ExternalAuthLoginUseCase
   oauthLoginUseCase: OAuthLoginUseCase
   linkAccountUseCase: LinkAccountUseCase
   deleteAccountUseCase: DeleteAccountUseCase
+
+  // Telegram Adapters
+  telegramValidator: TelegramInitDataValidator | null
 }
 
 // =============================================================================
@@ -84,9 +90,26 @@ export function getIdentityContainer(): IdentityContainer {
   const registerAccountUseCase = new RegisterAccountUseCase(playerRepository, accountRepository, sessionStore, passwordHasher)
   const loginUseCase = new LoginUseCase(playerRepository, accountRepository, sessionStore, passwordHasher)
   const logoutUseCase = new LogoutUseCase(sessionStore)
-  const oauthLoginUseCase = new OAuthLoginUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore)
+
+  // ExternalAuthLoginUseCase：核心第三方認證登入邏輯
+  const externalAuthLoginUseCase = new ExternalAuthLoginUseCase(
+    playerRepository,
+    accountRepository,
+    oauthLinkRepository,
+    sessionStore
+  )
+
+  // OAuthLoginUseCase 現在委派給 ExternalAuthLoginUseCase
+  const oauthLoginUseCase = new OAuthLoginUseCase(externalAuthLoginUseCase)
+
   const linkAccountUseCase = new LinkAccountUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore, passwordHasher)
   const deleteAccountUseCase = new DeleteAccountUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore, passwordHasher, playerStatsRepository)
+
+  // Telegram Validator（僅在有設定 TELEGRAM_BOT_TOKEN 時建立）
+  let telegramValidator: TelegramInitDataValidator | null = null
+  if (process.env.TELEGRAM_BOT_TOKEN) {
+    telegramValidator = new TelegramInitDataValidator(process.env.TELEGRAM_BOT_TOKEN)
+  }
 
   container = {
     playerRepository,
@@ -99,9 +122,11 @@ export function getIdentityContainer(): IdentityContainer {
     registerAccountUseCase,
     loginUseCase,
     logoutUseCase,
+    externalAuthLoginUseCase,
     oauthLoginUseCase,
     linkAccountUseCase,
     deleteAccountUseCase,
+    telegramValidator,
   }
 
   return container
