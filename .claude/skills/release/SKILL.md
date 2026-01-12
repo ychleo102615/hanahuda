@@ -65,15 +65,43 @@ fix/perf/refactor:        → PATCH (X.Y.Z+1)
 - docs/test/chore 類型不列入 CHANGELOG（除非是重要變更）
 - 變更描述使用繁體中文
 
-### Step 4: 全面檢視 README
+### Step 4: 全面檢視 README（必須詢問用戶）
 
-1. 更新版本區塊（Quick Start 上方）
-2. 檢視整體內容是否需要更新：
-   - 新功能是否需要在 highlights 中提及
-   - Tech Stack 是否有變更
-   - 架構說明是否需要調整
-   - Future Plans 是否有完成的項目
-3. 如有建議更新，列出並詢問是否套用
+**4.1 必要更新（自動執行）**：
+- 更新版本區塊（Quick Start 上方）
+- 更新 Bounded Contexts 表格（如有新增/重命名 BC）
+- 更新 Future Plans（勾選已完成項目）
+
+**4.2 建議更新（必須詢問用戶）**：
+
+逐一檢視以下區塊，根據本次變更內容判斷是否需要更新：
+
+| 區塊 | 檢視重點 |
+|------|----------|
+| **Project Highlights** | 新功能是否值得列為亮點？ |
+| **Tech Stack** | 是否有新增技術或框架？ |
+| **Core Feature Implementations** | 是否需要新增章節說明重要功能？ |
+| **Key Technical Decisions** | 是否有重要的架構決策需要記錄？ |
+| **Project Structure** | 目錄結構是否有重大變更？ |
+
+**4.3 詢問用戶**：
+
+使用 AskUserQuestion 工具，列出所有建議的更新項目：
+
+```
+根據本次變更，我建議以下 README 更新：
+
+1. [Project Highlights] 新增「Matchmaking」和「Identity」亮點
+2. [Core Features] 新增「Online Matchmaking System」章節
+3. [Key Decisions] 新增「PlayerEventBus 設計」說明
+
+請選擇要套用的更新：
+- 全部套用
+- 選擇性套用（請指定編號）
+- 跳過，只更新必要區塊
+```
+
+**重要**：必須等待用戶回覆後，才能進入 Step 5。
 
 ### Step 5: 更新檔案
 
