@@ -20,6 +20,7 @@ import { ref } from 'vue'
 import PlayerBadge from '~/components/PlayerBadge.vue'
 import ResponsiveMenu from '~/components/menu/ResponsiveMenu.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
+import { Z_INDEX } from '~/constants'
 import type { MenuItem } from '~/components/menu/types'
 
 // Re-export MenuItem type for parent components
@@ -67,7 +68,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="h-full topbar-glass text-white relative">
+  <div class="h-full topbar-glass text-white relative" :style="{ zIndex: Z_INDEX.DROPDOWN }">
     <!-- Header Bar -->
     <div class="h-full px-4 py-2 flex items-center justify-between">
       <!-- Left: Title -->

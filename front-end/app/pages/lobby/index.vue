@@ -411,7 +411,7 @@ const handleBackToGame = async () => {
     </header>
 
     <!-- 主要內容區 -->
-    <main class="flex-1 flex items-center justify-center p-4">
+    <main class="flex-1 flex items-center justify-center p-4 relative z-0">
       <div class="max-w-4xl w-full">
         <!-- 卡片清單容器 - 金箔蒔絵風格 -->
         <div class="lobby-card rounded-xl p-6 md:p-8">

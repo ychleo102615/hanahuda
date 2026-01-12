@@ -478,6 +478,8 @@
 
   /* TopInfoBar 毛玻璃效果 - 與 NavigationBar sticky 狀態一致 */
   .topbar-glass {
+    position: relative;
+    /* z-index 由組件 inline style 設定，使用 Z_INDEX 常數 */
     background: rgba(17, 24, 39, 0.88); /* gray-900/88 */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -492,6 +494,7 @@
   /* 大廳卡片 - 金邊裝飾 */
   .lobby-card {
     position: relative;
+    z-index: 0; /* 確保不會蓋過選單 overlay */
     border: 1px solid rgba(139, 105, 20, 0.4);
     box-shadow:
       0 4px 16px rgba(0, 0, 0, 0.4),
