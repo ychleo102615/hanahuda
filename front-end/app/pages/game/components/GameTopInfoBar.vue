@@ -23,6 +23,7 @@ import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
 import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
+import { Z_INDEX } from '~/constants'
 import ResponsiveMenu from '~/components/menu/ResponsiveMenu.vue'
 import type { MenuItem } from '~/components/menu/types'
 
@@ -155,7 +156,7 @@ const closeMenu = () => {
 </script>
 
 <template>
-  <div class="h-full bg-gray-800 text-white relative">
+  <div class="h-full topbar-glass text-white relative" :style="{ zIndex: Z_INDEX.DROPDOWN }">
     <!-- Header Bar -->
     <div class="h-full px-4 py-2 flex items-center justify-between">
       <!-- Left Section: 對手資訊 -->

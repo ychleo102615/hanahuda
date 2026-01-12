@@ -147,7 +147,7 @@ watch(
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-account-title"
-          class="relative z-10 w-full max-w-md rounded-lg bg-gray-800 p-6 shadow-2xl"
+          class="relative z-10 w-full max-w-md rounded-lg modal-panel p-6"
         >
           <!-- 標題 -->
           <div class="flex items-center justify-between mb-4">

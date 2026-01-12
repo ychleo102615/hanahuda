@@ -29,7 +29,7 @@ const layerStyles = computed(() => {
   const layers = []
   for (let i = 0; i < visualLayers.value; i++) {
     layers.push({
-      transform: `translate(0px, ${i * -2}px)`,
+      transform: `translate(0px, ${i * -4}px)`,
       zIndex: i,
     })
   }
@@ -57,7 +57,7 @@ const layerStyles = computed(() => {
         :data-card-id="'deck' + index"
         :style="style"
         :data-testid="'deck-layer'"
-        class="absolute items-center justify-center rounded-md hidden sm:inline-flex"
+        class="absolute items-center justify-center rounded-md hidden sm:inline-flex deck-card-layer"
       >
         <SvgIcon
           :name="CARD_BACK_ICON_NAME"
@@ -73,4 +73,11 @@ const layerStyles = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 牌堆堆疊陰影效果 */
+.deck-card-layer {
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.8);
+}
+</style>
 

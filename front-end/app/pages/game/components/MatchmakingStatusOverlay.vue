@@ -110,7 +110,7 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <Transition name="fade">
+  <Transition name="overlay-leave-only">
     <div
       v-if="isVisible"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
@@ -191,13 +191,12 @@ const handleCancel = () => {
 </template>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
+/* 只有 leave 動畫，無 enter 動畫 */
+.overlay-leave-only-leave-active {
   transition: opacity 0.3s ease;
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.overlay-leave-only-leave-to {
   opacity: 0;
 }
 

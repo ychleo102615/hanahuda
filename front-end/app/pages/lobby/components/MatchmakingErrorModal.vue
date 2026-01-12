@@ -23,10 +23,10 @@
       @click.self="handleDismiss"
     >
       <div
-        class="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all"
+        class="modal-panel rounded-lg max-w-md w-full mx-4 overflow-hidden transform transition-all"
       >
         <!-- Header -->
-        <div class="px-6 py-5 text-white bg-gradient-to-r from-red-500 to-red-600">
+        <div class="px-6 py-5 text-white modal-header bg-gradient-to-r from-red-600/80 to-red-700/80">
           <div class="flex items-center justify-center gap-2">
             <svg
               class="h-6 w-6"
@@ -48,19 +48,19 @@
 
         <!-- Body -->
         <div class="px-6 py-6">
-          <p class="text-center text-gray-700">
+          <p class="text-center text-gray-300">
             {{ errorMessage || 'An error occurred. Please try again.' }}
           </p>
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-4 bg-gray-50">
+        <div class="px-6 py-4 modal-footer">
           <!-- Queue Conflict: 兩個選項 -->
           <div v-if="actionType === 'queue-conflict'" class="flex flex-col gap-3">
             <button
               type="button"
               data-testid="continue-queue-button"
-              class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
               @click="$emit('continueQueue')"
             >
               Continue Current Queue
@@ -68,7 +68,7 @@
             <button
               type="button"
               data-testid="cancel-and-switch-button"
-              class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              class="w-full px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
               @click="$emit('cancelAndSwitch')"
             >
               Cancel and Switch Room
@@ -79,7 +79,7 @@
           <div v-else-if="actionType === 'back-to-game'" class="flex gap-3 justify-end">
             <button
               type="button"
-              class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              class="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
               @click="handleDismiss"
             >
               Close
@@ -87,7 +87,7 @@
             <button
               type="button"
               data-testid="back-to-game-button"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
               @click="$emit('backToGame')"
             >
               Back to Game
@@ -99,7 +99,7 @@
             <button
               type="button"
               data-testid="back-to-home-button"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
               @click="$emit('backToHome')"
             >
               Back to Home
@@ -110,7 +110,7 @@
           <div v-else class="flex gap-3 justify-end">
             <button
               type="button"
-              class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              class="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
               @click="handleDismiss"
             >
               Close
@@ -118,7 +118,7 @@
             <button
               type="button"
               data-testid="retry-button"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
               @click="$emit('retry')"
             >
               Retry
@@ -219,11 +219,11 @@ function handleDismiss(): void {
   opacity: 0;
 }
 
-.modal-fade-enter-active .bg-white {
+.modal-fade-enter-active .modal-panel {
   animation: modal-scale-up 0.3s ease;
 }
 
-.modal-fade-leave-active .bg-white {
+.modal-fade-leave-active .modal-panel {
   animation: modal-scale-down 0.2s ease;
 }
 

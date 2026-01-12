@@ -128,12 +128,12 @@ watch(
           role="dialog"
           aria-modal="true"
           :aria-labelledby="title"
-          class="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-2xl"
+          class="relative z-10 w-full max-w-md rounded-lg modal-panel p-6"
         >
           <!-- 標題 -->
           <h2
             data-testid="dialog-title"
-            class="mb-4 text-xl font-bold text-gray-900"
+            class="mb-4 text-xl font-bold text-white"
           >
             {{ title }}
           </h2>
@@ -141,7 +141,7 @@ watch(
           <!-- 訊息 -->
           <p
             data-testid="dialog-message"
-            class="mb-6 text-base text-gray-700"
+            class="mb-6 text-base text-gray-300"
           >
             {{ message }}
           </p>
@@ -151,7 +151,7 @@ watch(
             <button
               data-testid="cancel-button"
               type="button"
-              class="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-300 transition-colors"
+              class="rounded-lg bg-gray-700 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-600 transition-colors"
               @click="handleCancel"
             >
               {{ cancelText }}
@@ -159,7 +159,7 @@ watch(
             <button
               data-testid="confirm-button"
               type="button"
-              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors"
               @click="handleConfirm"
             >
               {{ confirmText }}
