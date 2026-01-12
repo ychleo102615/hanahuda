@@ -56,8 +56,10 @@ This project strictly follows Clean Architecture with four-layer structure on bo
 
 | Context | Responsibility | Layer |
 |---------|---------------|-------|
-| **User Interface BC** | Game UI rendering, animations, user interactions | Frontend |
+| **Game Client BC** | Game UI rendering, animations, user interactions | Frontend |
 | **Core Game BC** | Game rule engine, turn control, scoring | Backend |
+| **Identity BC** | Player accounts, authentication, guest mode | Backend |
+| **Matchmaking BC** | Online matchmaking, room management | Backend |
 | **Opponent BC** | AI opponent decision logic | Backend |
 
 ---
@@ -328,9 +330,13 @@ front-end/
 
 ## Current Version
 
-**v1.0.0** (2024-12-01)
+**v1.1.0** (2025-01-12)
 
-This is the initial release of Hanafuda Koi-Koi Web Game.
+### Recent Changes
+- 線上配對功能（人類對戰與 AI 對戰）
+- 玩家帳號系統（註冊、登入、訪客模式）
+- 重新設計牌背為菊花紋章
+- 套用金箔蒔絵設計系統
 
 [View Full Changelog](./CHANGELOG.md)
 
@@ -384,13 +390,13 @@ pnpm type-check
 
 ### Near-term Tasks
 
-- [ ] Player user information feature (account system)
-- [ ] Online matchmaking feature (match with other players)
+- [x] Player user information feature (account system) ✅ v1.1.0
+- [x] Online matchmaking feature (match with other players) ✅ v1.1.0
+- [x] Homepage beautification and dynamic effects ✅ v1.1.0
 - [ ] Custom rule settings
 - [ ] Graceful server shutdown handling
 - [ ] Remove CardPlay.captured_cards redundant field
 - [ ] Refactor UI Ports interface design
-- [ ] Homepage beautification and dynamic effects
 - [ ] Remove event/command IDs (business rules can already prevent duplicate calls)
 
 ### Mid-term Plans
