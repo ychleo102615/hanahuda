@@ -126,12 +126,6 @@ export class GameCreationHandler {
       is_bot: false,
     })
     playerEventBus.publishToPlayer(payload.player2Id, event2)
-
-    console.info(
-      '[GameCreationHandler] Human match game created:',
-      gameId,
-      `(${payload.player1Name} vs ${payload.player2Name})`
-    )
   }
 
   /**
@@ -154,7 +148,6 @@ export class GameCreationHandler {
     gameTimeoutManager.clearMatchmakingTimeout(gameId)
     // 從 GameStore 移除遊戲
     inMemoryGameStore.delete(gameId)
-    console.info('[GameCreationHandler] Cleaned up failed game:', gameId)
   }
 
   /**
@@ -187,12 +180,6 @@ export class GameCreationHandler {
       is_bot: true,
     })
     playerEventBus.publishToPlayer(payload.player1Id, matchFoundEvent)
-
-    console.info(
-      '[GameCreationHandler] Bot match game created:',
-      result.gameId,
-      `(${payload.player1Name} vs Bot)`
-    )
   }
 }
 
