@@ -31,7 +31,64 @@
 
 ---
 
-## 2. Daily Score Snapshot Architecture
+## 2. Shared Infrastructure Extension (Prerequisite)
+
+### Decision
+擴充 `front-end/server/shared/infrastructure/event-bus/types.ts`，新增 `GAME_FINISHED` 事件類型。
+
+### Rationale
+- **現況**：InternalEventBus 目前僅支援 `MATCH_FOUND` 和 `ROOM_CREATED` 事件
+- **需求**：Leaderboard BC 需訂閱遊戲結束事件來更新統計
+- **位置**：事件定義在 Shared Infrastructure 層，不屬於任何 BC
+
+### New Event Type
+```typescript
+// front-end/server/shared/infrastructure/event-bus/types.ts
+
+/**
+ * Game Finished Payload
+ *
+ * @description
+ * 遊戲結束時發布的事件 Payload。
+ * 由 Core Game BC 發布，Leaderboard BC 訂閱。
+ */
+export interface GameFinishedPayload {
+  /** 遊戲 ID */
+  readonly gameId: string
+  /** 獲勝者 ID (null 表示平局) */
+  readonly winnerId: string | null
+  /** 最終分數列表 */
+  readonly finalScores: ReadonlyArray<{
+    playerId: string
+    score: number
+    achievedYaku: string[]
+    koiKoiCalls: number
+    isMultiplierWin: boolean
+  }>
+  /** 玩家資訊列表 */
+  readonly players: ReadonlyArray<{
+    id: string
+    isAi: boolean
+  }>
+  /** 遊戲結束時間 */
+  readonly finishedAt: Date
+}
+
+export const EVENT_TYPES = {
+  MATCH_FOUND: 'MATCH_FOUND',
+  ROOM_CREATED: 'ROOM_CREATED',
+  GAME_FINISHED: 'GAME_FINISHED',  // 新增
+} as const
+```
+
+### Core-Game BC Changes Required
+Core-Game BC 需要在遊戲結束時發布此事件：
+- 修改遊戲結束流程，加入 `internalEventBus.publish('GAME_FINISHED', payload)`
+- 確保 payload 包含所有必要資訊供 Leaderboard BC 使用
+
+---
+
+## 3. Daily Score Snapshot Architecture
 
 ### Decision
 新增 `daily_player_scores` 表格，由 Core-Game BC 的 `GameFinishedEvent` 事件驅動更新，採用 **Event Subscription** 模式。
@@ -63,7 +120,7 @@ Leaderboard BC - UpdatePlayerRecordsUseCase
 
 ---
 
-## 3. BC Integration Pattern
+## 4. BC Integration Pattern
 
 ### Decision
 Leaderboard BC 透過 **InternalEventBus** 訂閱 Core-Game 的 `GameFinishedEvent`，採用鬆耦合的事件訂閱模式。
@@ -95,7 +152,7 @@ interface GameFinishedInternalEvent {
 
 ---
 
-## 4. Weekly Leaderboard Calculation
+## 5. Weekly Leaderboard Calculation
 
 ### Decision
 週排行榜透過 SQL 聚合 `daily_player_scores` 表的當週資料（星期一至今）計算。
@@ -118,7 +175,7 @@ LIMIT 10;
 
 ---
 
-## 5. Data Cleanup Strategy
+## 6. Data Cleanup Strategy
 
 ### Decision
 使用 Nuxt Server Plugin 定時清理超過 30 天的 `daily_player_scores` 資料。
@@ -144,7 +201,7 @@ export default defineNitroPlugin((nitro) => {
 
 ---
 
-## 6. Frontend Navigation Restructure
+## 7. Frontend Navigation Restructure
 
 ### Decision
 移除 NavigationBar 中的 Rules/About 錨點連結，新增獨立的 NavigationSection 組件提供頁內導航。
@@ -171,7 +228,7 @@ index.vue
 
 ---
 
-## 7. API Design Pattern
+## 8. API Design Pattern
 
 ### Decision
 採用與現有 `/api/v1/` 一致的 RESTful 風格，新增 `/api/v1/leaderboard` 和 `/api/v1/stats` 端點。
@@ -191,7 +248,7 @@ index.vue
 
 ---
 
-## 8. Personal Statistics Data Source
+## 9. Personal Statistics Data Source
 
 ### Decision
 個人統計分為兩個來源：
@@ -214,7 +271,7 @@ const rangeStats = await dailyPlayerScoreRepository.aggregateByRange(playerId, r
 
 ---
 
-## 9. UI Component Design
+## 10. UI Component Design
 
 ### Decision
 RecordSection 採用 Tab 切換設計，左側為排行榜（日/週切換），右側為個人統計。

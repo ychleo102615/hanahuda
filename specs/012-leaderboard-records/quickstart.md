@@ -80,17 +80,42 @@ pnpm --prefix front-end db:studio
 
 ## Implementation Order
 
+### Phase 0: Shared Infrastructure Extension (Prerequisite)
+
+**重要**：此功能依賴 `GAME_FINISHED` 事件，但目前 InternalEventBus 不支援此事件類型。
+
+1. **擴充事件類型定義**
+   - 修改 `front-end/server/shared/infrastructure/event-bus/types.ts`
+   - 新增 `GameFinishedPayload` 介面
+   - 更新 `EVENT_TYPES` 常數
+
+2. **擴充 InternalEventBus**
+   - 修改 `front-end/server/shared/infrastructure/event-bus/internalEventBus.ts`
+   - 支援 `GAME_FINISHED` 事件的發布與訂閱
+
+3. **修改 Core-Game BC**
+   - 在遊戲結束時發布 `GAME_FINISHED` 事件
+   - 確保 payload 包含 `achievedYaku`, `koiKoiCalls`, `isMultiplierWin` 等資訊
+
+詳見 [research.md](./research.md#2-shared-infrastructure-extension-prerequisite)。
+
+---
+
 ### Phase A: Backend Domain Layer (TDD)
 
-1. **Value Objects**
+1. **Domain Types**
+   - `types.ts` - 定義 `YakuCounts` Value Object（不依賴 DB Schema）
+
+2. **Value Objects**
    - `leaderboard-type.ts` - 排行榜類型常數
    - `time-range.ts` - 時間範圍計算邏輯
 
-2. **Entities**
+3. **Entities**
    - `daily-player-score.ts` - 每日分數實體與更新邏輯
+   - `player-stats.ts` - 玩家累計統計實體
    - `leaderboard-entry.ts` - 排行榜條目與排名計算
 
-3. **Domain Services**（若需要）
+4. **Domain Services**（若需要）
 
 **測試優先**：
 ```bash
@@ -259,9 +284,17 @@ export default defineNitroPlugin(() => {
 
 ## Verification Checklist
 
+### Prerequisite (Phase 0)
+
+- [ ] `GameFinishedPayload` 已定義在 `shared/infrastructure/event-bus/types.ts`
+- [ ] `EVENT_TYPES` 已包含 `GAME_FINISHED`
+- [ ] InternalEventBus 支援 `GAME_FINISHED` 事件的發布與訂閱
+- [ ] Core-Game BC 在遊戲結束時發布 `GAME_FINISHED` 事件
+
 ### Backend
 
 - [ ] `daily_player_scores` 表已建立
+- [ ] `YakuCounts` 定義在 Domain 層 (`domain/types.ts`)，不依賴 DB Schema
 - [ ] `player_stats` Repository 已遷移至 Leaderboard BC
 - [ ] Core-Game BC 中的舊 player_stats 相關檔案已移除
 - [ ] Domain 層單元測試覆蓋率 > 80%

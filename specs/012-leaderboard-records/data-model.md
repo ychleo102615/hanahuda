@@ -357,12 +357,31 @@ export function getTimeRangeStartDate(range: TimeRange): Date | null {
 }
 ```
 
+### YakuCounts (Value Object)
+
+```typescript
+// front-end/server/leaderboard/domain/types.ts
+
+/**
+ * 役種計數映射
+ *
+ * @description
+ * Domain 層定義的 Value Object，記錄各役種達成次數。
+ * key: yaku_type (如 'tane', 'tanzaku', 'kasu' 等)
+ * value: 達成次數
+ *
+ * Note: 此類型定義在 Domain 層，Adapter 層的 DB Schema 應依賴此定義，
+ *       而非 Domain 層依賴 DB Schema，以符合 Clean Architecture 依賴方向。
+ */
+export type YakuCounts = Record<string, number>
+```
+
 ### PlayerStats (Entity)
 
 ```typescript
 // front-end/server/leaderboard/domain/player-stats/player-stats.ts
 
-import type { YakuCounts } from '~/server/database/schema/playerStats'
+import type { YakuCounts } from '../types'
 
 /**
  * 玩家累計統計實體
@@ -442,7 +461,8 @@ export function updatePlayerStats(
 ```typescript
 // front-end/server/leaderboard/domain/statistics/player-statistics.ts
 
-import type { YakuCounts } from '~/server/database/schema/playerStats'
+import type { YakuCounts } from '../types'
+import type { TimeRange } from './time-range'
 
 /**
  * 玩家統計資料

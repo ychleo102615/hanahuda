@@ -57,9 +57,15 @@ specs/012-leaderboard-records/
 ### Source Code (repository root)
 
 ```text
+# Backend - Shared Infrastructure Extension (Prerequisite)
+front-end/server/shared/infrastructure/event-bus/
+├── types.ts                           # [MODIFY] 新增 GameFinishedPayload
+└── internalEventBus.ts                # [MODIFY] 支援 GAME_FINISHED 事件
+
 # Backend - New Bounded Context
 front-end/server/leaderboard/
 ├── domain/
+│   ├── types.ts                       # YakuCounts Value Object (Domain 層定義)
 │   ├── daily-score/
 │   │   └── daily-player-score.ts      # Entity
 │   ├── player-stats/
@@ -157,14 +163,16 @@ front-end/app/leaderboard/
 
 ### Key Decisions
 
-1. **Player Stats Ownership**: 將 `player_stats` 表的擁有權從 Core-Game BC 轉移至 Leaderboard BC，統一管理所有玩家統計資料
-2. **Unified Record Update**: 建立 `UpdatePlayerRecordsUseCase` 同時更新 `player_stats`（累計）和 `daily_player_scores`（每日快照）
-3. **Daily Score Snapshot**: 使用 `daily_player_scores` 表儲存每日分數，支援日/週排行榜查詢
-4. **BC Integration**: 透過 InternalEventBus 訂閱 Core-Game 的 GameFinishedEvent，維持鬆耦合
-5. **Weekly Calculation**: SQL 聚合當週 daily_player_scores 資料
-6. **Data Cleanup**: Server Plugin 定時清理 30 天以上資料
-7. **Frontend Structure**: NavigationSection + RecordSection 雙區塊設計
-8. **Core-Game Cleanup**: 移除 Core-Game BC 中的 `RecordGameStatsUseCase` 及相關 Port/Adapter
+1. **Shared Infrastructure Extension** (Prerequisite): 擴充 InternalEventBus 支援 `GAME_FINISHED` 事件（目前僅有 MATCH_FOUND、ROOM_CREATED）
+2. **Domain Layer Types**: `YakuCounts` 定義在 Domain 層 (`domain/types.ts`)，避免 Domain 依賴 Infrastructure（DB Schema）
+3. **Player Stats Ownership**: 將 `player_stats` 表的擁有權從 Core-Game BC 轉移至 Leaderboard BC，統一管理所有玩家統計資料
+4. **Unified Record Update**: 建立 `UpdatePlayerRecordsUseCase` 同時更新 `player_stats`（累計）和 `daily_player_scores`（每日快照）
+5. **Daily Score Snapshot**: 使用 `daily_player_scores` 表儲存每日分數，支援日/週排行榜查詢
+6. **BC Integration**: 透過 InternalEventBus 訂閱 Core-Game 的 GameFinishedEvent，維持鬆耦合
+7. **Weekly Calculation**: SQL 聚合當週 daily_player_scores 資料
+8. **Data Cleanup**: Server Plugin 定時清理 30 天以上資料
+9. **Frontend Structure**: NavigationSection + RecordSection 雙區塊設計
+10. **Core-Game Cleanup**: 移除 Core-Game BC 中的 `RecordGameStatsUseCase` 及相關 Port/Adapter
 
 ---
 
