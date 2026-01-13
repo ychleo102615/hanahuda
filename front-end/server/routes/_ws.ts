@@ -5,8 +5,9 @@
  * 統一的 WebSocket 連線入口，整合配對和遊戲事件。
  * 取代原本的 SSE 端點 /api/v1/events。
  *
- * 認證方式：
- * - 透過 session_id Cookie 驗證身份（在 WebSocket 升級階段讀取）
+ * 認證方式（支援兩種模式）：
+ * 1. Cookie 認證（單體架構）：透過 session_id Cookie 驗證身份
+ * 2. Token 認證（多實例架構）：透過 URL 參數 handoff_token 驗證身份
  *
  * 初始事件：
  * - 連線建立時自動查詢玩家狀態
@@ -24,6 +25,8 @@ import type { Peer, Message } from 'crossws'
 import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 import { wsConnectionManager } from '~~/server/gateway/wsConnectionManager'
 import { wsCommandHandler } from '~~/server/gateway/wsCommandHandler'
+import { wsRateLimiter } from '~~/server/gateway/wsRateLimiter'
+import { handoffTokenService } from '~~/server/gateway/handoffTokenService'
 import { playerStatusService, type PlayerStatusInGame } from '~~/server/gateway/playerStatusService'
 import { createGatewayEvent, createGameEvent } from '~~/server/shared/infrastructure/event-bus'
 import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
@@ -31,7 +34,7 @@ import { eventMapper } from '~~/server/core-game/adapters/mappers/eventMapper'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
 import { logger } from '~~/server/utils/logger'
-import type { WsCommand } from '#shared/contracts'
+import { validateWsCommand, formatZodError, createErrorResponse } from '#shared/contracts'
 
 /**
  * 從 Cookie 字串中解析 session_id
@@ -62,27 +65,44 @@ export default defineWebSocketHandler({
    */
   async open(peer) {
     try {
-      // 1. 從升級請求中取得 Cookie
-      const cookieHeader = peer.request?.headers.get('cookie')
-      const sessionId = parseSessionIdFromCookie(cookieHeader)
+      let playerId: string | null = null
 
-      if (!sessionId) {
-        logger.warn('WebSocket connection rejected: no session_id cookie')
-        peer.close(4001, 'Unauthorized: no session')
-        return
+      // 嘗試從 URL 取得 handoff_token（多實例架構）
+      const url = peer.request?.url
+      const handoffToken = url ? new URL(url, 'http://localhost').searchParams.get('handoff_token') : null
+
+      if (handoffToken) {
+        // Token 認證（多實例模式）
+        const payload = handoffTokenService.verifyToken(handoffToken)
+        if (!payload) {
+          logger.warn('WebSocket connection rejected: invalid handoff token')
+          peer.close(4001, 'Unauthorized: invalid handoff token')
+          return
+        }
+        playerId = payload.playerId
+        logger.info('WebSocket authenticated via handoff token', { playerId, gameId: payload.gameId })
+      } else {
+        // Cookie 認證（單體模式）
+        const cookieHeader = peer.request?.headers.get('cookie')
+        const sessionId = parseSessionIdFromCookie(cookieHeader)
+
+        if (!sessionId) {
+          logger.warn('WebSocket connection rejected: no session_id cookie')
+          peer.close(4001, 'Unauthorized: no session')
+          return
+        }
+
+        const identityPort = getIdentityPortAdapter()
+        playerId = await identityPort.getPlayerIdFromSessionId(sessionId)
+
+        if (!playerId) {
+          logger.warn('WebSocket connection rejected: invalid session_id')
+          peer.close(4001, 'Unauthorized: invalid session')
+          return
+        }
       }
 
-      // 2. 驗證 session_id，取得 playerId
-      const identityPort = getIdentityPortAdapter()
-      const playerId = await identityPort.getPlayerIdFromSessionId(sessionId)
-
-      if (!playerId) {
-        logger.warn('WebSocket connection rejected: invalid session_id')
-        peer.close(4001, 'Unauthorized: invalid session')
-        return
-      }
-
-      // 3. 註冊連線到 WsConnectionManager
+      // 註冊連線到 WsConnectionManager
       wsConnectionManager.registerConnection(playerId, peer)
 
       logger.info('WebSocket connected', { playerId })
@@ -138,12 +158,59 @@ export default defineWebSocketHandler({
     }
 
     try {
-      // 解析命令
-      const text = typeof message === 'string' ? message : message.text()
-      const command: WsCommand = JSON.parse(text)
+      // Rate Limiting 檢查
+      const rateLimitResult = wsRateLimiter.check(playerId)
+      if (!rateLimitResult.allowed) {
+        logger.warn('WebSocket rate limit exceeded', { playerId, retryAfter: rateLimitResult.retryAfter })
+        const errorResponse = createErrorResponse(
+          'rate_limit',
+          'RATE_LIMIT_EXCEEDED',
+          `Too many requests. Retry after ${rateLimitResult.retryAfter}s`
+        )
+        peer.send(JSON.stringify(errorResponse))
+        return
+      }
 
-      // 處理命令
-      await wsCommandHandler.handle(playerId, command, peer)
+      // 解析訊息文字
+      const text = typeof message === 'string' ? message : message.text()
+
+      // 訊息大小限制（4KB）
+      const MAX_MESSAGE_SIZE = 4096
+      if (text.length > MAX_MESSAGE_SIZE) {
+        logger.warn('WebSocket message too large', { playerId, size: text.length })
+        const errorResponse = createErrorResponse(
+          'size_limit',
+          'MESSAGE_TOO_LARGE',
+          `Message exceeds ${MAX_MESSAGE_SIZE} bytes limit`
+        )
+        peer.send(JSON.stringify(errorResponse))
+        return
+      }
+
+      // 解析 JSON
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(text)
+      } catch {
+        logger.warn('WebSocket message invalid JSON', { playerId })
+        const errorResponse = createErrorResponse('parse_error', 'INVALID_JSON', 'Invalid JSON format')
+        peer.send(JSON.stringify(errorResponse))
+        return
+      }
+
+      // Schema 驗證
+      const validationResult = validateWsCommand(parsed)
+      if (!validationResult.success) {
+        const errorMessage = formatZodError(validationResult.error)
+        logger.warn('WebSocket command validation failed', { playerId, error: errorMessage })
+        const commandId = (parsed as { command_id?: string }).command_id ?? 'unknown'
+        const errorResponse = createErrorResponse(commandId, 'VALIDATION_ERROR', errorMessage)
+        peer.send(JSON.stringify(errorResponse))
+        return
+      }
+
+      // 處理已驗證的命令
+      await wsCommandHandler.handle(playerId, validationResult.data, peer)
     } catch (error) {
       logger.error('WebSocket message error', { playerId, error })
     }

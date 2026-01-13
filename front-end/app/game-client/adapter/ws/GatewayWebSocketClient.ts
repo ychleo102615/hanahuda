@@ -33,8 +33,15 @@
  */
 
 import type { GatewayEvent, WsCommand, WsCommandResponse } from '#shared/contracts'
-import { isWsCommandResponse } from '#shared/contracts'
+import { isWsCommandResponse, createPingCommand } from '#shared/contracts'
 import type { GatewayEventRouter } from './GatewayEventRouter'
+
+/**
+ * 產生唯一命令 ID（供 Heartbeat 使用）
+ */
+function generateCommandId(): string {
+  return `cmd-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+}
 
 /**
  * 睡眠輔助函數
@@ -97,6 +104,10 @@ export class GatewayWebSocketClient {
   // 待處理命令 Map
   private pendingCommands = new Map<string, PendingCommand>()
 
+  // Heartbeat 機制
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null
+  private readonly heartbeatIntervalMs = 30000 // 30 秒
+
   // 連線狀態回調
   private onConnectionEstablishedCallback?: () => void
   private onConnectionLostCallback?: () => void
@@ -142,6 +153,7 @@ export class GatewayWebSocketClient {
       // 連線建立成功
       this.ws.onopen = () => {
         this.reconnectAttempts = 0
+        this.startHeartbeat()
         this.onConnectionEstablishedCallback?.()
       }
 
@@ -182,6 +194,9 @@ export class GatewayWebSocketClient {
     // 停止重連機制
     this.shouldReconnect = false
     this.reconnectAttempts = 0
+
+    // 停止 Heartbeat
+    this.stopHeartbeat()
 
     // 拒絕所有待處理命令
     this.rejectAllPendingCommands()
@@ -270,6 +285,83 @@ export class GatewayWebSocketClient {
   }
 
   /**
+   * 切換到遊戲伺服器（多實例架構）
+   *
+   * @description
+   * 當 MatchFound 事件包含 game_server_url 和 handoff_token 時，
+   * 客戶端應調用此方法切換到遊戲伺服器。
+   *
+   * @param serverUrl - 遊戲伺服器 WebSocket URL（例：wss://game-server-1.example.com/_ws）
+   * @param token - Handoff Token
+   * @returns Promise，連線成功時 resolve
+   * @throws {Error} 連線失敗時 reject
+   *
+   * @example
+   * ```typescript
+   * // 收到 MatchFound 事件
+   * if (event.game_server_url && event.handoff_token) {
+   *   await client.handoffToGameServer(event.game_server_url, event.handoff_token)
+   * }
+   * ```
+   */
+  async handoffToGameServer(serverUrl: string, token: string): Promise<void> {
+    // 停止當前連線的重連機制和心跳
+    this.shouldReconnect = false
+    this.stopHeartbeat()
+
+    // 關閉當前連線
+    if (this.ws) {
+      this.ws.close()
+      this.ws = null
+    }
+
+    // 拒絕所有待處理命令
+    this.rejectAllPendingCommands()
+
+    return new Promise((resolve, reject) => {
+      // 建立帶有 handoff_token 的 WebSocket URL
+      const url = new URL(serverUrl)
+      url.searchParams.set('handoff_token', token)
+
+      try {
+        this.ws = new WebSocket(url.toString())
+
+        this.ws.onopen = () => {
+          // 連線成功，啟用重連機制和心跳
+          this.shouldReconnect = true
+          this.reconnectAttempts = 0
+          this.startHeartbeat()
+          this.onConnectionEstablishedCallback?.()
+          resolve()
+        }
+
+        this.ws.onerror = () => {
+          // 連線錯誤（onclose 會接著觸發）
+        }
+
+        this.ws.onclose = () => {
+          // 若 Promise 尚未 resolve，則視為連線失敗
+          if (!this.shouldReconnect) {
+            reject(new Error('Failed to connect to game server'))
+          } else {
+            // 已連線成功後斷線，觸發重連
+            this.rejectAllPendingCommands()
+            this.ws = null
+            this.onConnectionLostCallback?.()
+            void this.reconnect()
+          }
+        }
+
+        this.ws.onmessage = (event: MessageEvent) => {
+          this.handleMessage(event.data)
+        }
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+  /**
    * 處理接收到的訊息
    * @private
    */
@@ -342,5 +434,40 @@ export class GatewayWebSocketClient {
     }
 
     this.connect()
+  }
+
+  /**
+   * 啟動 Heartbeat 機制
+   *
+   * @description
+   * 定期發送 PING 命令，確保連線活躍。
+   * 若 PING 失敗，觸發連線關閉以啟動重連。
+   *
+   * @private
+   */
+  private startHeartbeat(): void {
+    this.stopHeartbeat()
+
+    this.heartbeatInterval = setInterval(() => {
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        const pingCommand = createPingCommand(generateCommandId())
+        this.sendCommand(pingCommand).catch(() => {
+          // Heartbeat 失敗，可能連線已靜默斷開，觸發重連
+          console.warn('[GatewayWebSocketClient] Heartbeat failed, closing connection')
+          this.ws?.close()
+        })
+      }
+    }, this.heartbeatIntervalMs)
+  }
+
+  /**
+   * 停止 Heartbeat 機制
+   * @private
+   */
+  private stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval)
+      this.heartbeatInterval = null
+    }
   }
 }

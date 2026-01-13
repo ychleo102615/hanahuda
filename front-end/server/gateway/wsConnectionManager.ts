@@ -71,6 +71,15 @@ export interface IWsConnectionManager {
    * 根據 peer 取得 playerId
    */
   getPlayerIdByPeer(peer: Peer): string | undefined
+
+  /**
+   * 強制斷開玩家連線
+   *
+   * @param playerId - 玩家 ID
+   * @param code - WebSocket 關閉代碼（預設 4002）
+   * @param reason - 關閉原因
+   */
+  forceDisconnect(playerId: string, code?: number, reason?: string): void
 }
 
 /**
@@ -142,6 +151,21 @@ class WsConnectionManager implements IWsConnectionManager {
 
   getPlayerIdByPeer(peer: Peer): string | undefined {
     return this.peerToPlayerId.get(peer)
+  }
+
+  forceDisconnect(playerId: string, code: number = 4002, reason: string = 'Session invalidated'): void {
+    const connection = this.connections.get(playerId)
+    if (connection) {
+      try {
+        // 先關閉 WebSocket 連線
+        connection.peer.close(code, reason)
+        logger.info('WebSocket force disconnected', { playerId, code, reason })
+      } catch (error) {
+        logger.error('Failed to force disconnect WebSocket', { playerId, error })
+      }
+      // 清理連線資訊
+      this.removeConnection(playerId)
+    }
   }
 }
 

@@ -140,3 +140,7 @@ export {
 // WebSocket Responses
 export type { WsCommandError, WsCommandResponse } from './ws-responses'
 export { createSuccessResponse, createErrorResponse, isWsCommandResponse } from './ws-responses'
+
+// WebSocket Command Schema (Server-side validation)
+export type { WsCommandValidationResult } from './ws-commands.schema'
+export { validateWsCommand, formatZodError, WsCommandSchema } from './ws-commands.schema'
