@@ -3,13 +3,41 @@
 **Feature Branch**: `012-leaderboard-records`
 **Date**: 2026-01-13
 
-## 1. Daily Score Snapshot Architecture
+## 1. Player Stats Ownership Migration
+
+### Decision
+將 `player_stats` 表的擁有權從 Core-Game BC 轉移至 Leaderboard BC，統一管理所有玩家統計資料。
+
+### Rationale
+- **Domain 歸屬**：「玩家統計」本質上屬於 Records/Leaderboard 領域，而非遊戲核心邏輯
+- **資料一致性**：統一由 Leaderboard BC 管理 `player_stats` 和 `daily_player_scores`，避免跨 BC 資料同步問題
+- **單一更新點**：`UpdatePlayerRecordsUseCase` 同時更新兩個表，確保累計統計與每日快照一致
+- **符合 Constitution VI**：BC 資料擁有權明確，不再需要跨 BC 查詢
+
+### Migration Impact
+| 項目 | 原歸屬 (Core-Game BC) | 新歸屬 (Leaderboard BC) |
+|------|----------------------|------------------------|
+| `playerStats.ts` Schema | 保留原位置（共享基礎設施） | 保留原位置（共享基礎設施） |
+| `PlayerStatsRepositoryPort` | ❌ 移除 | ✅ 新增 |
+| `DrizzlePlayerStatsRepository` | ❌ 移除 | ✅ 新增 |
+| `RecordGameStatsUseCase` | ❌ 移除 | - |
+| `UpdatePlayerRecordsUseCase` | - | ✅ 新增（統一更新） |
+
+### Cleanup in Core-Game BC
+需要移除以下檔案：
+- `front-end/server/core-game/application/use-cases/recordGameStatsUseCase.ts`
+- `front-end/server/core-game/application/ports/output/playerStatsRepositoryPort.ts`
+- `front-end/server/core-game/adapters/persistence/drizzlePlayerStatsRepository.ts`
+
+---
+
+## 2. Daily Score Snapshot Architecture
 
 ### Decision
 新增 `daily_player_scores` 表格，由 Core-Game BC 的 `GameFinishedEvent` 事件驅動更新，採用 **Event Subscription** 模式。
 
 ### Rationale
-- 現有 `player_stats` 表僅儲存累計統計，無法支援時間區間查詢
+- `player_stats` 表僅儲存累計統計，無法支援時間區間查詢
 - 事件驅動模式符合專案既有的 Event Sourcing 架構
 - 30 天資料保留策略平衡儲存成本與查詢需求
 
@@ -24,14 +52,18 @@ GameFinishedEvent (Core-Game BC)
        ↓
 InternalEventBus.subscribe('GAME_FINISHED')
        ↓
-Leaderboard BC - UpdateDailyScoreUseCase
+Leaderboard BC - UpdatePlayerRecordsUseCase
        ↓
-daily_player_scores 表更新
+┌──────────────────────────────────────┐
+│ Transaction:                         │
+│   1. player_stats.upsert()           │
+│   2. daily_player_scores.upsert()    │
+└──────────────────────────────────────┘
 ```
 
 ---
 
-## 2. BC Integration Pattern
+## 3. BC Integration Pattern
 
 ### Decision
 Leaderboard BC 透過 **InternalEventBus** 訂閱 Core-Game 的 `GameFinishedEvent`，採用鬆耦合的事件訂閱模式。
@@ -63,7 +95,7 @@ interface GameFinishedInternalEvent {
 
 ---
 
-## 3. Weekly Leaderboard Calculation
+## 4. Weekly Leaderboard Calculation
 
 ### Decision
 週排行榜透過 SQL 聚合 `daily_player_scores` 表的當週資料（星期一至今）計算。
@@ -86,7 +118,7 @@ LIMIT 10;
 
 ---
 
-## 4. Data Cleanup Strategy
+## 5. Data Cleanup Strategy
 
 ### Decision
 使用 Nuxt Server Plugin 定時清理超過 30 天的 `daily_player_scores` 資料。
@@ -112,7 +144,7 @@ export default defineNitroPlugin((nitro) => {
 
 ---
 
-## 5. Frontend Navigation Restructure
+## 6. Frontend Navigation Restructure
 
 ### Decision
 移除 NavigationBar 中的 Rules/About 錨點連結，新增獨立的 NavigationSection 組件提供頁內導航。
@@ -139,7 +171,7 @@ index.vue
 
 ---
 
-## 6. API Design Pattern
+## 7. API Design Pattern
 
 ### Decision
 採用與現有 `/api/v1/` 一致的 RESTful 風格，新增 `/api/v1/leaderboard` 和 `/api/v1/stats` 端點。
@@ -159,7 +191,7 @@ index.vue
 
 ---
 
-## 7. Personal Statistics Data Source
+## 8. Personal Statistics Data Source
 
 ### Decision
 個人統計分為兩個來源：
@@ -182,7 +214,7 @@ const rangeStats = await dailyPlayerScoreRepository.aggregateByRange(playerId, r
 
 ---
 
-## 8. UI Component Design
+## 9. UI Component Design
 
 ### Decision
 RecordSection 採用 Tab 切換設計，左側為排行榜（日/週切換），右側為個人統計。

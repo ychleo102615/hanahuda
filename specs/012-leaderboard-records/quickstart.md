@@ -102,13 +102,13 @@ pnpm --prefix front-end test:unit -- --grep "leaderboard/domain"
 
 1. **Ports**
    - `daily-player-score-repository-port.ts`
-   - `player-stats-query-port.ts`
+   - `player-stats-repository-port.ts` (從 Core-Game 轉移)
    - `get-leaderboard-input-port.ts`
    - `get-player-statistics-input-port.ts`
-   - `update-daily-score-input-port.ts`
+   - `update-player-records-input-port.ts`
 
 2. **Use Cases**
-   - `update-daily-score-use-case.ts`
+   - `update-player-records-use-case.ts` (統一更新 player_stats + daily_player_scores)
    - `get-daily-leaderboard-use-case.ts`
    - `get-weekly-leaderboard-use-case.ts`
    - `get-player-statistics-use-case.ts`
@@ -123,7 +123,7 @@ pnpm --prefix front-end test:unit -- --grep "leaderboard/application"
 
 1. **Persistence**
    - `drizzle-daily-player-score-repository.ts`
-   - `drizzle-player-stats-query-adapter.ts`
+   - `drizzle-player-stats-repository.ts` (從 Core-Game 轉移)
 
 2. **Event Subscriber**
    - `game-finished-subscriber.ts` - 訂閱 InternalEventBus
@@ -133,6 +133,11 @@ pnpm --prefix front-end test:unit -- --grep "leaderboard/application"
 
 4. **Server Plugin**
    - `dailyScoreCleanup.ts` - 30 天資料清理
+
+5. **Core-Game BC Cleanup** (移除舊檔案)
+   - 刪除 `recordGameStatsUseCase.ts`
+   - 刪除 `playerStatsRepositoryPort.ts`
+   - 刪除 `drizzlePlayerStatsRepository.ts`
 
 ### Phase D: API Endpoints
 
@@ -224,7 +229,7 @@ import { getLeaderboardContainer } from '~/server/leaderboard/adapters/di/contai
 
 export default defineNitroPlugin(() => {
   const container = getLeaderboardContainer()
-  const updateDailyScoreUseCase = container.updateDailyScoreUseCase
+  const updatePlayerRecordsUseCase = container.updatePlayerRecordsUseCase
 
   internalEventBus.subscribe('GAME_FINISHED', async (event) => {
     const { winnerId, finalScores, players } = event.payload
@@ -236,11 +241,14 @@ export default defineNitroPlugin(() => {
       const scoreData = finalScores.find(s => s.playerId === player.id)
       if (!scoreData) continue
 
-      await updateDailyScoreUseCase.execute({
+      // 統一更新 player_stats 和 daily_player_scores
+      await updatePlayerRecordsUseCase.execute({
         playerId: player.id,
         scoreChange: scoreData.score,
         isWinner: winnerId === player.id,
-        koiKoiCallCount: 0, // 可從 event 擴充取得
+        koiKoiCallCount: scoreData.koiKoiCalls ?? 0,
+        achievedYaku: scoreData.achievedYaku ?? [],
+        isMultiplierWin: scoreData.isMultiplierWin ?? false,
       })
     }
   })
@@ -254,10 +262,12 @@ export default defineNitroPlugin(() => {
 ### Backend
 
 - [ ] `daily_player_scores` 表已建立
+- [ ] `player_stats` Repository 已遷移至 Leaderboard BC
+- [ ] Core-Game BC 中的舊 player_stats 相關檔案已移除
 - [ ] Domain 層單元測試覆蓋率 > 80%
 - [ ] Application 層單元測試覆蓋率 > 80%
 - [ ] API 端點回應符合 OpenAPI 規格
-- [ ] GameFinishedEvent 訂閱正常運作
+- [ ] GameFinishedEvent 訂閱正常運作（同時更新兩個表）
 - [ ] 30 天清理任務正常執行
 
 ### Frontend
