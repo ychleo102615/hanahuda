@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useScrollTo } from '~/composables/useScrollTo';
+import { useTelegram } from '~/composables/useTelegram';
 import PlayerBadge from '~/components/PlayerBadge.vue';
 
 // Types
@@ -46,6 +47,7 @@ const emit = defineEmits<{
 // Composables
 const router = useRouter();
 const { scrollTo } = useScrollTo();
+const { shouldShowLogout } = useTelegram();
 
 // State
 const isMobileMenuOpen = ref(false);
@@ -262,6 +264,7 @@ onUnmounted(() => {
             <!-- Action buttons (僅已註冊用戶顯示) -->
             <div v-if="!player.isGuest" class="mt-3 flex gap-4">
               <button
+                v-if="shouldShowLogout"
                 @click="emit('logoutClick'); closeMobileMenu()"
                 class="text-sm text-gray-300 hover:text-white transition-colors flex items-center gap-1.5"
               >

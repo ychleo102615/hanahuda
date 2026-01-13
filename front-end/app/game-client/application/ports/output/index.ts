@@ -39,3 +39,6 @@ export type { LayoutPort } from './layout.port'
 
 // Legacy Output Ports
 export type { UIStatePort } from './ui-state.port'
+
+// Telegram Ports
+export type { TelegramAuthPort, TelegramAuthResult, TelegramAuthPlayer } from './telegram-auth.port'

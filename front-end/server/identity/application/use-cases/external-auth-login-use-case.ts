@@ -1,15 +1,21 @@
 /**
- * OAuthLoginUseCase
+ * ExternalAuthLoginUseCase
  *
  * @description
- * OAuth 登入的 Use Case。
- * 支援 Google/Line 登入與帳號自動連結 (FR-006a)。
+ * 第三方認證登入的核心 Use Case。
+ * 處理所有第三方認證提供者（Google、LINE、Telegram 等）的登入邏輯。
+ *
+ * 此 Use Case 不知道具體的認證機制（OAuth code exchange、Telegram initData 等），
+ * 只接收已驗證的用戶資訊（ExternalUserInfo），執行以下流程：
+ * 1. 檢查是否已連結 → 直接登入
+ * 2. 檢查 Email 是否匹配現有帳號 → 自動連結
+ * 3. 建立新帳號
  *
  * 參考: specs/010-player-account/spec.md US3 - OAuth 社群登入
  */
 
 import { createSession } from '../../domain/types/session'
-import { createOAuthLink, type OAuthLinkId } from '../../domain/oauth-link/oauth-link'
+import { createOAuthLink, type OAuthLinkId, type OAuthProvider } from '../../domain/oauth-link/oauth-link'
 import { createRegisteredPlayer, type PlayerId } from '../../domain/player/player'
 import { createAccount, type Account, type AccountId } from '../../domain/account/account'
 import { createOAuthPasswordHash } from '../../domain/account/password-hash'
@@ -18,7 +24,7 @@ import type { PlayerRepositoryPort } from '../ports/output/player-repository-por
 import type { AccountRepositoryPort } from '../ports/output/account-repository-port'
 import type { OAuthLinkRepositoryPort } from '../ports/output/oauth-link-repository-port'
 import type { SessionStorePort } from '../ports/output/session-store-port'
-import type { OAuthProviderPort } from '../ports/output/oauth-provider-port'
+import type { ExternalUserInfo } from '../ports/input/external-user-info'
 import type { CommandResult, AuthError } from '#shared/contracts/auth-commands'
 import type { PlayerInfo } from '#shared/contracts/identity-types'
 
@@ -27,35 +33,29 @@ import type { PlayerInfo } from '#shared/contracts/identity-types'
 // =============================================================================
 
 /**
- * OAuthLogin 輸入參數
+ * ExternalAuthLogin 輸入參數
  */
-export interface OAuthLoginInput {
-  /** OAuth Provider */
-  provider: OAuthProviderPort
-  /** 授權碼 */
-  code: string
-  /** 重定向 URI（某些 Provider 需要） */
-  redirectUri?: string
-  /** PKCE Code Verifier（Google 需要） */
-  codeVerifier?: string
+export interface ExternalAuthLoginInput {
+  /** 第三方認證用戶資訊 */
+  userInfo: ExternalUserInfo
 }
 
 /**
- * OAuthLogin 輸出結果
+ * ExternalAuthLogin 輸出結果
  */
-export type OAuthLoginResult =
+export type ExternalAuthLoginResult =
   | { type: 'LOGGED_IN'; player: PlayerInfo; sessionId: string }
   | { type: 'NEW_ACCOUNT'; player: PlayerInfo; sessionId: string }
-  | { type: 'LINK_PROMPT'; existingUsername: string; oauthToken: string; sessionId: string }
+  | { type: 'AUTO_LINKED'; player: PlayerInfo; sessionId: string }
 
 // =============================================================================
 // Use Case
 // =============================================================================
 
 /**
- * OAuth 登入 Use Case
+ * 第三方認證登入 Use Case
  */
-export class OAuthLoginUseCase {
+export class ExternalAuthLoginUseCase {
   constructor(
     private readonly playerRepository: PlayerRepositoryPort,
     private readonly accountRepository: AccountRepositoryPort,
@@ -64,41 +64,27 @@ export class OAuthLoginUseCase {
   ) {}
 
   /**
-   * 執行 OAuth 登入流程
+   * 執行第三方認證登入流程
    *
-   * 1. 交換授權碼取得 Token
-   * 2. 取得使用者資訊
-   * 3. 檢查是否已連結
-   * 4. 自動連結或建立新帳號
-   * 5. 建立 Session
-   * 6. 回傳結果
+   * @param input 包含已驗證的第三方用戶資訊
+   * @returns 登入結果
    */
-  async execute(input: OAuthLoginInput): Promise<CommandResult<OAuthLoginResult, AuthError>> {
+  async execute(input: ExternalAuthLoginInput): Promise<CommandResult<ExternalAuthLoginResult, AuthError>> {
     try {
-      const { provider, code, redirectUri, codeVerifier } = input
-
-      // 1. 交換授權碼取得 Token
-      const tokenResult = await provider.exchangeCode({
-        code,
-        redirectUri,
-        codeVerifier,
-      })
-
-      // 2. 取得使用者資訊
-      const userInfo = await provider.getUserInfo(tokenResult.accessToken)
+      const { userInfo } = input
 
       // 驗證必要資訊
       if (!userInfo.providerUserId) {
         return {
           success: false,
           error: 'VALIDATION_ERROR',
-          message: 'Failed to get user info from OAuth provider',
+          message: 'Provider user ID is required',
         }
       }
 
-      // 3. 檢查是否已連結
+      // 1. 檢查是否已連結
       const existingLink = await this.oauthLinkRepository.findByProviderUserId(
-        provider.provider,
+        userInfo.provider,
         userInfo.providerUserId
       )
 
@@ -107,24 +93,23 @@ export class OAuthLoginUseCase {
         return await this.loginWithExistingLink(existingLink)
       }
 
-      // 4. 檢查 Email 是否匹配現有帳號 (FR-006a)
+      // 2. 檢查 Email 是否匹配現有帳號（自動連結 FR-006a）
       if (userInfo.email) {
         const existingAccount = await this.accountRepository.findByEmail(userInfo.email)
 
         if (existingAccount && canAutoLink(userInfo.email, existingAccount)) {
-          // 自動連結
-          return await this.autoLinkAndLogin(existingAccount, provider.provider, userInfo)
+          return await this.autoLinkAndLogin(existingAccount, userInfo)
         }
       }
 
-      // 5. 建立新帳號
-      return await this.createNewAccountAndLogin(provider.provider, userInfo)
+      // 3. 建立新帳號
+      return await this.createNewAccountAndLogin(userInfo)
 
     } catch (error) {
       return {
         success: false,
         error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Failed to complete OAuth login',
+        message: error instanceof Error ? error.message : 'Failed to complete external auth login',
       }
     }
   }
@@ -134,7 +119,7 @@ export class OAuthLoginUseCase {
    */
   private async loginWithExistingLink(
     oauthLink: { id: string; accountId: string; provider: string; providerUserId: string; providerEmail: string | null; createdAt: Date }
-  ): Promise<CommandResult<OAuthLoginResult, AuthError>> {
+  ): Promise<CommandResult<ExternalAuthLoginResult, AuthError>> {
     // 取得 Account
     const account = await this.accountRepository.findById(oauthLink.accountId as AccountId)
     if (!account) {
@@ -175,19 +160,18 @@ export class OAuthLoginUseCase {
   }
 
   /**
-   * 自動連結並登入 (FR-006a)
+   * 自動連結並登入（FR-006a）
    */
   private async autoLinkAndLogin(
     account: Account,
-    provider: 'google' | 'line',
-    userInfo: { providerUserId: string; email: string | null; displayName: string | null; avatarUrl: string | null }
-  ): Promise<CommandResult<OAuthLoginResult, AuthError>> {
+    userInfo: ExternalUserInfo
+  ): Promise<CommandResult<ExternalAuthLoginResult, AuthError>> {
     // 建立 OAuth Link
     const now = new Date()
     const oauthLink = createOAuthLink({
       id: crypto.randomUUID() as OAuthLinkId,
       accountId: account.id as AccountId,
-      provider,
+      provider: userInfo.provider,
       providerUserId: userInfo.providerUserId,
       providerEmail: userInfo.email,
       createdAt: now,
@@ -211,7 +195,7 @@ export class OAuthLoginUseCase {
     return {
       success: true,
       data: {
-        type: 'LOGGED_IN',
+        type: 'AUTO_LINKED',
         player: {
           id: player.id,
           displayName: player.displayName,
@@ -227,13 +211,12 @@ export class OAuthLoginUseCase {
    * 建立新帳號並登入
    */
   private async createNewAccountAndLogin(
-    provider: 'google' | 'line',
-    userInfo: { providerUserId: string; email: string | null; displayName: string | null; avatarUrl: string | null }
-  ): Promise<CommandResult<OAuthLoginResult, AuthError>> {
+    userInfo: ExternalUserInfo
+  ): Promise<CommandResult<ExternalAuthLoginResult, AuthError>> {
     const now = new Date()
 
     // 產生唯一 username
-    const username = await this.generateUniqueUsername(userInfo.displayName, provider)
+    const username = await this.generateUniqueUsername(userInfo.displayName, userInfo.provider)
 
     // 建立 Player
     const player = createRegisteredPlayer({
@@ -244,7 +227,7 @@ export class OAuthLoginUseCase {
     })
     await this.playerRepository.save(player)
 
-    // 建立 Account（OAuth 用戶不需要密碼登入）
+    // 建立 Account（第三方認證用戶不需要密碼登入）
     const account = createAccount({
       id: crypto.randomUUID() as AccountId,
       playerId: player.id,
@@ -260,7 +243,7 @@ export class OAuthLoginUseCase {
     const oauthLink = createOAuthLink({
       id: crypto.randomUUID() as OAuthLinkId,
       accountId: account.id,
-      provider,
+      provider: userInfo.provider,
       providerUserId: userInfo.providerUserId,
       providerEmail: userInfo.email,
       createdAt: now,
@@ -289,7 +272,7 @@ export class OAuthLoginUseCase {
   /**
    * 產生唯一 username
    */
-  private async generateUniqueUsername(displayName: string | null, provider: string): Promise<string> {
+  private async generateUniqueUsername(displayName: string | null, provider: OAuthProvider): Promise<string> {
     // 嘗試使用 displayName
     if (displayName) {
       const cleaned = displayName.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 15)

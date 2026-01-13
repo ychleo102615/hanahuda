@@ -14,7 +14,7 @@ import { accounts } from './accounts'
 /**
  * 支援的 OAuth Provider
  */
-export type OAuthProvider = 'google' | 'line'
+export type OAuthProvider = 'google' | 'line' | 'telegram'
 
 /**
  * OAuth Links 表

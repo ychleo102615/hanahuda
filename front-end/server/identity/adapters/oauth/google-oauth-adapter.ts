@@ -10,6 +10,7 @@
 import { Google, generateState, generateCodeVerifier } from 'arctic'
 import { OAuthProviderPort, type AuthorizationUrlOptions, type CodeExchangeOptions, type TokenExchangeResult, type OAuthUserInfo } from '../../application/ports/output/oauth-provider-port'
 import type { OAuthProvider } from '../../domain/oauth-link/oauth-link'
+import type { ExternalUserInfo } from '../../application/ports/input/external-user-info'
 
 // =============================================================================
 // Types
@@ -141,6 +142,33 @@ export class GoogleOAuthAdapter extends OAuthProviderPort {
    */
   validateState(state: string, storedState: string): boolean {
     return state === storedState
+  }
+
+  /**
+   * 完整 OAuth 認證流程
+   *
+   * @description
+   * 執行 code exchange + getUserInfo，回傳標準化的 ExternalUserInfo。
+   * 封裝所有 OAuth 協議細節，讓呼叫者不需要知道 Token 交換等技術細節。
+   *
+   * @param code - OAuth 授權碼
+   * @param codeVerifier - PKCE code verifier（Google 必須）
+   * @returns 標準化的使用者資訊
+   */
+  async authenticate(code: string, codeVerifier: string): Promise<ExternalUserInfo> {
+    // 1. 交換 Token（OAuth 協議細節）
+    const tokens = await this.exchangeCode({ code, codeVerifier })
+
+    // 2. 取得使用者資訊（外部 API 呼叫）
+    const oauthUser = await this.getUserInfo(tokens.accessToken)
+
+    // 3. 轉換為標準化 DTO
+    return {
+      provider: this.provider,
+      providerUserId: oauthUser.providerUserId,
+      email: oauthUser.email,
+      displayName: oauthUser.displayName,
+    }
   }
 }
 

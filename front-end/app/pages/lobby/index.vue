@@ -502,6 +502,7 @@ const handleBackToGame = async () => {
       @continue-queue="handleContinueQueue"
       @cancel-and-switch="handleCancelAndSwitch"
     />
+
   </div>
 </template>
 
