@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import NavigationBar from '~/pages/index/components/NavigationBar.vue'
 import HeroSection from '~/pages/index/components/HeroSection.vue'
+import NavigationSection from '~/pages/index/components/NavigationSection.vue'
+import RecordSection from '~/pages/index/components/RecordSection.vue'
 import RulesSection from '~/pages/index/components/RulesSection.vue'
 import Footer from '~/components/Footer.vue'
 import LoginModal from '~/identity/adapter/components/LoginModal.vue'
@@ -34,13 +36,12 @@ onUnmounted(() => {
 
 // Navigation Bar data
 // FR-024, FR-026, FR-028: 根據登入狀態動態顯示導航連結與玩家 icon
-const { isRegistered, displayName, isGuest } = useCurrentPlayer()
+const { isRegistered, displayName, isGuest, playerId } = useCurrentPlayer()
 const { logout, deleteAccount } = useAuth()
 
 // 導航連結不再包含 Sign In（由 NavigationBar 的 player prop 控制）
+// US4: 移除 Rules 和 About 連結，只保留 Start Game CTA
 const navigationLinks = computed<NavigationLink[]>(() => [
-  { label: 'Rules', target: '#rules', isCta: false },
-  { label: 'About', target: '#about', isCta: false },
   { label: 'Start Game', target: '/lobby', isCta: true },
 ])
 
@@ -215,6 +216,16 @@ const handleLoginSuccess = () => {
           :cta-target="heroData.ctaTarget"
         />
       </section>
+
+      <!-- Navigation Section - Records, Rules, About anchor links -->
+      <NavigationSection @rules-click="handleRulesClick" />
+
+      <!-- Record Section - Leaderboard and Personal Statistics -->
+      <RecordSection
+        :current-player-id="playerId ?? undefined"
+        :is-logged-in="isRegistered"
+        @login="handleLoginClick"
+      />
 
       <!-- Rules Section -->
       <section id="rules" class="relative">

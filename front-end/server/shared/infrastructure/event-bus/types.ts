@@ -53,11 +53,41 @@ export interface AiOpponentNeededPayload {
 }
 
 /**
+ * Game Finished Payload
+ *
+ * @description
+ * 遊戲結束時發布的事件 Payload。
+ * 由 Core Game BC 發布，Leaderboard BC 訂閱。
+ */
+export interface GameFinishedPayload {
+  /** 遊戲 ID */
+  readonly gameId: string
+  /** 獲勝者 ID (null 表示平局) */
+  readonly winnerId: string | null
+  /** 最終分數列表 */
+  readonly finalScores: ReadonlyArray<{
+    playerId: string
+    score: number
+    achievedYaku: string[]
+    koiKoiCalls: number
+    isMultiplierWin: boolean
+  }>
+  /** 玩家資訊列表 */
+  readonly players: ReadonlyArray<{
+    id: string
+    isAi: boolean
+  }>
+  /** 遊戲結束時間 */
+  readonly finishedAt: Date
+}
+
+/**
  * Event Types - 事件類型常數
  */
 export const EVENT_TYPES = {
   MATCH_FOUND: 'MATCH_FOUND',
   AI_OPPONENT_NEEDED: 'AI_OPPONENT_NEEDED',
+  GAME_FINISHED: 'GAME_FINISHED',
 } as const
 
 export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES]

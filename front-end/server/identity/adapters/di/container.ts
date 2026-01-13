@@ -14,7 +14,7 @@ import { DrizzleAccountRepository } from '../persistence/drizzle-account-reposit
 import { DrizzleOAuthLinkRepository } from '../persistence/drizzle-oauth-link-repository'
 import { getSessionStore } from '../session/in-memory-session-store'
 import { BcryptPasswordHasher } from '../crypto/bcrypt-password-hasher'
-import { playerStatsRepository } from '~~/server/core-game/adapters/persistence/drizzlePlayerStatsRepository'
+import { DrizzlePlayerStatsRepository } from '~~/server/leaderboard/adapters/persistence/drizzle-player-stats-repository'
 import { CreateGuestUseCase } from '../../application/use-cases/create-guest-use-case'
 import { GetCurrentPlayerUseCase } from '../../application/use-cases/get-current-player-use-case'
 import { RegisterAccountUseCase } from '../../application/use-cases/register-account-use-case'
@@ -98,6 +98,7 @@ export function getIdentityContainer(): IdentityContainer {
   )
 
   const linkAccountUseCase = new LinkAccountUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore, passwordHasher)
+  const playerStatsRepository = new DrizzlePlayerStatsRepository(db)
   const deleteAccountUseCase = new DeleteAccountUseCase(playerRepository, accountRepository, oauthLinkRepository, sessionStore, passwordHasher, playerStatsRepository)
 
   // Telegram Validator（僅在有設定 TELEGRAM_BOT_TOKEN 時建立）

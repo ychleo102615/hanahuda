@@ -18,12 +18,13 @@ import { calculateWinner } from '~~/server/core-game/domain/game/gameEndConditio
 import type { ScoreMultipliers, RoundScoringData, GameEndedReason } from '#shared/contracts'
 import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
 import type { AutoActionInputPort } from '~~/server/core-game/application/ports/input/autoActionInputPort'
-import type { RecordGameStatsInputPort } from '~~/server/core-game/application/ports/input/recordGameStatsInputPort'
 import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
 import type { GameRepositoryPort } from '~~/server/core-game/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/core-game/application/ports/output/eventPublisherPort'
 import type { TurnEventMapperPort } from '~~/server/core-game/application/ports/output/eventMapperPort'
 import type { GameLockPort } from '~~/server/core-game/application/ports/output/gameLockPort'
+import { internalEventBus } from '~~/server/shared/infrastructure/event-bus/internalEventBus'
+import type { GameFinishedPayload } from '~~/server/shared/infrastructure/event-bus/types'
 import {
   transitionAfterRoundDraw,
   finalizeRoundAndTransition,
@@ -51,8 +52,7 @@ export class TurnFlowService {
     private readonly gameRepository: GameRepositoryPort,
     private readonly eventPublisher: EventPublisherPort,
     private readonly eventMapper: TurnEventMapperPort,
-    private readonly gameLock: GameLockPort,
-    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort
+    private readonly gameLock: GameLockPort
   ) {}
 
   /**
@@ -348,24 +348,6 @@ export class TurnFlowService {
     // 使用 Domain 函數結束遊戲
     const finishedGame = finishGame(game, winnerId)
 
-    // 記錄遊戲統計
-    // 若有 statsData（正常結束），使用其中的役種和倍率資訊
-    // 否則（非正常結束如斷線、超時），使用預設值
-    if (this.recordGameStatsUseCase) {
-      try {
-        await this.recordGameStatsUseCase.execute({
-          gameId,
-          winnerId: winnerId ?? null,
-          finalScores: finishedGame.cumulativeScores,
-          winnerYakuList: statsData?.yakuList ?? [],
-          winnerKoiMultiplier: statsData?.koiMultiplier ?? 1,
-          players: finishedGame.players,
-        })
-      } catch {
-        // 統計記錄失敗不應影響遊戲結束流程
-      }
-    }
-
     // 1. 先寫 DB（確保持久化成功）
     await this.gameRepository.save(finishedGame)
 
@@ -380,8 +362,63 @@ export class TurnFlowService {
     )
     this.eventPublisher.publishToGame(gameId, gameFinishedEvent)
 
-    // 4. 最後從記憶體移除
+    // 4. 發佈跨 BC 事件 (供 Leaderboard BC 訂閱)
+    this.publishGameFinishedEvent(gameId, winnerId, finishedGame, statsData)
+
+    // 5. 最後從記憶體移除
     this.gameStore.delete(gameId)
+  }
+
+  /**
+   * 發佈 GAME_FINISHED 跨 BC 事件
+   *
+   * @description
+   * 將遊戲結束資訊發佈到 InternalEventBus，供 Leaderboard BC 訂閱。
+   * 此事件用於更新 player_stats 和 daily_player_scores 表。
+   */
+  private publishGameFinishedEvent(
+    gameId: string,
+    winnerId: string | undefined,
+    game: Game,
+    statsData?: {
+      readonly yakuList: readonly import('#shared/contracts').Yaku[]
+      readonly koiMultiplier: number
+    }
+  ): void {
+    // 建構每位玩家的統計資料
+    const finalScores = game.players.map((player) => {
+      const playerScore = game.cumulativeScores.find(s => s.player_id === player.id)
+      const isWinner = player.id === winnerId
+
+      // 只有勝者才有 yaku 和 koiKoiCalls
+      const achievedYaku: string[] = isWinner && statsData?.yakuList
+        ? statsData.yakuList.map(y => y.yaku_type)
+        : []
+      const koiKoiCalls = isWinner && statsData?.koiMultiplier
+        ? Math.max(0, statsData.koiMultiplier - 1)
+        : 0
+      const isMultiplierWin = isWinner && statsData?.koiMultiplier
+        ? statsData.koiMultiplier > 1
+        : false
+
+      return {
+        playerId: player.id,
+        score: playerScore?.score ?? 0,
+        achievedYaku,
+        koiKoiCalls,
+        isMultiplierWin,
+      }
+    })
+
+    const payload: GameFinishedPayload = {
+      gameId,
+      winnerId: winnerId ?? null,
+      finalScores,
+      players: game.players.map(p => ({ id: p.id, isAi: p.isAi })),
+      finishedAt: new Date(),
+    }
+
+    internalEventBus.publishGameFinished(payload)
   }
 
   /**

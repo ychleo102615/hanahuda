@@ -19,7 +19,6 @@ import type { GameTimeoutPort } from '~~/server/core-game/application/ports/outp
 import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
 import type { LeaveGameEventMapperPort } from '~~/server/core-game/application/ports/output/eventMapperPort'
 import type { GameLockPort } from '~~/server/core-game/application/ports/output/gameLockPort'
-import type { RecordGameStatsInputPort } from '~~/server/core-game/application/ports/input/recordGameStatsInputPort'
 import type { GameLogRepositoryPort } from '~~/server/core-game/application/ports/output/gameLogRepositoryPort'
 import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 import { markPlayerLeft, getPlayerConnectionStatus } from '~~/server/core-game/domain/game/playerConnection'
@@ -52,7 +51,6 @@ export class LeaveGameUseCase implements LeaveGameInputPort {
     private readonly eventMapper: LeaveGameEventMapperPort,
     private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager?: GameTimeoutPort,
-    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
     private readonly gameLogRepository?: GameLogRepositoryPort
   ) {}
 

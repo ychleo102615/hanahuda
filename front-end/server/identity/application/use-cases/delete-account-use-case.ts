@@ -20,7 +20,7 @@ import type { AccountRepositoryPort } from '../ports/output/account-repository-p
 import type { OAuthLinkRepositoryPort } from '../ports/output/oauth-link-repository-port'
 import type { SessionStorePort } from '../ports/output/session-store-port'
 import type { PasswordHashPort } from '../ports/output/password-hash-port'
-import type { PlayerStatsRepositoryPort } from '~~/server/core-game/application/ports/output/playerStatsRepositoryPort'
+import type { PlayerStatsRepositoryPort } from '~~/server/leaderboard/application/ports/output/player-stats-repository-port'
 import type { CommandResult, AuthError } from '#shared/contracts/auth-commands'
 import type { DeleteAccountRequest } from '#shared/contracts/identity-types'
 

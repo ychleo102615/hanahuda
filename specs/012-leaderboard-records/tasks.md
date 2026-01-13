@@ -33,10 +33,10 @@
 
 **Purpose**: Create Leaderboard BC directory structure
 
-- [ ] T001 Create Leaderboard BC directory structure per plan.md in `front-end/server/leaderboard/`
-- [ ] T002 [P] Create domain layer directories: `domain/types.ts`, `domain/daily-score/`, `domain/player-stats/`, `domain/leaderboard/`, `domain/statistics/`
-- [ ] T003 [P] Create application layer directories: `application/use-cases/`, `application/ports/input/`, `application/ports/output/`
-- [ ] T004 [P] Create adapter layer directories: `adapters/di/`, `adapters/persistence/`, `adapters/event-subscriber/`
+- [x] T001 Create Leaderboard BC directory structure per plan.md in `front-end/server/leaderboard/`
+- [x] T002 [P] Create domain layer directories: `domain/types.ts`, `domain/daily-score/`, `domain/player-stats/`, `domain/leaderboard/`, `domain/statistics/`
+- [x] T003 [P] Create application layer directories: `application/use-cases/`, `application/ports/input/`, `application/ports/output/`
+- [x] T004 [P] Create adapter layer directories: `adapters/di/`, `adapters/persistence/`, `adapters/event-subscriber/`
 
 ---
 
@@ -48,14 +48,14 @@
 
 ### 2.1 Shared Infrastructure Extension
 
-- [ ] T005 Add `GameFinishedPayload` interface to `front-end/server/shared/infrastructure/event-bus/types.ts`
-- [ ] T006 Add `GAME_FINISHED` to `EVENT_TYPES` constant in `front-end/server/shared/infrastructure/event-bus/types.ts`
-- [ ] T007 Extend `InternalEventBus` to support `GAME_FINISHED` event in `front-end/server/shared/infrastructure/event-bus/internalEventBus.ts`
+- [x] T005 Add `GameFinishedPayload` interface to `front-end/server/shared/infrastructure/event-bus/types.ts`
+- [x] T006 Add `GAME_FINISHED` to `EVENT_TYPES` constant in `front-end/server/shared/infrastructure/event-bus/types.ts`
+- [x] T007 Extend `InternalEventBus` to support `GAME_FINISHED` event in `front-end/server/shared/infrastructure/event-bus/internalEventBus.ts`
 
 ### 2.2 Database Schema
 
-- [ ] T008 Create `daily_player_scores` table schema in `front-end/server/database/schema/dailyPlayerScores.ts`
-- [ ] T009 Export new schema from `front-end/server/database/schema/index.ts`
+- [x] T008 Create `daily_player_scores` table schema in `front-end/server/database/schema/dailyPlayerScores.ts`
+- [x] T009 Export new schema from `front-end/server/database/schema/index.ts`
 - [ ] T010 Run database migration: `pnpm --prefix front-end db:generate && pnpm --prefix front-end db:migrate`
 
 ### 2.3 Core-Game BC Cleanup
@@ -72,34 +72,34 @@ recordGameStatsUseCase 被引用於:
 └── utils/container.ts
 ```
 
-- [ ] T011 Update `TurnFlowService` to remove `recordGameStatsUseCase` dependency and calls in `front-end/server/core-game/domain/services/turnFlowService.ts`
-- [ ] T012 [P] Update `selectTargetUseCase.ts` to remove optional `recordGameStatsUseCase` parameter in `front-end/server/core-game/application/use-cases/selectTargetUseCase.ts`
-- [ ] T013 [P] Update `playHandCardUseCase.ts` to remove optional `recordGameStatsUseCase` parameter in `front-end/server/core-game/application/use-cases/playHandCardUseCase.ts`
-- [ ] T014 [P] Update `makeDecisionUseCase.ts` to remove optional `recordGameStatsUseCase` parameter in `front-end/server/core-game/application/use-cases/makeDecisionUseCase.ts`
-- [ ] T015 [P] Update `leaveGameUseCase.ts` to remove optional `recordGameStatsUseCase` parameter in `front-end/server/core-game/application/use-cases/leaveGameUseCase.ts`
-- [ ] T016 Update `ports/input/index.ts` to remove `RecordGameStatsInputPort` export in `front-end/server/core-game/application/ports/input/index.ts`
-- [ ] T017 Delete `front-end/server/core-game/application/use-cases/recordGameStatsUseCase.ts`
-- [ ] T018 Delete `front-end/server/core-game/application/ports/input/recordGameStatsInputPort.ts`
-- [ ] T019 Delete `front-end/server/core-game/application/ports/output/playerStatsRepositoryPort.ts`
-- [ ] T020 Delete `front-end/server/core-game/adapters/persistence/drizzlePlayerStatsRepository.ts`
-- [ ] T021 Update Core-Game DI container to remove player stats related bindings in `front-end/server/utils/container.ts`
+- [x] T011 Update `TurnFlowService` to remove `recordGameStatsUseCase` dependency and calls in `front-end/server/core-game/application/services/turnFlowService.ts`
+- [x] T012 [P] Update `selectTargetUseCase.ts` to remove optional `recordGameStatsUseCase` parameter in `front-end/server/core-game/application/use-cases/selectTargetUseCase.ts`
+- [x] T013 [P] Update `playHandCardUseCase.ts` to remove optional `recordGameStatsUseCase` parameter in `front-end/server/core-game/application/use-cases/playHandCardUseCase.ts`
+- [x] T014 [P] Update `makeDecisionUseCase.ts` to remove optional `recordGameStatsUseCase` parameter in `front-end/server/core-game/application/use-cases/makeDecisionUseCase.ts`
+- [x] T015 [P] Update `leaveGameUseCase.ts` to remove optional `recordGameStatsUseCase` parameter in `front-end/server/core-game/application/use-cases/leaveGameUseCase.ts`
+- [x] T016 Update `ports/input/index.ts` to remove `RecordGameStatsInputPort` export in `front-end/server/core-game/application/ports/input/index.ts`
+- [x] T017 Delete `front-end/server/core-game/application/use-cases/recordGameStatsUseCase.ts`
+- [x] T018 Delete `front-end/server/core-game/application/ports/input/recordGameStatsInputPort.ts`
+- [x] T019 Delete `front-end/server/core-game/application/ports/output/playerStatsRepositoryPort.ts`
+- [x] T020 Delete `front-end/server/core-game/adapters/persistence/drizzlePlayerStatsRepository.ts`
+- [x] T021 Update Core-Game DI container to remove player stats related bindings in `front-end/server/utils/container.ts`
 
 ### 2.4 Core-Game Event Integration (GAME_FINISHED Publisher)
 
 **CRITICAL**: Must complete before US2 can be independently tested
 
-- [ ] T022 Identify game completion flow in Core-Game BC (locate where game ends and stats were recorded)
-- [ ] T023 Modify Core-Game BC to publish `GAME_FINISHED` event on game completion (replace `recordGameStatsUseCase` calls)
-- [ ] T024 Ensure event payload includes `achievedYaku`, `koiKoiCalls`, `isMultiplierWin` fields per `GameFinishedPayload` interface
+- [x] T022 Identify game completion flow in Core-Game BC (locate where game ends and stats were recorded)
+- [x] T023 Modify Core-Game BC to publish `GAME_FINISHED` event on game completion (replace `recordGameStatsUseCase` calls)
+- [x] T024 Ensure event payload includes `achievedYaku`, `koiKoiCalls`, `isMultiplierWin` fields per `GameFinishedPayload` interface
 
 ### 2.5 Domain Layer Foundation (TDD)
 
 **Note**: `YakuCounts` type 與 DB Schema 中的 `yakuCounts` 欄位定義可並存。Domain 層定義用於業務邏輯，DB Schema 定義用於資料庫映射。兩者語意相同但位置不同，符合 Clean Architecture 的層級隔離原則。
 
-- [ ] T025 [P] Create `YakuCounts` type in `front-end/server/leaderboard/domain/types.ts` (Domain 層獨立定義，不 import DB Schema)
-- [ ] T026 [P] Create `LeaderboardType` value object in `front-end/server/leaderboard/domain/leaderboard/leaderboard-type.ts`
-- [ ] T027 [P] Create `TimeRange` value object with `getTimeRangeStartDate` in `front-end/server/leaderboard/domain/statistics/time-range.ts`
-- [ ] T028 [P] Write unit tests for `TimeRange` in `front-end/server/leaderboard/domain/statistics/__tests__/time-range.spec.ts`
+- [x] T025 [P] Create `YakuCounts` type in `front-end/server/leaderboard/domain/types.ts` (Domain 層獨立定義，不 import DB Schema)
+- [x] T026 [P] Create `LeaderboardType` value object in `front-end/server/leaderboard/domain/leaderboard/leaderboard-type.ts`
+- [x] T027 [P] Create `TimeRange` value object with `getTimeRangeStartDate` in `front-end/server/leaderboard/domain/statistics/time-range.ts`
+- [x] T028 [P] Write unit tests for `TimeRange` in `front-end/tests/server/leaderboard/domain/statistics/time-range.test.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 

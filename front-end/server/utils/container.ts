@@ -18,7 +18,6 @@ import { DIContainer, BACKEND_TOKENS } from '~~/server/lib/di'
 // Adapters - Persistence
 import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
 import { gameRepository } from '~~/server/core-game/adapters/persistence/drizzleGameRepository'
-import { playerStatsRepository } from '~~/server/core-game/adapters/persistence/drizzlePlayerStatsRepository'
 import { gameLogRepository } from '~~/server/core-game/adapters/persistence/drizzleGameLogRepository'
 
 // Adapters - Event Publisher
@@ -44,7 +43,6 @@ import { SelectTargetUseCase } from '~~/server/core-game/application/use-cases/s
 import { MakeDecisionUseCase } from '~~/server/core-game/application/use-cases/makeDecisionUseCase'
 import { LeaveGameUseCase } from '~~/server/core-game/application/use-cases/leaveGameUseCase'
 import { AutoActionUseCase } from '~~/server/core-game/application/use-cases/autoActionUseCase'
-import { RecordGameStatsUseCase } from '~~/server/core-game/application/use-cases/recordGameStatsUseCase'
 import { ConfirmContinueUseCase } from '~~/server/core-game/application/use-cases/confirmContinueUseCase'
 
 // Application Services
@@ -57,7 +55,6 @@ import { createOpponentContainer, type OpponentContainer } from '~~/server/oppon
 // Input Port Types (only importing types used for explicit type annotations)
 import type { LeaveGameInputPort } from '~~/server/core-game/application/ports/input/leaveGameInputPort'
 import type { AutoActionInputPort } from '~~/server/core-game/application/ports/input/autoActionInputPort'
-import type { RecordGameStatsInputPort } from '~~/server/core-game/application/ports/input/recordGameStatsInputPort'
 import type { ConfirmContinueInputPort } from '~~/server/core-game/application/ports/input/confirmContinueInputPort'
 
 /**
@@ -77,7 +74,6 @@ function createBackendContainer(): BackendContainers {
   // ===== 1. 註冊 Adapters =====
   diContainer.register(BACKEND_TOKENS.GameStore, () => inMemoryGameStore, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameRepository, () => gameRepository, { singleton: true })
-  diContainer.register(BACKEND_TOKENS.PlayerStatsRepository, () => playerStatsRepository, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameLogRepository, () => gameLogRepository, { singleton: true })
   diContainer.register(BACKEND_TOKENS.EventMapper, () => eventMapper, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameTimeoutManager, () => gameTimeoutManager, { singleton: true })
@@ -92,10 +88,6 @@ function createBackendContainer(): BackendContainers {
 
   // ===== 3. 註冊 Use Cases (Input Ports) =====
 
-  // RecordGameStatsUseCase（無循環依賴）
-  const recordGameStatsUseCase: RecordGameStatsInputPort = new RecordGameStatsUseCase(playerStatsRepository)
-  diContainer.register(BACKEND_TOKENS.RecordGameStatsInputPort, () => recordGameStatsUseCase, { singleton: true })
-
   // LeaveGameUseCase
   const leaveGameUseCase: LeaveGameInputPort = new LeaveGameUseCase(
     gameRepository,
@@ -104,7 +96,6 @@ function createBackendContainer(): BackendContainers {
     eventMapper,
     inMemoryGameLock,
     gameTimeoutManager,
-    recordGameStatsUseCase,
     gameLogRepository
   )
   diContainer.register(BACKEND_TOKENS.LeaveGameInputPort, () => leaveGameUseCase, { singleton: true })
@@ -126,7 +117,6 @@ function createBackendContainer(): BackendContainers {
     eventMapper,
     inMemoryGameLock,
     gameTimeoutManager,
-    recordGameStatsUseCase,
     gameLogRepository
   )
 
@@ -137,7 +127,6 @@ function createBackendContainer(): BackendContainers {
     eventMapper,
     inMemoryGameLock,
     gameTimeoutManager,
-    recordGameStatsUseCase,
     gameLogRepository
   )
 
@@ -148,7 +137,6 @@ function createBackendContainer(): BackendContainers {
     eventMapper,
     inMemoryGameLock,
     gameTimeoutManager,
-    recordGameStatsUseCase,
     gameLogRepository
   )
 
@@ -195,8 +183,7 @@ function createBackendContainer(): BackendContainers {
     gameRepository,
     compositeEventPublisher,
     eventMapper,
-    inMemoryGameLock,
-    recordGameStatsUseCase
+    inMemoryGameLock
   )
 
   // 注入 TurnFlowService 到需要它的 Use Cases 和 Services（Setter Injection）

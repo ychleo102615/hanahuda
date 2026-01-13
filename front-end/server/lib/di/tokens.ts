@@ -17,7 +17,6 @@ export const BACKEND_TOKENS = {
   // ===== Adapters - Persistence =====
   GameStore: Symbol('GameStore'),
   GameRepository: Symbol('GameRepository'),
-  PlayerStatsRepository: Symbol('PlayerStatsRepository'),
   GameLogRepository: Symbol('GameLogRepository'),
 
   // ===== Adapters - Event Publisher =====
@@ -43,7 +42,6 @@ export const BACKEND_TOKENS = {
   MakeDecisionInputPort: Symbol('MakeDecisionInputPort'),
   LeaveGameInputPort: Symbol('LeaveGameInputPort'),
   AutoActionInputPort: Symbol('AutoActionInputPort'),
-  RecordGameStatsInputPort: Symbol('RecordGameStatsInputPort'),
   ConfirmContinueInputPort: Symbol('ConfirmContinueInputPort'),
 
   // ===== Application Services =====
