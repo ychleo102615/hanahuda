@@ -28,21 +28,29 @@ let cleanupTimer: ReturnType<typeof setInterval> | null = null
  * 執行訪客清理
  *
  * @description
- * 刪除超過 90 天未活躍的訪客資料。
+ * 1. 軟刪除超過 90 天未活躍的訪客資料
+ * 2. 硬刪除已軟刪除且無遊戲記錄的訪客（資料全白，無保留價值）
  */
 async function performCleanup(): Promise<void> {
   try {
     const { playerRepository } = getIdentityContainer()
-    const deletedCount = await playerRepository.deleteInactiveGuests(GUEST_INACTIVE_DAYS)
 
-    if (deletedCount > 0) {
-      logger.info('Inactive guests cleaned up (FR-010a)', {
-        deletedCount,
-        inactiveDays: GUEST_INACTIVE_DAYS,
-      })
-    }
+    // 步驟 1: 軟刪除長時間未活躍的訪客
+    const softDeletedCount = await playerRepository.deleteInactiveGuests(GUEST_INACTIVE_DAYS)
+
+    logger.info('[GuestCleanup] Soft-delete completed', {
+      softDeletedCount,
+      inactiveDays: GUEST_INACTIVE_DAYS,
+    })
+
+    // 步驟 2: 硬刪除已軟刪除且無遊戲記錄的訪客
+    const hardDeletedCount = await playerRepository.hardDeleteGuestsWithoutGameLogs()
+
+    logger.info('[GuestCleanup] Hard-delete completed', {
+      hardDeletedCount,
+    })
   } catch (error) {
-    logger.error('Failed to cleanup inactive guests', {
+    logger.error('[GuestCleanup] Cleanup failed', {
       error: error instanceof Error ? error.message : String(error),
     })
   }
@@ -53,6 +61,11 @@ export default defineNitroPlugin((nitroApp) => {
   if (cleanupTimer) {
     return
   }
+
+  logger.info('[GuestCleanup] Scheduler initialized', {
+    intervalHours: CLEANUP_INTERVAL_MS / 60 / 60 / 1000,
+    inactiveDays: GUEST_INACTIVE_DAYS,
+  })
 
   // 啟動定期清理
   cleanupTimer = setInterval(performCleanup, CLEANUP_INTERVAL_MS)
