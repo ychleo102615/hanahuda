@@ -7,7 +7,7 @@
  *
  * 清理策略：
  * - 每 1 小時執行一次清理
- * - 清理 createdAt 超過 7 天的日誌
+ * - 清理 createdAt 超過 RETENTION_DAYS 天的日誌
  */
 
 import { lt } from 'drizzle-orm'
@@ -18,8 +18,8 @@ import { logger } from '~~/server/utils/logger'
 /** 清理間隔（毫秒）：1 小時 */
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000
 
-/** 日誌保留天數：7 天 */
-const RETENTION_DAYS = 7
+/** 日誌保留天數 */
+const RETENTION_DAYS = 3
 
 /** 清理計時器 ID */
 let cleanupTimer: ReturnType<typeof setInterval> | null = null
@@ -35,12 +35,15 @@ async function performCleanup(): Promise<void> {
       .where(lt(gameLogs.createdAt, cutoffDate))
       .returning({ id: gameLogs.id })
 
-    // 只在有刪除時記錄
-    if (deleted.length > 0) {
-      logger.info('GameLog cleanup completed', { deletedCount: deleted.length })
-    }
-  } catch {
-    // 清理失敗不影響應用
+    logger.info('[GameLogCleanup] Cleanup completed', {
+      deletedCount: deleted.length,
+      retentionDays: RETENTION_DAYS,
+      cutoffDate: cutoffDate.toISOString(),
+    })
+  } catch (error) {
+    logger.error('[GameLogCleanup] Cleanup failed', {
+      error: error instanceof Error ? error.message : String(error),
+    })
   }
 }
 
@@ -49,6 +52,11 @@ export default defineNitroPlugin((nitroApp) => {
   if (cleanupTimer) {
     return
   }
+
+  logger.info('[GameLogCleanup] Scheduler initialized', {
+    intervalHours: CLEANUP_INTERVAL_MS / 60 / 60 / 1000,
+    retentionDays: RETENTION_DAYS,
+  })
 
   // 啟動定期清理
   cleanupTimer = setInterval(performCleanup, CLEANUP_INTERVAL_MS)
