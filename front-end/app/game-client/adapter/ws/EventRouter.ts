@@ -1,9 +1,8 @@
 /**
- * EventRouter - SSE 事件路由器
+ * EventRouter - 遊戲事件路由器
  *
  * @description
- * 將 SSE 事件類型映射到對應的 Input Port,負責事件分發。
- * 參考契約: specs/004-ui-adapter-layer/contracts/sse-client.md
+ * 將遊戲事件類型映射到對應的 Input Port，負責事件分發。
  *
  * @example
  * ```typescript
@@ -29,8 +28,8 @@ import type { SSEEventType } from '#shared/contracts'
  * 使用 Promise 鏈確保事件依序處理。每個事件會等待前一個事件的 Use Case
  * 完全執行完畢（包括動畫）後才開始處理。
  *
- * **注意**：SSE 連線管理由 Adapter 層負責（SSEConnectionManager）。
- * 在呼叫 clearEventChain() 前，SSE 應已斷開，因此不會有舊事件需要過濾。
+ * **注意**：WebSocket 連線管理由 Adapter 層負責（GatewayWebSocketClient）。
+ * 在呼叫 clearEventChain() 前，WebSocket 應已斷開，因此不會有舊事件需要過濾。
  */
 export class EventRouter {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -65,7 +64,7 @@ export class EventRouter {
   /**
    * 註冊事件處理器
    *
-   * @param eventType - SSE 事件類型 (例如 'GameStarted')
+   * @param eventType - 遊戲事件類型 (例如 'GameStarted')
    * @param port - Event Handler Port 實例
    *
    * @example
@@ -81,12 +80,12 @@ export class EventRouter {
   /**
    * 路由事件到對應的 Event Handler Port
    *
-   * @param eventType - SSE 事件類型
+   * @param eventType - 遊戲事件類型
    * @param payload - 事件 payload
    *
    * @description
-   * 如果事件類型未註冊,記錄警告但不拋出異常。
-   * 如果 Event Handler Port 執行失敗,錯誤會向上傳播。
+   * 如果事件類型未註冊，記錄警告但不拋出異常。
+   * 如果 Event Handler Port 執行失敗，錯誤會向上傳播。
    *
    * **序列化處理**：
    * 事件會被加入 Promise 鏈中，確保前一個事件的 Use Case（包括動畫）
@@ -121,7 +120,6 @@ export class EventRouter {
 
     // 將事件加入處理鏈，等待前一個事件完成
     this.eventChain = this.eventChain
-      // .then(() => new Promise(resolve => setTimeout(resolve, 3000)))
       .then(() => {
         // 檢查是否已取消（Adapter 層內部邏輯）
         if (this.operationSession?.getSignal()?.aborted) {
@@ -138,7 +136,7 @@ export class EventRouter {
   /**
    * 取消註冊事件處理器
    *
-   * @param eventType - SSE 事件類型
+   * @param eventType - 遊戲事件類型
    *
    * @example
    * ```typescript
@@ -167,13 +165,13 @@ export class EventRouter {
    * @description
    * 用於狀態恢復時，重置 Promise chain，新事件將從乾淨的起點開始。
    *
-   * **前置條件**：呼叫此方法前，SSE 連線應已斷開。
-   * 這由 Adapter 層（SSEConnectionManager）負責確保。
+   * **前置條件**：呼叫此方法前，WebSocket 連線應已斷開。
+   * 這由 Adapter 層（GatewayWebSocketClient）負責確保。
    *
    * @example
    * ```typescript
-   * // 1. 先斷開 SSE
-   * gameEventClient.disconnect()
+   * // 1. 先斷開 WebSocket
+   * gatewayClient.disconnect()
    * // 2. 再清空事件鏈
    * router.clearEventChain()
    * ```

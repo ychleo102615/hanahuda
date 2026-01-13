@@ -3,8 +3,8 @@
  *
  * @description
  * 組合式事件發佈器，統一發佈事件到所有訂閱者：
- * 1. SSE 連線（透過 ConnectionStore）
- * 2. AI 對手（透過 OpponentStore）
+ * 1. AI 對手（透過 OpponentStore）
+ * 2. 玩家連線（透過 PlayerEventBus，WebSocket Gateway 架構）
  * 3. 資料庫日誌（透過 GameLogRepository）
  *
  * 設計原則：
@@ -22,7 +22,6 @@ import type { GameLogRepositoryPort } from '~~/server/core-game/application/port
 import type { GameEvent, GameStartedEvent, RoundDealtEvent, CardPlay } from '#shared/contracts'
 import { EVENT_TYPES } from '#shared/contracts'
 import type { GameLogEventType } from '~~/server/database/schema/gameLogs'
-import { connectionStore } from './connectionStore'
 import { opponentStore } from '~~/server/core-game/adapters/opponent/opponentStore'
 import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
 import {
@@ -113,31 +112,24 @@ export class CompositeEventPublisher implements EventPublisherPort {
    * 發佈通用遊戲事件到指定遊戲
    *
    * @description
-   * 1. 發布到傳統 SSE 連線（向後兼容 /api/v1/games/connect）
-   * 2. 發布到 AI 對手
-   * 3. 發布到 PlayerEventBus（新 Gateway 架構 /api/v1/events）
-   * 4. 記錄到資料庫
+   * 1. 發布到 AI 對手
+   * 2. 發布到 PlayerEventBus（WebSocket Gateway 架構 /_ws）
+   * 3. 記錄到資料庫
    *
    * @param gameId - 遊戲 ID
    * @param event - 遊戲事件
    */
   publishToGame(gameId: string, event: GameEvent): void {
-    // 1. 發布到 SSE 連線（傳統 Clients，向後兼容）
-    const connectionCount = connectionStore.getConnectionCount(gameId)
-    if (connectionCount > 0) {
-      connectionStore.broadcast(gameId, event)
-    }
-
-    // 2. 發布到 AI 對手（若有註冊）
+    // 1. 發布到 AI 對手（若有註冊）
     const hasOpponent = opponentStore.hasOpponent(gameId)
     if (hasOpponent) {
       opponentStore.sendEvent(gameId, event)
     }
 
-    // 3. 發布到 PlayerEventBus（新 Gateway 架構）
+    // 2. 發布到 PlayerEventBus（WebSocket Gateway 架構）
     this.publishToPlayerEventBus(gameId, event)
 
-    // 4. 記錄到資料庫（Fire-and-Forget）
+    // 3. 記錄到資料庫（Fire-and-Forget）
     this.logEventToDatabase(gameId, event)
   }
 
@@ -291,18 +283,14 @@ export class CompositeEventPublisher implements EventPublisherPort {
    *
    * @description
    * 用於重連時發送 GameSnapshotRestore 事件給單一玩家。
-   * 1. 發送到傳統 SSE 連線（向後兼容）
-   * 2. 發送到 PlayerEventBus（新 Gateway 架構）
+   * 透過 PlayerEventBus（WebSocket Gateway 架構）發送。
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
    * @param event - 遊戲事件
    */
-  publishToPlayer(gameId: string, playerId: string, event: GameEvent): void {
-    // 1. 傳統 SSE 連線（向後兼容）
-    connectionStore.sendToPlayer(gameId, playerId, event)
-
-    // 2. PlayerEventBus（新 Gateway 架構）
+  publishToPlayer(_gameId: string, playerId: string, event: GameEvent): void {
+    // 透過 PlayerEventBus（WebSocket Gateway 架構）發送
     const gatewayEvent = createGameEvent(event.event_type, event)
     playerEventBus.publishToPlayer(playerId, gatewayEvent)
   }

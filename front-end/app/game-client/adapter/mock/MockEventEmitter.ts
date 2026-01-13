@@ -13,7 +13,7 @@
  * ```
  */
 
-import { EventRouter } from '../sse/EventRouter'
+import { EventRouter } from '../ws/EventRouter'
 import { mockEventScript } from './mockEventScript'
 // import { mockEventScriptForSelection as mockEventScript } from './mockEventScriptForSelection'
 

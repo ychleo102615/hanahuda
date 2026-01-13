@@ -2,7 +2,7 @@
  * GatewayEventRouter - 統一 Gateway 事件路由器
  *
  * @description
- * 將 Gateway SSE 事件根據 domain 路由到對應的子路由器：
+ * 將 Gateway 事件根據 domain 路由到對應的子路由器：
  * - MATCHMAKING domain → MatchmakingEventRouter
  * - GAME domain → EventRouter (遊戲事件路由器)
  *
@@ -17,7 +17,7 @@
  * gatewayRouter.route(gatewayEvent)
  * ```
  *
- * @module app/game-client/adapter/sse/GatewayEventRouter
+ * @module app/game-client/adapter/ws/GatewayEventRouter
  */
 
 import type { GatewayEvent, SSEEventType, MatchmakingSSEEventType } from '#shared/contracts'

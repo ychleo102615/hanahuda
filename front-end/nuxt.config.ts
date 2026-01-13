@@ -11,6 +11,13 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  // 啟用 Nitro WebSocket 支援
+  nitro: {
+    experimental: {
+      websocket: true,
+    },
+  },
+
   devtools: { enabled: false },
 
   app: {
