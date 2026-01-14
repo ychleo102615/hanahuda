@@ -8,7 +8,7 @@
  * 2. 若無等待中遊戲 → 建立新遊戲（WAITING 狀態）
  * 3. 若有等待中遊戲 → 加入成為 Player 2（IN_PROGRESS 狀態）
  *
- * 注意：不直接建立 AI 對手，AI 配對由 OpponentService 透過事件監聽處理（T056）
+ * 注意：不直接建立 AI 對手，AI 配對由 GameCreationHandler 透過 AiOpponentPort 處理
  *
  * @module server/application/use-cases/joinGameUseCase
  */
@@ -23,7 +23,6 @@ import {
 import type { RoomTypeId } from '#shared/constants/roomTypes'
 import type { GameRepositoryPort } from '~~/server/core-game/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/core-game/application/ports/output/eventPublisherPort'
-import type { InternalEventPublisherPort } from '~~/server/core-game/application/ports/output/internalEventPublisherPort'
 import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
 import type { FullEventMapperPort } from '~~/server/core-game/application/ports/output/eventMapperPort'
 import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
@@ -49,8 +48,11 @@ import type { GameStartService } from '~~/server/core-game/application/services/
  * 處理玩家加入遊戲的完整流程，實作 Server 中立的配對邏輯。
  *
  * 事件發布設計：
- * - 建立新遊戲時 → 發布 ROOM_CREATED 內部事件（通知 OpponentService）
- * - 加入現有遊戲時 → 發布 GameStarted 事件
+ * - 建立新遊戲時 → 返回 game_waiting 狀態
+ * - 加入現有遊戲時 → 發布 GameStarted SSE 事件
+ *
+ * 注意：AI 配對由 GameCreationHandler 透過 AiOpponentPort 處理，
+ * 本 UseCase 不負責通知 AI 加入。
  */
 export class JoinGameUseCase implements JoinGameInputPort {
   constructor(
@@ -58,7 +60,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: FullEventMapperPort,
-    private readonly internalEventPublisher: InternalEventPublisherPort,
     private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager: GameTimeoutPort,
     private readonly gameLogRepository: GameLogRepositoryPort | undefined,
@@ -254,12 +255,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
 
     // 建立 playerId -> gameId 映射
     this.gameStore.addPlayerGame(playerId, gameId)
-
-    // 發布 ROOM_CREATED 內部事件（通知 OpponentService 有新房間需要 AI 加入）
-    this.internalEventPublisher.publishRoomCreated({
-      gameId: game.id,
-      waitingPlayerId: playerId,
-    })
 
     // 啟動配對超時計時器
     this.gameTimeoutManager.startMatchmakingTimeout(game.id, () => {

@@ -33,14 +33,6 @@ export {
   type MockGameRepository,
 } from './gameRepositoryMock'
 
-// InternalEventPublisher
-export {
-  createMockInternalEventPublisher,
-  createMockInternalEventPublisher as createInternalEventPublisherMock,
-  getRoomCreatedPayloads,
-  type MockInternalEventPublisher,
-} from './internalEventPublisherMock'
-
 // GameTimeout
 export {
   createMockGameTimeout,

@@ -6,7 +6,7 @@
  *
  * 事件處理流程:
  * - HUMAN match: 直接建立雙人遊戲
- * - BOT match: 建立等待遊戲，發布 ROOM_CREATED 觸發 Opponent BC
+ * - BOT match: 建立等待遊戲，透過 AiOpponentPort 請求 AI 加入
  *
  * @module server/core-game/adapters/event-subscriber/gameCreationHandler
  */
@@ -19,7 +19,7 @@ import {
   type Unsubscribe,
 } from '~~/server/shared/infrastructure/event-bus'
 import type { JoinGameInputPort } from '../../application/ports/input/joinGameInputPort'
-import type { InternalEventPublisherPort } from '../../application/ports/output/internalEventPublisherPort'
+import type { AiOpponentPort } from '../../application/ports/output/aiOpponentPort'
 import { inMemoryGameStore } from '../persistence/inMemoryGameStore'
 import { gameTimeoutManager } from '../timeout/gameTimeoutManager'
 import { logger } from '~~/server/utils/logger'
@@ -35,11 +35,11 @@ export class GameCreationHandler {
 
   constructor(
     private readonly joinGameUseCase: JoinGameInputPort,
-    private readonly internalEventPublisher: InternalEventPublisherPort
+    private readonly aiOpponentPort: AiOpponentPort
   ) {}
 
   /**
-   * 啟動監聽
+   * 啟動監聯
    */
   start(): void {
     if (this.unsubscribe) {
@@ -156,7 +156,7 @@ export class GameCreationHandler {
    *
    * @description
    * 1. Player 建立遊戲 (WAITING 狀態)
-   * 2. 發布 ROOM_CREATED 事件，觸發 Opponent BC 加入
+   * 2. 透過 AiOpponentPort 請求 AI 加入
    * 3. 發布 MatchFound 到 PlayerEventBus（包含有效 game_id）
    */
   private async handleBotMatch(payload: MatchFoundPayload): Promise<void> {
@@ -172,7 +172,9 @@ export class GameCreationHandler {
       return
     }
 
-    // 注意：ROOM_CREATED 事件已由 JoinGameUseCase 發布，此處不需重複發布
+    // 透過 AiOpponentPort 請求 AI 加入（非同步，不等待完成）
+    // AI 會在 1-3 秒後加入遊戲
+    this.aiOpponentPort.createAiForGame({ gameId: result.gameId })
 
     // 遊戲建立成功後，發布 MatchFound 到 PlayerEventBus
     const matchFoundEvent = createMatchmakingEvent('MatchFound', {
@@ -194,13 +196,13 @@ let instance: GameCreationHandler | null = null
  */
 export function initGameCreationHandler(
   joinGameUseCase: JoinGameInputPort,
-  internalEventPublisher: InternalEventPublisherPort
+  aiOpponentPort: AiOpponentPort
 ): GameCreationHandler {
   if (instance) {
     instance.stop()
   }
 
-  instance = new GameCreationHandler(joinGameUseCase, internalEventPublisher)
+  instance = new GameCreationHandler(joinGameUseCase, aiOpponentPort)
   instance.start()
   return instance
 }

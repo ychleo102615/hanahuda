@@ -22,7 +22,6 @@ import { playerStatsRepository } from '~~/server/core-game/adapters/persistence/
 import { gameLogRepository } from '~~/server/core-game/adapters/persistence/drizzleGameLogRepository'
 
 // Adapters - Event Publisher
-import { internalEventBus } from '~~/server/core-game/adapters/event-publisher/internalEventBus'
 import { createCompositeEventPublisher } from '~~/server/core-game/adapters/event-publisher/compositeEventPublisher'
 
 // Adapters - Mappers
@@ -52,6 +51,9 @@ import { ConfirmContinueUseCase } from '~~/server/core-game/application/use-case
 import { TurnFlowService } from '~~/server/core-game/application/services/turnFlowService'
 import { GameStartService } from '~~/server/core-game/application/services/gameStartService'
 
+// Opponent Adapter
+import { OpponentRegistry } from '~~/server/core-game/adapters/opponent/opponentRegistry'
+
 // Input Port Types (only importing types used for explicit type annotations)
 import type { LeaveGameInputPort } from '~~/server/core-game/application/ports/input/leaveGameInputPort'
 import type { AutoActionInputPort } from '~~/server/core-game/application/ports/input/autoActionInputPort'
@@ -70,7 +72,6 @@ function createBackendContainer(): DIContainer {
   diContainer.register(BACKEND_TOKENS.PlayerStatsRepository, () => playerStatsRepository, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameLogRepository, () => gameLogRepository, { singleton: true })
   diContainer.register(BACKEND_TOKENS.EventMapper, () => eventMapper, { singleton: true })
-  diContainer.register(BACKEND_TOKENS.InternalEventBus, () => internalEventBus, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameTimeoutManager, () => gameTimeoutManager, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameLock, () => inMemoryGameLock, { singleton: true })
 
@@ -158,7 +159,6 @@ function createBackendContainer(): DIContainer {
     compositeEventPublisher,
     inMemoryGameStore,
     eventMapper,
-    internalEventBus,
     inMemoryGameLock,
     gameTimeoutManager,
     gameLogRepository,
@@ -215,6 +215,16 @@ function createBackendContainer(): DIContainer {
 
   // ===== 4. 註冊 Application Services =====
   diContainer.register(BACKEND_TOKENS.TurnFlowService, () => turnFlowService, { singleton: true })
+
+  // ===== 5. 註冊 Opponent Adapter (AiOpponentPort) =====
+  const opponentRegistry = new OpponentRegistry({
+    joinGameAsAi: joinGameAsAiUseCase,
+    playHandCard: playHandCardUseCase,
+    selectTarget: selectTargetUseCase,
+    makeDecision: makeDecisionUseCase,
+    gameStore: inMemoryGameStore,
+  })
+  diContainer.register(BACKEND_TOKENS.AiOpponentPort, () => opponentRegistry, { singleton: true })
 
   return diContainer
 }
