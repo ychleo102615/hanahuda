@@ -8,7 +8,7 @@
  * - 為每個配對條目設定獨立計時器
  * - 10 秒後轉換為 LOW_AVAILABILITY 狀態
  * - 15 秒後觸發 Bot Fallback
- * - 提供 SSE 狀態更新回調
+ * - 提供狀態更新回調
  *
  * 計時器設計：
  * - 每個 Entry 有獨立的 lowAvailability (10s) 和 botFallback (15s) 計時器
@@ -38,7 +38,7 @@ const TIMERS = {
 } as const
 
 /**
- * SSE 狀態更新事件
+ * 狀態更新事件
  */
 export interface MatchmakingStatusUpdate {
   readonly entry_id: string
@@ -70,7 +70,7 @@ export interface BotFallbackInfo {
  * Bot Fallback 回調類型
  *
  * @description
- * 由 SSE Endpoint 定義，呼叫 ProcessMatchmakingUseCase.executeBotFallback()。
+ * 由 Gateway Endpoint 定義，呼叫 ProcessMatchmakingUseCase.executeBotFallback()。
  * 確保所有 MATCH_FOUND 事件由 Application Layer 發布，符合 Clean Architecture。
  */
 export type BotFallbackCallback = (info: BotFallbackInfo) => void
@@ -134,7 +134,7 @@ export class MatchmakingRegistry {
    * 此方法具有冪等性：如果條目已存在，會先清除舊的計時器再重新設定。
    *
    * @param entry 配對條目
-   * @param statusCallback SSE 狀態更新回調
+   * @param statusCallback 狀態更新回調
    * @param botFallbackCallback Bot Fallback 回調（由 Application Layer 定義）
    */
   registerEntry(
@@ -234,7 +234,7 @@ export class MatchmakingRegistry {
     // 更新 Pool 中的狀態
     this.poolPort.updateStatus(entryId, 'LOW_AVAILABILITY')
 
-    // 發送 SSE 狀態更新
+    // 發送狀態更新
     this.sendStatusUpdate(entryTimers, 'LOW_AVAILABILITY')
   }
 
@@ -264,11 +264,11 @@ export class MatchmakingRegistry {
   }
 
   /**
-   * 發送 SSE 狀態更新
+   * 發送狀態更新
    *
    * @description
-   * 1. 呼叫傳統 statusCallback（向後兼容舊 SSE 端點）
-   * 2. 發布到 PlayerEventBus（新 Gateway 架構）
+   * 1. 呼叫傳統 statusCallback（向後兼容）
+   * 2. 發布到 PlayerEventBus（Gateway 架構）
    */
   private sendStatusUpdate(entryTimers: EntryTimers, status: MatchmakingStatusCode): void {
     const now = new Date()

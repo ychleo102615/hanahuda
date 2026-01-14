@@ -8,7 +8,7 @@
  * - 小螢幕：各區域使用最小高度，頁面可垂直滾動
  *
  * Gateway Architecture:
- * - 頁面載入時建立單一 Gateway SSE 連線
+ * - 頁面載入時建立單一 Gateway WebSocket 連線
  * - Gateway 自動處理配對和遊戲事件
  * - 後端推送 GatewayConnected 事件決定初始狀態
  * - 重連由 GatewayEventClient 自動處理
@@ -69,7 +69,7 @@ const matchmakingApiClient = gameMode === 'backend'
   ? tryResolveDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
   : null
 
-// Gateway SSE 連線（Backend 模式）
+// Gateway WebSocket 連線（Backend 模式）
 const gatewayConnection = gameMode === 'backend' ? useGatewayConnection() : null
 
 // 提供 gatewayConnection 給子元件（GameFinishedModal 需要用於 Rematch）

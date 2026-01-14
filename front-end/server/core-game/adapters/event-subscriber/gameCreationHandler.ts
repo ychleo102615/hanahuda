@@ -22,6 +22,7 @@ import type { JoinGameInputPort } from '../../application/ports/input/joinGameIn
 import type { InternalEventPublisherPort } from '../../application/ports/output/internalEventPublisherPort'
 import { inMemoryGameStore } from '../persistence/inMemoryGameStore'
 import { gameTimeoutManager } from '../timeout/gameTimeoutManager'
+import { logger } from '~~/server/utils/logger'
 
 /**
  * Game Creation Handler
@@ -88,7 +89,7 @@ export class GameCreationHandler {
     })
 
     if (player1Result.status !== 'game_waiting') {
-      console.error('[GameCreationHandler] Failed to create game for player1:', player1Result)
+      logger.error('Failed to create game for player1', { result: player1Result })
       this.notifyMatchFailed(payload.player1Id, payload.player2Id, 'GAME_CREATION_FAILED')
       return
     }
@@ -101,7 +102,7 @@ export class GameCreationHandler {
     })
 
     if (player2Result.status !== 'game_started') {
-      console.error('[GameCreationHandler] Failed to join game for player2:', player2Result)
+      logger.error('Failed to join game for player2', { result: player2Result })
       // 清理 player1 的遊戲並通知兩個玩家
       this.cleanupFailedGame(player1Result.gameId)
       this.notifyMatchFailed(payload.player1Id, payload.player2Id, 'OPPONENT_JOIN_FAILED')
@@ -167,7 +168,7 @@ export class GameCreationHandler {
     })
 
     if (result.status !== 'game_waiting') {
-      console.error('[GameCreationHandler] Failed to create game for bot match:', result)
+      logger.error('Failed to create game for bot match', { result })
       return
     }
 

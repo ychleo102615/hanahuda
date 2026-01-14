@@ -13,6 +13,7 @@ import { getIdentityContainer } from '~~/server/identity/adapters/di/container'
 import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 import { wsConnectionManager } from '~~/server/gateway/wsConnectionManager'
 import { COOKIE_NAMES } from '#shared/contracts/identity-types'
+import { logger } from '~~/server/utils/logger'
 
 export default defineEventHandler(async (event) => {
   // 取得 Session ID
@@ -37,7 +38,7 @@ export default defineEventHandler(async (event) => {
 
     if (!result.success) {
       // 即使登出失敗，也清除 Cookie（graceful handling）
-      console.warn('Logout use case failed:', result.message)
+      logger.warn('Logout use case failed', { message: result.message })
     }
   }
 

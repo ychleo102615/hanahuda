@@ -50,7 +50,7 @@ watch(isMatched, (matched) => {
 
 function startTimer() {
   if (timerInterval) return
-  // 從 store 同步初始值（可能是從 SSE 事件取得的）
+  // 從 store 同步初始值（可能是從 WebSocket 事件取得的）
   localElapsedSeconds.value = matchmakingStore.elapsedSeconds
   timerInterval = setInterval(() => {
     localElapsedSeconds.value++

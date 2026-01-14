@@ -3,11 +3,11 @@
  *
  * @description
  * 以 playerId 為 key 的事件發布訂閱系統。
- * 用於將 BC 事件路由到特定玩家的 SSE 連線。
+ * 用於將 BC 事件路由到特定玩家的 WebSocket 連線。
  *
  * 與 internalEventBus 的區別：
  * - internalEventBus: BC 間內部通訊（MATCH_FOUND, ROOM_CREATED）
- * - playerEventBus: 發送事件給前端玩家（透過 Gateway SSE）
+ * - playerEventBus: 發送事件給前端玩家（透過 Gateway WebSocket）
  *
  * @module server/shared/infrastructure/event-bus/playerEventBus
  */
@@ -24,8 +24,8 @@ export type GatewayEventDomain = 'MATCHMAKING' | 'GAME'
  * Gateway 事件介面
  *
  * @description
- * 統一的事件格式，用於前端 SSE 接收。
- * SSE 事件名稱格式: `${domain}:${type}`
+ * 統一的事件格式，用於前端 WebSocket 接收。
+ * 事件名稱格式: `${domain}:${type}`
  */
 export interface GatewayEvent {
   readonly domain: GatewayEventDomain

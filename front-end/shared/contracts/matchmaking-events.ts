@@ -1,8 +1,8 @@
 /**
- * Matchmaking SSE Event Contracts
+ * Matchmaking Event Contracts
  *
  * @description
- * 配對 SSE 事件類型定義（SSOT）。
+ * 配對事件類型定義（SSOT）。
  * 對應 specs/011-online-matchmaking/contracts/matchmaking-api.yaml
  *
  * @module shared/contracts/matchmaking-events
@@ -13,7 +13,7 @@
 // ============================================================================
 
 /**
- * 配對 SSE 事件類型常數
+ * 配對事件類型常數
  */
 export const MATCHMAKING_EVENT_TYPES = {
   MatchmakingStatus: 'MatchmakingStatus',
@@ -24,9 +24,9 @@ export const MATCHMAKING_EVENT_TYPES = {
 } as const
 
 /**
- * 配對 SSE 事件類型陣列（用於 EventClient 註冊監聽器）
+ * 配對事件類型陣列（用於 EventClient 註冊監聽器）
  */
-export const SSE_MATCHMAKING_EVENT_TYPES = [
+export const MATCHMAKING_EVENT_TYPE_LIST = [
   MATCHMAKING_EVENT_TYPES.MatchmakingStatus,
   MATCHMAKING_EVENT_TYPES.MatchFound,
   MATCHMAKING_EVENT_TYPES.MatchmakingCancelled,
@@ -35,9 +35,19 @@ export const SSE_MATCHMAKING_EVENT_TYPES = [
 ] as const
 
 /**
- * 配對 SSE 事件類型（從常數陣列衍生）
+ * 配對事件類型（從常數陣列衍生）
  */
-export type MatchmakingSSEEventType = (typeof SSE_MATCHMAKING_EVENT_TYPES)[number]
+export type MatchmakingEventType = (typeof MATCHMAKING_EVENT_TYPE_LIST)[number]
+
+/**
+ * @deprecated 請使用 MATCHMAKING_EVENT_TYPE_LIST
+ */
+export const SSE_MATCHMAKING_EVENT_TYPES = MATCHMAKING_EVENT_TYPE_LIST
+
+/**
+ * @deprecated 請使用 MatchmakingEventType
+ */
+export type MatchmakingSSEEventType = MatchmakingEventType
 
 // ============================================================================
 // Event Interfaces

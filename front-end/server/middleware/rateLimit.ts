@@ -64,7 +64,7 @@ export default defineEventHandler((event) => {
   // 判斷端點類型
   const endpointType = getEndpointType(path)
   if (!endpointType) {
-    // 不需要限速的端點（如 SSE events, snapshot GET）
+    // 不需要限速的端點（如 events, snapshot GET）
     return
   }
 

@@ -41,7 +41,7 @@ export interface GameConfig {
   /** 假玩家思考時間上限（毫秒） */
   readonly opponent_thinking_max_ms: number
 
-  /** SSE 心跳間隔（秒） */
+  /** WebSocket 心跳間隔（秒） */
   readonly sse_heartbeat_interval_seconds: number
 
   /** 超時冗餘時間（秒） - 後端判定超時前的額外緩衝 */

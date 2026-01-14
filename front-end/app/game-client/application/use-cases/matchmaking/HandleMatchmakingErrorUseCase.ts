@@ -2,7 +2,7 @@
  * HandleMatchmakingErrorUseCase
  *
  * @description
- * 處理 MatchmakingError SSE 事件，更新 UI 錯誤狀態。
+ * 處理 MatchmakingError 事件，更新 UI 錯誤狀態。
  *
  * @module app/game-client/application/use-cases/matchmaking/HandleMatchmakingErrorUseCase
  */

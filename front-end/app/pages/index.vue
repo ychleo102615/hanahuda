@@ -273,9 +273,9 @@ const handleLoginSuccess = () => {
                     <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">Nuxt 4</div>
                     <div class="text-gray-300 text-sm">Full-Stack Framework</div>
                   </div>
-                  <!-- SSE -->
+                  <!-- WebSocket -->
                   <div class="bg-primary-700/50 rounded-xl p-6 border border-primary-600/30">
-                    <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">SSE</div>
+                    <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">WS</div>
                     <div class="text-gray-300 text-sm">Real-time Events</div>
                   </div>
                   <!-- Clean Architecture -->

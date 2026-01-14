@@ -2,12 +2,12 @@
  * HandleMatchFoundUseCase
  *
  * @description
- * 處理 MatchFound SSE 事件，更新狀態並準備導航到遊戲。
+ * 處理 MatchFound 事件，更新狀態並準備導航到遊戲。
  *
  * 流程：
  * 1. 更新配對狀態為 'matched'
  * 2. 儲存對手資訊
- * 3. 儲存 game_id 供後續 SSE 連線使用
+ * 3. 儲存 game_id 供後續 WebSocket 連線使用
  * 4. 清除 SessionContext 中的 entryId（配對完成後不再需要）
  *
  * @module app/game-client/application/use-cases/matchmaking/HandleMatchFoundUseCase

@@ -3,7 +3,7 @@
  *
  * @description
  * 匯出 WebSocket 相關的 Adapter 類別。
- * 取代原本的 SSE Adapter。
+ * 取代原本的 REST API Adapter。
  *
  * @module app/game-client/adapter/ws
  */

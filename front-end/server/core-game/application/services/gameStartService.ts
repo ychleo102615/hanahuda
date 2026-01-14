@@ -119,7 +119,7 @@ export class GameStartService {
     // 6. 建立 playerId -> gameId 映射
     this.gameStore.addPlayerGame(secondPlayer.id, game.id)
 
-    // 7. 排程初始事件（延遲讓客戶端建立 SSE 連線）
+    // 7. 排程初始事件（延遲讓客戶端建立 WebSocket 連線）
     if (specialRuleResult.triggered && game.currentRound) {
       this.scheduleSpecialRuleEvents(game, specialRuleResult)
     } else {

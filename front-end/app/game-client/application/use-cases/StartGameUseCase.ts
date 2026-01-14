@@ -2,12 +2,12 @@
  * StartGameUseCase - Use Case
  *
  * @description
- * 啟動遊戲連線流程：重置狀態並建立 SSE 連線。
+ * 啟動遊戲連線流程：重置狀態並建立 WebSocket 連線。
  *
- * SSE-First Architecture：
+ * Gateway Architecture：
  * - 連線建立後，後端透過 InitialState 事件決定遊戲狀態
  * - playerId、playerName 由呼叫端提供（來自 authStore）
- * - roomTypeId 由 SSE 事件（GameStarted/GameSnapshotRestore）提供，存入 gameState
+ * - roomTypeId 由 WebSocket 事件（GameStarted/GameSnapshotRestore）提供，存入 gameState
  *
  * 業務流程（順序至關重要！）：
  * 1. 如果 isNewGame 為 true，清除 gameState 中的 currentGameId
@@ -17,12 +17,12 @@
  * 5. 建立新的遊戲連線
  *
  * **重要**：disconnect() 必須在 clearHiddenCards() 和 reset() 之前執行！
- * 否則舊的 SSE 事件可能在清理過程中繼續進入，導致：
+ * 否則舊的 WebSocket 事件可能在清理過程中繼續進入，導致：
  * - 動畫層的 hideCards() 被呼叫，卡片消失
  * - UI 狀態被舊事件覆蓋（如顯示錯誤的 "Round Over"）
  *
  * 依賴的 Output Ports：
- * - GameConnectionPort: 管理 SSE 連線
+ * - GameConnectionPort: 管理 WebSocket 連線
  * - GameStatePort: 管理遊戲狀態
  * - NotificationPort: 管理 UI 通知狀態
  * - AnimationPort: 中斷動畫、清除隱藏卡片

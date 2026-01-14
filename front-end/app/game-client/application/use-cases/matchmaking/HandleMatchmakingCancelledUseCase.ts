@@ -2,7 +2,7 @@
  * HandleMatchmakingCancelledUseCase
  *
  * @description
- * 處理 MatchmakingCancelled SSE 事件，更新 UI 狀態。
+ * 處理 MatchmakingCancelled 事件，更新 UI 狀態。
  *
  * 清理項目：
  * - MatchmakingState: 重置為 idle 狀態

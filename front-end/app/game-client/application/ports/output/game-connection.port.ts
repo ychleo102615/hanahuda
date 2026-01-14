@@ -3,7 +3,7 @@
  *
  * @description
  * 遊戲連線管理的 Application Layer 介面。
- * 抽象化 SSE 連線細節，讓 Use Case 不依賴具體連線技術。
+ * 抽象化 WebSocket 連線細節，讓 Use Case 不依賴具體連線技術。
  *
  * 由 Application Layer 定義，Adapter Layer 實作。
  *

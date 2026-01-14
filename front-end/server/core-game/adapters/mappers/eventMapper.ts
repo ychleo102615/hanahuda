@@ -2,7 +2,7 @@
  * EventMapper - Adapter Layer
  *
  * @description
- * 將 Domain entities 轉換為 SSE events。
+ * 將 Domain entities 轉換為推送事件。
  * 負責處理 Domain → Shared Contracts 的轉換邏輯。
  *
  * @module server/adapters/mappers/eventMapper
@@ -58,7 +58,7 @@ function createEventId(): string {
 /**
  * EventMapper
  *
- * 提供 Domain → SSE Event 的轉換方法。
+ * 提供 Domain → 推送事件的轉換方法。
  * 實作 FullEventMapperPort（Application Layer Output Port）。
  */
 export class EventMapper implements FullEventMapperPort {

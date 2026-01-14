@@ -12,7 +12,7 @@
  * 1. 玩家呼叫 POST /matchmaking/enter 進入配對佇列
  * 2. EnterMatchmakingUseCase 嘗試配對，成功則發布 MATCH_FOUND
  * 3. GameCreationHandler 接收 MATCH_FOUND，建立遊戲
- * 4. 遊戲建立後，玩家可透過 SSE 接收遊戲狀態
+ * 4. 遊戲建立後，玩家可透過 WebSocket 接收遊戲狀態
  *
  * @module server/plugins/matchmaking
  */

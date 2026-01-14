@@ -3,12 +3,12 @@
  *
  * @description
  * 由 Application Layer 定義並實作為 Use Cases，
- * 供 Adapter Layer（SSE Listener）呼叫。
+ * 供 Adapter Layer（EventRouter）呼叫。
  *
  * 所有 Port 都繼承自 EventHandlerPort<T>，統一 execute 方法簽名：
  * - execute(event: T, options: ExecuteOptions): void | Promise<void>
  *
- * 包含 10 個事件處理器 Input Ports（對應 10 種 SSE 事件）：
+ * 包含 10 個事件處理器 Input Ports（對應 10 種推送事件）：
  * - HandleGameStartedPort
  * - HandleRoundDealtPort
  * - HandleTurnCompletedPort

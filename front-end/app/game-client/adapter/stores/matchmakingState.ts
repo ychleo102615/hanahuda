@@ -26,7 +26,7 @@ interface MatchmakingState {
   /** 會話 Token（GameRequestJoin 成功後保存） */
   sessionToken: string | null
 
-  /** 遊戲 ID（GameRequestJoin 成功後保存，用於建立 SSE 連線） */
+  /** 遊戲 ID（GameRequestJoin 成功後保存，用於建立 WebSocket 連線） */
   gameId: string | null
 
   /** 錯誤代碼（伺服器回傳） */

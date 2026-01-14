@@ -34,4 +34,4 @@ export type {
   ConnectionStatus,
 } from './stores'
 
-// 注意: API, SSE, Animation, Router, Mock 模組將在後續 Phase 實作
+// 注意: API, WebSocket, Animation, Router, Mock 模組將在後續 Phase 實作

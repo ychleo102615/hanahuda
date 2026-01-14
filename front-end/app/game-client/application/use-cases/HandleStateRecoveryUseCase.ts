@@ -11,7 +11,7 @@
  *
  * 使用者：
  * - TriggerStateRecoveryUseCase（主動請求快照後）
- * - SSE GameSnapshotRestore 事件處理（被動接收）
+ * - GameSnapshotRestore 事件處理（被動接收）
  *
  * 業務流程（handleSnapshotRestore）：
  * 1. 立即中斷所有進行中的動畫（防止視覺混亂）

@@ -2,7 +2,7 @@
  * HandleInitialStatePort - Input Port
  *
  * @description
- * 處理 SSE 連線後的第一個事件 InitialState。
+ * 處理 WebSocket 連線後的第一個事件 InitialState。
  * 統一處理新遊戲加入和斷線重連的情境。
  *
  * 根據 response_type 決定處理方式：
@@ -24,7 +24,7 @@ import type { InitialStateEvent } from '#shared/contracts'
  *
  * @description
  * 使用 abstract class 定義介面，防止 duck typing。
- * Adapter Layer（SSE EventRouter）呼叫此 Port。
+ * Adapter Layer（EventRouter）呼叫此 Port。
  */
 export abstract class HandleInitialStatePort {
   /**

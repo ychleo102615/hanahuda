@@ -2,7 +2,7 @@
  * Matchmaking Status Value Object
  *
  * @description
- * 代表配對狀態資訊，用於透過 SSE 傳送給客戶端。
+ * 代表配對狀態資訊，用於透過 WebSocket 傳送給客戶端。
  *
  * @module server/matchmaking/domain/matchmakingStatus
  */

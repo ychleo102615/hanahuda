@@ -3,7 +3,7 @@
  *
  * @description
  * 統一的 WebSocket 連線入口，整合配對和遊戲事件。
- * 取代原本的 SSE 端點 /api/v1/events。
+ * 取代原本的 REST API 端點。
  *
  * 認證方式（支援兩種模式）：
  * 1. Cookie 認證（單體架構）：透過 session_id Cookie 驗證身份

@@ -2,7 +2,7 @@
  * HandleInitialStateUseCase
  *
  * @description
- * 處理 SSE 連線後的第一個事件 InitialState。
+ * 處理 WebSocket 連線後的第一個事件 InitialState。
  * 統一處理新遊戲加入和斷線重連的所有情境。
  *
  * 支援五種 response_type：
