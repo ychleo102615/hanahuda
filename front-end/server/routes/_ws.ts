@@ -59,6 +59,24 @@ function getPlayerIdFromPeer(peer: Peer): string | undefined {
   return wsConnectionManager.getPlayerIdByPeer(peer)
 }
 
+/**
+ * 安全發送訊息，捕捉連線已關閉的錯誤
+ *
+ * @description
+ * 在連線關閉後嘗試發送會拋出錯誤，此函數會捕捉並記錄這些錯誤。
+ */
+function safeSend(peer: Peer, message: string, playerId?: string): void {
+  try {
+    peer.send(message)
+  } catch (error) {
+    const errorCode = (error as NodeJS.ErrnoException)?.code
+    // 連線已關閉的錯誤是正常的，不需要記錄
+    if (errorCode !== 'ECONNRESET' && errorCode !== 'EPIPE') {
+      logger.warn('WebSocket send failed', { playerId, error })
+    }
+  }
+}
+
 export default defineWebSocketHandler({
   /**
    * WebSocket 連線建立時
@@ -115,7 +133,7 @@ export default defineWebSocketHandler({
         player_id: playerId,
         ...playerStatus,
       })
-      peer.send(JSON.stringify(initialEvent))
+      safeSend(peer, JSON.stringify(initialEvent), playerId)
 
       // 6. 若玩家在遊戲中，發送 GameSnapshotRestore 恢復遊戲狀態
       if (playerStatus.status === 'IN_GAME') {
@@ -131,7 +149,7 @@ export default defineWebSocketHandler({
           const snapshotEvent = eventMapper.toGameSnapshotRestoreEvent(game, remainingSeconds ?? undefined)
           const gatewaySnapshotEvent = createGameEvent('GameSnapshotRestore', snapshotEvent)
 
-          peer.send(JSON.stringify(gatewaySnapshotEvent))
+          safeSend(peer, JSON.stringify(gatewaySnapshotEvent), playerId)
           logger.info('WebSocket sent GameSnapshotRestore', { playerId, gameId: game.id })
         } else {
           logger.warn('WebSocket: game not found in memory for IN_GAME status', {
@@ -219,20 +237,47 @@ export default defineWebSocketHandler({
   /**
    * WebSocket 連線關閉時
    */
-  close(peer) {
-    const playerId = getPlayerIdFromPeer(peer)
+  close(peer, details) {
+    try {
+      const playerId = getPlayerIdFromPeer(peer)
 
-    if (playerId) {
-      wsConnectionManager.removeConnection(playerId)
-      logger.info('WebSocket disconnected', { playerId })
+      if (playerId) {
+        wsConnectionManager.removeConnection(playerId)
+        logger.info('WebSocket disconnected', {
+          playerId,
+          code: details?.code,
+          reason: details?.reason,
+        })
+      }
+    } catch (error) {
+      // 防止 close 處理器拋出未捕捉的異常
+      logger.error('WebSocket close handler error', { error })
     }
   },
 
   /**
    * WebSocket 錯誤時
+   *
+   * @description
+   * 處理網路層錯誤（ECONNRESET、EPIPE 等）。
+   * 這些錯誤通常是客戶端斷線造成的，屬於正常現象。
    */
   error(peer, error) {
-    const playerId = getPlayerIdFromPeer(peer)
-    logger.error('WebSocket error', { playerId, error })
+    try {
+      const playerId = getPlayerIdFromPeer(peer)
+      const errorCode = (error as NodeJS.ErrnoException)?.code
+
+      // ECONNRESET: 連線被對方重置（客戶端關閉瀏覽器）
+      // EPIPE: 寫入已關閉的連線
+      // 這些是正常的網路斷線，降級為 warn
+      if (errorCode === 'ECONNRESET' || errorCode === 'EPIPE') {
+        logger.warn('WebSocket connection reset', { playerId, code: errorCode })
+      } else {
+        logger.error('WebSocket error', { playerId, error })
+      }
+    } catch (handlerError) {
+      // 防止 error 處理器自身拋出未捕捉的異常
+      logger.error('WebSocket error handler error', { handlerError, originalError: error })
+    }
   },
 })
