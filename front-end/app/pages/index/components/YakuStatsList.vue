@@ -1,16 +1,16 @@
 <script setup lang="ts">
 /**
- * YakuStatsAccordion
+ * YakuStatsList
  *
  * @description
- * 役種達成統計摺疊元件，顯示玩家各役種的達成次數。
- * 按達成次數降序排列，支援展開/收合狀態。
+ * 役種達成統計列表元件，顯示玩家各役種的達成次數。
+ * 按達成次數降序排列，使用固定高度配合 overflow-y: auto。
  * 使用金箔蒔絵 (Kinpaku Maki-e) 設計風格。
  *
- * @module pages/index/components/YakuStatsAccordion
+ * @module pages/index/components/YakuStatsList
  */
 
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import yakuDataJson from '~/data/yaku.json'
 
 // Types
@@ -39,8 +39,36 @@ const props = defineProps<{
   yakuCounts: YakuCounts
 }>()
 
-// State
-const isExpanded = ref(false)
+/**
+ * 後端 yaku_type 到前端 yaku.json id 的對應
+ * 後端使用 UPPERCASE_SNAKE_CASE，前端使用 lowercase
+ */
+const BACKEND_TO_FRONTEND_YAKU_MAP: Record<string, string> = {
+  GOKOU: 'goko',
+  SHIKOU: 'shiko',
+  AME_SHIKOU: 'ameshiko',
+  SANKOU: 'sanko',
+  AKATAN: 'akatan',
+  AOTAN: 'aotan',
+  TANZAKU: 'tanzaku',
+  INOSHIKACHO: 'inoshikacho',
+  HANAMI_ZAKE: 'hanamizake',
+  TSUKIMI_ZAKE: 'tsukimizake',
+  TANE: 'tane',
+  KASU: 'kasu',
+}
+
+/**
+ * 將後端格式的 yakuCounts 轉換為前端格式
+ */
+const normalizedYakuCounts = computed<YakuCounts>(() => {
+  const result: YakuCounts = {}
+  for (const [backendKey, count] of Object.entries(props.yakuCounts)) {
+    const frontendKey = BACKEND_TO_FRONTEND_YAKU_MAP[backendKey] || backendKey.toLowerCase()
+    result[frontendKey] = (result[frontendKey] || 0) + count
+  }
+  return result
+})
 
 // Computed
 /**
@@ -59,9 +87,10 @@ const yakuMetadata = computed<YakuInfo[]>(() =>
  * 合併役種元資料與達成次數，並按次數降序排列
  */
 const sortedYakuStats = computed<YakuStatItem[]>(() => {
+  const counts = normalizedYakuCounts.value
   const stats = yakuMetadata.value.map((yaku) => ({
     ...yaku,
-    count: props.yakuCounts[yaku.id] || 0,
+    count: counts[yaku.id] || 0,
   }))
 
   // 按達成次數降序排列，相同次數則按點數降序
@@ -84,23 +113,12 @@ const totalAchievements = computed(() =>
  * 是否所有役種達成次數都為 0
  */
 const hasNoAchievements = computed(() => totalAchievements.value === 0)
-
-// Methods
-const toggleExpanded = () => {
-  isExpanded.value = !isExpanded.value
-}
 </script>
 
 <template>
-  <div class="accordion-wrapper pt-4">
-    <!-- Accordion Header -->
-    <button
-      type="button"
-      class="accordion-header w-full flex items-center justify-between p-3.5 rounded-lg cursor-pointer transition-colors duration-200 ease-out"
-      :aria-expanded="isExpanded"
-      aria-controls="yaku-stats-content"
-      @click="toggleExpanded"
-    >
+  <div class="yaku-stats-section pt-4">
+    <!-- Section Header -->
+    <div class="section-header flex items-center justify-between p-3 rounded-t-lg">
       <div class="flex items-center gap-2.5">
         <svg
           class="w-5 h-5 text-gold-light"
@@ -119,34 +137,15 @@ const toggleExpanded = () => {
         <span class="text-sm font-medium text-white">Yaku Achievements</span>
         <span class="achievement-count px-2 py-0.5 text-xs font-semibold rounded-full">{{ totalAchievements }}</span>
       </div>
-      <svg
-        class="w-5 h-5 text-gray-400 transition-transform duration-200 ease-out"
-        :class="{ 'rotate-180': isExpanded }"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    </button>
+    </div>
 
-    <!-- Accordion Content -->
-    <div
-      v-show="isExpanded"
-      id="yaku-stats-content"
-      class="mt-3"
-    >
+    <!-- Yaku List Content -->
+    <div class="yaku-list-container rounded-b-lg">
       <!-- Empty State -->
-      <div v-if="hasNoAchievements" class="text-center py-8">
-        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gold-dark/10 border border-gold-dark/20 mb-3">
+      <div v-if="hasNoAchievements" class="empty-state text-center py-6">
+        <div class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gold-dark/10 border border-gold-dark/20 mb-2">
           <svg
-            class="w-6 h-6 text-gold-light/40"
+            class="w-5 h-5 text-gold-light/40"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -161,25 +160,24 @@ const toggleExpanded = () => {
           </svg>
         </div>
         <p class="text-gray-400 text-sm">No yaku achieved yet</p>
-        <p class="text-gray-500 text-xs mt-1">Complete yaku combinations to see your stats!</p>
       </div>
 
       <!-- Yaku List -->
-      <div v-else class="yaku-list space-y-1.5">
+      <div v-else class="yaku-list space-y-1 p-2">
         <div
           v-for="yaku in sortedYakuStats"
           :key="yaku.id"
-          class="yaku-item flex items-center justify-between p-2.5 rounded-lg transition-colors duration-150 ease-out"
-          :class="{ 'yaku-item-achieved': yaku.count > 0, 'opacity-50': yaku.count === 0 }"
+          class="yaku-item flex items-center justify-between px-2.5 py-2 rounded-md transition-colors duration-150 ease-out"
+          :class="{ 'yaku-item-achieved': yaku.count > 0, 'opacity-40': yaku.count === 0 }"
         >
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <span class="text-sm text-white truncate">{{ yaku.name }}</span>
-            <span class="text-xs text-gray-500 hidden sm:inline">{{ yaku.nameJa }}</span>
-            <span class="yaku-points text-xs px-1.5 py-0.5 rounded">{{ yaku.points }}pts</span>
+            <span class="text-xs text-gray-500 hidden sm:inline shrink-0">({{ yaku.nameJa }})</span>
+            <span class="yaku-points text-xs px-1.5 py-0.5 rounded shrink-0">{{ yaku.points }}pts</span>
           </div>
-          <div class="flex items-center gap-1.5 flex-shrink-0">
+          <div class="flex items-center gap-1 shrink-0 ml-2">
             <span
-              class="text-sm font-semibold tabular-nums min-w-[1.5rem] text-center"
+              class="text-sm font-semibold tabular-nums min-w-[1.25rem] text-right"
               :class="yaku.count > 0 ? 'text-gold-light' : 'text-gray-500'"
             >
               {{ yaku.count }}
@@ -193,24 +191,14 @@ const toggleExpanded = () => {
 </template>
 
 <style scoped>
-.accordion-wrapper {
+.yaku-stats-section {
   border-top: 1px solid rgba(139, 105, 20, 0.15);
 }
 
-.accordion-header {
+.section-header {
   background: rgba(26, 26, 26, 0.5);
   border: 1px solid rgba(139, 105, 20, 0.15);
-}
-
-.accordion-header:hover {
-  background: rgba(139, 105, 20, 0.1);
-  border-color: rgba(212, 175, 55, 0.2);
-}
-
-.accordion-header:focus-visible {
-  outline: none;
-  border-color: rgba(212, 175, 55, 0.4);
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.15);
+  border-bottom: none;
 }
 
 .achievement-count {
@@ -218,37 +206,51 @@ const toggleExpanded = () => {
   color: #D4AF37;
 }
 
-.yaku-list {
-  max-height: 320px;
+.yaku-list-container {
+  background: rgba(26, 26, 26, 0.3);
+  border: 1px solid rgba(139, 105, 20, 0.15);
+  border-top: none;
+  height: 180px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(139, 105, 20, 0.3) transparent;
 }
 
-.yaku-list::-webkit-scrollbar {
+.yaku-list-container::-webkit-scrollbar {
   width: 6px;
 }
 
-.yaku-list::-webkit-scrollbar-track {
+.yaku-list-container::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.yaku-list::-webkit-scrollbar-thumb {
+.yaku-list-container::-webkit-scrollbar-thumb {
   background: rgba(139, 105, 20, 0.3);
   border-radius: 3px;
 }
 
-.yaku-list::-webkit-scrollbar-thumb:hover {
+.yaku-list-container::-webkit-scrollbar-thumb:hover {
   background: rgba(139, 105, 20, 0.5);
 }
 
+.empty-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 .yaku-item {
-  background: rgba(26, 26, 26, 0.3);
+  background: transparent;
 }
 
 .yaku-item-achieved {
   background: rgba(139, 105, 20, 0.08);
-  border: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.yaku-item:hover {
+  background: rgba(139, 105, 20, 0.1);
 }
 
 .yaku-points {
@@ -258,8 +260,6 @@ const toggleExpanded = () => {
 
 /* Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
-  .accordion-header,
-  .accordion-header svg,
   .yaku-item {
     transition: none;
   }

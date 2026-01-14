@@ -11,7 +11,7 @@
  */
 
 import { ref, computed, onMounted, watch } from 'vue'
-import YakuStatsAccordion from './YakuStatsAccordion.vue'
+import YakuStatsList from './YakuStatsList.vue'
 
 // Types
 interface YakuCounts {
@@ -357,8 +357,8 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Yaku Achievements Accordion -->
-        <YakuStatsAccordion :yaku-counts="statistics.yakuCounts" />
+        <!-- Yaku Achievements List -->
+        <YakuStatsList :yaku-counts="statistics.yakuCounts" />
       </div>
     </div>
   </div>

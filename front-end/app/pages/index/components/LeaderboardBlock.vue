@@ -41,10 +41,23 @@ defineProps<{
 
 // State
 const activeTab = ref<LeaderboardType>('daily')
-const entries = ref<LeaderboardEntry[]>([])
-const currentPlayerRank = ref<number | undefined>(undefined)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
+const hasInitialLoad = ref(false)
+
+// 分別儲存每個 tab 的資料，避免切換時閃爍
+const tabData = ref<Record<LeaderboardType, {
+  entries: LeaderboardEntry[]
+  currentPlayerRank?: number
+  loaded: boolean
+}>>({
+  daily: { entries: [], loaded: false },
+  weekly: { entries: [], loaded: false },
+})
+
+// 當前 tab 的資料
+const entries = computed(() => tabData.value[activeTab.value].entries)
+const currentPlayerRank = computed(() => tabData.value[activeTab.value].currentPlayerRank)
 
 // Constants
 const LEADERBOARD_LIMIT = 10
@@ -55,12 +68,16 @@ const tabs = computed(() => [
   { id: 'weekly' as const, label: 'Weekly' },
 ])
 
-// 只在沒有舊資料時才顯示 skeleton
-const showSkeleton = computed(() => isLoading.value && entries.value.length === 0)
+// 只在該 tab 尚未載入過時才顯示 skeleton
+const showSkeleton = computed(() => isLoading.value && !tabData.value[activeTab.value].loaded)
 
 // Methods
 const fetchLeaderboard = async (type: LeaderboardType) => {
-  isLoading.value = true
+  // 如果該 tab 已經載入過，不顯示 loading 狀態（背景更新）
+  const isFirstLoad = !tabData.value[type].loaded
+  if (isFirstLoad) {
+    isLoading.value = true
+  }
   error.value = null
 
   try {
@@ -71,8 +88,12 @@ const fetchLeaderboard = async (type: LeaderboardType) => {
       },
     })
 
-    entries.value = response.data.entries
-    currentPlayerRank.value = response.data.currentPlayerRank
+    tabData.value[type] = {
+      entries: response.data.entries,
+      currentPlayerRank: response.data.currentPlayerRank,
+      loaded: true,
+    }
+    hasInitialLoad.value = true
   }
   catch (e) {
     error.value = 'Failed to load leaderboard'
@@ -95,7 +116,9 @@ const handleRetry = () => {
 
 // Lifecycle
 onMounted(() => {
-  fetchLeaderboard(activeTab.value)
+  // 預載入兩個 tab 的資料，避免切換時閃爍
+  fetchLeaderboard('daily')
+  fetchLeaderboard('weekly')
 })
 </script>
 
@@ -144,22 +167,24 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Loading State (Skeleton) -->
-    <div v-if="showSkeleton" class="space-y-3" role="status" aria-label="Loading leaderboard">
-      <div
-        v-for="i in 5"
-        :key="i"
-        class="flex items-center gap-4 p-3 rounded-lg bg-lacquer-black/30"
-      >
-        <div class="w-8 h-8 rounded-full bg-gold-dark/20 animate-pulse" />
-        <div class="flex-1 h-4 bg-gold-dark/20 rounded animate-pulse" />
-        <div class="w-14 h-4 bg-gold-dark/20 rounded animate-pulse" />
+    <!-- Content Area with min-height -->
+    <div class="min-h-[300px]">
+      <!-- Loading State (Skeleton) -->
+      <div v-if="showSkeleton" class="space-y-3" role="status" aria-label="Loading leaderboard">
+        <div
+          v-for="i in 5"
+          :key="i"
+          class="flex items-center gap-4 p-3 rounded-lg bg-lacquer-black/30"
+        >
+          <div class="w-8 h-8 rounded-full bg-gold-dark/20 animate-pulse" />
+          <div class="flex-1 h-4 bg-gold-dark/20 rounded animate-pulse" />
+          <div class="w-14 h-4 bg-gold-dark/20 rounded animate-pulse" />
+        </div>
+        <span class="sr-only">Loading...</span>
       </div>
-      <span class="sr-only">Loading...</span>
-    </div>
 
-    <!-- Error State -->
-    <div v-else-if="error" class="text-center py-10">
+      <!-- Error State -->
+      <div v-else-if="error" class="text-center py-10">
       <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-900/30 border border-red-700/30 mb-4">
         <svg
           class="w-7 h-7 text-red-400"
@@ -282,6 +307,7 @@ onMounted(() => {
           </svg>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
