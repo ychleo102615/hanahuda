@@ -2,7 +2,7 @@
  * HandleMatchmakingStatusUseCase
  *
  * @description
- * 處理 MatchmakingStatus SSE 事件，更新 UI 狀態。
+ * 處理 MatchmakingStatus 事件，更新 UI 狀態。
  *
  * 事件類型：
  * - MatchmakingStatus: 狀態更新 (SEARCHING, LOW_AVAILABILITY)

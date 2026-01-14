@@ -3,7 +3,7 @@
  *
  * @description
  * 事件映射器介面。
- * 負責將 Domain entities 轉換為 SSE events。
+ * 負責將 Domain entities 轉換為推送事件。
  *
  * Adapter 實作：eventMapper
  *
@@ -41,7 +41,7 @@ import type { RoundEndReason, GameEndedReason, GameErrorCode, SuggestedAction } 
  * 基礎事件映射器介面
  *
  * @description
- * 將 Domain entities 轉換為 SSE events。
+ * 將 Domain entities 轉換為推送事件。
  * 用於 JoinGameUseCase。
  */
 export interface EventMapperPort {

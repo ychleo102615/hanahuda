@@ -4,7 +4,7 @@
  * 參考: doc/shared/protocol.md 和 doc/shared/data-contracts.md
  *
  * @description
- * 這些資料結構在 SSE 事件和命令中共用，
+ * 這些資料結構在事件和命令中共用，
  * 與後端的 Protocol 定義保持一致。
  */
 
@@ -279,14 +279,14 @@ export type SnapshotApiResponse =
   | SnapshotApiResponseExpired
 
 // ============================================================================
-// InitialState 相關類型（SSE-First 架構）
+// InitialState 相關類型（Gateway 架構）
 // ============================================================================
 
 /**
  * InitialState 回應類型
  *
  * @description
- * SSE 連線後第一個事件的類型，用於區分不同情境：
+ * WebSocket 連線後第一個事件的類型，用於區分不同情境：
  * - `game_waiting`: 新遊戲，等待對手加入
  * - `game_started`: 新遊戲，對手已加入，遊戲開始
  * - `snapshot`: 重連，恢復進行中的遊戲狀態

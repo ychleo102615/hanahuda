@@ -4,16 +4,16 @@
   @description
   使用者在此選擇房間類型並開始配對。
   點擊房間卡片後直接導航到遊戲頁面。
-  SSE 連線在遊戲頁面建立，由後端透過 InitialState 事件決定遊戲狀態。
+  WebSocket 連線在遊戲頁面建立，由後端透過 InitialState 事件決定遊戲狀態。
 
   功能:
   - 顯示房間類型列表（QUICK/STANDARD/MARATHON）
   - 點擊房間卡片開始配對
   - 配對錯誤重試按鈕
 
-  SSE-First 架構:
+  架構:
   - Lobby: 選擇房間 → 儲存 playerId + roomTypeId → 導航到 /game
-  - Game Page: 建立 SSE → InitialState 事件決定顯示
+  - Game Page: 建立 WebSocket → InitialState 事件決定顯示
 -->
 
 <script setup lang="ts">
@@ -279,7 +279,7 @@ const handleCancelAndSwitch = () => {
  *
  * @description
  * 當玩家已在遊戲中時，直接導向遊戲頁面。
- * roomTypeId 由 SSE GameSnapshotRestore 事件提供。
+ * roomTypeId 由 GameSnapshotRestore 事件提供。
  */
 const handleBackToGame = async () => {
   try {

@@ -2,7 +2,7 @@
  * HandleGatewayConnectedUseCase - 處理 Gateway 連線成功事件
  *
  * @description
- * 處理 Gateway SSE 連線建立後的初始狀態事件。
+ * 處理 Gateway WebSocket 連線建立後的初始狀態事件。
  * 根據玩家狀態決定後續行為：
  * - IDLE: 閒置狀態，可進入大廳
  * - MATCHMAKING: 配對中，顯示配對 UI

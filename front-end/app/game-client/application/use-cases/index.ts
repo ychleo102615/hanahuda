@@ -6,7 +6,7 @@
  *
  * 分類：
  * - Player Operations (3): 玩家打牌、選擇配對、Koi-Koi 決策
- * - Event Handlers (13): 處理後端推送的 SSE 遊戲事件
+ * - Event Handlers (13): 處理後端推送的遊戲事件
  *
  * 使用方式：
  * ```typescript

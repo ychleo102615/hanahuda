@@ -8,7 +8,7 @@
  * 差異點：
  * - AI 玩家標記 isAi = true
  * - 不產生 sessionToken（AI 不會斷線重連）
- * - 不建立 SSE 連線（AI 透過 OpponentInstance 接收事件）
+ * - 不建立 WebSocket 連線（AI 透過 OpponentInstance 接收事件）
  *
  * 委託 GameStartService 處理共用的遊戲開始邏輯。
  *

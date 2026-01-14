@@ -8,7 +8,7 @@
  * 語意區分：
  * - InternalEventBus: 僅限 ROOM_CREATED（房間建立通知）
  * - OpponentEventBus: AI 專用遊戲事件路由
- * - GameEventBus: Normal Client 遊戲事件（SSE）
+ * - GameEventBus: Normal Client 遊戲事件（WebSocket）
  */
 
 import { EventEmitter } from 'events'

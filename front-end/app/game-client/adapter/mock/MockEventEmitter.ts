@@ -1,8 +1,8 @@
 /**
- * MockEventEmitter - Mock SSE 事件發射器
+ * MockEventEmitter - Mock 事件發射器
  *
  * @description
- * 模擬 SSE 事件推送,用於開發測試。
+ * 模擬事件推送,用於開發測試。
  * 按照預設的事件腳本自動發送遊戲事件。
  *
  * @example

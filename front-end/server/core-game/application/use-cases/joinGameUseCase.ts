@@ -50,7 +50,7 @@ import type { GameStartService } from '~~/server/core-game/application/services/
  *
  * 事件發布設計：
  * - 建立新遊戲時 → 發布 ROOM_CREATED 內部事件（通知 OpponentService）
- * - 加入現有遊戲時 → 發布 GameStarted SSE 事件
+ * - 加入現有遊戲時 → 發布 GameStarted 事件
  */
 export class JoinGameUseCase implements JoinGameInputPort {
   constructor(
@@ -149,7 +149,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
   /**
    * 處理重連
    *
-   * SSE-First 架構：
+   * Gateway 架構：
    * - 若遊戲 IN_PROGRESS → 返回 snapshot（包含完整遊戲狀態）
    * - 若遊戲 WAITING → 返回 game_waiting（等待對手）
    * - 若遊戲 FINISHED → 不應該到達這裡（已在 handleReconnectionMode 處理）
@@ -218,7 +218,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * 建立新遊戲（WAITING 狀態）
    *
    * 不發牌、不開始遊戲，等待第二位玩家加入。
-   * SSE-First 架構：返回 game_waiting 狀態。
+   * Gateway 架構：返回 game_waiting 狀態。
    *
    * @param playerId - 玩家 ID
    * @param playerName - 玩家名稱
@@ -274,7 +274,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       payload: { playerName, roomType: effectiveRoomType },
     })
 
-    // SSE-First: 返回 game_waiting 狀態（前端顯示等待畫面）
+    // Gateway: 返回 game_waiting 狀態（前端顯示等待畫面）
     return {
       status: 'game_waiting',
       gameId: game.id,
@@ -288,7 +288,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * 加入現有遊戲（成為 Player 2）
    *
    * 將遊戲狀態改為 IN_PROGRESS，發牌，並推送初始事件。
-   * SSE-First 架構：返回 game_started 狀態。
+   * Gateway 架構：返回 game_started 狀態。
    *
    * 委託 GameStartService 處理共用的遊戲開始邏輯。
    */
@@ -323,7 +323,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
         playerName,
       })
 
-      // SSE-First: 返回 game_started 狀態
+      // Gateway: 返回 game_started 狀態
       return {
         status: 'game_started',
         gameId: result.game.id,

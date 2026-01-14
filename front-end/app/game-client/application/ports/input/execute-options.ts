@@ -18,7 +18,7 @@ export interface ExecuteOptions {
    * 前端收到事件的時間戳（毫秒）
    *
    * @description
-   * EventRouter 在收到 SSE 事件時記錄的時間戳。
+   * EventRouter 在收到 WebSocket 事件時記錄的時間戳。
    * UseCase 可以用來計算事件處理延遲，調整倒數計時等。
    */
   readonly receivedAt: number

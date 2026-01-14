@@ -132,7 +132,7 @@ export interface JoinGameExpiredOutput {
 /**
  * 加入遊戲輸出結果（聯合類型）
  *
- * SSE-First 架構支援的狀態：
+ * Gateway 架構支援的狀態：
  * - game_waiting: 等待對手加入
  * - game_started: 遊戲開始
  * - snapshot: 重連快照恢復

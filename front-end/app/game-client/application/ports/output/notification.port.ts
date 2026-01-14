@@ -274,7 +274,7 @@ export interface NotificationPort {
    * 顯示正在重連訊息
    *
    * @description
-   * SSE 連線中斷時顯示的提示訊息。
+   * WebSocket 連線中斷時顯示的提示訊息。
    *
    * @example
    * ```typescript

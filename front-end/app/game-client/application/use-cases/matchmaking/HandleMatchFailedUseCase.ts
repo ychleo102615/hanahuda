@@ -2,7 +2,7 @@
  * HandleMatchFailedUseCase
  *
  * @description
- * 處理 MatchFailed SSE 事件（配對成功但遊戲創建失敗）。
+ * 處理 MatchFailed 事件（配對成功但遊戲創建失敗）。
  * 更新 UI 錯誤狀態並清除 session。
  *
  * @module app/game-client/application/use-cases/matchmaking/HandleMatchFailedUseCase

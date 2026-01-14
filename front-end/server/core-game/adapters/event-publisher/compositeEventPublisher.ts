@@ -87,7 +87,7 @@ function omitNullValues<T extends Record<string, unknown>>(obj: T): Record<strin
 }
 
 /**
- * 需要記錄的 SSE 事件類型（使用 EVENT_TYPES 常數）
+ * 需要記錄的事件類型（使用 EVENT_TYPES 常數）
  *
  * 不記錄的事件：
  * - TurnError, GameError: 錯誤事件由日誌框架處理
@@ -112,7 +112,7 @@ const LOGGABLE_EVENT_TYPES: Set<GameLogEventType> = new Set([
 /**
  * CompositeEventPublisher
  *
- * 實作 EventPublisherPort，將事件廣播到 SSE、AI 對手，並記錄到資料庫。
+ * 實作 EventPublisherPort，將事件廣播到 WebSocket、AI 對手，並記錄到資料庫。
  */
 export class CompositeEventPublisher implements EventPublisherPort {
   constructor(

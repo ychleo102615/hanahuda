@@ -10,7 +10,7 @@
  * 3. Mode-specific Adapters (Backend / Mock / Local) - 提供 SendCommandPort
  * 4. Use Cases as Input Ports (18 個)
  * 5. Event Router (事件路由)
- * 6. SSE Client & Event Emitter (根據模式初始化)
+ * 6. WebSocket Client & Event Emitter (根據模式初始化)
  *
  * @example
  * ```typescript
@@ -125,7 +125,7 @@ export function registerDependencies(container: DIContainer, mode: GameMode, pin
   if (mode === 'mock') {
     initializeMockEventEmitter(container)
   }
-  // Backend 模式的 SSE 相關元件已在 registerBackendAdapters 中註冊
+  // Backend 模式的 WebSocket 相關元件已在 registerBackendAdapters 中註冊
 }
 
 /**
@@ -364,7 +364,7 @@ function registerInputPorts(container: DIContainer): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
 
-  // 註冊 StartGamePort（SSE-First Architecture）
+  // 註冊 StartGamePort（Gateway Architecture）
   // 依賴 GameConnectionPort、GameStatePort、NotificationPort、AnimationPort、OperationSessionPort
   container.register(
     TOKENS.StartGamePort,
@@ -522,7 +522,7 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  // SSE-First: 註冊 HandleInitialStatePort（處理 SSE 連線後的第一個事件）
+  // Gateway: 註冊 HandleInitialStatePort（處理 WebSocket 連線後的第一個事件）
   // 改用 OperationSessionPort 取代 OperationSessionManager
   container.register(
     TOKENS.HandleInitialStatePort,
@@ -753,14 +753,14 @@ function initializeMockEventEmitter(container: DIContainer): void {
  * 註冊事件路由
  *
  * @description
- * 將 SSE 事件類型綁定到對應的 Input Ports。
+ * 將事件類型綁定到對應的 Input Ports。
  */
 function registerEventRoutes(container: DIContainer): void {
   const router = container.resolve(TOKENS.EventRouter) as {
     register: (eventType: SSEEventType, port: { execute: (payload: unknown) => void }) => void
   }
 
-  // SSE-First: 綁定 InitialState 事件（SSE 連線後的第一個事件）
+  // Gateway: 綁定 InitialState 事件（WebSocket 連線後的第一個事件）
   const handleInitialStatePort = container.resolve(TOKENS.HandleInitialStatePort) as { execute: (payload: unknown) => void }
   router.register('InitialState', handleInitialStatePort)
 
@@ -809,7 +809,7 @@ function registerEventRoutes(container: DIContainer): void {
   const gameErrorPort = container.resolve(TOKENS.HandleGameErrorPort) as { execute: (payload: unknown) => void }
   router.register('GameError', gameErrorPort)
 
-  // Gateway: 綁定 GatewayConnected 事件（Gateway SSE 連線後的初始狀態）
+  // Gateway: 綁定 GatewayConnected 事件（Gateway WebSocket 連線後的初始狀態）
   const gatewayConnectedPort = container.resolve(TOKENS.HandleGatewayConnectedPort) as { execute: (payload: unknown) => void }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   router.register('GatewayConnected' as any, gatewayConnectedPort)
@@ -833,7 +833,7 @@ function registerLocalAdapters(container: DIContainer): void {
  * 註冊配對事件路由
  *
  * @description
- * 將配對 SSE 事件類型綁定到對應的 Input Ports (Use Cases)。
+ * 將配對事件類型綁定到對應的 Input Ports (Use Cases)。
  * 僅在 Backend 模式下呼叫。
  *
  * 事件類型:

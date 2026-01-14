@@ -3,7 +3,7 @@
  *
  * @description
  * Domain types → Shared contracts 轉換函數。
- * 用於將 Domain Layer 的型別轉換為 SSE 事件可用的格式。
+ * 用於將 Domain Layer 的型別轉換為推送事件可用的格式。
  *
  * @module server/adapters/mappers/dtos
  */

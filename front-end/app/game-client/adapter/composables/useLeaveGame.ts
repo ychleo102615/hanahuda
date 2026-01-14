@@ -167,7 +167,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
    * 5. Game 頁面 onConnected 回調會偵測 pendingRoomTypeId 並發送配對命令
    */
   async function handleRematch(): Promise<void> {
-    // 取得 roomTypeId（從 gameState，由 SSE 事件設定）
+    // 取得 roomTypeId（從 gameState，由 WebSocket 事件設定）
     const roomTypeId = gameState.roomTypeId
     if (!roomTypeId) {
       // 沒有 roomTypeId，導航回 lobby

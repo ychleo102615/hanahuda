@@ -10,7 +10,7 @@
  * - pendingRoomTypeId: 待配對的房間類型（用於 Lobby → Game 頁面傳遞）
  *
  * 不在此模組中管理的資訊：
- * - roomTypeId: 由 gameState.roomTypeId 管理（來自 SSE 事件）
+ * - roomTypeId: 由 gameState.roomTypeId 管理（來自 WebSocket 事件）
  * - playerId/playerName: 由 useAuthStore 管理（來自 auth/me API）
  * - gameFinished: 由 gameState.gameEnded 管理
  * - session_token: 由 HttpOnly Cookie 管理

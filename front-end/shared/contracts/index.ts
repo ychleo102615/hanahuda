@@ -44,7 +44,7 @@ export type {
   SnapshotApiResponseFinished,
   SnapshotApiResponseExpired,
   SnapshotApiResponse,
-  // InitialState Types (SSE-First)
+  // InitialState Types
   InitialStateResponseType,
   GameWaitingData,
   GameStartedData,
@@ -59,7 +59,7 @@ export type { TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision } from './co
 // Events
 export type {
   BaseEvent,
-  // InitialState (SSE-First)
+  // InitialState (Gateway)
   InitialStateData,
   InitialStateEvent,
   // Game Events
@@ -83,12 +83,14 @@ export type {
   SelectionContext,
   DecisionContext,
   RoundEndInfo,
-  // SSE Event Types
+  // Game Event Types
+  GameEventType,
+  // @deprecated - 請使用 GameEventType
   SSEEventType,
 } from './events'
 
-// SSE Event Types Constant (for runtime use)
-export { SSE_EVENT_TYPES, EVENT_TYPES } from './events'
+// Game Event Types Constant (for runtime use)
+export { GAME_EVENT_TYPES, EVENT_TYPES, SSE_EVENT_TYPES } from './events'
 export type { EventTypeValue } from './events'
 
 // Matchmaking Events
@@ -99,9 +101,15 @@ export type {
   MatchmakingErrorEvent,
   MatchFailedEvent,
   MatchmakingEvent,
+  MatchmakingEventType,
+  // @deprecated - 請使用 MatchmakingEventType
   MatchmakingSSEEventType,
 } from './matchmaking-events'
-export { MATCHMAKING_EVENT_TYPES, SSE_MATCHMAKING_EVENT_TYPES } from './matchmaking-events'
+export {
+  MATCHMAKING_EVENT_TYPES,
+  MATCHMAKING_EVENT_TYPE_LIST,
+  SSE_MATCHMAKING_EVENT_TYPES,
+} from './matchmaking-events'
 
 // Gateway Events
 export type {
