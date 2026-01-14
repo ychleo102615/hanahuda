@@ -56,7 +56,7 @@
 
 - [x] T008 Create `daily_player_scores` table schema in `front-end/server/database/schema/dailyPlayerScores.ts`
 - [x] T009 Export new schema from `front-end/server/database/schema/index.ts`
-- [ ] T010 Run database migration: `pnpm --prefix front-end db:generate && pnpm --prefix front-end db:migrate`
+- [x] T010 Run database migration: `pnpm --prefix front-end db:generate && pnpm --prefix front-end db:migrate`
 
 ### 2.3 Core-Game BC Cleanup
 
@@ -113,10 +113,10 @@ recordGameStatsUseCase 被引用於:
 
 ### Implementation for User Story 4
 
-- [ ] T029 [US4] Modify `NavigationBar.vue` to remove Rules and About anchor links
-- [ ] T030 [US4] Create `NavigationSection.vue` component with anchor links (Records, Rules, About) in `front-end/app/pages/index/components/NavigationSection.vue`
-- [ ] T031 [US4] Update `front-end/app/pages/index.vue` to include NavigationSection below HeroSection
-- [ ] T032 [US4] Style NavigationSection for responsive design (mobile/desktop)
+- [x] T029 [US4] Modify `NavigationBar.vue` to remove Rules and About anchor links
+- [x] T030 [US4] Create `NavigationSection.vue` component with anchor links (Records, Rules, About) in `front-end/app/pages/index/components/NavigationSection.vue`
+- [x] T031 [US4] Update `front-end/app/pages/index.vue` to include NavigationSection below HeroSection
+- [x] T032 [US4] Style NavigationSection for responsive design (mobile/desktop)
 
 **Checkpoint**: User Story 4 complete - NavigationBar simplified, NavigationSection added
 
@@ -130,42 +130,42 @@ recordGameStatsUseCase 被引用於:
 
 ### 4.1 Domain Layer for US1 (TDD)
 
-- [ ] T033 [P] [US1] Write unit tests for `DailyPlayerScore` entity in `front-end/server/leaderboard/domain/daily-score/__tests__/daily-player-score.spec.ts`
-- [ ] T034 [P] [US1] Write unit tests for `LeaderboardEntry` and `calculateRanks` in `front-end/server/leaderboard/domain/leaderboard/__tests__/leaderboard-entry.spec.ts`
-- [ ] T035 [P] [US1] Implement `DailyPlayerScore` entity with `updateDailyScore` function in `front-end/server/leaderboard/domain/daily-score/daily-player-score.ts`
-- [ ] T036 [P] [US1] Implement `LeaderboardEntry` value object with `calculateRanks` in `front-end/server/leaderboard/domain/leaderboard/leaderboard-entry.ts`
+- [x] T033 [P] [US1] Write unit tests for `DailyPlayerScore` entity in `front-end/server/leaderboard/domain/daily-score/__tests__/daily-player-score.spec.ts`
+- [x] T034 [P] [US1] Write unit tests for `LeaderboardEntry` and `calculateRanks` in `front-end/server/leaderboard/domain/leaderboard/__tests__/leaderboard-entry.spec.ts`
+- [x] T035 [P] [US1] Implement `DailyPlayerScore` entity with `updateDailyScore` function in `front-end/server/leaderboard/domain/daily-score/daily-player-score.ts`
+- [x] T036 [P] [US1] Implement `LeaderboardEntry` value object with `calculateRanks` in `front-end/server/leaderboard/domain/leaderboard/leaderboard-entry.ts`
 
 ### 4.2 Application Layer for US1 (TDD)
 
-- [ ] T037 [P] [US1] Create `DailyPlayerScoreRepositoryPort` interface in `front-end/server/leaderboard/application/ports/output/daily-player-score-repository-port.ts`
-- [ ] T038 [P] [US1] Create `GetLeaderboardInputPort` interface in `front-end/server/leaderboard/application/ports/input/get-leaderboard-input-port.ts`
-- [ ] T039 [P] [US1] Write unit tests for `GetDailyLeaderboardUseCase` in `front-end/server/leaderboard/application/use-cases/__tests__/get-daily-leaderboard-use-case.spec.ts`
-- [ ] T040 [P] [US1] Write unit tests for `GetWeeklyLeaderboardUseCase` in `front-end/server/leaderboard/application/use-cases/__tests__/get-weekly-leaderboard-use-case.spec.ts`
-- [ ] T041 [US1] Implement `GetDailyLeaderboardUseCase` in `front-end/server/leaderboard/application/use-cases/get-daily-leaderboard-use-case.ts`
-- [ ] T042 [US1] Implement `GetWeeklyLeaderboardUseCase` in `front-end/server/leaderboard/application/use-cases/get-weekly-leaderboard-use-case.ts`
+- [x] T037 [P] [US1] Create `DailyPlayerScoreRepositoryPort` interface in `front-end/server/leaderboard/application/ports/output/daily-player-score-repository-port.ts`
+- [x] T038 [P] [US1] Create `GetLeaderboardInputPort` interface in `front-end/server/leaderboard/application/ports/input/get-leaderboard-input-port.ts`
+- [x] T039 [P] [US1] Write unit tests for `GetDailyLeaderboardUseCase` in `front-end/server/leaderboard/application/use-cases/__tests__/get-daily-leaderboard-use-case.spec.ts`
+- [x] T040 [P] [US1] Write unit tests for `GetWeeklyLeaderboardUseCase` in `front-end/server/leaderboard/application/use-cases/__tests__/get-weekly-leaderboard-use-case.spec.ts`
+- [x] T041 [US1] Implement `GetDailyLeaderboardUseCase` in `front-end/server/leaderboard/application/use-cases/get-daily-leaderboard-use-case.ts`
+- [x] T042 [US1] Implement `GetWeeklyLeaderboardUseCase` in `front-end/server/leaderboard/application/use-cases/get-weekly-leaderboard-use-case.ts`
 
 ### 4.3 Adapter Layer for US1
 
-- [ ] T043 [US1] Implement `DrizzleDailyPlayerScoreRepository` in `front-end/server/leaderboard/adapters/persistence/drizzle-daily-player-score-repository.ts`
-- [ ] T044 [US1] Register leaderboard dependencies in `front-end/server/leaderboard/adapters/di/container.ts`
+- [x] T043 [US1] Implement `DrizzleDailyPlayerScoreRepository` in `front-end/server/leaderboard/adapters/persistence/drizzle-daily-player-score-repository.ts`
+- [x] T044 [US1] Register leaderboard dependencies in `front-end/server/leaderboard/adapters/di/container.ts`
 
 ### 4.4 API Endpoint for US1
 
-- [ ] T045 [US1] Create `GET /api/v1/leaderboard` endpoint in `front-end/server/api/v1/leaderboard/index.get.ts`
-- [ ] T046 [US1] Add parameter validation (type: daily/weekly, limit: 1-100)
-- [ ] T047 [US1] Add error handling for invalid parameters (400 response)
+- [x] T045 [US1] Create `GET /api/v1/leaderboard` endpoint in `front-end/server/api/v1/leaderboard/index.get.ts`
+- [x] T046 [US1] Add parameter validation (type: daily/weekly, limit: 1-100)
+- [x] T047 [US1] Add error handling for invalid parameters (400 response)
 
 ### 4.5 Frontend for US1
 
-- [ ] T048 [P] [US1] Create `LeaderboardBlock.vue` component in `front-end/app/pages/index/components/LeaderboardBlock.vue`
-- [ ] T049 [US1] Implement daily/weekly tab switching in LeaderboardBlock
-- [ ] T050 [US1] Implement loading state (skeleton screen) in LeaderboardBlock
-- [ ] T051 [US1] Implement error state with retry option in LeaderboardBlock
-- [ ] T052 [US1] Implement empty state ("目前無排行資料") in LeaderboardBlock
-- [ ] T053 [US1] Display current player rank if not in top N (for logged-in users)
-- [ ] T054 [P] [US1] Create `RecordSection.vue` container component in `front-end/app/pages/index/components/RecordSection.vue`
-- [ ] T055 [US1] Integrate LeaderboardBlock into RecordSection
-- [ ] T056 [US1] Update `front-end/app/pages/index.vue` to include RecordSection below NavigationSection
+- [x] T048 [P] [US1] Create `LeaderboardBlock.vue` component in `front-end/app/pages/index/components/LeaderboardBlock.vue`
+- [x] T049 [US1] Implement daily/weekly tab switching in LeaderboardBlock
+- [x] T050 [US1] Implement loading state (skeleton screen) in LeaderboardBlock
+- [x] T051 [US1] Implement error state with retry option in LeaderboardBlock
+- [x] T052 [US1] Implement empty state ("目前無排行資料") in LeaderboardBlock
+- [x] T053 [US1] Display current player rank if not in top N (for logged-in users)
+- [x] T054 [P] [US1] Create `RecordSection.vue` container component in `front-end/app/pages/index/components/RecordSection.vue`
+- [x] T055 [US1] Integrate LeaderboardBlock into RecordSection
+- [x] T056 [US1] Update `front-end/app/pages/index.vue` to include RecordSection below NavigationSection
 
 **Checkpoint**: User Story 1 complete - Leaderboard fully functional and testable
 
@@ -185,43 +185,43 @@ recordGameStatsUseCase 被引用於:
 - `PlayerStats` = Entity 對應 DB 表
 - `PlayerStatistics` = Aggregate 組合查詢結果（含計算欄位如勝率）
 
-- [ ] T057 [P] [US2] Write unit tests for `PlayerStats` entity in `front-end/server/leaderboard/domain/player-stats/__tests__/player-stats.spec.ts`
-- [ ] T058 [P] [US2] Write unit tests for `PlayerStatistics` aggregate in `front-end/server/leaderboard/domain/statistics/__tests__/player-statistics.spec.ts`
-- [ ] T059 [P] [US2] Implement `PlayerStats` entity with `updatePlayerStats` in `front-end/server/leaderboard/domain/player-stats/player-stats.ts`
-- [ ] T060 [P] [US2] Implement `PlayerStatistics` aggregate with `calculateWinRate`, `createEmptyStatistics` in `front-end/server/leaderboard/domain/statistics/player-statistics.ts`
+- [x] T057 [P] [US2] Write unit tests for `PlayerStats` entity in `front-end/server/leaderboard/domain/player-stats/__tests__/player-stats.spec.ts`
+- [x] T058 [P] [US2] Write unit tests for `PlayerStatistics` aggregate in `front-end/server/leaderboard/domain/statistics/__tests__/player-statistics.spec.ts`
+- [x] T059 [P] [US2] Implement `PlayerStats` entity with `updatePlayerStats` in `front-end/server/leaderboard/domain/player-stats/player-stats.ts`
+- [x] T060 [P] [US2] Implement `PlayerStatistics` aggregate with `calculateWinRate`, `createEmptyStatistics` in `front-end/server/leaderboard/domain/statistics/player-statistics.ts`
 
 ### 5.2 Application Layer for US2 (TDD)
 
-- [ ] T061 [P] [US2] Create `PlayerStatsRepositoryPort` interface in `front-end/server/leaderboard/application/ports/output/player-stats-repository-port.ts`
-- [ ] T062 [P] [US2] Create `GetPlayerStatisticsInputPort` interface in `front-end/server/leaderboard/application/ports/input/get-player-statistics-input-port.ts`
-- [ ] T063 [P] [US2] Create `UpdatePlayerRecordsInputPort` interface in `front-end/server/leaderboard/application/ports/input/update-player-records-input-port.ts`
-- [ ] T064 [P] [US2] Write unit tests for `GetPlayerStatisticsUseCase` in `front-end/server/leaderboard/application/use-cases/__tests__/get-player-statistics-use-case.spec.ts`
-- [ ] T065 [P] [US2] Write unit tests for `UpdatePlayerRecordsUseCase` in `front-end/server/leaderboard/application/use-cases/__tests__/update-player-records-use-case.spec.ts`
-- [ ] T066 [US2] Implement `GetPlayerStatisticsUseCase` in `front-end/server/leaderboard/application/use-cases/get-player-statistics-use-case.ts`
-- [ ] T067 [US2] Implement `UpdatePlayerRecordsUseCase` (unified update for player_stats + daily_player_scores) in `front-end/server/leaderboard/application/use-cases/update-player-records-use-case.ts`
+- [x] T061 [P] [US2] Create `PlayerStatsRepositoryPort` interface in `front-end/server/leaderboard/application/ports/output/player-stats-repository-port.ts`
+- [x] T062 [P] [US2] Create `GetPlayerStatisticsInputPort` interface in `front-end/server/leaderboard/application/ports/input/get-player-statistics-input-port.ts`
+- [x] T063 [P] [US2] Create `UpdatePlayerRecordsInputPort` interface in `front-end/server/leaderboard/application/ports/input/update-player-records-input-port.ts`
+- [x] T064 [P] [US2] Write unit tests for `GetPlayerStatisticsUseCase` in `front-end/server/leaderboard/application/use-cases/__tests__/get-player-statistics-use-case.spec.ts`
+- [x] T065 [P] [US2] Write unit tests for `UpdatePlayerRecordsUseCase` in `front-end/server/leaderboard/application/use-cases/__tests__/update-player-records-use-case.spec.ts`
+- [x] T066 [US2] Implement `GetPlayerStatisticsUseCase` in `front-end/server/leaderboard/application/use-cases/get-player-statistics-use-case.ts`
+- [x] T067 [US2] Implement `UpdatePlayerRecordsUseCase` (unified update for player_stats + daily_player_scores) in `front-end/server/leaderboard/application/use-cases/update-player-records-use-case.ts`
 
 ### 5.3 Adapter Layer for US2
 
-- [ ] T068 [US2] Implement `DrizzlePlayerStatsRepository` in `front-end/server/leaderboard/adapters/persistence/drizzle-player-stats-repository.ts`
-- [ ] T069 [US2] Implement `GameFinishedSubscriber` in `front-end/server/leaderboard/adapters/event-subscriber/game-finished-subscriber.ts`
-- [ ] T070 [US2] Update DI container with player stats dependencies in `front-end/server/leaderboard/adapters/di/container.ts`
-- [ ] T071 [US2] Create Leaderboard plugin for event subscription in `front-end/server/plugins/leaderboard.ts`
+- [x] T068 [US2] Implement `DrizzlePlayerStatsRepository` in `front-end/server/leaderboard/adapters/persistence/drizzle-player-stats-repository.ts`
+- [x] T069 [US2] Implement `GameFinishedSubscriber` in `front-end/server/leaderboard/adapters/event-subscriber/game-finished-subscriber.ts`
+- [x] T070 [US2] Update DI container with player stats dependencies in `front-end/server/leaderboard/adapters/di/container.ts`
+- [x] T071 [US2] Create Leaderboard plugin for event subscription in `front-end/server/plugins/leaderboard.ts`
 
 ### 5.4 API Endpoint for US2
 
-- [ ] T072 [US2] Create `GET /api/v1/stats/me` endpoint in `front-end/server/api/v1/stats/me.get.ts`
-- [ ] T073 [US2] Add authentication check (401 for unauthenticated requests)
-- [ ] T074 [US2] Add time range parameter validation (all, day, week, month)
+- [x] T072 [US2] Create `GET /api/v1/stats/me` endpoint in `front-end/server/api/v1/stats/me.get.ts`
+- [x] T073 [US2] Add authentication check (401 for unauthenticated requests)
+- [x] T074 [US2] Add time range parameter validation (all, day, week, month)
 
 ### 5.5 Frontend for US2
 
-- [ ] T075 [P] [US2] Create `PersonalStatsBlock.vue` component in `front-end/app/pages/index/components/PersonalStatsBlock.vue`
-- [ ] T076 [US2] Implement time range selector (全部/本週/本月) in PersonalStatsBlock
-- [ ] T077 [US2] Display stats summary (總分、勝場數、勝率、Koi-Koi 次數)
-- [ ] T078 [US2] Implement login prompt for unauthenticated users ("登入以查看個人統計")
-- [ ] T079 [US2] Implement empty state ("尚無遊戲紀錄") for users with no games
-- [ ] T080 [US2] Implement loading and error states
-- [ ] T081 [US2] Integrate PersonalStatsBlock into RecordSection
+- [x] T075 [P] [US2] Create `PersonalStatsBlock.vue` component in `front-end/app/pages/index/components/PersonalStatsBlock.vue`
+- [x] T076 [US2] Implement time range selector (全部/本週/本月) in PersonalStatsBlock
+- [x] T077 [US2] Display stats summary (總分、勝場數、勝率、Koi-Koi 次數)
+- [x] T078 [US2] Implement login prompt for unauthenticated users ("登入以查看個人統計")
+- [x] T079 [US2] Implement empty state ("尚無遊戲紀錄") for users with no games
+- [x] T080 [US2] Implement loading and error states
+- [x] T081 [US2] Integrate PersonalStatsBlock into RecordSection
 
 **Checkpoint**: User Story 2 complete - Personal statistics fully functional
 
@@ -235,11 +235,11 @@ recordGameStatsUseCase 被引用於:
 
 ### Implementation for User Story 3
 
-- [ ] T082 [P] [US3] Create `YakuStatsAccordion.vue` component in `front-end/app/pages/index/components/YakuStatsAccordion.vue`
-- [ ] T083 [US3] Display all yaku types with achievement counts
-- [ ] T084 [US3] Sort yaku by count descending (highest first)
-- [ ] T085 [US3] Handle empty state (all counts = 0) gracefully
-- [ ] T086 [US3] Integrate YakuStatsAccordion into PersonalStatsBlock (expandable section)
+- [x] T082 [P] [US3] Create `YakuStatsAccordion.vue` component in `front-end/app/pages/index/components/YakuStatsAccordion.vue`
+- [x] T083 [US3] Display all yaku types with achievement counts
+- [x] T084 [US3] Sort yaku by count descending (highest first)
+- [x] T085 [US3] Handle empty state (all counts = 0) gracefully
+- [x] T086 [US3] Integrate YakuStatsAccordion into PersonalStatsBlock (expandable section)
 
 **Checkpoint**: User Story 3 complete - Yaku statistics expandable section functional
 
@@ -251,21 +251,21 @@ recordGameStatsUseCase 被引用於:
 
 ### 7.1 Data Cleanup
 
-- [ ] T087 Create `dailyScoreCleanup.ts` server plugin for 30-day data retention in `front-end/server/plugins/dailyScoreCleanup.ts`
-- [ ] T088 Implement cleanup job to delete records older than 30 days
+- [x] T087 Create `dailyScoreCleanup.ts` server plugin for 30-day data retention in `front-end/server/plugins/dailyScoreCleanup.ts`
+- [x] T088 Implement cleanup job to delete records older than 30 days
 
 ### 7.2 Responsive Design
 
-- [ ] T089 [P] Verify RecordSection responsive layout on mobile devices
-- [ ] T090 [P] Verify LeaderboardBlock responsive layout
-- [ ] T091 [P] Verify PersonalStatsBlock responsive layout
+- [x] T089 [P] Verify RecordSection responsive layout on mobile devices
+- [x] T090 [P] Verify LeaderboardBlock responsive layout
+- [x] T091 [P] Verify PersonalStatsBlock responsive layout
 
 ### 7.3 Performance & Validation
 
-- [ ] T092 Add database indexes verification for leaderboard queries
-- [ ] T093 Run full test suite: `pnpm --prefix front-end test:unit`
-- [ ] T094 Run lint check: `pnpm --prefix front-end lint`
-- [ ] T095 Validate against quickstart.md verification checklist
+- [x] T092 Add database indexes verification for leaderboard queries
+- [x] T093 Run full test suite: `pnpm --prefix front-end test:unit`
+- [x] T094 Run lint check: `pnpm --prefix front-end lint`
+- [x] T095 Validate against quickstart.md verification checklist
 
 ---
 
