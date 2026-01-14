@@ -132,8 +132,22 @@ class WsConnectionManager implements IWsConnectionManager {
       try {
         connection.peer.send(JSON.stringify(event))
       } catch (error) {
-        logger.error('Failed to send WebSocket message', { playerId, error })
+        // 捕捉同步錯誤
+        this.handleSendError(playerId, error)
       }
+    }
+  }
+
+  /**
+   * 處理發送錯誤
+   *
+   * @description
+   * ECONNRESET/EPIPE 是客戶端斷線的正常情況，不需要記錄為錯誤。
+   */
+  private handleSendError(playerId: string, error: unknown): void {
+    const errorCode = (error as NodeJS.ErrnoException)?.code
+    if (errorCode !== 'ECONNRESET' && errorCode !== 'EPIPE') {
+      logger.error('Failed to send WebSocket message', { playerId, error })
     }
   }
 
@@ -161,7 +175,11 @@ class WsConnectionManager implements IWsConnectionManager {
         connection.peer.close(code, reason)
         logger.info('WebSocket force disconnected', { playerId, code, reason })
       } catch (error) {
-        logger.error('Failed to force disconnect WebSocket', { playerId, error })
+        // ECONNRESET/EPIPE 是連線已斷開的正常情況
+        const errorCode = (error as NodeJS.ErrnoException)?.code
+        if (errorCode !== 'ECONNRESET' && errorCode !== 'EPIPE') {
+          logger.error('Failed to force disconnect WebSocket', { playerId, error })
+        }
       }
       // 清理連線資訊
       this.removeConnection(playerId)
