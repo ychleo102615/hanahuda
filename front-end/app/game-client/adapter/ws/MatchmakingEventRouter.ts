@@ -1,8 +1,8 @@
 /**
- * MatchmakingEventRouter - 配對 SSE 事件路由器
+ * MatchmakingEventRouter - 配對事件路由器
  *
  * @description
- * 將配對 SSE 事件類型映射到對應的 Input Port，負責事件分發。
+ * 將配對事件類型映射到對應的 Input Port，負責事件分發。
  * 參照 EventRouter 設計。
  *
  * @example
@@ -12,7 +12,7 @@
  * router.route('MatchmakingStatus', payload)
  * ```
  *
- * @module app/game-client/adapter/sse/MatchmakingEventRouter
+ * @module app/game-client/adapter/ws/MatchmakingEventRouter
  */
 
 import type { EventHandlerPort, ExecuteOptions } from '~/game-client/application/ports/input'
@@ -32,7 +32,7 @@ export class MatchmakingEventRouter {
   /**
    * 註冊事件處理器
    *
-   * @param eventType - 配對 SSE 事件類型
+   * @param eventType - 配對事件類型
    * @param port - Event Handler Port 實例
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,7 +43,7 @@ export class MatchmakingEventRouter {
   /**
    * 路由事件到對應的 Event Handler Port
    *
-   * @param eventType - 配對 SSE 事件類型
+   * @param eventType - 配對事件類型
    * @param payload - 事件 payload
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

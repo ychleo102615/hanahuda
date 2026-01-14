@@ -46,9 +46,12 @@ export class HandleGatewayConnectedUseCase implements EventHandlerPort<GatewayCo
   async execute(payload: GatewayConnectedPayload, _options?: ExecuteOptions): Promise<void> {
     switch (payload.status) {
       case 'IDLE':
-        // 閒置狀態：清除配對狀態和 SessionContext
+        // 閒置狀態：清除配對狀態
         this.matchmakingState.clearSession()
-        this.sessionContext.clearSession()
+        // 只清除 entryId 和 currentGameId，保留 pendingRoomTypeId
+        // 因為 Rematch 流程需要在連線成功後讀取 pendingRoomTypeId 發送配對命令
+        this.sessionContext.setEntryId(null)
+        this.sessionContext.setCurrentGameId(null)
         break
 
       case 'MATCHMAKING':

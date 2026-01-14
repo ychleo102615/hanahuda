@@ -107,6 +107,46 @@ export { MATCHMAKING_EVENT_TYPES, SSE_MATCHMAKING_EVENT_TYPES } from './matchmak
 export type {
   GatewayEvent,
   GatewayEventDomain,
-  GatewaySSEEventType,
 } from './gateway-events'
-export { GATEWAY_DOMAINS, GATEWAY_SSE_EVENT_TYPES } from './gateway-events'
+export { GATEWAY_DOMAINS } from './gateway-events'
+
+// WebSocket Commands
+export type {
+  WsCommandType,
+  PingPayload,
+  JoinMatchmakingPayload,
+  CancelMatchmakingPayload,
+  PlayCardPayload,
+  SelectTargetPayload,
+  MakeDecisionPayload,
+  ConfirmContinuePayload,
+  LeaveGamePayload,
+  PingCommand,
+  JoinMatchmakingCommand,
+  CancelMatchmakingCommand,
+  PlayCardCommand,
+  SelectTargetCommand,
+  MakeDecisionCommand,
+  ConfirmContinueCommand,
+  LeaveGameCommand,
+  WsCommand,
+} from './ws-commands'
+export {
+  WS_COMMAND_TYPES,
+  createPingCommand,
+  createJoinMatchmakingCommand,
+  createCancelMatchmakingCommand,
+  createPlayCardCommand,
+  createSelectTargetCommand,
+  createMakeDecisionCommand,
+  createConfirmContinueCommand,
+  createLeaveGameCommand,
+} from './ws-commands'
+
+// WebSocket Responses
+export type { WsCommandError, WsCommandResponse } from './ws-responses'
+export { createSuccessResponse, createErrorResponse, isWsCommandResponse } from './ws-responses'
+
+// WebSocket Command Schema (Server-side validation)
+export type { WsCommandValidationResult } from './ws-commands.schema'
+export { validateWsCommand, formatZodError, WsCommandSchema } from './ws-commands.schema'

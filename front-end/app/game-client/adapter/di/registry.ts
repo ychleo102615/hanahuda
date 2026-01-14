@@ -52,11 +52,11 @@ import type { DomainFacade } from '../../application/types/domain-facade'
 import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
 import { MockEventEmitter } from '../mock/MockEventEmitter'
-import { EventRouter } from '../sse/EventRouter'
-import { MatchmakingEventRouter } from '../sse/MatchmakingEventRouter'
-import { GatewayEventRouter } from '../sse/GatewayEventRouter'
-import { GatewayEventClient } from '../sse/GatewayEventClient'
-import { GameApiClient } from '../api/GameApiClient'
+import { EventRouter } from '../ws/EventRouter'
+import { MatchmakingEventRouter } from '../ws/MatchmakingEventRouter'
+import { GatewayEventRouter } from '../ws/GatewayEventRouter'
+import { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
+import { WsSendCommandAdapter } from '../ws/WsSendCommandAdapter'
 import { AnimationPortAdapter } from '../animation/AnimationPortAdapter'
 import { zoneRegistry } from '../animation/ZoneRegistry'
 import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
@@ -497,9 +497,13 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T084 [US4]: 註冊 GameFinished 事件處理器
+  // 需要 GameConnectionPort 以設定預期斷線標記（後端會在發送此事件後主動關閉 WebSocket）
   container.register(
     TOKENS.HandleGameFinishedPort,
-    () => new HandleGameFinishedUseCase(notificationPort, uiStatePort, gameStatePort),
+    () => {
+      const gameConnectionPort = container.resolve(TOKENS.GameConnectionPort) as GameConnectionPort
+      return new HandleGameFinishedUseCase(notificationPort, uiStatePort, gameStatePort, gameConnectionPort)
+    },
     { singleton: true }
   )
 
@@ -562,29 +566,18 @@ function registerInputPorts(container: DIContainer): void {
  * 註冊 Backend 模式的 Adapters
  *
  * @description
- * 註冊 GameApiClient 作為 SendCommandPort 的實作。
- * Nuxt 4 前後端同域，baseURL 使用空字串。
- * 注入 SessionContextPort 以取得 gameId, playerId。
+ * 註冊 WsSendCommandAdapter 作為 SendCommandPort 的實作。
+ * 透過 WebSocket 發送命令到後端伺服器。
  *
- * 同時註冊 SSE 相關元件：
- * - GameEventClient
- * - SSEConnectionManager
+ * 同時註冊 WebSocket 相關元件：
+ * - GatewayWebSocketClient
+ * - GatewayEventRouter
  * - GameConnectionPort
  */
 function registerBackendAdapters(container: DIContainer): void {
 
   // Nuxt 同域，使用空字串作為 baseURL
   const baseURL = ''
-
-  // SendCommandPort: GameApiClient（注入 GameStatePort）
-  container.register(
-    TOKENS.SendCommandPort,
-    () => {
-      const gameState = container.resolve(TOKENS.GameStatePort) as GameStatePort
-      return new GameApiClient(baseURL, gameState)
-    },
-    { singleton: true },
-  )
 
   // RoomApiClient: 取得房間類型列表
   container.register(
@@ -622,7 +615,7 @@ function registerBackendAdapters(container: DIContainer): void {
     { singleton: true },
   )
 
-  // ===== Gateway SSE (Game Gateway 統一架構) =====
+  // ===== Gateway WebSocket (Game Gateway 統一架構) =====
 
   // GatewayEventRouter: 統一 Gateway 事件路由器
   // 整合 EventRouter (遊戲) 與 MatchmakingEventRouter (配對)
@@ -636,25 +629,44 @@ function registerBackendAdapters(container: DIContainer): void {
     { singleton: true },
   )
 
-  // GatewayEventClient: 統一 Gateway SSE 客戶端
-  // 連線到 /api/v1/events，接收所有遊戲相關事件
+  // GatewayWebSocketClient: 統一 Gateway WebSocket 客戶端
+  // 連線到 /_ws，接收所有遊戲相關事件並發送命令
   container.register(
-    TOKENS.GatewayEventClient,
+    TOKENS.GatewayWebSocketClient,
     () => {
       const router = container.resolve(TOKENS.GatewayEventRouter) as GatewayEventRouter
-      return new GatewayEventClient(router)
+      const wsClient = new GatewayWebSocketClient(router)
+
+      // 注入 WebSocket 客戶端到 MatchmakingApiClient
+      // 這確保配對操作透過 WebSocket 進行，避免 Race Condition
+      const matchmakingClient = container.resolve(TOKENS.MatchmakingApiClient) as MatchmakingApiClient
+      matchmakingClient.setWebSocketClient(wsClient)
+
+      return wsClient
     },
     { singleton: true },
   )
 
-  // GameConnectionPort: 包裝 GatewayEventClient 提供 Application Layer 介面
+  // SendCommandPort: WsSendCommandAdapter（透過 WebSocket 發送命令）
+  // 必須在 GatewayWebSocketClient 之後註冊
+  container.register(
+    TOKENS.SendCommandPort,
+    () => {
+      const wsClient = container.resolve(TOKENS.GatewayWebSocketClient) as GatewayWebSocketClient
+      const gameState = container.resolve(TOKENS.GameStatePort) as GameStatePort
+      return new WsSendCommandAdapter(wsClient, gameState)
+    },
+    { singleton: true },
+  )
+
+  // GameConnectionPort: 包裝 GatewayWebSocketClient 提供 Application Layer 介面
   // Gateway 架構下，connect() 參數由 Cookie 身份驗證取代
   container.register(
     TOKENS.GameConnectionPort,
     () => {
-      const gatewayClient = container.resolve(TOKENS.GatewayEventClient) as GatewayEventClient
+      const gatewayClient = container.resolve(TOKENS.GatewayWebSocketClient) as GatewayWebSocketClient
 
-      // 建立內聯 Adapter，將 GatewayEventClient 適配為 GameConnectionPort
+      // 建立內聯 Adapter，將 GatewayWebSocketClient 適配為 GameConnectionPort
       return new (class extends GameConnectionPort {
         connect(_params: GameConnectionParams): void {
           // Gateway 架構：身份由 Cookie 驗證，不需要傳遞參數
@@ -667,6 +679,10 @@ function registerBackendAdapters(container: DIContainer): void {
 
         isConnected(): boolean {
           return gatewayClient.isConnected()
+        }
+
+        setExpectingDisconnect(expecting: boolean): void {
+          gatewayClient.setExpectingDisconnect(expecting)
         }
       })()
     },

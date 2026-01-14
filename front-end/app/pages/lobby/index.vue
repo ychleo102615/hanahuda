@@ -38,24 +38,19 @@ import RegisterPrompt from '~/identity/adapter/components/RegisterPrompt.vue'
 import MatchmakingErrorModal from './components/MatchmakingErrorModal.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
-import { useAuthStore } from '~/identity/adapter/stores/auth-store'
 import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()
-const authStore = useAuthStore()
 
-// Identity BC - 使用後端提供的 playerId
-const { playerId, displayName, isGuest } = useCurrentPlayer()
+// Identity BC - 使用後端提供的玩家資訊
+const { displayName, isGuest } = useCurrentPlayer()
 const { logout, deleteAccount } = useAuth()
 
 // DI 注入
 const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
 const roomApiClient = resolveDependency<RoomApiClient>(TOKENS.RoomApiClient)
 const matchmakingApiClient = resolveDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
-
-// 配對中狀態
-const isMatchmaking = ref(false)
 
 // ALREADY_IN_QUEUE 時，儲存正在配對的房間類型（用於顯示和取消後重試）
 const pendingRoomTypeId = ref<string | null>(null)
@@ -102,14 +97,6 @@ function clearLocalMatchmakingState(): void {
 }
 
 /**
- * 導航到遊戲頁面（配對中）
- */
-function navigateToGameWithEntry(entryId: string): void {
-  sessionContext.setEntryId(entryId)
-  navigateTo('/game')
-}
-
-/**
  * 導航到遊戲頁面（遊戲中）
  */
 function navigateToGameWithGameId(gameId: string): void {
@@ -130,10 +117,10 @@ const menuItems = computed<MenuItem[]>(() => [
 // 載入房間類型
 onMounted(async () => {
   // 重設本地狀態（確保從其他頁面返回時按鈕可點擊）
-  isMatchmaking.value = false
   pendingRoomTypeId.value = null
   conflictingEntryId.value = null
 
+  // 載入房間類型
   try {
     roomTypes.value = await roomApiClient.getRoomTypes()
   } catch (_error) {
@@ -215,101 +202,28 @@ const handleDeleteAccountConfirm = async (password: string | undefined) => {
   }
 }
 
-// 選擇房間並開始配對
-const handleSelectRoom = async (roomTypeId: string) => {
-  // 防止重複呼叫（API 呼叫中）
-  if (isMatchmaking.value) return
-
+/**
+ * 選擇房間
+ *
+ * @description
+ * 儲存 pendingRoomTypeId 到 SessionContext，然後導航到 Game 頁面。
+ * Game 頁面會建立 WebSocket 連線，並發送 JOIN_MATCHMAKING 命令。
+ */
+const handleSelectRoom = (roomTypeId: string) => {
   // 點擊時自動清除錯誤狀態（允許用戶重試）
   if (hasError.value) {
     clearLocalMatchmakingState()
   }
 
-  // 使用 Identity BC 提供的 playerId (由後端 Session 管理)
-  const currentPlayerId = playerId.value
+  // 儲存 pendingRoomTypeId 到 SessionContext
+  sessionContext.setPendingRoomTypeId(roomTypeId as RoomTypeId)
 
-  if (!currentPlayerId) {
-    console.error('No player ID available - auth middleware should have initialized this')
-    return
-  }
-
-  // 開始線上配對流程
-  isMatchmaking.value = true
-  matchmakingStore.setStatus('finding')
-
-  try {
-    const entryId = await matchmakingApiClient.enterMatchmaking(roomTypeId as RoomTypeId)
-    navigateToGameWithEntry(entryId)
-  } catch (error: unknown) {
-    isMatchmaking.value = false
-
-    if (error instanceof MatchmakingError) {
-      const errorCode = error.errorCode
-
-      // ALREADY_IN_QUEUE: 比較房間類型，決定是否直接導向或顯示選項
-      if (errorCode === 'ALREADY_IN_QUEUE') {
-        try {
-          const status = await matchmakingApiClient.getPlayerStatus()
-          if (status.status === 'MATCHMAKING') {
-            if (status.roomType === roomTypeId) {
-              // 相同房間：直接導向遊戲頁面
-              navigateToGameWithEntry(status.entryId)
-            } else {
-              // 不同房間：顯示訊息讓用戶選擇
-              pendingRoomTypeId.value = roomTypeId
-              conflictingEntryId.value = status.entryId
-              matchmakingStore.setStatus('error')
-              matchmakingStore.setError('ALREADY_IN_QUEUE', `You are already queuing for "${status.roomType}"`)
-            }
-          } else if (status.status === 'IN_GAME') {
-            navigateToGameWithGameId(status.gameId)
-          }
-        } catch {
-          setMatchmakingError(null, 'Unable to retrieve matchmaking status')
-        }
-        return
-      }
-
-      // UNAUTHORIZED: 根據用戶類型處理
-      if (errorCode === 'UNAUTHORIZED') {
-        if (isGuest.value) {
-          await handleGuestSessionRecovery(roomTypeId)
-          return
-        } else {
-          matchmakingStore.setStatus('error')
-          matchmakingStore.setError('SESSION_EXPIRED', '您的登入已過期，請重新登入')
-          return
-        }
-      }
-
-      // 其他錯誤（含 ALREADY_IN_GAME）：顯示 server 訊息
-      setMatchmakingError(error, 'Failed to enter matchmaking')
-    } else {
-      setMatchmakingError(error, 'Failed to enter matchmaking')
-    }
-  }
-}
-
-/**
- * 訪客 Session 恢復
- *
- * 當訪客遇到 UNAUTHORIZED 錯誤時，自動重建 Session 並重試配對
- */
-async function handleGuestSessionRecovery(roomTypeId: string): Promise<void> {
-  try {
-    await authStore.reinitAuth()
-    const entryId = await matchmakingApiClient.enterMatchmaking(roomTypeId as RoomTypeId)
-    navigateToGameWithEntry(entryId)
-  } catch {
-    matchmakingStore.setStatus('error')
-    matchmakingStore.setError('RECOVERY_FAILED', '無法恢復連線，請重新整理頁面')
-    isMatchmaking.value = false
-  }
+  // 導航到 Game 頁面（由 Game 頁面處理 WebSocket 連線和配對）
+  navigateTo('/game')
 }
 
 // 重試配對
 const handleRetry = () => {
-  isMatchmaking.value = false
   clearLocalMatchmakingState()
 }
 
@@ -325,12 +239,11 @@ const handleContinueQueue = async () => {
     const status = await matchmakingApiClient.getPlayerStatus()
 
     if (status.status === 'MATCHMAKING') {
-      navigateToGameWithEntry(status.entryId)
+      // 直接導航到遊戲頁面繼續等待配對
+      navigateTo('/game')
     } else if (status.status === 'IN_GAME') {
-      // 配對已成功，嘗試進入配對來觸發 server 返回 ALREADY_IN_GAME 錯誤
-      pendingRoomTypeId.value = null
-      conflictingEntryId.value = null
-      await matchmakingApiClient.enterMatchmaking(status.roomTypeId)
+      // 配對已成功，導航到遊戲
+      navigateToGameWithGameId(status.gameId)
     } else {
       // IDLE - 配對被取消或超時
       clearLocalMatchmakingState()
@@ -344,34 +257,21 @@ const handleContinueQueue = async () => {
  * 取消當前配對並切換到新房間
  *
  * @description
- * 當用戶選擇不同房間但已在配對中時，取消當前配對並重新配對新房間。
- * 不預先檢查狀態，讓 server 返回錯誤（如 ALREADY_IN_GAME）。
+ * 當用戶選擇不同房間但已在配對中時，導航到 Game 頁面處理。
+ * Game 頁面會先取消配對，再發送新的 JOIN_MATCHMAKING 命令。
  */
-const handleCancelAndSwitch = async () => {
+const handleCancelAndSwitch = () => {
   if (!pendingRoomTypeId.value) return
 
-  try {
-    // 嘗試取消當前配對（如果有）
-    if (conflictingEntryId.value) {
-      try {
-        await matchmakingApiClient.cancelMatchmaking(conflictingEntryId.value)
-      } catch {
-        // 取消失敗（可能配對已成功或被取消），繼續嘗試配對新房間
-      }
-    }
+  // 清除狀態
+  matchmakingStore.clearSession()
+  conflictingEntryId.value = null
 
-    // 清除狀態並取得新房間 ID
-    matchmakingStore.clearSession()
-    conflictingEntryId.value = null
-    const newRoomTypeId = pendingRoomTypeId.value
-    pendingRoomTypeId.value = null
+  // 儲存新房間類型並導航到 Game 頁面
+  sessionContext.setPendingRoomTypeId(pendingRoomTypeId.value as RoomTypeId)
+  pendingRoomTypeId.value = null
 
-    // 重新配對新房間（如果已在遊戲中，server 會返回 ALREADY_IN_GAME 錯誤）
-    const entryId = await matchmakingApiClient.enterMatchmaking(newRoomTypeId as RoomTypeId)
-    navigateToGameWithEntry(entryId)
-  } catch (error: unknown) {
-    setMatchmakingError(error, 'Failed to switch room. Please try again.')
-  }
+  navigateTo('/game')
 }
 
 /**

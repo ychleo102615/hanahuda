@@ -1,18 +1,19 @@
 /**
- * useGatewayConnection - Gateway SSE 連線管理 Composable
+ * useGatewayConnection - Gateway WebSocket 連線管理 Composable
  *
  * @description
- * 統一的 Gateway SSE 連線管理。使用單一 SSE 連線接收所有遊戲相關事件。
- * 取代原本分散的 MatchmakingEventClient 和 GameEventClient。
+ * 統一的 Gateway WebSocket 連線管理。使用單一 WebSocket 連線處理雙向通訊：
+ * - 接收：Server → Client 的事件
+ * - 發送：Client → Server 的命令（透過 WsSendCommandAdapter）
  *
  * Gateway Architecture:
- * - 單一 SSE 端點：/api/v1/events
+ * - 單一 WebSocket 端點：/_ws
  * - 身份驗證：透過 session_id Cookie
- * - 事件格式：${domain}:${type}
+ * - 事件格式：GatewayEvent（包含 domain, type, payload）
  * - 初始事件：GatewayConnected（包含玩家狀態）
  *
  * 控制流：
- * - GatewayEventClient → GatewayEventRouter → Domain Routers → Use Cases
+ * - GatewayWebSocketClient → GatewayEventRouter → Domain Routers → Use Cases
  *
  * @module app/game-client/adapter/composables/useGatewayConnection
  */
@@ -21,7 +22,7 @@ import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { resolveDependency } from '../di/resolver'
 import { TOKENS } from '../di/tokens'
-import type { GatewayEventClient } from '../sse/GatewayEventClient'
+import type { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
 import type { useUIStateStore } from '../stores/uiState'
 import type { SessionContextPort } from '../../application/ports/output'
 
@@ -55,11 +56,11 @@ export interface UseGatewayConnectionOptions {
  * Gateway 連線 Composable
  *
  * @description
- * 使用 DI 注入的 GatewayEventClient 進行統一 SSE 連線管理。
+ * 使用 DI 注入的 GatewayWebSocketClient 進行統一 WebSocket 連線管理。
  * 事件由 GatewayEventRouter 根據 domain 路由到對應的子路由器。
  *
  * 職責：
- * - 啟動/關閉 Gateway SSE 連線
+ * - 啟動/關閉 Gateway WebSocket 連線
  * - 管理 Vue 響應式連線狀態
  * - 同步連線狀態到 UIStateStore
  * - 連線永久失敗時導向首頁（可選）
@@ -71,7 +72,7 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
   const router = useRouter()
 
   // DI - 取得已組裝好的元件
-  const gatewayClient = resolveDependency<GatewayEventClient>(TOKENS.GatewayEventClient)
+  const gatewayClient = resolveDependency<GatewayWebSocketClient>(TOKENS.GatewayWebSocketClient)
   const uiStateStore = resolveDependency<ReturnType<typeof useUIStateStore>>(TOKENS.UIStateStore)
   const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
@@ -81,12 +82,24 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
     errorMessage: null,
   })
 
+  // 連線成功回調列表
+  const connectedCallbacks: Array<() => void | Promise<void>> = []
+
   // 設定連線狀態回調
-  gatewayClient.onConnectionEstablished(() => {
+  gatewayClient.onConnectionEstablished(async () => {
     state.value.status = 'connected'
     state.value.errorMessage = null
     uiStateStore.setConnectionStatus('connected')
     uiStateStore.hideReconnectionMessage()
+
+    // 執行連線成功回調
+    for (const callback of connectedCallbacks) {
+      try {
+        await callback()
+      } catch (error) {
+        console.error('Error in onConnected callback:', error)
+      }
+    }
   })
 
   gatewayClient.onConnectionLost(() => {
@@ -120,10 +133,10 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
   })
 
   /**
-   * 建立 Gateway SSE 連線
+   * 建立 Gateway WebSocket 連線
    *
    * @description
-   * 連線到統一的 Gateway 端點。身份由 Cookie 驗證。
+   * 連線到統一的 Gateway 端點 /_ws。身份由 Cookie 驗證。
    * 連線成功後會收到 GatewayConnected 事件，包含玩家目前狀態。
    */
   function connect(): void {
@@ -151,6 +164,36 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
     return gatewayClient.isConnected()
   }
 
+  /**
+   * 註冊連線成功回調
+   *
+   * @description
+   * 在 WebSocket 連線成功後執行的回調。
+   * 用於在連線建立後執行初始化邏輯（如發送配對命令）。
+   *
+   * @param callback - 連線成功後執行的回調函數
+   * @param options - 選項
+   * @param options.once - 若為 true，回調執行一次後自動移除
+   */
+  function onConnected(
+    callback: () => void | Promise<void>,
+    options?: { once?: boolean }
+  ): void {
+    if (options?.once) {
+      // 包裝回調，執行後自動移除
+      const wrappedCallback = async () => {
+        await callback()
+        const index = connectedCallbacks.indexOf(wrappedCallback)
+        if (index > -1) {
+          connectedCallbacks.splice(index, 1)
+        }
+      }
+      connectedCallbacks.push(wrappedCallback)
+    } else {
+      connectedCallbacks.push(callback)
+    }
+  }
+
   // 清理
   onUnmounted(() => {
     disconnect()
@@ -161,5 +204,6 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
     connect,
     disconnect,
     isConnected,
+    onConnected,
   }
 }

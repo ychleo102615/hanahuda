@@ -28,9 +28,10 @@ import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 /**
  * 初始事件延遲（毫秒）
  *
- * 給予客戶端時間建立 SSE 連線
+ * 給予客戶端時間建立 WebSocket 連線並完成應用層初始化。
+ * 這是臨時緩解措施，待 Phase 2（配對改用 WebSocket 命令）完成後可移除。
  */
-const INITIAL_EVENT_DELAY_MS = 100
+const INITIAL_EVENT_DELAY_MS = 500
 
 /**
  * 開始遊戲參數

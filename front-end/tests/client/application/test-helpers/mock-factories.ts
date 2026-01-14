@@ -53,6 +53,7 @@ import type {
   SessionContextPort,
   DelayPort,
   LayoutPort,
+  GameConnectionPort,
 } from '@/game-client/application/ports'
 import type { DomainFacade } from '@/game-client/application/types/domain-facade'
 import type { ToastNotificationPort } from '@/shared/ports/toast-notification.port'
@@ -552,4 +553,32 @@ export function createMockCurrentPlayerContextPort(): CurrentPlayerContextPort {
       isLoggedIn: true,
     }),
   }
+}
+
+/**
+ * 建立 Mock GameConnectionPort
+ *
+ * @description
+ * 所有方法預設為空操作（no-op）。
+ * `isConnected` 預設返回 true。
+ *
+ * @example
+ * ```typescript
+ * const mockGameConnection = createMockGameConnectionPort()
+ *
+ * // 驗證方法調用
+ * mockGameConnection.setExpectingDisconnect(true)
+ * expect(mockGameConnection.setExpectingDisconnect).toHaveBeenCalledWith(true)
+ *
+ * // 模擬未連線狀態
+ * mockGameConnection.isConnected = vi.fn().mockReturnValue(false)
+ * ```
+ */
+export function createMockGameConnectionPort(): GameConnectionPort {
+  return {
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    isConnected: vi.fn().mockReturnValue(true),
+    setExpectingDisconnect: vi.fn(),
+  } as GameConnectionPort
 }

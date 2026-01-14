@@ -64,12 +64,34 @@ export interface MatchmakingStatusEvent {
  *
  * @description
  * 配對成功事件，包含遊戲 ID 和對手資訊。
+ *
+ * 多實例架構（方案 C）擴充欄位：
+ * - game_server_url: 遊戲伺服器 WebSocket URL
+ * - handoff_token: 連線切換 Token（短期有效）
+ *
+ * 若未提供 game_server_url，則使用當前連線（單體架構）。
  */
 export interface MatchFoundEvent {
   readonly event_type: typeof MATCHMAKING_EVENT_TYPES.MatchFound
   readonly game_id: string
   readonly opponent_name: string
   readonly is_bot: boolean
+  /**
+   * 遊戲伺服器 WebSocket URL（多實例架構）
+   *
+   * @description
+   * 若有此欄位，客戶端應使用此 URL 連接遊戲伺服器。
+   * 格式：wss://game-server-n.example.com/_ws
+   */
+  readonly game_server_url?: string
+  /**
+   * 連線切換 Token（多實例架構）
+   *
+   * @description
+   * 短期有效的認證 Token，用於連接遊戲伺服器。
+   * 與 game_server_url 一起提供。
+   */
+  readonly handoff_token?: string
 }
 
 /**

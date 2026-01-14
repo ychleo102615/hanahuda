@@ -84,4 +84,22 @@ export abstract class GameConnectionPort {
    * ```
    */
   abstract isConnected(): boolean
+
+  /**
+   * 設定預期斷線標記
+   *
+   * @description
+   * 當遊戲正常結束時，後端會主動關閉 WebSocket 連線。
+   * 前端收到 GameFinished 事件後設置此標記，
+   * 讓 onclose 處理器知道這是預期中的斷線，不需要嘗試重連。
+   *
+   * @param expecting - 是否預期即將斷線
+   *
+   * @example
+   * ```typescript
+   * // 在 HandleGameFinishedUseCase 中
+   * gameConnection.setExpectingDisconnect(true)
+   * ```
+   */
+  abstract setExpectingDisconnect(expecting: boolean): void
 }

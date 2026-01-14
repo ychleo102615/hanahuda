@@ -60,7 +60,6 @@ export const TOKENS = {
   HandleGameErrorPort: Symbol('HandleGameErrorPort'),
 
   // ===== Adapters =====
-  GameApiClient: Symbol('GameApiClient'),
   EventRouter: Symbol('EventRouter'),
 
   // ===== Stores =====
@@ -81,7 +80,7 @@ export const TOKENS = {
 
   // ===== Gateway Adapters =====
   GatewayEventRouter: Symbol('GatewayEventRouter'),
-  GatewayEventClient: Symbol('GatewayEventClient'),
+  GatewayWebSocketClient: Symbol('GatewayWebSocketClient'),
 
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),
