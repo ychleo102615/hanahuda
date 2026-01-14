@@ -56,6 +56,9 @@ const statistics = ref<PlayerStatistics | null>(null)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
+// Computed - 只在沒有舊資料時才顯示 skeleton
+const showSkeleton = computed(() => isLoading.value && statistics.value === null)
+
 // Constants
 const timeRanges = computed(() => [
   { id: 'all' as const, label: 'All Time' },
@@ -74,6 +77,7 @@ const fetchStatistics = async (timeRange: TimeRange) => {
 
   isLoading.value = true
   error.value = null
+  // 注意：不清空 statistics，保留舊資料直到新資料到來
 
   try {
     const response = await $fetch<StatsApiResponse>('/api/v1/stats/me', {
@@ -149,8 +153,10 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Not Logged In State -->
-    <div v-if="!isLoggedIn" class="text-center py-8">
+    <!-- Content Area with min-height to prevent layout shift -->
+    <div class="min-h-[280px]">
+      <!-- Not Logged In State -->
+      <div v-if="!isLoggedIn" class="text-center py-8">
       <svg
         class="w-12 h-12 mx-auto text-gray-500 mb-3"
         fill="none"
@@ -173,8 +179,8 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- Loading State -->
-    <div v-else-if="isLoading" class="space-y-3" role="status" aria-label="Loading statistics">
+    <!-- Loading State (delayed to prevent flicker) -->
+    <div v-else-if="showSkeleton" class="space-y-3" role="status" aria-label="Loading statistics">
       <div class="grid grid-cols-2 gap-3">
         <div v-for="i in 4" :key="i" class="p-3 rounded-lg bg-primary-700/30 animate-pulse">
           <div class="h-3 w-16 bg-primary-600/50 rounded mb-2" />
@@ -273,6 +279,7 @@ onMounted(() => {
 
       <!-- Yaku Achievements Accordion -->
       <YakuStatsAccordion :yaku-counts="statistics.yakuCounts" />
+    </div>
     </div>
   </div>
 </template>

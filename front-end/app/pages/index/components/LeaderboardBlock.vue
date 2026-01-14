@@ -54,6 +54,9 @@ const tabs = computed(() => [
   { id: 'weekly' as const, label: 'Weekly' },
 ])
 
+// 只在沒有舊資料時才顯示 skeleton
+const showSkeleton = computed(() => isLoading.value && entries.value.length === 0)
+
 // Methods
 const fetchLeaderboard = async (type: LeaderboardType) => {
   isLoading.value = true
@@ -121,8 +124,8 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Loading State (Skeleton) -->
-    <div v-if="isLoading" class="space-y-2" role="status" aria-label="Loading leaderboard">
+    <!-- Loading State (Skeleton) - 只在沒有舊資料時顯示 -->
+    <div v-if="showSkeleton" class="space-y-2" role="status" aria-label="Loading leaderboard">
       <div
         v-for="i in 5"
         :key="i"
