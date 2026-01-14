@@ -8,6 +8,7 @@
  * 管理的資訊：
  * - entryId: 配對條目 ID（用於取消配對）
  * - currentGameId: 遊戲 ID（用於頁面刷新後重連）
+ * - pendingRoomTypeId: 待配對的房間類型（用於 Lobby → Game 頁面傳遞）
  *
  * 不在此介面中管理的資訊：
  * - roomTypeId: 由 gameState.roomTypeId 管理（來自 SSE 事件）
@@ -22,6 +23,8 @@
  *
  * @module game-client/application/ports/output/session-context.port
  */
+
+import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 
 /**
  * SessionContext Output Port
@@ -84,6 +87,26 @@ export abstract class SessionContextPort {
    * 配對完成或取消時清除 entryId
    */
   abstract clearMatchmaking(): void
+
+  // === Pending Matchmaking ===
+
+  /**
+   * 取得待配對的房間類型
+   *
+   * @description
+   * 用於 Lobby → Game 頁面傳遞房間類型。
+   * Lobby 點擊房間後設定，Game 頁面連線後讀取並發送配對命令。
+   *
+   * @returns 房間類型 ID，若無則返回 null
+   */
+  abstract getPendingRoomTypeId(): RoomTypeId | null
+
+  /**
+   * 設定待配對的房間類型
+   *
+   * @param roomTypeId - 房間類型 ID，傳入 null 可清除
+   */
+  abstract setPendingRoomTypeId(roomTypeId: RoomTypeId | null): void
 
   // === Session Cleanup ===
 

@@ -82,12 +82,24 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
     errorMessage: null,
   })
 
+  // 連線成功回調列表
+  const connectedCallbacks: Array<() => void | Promise<void>> = []
+
   // 設定連線狀態回調
-  gatewayClient.onConnectionEstablished(() => {
+  gatewayClient.onConnectionEstablished(async () => {
     state.value.status = 'connected'
     state.value.errorMessage = null
     uiStateStore.setConnectionStatus('connected')
     uiStateStore.hideReconnectionMessage()
+
+    // 執行連線成功回調
+    for (const callback of connectedCallbacks) {
+      try {
+        await callback()
+      } catch (error) {
+        console.error('Error in onConnected callback:', error)
+      }
+    }
   })
 
   gatewayClient.onConnectionLost(() => {
@@ -152,6 +164,36 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
     return gatewayClient.isConnected()
   }
 
+  /**
+   * 註冊連線成功回調
+   *
+   * @description
+   * 在 WebSocket 連線成功後執行的回調。
+   * 用於在連線建立後執行初始化邏輯（如發送配對命令）。
+   *
+   * @param callback - 連線成功後執行的回調函數
+   * @param options - 選項
+   * @param options.once - 若為 true，回調執行一次後自動移除
+   */
+  function onConnected(
+    callback: () => void | Promise<void>,
+    options?: { once?: boolean }
+  ): void {
+    if (options?.once) {
+      // 包裝回調，執行後自動移除
+      const wrappedCallback = async () => {
+        await callback()
+        const index = connectedCallbacks.indexOf(wrappedCallback)
+        if (index > -1) {
+          connectedCallbacks.splice(index, 1)
+        }
+      }
+      connectedCallbacks.push(wrappedCallback)
+    } else {
+      connectedCallbacks.push(callback)
+    }
+  }
+
   // 清理
   onUnmounted(() => {
     disconnect()
@@ -162,5 +204,6 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
     connect,
     disconnect,
     isConnected,
+    onConnected,
   }
 }

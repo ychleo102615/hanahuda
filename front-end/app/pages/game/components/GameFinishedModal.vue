@@ -118,16 +118,21 @@
  * - 根據勝負顯示不同顏色主題
  */
 
+import { inject } from 'vue'
 import { Z_INDEX } from '~/constants'
 import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
 import { useLeaveGame } from '~/game-client/adapter/composables/useLeaveGame'
+import type { useGatewayConnection } from '~/game-client/adapter/composables/useGatewayConnection'
 
 const uiStateStore = useUIStateStore()
 const gameStateStore = useGameStateStore()
 
+// 從父元件注入 gatewayConnection（用於 Rematch 直接重連）
+const gatewayConnection = inject<ReturnType<typeof useGatewayConnection> | null>('gatewayConnection', null)
+
 // 使用 useLeaveGame 處理 Rematch 邏輯
-const { handleRematch, isRematching } = useLeaveGame()
+const { handleRematch, isRematching } = useLeaveGame({ gatewayConnection })
 
 /**
  * 取得玩家名稱

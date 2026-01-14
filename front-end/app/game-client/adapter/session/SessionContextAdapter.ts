@@ -7,6 +7,7 @@
  * 儲存：
  * - entryId: 配對條目 ID（用於取消配對）
  * - currentGameId: 遊戲 ID（用於頁面刷新後重連）
+ * - pendingRoomTypeId: 待配對的房間類型（用於 Lobby → Game 頁面傳遞）
  *
  * 不在此模組中管理的資訊：
  * - roomTypeId: 由 gameState.roomTypeId 管理（來自 SSE 事件）
@@ -17,6 +18,7 @@
  * @module game-client/adapter/session/SessionContextAdapter
  */
 
+import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import { SessionContextPort } from '../../application/ports/output/session-context.port'
 
 /**
@@ -25,6 +27,7 @@ import { SessionContextPort } from '../../application/ports/output/session-conte
 const STORAGE_KEYS = {
   currentGameId: 'current_game_id',
   entryId: 'matchmaking_entry_id',
+  pendingRoomTypeId: 'pending_room_type_id',
 } as const
 
 /**
@@ -122,13 +125,43 @@ export class SessionContextAdapter extends SessionContextPort {
     sessionStorage.removeItem(STORAGE_KEYS.entryId)
   }
 
+  // === Pending Matchmaking ===
+
+  /**
+   * 取得待配對的房間類型
+   *
+   * @returns 房間類型 ID，若無則返回 null
+   */
+  getPendingRoomTypeId(): RoomTypeId | null {
+    if (typeof window === 'undefined') {
+      return null
+    }
+    return sessionStorage.getItem(STORAGE_KEYS.pendingRoomTypeId) as RoomTypeId | null
+  }
+
+  /**
+   * 設定待配對的房間類型
+   *
+   * @param roomTypeId - 房間類型 ID，傳入 null 可清除
+   */
+  setPendingRoomTypeId(roomTypeId: RoomTypeId | null): void {
+    if (typeof window === 'undefined') {
+      return
+    }
+    if (roomTypeId === null) {
+      sessionStorage.removeItem(STORAGE_KEYS.pendingRoomTypeId)
+    } else {
+      sessionStorage.setItem(STORAGE_KEYS.pendingRoomTypeId, roomTypeId)
+    }
+  }
+
   // === Session Cleanup ===
 
   /**
    * 清除所有會話資訊
    *
    * @description
-   * 離開遊戲時清除所有 sessionStorage 資料（entryId + currentGameId）
+   * 離開遊戲時清除所有 sessionStorage 資料（entryId + currentGameId + pendingRoomTypeId）
    */
   clearSession(): void {
     if (typeof window === 'undefined') {
@@ -136,6 +169,7 @@ export class SessionContextAdapter extends SessionContextPort {
     }
     sessionStorage.removeItem(STORAGE_KEYS.entryId)
     sessionStorage.removeItem(STORAGE_KEYS.currentGameId)
+    sessionStorage.removeItem(STORAGE_KEYS.pendingRoomTypeId)
   }
 }
 

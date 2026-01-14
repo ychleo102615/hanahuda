@@ -19,11 +19,11 @@ definePageMeta({
   middleware: 'game',
 })
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, provide, onMounted, onUnmounted } from 'vue'
 import { resolveDependency, tryResolveDependency } from '~/game-client/adapter/di/resolver'
 import type { MockEventEmitter } from '~/game-client/adapter/mock/MockEventEmitter'
 import type { SessionContextPort } from '~/game-client/application/ports/output'
-import type { MatchmakingApiClient } from '~/game-client/adapter/api/MatchmakingApiClient'
+import { MatchmakingError, type MatchmakingApiClient } from '~/game-client/adapter/api/MatchmakingApiClient'
 import { useAuthStore } from '~/identity/adapter/stores/auth-store'
 import GameTopInfoBar from './components/GameTopInfoBar.vue'
 import FieldZone from './components/FieldZone.vue'
@@ -72,6 +72,9 @@ const matchmakingApiClient = gameMode === 'backend'
 // Gateway SSE 連線（Backend 模式）
 const gatewayConnection = gameMode === 'backend' ? useGatewayConnection() : null
 
+// 提供 gatewayConnection 給子元件（GameFinishedModal 需要用於 Rematch）
+provide('gatewayConnection', gatewayConnection)
+
 // 頁面可見性監控（自動重連）
 usePageVisibility()
 
@@ -88,6 +91,7 @@ const {
   handleLeaveGameCancel,
 } = useLeaveGame({
   requireConfirmation: true,
+  gatewayConnection,
 })
 
 // Identity BC - 玩家資訊
@@ -108,16 +112,15 @@ const handlePlayerInfoCardClose = () => {
 
 // 取消配對
 const handleCancelMatchmaking = async () => {
-  const entryId = sessionContext.getEntryId()
-  if (entryId && matchmakingApiClient) {
-    try {
-      await matchmakingApiClient.cancelMatchmaking(entryId)
-    } finally {
-      // 清除所有配對相關資訊（roomTypeId + entryId）
-      sessionContext.clearSession()
-      matchmakingStore.clearSession()
-      navigateTo('/lobby')
-    }
+  if (!matchmakingApiClient) return
+
+  try {
+    await matchmakingApiClient.cancelMatchmaking()
+  } finally {
+    // 清除所有配對相關資訊
+    sessionContext.clearSession()
+    matchmakingStore.clearSession()
+    navigateTo('/lobby')
   }
 }
 
@@ -130,8 +133,35 @@ onMounted(() => {
 
   // 根據模式建立連線
   if (gameMode === 'backend' && gatewayConnection) {
-    // Backend 模式：建立 Gateway SSE 連線
-    // Gateway 自動處理配對和遊戲事件
+    // 註冊連線成功回調：發送配對命令
+    gatewayConnection.onConnected(async () => {
+      // 檢查是否有 pending 配對請求（從 Lobby 頁面傳遞）
+      const pendingRoomTypeId = sessionContext.getPendingRoomTypeId()
+      if (pendingRoomTypeId && matchmakingApiClient) {
+        try {
+          // 發送 JOIN_MATCHMAKING 命令
+          matchmakingStore.setStatus('searching')
+          await matchmakingApiClient.enterMatchmaking(pendingRoomTypeId)
+          // 清除 pending（命令已發送，等待 MatchFound 事件）
+          sessionContext.setPendingRoomTypeId(null)
+        } catch (error) {
+          // 清除 pending
+          sessionContext.setPendingRoomTypeId(null)
+
+          // 錯誤處理
+          matchmakingStore.setStatus('error')
+          if (error instanceof MatchmakingError) {
+            matchmakingStore.setError(error.errorCode, error.message)
+          } else {
+            matchmakingStore.setError('NETWORK_ERROR', 'Failed to enter matchmaking')
+          }
+          // 導回 Lobby 頁面顯示錯誤
+          navigateTo('/lobby')
+        }
+      }
+    })
+
+    // Backend 模式：建立 Gateway WebSocket 連線
     gatewayConnection.connect()
   } else if (gameMode === 'mock' && mockEventEmitter) {
     // Mock 模式：啟動事件腳本

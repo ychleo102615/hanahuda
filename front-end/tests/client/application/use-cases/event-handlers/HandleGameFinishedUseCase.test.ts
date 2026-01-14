@@ -9,20 +9,23 @@ import {
   createMockNotificationPort,
   createMockUIStatePort,
   createMockGameStatePort,
+  createMockGameConnectionPort,
 } from '../../test-helpers/mock-factories'
-import type { NotificationPort, UIStatePort, GameStatePort } from '@/game-client/application/ports'
+import type { NotificationPort, UIStatePort, GameStatePort, GameConnectionPort } from '@/game-client/application/ports'
 
 describe('HandleGameFinishedUseCase', () => {
   let mockNotification: NotificationPort
   let mockUIState: UIStatePort
   let mockGameState: GameStatePort
+  let mockGameConnection: GameConnectionPort
   let useCase: HandleGameFinishedUseCase
 
   beforeEach(() => {
     mockNotification = createMockNotificationPort()
     mockUIState = createMockUIStatePort()
     mockGameState = createMockGameStatePort()
-    useCase = new HandleGameFinishedUseCase(mockNotification, mockUIState, mockGameState)
+    mockGameConnection = createMockGameConnectionPort()
+    useCase = new HandleGameFinishedUseCase(mockNotification, mockUIState, mockGameState, mockGameConnection)
   })
 
   it('當玩家獲勝時，isPlayerWinner 應為 true', () => {

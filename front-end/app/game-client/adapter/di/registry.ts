@@ -497,9 +497,13 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T084 [US4]: 註冊 GameFinished 事件處理器
+  // 需要 GameConnectionPort 以設定預期斷線標記（後端會在發送此事件後主動關閉 WebSocket）
   container.register(
     TOKENS.HandleGameFinishedPort,
-    () => new HandleGameFinishedUseCase(notificationPort, uiStatePort, gameStatePort),
+    () => {
+      const gameConnectionPort = container.resolve(TOKENS.GameConnectionPort) as GameConnectionPort
+      return new HandleGameFinishedUseCase(notificationPort, uiStatePort, gameStatePort, gameConnectionPort)
+    },
     { singleton: true }
   )
 
@@ -631,7 +635,14 @@ function registerBackendAdapters(container: DIContainer): void {
     TOKENS.GatewayWebSocketClient,
     () => {
       const router = container.resolve(TOKENS.GatewayEventRouter) as GatewayEventRouter
-      return new GatewayWebSocketClient(router)
+      const wsClient = new GatewayWebSocketClient(router)
+
+      // 注入 WebSocket 客戶端到 MatchmakingApiClient
+      // 這確保配對操作透過 WebSocket 進行，避免 Race Condition
+      const matchmakingClient = container.resolve(TOKENS.MatchmakingApiClient) as MatchmakingApiClient
+      matchmakingClient.setWebSocketClient(wsClient)
+
+      return wsClient
     },
     { singleton: true },
   )
@@ -668,6 +679,10 @@ function registerBackendAdapters(container: DIContainer): void {
 
         isConnected(): boolean {
           return gatewayClient.isConnected()
+        }
+
+        setExpectingDisconnect(expecting: boolean): void {
+          gatewayClient.setExpectingDisconnect(expecting)
         }
       })()
     },

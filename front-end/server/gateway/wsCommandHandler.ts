@@ -19,6 +19,16 @@ import type { ConfirmContinueInputPort } from '../core-game/application/ports/in
 import type { LeaveGameInputPort } from '../core-game/application/ports/input/leaveGameInputPort'
 import { logger } from '../utils/logger'
 
+// Matchmaking imports
+import { getIdentityContainer } from '../identity/adapters/di/container'
+import { getMatchmakingContainer } from '../matchmaking/adapters/di/container'
+import { getMatchmakingRegistry } from '../matchmaking/adapters/registry/matchmakingRegistrySingleton'
+import { getInMemoryMatchmakingPool } from '../matchmaking/adapters/persistence/inMemoryMatchmakingPool'
+import { CancelMatchmakingUseCase } from '../matchmaking/application/use-cases/cancelMatchmakingUseCase'
+import type { BotFallbackInfo } from '../matchmaking/adapters/registry/matchmakingRegistry'
+import type { RoomTypeId } from '#shared/constants/roomTypes'
+import type { PlayerId } from '../identity/domain/player/player'
+
 /**
  * WsCommandHandler 介面
  */
@@ -81,6 +91,14 @@ class WsCommandHandler implements IWsCommandHandler {
       switch (commandType) {
         case 'PING':
           sendResponse(peer, createSuccessResponse(command.command_id))
+          break
+
+        case 'JOIN_MATCHMAKING':
+          await this.handleJoinMatchmaking(playerId, command, peer)
+          break
+
+        case 'CANCEL_MATCHMAKING':
+          await this.handleCancelMatchmaking(playerId, command, peer)
           break
 
         case 'PLAY_CARD':
@@ -208,6 +226,124 @@ class WsCommandHandler implements IWsCommandHandler {
       playerId,
     })
 
+    sendResponse(peer, createSuccessResponse(command.command_id))
+  }
+
+  /**
+   * 處理加入配對命令
+   *
+   * @description
+   * 透過 WebSocket 發送配對請求，確保連線已建立後才加入配對池。
+   * 這解決了 HTTP 配對的 Race Condition 問題。
+   */
+  private async handleJoinMatchmaking(playerId: string, command: WsCommand, peer: Peer): Promise<void> {
+    const payload = command.payload as {
+      room_type: RoomTypeId
+    }
+
+    // 1. 取得玩家名稱
+    const identityContainer = getIdentityContainer()
+    const player = await identityContainer.playerRepository.findById(playerId as PlayerId)
+
+    if (!player) {
+      sendResponse(
+        peer,
+        createErrorResponse(command.command_id, 'PLAYER_NOT_FOUND', 'Player not found')
+      )
+      return
+    }
+
+    // 2. 呼叫 Use Case
+    const matchmakingContainer = getMatchmakingContainer()
+    const result = await matchmakingContainer.enterMatchmakingUseCase.execute({
+      playerId,
+      playerName: player.displayName,
+      roomType: payload.room_type,
+    })
+
+    // 3. 處理結果
+    if (!result.success) {
+      sendResponse(
+        peer,
+        createErrorResponse(command.command_id, result.errorCode ?? 'MATCHMAKING_ERROR', result.message)
+      )
+      return
+    }
+
+    // 4. 如果是等待配對狀態，註冊到 MatchmakingRegistry
+    const isWaitingForMatch = result.message.includes('Searching')
+
+    if (isWaitingForMatch && result.entryId) {
+      const registry = getMatchmakingRegistry()
+      const pool = getInMemoryMatchmakingPool()
+      const entry = await pool.findById(result.entryId)
+
+      if (entry) {
+        // Bot Fallback 回調
+        const { processMatchmakingUseCase } = matchmakingContainer
+        const botFallbackCallback = async (info: BotFallbackInfo) => {
+          try {
+            await processMatchmakingUseCase.executeBotFallback({
+              entryId: info.entryId,
+              playerId: info.playerId,
+              playerName: info.playerName,
+              roomType: info.roomType,
+            })
+          } catch (error) {
+            logger.error('Bot fallback failed', { error })
+          }
+        }
+
+        // 註冊到 Registry（啟動計時器）
+        registry.registerEntry(entry, () => {}, botFallbackCallback)
+      }
+    }
+
+    // 5. 回應成功（entry_id 透過事件通知，無需在回應中返回）
+    sendResponse(peer, createSuccessResponse(command.command_id))
+  }
+
+  /**
+   * 處理取消配對命令
+   *
+   * @description
+   * 透過玩家 ID 查找配對條目並取消。
+   * 不需要 entry_id，簡化前端邏輯。
+   */
+  private async handleCancelMatchmaking(playerId: string, command: WsCommand, peer: Peer): Promise<void> {
+    // 1. 查找玩家的配對條目
+    const pool = getInMemoryMatchmakingPool()
+    const entry = await pool.findByPlayerId(playerId)
+
+    if (!entry) {
+      sendResponse(
+        peer,
+        createErrorResponse(command.command_id, 'NOT_IN_MATCHMAKING', 'Player is not in matchmaking queue')
+      )
+      return
+    }
+
+    // 2. 呼叫 Use Case 取消配對
+    const useCase = new CancelMatchmakingUseCase(pool)
+    const result = await useCase.execute({
+      entryId: entry.id,
+      playerId,
+    })
+
+    // 3. 處理結果
+    if (!result.success) {
+      sendResponse(
+        peer,
+        createErrorResponse(command.command_id, result.errorCode, result.message)
+      )
+      return
+    }
+
+    // 4. 清除 Registry 中的計時器
+    const registry = getMatchmakingRegistry()
+    registry.unregisterEntry(entry.id)
+
+    // 5. 回應成功
     sendResponse(peer, createSuccessResponse(command.command_id))
   }
 }

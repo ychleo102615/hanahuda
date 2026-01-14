@@ -21,6 +21,20 @@ import type { WsCommand } from './ws-commands'
 export const PingPayloadSchema = z.object({}).strict()
 
 /**
+ * JOIN_MATCHMAKING 命令 payload schema
+ */
+export const JoinMatchmakingPayloadSchema = z.object({
+  room_type: z.enum(['SINGLE', 'QUICK', 'STANDARD', 'MARATHON'], {
+    message: 'room_type must be SINGLE, QUICK, STANDARD, or MARATHON',
+  }),
+})
+
+/**
+ * CANCEL_MATCHMAKING 命令 payload schema
+ */
+export const CancelMatchmakingPayloadSchema = z.object({}).strict()
+
+/**
  * PLAY_CARD 命令 payload schema
  */
 export const PlayCardPayloadSchema = z.object({
@@ -86,6 +100,24 @@ const PingCommandSchema = z.object({
 })
 
 /**
+ * JOIN_MATCHMAKING 命令 schema
+ */
+const JoinMatchmakingCommandSchema = z.object({
+  ...BaseCommandFields,
+  type: z.literal('JOIN_MATCHMAKING'),
+  payload: JoinMatchmakingPayloadSchema,
+})
+
+/**
+ * CANCEL_MATCHMAKING 命令 schema
+ */
+const CancelMatchmakingCommandSchema = z.object({
+  ...BaseCommandFields,
+  type: z.literal('CANCEL_MATCHMAKING'),
+  payload: CancelMatchmakingPayloadSchema,
+})
+
+/**
  * PLAY_CARD 命令 schema
  */
 const PlayCardCommandSchema = z.object({
@@ -141,6 +173,8 @@ const LeaveGameCommandSchema = z.object({
  */
 export const WsCommandSchema = z.discriminatedUnion('type', [
   PingCommandSchema,
+  JoinMatchmakingCommandSchema,
+  CancelMatchmakingCommandSchema,
   PlayCardCommandSchema,
   SelectTargetCommandSchema,
   MakeDecisionCommandSchema,

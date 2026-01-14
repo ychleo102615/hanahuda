@@ -8,6 +8,8 @@
  * @module shared/contracts/ws-commands
  */
 
+import type { RoomTypeId } from '../constants/roomTypes'
+
 // ============================================================================
 // 命令類型
 // ============================================================================
@@ -17,6 +19,8 @@
  */
 export const WS_COMMAND_TYPES = [
   'PING',
+  'JOIN_MATCHMAKING',
+  'CANCEL_MATCHMAKING',
   'PLAY_CARD',
   'SELECT_TARGET',
   'MAKE_DECISION',
@@ -39,6 +43,18 @@ export type WsCommandType = (typeof WS_COMMAND_TYPES)[number]
  * 使用 Record<string, never> 表示空物件。
  */
 export type PingPayload = Record<string, never>
+
+/**
+ * JOIN_MATCHMAKING 命令 payload
+ */
+export interface JoinMatchmakingPayload {
+  readonly room_type: RoomTypeId
+}
+
+/**
+ * CANCEL_MATCHMAKING 命令 payload（無需額外資料）
+ */
+export type CancelMatchmakingPayload = Record<string, never>
 
 /**
  * PLAY_CARD 命令 payload
@@ -100,6 +116,16 @@ interface BaseWsCommand<T extends WsCommandType, P> {
 export type PingCommand = BaseWsCommand<'PING', PingPayload>
 
 /**
+ * JOIN_MATCHMAKING 命令
+ */
+export type JoinMatchmakingCommand = BaseWsCommand<'JOIN_MATCHMAKING', JoinMatchmakingPayload>
+
+/**
+ * CANCEL_MATCHMAKING 命令
+ */
+export type CancelMatchmakingCommand = BaseWsCommand<'CANCEL_MATCHMAKING', CancelMatchmakingPayload>
+
+/**
  * PLAY_CARD 命令
  */
 export type PlayCardCommand = BaseWsCommand<'PLAY_CARD', PlayCardPayload>
@@ -129,6 +155,8 @@ export type LeaveGameCommand = BaseWsCommand<'LEAVE_GAME', LeaveGamePayload>
  */
 export type WsCommand =
   | PingCommand
+  | JoinMatchmakingCommand
+  | CancelMatchmakingCommand
   | PlayCardCommand
   | SelectTargetCommand
   | MakeDecisionCommand
@@ -146,6 +174,33 @@ export function createPingCommand(commandId: string): PingCommand {
   return {
     command_id: commandId,
     type: 'PING',
+    payload: {},
+  }
+}
+
+/**
+ * 建立 JOIN_MATCHMAKING 命令
+ */
+export function createJoinMatchmakingCommand(
+  commandId: string,
+  roomType: RoomTypeId
+): JoinMatchmakingCommand {
+  return {
+    command_id: commandId,
+    type: 'JOIN_MATCHMAKING',
+    payload: {
+      room_type: roomType,
+    },
+  }
+}
+
+/**
+ * 建立 CANCEL_MATCHMAKING 命令
+ */
+export function createCancelMatchmakingCommand(commandId: string): CancelMatchmakingCommand {
+  return {
+    command_id: commandId,
+    type: 'CANCEL_MATCHMAKING',
     payload: {},
   }
 }

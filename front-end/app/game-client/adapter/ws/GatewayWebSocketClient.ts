@@ -98,6 +98,9 @@ export class GatewayWebSocketClient {
   private readonly reconnectDelays = [1000, 2000, 4000, 8000, 16000] // 指數退避
   private shouldReconnect = false // 控制重連，disconnect 時設為 false
 
+  // 預期斷線標記（遊戲正常結束時，後端主動關閉連線）
+  private expectingDisconnect = false
+
   // 命令超時時間
   private readonly commandTimeout: number
 
@@ -164,8 +167,18 @@ export class GatewayWebSocketClient {
 
       // 連線關閉
       this.ws.onclose = () => {
+        this.stopHeartbeat()
         this.rejectAllPendingCommands()
         this.ws = null
+
+        // 預期斷線（遊戲正常結束）：不觸發重連
+        if (this.expectingDisconnect) {
+          this.expectingDisconnect = false // 重置標記
+          this.shouldReconnect = false
+          // 不呼叫 onConnectionLostCallback，因為這是預期行為
+          return
+        }
+
         this.onConnectionLostCallback?.()
         void this.reconnect()
       }
@@ -282,6 +295,20 @@ export class GatewayWebSocketClient {
    */
   onConnectionFailed(callback: () => void): void {
     this.onConnectionFailedCallback = callback
+  }
+
+  /**
+   * 設定預期斷線標記
+   *
+   * @description
+   * 當遊戲正常結束時，後端會主動關閉 WebSocket 連線。
+   * 前端收到 GameFinished 事件後設置此標記，
+   * 讓 onclose 處理器知道這是預期中的斷線，不需要嘗試重連。
+   *
+   * @param expecting - 是否預期即將斷線
+   */
+  setExpectingDisconnect(expecting: boolean): void {
+    this.expectingDisconnect = expecting
   }
 
   /**
