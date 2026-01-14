@@ -18,6 +18,7 @@
  */
 
 import { randomUUID } from 'crypto'
+import { logger } from '~~/server/utils/logger'
 import type { RoomCreatedPayload } from '~~/server/core-game/application/ports/output/internalEventPublisherPort'
 import type { JoinGameAsAiInputPort, AiStrategyType } from '~~/server/core-game/application/ports/input/joinGameAsAiInputPort'
 import type { PlayHandCardInputPort } from '~~/server/core-game/application/ports/input/playHandCardInputPort'
@@ -173,11 +174,11 @@ export class OpponentRegistry {
       })
 
       if (!result.success) {
-        console.warn('[OpponentRegistry] AI failed to join game:', payload.gameId)
+        logger.warn('AI failed to join game', { gameId: payload.gameId })
         this.cleanupGame(payload.gameId)
       }
     } catch (error) {
-      console.error('[OpponentRegistry] Error joining game:', payload.gameId, error)
+      logger.error('Error joining game', { gameId: payload.gameId, error })
       this.cleanupGame(payload.gameId)
     }
   }

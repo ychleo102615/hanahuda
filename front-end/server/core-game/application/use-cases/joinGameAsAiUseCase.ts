@@ -16,6 +16,7 @@
  */
 
 import { createPlayer } from '~~/server/core-game/domain/game/player'
+import { logger } from '~~/server/utils/logger'
 import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
 import type { GameLockPort } from '~~/server/core-game/application/ports/output/gameLockPort'
 import {
@@ -55,7 +56,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
       const waitingGame = this.gameStore.get(gameId)
 
       if (!waitingGame) {
-        console.warn('[JoinGameAsAiUseCase] Game not found:', gameId)
+        logger.warn('Game not found for AI join', { gameId })
         return {
           gameId,
           playerId,
@@ -64,7 +65,7 @@ export class JoinGameAsAiUseCase extends JoinGameAsAiInputPort {
       }
 
       if (waitingGame.status !== 'WAITING') {
-        console.warn('[JoinGameAsAiUseCase] Game not in WAITING status:', gameId, 'status:', waitingGame.status)
+        logger.warn('Game not in WAITING status for AI join', { gameId, status: waitingGame.status })
         return {
           gameId,
           playerId,

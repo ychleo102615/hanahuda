@@ -124,10 +124,6 @@ export class TelegramInitDataValidator {
       const now = Math.floor(Date.now() / 1000)
       const age = now - authDate
 
-      console.log('[TelegramValidator] auth_date:', authDate, new Date(authDate * 1000).toISOString())
-      console.log('[TelegramValidator] now:', now, new Date(now * 1000).toISOString())
-      console.log('[TelegramValidator] age (seconds):', age, 'TTL:', INIT_DATA_TTL_SECONDS)
-
       if (age > INIT_DATA_TTL_SECONDS) {
         return { valid: false, error: `initData expired (age: ${age}s, TTL: ${INIT_DATA_TTL_SECONDS}s)` }
       }
