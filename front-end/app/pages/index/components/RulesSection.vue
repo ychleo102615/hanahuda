@@ -246,11 +246,11 @@ const isScoringRules = (cat: RuleCategoryUnion): cat is ScoringRulesCategory =>
 </template>
 
 <style scoped>
-/* 深色背景 + 漸層（使用森林綠調，與 About Section 區隔） */
+/* 深色背景 + 漸層（使用深翠綠調，統一金箔蒔絵風格） */
 .rules-section {
-  --rules-bg-dark: #1e2520;
-  --rules-bg-mid: #2a3530;
-  --rules-bg-light: #3a4840;
+  --rules-bg-dark: #0d1f17;
+  --rules-bg-mid: #163028;
+  --rules-bg-light: #1a3a2a;
   --rules-border: #485848;
   --rules-border-light: #586858;
 

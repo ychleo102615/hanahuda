@@ -57,7 +57,7 @@ const handleAnchorClick = (targetId: string, event: Event) => {
     />
 
     <!-- Main Content -->
-    <div class="relative bg-primary-900/95 backdrop-blur-sm">
+    <div class="relative bg-game-table/95 backdrop-blur-sm">
       <div class="container mx-auto px-4">
         <nav
           aria-label="Page sections"

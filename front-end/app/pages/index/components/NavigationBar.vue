@@ -134,10 +134,10 @@ onUnmounted(() => {
     :class="[
       'fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-out',
       isSticky
-        ? 'bg-primary-900/65 backdrop-blur-sm shadow-lg'
+        ? 'bg-game-table/65 backdrop-blur-sm shadow-lg'
         : transparent
           ? 'bg-transparent'
-          : 'bg-primary-900',
+          : 'bg-game-table',
     ]"
   >
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -209,7 +209,7 @@ onUnmounted(() => {
 
         <!-- Mobile Menu Button -->
         <button
-          class="md:hidden text-white p-2 rounded-md hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-gold-light"
+          class="md:hidden text-white p-2 rounded-md hover:bg-game-table-light focus:outline-none focus:ring-2 focus:ring-gold-light"
           @click="toggleMobileMenu"
           :aria-expanded="isMobileMenuOpen"
           aria-controls="mobile-menu"
@@ -292,7 +292,7 @@ onUnmounted(() => {
               :href="link.target"
               :target="link.external ? '_blank' : undefined"
               :rel="link.external ? 'noopener noreferrer' : undefined"
-              class="block px-4 py-3 text-sm font-medium rounded-md transition-colors text-white hover:bg-primary-800 hover:text-gold-light"
+              class="block px-4 py-3 text-sm font-medium rounded-md transition-colors text-white hover:bg-game-table-light hover:text-gold-light"
               @click="handleLinkClick(link, $event)"
               @keydown.enter="handleLinkClick(link, $event)"
               tabindex="0"
@@ -305,7 +305,7 @@ onUnmounted(() => {
           <button
             v-if="!player"
             @click="emit('loginClick'); closeMobileMenu()"
-            class="block w-full text-left px-4 py-3 text-sm font-medium text-white hover:bg-primary-800 hover:text-gold-light rounded-md transition-colors"
+            class="block w-full text-left px-4 py-3 text-sm font-medium text-white hover:bg-game-table-light hover:text-gold-light rounded-md transition-colors"
           >
             Sign In
           </button>

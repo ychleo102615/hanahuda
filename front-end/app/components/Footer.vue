@@ -29,7 +29,7 @@ const attributions = [
 </script>
 
 <template>
-  <footer class="bg-primary-900 text-white py-12">
+  <footer class="bg-game-table text-white py-12">
     <div class="container mx-auto px-4">
       <!-- Desktop: horizontal layout | Mobile: stacked content -->
       <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-8">

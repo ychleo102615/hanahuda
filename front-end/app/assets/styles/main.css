@@ -480,7 +480,7 @@
   .topbar-glass {
     position: relative;
     /* z-index 由組件 inline style 設定，使用 Z_INDEX 常數 */
-    background: rgba(17, 24, 39, 0.88); /* gray-900/88 */
+    background: rgba(13, 31, 23, 0.88); /* game-table/88 */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     /* 金色底部邊線 */

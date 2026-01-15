@@ -39,7 +39,7 @@ const handleLogin = () => {
   >
     <!-- Background with Asanoha Pattern -->
     <div
-      class="absolute inset-0 bg-primary-900"
+      class="absolute inset-0 bg-game-table"
       aria-hidden="true"
     >
       <!-- Asanoha Pattern Overlay -->

@@ -237,18 +237,18 @@ const handleLoginSuccess = () => {
       </section>
 
       <!-- About Section - Project Introduction -->
-      <section id="about" class="relative py-16 px-4 bg-primary-900 overflow-hidden">
+      <section id="about" class="relative py-16 px-4 bg-game-table overflow-hidden">
         <!-- 裝飾元素 -->
         <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
           <!-- 右上角圓形裝飾 -->
-          <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full border-2 border-primary-700/30" />
+          <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full border-2 border-gold-dark/30" />
           <!-- 左下角線條裝飾 -->
-          <div class="absolute left-8 bottom-8 w-24 h-1 rotate-45 bg-primary-700/20" />
+          <div class="absolute left-8 bottom-8 w-24 h-1 rotate-45 bg-gold-dark/20" />
         </div>
 
         <div class="container mx-auto max-w-6xl relative z-10">
           <!-- 外框卡片 -->
-          <div class="bg-primary-800/80 rounded-2xl p-8 md:p-12 border border-primary-700/50">
+          <div class="bg-game-felt/80 rounded-2xl p-8 md:p-12 border border-gold-dark/50">
             <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
               <!-- 左側：文字內容 -->
               <div class="flex-1 space-y-6">
@@ -280,22 +280,22 @@ const handleLoginSuccess = () => {
               <div class="flex-1 lg:max-w-md">
                 <div class="grid grid-cols-2 gap-4">
                   <!-- Nuxt 4 -->
-                  <div class="bg-primary-700/50 rounded-xl p-6 border border-primary-600/30">
+                  <div class="bg-game-table-light/50 rounded-xl p-6 border border-gold-dark/30">
                     <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">Nuxt 4</div>
                     <div class="text-gray-300 text-sm">Full-Stack Framework</div>
                   </div>
-                  <!-- WebSocket -->
-                  <div class="bg-primary-700/50 rounded-xl p-6 border border-primary-600/30">
-                    <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">WS</div>
+                  <!-- SSE -->
+                  <div class="bg-game-table-light/50 rounded-xl p-6 border border-gold-dark/30">
+                    <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">SSE</div>
                     <div class="text-gray-300 text-sm">Real-time Events</div>
                   </div>
                   <!-- Clean Architecture -->
-                  <div class="bg-primary-700/50 rounded-xl p-6 border border-primary-600/30">
+                  <div class="bg-game-table-light/50 rounded-xl p-6 border border-gold-dark/30">
                     <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">CA</div>
                     <div class="text-gray-300 text-sm">Clean Architecture</div>
                   </div>
                   <!-- Drizzle ORM -->
-                  <div class="bg-primary-700/50 rounded-xl p-6 border border-primary-600/30">
+                  <div class="bg-game-table-light/50 rounded-xl p-6 border border-gold-dark/30">
                     <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">Drizzle</div>
                     <div class="text-gray-300 text-sm">Type-Safe ORM</div>
                   </div>
