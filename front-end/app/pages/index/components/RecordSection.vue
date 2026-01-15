@@ -93,7 +93,7 @@ const handleLogin = () => {
 
 <style scoped>
 .asanoha-pattern {
-  opacity: 0.02;
+  opacity: 0.06;
   background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='0.5'%3E%3Cpath d='M30 0 L30 60 M0 30 L60 30'/%3E%3Cpath d='M30 0 L0 30 L30 60 L60 30 Z'/%3E%3Cpath d='M15 15 L30 0 L45 15 L30 30 Z'/%3E%3Cpath d='M15 45 L30 30 L45 45 L30 60 Z'/%3E%3Cpath d='M0 30 L15 15 L30 30 L15 45 Z'/%3E%3Cpath d='M30 30 L45 15 L60 30 L45 45 Z'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 60px 60px;
 }
