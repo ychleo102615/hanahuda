@@ -17,14 +17,14 @@
           :class="[
             'px-6 py-5 text-white modal-header',
             uiStateStore.gameFinishedModalData.isPlayerWinner
-              ? 'bg-gradient-to-r from-green-600/80 to-green-700/80'
-              : 'bg-gradient-to-r from-blue-600/80 to-blue-700/80',
+              ? 'bg-gradient-to-r from-game-felt/90 to-game-table/90 border-b border-gold-dark/30'
+              : 'bg-gradient-to-r from-game-table-light/90 to-game-table/90',
           ]"
         >
-          <h2 id="game-finished-title" class="text-2xl font-bold text-center">
+          <h2 id="game-finished-title" class="text-2xl font-bold font-serif text-gold-light text-center">
             {{
               uiStateStore.gameFinishedModalData.isPlayerWinner
-                ? '🎉 Victory!'
+                ? 'Victory!'
                 : 'Game Over'
             }}
           </h2>

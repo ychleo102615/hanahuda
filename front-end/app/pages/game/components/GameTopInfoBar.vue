@@ -190,13 +190,13 @@ const closeMenu = () => {
       <!-- Center Section: 回合資訊 -->
       <div class="flex flex-col items-center shrink min-w-0">
         <!-- 局數顯示 -->
-        <div v-if="currentRound !== null" class="text-sm text-gray-400 whitespace-nowrap">
+        <div v-if="currentRound !== null" class="text-sm text-gray-400 font-serif whitespace-nowrap">
           Round {{ currentRound }} / {{ totalRounds }}
         </div>
         <!-- Unified status text -->
         <div
           v-if="statusText"
-          class="text-lg font-medium truncate max-w-full"
+          class="text-lg font-semibold truncate max-w-full"
           :class="{ 'text-yellow-400': isMyTurnStatus }"
         >
           {{ statusText }}

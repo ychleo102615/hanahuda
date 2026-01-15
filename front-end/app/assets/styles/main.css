@@ -425,9 +425,9 @@
    * Modal 統一樣式 - 深色毛玻璃
    * ============================================ */
 
-  /* Modal 面板 - 深色毛玻璃效果 */
+  /* Modal 面板 - 深翠綠毛玻璃效果 */
   .modal-panel {
-    background: rgba(17, 24, 39, 0.95); /* gray-900/95 */
+    background: rgba(13, 31, 23, 0.95); /* game-table/95 */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(139, 105, 20, 0.2);
@@ -458,10 +458,10 @@
     );
   }
 
-  /* Modal 內部區塊 - 半透明深色 */
+  /* Modal 內部區塊 - 半透明深翠綠 */
   .modal-section {
-    background: rgba(31, 41, 55, 0.5); /* gray-800/50 */
-    border: 1px solid rgba(75, 85, 99, 0.3); /* gray-600/30 */
+    background: rgba(22, 48, 40, 0.5); /* game-table-light/50 */
+    border: 1px solid rgba(139, 105, 20, 0.2); /* gold-dark/20 */
   }
 
   /* Modal 高亮區塊（用於役種等） */
@@ -472,7 +472,7 @@
 
   /* Modal Footer - 微妙分隔 */
   .modal-footer {
-    background: rgba(17, 24, 39, 0.5);
+    background: rgba(13, 31, 23, 0.5); /* game-table/50 */
     border-top: 1px solid rgba(139, 105, 20, 0.15);
   }
 
