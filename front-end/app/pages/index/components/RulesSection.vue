@@ -80,6 +80,12 @@ const isScoringRules = (cat: RuleCategoryUnion): cat is ScoringRulesCategory =>
 
 <template>
   <section id="rules" class="rules-section relative py-16 px-4 overflow-hidden">
+    <!-- Gold Border Top -->
+    <div
+      class="absolute top-0 left-0 right-0 h-px gold-border z-10"
+      aria-hidden="true"
+    />
+
     <div class="container mx-auto max-w-6xl relative z-10">
       <!-- Section Header -->
       <div class="text-center mb-12">

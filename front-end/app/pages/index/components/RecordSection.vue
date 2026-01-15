@@ -37,6 +37,12 @@ const handleLogin = () => {
     id="records"
     class="relative py-16 md:py-20 px-4 overflow-hidden"
   >
+    <!-- Gold Border Top -->
+    <div
+      class="absolute top-0 left-0 right-0 h-px gold-border"
+      aria-hidden="true"
+    />
+
     <!-- Background with Asanoha Pattern -->
     <div
       class="absolute inset-0 bg-game-table"

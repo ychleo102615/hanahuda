@@ -238,6 +238,12 @@ const handleLoginSuccess = () => {
 
       <!-- About Section - Project Introduction -->
       <section id="about" class="relative py-16 px-4 bg-game-table overflow-hidden">
+        <!-- Gold Border Top -->
+        <div
+          class="absolute top-0 left-0 right-0 h-px gold-border z-10"
+          aria-hidden="true"
+        />
+
         <!-- 裝飾元素 -->
         <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
           <!-- 右上角圓形裝飾 -->

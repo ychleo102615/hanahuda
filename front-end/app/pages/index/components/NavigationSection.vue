@@ -173,10 +173,6 @@ const handleAnchorClick = (targetId: string, event: Event) => {
   background-size: 100px 50px;
 }
 
-.gold-border {
-  background: linear-gradient(90deg, transparent 0%, rgba(139, 105, 20, 0.6) 20%, rgba(212, 175, 55, 0.8) 50%, rgba(139, 105, 20, 0.6) 80%, transparent 100%);
-}
-
 .nav-link-bg {
   position: absolute;
   inset: 0;

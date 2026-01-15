@@ -529,4 +529,32 @@
     border: 1px solid rgba(212, 175, 55, 0.1);
     pointer-events: none;
   }
+
+  /* ============================================
+   * 金色分隔線 - Section 邊緣裝飾
+   * ============================================ */
+
+  /* 金色漸層分隔線 */
+  .gold-border {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(139, 105, 20, 0.6) 20%,
+      rgba(212, 175, 55, 0.8) 50%,
+      rgba(139, 105, 20, 0.6) 80%,
+      transparent 100%
+    );
+  }
+
+  /* 較淡的金色分隔線（用於次要區塊） */
+  .gold-border-subtle {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(139, 105, 20, 0.3) 20%,
+      rgba(212, 175, 55, 0.5) 50%,
+      rgba(139, 105, 20, 0.3) 80%,
+      transparent 100%
+    );
+  }
 }
