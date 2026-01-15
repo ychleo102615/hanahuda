@@ -68,10 +68,10 @@ const handleLogin = () => {
           <div class="w-12 h-px bg-gradient-to-l from-transparent to-gold-dark/60" />
         </div>
 
-        <h2 class="text-2xl md:text-3xl font-bold text-white mb-3 tracking-wide">
+        <h2 class="text-2xl md:text-3xl font-bold font-serif text-white mb-3 tracking-wide">
           Records
         </h2>
-        <p class="text-gray-400 text-sm md:text-base max-w-md mx-auto">
+        <p class="text-gray-300 text-sm md:text-base max-w-md mx-auto">
           Check the rankings and track your progress
         </p>
       </div>

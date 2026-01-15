@@ -83,13 +83,13 @@ const isScoringRules = (cat: RuleCategoryUnion): cat is ScoringRulesCategory =>
     <div class="container mx-auto max-w-6xl relative z-10">
       <!-- Section Header -->
       <div class="text-center mb-12">
-        <p class="text-emerald-400 text-sm font-semibold uppercase tracking-wider mb-4">
+        <p class="text-gold-light text-sm font-semibold uppercase tracking-wider mb-4">
           HOW TO PLAY
         </p>
-        <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">
+        <h2 class="text-4xl md:text-5xl font-bold font-serif text-white mb-4">
           Game Rules &amp; Strategy
         </h2>
-        <p class="text-gray-400 max-w-2xl mx-auto">
+        <p class="text-gray-300 max-w-2xl mx-auto">
           Understanding Koi-Koi is simple, yet mastering it takes a lifetime.
           Here are the basics to get you started on your journey.
         </p>
@@ -103,7 +103,7 @@ const isScoringRules = (cat: RuleCategoryUnion): cat is ScoringRulesCategory =>
           class="rounded-xl overflow-hidden transition-all duration-300"
           :class="[
             'rules-card border',
-            isCategoryExpanded(category.id) ? 'border-emerald-400' : ''
+            isCategoryExpanded(category.id) ? 'border-gold-light' : ''
           ]"
         >
           <!-- Category Header (Toggle Button) -->
@@ -114,8 +114,8 @@ const isScoringRules = (cat: RuleCategoryUnion): cat is ScoringRulesCategory =>
             class="w-full px-6 py-5 flex items-center gap-4 text-left hover:bg-white/5 transition-colors"
           >
             <!-- Icon -->
-            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <svg class="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-gold-dark/20 flex items-center justify-center">
+              <svg class="w-5 h-5 text-gold-light" fill="currentColor" viewBox="0 0 20 20">
                 <path v-if="category.id === 'game-objective'" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
                 <path v-else-if="category.id === 'card-deck'" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z"/>
                 <path v-else-if="category.id === 'card-types'" d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
@@ -127,7 +127,7 @@ const isScoringRules = (cat: RuleCategoryUnion): cat is ScoringRulesCategory =>
               {{ category.title }}
             </h3>
             <svg
-              class="w-5 h-5 text-gray-400 transition-transform duration-300"
+              class="w-5 h-5 text-gray-300 transition-transform duration-300"
               :class="isCategoryExpanded(category.id) ? 'rotate-180' : 'rotate-0'"
               fill="none"
               stroke="currentColor"

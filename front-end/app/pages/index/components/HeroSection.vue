@@ -103,7 +103,7 @@ onUnmounted(() => {
       <h1
         id="hero-title"
         :class="[
-          'mb-6 text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl',
+          'mb-6 text-4xl font-bold font-serif tracking-tight md:text-6xl lg:text-7xl',
           'bg-linear-to-r from-amber-200 via-yellow-100 to-white bg-clip-text text-transparent',
           'opacity-0',
           isVisible && 'animate-slide-up-fade-in'
@@ -140,7 +140,7 @@ onUnmounted(() => {
         :aria-busy="isNavigating"
         :class="[
           'pointer-events-auto inline-flex items-center rounded-lg bg-accent-red px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 cursor-pointer',
-          'hover:scale-105 hover:bg-red-600 hover:shadow-xl',
+          'hover:bg-red-600 hover:shadow-xl',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-red',
           'disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100',
           'md:px-10 md:py-5 md:text-xl',

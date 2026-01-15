@@ -109,7 +109,7 @@ const getCategoryDisplayName = (category: string): string => {
         </div>
 
         <!-- Points -->
-        <div class="text-5xl font-bold text-emerald-400">
+        <div class="text-5xl font-bold text-gold-light">
           {{ currentYaku.points }}
           <span class="text-2xl text-gray-400">points</span>
         </div>
@@ -159,7 +159,7 @@ const getCategoryDisplayName = (category: string): string => {
         :class="[
           'w-3 h-3 rounded-full transition-all',
           index === currentIndex
-            ? 'bg-emerald-400 w-8'
+            ? 'bg-gold-light w-8'
             : 'bg-gray-500 hover:bg-gray-400',
         ]"
       />

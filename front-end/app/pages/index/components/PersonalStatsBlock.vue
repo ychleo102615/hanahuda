@@ -299,7 +299,7 @@ onMounted(() => {
           <div class="stat-card p-4 rounded-lg">
             <div class="text-xs text-gray-500 mb-1.5 uppercase tracking-wider">Win / Loss</div>
             <div class="text-xl font-bold tabular-nums">
-              <span class="text-emerald-400">{{ statistics.gamesWon }}</span>
+              <span class="text-gold-light">{{ statistics.gamesWon }}</span>
               <span class="text-gray-500 mx-1">/</span>
               <span class="text-red-400">{{ statistics.gamesLost }}</span>
             </div>
