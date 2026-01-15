@@ -34,7 +34,6 @@ export const BACKEND_TOKENS = {
 
   // ===== Output Ports (跨 BC 通訊) =====
   PlayerIdentityPort: Symbol('PlayerIdentityPort'),
-  AiOpponentPort: Symbol('AiOpponentPort'),
 
   // ===== Input Ports (Use Cases) =====
   JoinGameInputPort: Symbol('JoinGameInputPort'),

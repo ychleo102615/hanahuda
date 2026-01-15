@@ -1,13 +1,13 @@
 /**
- * Opponent Store
+ * Opponent Store - Opponent BC Adapter Layer
  *
  * @description
  * 管理 AI 對手實例，追蹤每個遊戲的 AI 對手。
- * 設計類似 ConnectionStore，使用嵌套 Map 結構。
+ * 設計類似 ConnectionStore，使用 Map 結構。
  *
  * 結構：Map<gameId, OpponentInfo>
  *
- * @module server/adapters/opponent/opponentStore
+ * @module server/opponent/adapter/store/opponentStore
  */
 
 import type { AiStrategyType } from '~~/server/core-game/application/ports/input/joinGameAsAiInputPort'

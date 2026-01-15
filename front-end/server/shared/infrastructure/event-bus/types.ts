@@ -41,10 +41,23 @@ export interface MatchFoundPayload {
 }
 
 /**
+ * AI Opponent Needed Payload
+ *
+ * @description
+ * 需要 AI 對手時發布的事件 Payload。
+ * 由 Core Game BC 發布，Opponent BC 訂閱。
+ */
+export interface AiOpponentNeededPayload {
+  /** 遊戲 ID */
+  readonly gameId: string
+}
+
+/**
  * Event Types - 事件類型常數
  */
 export const EVENT_TYPES = {
   MATCH_FOUND: 'MATCH_FOUND',
+  AI_OPPONENT_NEEDED: 'AI_OPPONENT_NEEDED',
 } as const
 
 export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES]

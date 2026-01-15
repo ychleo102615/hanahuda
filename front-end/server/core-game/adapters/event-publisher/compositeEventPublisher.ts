@@ -22,7 +22,7 @@ import type { GameLogRepositoryPort } from '~~/server/core-game/application/port
 import type { GameEvent, GameStartedEvent, RoundDealtEvent, CardPlay } from '#shared/contracts'
 import { EVENT_TYPES } from '#shared/contracts'
 import type { GameLogEventType } from '~~/server/database/schema/gameLogs'
-import { opponentStore } from '~~/server/core-game/adapters/opponent/opponentStore'
+import { opponentStore } from '~~/server/opponent/adapter/store/opponentStore'
 import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
 import {
   playerEventBus,
@@ -323,15 +323,27 @@ export class CompositeEventPublisher implements EventPublisherPort {
    * 發佈事件到指定玩家
    *
    * @description
-   * 用於重連時發送 GameSnapshotRestore 事件給單一玩家。
-   * 透過 PlayerEventBus（WebSocket Gateway 架構）發送。
+   * 用於：
+   * - RoundDealt 事件（每個玩家收到過濾後的版本）
+   * - 重連時發送 GameSnapshotRestore 事件給單一玩家
+   *
+   * 若目標玩家是 AI 對手，透過 OpponentStore 發送。
+   * 否則透過 PlayerEventBus（WebSocket Gateway 架構）發送。
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
    * @param event - 遊戲事件
    */
-  publishToPlayer(_gameId: string, playerId: string, event: GameEvent): void {
-    // 透過 PlayerEventBus（WebSocket Gateway 架構）發送
+  publishToPlayer(gameId: string, playerId: string, event: GameEvent): void {
+    // 檢查目標玩家是否為 AI 對手
+    const opponentInfo = opponentStore.get(gameId)
+    if (opponentInfo && opponentInfo.playerId === playerId) {
+      // AI 玩家：透過 OpponentStore 發送
+      opponentStore.sendEvent(gameId, event)
+      return
+    }
+
+    // 人類玩家：透過 PlayerEventBus（WebSocket Gateway 架構）發送
     const gatewayEvent = createGameEvent(event.event_type, event)
     playerEventBus.publishToPlayer(playerId, gatewayEvent)
   }

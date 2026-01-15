@@ -6,7 +6,7 @@
  *
  * 事件處理流程:
  * - HUMAN match: 直接建立雙人遊戲
- * - BOT match: 建立等待遊戲，透過 AiOpponentPort 請求 AI 加入
+ * - BOT match: 建立等待遊戲，發布 AI_OPPONENT_NEEDED 事件
  *
  * @module server/core-game/adapters/event-subscriber/gameCreationHandler
  */
@@ -19,7 +19,6 @@ import {
   type Unsubscribe,
 } from '~~/server/shared/infrastructure/event-bus'
 import type { JoinGameInputPort } from '../../application/ports/input/joinGameInputPort'
-import type { AiOpponentPort } from '../../application/ports/output/aiOpponentPort'
 import { inMemoryGameStore } from '../persistence/inMemoryGameStore'
 import { gameTimeoutManager } from '../timeout/gameTimeoutManager'
 import { logger } from '~~/server/utils/logger'
@@ -34,8 +33,7 @@ export class GameCreationHandler {
   private unsubscribe: Unsubscribe | null = null
 
   constructor(
-    private readonly joinGameUseCase: JoinGameInputPort,
-    private readonly aiOpponentPort: AiOpponentPort
+    private readonly joinGameUseCase: JoinGameInputPort
   ) {}
 
   /**
@@ -156,7 +154,7 @@ export class GameCreationHandler {
    *
    * @description
    * 1. Player 建立遊戲 (WAITING 狀態)
-   * 2. 透過 AiOpponentPort 請求 AI 加入
+   * 2. 發布 AI_OPPONENT_NEEDED 事件（由 Opponent BC 處理）
    * 3. 發布 MatchFound 到 PlayerEventBus（包含有效 game_id）
    */
   private async handleBotMatch(payload: MatchFoundPayload): Promise<void> {
@@ -172,9 +170,9 @@ export class GameCreationHandler {
       return
     }
 
-    // 透過 AiOpponentPort 請求 AI 加入（非同步，不等待完成）
+    // 發布 AI_OPPONENT_NEEDED 事件（由 Opponent BC 訂閱處理）
     // AI 會立即加入遊戲，遊戲在 1 秒後開始（GAME_START_DELAY_MS）
-    this.aiOpponentPort.createAiForGame({ gameId: result.gameId })
+    internalEventBus.publishAiOpponentNeeded({ gameId: result.gameId })
 
     // 遊戲建立成功後，發布 MatchFound 到 PlayerEventBus
     const matchFoundEvent = createMatchmakingEvent('MatchFound', {
@@ -195,14 +193,13 @@ let instance: GameCreationHandler | null = null
  * 初始化 GameCreationHandler
  */
 export function initGameCreationHandler(
-  joinGameUseCase: JoinGameInputPort,
-  aiOpponentPort: AiOpponentPort
+  joinGameUseCase: JoinGameInputPort
 ): GameCreationHandler {
   if (instance) {
     instance.stop()
   }
 
-  instance = new GameCreationHandler(joinGameUseCase, aiOpponentPort)
+  instance = new GameCreationHandler(joinGameUseCase)
   instance.start()
   return instance
 }

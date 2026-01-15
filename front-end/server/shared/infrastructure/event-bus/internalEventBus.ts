@@ -11,7 +11,7 @@
  */
 
 import { EventEmitter } from 'node:events'
-import type { MatchFoundPayload } from './types'
+import type { MatchFoundPayload, AiOpponentNeededPayload } from './types'
 import { EVENT_TYPES } from './types'
 
 /**
@@ -25,6 +25,11 @@ export type Unsubscribe = () => void
 export type MatchFoundHandler = (payload: MatchFoundPayload) => void
 
 /**
+ * AI 對手需求事件處理器類型
+ */
+export type AiOpponentNeededHandler = (payload: AiOpponentNeededPayload) => void
+
+/**
  * Internal Event Bus Interface
  *
  * @description
@@ -34,6 +39,10 @@ export interface IInternalEventBus {
   // MATCH_FOUND events (Matchmaking → Core Game)
   publishMatchFound(payload: MatchFoundPayload): void
   onMatchFound(handler: MatchFoundHandler): Unsubscribe
+
+  // AI_OPPONENT_NEEDED events (Core Game → Opponent)
+  publishAiOpponentNeeded(payload: AiOpponentNeededPayload): void
+  onAiOpponentNeeded(handler: AiOpponentNeededHandler): Unsubscribe
 }
 
 /**
@@ -68,7 +77,7 @@ class InternalEventBus implements IInternalEventBus {
    * 訂閱配對成功事件
    *
    * @description
-   * 由 Core Game BC 呼叫，監聽配對成功事件以建立遊戲。
+   * 由 Core Game BC 呼叫，監聯配對成功事件以建立遊戲。
    *
    * @param handler - 事件處理器
    * @returns 取消訂閱函數
@@ -77,6 +86,34 @@ class InternalEventBus implements IInternalEventBus {
     this.emitter.on(EVENT_TYPES.MATCH_FOUND, handler)
     return () => {
       this.emitter.off(EVENT_TYPES.MATCH_FOUND, handler)
+    }
+  }
+
+  /**
+   * 發佈 AI 對手需求事件
+   *
+   * @description
+   * 由 Core Game BC 呼叫，通知 Opponent BC 需要建立 AI 對手。
+   *
+   * @param payload - AI 對手需求事件 Payload
+   */
+  publishAiOpponentNeeded(payload: AiOpponentNeededPayload): void {
+    this.emitter.emit(EVENT_TYPES.AI_OPPONENT_NEEDED, payload)
+  }
+
+  /**
+   * 訂閱 AI 對手需求事件
+   *
+   * @description
+   * 由 Opponent BC 呼叫，監聽 AI 對手需求事件以建立 AI 實例。
+   *
+   * @param handler - 事件處理器
+   * @returns 取消訂閱函數
+   */
+  onAiOpponentNeeded(handler: AiOpponentNeededHandler): Unsubscribe {
+    this.emitter.on(EVENT_TYPES.AI_OPPONENT_NEEDED, handler)
+    return () => {
+      this.emitter.off(EVENT_TYPES.AI_OPPONENT_NEEDED, handler)
     }
   }
 }

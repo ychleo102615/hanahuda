@@ -2,25 +2,28 @@
  * Opponent Plugin - Nitro Plugin
  *
  * @description
- * 確保 AI 對手服務已初始化。
+ * 初始化 Opponent BC，負責 AI 對手功能。
  *
  * 架構說明：
- * - OpponentRegistry 實現 AiOpponentPort，在 DI Container 中建立
- * - GameCreationHandler 在 BOT 配對時調用 AiOpponentPort.createAiForGame()
- * - OpponentInstance 負責單場遊戲的 AI 邏輯
+ * - OpponentContainer 是 Opponent BC 的 DI Container
+ * - AiNeededHandler 訂閱 AI_OPPONENT_NEEDED 事件
+ * - OpponentInstance 負責單場遊戲的 AI 邏輯（使用 OpponentStateTracker 追蹤狀態）
  * - OpponentStore 負責儲存 AI 實例（供 CompositeEventPublisher 使用）
  *
- * 設計變更（請求驅動 vs 事件驅動）：
- * - 舊設計：OpponentRegistry 監聽 ROOM_CREATED 事件，任何房間建立都會嘗試加入 AI
- * - 新設計：只有 BOT 配對時，GameCreationHandler 明確調用 createAiForGame()
+ * 事件驅動設計：
+ * - Core-Game BC 發布 AI_OPPONENT_NEEDED 事件
+ * - Opponent BC 訂閱事件，建立 AI 對手
+ * - AI 透過 Core-Game Input Ports 進行遊戲操作
  *
  * @module server/plugins/opponent
  */
 
+import { opponentContainer } from '~~/server/utils/container'
 import { logger } from '~~/server/utils/logger'
 
 export default defineNitroPlugin(() => {
-  // OpponentRegistry 已在 DI Container 中建立並註冊為 AiOpponentPort
-  // 此 Plugin 僅作為確認點，確保 Container 初始化順序正確
-  logger.info('[Opponent Plugin] AI opponent service ready (request-driven)')
+  // 啟動 Opponent BC（訂閱 AI_OPPONENT_NEEDED 事件）
+  opponentContainer.start()
+
+  logger.info('[Opponent Plugin] AI opponent service started (event-driven)')
 })

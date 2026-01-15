@@ -1,22 +1,22 @@
 /**
- * OpponentRegistry - Adapter Layer
+ * AiNeededHandler - Opponent BC Adapter Layer
  *
  * @description
- * AI 對手註冊中心，管理 OpponentInstance 的生命週期。
- * 實現 AiOpponentPort，提供請求驅動的 AI 建立服務。
+ * AI 對手需求事件處理器。
+ * 訂閱 AI_OPPONENT_NEEDED 事件，建立並管理 AI 對手實例。
  *
  * 職責：
- * 1. 接收建立 AI 請求（透過 AiOpponentPort）
- * 2. 建立 OpponentInstance
+ * 1. 訂閱 AI_OPPONENT_NEEDED 事件
+ * 2. 建立 OpponentInstance（含 OpponentStateTracker）
  * 3. 透過 JoinGameAsAiInputPort 加入遊戲
  * 4. 在 OpponentStore 註冊，供 CompositeEventPublisher 發送事件
  *
  * 設計原則：
- * - 請求驅動（而非事件驅動）：只有 BOT 配對時才建立 AI
- * - OpponentRegistry 是 Controller，不包含業務邏輯
- * - 業務邏輯由 JoinGameAsAiUseCase 和 OpponentInstance 處理
+ * - 事件驅動：接收來自 Core-Game BC 的 AI_OPPONENT_NEEDED 事件
+ * - 狀態自主：使用 OpponentStateTracker 追蹤狀態，不依賴 GameStorePort
+ * - 只依賴 Input Ports（符合 CA 原則）
  *
- * @module server/adapters/opponent/opponentRegistry
+ * @module server/opponent/adapter/event-handler/aiNeededHandler
  */
 
 import { randomUUID } from 'crypto'
@@ -25,61 +25,105 @@ import type { JoinGameAsAiInputPort, AiStrategyType } from '~~/server/core-game/
 import type { PlayHandCardInputPort } from '~~/server/core-game/application/ports/input/playHandCardInputPort'
 import type { SelectTargetInputPort } from '~~/server/core-game/application/ports/input/selectTargetInputPort'
 import type { MakeDecisionInputPort } from '~~/server/core-game/application/ports/input/makeDecisionInputPort'
-import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
-import type { AiOpponentPort, CreateAiOpponentInput } from '~~/server/core-game/application/ports/output/aiOpponentPort'
-import { opponentStore } from './opponentStore'
-import { OpponentInstance, type OpponentInstanceDependencies, type OpponentInstanceOptions } from './opponentInstance'
-
+import {
+  internalEventBus,
+  type AiOpponentNeededPayload,
+} from '~~/server/shared/infrastructure/event-bus'
+import type { Unsubscribe } from '../../domain/types'
+import { opponentStore } from '../store/opponentStore'
+import { OpponentInstance, type OpponentInstanceDependencies, type OpponentInstanceOptions } from '../ai/opponentInstance'
+import { OpponentStateTracker } from '../state/opponentStateTracker'
 
 /**
- * OpponentRegistry 依賴
+ * AiNeededHandler 依賴
  *
  * @description
- * 只依賴 Input Ports 和 GameStore。
- * 計時器由 Opponent BC 內部的 aiActionScheduler 處理。
+ * 只依賴 Core-Game BC 的 Input Ports。
+ * 注意：不再依賴 GameStorePort！
  */
-export interface OpponentRegistryDependencies {
+export interface AiNeededHandlerDependencies {
   readonly joinGameAsAi: JoinGameAsAiInputPort
   readonly playHandCard: PlayHandCardInputPort
   readonly selectTarget: SelectTargetInputPort
   readonly makeDecision: MakeDecisionInputPort
-  readonly gameStore: GameStorePort
 }
 
 /**
- * OpponentRegistry
+ * AiNeededHandler
  *
- * AI 對手註冊中心，實現 AiOpponentPort。
+ * @description
+ * 訂閱 AI_OPPONENT_NEEDED 事件，建立 AI 對手實例。
+ * 取代原本的 OpponentRegistry（改為事件驅動）。
  */
-export class OpponentRegistry implements AiOpponentPort {
+export class AiNeededHandler {
+  /** 事件訂閱取消函數 */
+  private unsubscribe: Unsubscribe | null = null
+
   /** 已建立的 OpponentInstance 映射 */
   private instances: Map<string, OpponentInstance> = new Map()
 
-  constructor(private readonly deps: OpponentRegistryDependencies) {}
+  constructor(private readonly deps: AiNeededHandlerDependencies) {}
 
   /**
-   * 為指定遊戲建立 AI 對手
+   * 啟動事件處理器
    *
    * @description
-   * 實現 AiOpponentPort.createAiForGame()。
-   * 建立 AI 玩家並嘗試加入遊戲。
-   *
-   * @param input - 建立 AI 對手的參數
+   * 訂閱 AI_OPPONENT_NEEDED 事件。
    */
-  async createAiForGame(input: CreateAiOpponentInput): Promise<void> {
-    const { gameId } = input
+  start(): void {
+    if (this.unsubscribe) {
+      return // 已啟動
+    }
+
+    this.unsubscribe = internalEventBus.onAiOpponentNeeded((payload) => {
+      // 使用 void 忽略 Promise，避免阻塞事件處理
+      void this.handleAiNeeded(payload)
+    })
+  }
+
+  /**
+   * 停止事件處理器
+   *
+   * @description
+   * 取消訂閱並清理所有 AI 實例。
+   */
+  stop(): void {
+    // 取消訂閱
+    if (this.unsubscribe) {
+      this.unsubscribe()
+      this.unsubscribe = null
+    }
+
+    // 清理所有實例
+    for (const [gameId, instance] of this.instances) {
+      instance.dispose()
+      opponentStore.unregister(gameId)
+    }
+    this.instances.clear()
+  }
+
+  /**
+   * 處理 AI_OPPONENT_NEEDED 事件
+   *
+   * @param payload - 事件 Payload
+   */
+  private async handleAiNeeded(payload: AiOpponentNeededPayload): Promise<void> {
+    const { gameId } = payload
 
     // 1. 建立 AI 玩家 ID
     const aiPlayerId = randomUUID()
     const aiPlayerName = 'Computer'
     const strategyType: AiStrategyType = 'RANDOM' // MVP 使用隨機策略
 
-    // 2. 建立 OpponentInstance
+    // 2. 建立 OpponentStateTracker（追蹤遊戲狀態）
+    const stateTracker = new OpponentStateTracker(aiPlayerId)
+
+    // 3. 建立 OpponentInstance
     const instanceDeps: OpponentInstanceDependencies = {
       playHandCard: this.deps.playHandCard,
       selectTarget: this.deps.selectTarget,
       makeDecision: this.deps.makeDecision,
-      gameStore: this.deps.gameStore,
+      stateTracker, // 使用 StateTracker 取代 GameStorePort
     }
 
     // 清理回調：當遊戲結束時，從 instances Map 和 opponentStore 移除
@@ -98,7 +142,7 @@ export class OpponentRegistry implements AiOpponentPort {
       instanceOptions
     )
 
-    // 3. 在 OpponentStore 註冊（讓 CompositeEventPublisher 可以發送事件）
+    // 4. 在 OpponentStore 註冊（讓 CompositeEventPublisher 可以發送事件）
     opponentStore.register({
       gameId,
       playerId: aiPlayerId,
@@ -107,10 +151,10 @@ export class OpponentRegistry implements AiOpponentPort {
       handler: (event) => instance.handleEvent(event),
     })
 
-    // 4. 儲存實例引用
+    // 5. 儲存實例引用
     this.instances.set(gameId, instance)
 
-    // 5. 透過 Input Port 加入遊戲（立即執行，不延遲）
+    // 6. 透過 Input Port 加入遊戲（立即執行，不延遲）
     try {
       const result = await this.deps.joinGameAsAi.execute({
         playerId: aiPlayerId,
@@ -127,21 +171,6 @@ export class OpponentRegistry implements AiOpponentPort {
       logger.error('Error joining game', { gameId, error })
       this.cleanupGame(gameId)
     }
-  }
-
-  /**
-   * 停止 Registry 並清理所有實例
-   *
-   * @description
-   * 清理所有 AI 實例。
-   */
-  stop(): void {
-    // 清理所有實例
-    for (const [gameId, instance] of this.instances) {
-      instance.dispose()
-      opponentStore.unregister(gameId)
-    }
-    this.instances.clear()
   }
 
   /**
