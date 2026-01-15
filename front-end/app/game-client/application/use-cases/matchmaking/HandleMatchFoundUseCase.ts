@@ -8,7 +8,7 @@
  * 1. 更新配對狀態為 'matched'
  * 2. 儲存對手資訊
  * 3. 儲存 game_id 供後續 WebSocket 連線使用
- * 4. 清除 SessionContext 中的 entryId（配對完成後不再需要）
+ * 4. 清除 selectedRoomTypeId（配對完成，遊戲已開始）
  *
  * @module app/game-client/application/use-cases/matchmaking/HandleMatchFoundUseCase
  */
@@ -46,7 +46,7 @@ export class HandleMatchFoundUseCase implements HandleMatchFoundPort {
     // 3. 設定 SessionContext 的 currentGameId（持久化，供頁面刷新後重連使用）
     this.sessionContext.setCurrentGameId(event.game_id)
 
-    // 4. 清除 SessionContext 中的 entryId（配對完成後不再需要）
-    this.sessionContext.clearMatchmaking()
+    // 4. 清除 selectedRoomTypeId（配對完成，遊戲已開始）
+    this.sessionContext.setSelectedRoomTypeId(null)
   }
 }

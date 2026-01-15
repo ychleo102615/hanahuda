@@ -45,7 +45,8 @@ import { HandleStateRecoveryUseCase } from '../../application/use-cases/HandleSt
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ErrorHandlerPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ErrorHandlerPort, ConnectionReadyPort } from '../../application/ports/output'
+import { createConnectionReadyAdapter } from '../connection/ConnectionReadyAdapter'
 import type { HandleStateRecoveryPort } from '../../application/ports/input'
 import { createSessionContextAdapter } from '../session/SessionContextAdapter'
 import type { DomainFacade } from '../../application/types/domain-facade'
@@ -331,6 +332,14 @@ function registerOutputPorts(container: DIContainer): void {
     () => new LayoutPortAdapter(),
     { singleton: true },
   )
+
+  // ConnectionReadyPort: 連線就緒通知
+  // 讓 HandleGatewayConnectedUseCase 通知 useGatewayConnection 初始狀態已接收
+  container.register(
+    TOKENS.ConnectionReadyPort,
+    () => createConnectionReadyAdapter(),
+    { singleton: true },
+  )
 }
 
 /**
@@ -547,9 +556,12 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // Gateway: 註冊 HandleGatewayConnectedPort（處理 Gateway 連線後的初始狀態）
+  // 注入 ConnectionReadyPort 以通知 useGatewayConnection 初始狀態已接收
+  // 注意：不再注入 NavigationPort，因為 IDLE 狀態不再自動導航（由 middleware 處理）
+  const connectionReadyPort = container.resolve(TOKENS.ConnectionReadyPort) as ConnectionReadyPort
   container.register(
     TOKENS.HandleGatewayConnectedPort,
-    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, navigationPort, gameStatePort),
+    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, gameStatePort, connectionReadyPort),
     { singleton: true }
   )
 

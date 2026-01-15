@@ -30,15 +30,6 @@ import type { AiOpponentPort, CreateAiOpponentInput } from '~~/server/core-game/
 import { opponentStore } from './opponentStore'
 import { OpponentInstance, type OpponentInstanceDependencies, type OpponentInstanceOptions } from './opponentInstance'
 
-/**
- * AI 加入遊戲延遲設定（毫秒）
- */
-const AI_JOIN_DELAYS = {
-  /** 加入遊戲前的延遲最小值 */
-  MIN_MS: 1000,
-  /** 加入遊戲前的延遲最大值 */
-  MAX_MS: 3000,
-} as const
 
 /**
  * OpponentRegistry 依賴
@@ -119,11 +110,7 @@ export class OpponentRegistry implements AiOpponentPort {
     // 4. 儲存實例引用
     this.instances.set(gameId, instance)
 
-    // 5. 延遲後透過 Input Port 加入遊戲
-    const joinDelay = AI_JOIN_DELAYS.MIN_MS + Math.random() * (AI_JOIN_DELAYS.MAX_MS - AI_JOIN_DELAYS.MIN_MS)
-
-    await this.delay(joinDelay)
-
+    // 5. 透過 Input Port 加入遊戲（立即執行，不延遲）
     try {
       const result = await this.deps.joinGameAsAi.execute({
         playerId: aiPlayerId,
@@ -171,15 +158,6 @@ export class OpponentRegistry implements AiOpponentPort {
       instance.dispose()
       // onCleanup 回調會處理 instances.delete() 和 opponentStore.unregister()
     }
-  }
-
-  /**
-   * 延遲函數
-   *
-   * @param ms - 毫秒數
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
   /**

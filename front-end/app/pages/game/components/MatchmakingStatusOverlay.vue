@@ -9,6 +9,7 @@
   - searching: 正在尋找對手... (0-10秒)
   - low_availability: 對手較少，繼續等待... (10-15秒)
   - matched: 配對成功！準備開始遊戲...
+  - starting: 遊戲開始中...（等待發牌）
 
   @module app/pages/game/components/MatchmakingStatusOverlay
 -->
@@ -23,14 +24,14 @@ const matchmakingStore = useMatchmakingStateStore()
 const localElapsedSeconds = ref(0)
 let timerInterval: ReturnType<typeof setInterval> | null = null
 
-// 是否顯示覆蓋層（searching, low_availability, matched 狀態時顯示）
+// 是否顯示覆蓋層（searching, low_availability, matched, starting 狀態時顯示）
 const isVisible = computed(() => {
   const status = matchmakingStore.status
-  return status === 'searching' || status === 'low_availability' || status === 'matched'
+  return status === 'searching' || status === 'low_availability' || status === 'matched' || status === 'starting'
 })
 
-// 是否配對成功
-const isMatched = computed(() => matchmakingStore.status === 'matched')
+// 是否配對成功或遊戲開始中（兩者都表示遊戲即將開始，共用視覺樣式）
+const isMatched = computed(() => matchmakingStore.status === 'matched' || matchmakingStore.status === 'starting')
 
 // 監聽可見狀態，啟動/停止計時器
 watch(isVisible, (visible) => {
@@ -73,6 +74,8 @@ const titleText = computed(() => {
   switch (matchmakingStore.status) {
     case 'matched':
       return 'Match Found!'
+    case 'starting':
+      return 'Starting Game'
     default:
       return 'Searching'
   }
@@ -84,6 +87,9 @@ const subtitleText = computed(() => {
     const opponentName = matchmakingStore.opponentName || 'Opponent'
     const botIndicator = matchmakingStore.isBot ? ' (Bot)' : ''
     return `vs. ${opponentName}${botIndicator}`
+  }
+  if (matchmakingStore.status === 'starting') {
+    return 'PREPARING GAME...'
   }
   if (matchmakingStore.status === 'low_availability') {
     return 'FEW PLAYERS ONLINE...'

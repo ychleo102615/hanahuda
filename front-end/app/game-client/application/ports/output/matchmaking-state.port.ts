@@ -99,17 +99,7 @@ export interface MatchmakingStatePort {
    */
   clearSession(): void
 
-  // === Online Matchmaking (011-online-matchmaking) ===
-
-  /**
-   * 設定配對條目 ID
-   */
-  setEntryId(entryId: string | null): void
-
-  /**
-   * 取得配對條目 ID
-   */
-  readonly entryId: string | null
+  // === Online Matchmaking ===
 
   /**
    * 設定配對經過秒數
@@ -159,13 +149,12 @@ export type MatchmakingStatus =
   | 'searching' // 搜尋對手中 (0-10s)
   | 'low_availability' // 低可用性狀態 (10-15s)
   | 'matched' // 已配對成功
+  | 'starting' // 遊戲正在啟動中（已配對，等待發牌）
 
 /**
  * OnlineMatchmakingState - 線上配對狀態
  */
 export interface OnlineMatchmakingState {
-  /** 配對條目 ID (從 POST /matchmaking/enter 取得) */
-  readonly entryId: string | null
   /** 配對經過秒數 */
   readonly elapsedSeconds: number
   /** 狀態訊息 */

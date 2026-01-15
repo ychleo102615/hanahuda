@@ -135,28 +135,34 @@ export default defineWebSocketHandler({
       })
       safeSend(peer, JSON.stringify(initialEvent), playerId)
 
-      // 6. 若玩家在遊戲中，發送 GameSnapshotRestore 恢復遊戲狀態
+      // 6. 若玩家在遊戲中且遊戲已開始（IN_PROGRESS），發送 GameSnapshotRestore 恢復遊戲狀態
+      // 注意：STARTING 狀態不發送快照，因為遊戲尚未發牌，沒有狀態可恢復
       if (playerStatus.status === 'IN_GAME') {
         const inGameStatus = playerStatus as PlayerStatusInGame
-        const game = inMemoryGameStore.get(inGameStatus.gameId)
 
-        if (game) {
-          // 取得剩餘超時秒數
-          const gameTimeoutManager = resolve<GameTimeoutPort>(BACKEND_TOKENS.GameTimeoutManager)
-          const remainingSeconds = gameTimeoutManager.getRemainingSeconds(game.id)
+        // 只在 IN_PROGRESS 狀態發送快照
+        if (inGameStatus.gameStatus === 'IN_PROGRESS') {
+          const game = inMemoryGameStore.get(inGameStatus.gameId)
 
-          // 建立 GameSnapshotRestore 事件
-          const snapshotEvent = eventMapper.toGameSnapshotRestoreEvent(game, remainingSeconds ?? undefined)
-          const gatewaySnapshotEvent = createGameEvent('GameSnapshotRestore', snapshotEvent)
+          if (game) {
+            // 取得剩餘超時秒數
+            const gameTimeoutManager = resolve<GameTimeoutPort>(BACKEND_TOKENS.GameTimeoutManager)
+            const remainingSeconds = gameTimeoutManager.getRemainingSeconds(game.id)
 
-          safeSend(peer, JSON.stringify(gatewaySnapshotEvent), playerId)
-          logger.info('WebSocket sent GameSnapshotRestore', { playerId, gameId: game.id })
-        } else {
-          logger.warn('WebSocket: game not found in memory for IN_GAME status', {
-            playerId,
-            gameId: inGameStatus.gameId,
-          })
+            // 建立 GameSnapshotRestore 事件
+            const snapshotEvent = eventMapper.toGameSnapshotRestoreEvent(game, remainingSeconds ?? undefined)
+            const gatewaySnapshotEvent = createGameEvent('GameSnapshotRestore', snapshotEvent)
+
+            safeSend(peer, JSON.stringify(gatewaySnapshotEvent), playerId)
+            logger.info('WebSocket sent GameSnapshotRestore', { playerId, gameId: game.id })
+          } else {
+            logger.warn('WebSocket: game not found in memory for IN_GAME status', {
+              playerId,
+              gameId: inGameStatus.gameId,
+            })
+          }
         }
+        // STARTING 或 WAITING 狀態：不發送快照，前端會顯示等待畫面
       }
     } catch (error) {
       logger.error('WebSocket open error', { error })

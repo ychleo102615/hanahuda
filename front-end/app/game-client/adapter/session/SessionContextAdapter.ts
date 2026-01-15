@@ -5,9 +5,13 @@
  * 實作 SessionContextPort，使用 sessionStorage 儲存會話資訊。
  *
  * 儲存：
- * - entryId: 配對條目 ID（用於取消配對）
+ * - selectedRoomTypeId: 選擇的房間類型（配對中時保留，遊戲開始或取消時清除）
  * - currentGameId: 遊戲 ID（用於頁面刷新後重連）
- * - pendingRoomTypeId: 待配對的房間類型（用於 Lobby → Game 頁面傳遞）
+ *
+ * 狀態判斷：
+ * - selectedRoomTypeId 存在，currentGameId 不存在 → 配對中
+ * - currentGameId 存在 → 遊戲中
+ * - 都不存在 → 閒置
  *
  * 不在此模組中管理的資訊：
  * - roomTypeId: 由 gameState.roomTypeId 管理（來自 WebSocket 事件）
@@ -26,8 +30,7 @@ import { SessionContextPort } from '../../application/ports/output/session-conte
  */
 const STORAGE_KEYS = {
   currentGameId: 'current_game_id',
-  entryId: 'matchmaking_entry_id',
-  pendingRoomTypeId: 'pending_room_type_id',
+  selectedRoomTypeId: 'selected_room_type_id',
 } as const
 
 /**
@@ -76,83 +79,43 @@ export class SessionContextAdapter extends SessionContextPort {
     return this.getCurrentGameId() !== null
   }
 
-  // === Online Matchmaking ===
+  // === Selected Room (Matchmaking) ===
 
   /**
-   * 取得配對條目 ID
-   *
-   * @returns 配對條目 ID，若無則返回 null
-   */
-  getEntryId(): string | null {
-    if (typeof window === 'undefined') {
-      return null
-    }
-    return sessionStorage.getItem(STORAGE_KEYS.entryId)
-  }
-
-  /**
-   * 設定配對條目 ID
-   *
-   * @param entryId - 配對條目 ID，傳入 null 可清除
-   */
-  setEntryId(entryId: string | null): void {
-    if (typeof window === 'undefined') {
-      return
-    }
-    if (entryId === null) {
-      sessionStorage.removeItem(STORAGE_KEYS.entryId)
-    } else {
-      sessionStorage.setItem(STORAGE_KEYS.entryId, entryId)
-    }
-  }
-
-  /**
-   * 檢查是否處於線上配對模式
-   *
-   * @returns 是否有 entryId（線上配對中）
-   */
-  isMatchmakingMode(): boolean {
-    return this.getEntryId() !== null
-  }
-
-  /**
-   * 清除配對資訊
-   */
-  clearMatchmaking(): void {
-    if (typeof window === 'undefined') {
-      return
-    }
-    sessionStorage.removeItem(STORAGE_KEYS.entryId)
-  }
-
-  // === Pending Matchmaking ===
-
-  /**
-   * 取得待配對的房間類型
+   * 取得選擇的房間類型
    *
    * @returns 房間類型 ID，若無則返回 null
    */
-  getPendingRoomTypeId(): RoomTypeId | null {
+  getSelectedRoomTypeId(): RoomTypeId | null {
     if (typeof window === 'undefined') {
       return null
     }
-    return sessionStorage.getItem(STORAGE_KEYS.pendingRoomTypeId) as RoomTypeId | null
+    return sessionStorage.getItem(STORAGE_KEYS.selectedRoomTypeId) as RoomTypeId | null
   }
 
   /**
-   * 設定待配對的房間類型
+   * 設定選擇的房間類型
    *
    * @param roomTypeId - 房間類型 ID，傳入 null 可清除
    */
-  setPendingRoomTypeId(roomTypeId: RoomTypeId | null): void {
+  setSelectedRoomTypeId(roomTypeId: RoomTypeId | null): void {
     if (typeof window === 'undefined') {
       return
     }
     if (roomTypeId === null) {
-      sessionStorage.removeItem(STORAGE_KEYS.pendingRoomTypeId)
+      sessionStorage.removeItem(STORAGE_KEYS.selectedRoomTypeId)
     } else {
-      sessionStorage.setItem(STORAGE_KEYS.pendingRoomTypeId, roomTypeId)
+      sessionStorage.setItem(STORAGE_KEYS.selectedRoomTypeId, roomTypeId)
     }
+  }
+
+  /**
+   * 檢查是否有選擇的房間（配對中或準備配對）
+   *
+   * @returns 是否有 selectedRoomTypeId
+   */
+  hasSelectedRoom(): boolean {
+    return this.getSelectedRoomTypeId() !== null
   }
 
   // === Session Cleanup ===
@@ -161,15 +124,14 @@ export class SessionContextAdapter extends SessionContextPort {
    * 清除所有會話資訊
    *
    * @description
-   * 離開遊戲時清除所有 sessionStorage 資料（entryId + currentGameId + pendingRoomTypeId）
+   * 離開遊戲時清除所有 sessionStorage 資料（selectedRoomTypeId + currentGameId）
    */
   clearSession(): void {
     if (typeof window === 'undefined') {
       return
     }
-    sessionStorage.removeItem(STORAGE_KEYS.entryId)
+    sessionStorage.removeItem(STORAGE_KEYS.selectedRoomTypeId)
     sessionStorage.removeItem(STORAGE_KEYS.currentGameId)
-    sessionStorage.removeItem(STORAGE_KEYS.pendingRoomTypeId)
   }
 }
 

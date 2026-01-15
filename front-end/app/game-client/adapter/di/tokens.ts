@@ -25,6 +25,9 @@ export const TOKENS = {
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
 
+  // ===== Output Ports - Connection =====
+  ConnectionReadyPort: Symbol('ConnectionReadyPort'),
+
   // ===== Input Ports - Game Initialization =====
   StartGamePort: Symbol('StartGamePort'),
 

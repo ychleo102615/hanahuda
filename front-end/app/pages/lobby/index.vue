@@ -206,7 +206,7 @@ const handleDeleteAccountConfirm = async (password: string | undefined) => {
  * 選擇房間
  *
  * @description
- * 儲存 pendingRoomTypeId 到 SessionContext，然後導航到 Game 頁面。
+ * 儲存 selectedRoomTypeId 到 SessionContext，然後導航到 Game 頁面。
  * Game 頁面會建立 WebSocket 連線，並發送 JOIN_MATCHMAKING 命令。
  */
 const handleSelectRoom = (roomTypeId: string) => {
@@ -215,8 +215,8 @@ const handleSelectRoom = (roomTypeId: string) => {
     clearLocalMatchmakingState()
   }
 
-  // 儲存 pendingRoomTypeId 到 SessionContext
-  sessionContext.setPendingRoomTypeId(roomTypeId as RoomTypeId)
+  // 儲存 selectedRoomTypeId 到 SessionContext
+  sessionContext.setSelectedRoomTypeId(roomTypeId as RoomTypeId)
 
   // 導航到 Game 頁面（由 Game 頁面處理 WebSocket 連線和配對）
   navigateTo('/game')
@@ -268,7 +268,7 @@ const handleCancelAndSwitch = () => {
   conflictingEntryId.value = null
 
   // 儲存新房間類型並導航到 Game 頁面
-  sessionContext.setPendingRoomTypeId(pendingRoomTypeId.value as RoomTypeId)
+  sessionContext.setSelectedRoomTypeId(pendingRoomTypeId.value as RoomTypeId)
   pendingRoomTypeId.value = null
 
   navigateTo('/game')

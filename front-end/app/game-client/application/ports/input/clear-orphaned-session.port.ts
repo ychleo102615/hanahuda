@@ -3,7 +3,7 @@
  *
  * @description
  * 定義清除孤立會話資訊的介面。
- * 用於進入首頁時清除殘留的配對資訊（roomTypeId、entryId）。
+ * 用於進入首頁時清除殘留的配對資訊（selectedRoomTypeId）。
  *
  * 使用場景：
  * - 用戶直接導航到首頁（可能因意外離開 lobby/game 頁面）
@@ -16,7 +16,7 @@
  * ClearOrphanedSessionPort Input Port
  *
  * @description
- * 如果沒有活躍的遊戲，清除 SessionContext 中的 roomTypeId 和 entryId。
+ * 如果沒有活躍的遊戲，清除 SessionContext 中的 selectedRoomTypeId。
  */
 export abstract class ClearOrphanedSessionPort {
   /**

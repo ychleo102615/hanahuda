@@ -6,7 +6,7 @@
  *
  * 清理項目：
  * - MatchmakingState: 重置為 idle 狀態
- * - SessionContext: 清除 roomTypeId 和 entryId
+ * - SessionContext: 清除 selectedRoomTypeId 和 currentGameId
  *
  * @module app/game-client/application/use-cases/matchmaking/HandleMatchmakingCancelledUseCase
  */
@@ -35,7 +35,7 @@ export class HandleMatchmakingCancelledUseCase implements HandleMatchmakingCance
     this.matchmakingState.setStatusMessage(event.message)
     this.matchmakingState.clearSession()
 
-    // 清除 SessionContext 中的 roomTypeId 和 entryId
+    // 清除 SessionContext 中的 selectedRoomTypeId 和 currentGameId
     this.sessionContext.clearSession()
   }
 }

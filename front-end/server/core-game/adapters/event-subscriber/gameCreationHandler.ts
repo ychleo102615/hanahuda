@@ -173,7 +173,7 @@ export class GameCreationHandler {
     }
 
     // 透過 AiOpponentPort 請求 AI 加入（非同步，不等待完成）
-    // AI 會在 1-3 秒後加入遊戲
+    // AI 會立即加入遊戲，遊戲在 1 秒後開始（GAME_START_DELAY_MS）
     this.aiOpponentPort.createAiForGame({ gameId: result.gameId })
 
     // 遊戲建立成功後，發布 MatchFound 到 PlayerEventBus

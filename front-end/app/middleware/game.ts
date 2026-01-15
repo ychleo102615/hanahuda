@@ -5,8 +5,7 @@
  * 路由守衛：檢查是否有有效的遊戲會話，若無則重定向至大廳。
  *
  * 允許進入 Game 頁面的條件（任一）：
- * - pendingRoomTypeId: 從 Lobby 點擊房間卡片，準備開始配對
- * - isMatchmakingMode: 有 entryId（配對中）
+ * - hasSelectedRoom: 有 selectedRoomTypeId（選擇了房間，準備配對或配對中）
  * - hasActiveGame: 有 currentGameId（遊戲中）
  *
  * 注意：遊戲模式（gameMode）不在此處理，由 DI Plugin 透過 runtimeConfig 統一管理。
@@ -33,15 +32,13 @@ export default defineNuxtRouteMiddleware((_to, _from) => {
   const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
   // 檢查是否有進入 Game 頁面的理由（使用持久化的 sessionStorage）
-  // - getPendingRoomTypeId(): 從 Lobby 點擊房間，準備開始配對
-  // - isMatchmakingMode(): 有 entryId（配對中）
+  // - hasSelectedRoom(): 有 selectedRoomTypeId（選擇了房間，配對中或準備配對）
   // - hasActiveGame(): 有 currentGameId（遊戲中）
   // 注意：使用 sessionContext 而非 gameState，因為頁面刷新後 Pinia store 會被重置
-  const hasPendingMatchmaking = sessionContext.getPendingRoomTypeId() !== null
-  const isInMatchmaking = sessionContext.isMatchmakingMode()
+  const hasSelectedRoom = sessionContext.hasSelectedRoom()
   const hasActiveGame = sessionContext.hasActiveGame()
 
-  if (!hasPendingMatchmaking && !isInMatchmaking && !hasActiveGame) {
+  if (!hasSelectedRoom && !hasActiveGame) {
     return navigateTo('/lobby')
   }
 
