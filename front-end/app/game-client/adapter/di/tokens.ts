@@ -31,9 +31,6 @@ export const TOKENS = {
   // ===== Input Ports - Game Initialization =====
   StartGamePort: Symbol('StartGamePort'),
 
-  // ===== Input Ports - InitialState Handler (Gateway) =====
-  HandleInitialStatePort: Symbol('HandleInitialStatePort'),
-
   // ===== Input Ports - State Recovery =====
   HandleStateRecoveryPort: Symbol('HandleStateRecoveryPort'),
 

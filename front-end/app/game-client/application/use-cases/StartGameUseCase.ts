@@ -5,7 +5,7 @@
  * 啟動遊戲連線流程：重置狀態並建立 WebSocket 連線。
  *
  * Gateway Architecture：
- * - 連線建立後，後端透過 InitialState 事件決定遊戲狀態
+ * - 連線建立後，後端透過 GatewayConnected 事件返回玩家狀態（IDLE/MATCHMAKING/IN_GAME）
  * - playerId、playerName 由呼叫端提供（來自 authStore）
  * - roomTypeId 由 WebSocket 事件（GameStarted/GameSnapshotRestore）提供，存入 gameState
  *

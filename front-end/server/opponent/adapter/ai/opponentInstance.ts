@@ -273,8 +273,11 @@ export class OpponentInstance {
   private selectCardFromHand(hand: readonly string[]): string {
     // 目前所有策略都使用隨機選擇（MVP）
     // TODO: 未來可根據 strategyType 實作不同策略
+    if (hand.length === 0) {
+      throw new Error('Cannot select card from empty hand')
+    }
     const randomIndex = Math.floor(Math.random() * hand.length)
-    return hand[randomIndex]
+    return hand[randomIndex] as string
   }
 
   /**
@@ -285,8 +288,11 @@ export class OpponentInstance {
    */
   private selectTarget(possibleTargets: readonly string[]): string {
     // 目前所有策略都使用隨機選擇（MVP）
+    if (possibleTargets.length === 0) {
+      throw new Error('Cannot select from empty targets')
+    }
     const randomIndex = Math.floor(Math.random() * possibleTargets.length)
-    return possibleTargets[randomIndex]
+    return possibleTargets[randomIndex] as string
   }
 
   /**

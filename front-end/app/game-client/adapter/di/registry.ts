@@ -39,7 +39,6 @@ import { HandleRoundEndedUseCase } from '../../application/use-cases/event-handl
 import { HandleGameFinishedUseCase } from '../../application/use-cases/event-handlers/HandleGameFinishedUseCase'
 import { HandleTurnErrorUseCase } from '../../application/use-cases/event-handlers/HandleTurnErrorUseCase'
 import { HandleGameErrorUseCase } from '../../application/use-cases/event-handlers/HandleGameErrorUseCase'
-import { HandleInitialStateUseCase } from '../../application/use-cases/HandleInitialStateUseCase'
 import { StartGameUseCase } from '../../application/use-cases/StartGameUseCase'
 import { HandleStateRecoveryUseCase } from '../../application/use-cases/HandleStateRecoveryUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
@@ -531,22 +530,6 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  // Gateway: 註冊 HandleInitialStatePort（處理 WebSocket 連線後的第一個事件）
-  // 改用 OperationSessionPort 取代 OperationSessionManager
-  container.register(
-    TOKENS.HandleInitialStatePort,
-    () => new HandleInitialStateUseCase(
-      uiStatePort,
-      notificationPort,
-      navigationPort,
-      animationPort,
-      matchmakingStatePort,
-      gameStatePort,
-      operationSessionPort
-    ),
-    { singleton: true }
-  )
-
   // 註冊 HandleStateRecoveryPort（統一處理快照恢復）
   // 改用 OperationSessionPort 取代 OperationSessionManager
   container.register(
@@ -771,10 +754,6 @@ function registerEventRoutes(container: DIContainer): void {
   const router = container.resolve(TOKENS.EventRouter) as {
     register: (eventType: SSEEventType, port: { execute: (payload: unknown) => void }) => void
   }
-
-  // Gateway: 綁定 InitialState 事件（WebSocket 連線後的第一個事件）
-  const handleInitialStatePort = container.resolve(TOKENS.HandleInitialStatePort) as { execute: (payload: unknown) => void }
-  router.register('InitialState', handleInitialStatePort)
 
   // T030 [US1]: 綁定 GameStarted 和 RoundDealt 事件
   const gameStartedPort = container.resolve(TOKENS.HandleGameStartedPort) as { execute: (payload: unknown) => void }

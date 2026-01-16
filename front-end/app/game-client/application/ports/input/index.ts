@@ -54,9 +54,6 @@ export type {
   HandleGameErrorPort,
 } from './event-handlers.port'
 
-// InitialState Handler Input Port (Gateway Architecture)
-export { HandleInitialStatePort } from './handle-initial-state.port'
-
 // State Recovery Input Port (for GameSnapshotRestore event)
 export { HandleStateRecoveryPort } from './handle-state-recovery.port'
 
