@@ -40,8 +40,10 @@ const { isRegistered, displayName, isGuest, playerId } = useCurrentPlayer()
 const { logout, deleteAccount } = useAuth()
 
 // 導航連結不再包含 Sign In（由 NavigationBar 的 player prop 控制）
-// US4: 移除 Rules 和 About 連結，只保留 Start Game CTA
+// Rules 和 About 為錨點連結，顯示於桌面版 header 和手機選單
 const navigationLinks = computed<NavigationLink[]>(() => [
+  { label: 'Rules', target: '#rules' },
+  { label: 'About', target: '#about' },
   { label: 'Start Game', target: '/lobby', isCta: true },
 ])
 
@@ -290,9 +292,9 @@ const handleLoginSuccess = () => {
                     <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">Nuxt 4</div>
                     <div class="text-gray-300 text-sm">Full-Stack Framework</div>
                   </div>
-                  <!-- SSE -->
+                  <!-- WebSocket -->
                   <div class="bg-game-table-light/50 rounded-xl p-6 border border-gold-dark/30">
-                    <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">SSE</div>
+                    <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">WS</div>
                     <div class="text-gray-300 text-sm">Real-time Events</div>
                   </div>
                   <!-- Clean Architecture -->
