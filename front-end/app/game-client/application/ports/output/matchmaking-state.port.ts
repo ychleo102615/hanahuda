@@ -135,6 +135,24 @@ export interface MatchmakingStatePort {
    * 取得是否為 Bot 對手
    */
   readonly isBot: boolean
+
+  /**
+   * 批量設定配對成功狀態
+   *
+   * @description
+   * 使用 Pinia $patch 一次性更新多個屬性，減少響應式更新次數。
+   * 解決 iPad 等低端設備上多次響應式更新導致的動畫卡頓問題。
+   */
+  setMatchedState(payload: MatchedStatePayload): void
+}
+
+/**
+ * 配對成功狀態 Payload
+ */
+export interface MatchedStatePayload {
+  opponentName: string
+  isBot: boolean
+  gameId: string
 }
 
 /**

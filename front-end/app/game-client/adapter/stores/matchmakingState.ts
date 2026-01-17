@@ -136,5 +136,19 @@ export const useMatchmakingStateStore = defineStore('matchmakingState', {
       this.opponentName = name
       this.isBot = isBot
     },
+
+    /**
+     * 批量設定配對成功狀態
+     *
+     * 使用 $patch 一次性更新多個屬性，只觸發一次響應式更新。
+     */
+    setMatchedState(payload: { opponentName: string; isBot: boolean; gameId: string }): void {
+      this.$patch({
+        status: 'matched' as const,
+        opponentName: payload.opponentName,
+        isBot: payload.isBot,
+        gameId: payload.gameId,
+      })
+    },
   },
 })

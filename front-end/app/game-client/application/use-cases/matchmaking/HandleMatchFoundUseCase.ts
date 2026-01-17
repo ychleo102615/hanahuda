@@ -34,10 +34,12 @@ export class HandleMatchFoundUseCase implements HandleMatchFoundPort {
    * 處理 MatchFound 事件
    */
   execute(event: MatchFoundEvent, _options?: ExecuteOptions): void {
-    // 1. 更新配對狀態（Pinia store）
-    this.matchmakingState.setStatus('matched')
-    this.matchmakingState.setOpponentInfo(event.opponent_name, event.is_bot)
-    this.matchmakingState.setGameId(event.game_id)
+    // 1. 批量更新配對狀態（使用 $patch 減少響應式更新次數）
+    this.matchmakingState.setMatchedState({
+      opponentName: event.opponent_name,
+      isBot: event.is_bot,
+      gameId: event.game_id,
+    })
 
     // 2. 設定 gameState 的 currentGameId
     // GameApiClient 會從 GameStatePort 讀取 gameId
