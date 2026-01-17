@@ -23,7 +23,7 @@ import type { ClearOrphanedSessionPort } from '~/game-client/application/ports/i
 onMounted(() => {
   document.documentElement.style.scrollbarGutter = 'stable'
 
-  // 清除孤立的會話資訊（roomTypeId、entryId）
+  // 清除孤立的會話資訊（selectedRoomTypeId）
   // 如果沒有活躍的遊戲，進入首頁時應清除所有配對相關資訊
   const clearOrphanedSession = resolveDependency<ClearOrphanedSessionPort>(TOKENS.ClearOrphanedSessionPort)
   clearOrphanedSession.execute()

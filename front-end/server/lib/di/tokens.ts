@@ -22,7 +22,6 @@ export const BACKEND_TOKENS = {
 
   // ===== Adapters - Event Publisher =====
   EventPublisher: Symbol('EventPublisher'),
-  InternalEventBus: Symbol('InternalEventBus'),
 
   // ===== Adapters - Mappers =====
   EventMapper: Symbol('EventMapper'),

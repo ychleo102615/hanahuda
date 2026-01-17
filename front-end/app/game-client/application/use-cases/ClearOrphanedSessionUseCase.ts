@@ -3,11 +3,11 @@
  *
  * @description
  * 清除孤立的會話資訊。
- * 用於進入首頁時，確保沒有殘留的配對資訊（roomTypeId、entryId）。
+ * 用於進入首頁時，確保沒有殘留的配對資訊（selectedRoomTypeId）。
  *
  * 邏輯：
  * - 如果沒有活躍的遊戲（currentGameId 為 null），清除 sessionContext
- * - 如果有活躍遊戲，不做任何事（保留 roomTypeId 供 Rematch 使用）
+ * - 如果有活躍遊戲，不做任何事
  *
  * @module game-client/application/use-cases/ClearOrphanedSessionUseCase
  */

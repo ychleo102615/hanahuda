@@ -5,11 +5,11 @@
  * 定義配對事件處理器的 Input Port 介面。
  * 所有 Port 都繼承自 EventHandlerPort<T>，統一 execute 方法簽名。
  *
- * 包含 4 個事件處理器 Input Ports：
+ * 包含事件處理器 Input Ports：
  * - HandleMatchmakingStatusPort
  * - HandleMatchFoundPort
- * - HandleMatchmakingCancelledPort
  * - HandleMatchmakingErrorPort
+ * - HandleMatchFailedPort
  *
  * @module app/game-client/application/ports/input/matchmaking-event-handlers.port
  */
@@ -18,7 +18,6 @@ import type { EventHandlerPort } from './event-handler.interface'
 import type {
   MatchmakingStatusEvent,
   MatchFoundEvent,
-  MatchmakingCancelledEvent,
   MatchmakingErrorEvent,
   MatchFailedEvent,
 } from '#shared/contracts'
@@ -42,16 +41,6 @@ export interface HandleMatchmakingStatusPort
  */
 export interface HandleMatchFoundPort
   extends EventHandlerPort<MatchFoundEvent> {}
-
-/**
- * HandleMatchmakingCancelledPort - Input Port
- *
- * @description
- * 處理 MatchmakingCancelled 事件。
- * 更新取消狀態。
- */
-export interface HandleMatchmakingCancelledPort
-  extends EventHandlerPort<MatchmakingCancelledEvent> {}
 
 /**
  * HandleMatchmakingErrorPort - Input Port

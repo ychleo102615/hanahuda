@@ -80,7 +80,7 @@ class PlayerStatusService implements IPlayerStatusService {
 
     // 2. 檢查是否在遊戲中（優先 in-memory store）
     const game = inMemoryGameStore.getByPlayerId(playerId)
-    if (game && (game.status === 'WAITING' || game.status === 'IN_PROGRESS')) {
+    if (game && (game.status === 'WAITING' || game.status === 'STARTING' || game.status === 'IN_PROGRESS')) {
       return {
         status: 'IN_GAME',
         gameId: game.id,

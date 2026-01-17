@@ -11,7 +11,7 @@
 // Types
 export type {
   MatchFoundPayload,
-  RoomCreatedPayload,
+  AiOpponentNeededPayload,
   MatchType,
   EventType,
 } from './types'
@@ -22,7 +22,7 @@ export type {
   IInternalEventBus,
   Unsubscribe,
   MatchFoundHandler,
-  RoomCreatedHandler,
+  AiOpponentNeededHandler,
 } from './internalEventBus'
 export { internalEventBus } from './internalEventBus'
 

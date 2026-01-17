@@ -44,10 +44,6 @@ export type {
   SnapshotApiResponseFinished,
   SnapshotApiResponseExpired,
   SnapshotApiResponse,
-  // InitialState Types
-  InitialStateResponseType,
-  GameWaitingData,
-  GameStartedData,
 } from './shared'
 
 // Shared Helper Functions
@@ -59,9 +55,6 @@ export type { TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision } from './co
 // Events
 export type {
   BaseEvent,
-  // InitialState (Gateway)
-  InitialStateData,
-  InitialStateEvent,
   // Game Events
   GameStartedEvent,
   RoundDealtEvent,
@@ -97,7 +90,6 @@ export type { EventTypeValue } from './events'
 export type {
   MatchmakingStatusEvent,
   MatchFoundEvent,
-  MatchmakingCancelledEvent,
   MatchmakingErrorEvent,
   MatchFailedEvent,
   MatchmakingEvent,
@@ -123,7 +115,6 @@ export type {
   WsCommandType,
   PingPayload,
   JoinMatchmakingPayload,
-  CancelMatchmakingPayload,
   PlayCardPayload,
   SelectTargetPayload,
   MakeDecisionPayload,
@@ -131,7 +122,6 @@ export type {
   LeaveGamePayload,
   PingCommand,
   JoinMatchmakingCommand,
-  CancelMatchmakingCommand,
   PlayCardCommand,
   SelectTargetCommand,
   MakeDecisionCommand,
@@ -143,7 +133,6 @@ export {
   WS_COMMAND_TYPES,
   createPingCommand,
   createJoinMatchmakingCommand,
-  createCancelMatchmakingCommand,
   createPlayCardCommand,
   createSelectTargetCommand,
   createMakeDecisionCommand,

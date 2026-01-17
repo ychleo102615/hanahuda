@@ -4,16 +4,17 @@
   @description
   使用者在此選擇房間類型並開始配對。
   點擊房間卡片後直接導航到遊戲頁面。
-  WebSocket 連線在遊戲頁面建立，由後端透過 InitialState 事件決定遊戲狀態。
+  WebSocket 連線在遊戲頁面建立，由後端透過 GatewayConnected 事件決定玩家狀態。
 
   功能:
   - 顯示房間類型列表（QUICK/STANDARD/MARATHON）
   - 點擊房間卡片開始配對
   - 配對錯誤重試按鈕
+  - 進行中遊戲提示（選擇不同房間時提示用戶回到遊戲）
 
-  架構:
-  - Lobby: 選擇房間 → 儲存 playerId + roomTypeId → 導航到 /game
-  - Game Page: 建立 WebSocket → InitialState 事件決定顯示
+  Gateway 架構:
+  - Lobby: 選擇房間 → 儲存 roomTypeId → 導航到 /game
+  - Game Page: 建立 WebSocket → GatewayConnected 事件返回玩家狀態（IDLE/MATCHMAKING/IN_GAME）
 -->
 
 <script setup lang="ts">
@@ -31,6 +32,7 @@ import { RoomApiClient, type RoomType } from '~/game-client/adapter/api/RoomApiC
 import { MatchmakingApiClient, MatchmakingError } from '~/game-client/adapter/api/MatchmakingApiClient'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
+import ConfirmDialog from '~/components/ConfirmDialog.vue'
 import LobbyTopInfoBar from './components/LobbyTopInfoBar.vue'
 import type { MenuItem } from './components/LobbyTopInfoBar.vue'
 import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
@@ -52,9 +54,16 @@ const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionConte
 const roomApiClient = resolveDependency<RoomApiClient>(TOKENS.RoomApiClient)
 const matchmakingApiClient = resolveDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
 
-// ALREADY_IN_QUEUE 時，儲存正在配對的房間類型（用於顯示和取消後重試）
-const pendingRoomTypeId = ref<string | null>(null)
-const conflictingEntryId = ref<string | null>(null)
+// 檢查玩家狀態中（防止重複點擊）
+const isCheckingStatus = ref(false)
+
+// 狀態衝突對話框
+const isStatusConflictDialogOpen = ref(false)
+const pendingStatusInfo = ref<{
+  type: 'matchmaking' | 'in_game'
+  roomType?: string
+  roomTypeId?: string
+} | null>(null)
 
 // Player Info Card 狀態
 const isPlayerInfoCardOpen = ref(false)
@@ -92,16 +101,8 @@ function setMatchmakingError(error: unknown, fallbackMessage: string): void {
  */
 function clearLocalMatchmakingState(): void {
   matchmakingStore.clearSession()
-  pendingRoomTypeId.value = null
-  conflictingEntryId.value = null
-}
-
-/**
- * 導航到遊戲頁面（遊戲中）
- */
-function navigateToGameWithGameId(gameId: string): void {
-  sessionContext.setCurrentGameId(gameId)
-  navigateTo('/game')
+  pendingStatusInfo.value = null
+  isStatusConflictDialogOpen.value = false
 }
 
 // 選單項目
@@ -117,8 +118,9 @@ const menuItems = computed<MenuItem[]>(() => [
 // 載入房間類型
 onMounted(async () => {
   // 重設本地狀態（確保從其他頁面返回時按鈕可點擊）
-  pendingRoomTypeId.value = null
-  conflictingEntryId.value = null
+  isCheckingStatus.value = false
+  pendingStatusInfo.value = null
+  isStatusConflictDialogOpen.value = false
 
   // 載入房間類型
   try {
@@ -206,20 +208,97 @@ const handleDeleteAccountConfirm = async (password: string | undefined) => {
  * 選擇房間
  *
  * @description
- * 儲存 pendingRoomTypeId 到 SessionContext，然後導航到 Game 頁面。
- * Game 頁面會建立 WebSocket 連線，並發送 JOIN_MATCHMAKING 命令。
+ * 先呼叫 getPlayerStatus API 檢查玩家狀態，再決定下一步動作。
+ *
+ * 流程：
+ * - IDLE：儲存 selectedRoomTypeId 並導航到 /game 開始配對
+ * - MATCHMAKING + 相同房間：直接導航到 /game 繼續配對
+ * - MATCHMAKING + 不同房間：顯示狀態衝突對話框
+ * - IN_GAME + 相同房間：直接導航到 /game 回到遊戲
+ * - IN_GAME + 不同房間：顯示狀態衝突對話框
+ *
+ * 玩家無法放棄配對/遊戲，只能選擇回去或留在 lobby。
  */
-const handleSelectRoom = (roomTypeId: string) => {
+const handleSelectRoom = async (roomTypeId: string) => {
+  // 防止重複點擊
+  if (isCheckingStatus.value) return
+
   // 點擊時自動清除錯誤狀態（允許用戶重試）
   if (hasError.value) {
     clearLocalMatchmakingState()
   }
 
-  // 儲存 pendingRoomTypeId 到 SessionContext
-  sessionContext.setPendingRoomTypeId(roomTypeId as RoomTypeId)
+  isCheckingStatus.value = true
 
-  // 導航到 Game 頁面（由 Game 頁面處理 WebSocket 連線和配對）
+  try {
+    // 呼叫 API 檢查玩家狀態
+    const status = await matchmakingApiClient.getPlayerStatus()
+
+    if (status.status === 'IDLE') {
+      // 閒置：正常開始配對
+      sessionContext.setSelectedRoomTypeId(roomTypeId as RoomTypeId)
+      navigateTo('/game')
+      return
+    }
+
+    if (status.status === 'MATCHMAKING') {
+      // 設置 session 資料讓 middleware 通過
+      sessionContext.setSelectedRoomTypeId(status.roomType)
+
+      if (status.roomType === roomTypeId) {
+        // 相同房間：繼續配對
+        navigateTo('/game')
+      } else {
+        // 不同房間：顯示提示
+        pendingStatusInfo.value = { type: 'matchmaking', roomType: status.roomType }
+        isStatusConflictDialogOpen.value = true
+      }
+      return
+    }
+
+    if (status.status === 'IN_GAME') {
+      // 設置 session 資料讓 middleware 通過
+      sessionContext.setCurrentGameId(status.gameId)
+
+      if (status.roomTypeId === roomTypeId) {
+        // 相同房間：回到遊戲
+        navigateTo('/game')
+      } else {
+        // 不同房間：顯示提示
+        pendingStatusInfo.value = { type: 'in_game', roomTypeId: status.roomTypeId }
+        isStatusConflictDialogOpen.value = true
+      }
+      return
+    }
+  } catch (error) {
+    // API 失敗：顯示錯誤
+    setMatchmakingError(error, 'Unable to check player status')
+  } finally {
+    isCheckingStatus.value = false
+  }
+}
+
+/**
+ * 回到配對/遊戲
+ *
+ * @description
+ * 用戶選擇回到進行中的配對或遊戲。
+ */
+const handleReturnToActivity = () => {
+  isStatusConflictDialogOpen.value = false
+  pendingStatusInfo.value = null
   navigateTo('/game')
+}
+
+/**
+ * 留在 Lobby
+ *
+ * @description
+ * 用戶取消選擇，關閉對話框並留在 lobby。
+ */
+const handleStayInLobby = () => {
+  isStatusConflictDialogOpen.value = false
+  pendingStatusInfo.value = null
 }
 
 // 重試配對
@@ -227,74 +306,28 @@ const handleRetry = () => {
   clearLocalMatchmakingState()
 }
 
-/**
- * 繼續當前配對
- *
- * @description
- * 當用戶選擇不同房間但已在配對中時，選擇繼續當前配對。
- * 需要先檢查玩家狀態，因為配對可能在這段時間內已經成功。
- */
-const handleContinueQueue = async () => {
-  try {
-    const status = await matchmakingApiClient.getPlayerStatus()
+// 狀態衝突對話框的 computed properties
+const conflictDialogTitle = computed(() => {
+  if (!pendingStatusInfo.value) return ''
+  return pendingStatusInfo.value.type === 'matchmaking'
+    ? 'Matchmaking in Progress'
+    : 'Game in Progress'
+})
 
-    if (status.status === 'MATCHMAKING') {
-      // 直接導航到遊戲頁面繼續等待配對
-      navigateTo('/game')
-    } else if (status.status === 'IN_GAME') {
-      // 配對已成功，導航到遊戲
-      navigateToGameWithGameId(status.gameId)
-    } else {
-      // IDLE - 配對被取消或超時
-      clearLocalMatchmakingState()
-    }
-  } catch (error: unknown) {
-    setMatchmakingError(error, 'Unable to retrieve matchmaking status')
-  }
-}
+const conflictDialogMessage = computed(() => {
+  if (!pendingStatusInfo.value) return ''
+  return pendingStatusInfo.value.type === 'matchmaking'
+    ? 'You are currently in matchmaking queue. Would you like to continue waiting?'
+    : 'You have a game in progress. Would you like to return to it?'
+})
 
-/**
- * 取消當前配對並切換到新房間
- *
- * @description
- * 當用戶選擇不同房間但已在配對中時，導航到 Game 頁面處理。
- * Game 頁面會先取消配對，再發送新的 JOIN_MATCHMAKING 命令。
- */
-const handleCancelAndSwitch = () => {
-  if (!pendingRoomTypeId.value) return
+const conflictDialogConfirmText = computed(() => {
+  if (!pendingStatusInfo.value) return ''
+  return pendingStatusInfo.value.type === 'matchmaking'
+    ? 'Continue Matchmaking'
+    : 'Return to Game'
+})
 
-  // 清除狀態
-  matchmakingStore.clearSession()
-  conflictingEntryId.value = null
-
-  // 儲存新房間類型並導航到 Game 頁面
-  sessionContext.setPendingRoomTypeId(pendingRoomTypeId.value as RoomTypeId)
-  pendingRoomTypeId.value = null
-
-  navigateTo('/game')
-}
-
-/**
- * 返回遊戲
- *
- * @description
- * 當玩家已在遊戲中時，直接導向遊戲頁面。
- * roomTypeId 由 GameSnapshotRestore 事件提供。
- */
-const handleBackToGame = async () => {
-  try {
-    const status = await matchmakingApiClient.getPlayerStatus()
-
-    if (status.status === 'IN_GAME') {
-      navigateToGameWithGameId(status.gameId)
-    } else {
-      // 玩家已不在遊戲中，清除錯誤狀態
-      clearLocalMatchmakingState()
-    }
-  } catch (error: unknown) {
-    setMatchmakingError(error, 'Unable to retrieve game status')
-  }
-}
 </script>
 
 <template>
@@ -390,22 +423,50 @@ const handleBackToGame = async () => {
     <!-- 訪客註冊提示 -->
     <RegisterPrompt />
 
-    <!-- 配對錯誤 Modal -->
+    <!-- 配對錯誤 Modal（只處理 getPlayerStatus API 的網路錯誤） -->
     <MatchmakingErrorModal
       :visible="hasError"
       :error-code="matchmakingStore.errorCode"
       :error-message="matchmakingStore.errorMessage"
       @dismiss="handleRetry"
       @retry="handleRetry"
-      @back-to-game="handleBackToGame"
-      @back-to-home="navigateTo('/')"
-      @continue-queue="handleContinueQueue"
-      @cancel-and-switch="handleCancelAndSwitch"
     />
+
+    <!-- 狀態衝突對話框（用戶選擇不同房間時顯示） -->
+    <ConfirmDialog
+      :is-open="isStatusConflictDialogOpen"
+      :title="conflictDialogTitle"
+      :message="conflictDialogMessage"
+      :confirm-text="conflictDialogConfirmText"
+      cancel-text="Stay Here"
+      @confirm="handleReturnToActivity"
+      @cancel="handleStayInLobby"
+    />
+
+    <!-- Loading Overlay -->
+    <Transition name="fade">
+      <div
+        v-if="isCheckingStatus"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      >
+        <div class="flex flex-col items-center gap-4">
+          <div class="animate-spin rounded-full h-10 w-10 border-2 border-gold-dark border-t-gold-light" />
+          <span class="text-gold-light text-sm">Checking status...</span>
+        </div>
+      </div>
+    </Transition>
 
   </div>
 </template>
 
 <style scoped>
-/* 此頁面不再需要自訂樣式 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>

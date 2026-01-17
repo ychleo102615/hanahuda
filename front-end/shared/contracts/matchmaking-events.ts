@@ -18,7 +18,6 @@
 export const MATCHMAKING_EVENT_TYPES = {
   MatchmakingStatus: 'MatchmakingStatus',
   MatchFound: 'MatchFound',
-  MatchmakingCancelled: 'MatchmakingCancelled',
   MatchmakingError: 'MatchmakingError',
   MatchFailed: 'MatchFailed',
 } as const
@@ -29,7 +28,6 @@ export const MATCHMAKING_EVENT_TYPES = {
 export const MATCHMAKING_EVENT_TYPE_LIST = [
   MATCHMAKING_EVENT_TYPES.MatchmakingStatus,
   MATCHMAKING_EVENT_TYPES.MatchFound,
-  MATCHMAKING_EVENT_TYPES.MatchmakingCancelled,
   MATCHMAKING_EVENT_TYPES.MatchmakingError,
   MATCHMAKING_EVENT_TYPES.MatchFailed,
 ] as const
@@ -105,18 +103,6 @@ export interface MatchFoundEvent {
 }
 
 /**
- * MatchmakingCancelled 事件
- *
- * @description
- * 配對已取消事件。
- */
-export interface MatchmakingCancelledEvent {
-  readonly event_type: typeof MATCHMAKING_EVENT_TYPES.MatchmakingCancelled
-  readonly entry_id: string
-  readonly message: string
-}
-
-/**
  * MatchmakingError 事件
  *
  * @description
@@ -146,6 +132,5 @@ export interface MatchFailedEvent {
 export type MatchmakingEvent =
   | MatchmakingStatusEvent
   | MatchFoundEvent
-  | MatchmakingCancelledEvent
   | MatchmakingErrorEvent
   | MatchFailedEvent

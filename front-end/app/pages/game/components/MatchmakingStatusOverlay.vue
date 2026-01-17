@@ -9,6 +9,7 @@
   - searching: 正在尋找對手... (0-10秒)
   - low_availability: 對手較少，繼續等待... (10-15秒)
   - matched: 配對成功！準備開始遊戲...
+  - starting: 遊戲開始中...（等待發牌）
 
   @module app/pages/game/components/MatchmakingStatusOverlay
 -->
@@ -19,41 +20,59 @@ import { useMatchmakingStateStore } from '~/game-client/adapter/stores/matchmaki
 
 const matchmakingStore = useMatchmakingStateStore()
 
-// 本地計時器
-const localElapsedSeconds = ref(0)
+// 本地計時器（非響應式，避免不必要的追蹤）
+let localElapsedSeconds = 0
 let timerInterval: ReturnType<typeof setInterval> | null = null
+const displayedSeconds = ref(0)
 
-// 是否顯示覆蓋層（searching, low_availability, matched 狀態時顯示）
-const isVisible = computed(() => {
+// UI 階段：單一狀態來源，減少多個 computed 的重複計算
+type UIPhase = 'hidden' | 'searching' | 'matched'
+const uiPhase = computed<UIPhase>(() => {
   const status = matchmakingStore.status
-  return status === 'searching' || status === 'low_availability' || status === 'matched'
+  if (status === 'matched' || status === 'starting') {
+    return 'matched'
+  }
+  if (status === 'searching' || status === 'low_availability') {
+    return 'searching'
+  }
+  return 'hidden'
 })
 
-// 是否配對成功
-const isMatched = computed(() => matchmakingStore.status === 'matched')
+// 衍生狀態（從 uiPhase 計算，不再直接依賴 store.status）
+const isVisible = computed(() => uiPhase.value !== 'hidden')
+const isMatched = computed(() => uiPhase.value === 'matched')
 
-// 監聽可見狀態，啟動/停止計時器
-watch(isVisible, (visible) => {
-  if (visible && !isMatched.value) {
+// 對手資訊快照（只在 matched 時讀取一次，避免後續響應式追蹤）
+const opponentSnapshot = ref<{ name: string; isBot: boolean } | null>(null)
+
+// 單一 watch 控制計時器和對手資訊快照
+watch(uiPhase, (phase, oldPhase) => {
+  if (phase === 'searching') {
     startTimer()
-  } else {
+  } else if (oldPhase === 'searching') {
+    // 從 searching 離開時停止計時器
     stopTimer()
+  }
+
+  // 進入 matched 狀態時快照對手資訊
+  if (phase === 'matched') {
+    opponentSnapshot.value = {
+      name: matchmakingStore.opponentName || 'Opponent',
+      isBot: matchmakingStore.isBot,
+    }
+  } else if (phase === 'hidden') {
+    opponentSnapshot.value = null
   }
 }, { immediate: true })
 
-// 配對成功時停止計時器
-watch(isMatched, (matched) => {
-  if (matched) {
-    stopTimer()
-  }
-})
-
 function startTimer() {
   if (timerInterval) return
-  // 從 store 同步初始值（可能是從 WebSocket 事件取得的）
-  localElapsedSeconds.value = matchmakingStore.elapsedSeconds
+  // 從 store 同步初始值
+  localElapsedSeconds = matchmakingStore.elapsedSeconds
+  displayedSeconds.value = localElapsedSeconds
   timerInterval = setInterval(() => {
-    localElapsedSeconds.value++
+    localElapsedSeconds++
+    displayedSeconds.value = localElapsedSeconds
   }, 1000)
 }
 
@@ -68,45 +87,34 @@ onUnmounted(() => {
   stopTimer()
 })
 
-// 主標題
+// 主標題（從 uiPhase 衍生，減少響應式追蹤）
 const titleText = computed(() => {
-  switch (matchmakingStore.status) {
-    case 'matched':
-      return 'Match Found!'
-    default:
-      return 'Searching'
+  // matched 和 starting 都屬於 uiPhase === 'matched'
+  // 需要區分顯示文字時，才訪問 store.status
+  if (uiPhase.value === 'matched') {
+    return matchmakingStore.status === 'starting' ? 'Starting Game' : 'Match Found!'
   }
+  return 'Searching'
 })
 
-// 副標題
+// 副標題（從 uiPhase 和 opponentSnapshot 衍生）
 const subtitleText = computed(() => {
-  if (matchmakingStore.status === 'matched') {
-    const opponentName = matchmakingStore.opponentName || 'Opponent'
-    const botIndicator = matchmakingStore.isBot ? ' (Bot)' : ''
-    return `vs. ${opponentName}${botIndicator}`
+  if (uiPhase.value === 'matched') {
+    // 使用快照，避免額外響應式追蹤
+    if (opponentSnapshot.value) {
+      const { name, isBot } = opponentSnapshot.value
+      return matchmakingStore.status === 'starting'
+        ? 'PREPARING GAME...'
+        : `vs. ${name}${isBot ? ' (Bot)' : ''}`
+    }
+    return 'PREPARING GAME...'
   }
-  if (matchmakingStore.status === 'low_availability') {
-    return 'FEW PLAYERS ONLINE...'
-  }
+  // searching 狀態：需要區分 low_availability
+  const status = matchmakingStore.status
+  if (status === 'low_availability') return 'FEW PLAYERS ONLINE...'
   return 'FINDING AN OPPONENT...'
 })
 
-// 經過時間顯示（單純秒數）
-const elapsedDisplay = computed(() => `${localElapsedSeconds.value}s`)
-
-// 是否顯示取消按鈕
-const showCancelButton = computed(() => {
-  return matchmakingStore.status === 'searching' || matchmakingStore.status === 'low_availability'
-})
-
-// 取消事件
-const emit = defineEmits<{
-  cancel: []
-}>()
-
-const handleCancel = () => {
-  emit('cancel')
-}
 </script>
 
 <template>
@@ -122,21 +130,18 @@ const handleCancel = () => {
           <div class="relative w-32 h-32">
             <!-- 外圈（配對成功時改為綠色且停止旋轉） -->
             <div
-              class="absolute inset-0 rounded-full border-4"
-              :class="isMatched ? 'border-green-500/30' : 'border-amber-500/30'"
+              class="absolute inset-0 rounded-full border-4 ring-base"
+              :class="{ 'is-matched': isMatched }"
             />
             <div
-              class="absolute inset-0 rounded-full border-4 border-transparent"
-              :class="[
-                isMatched ? 'border-t-green-400' : 'border-t-amber-400',
-                isMatched ? 'invisible' : 'animate-spin-slow'
-              ]"
+              class="absolute inset-0 rounded-full border-4 border-transparent ring-spinner"
+              :class="{ 'is-matched': isMatched }"
             />
             <!-- 內圈圖標 -->
             <div class="absolute inset-4 rounded-full bg-gray-800/80 flex items-center justify-center">
               <svg
-                class="w-12 h-12"
-                :class="isMatched ? 'text-green-400' : 'text-amber-400'"
+                class="w-12 h-12 icon-color"
+                :class="{ 'is-matched': isMatched }"
                 fill="currentColor"
                 viewBox="0 0 24 24"
               >
@@ -148,8 +153,8 @@ const handleCancel = () => {
 
         <!-- 主標題（固定高度） -->
         <h2
-          class="text-3xl font-bold tracking-wide h-10"
-          :class="isMatched ? 'text-green-400' : 'text-amber-400'"
+          class="text-3xl font-bold tracking-wide h-10 title-color"
+          :class="{ 'is-matched': isMatched }"
         >
           {{ titleText }}
         </h2>
@@ -159,32 +164,17 @@ const handleCancel = () => {
           {{ subtitleText }}
         </p>
 
-        <!-- 經過時間（固定高度，使用 opacity 隱藏保留空間） -->
-        <div class="pt-4 pb-6 h-20">
-          <p
-            class="text-xs text-gray-500 tracking-wider mb-1 transition-opacity"
-            :class="isMatched ? 'opacity-0' : 'opacity-100'"
-          >
+        <!-- 經過時間（固定高度，配對成功時直接隱藏） -->
+        <div v-if="!isMatched" class="pt-4 pb-6 h-20">
+          <p class="text-xs text-gray-500 tracking-wider mb-1">
             ELAPSED TIME
           </p>
-          <p
-            class="text-2xl font-mono text-white transition-opacity"
-            :class="isMatched ? 'opacity-0' : 'opacity-100'"
-          >
-            {{ elapsedDisplay }}
+          <p class="text-2xl font-mono text-white">
+            {{ displayedSeconds }}s
           </p>
         </div>
+        <div v-else class="pt-4 pb-6 h-20" />
 
-        <!-- 取消按鈕（固定高度，使用 opacity + pointer-events 隱藏） -->
-        <div class="h-14 flex items-center justify-center">
-          <button
-            class="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg"
-            :class="showCancelButton ? 'opacity-100' : 'opacity-0 pointer-events-none'"
-            @click="handleCancel"
-          >
-            Cancel Matchmaking
-          </button>
-        </div>
       </div>
     </div>
   </Transition>
@@ -201,16 +191,51 @@ const handleCancel = () => {
 }
 
 /* 自定義慢速旋轉動畫 */
-.animate-spin-slow {
-  animation: spin 2s linear infinite;
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* === 基於 class 的狀態樣式（直接綁定，避免屬性選擇器的 iOS Safari 問題） === */
+
+/* 預設狀態（searching） */
+.ring-base {
+  border-color: rgb(245 158 11 / 0.3); /* amber-500/30 */
+  transition: border-color 0.3s ease;
+}
+
+.ring-spinner {
+  border-top-color: rgb(251 191 36); /* amber-400 */
+  animation: spin 2s linear infinite;
+  transition: border-top-color 0.3s ease, visibility 0s linear 0.3s;
+}
+
+.icon-color {
+  color: rgb(251 191 36); /* amber-400 */
+  transition: color 0.3s ease;
+}
+
+.title-color {
+  color: rgb(251 191 36); /* amber-400 */
+  transition: color 0.3s ease;
+}
+
+/* matched 狀態 - 使用 .is-matched class */
+.ring-base.is-matched {
+  border-color: rgb(34 197 94 / 0.3); /* green-500/30 */
+}
+
+.ring-spinner.is-matched {
+  border-top-color: rgb(74 222 128); /* green-400 */
+  animation: none;
+  visibility: hidden;
+}
+
+.icon-color.is-matched {
+  color: rgb(74 222 128); /* green-400 */
+}
+
+.title-color.is-matched {
+  color: rgb(74 222 128); /* green-400 */
 }
 </style>

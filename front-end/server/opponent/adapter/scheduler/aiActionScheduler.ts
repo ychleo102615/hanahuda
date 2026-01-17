@@ -1,11 +1,11 @@
 /**
- * AI Action Scheduler - Opponent BC
+ * AI Action Scheduler - Opponent BC Adapter Layer
  *
  * @description
  * AI 操作排程器，專屬於 Opponent BC。
  * 管理 AI 的延遲操作計時器，與 CoreGame 的超時機制完全獨立。
  *
- * @module server/adapters/opponent/aiActionScheduler
+ * @module server/opponent/adapter/scheduler/aiActionScheduler
  */
 
 /**

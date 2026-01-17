@@ -3,12 +3,16 @@
  *
  * @description
  * 定義會話資訊的存取介面（需跨頁面刷新保留）。
- * 儲存配對條目 ID 和遊戲 ID，讓頁面刷新後可以恢復遊戲。
+ * 儲存選擇的房間類型和遊戲 ID，讓頁面刷新後可以恢復狀態。
  *
  * 管理的資訊：
- * - entryId: 配對條目 ID（用於取消配對）
+ * - selectedRoomTypeId: 選擇的房間類型（配對中時保留，遊戲開始或取消時清除）
  * - currentGameId: 遊戲 ID（用於頁面刷新後重連）
- * - pendingRoomTypeId: 待配對的房間類型（用於 Lobby → Game 頁面傳遞）
+ *
+ * 狀態判斷：
+ * - selectedRoomTypeId 存在，currentGameId 不存在 → 配對中（或準備配對）
+ * - currentGameId 存在 → 遊戲中
+ * - 都不存在 → 閒置
  *
  * 不在此介面中管理的資訊：
  * - roomTypeId: 由 gameState.roomTypeId 管理（來自 WebSocket 事件）
@@ -19,7 +23,7 @@
  * 設計原則：
  * - 單一真相來源（SSOT）
  * - 非響應式資料：不需要驅動 UI 更新
- * - 跨頁面刷新保留：用於重連遊戲和取消配對
+ * - 跨頁面刷新保留：用於重連遊戲
  *
  * @module game-client/application/ports/output/session-context.port
  */
@@ -57,56 +61,34 @@ export abstract class SessionContextPort {
    */
   abstract hasActiveGame(): boolean
 
-  // === Online Matchmaking ===
+  // === Selected Room (Matchmaking) ===
 
   /**
-   * 取得配對條目 ID
-   *
-   * @returns 配對條目 ID，若無則返回 null
-   */
-  abstract getEntryId(): string | null
-
-  /**
-   * 設定配對條目 ID
-   *
-   * @param entryId - 配對條目 ID，傳入 null 可清除
-   */
-  abstract setEntryId(entryId: string | null): void
-
-  /**
-   * 檢查是否處於線上配對模式
-   *
-   * @returns 是否有 entryId（線上配對中）
-   */
-  abstract isMatchmakingMode(): boolean
-
-  /**
-   * 清除配對資訊
+   * 取得選擇的房間類型
    *
    * @description
-   * 配對完成或取消時清除 entryId
-   */
-  abstract clearMatchmaking(): void
-
-  // === Pending Matchmaking ===
-
-  /**
-   * 取得待配對的房間類型
-   *
-   * @description
-   * 用於 Lobby → Game 頁面傳遞房間類型。
-   * Lobby 點擊房間後設定，Game 頁面連線後讀取並發送配對命令。
+   * 用於表示玩家選擇的房間類型，在整個配對過程中保留。
+   * - Lobby 點擊房間後設定
+   * - 配對中時保留（頁面刷新後可恢復）
+   * - 遊戲開始或取消配對時清除
    *
    * @returns 房間類型 ID，若無則返回 null
    */
-  abstract getPendingRoomTypeId(): RoomTypeId | null
+  abstract getSelectedRoomTypeId(): RoomTypeId | null
 
   /**
-   * 設定待配對的房間類型
+   * 設定選擇的房間類型
    *
    * @param roomTypeId - 房間類型 ID，傳入 null 可清除
    */
-  abstract setPendingRoomTypeId(roomTypeId: RoomTypeId | null): void
+  abstract setSelectedRoomTypeId(roomTypeId: RoomTypeId | null): void
+
+  /**
+   * 檢查是否有選擇的房間（配對中或準備配對）
+   *
+   * @returns 是否有 selectedRoomTypeId
+   */
+  abstract hasSelectedRoom(): boolean
 
   // === Session Cleanup ===
 
@@ -114,7 +96,7 @@ export abstract class SessionContextPort {
    * 清除所有會話資訊
    *
    * @description
-   * 離開遊戲時清除所有 sessionStorage 資料（entryId + currentGameId）
+   * 離開遊戲時清除所有 sessionStorage 資料（selectedRoomTypeId + currentGameId）
    */
   abstract clearSession(): void
 }

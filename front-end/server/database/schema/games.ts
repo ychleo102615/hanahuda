@@ -14,7 +14,7 @@ import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 /**
  * 遊戲狀態
  */
-export type GameStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED'
+export type GameStatus = 'WAITING' | 'STARTING' | 'IN_PROGRESS' | 'FINISHED'
 
 /**
  * Games 表

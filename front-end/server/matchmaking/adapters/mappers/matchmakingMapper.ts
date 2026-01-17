@@ -23,16 +23,7 @@ export interface EnterMatchmakingResponseDto {
 }
 
 /**
- * Cancel Matchmaking Response DTO
- */
-export interface CancelMatchmakingResponseDto {
-  readonly success: boolean
-  readonly message: string
-  readonly error_code?: string
-}
-
-/**
- * Matchmaking Status Event DTO
+ * Matchmaking Status SSE Event DTO
  */
 export interface MatchmakingStatusEventDto {
   readonly event_type: 'MatchmakingStatus'
@@ -50,13 +41,6 @@ export interface MatchFoundEventDto {
   readonly game_id: string
   readonly opponent_name: string
   readonly is_bot: boolean
-}
-
-/**
- * Matchmaking Cancelled Event DTO
- */
-export interface MatchmakingCancelledEventDto {
-  readonly event_type: 'MatchmakingCancelled'
 }
 
 /**
@@ -95,28 +79,7 @@ export const MatchmakingMapper = {
   },
 
   /**
-   * 轉換 Cancel Matchmaking 成功回應
-   */
-  toCancelSuccessDto(message: string): CancelMatchmakingResponseDto {
-    return {
-      success: true,
-      message,
-    }
-  },
-
-  /**
-   * 轉換 Cancel Matchmaking 錯誤回應
-   */
-  toCancelErrorDto(errorCode: string, message: string): CancelMatchmakingResponseDto {
-    return {
-      success: false,
-      error_code: errorCode,
-      message,
-    }
-  },
-
-  /**
-   * 轉換配對狀態事件
+   * 轉換配對狀態 SSE 事件
    */
   toStatusEventDto(
     entry: MatchmakingEntry,
@@ -147,15 +110,6 @@ export const MatchmakingMapper = {
       game_id: gameId,
       opponent_name: opponentName,
       is_bot: isBot,
-    }
-  },
-
-  /**
-   * 轉換配對取消事件
-   */
-  toCancelledEventDto(): MatchmakingCancelledEventDto {
-    return {
-      event_type: 'MatchmakingCancelled',
     }
   },
 

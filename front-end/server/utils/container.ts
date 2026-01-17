@@ -22,7 +22,6 @@ import { playerStatsRepository } from '~~/server/core-game/adapters/persistence/
 import { gameLogRepository } from '~~/server/core-game/adapters/persistence/drizzleGameLogRepository'
 
 // Adapters - Event Publisher
-import { internalEventBus } from '~~/server/core-game/adapters/event-publisher/internalEventBus'
 import { createCompositeEventPublisher } from '~~/server/core-game/adapters/event-publisher/compositeEventPublisher'
 
 // Adapters - Mappers
@@ -52,6 +51,9 @@ import { ConfirmContinueUseCase } from '~~/server/core-game/application/use-case
 import { TurnFlowService } from '~~/server/core-game/application/services/turnFlowService'
 import { GameStartService } from '~~/server/core-game/application/services/gameStartService'
 
+// Opponent BC Container
+import { createOpponentContainer, type OpponentContainer } from '~~/server/opponent'
+
 // Input Port Types (only importing types used for explicit type annotations)
 import type { LeaveGameInputPort } from '~~/server/core-game/application/ports/input/leaveGameInputPort'
 import type { AutoActionInputPort } from '~~/server/core-game/application/ports/input/autoActionInputPort'
@@ -59,9 +61,17 @@ import type { RecordGameStatsInputPort } from '~~/server/core-game/application/p
 import type { ConfirmContinueInputPort } from '~~/server/core-game/application/ports/input/confirmContinueInputPort'
 
 /**
+ * Backend Container 回傳型別
+ */
+interface BackendContainers {
+  readonly diContainer: DIContainer
+  readonly opponentContainer: OpponentContainer
+}
+
+/**
  * 建立並設定 DI Container
  */
-function createBackendContainer(): DIContainer {
+function createBackendContainer(): BackendContainers {
   const diContainer = new DIContainer()
 
   // ===== 1. 註冊 Adapters =====
@@ -70,7 +80,6 @@ function createBackendContainer(): DIContainer {
   diContainer.register(BACKEND_TOKENS.PlayerStatsRepository, () => playerStatsRepository, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameLogRepository, () => gameLogRepository, { singleton: true })
   diContainer.register(BACKEND_TOKENS.EventMapper, () => eventMapper, { singleton: true })
-  diContainer.register(BACKEND_TOKENS.InternalEventBus, () => internalEventBus, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameTimeoutManager, () => gameTimeoutManager, { singleton: true })
   diContainer.register(BACKEND_TOKENS.GameLock, () => inMemoryGameLock, { singleton: true })
 
@@ -158,7 +167,6 @@ function createBackendContainer(): DIContainer {
     compositeEventPublisher,
     inMemoryGameStore,
     eventMapper,
-    internalEventBus,
     inMemoryGameLock,
     gameTimeoutManager,
     gameLogRepository,
@@ -216,13 +224,24 @@ function createBackendContainer(): DIContainer {
   // ===== 4. 註冊 Application Services =====
   diContainer.register(BACKEND_TOKENS.TurnFlowService, () => turnFlowService, { singleton: true })
 
-  return diContainer
+  // ===== 5. 建立 Opponent BC Container =====
+  // 注意：OpponentContainer 不再依賴 GameStorePort，改用 OpponentStateTracker
+  const opponentContainer = createOpponentContainer({
+    joinGameAsAi: joinGameAsAiUseCase,
+    playHandCard: playHandCardUseCase,
+    selectTarget: selectTargetUseCase,
+    makeDecision: makeDecisionUseCase,
+  })
+
+  return { diContainer, opponentContainer }
 }
 
 /**
  * 全域容器實例
  */
-export const container = createBackendContainer()
+const { diContainer, opponentContainer } = createBackendContainer()
+export const container = diContainer
+export { opponentContainer }
 
 // 匯出 BACKEND_TOKENS 供 API 端點使用
 export { BACKEND_TOKENS }

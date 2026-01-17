@@ -1,19 +1,21 @@
 /**
- * OpponentInstance - Adapter Layer
+ * OpponentInstance - Opponent BC Adapter Layer
  *
  * @description
  * 單一遊戲的 AI 對手實例。
  * 每個遊戲擁有獨立的 OpponentInstance，負責：
  * 1. 接收遊戲事件
- * 2. 判斷是否該 AI 行動（Tell, Don't Ask 原則）
- * 3. 執行 AI 策略
- * 4. 呼叫對應的 Input Port
+ * 2. 更新內部狀態（透過 OpponentStateTracker）
+ * 3. 判斷是否該 AI 行動（Tell, Don't Ask 原則）
+ * 4. 執行 AI 策略
+ * 5. 呼叫對應的 Input Port
  *
  * 設計原則：
+ * - 不依賴 GameStorePort，使用 OpponentStateTracker 追蹤狀態
  * - OpponentInstance 自己判斷是否該行動，而非由 EventPublisher 判斷
  * - 策略實作可擴展（目前僅實作 RANDOM）
  *
- * @module server/adapters/opponent/opponentInstance
+ * @module server/opponent/adapter/ai/opponentInstance
  */
 
 import type { GameEvent, Yaku } from '#shared/contracts'
@@ -21,9 +23,9 @@ import type { AiStrategyType } from '~~/server/core-game/application/ports/input
 import type { PlayHandCardInputPort } from '~~/server/core-game/application/ports/input/playHandCardInputPort'
 import type { SelectTargetInputPort } from '~~/server/core-game/application/ports/input/selectTargetInputPort'
 import type { MakeDecisionInputPort } from '~~/server/core-game/application/ports/input/makeDecisionInputPort'
-import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
 import { findMatchableTargets } from '~~/server/core-game/domain/services/matchingService'
-import { aiActionScheduler } from './aiActionScheduler'
+import type { OpponentStateTracker } from '../state/opponentStateTracker'
+import { aiActionScheduler } from '../scheduler/aiActionScheduler'
 
 /**
  * AI 延遲設定（毫秒）
@@ -41,14 +43,14 @@ const AI_DELAYS = {
  * OpponentInstance 依賴
  *
  * @description
- * 只依賴 Input Ports 和 GameStore。
- * 計時器使用 Opponent BC 內部的 aiActionScheduler。
+ * 只依賴 Input Ports 和 OpponentStateTracker。
+ * 不再依賴 GameStorePort。
  */
 export interface OpponentInstanceDependencies {
   readonly playHandCard: PlayHandCardInputPort
   readonly selectTarget: SelectTargetInputPort
   readonly makeDecision: MakeDecisionInputPort
-  readonly gameStore: GameStorePort
+  readonly stateTracker: OpponentStateTracker
 }
 
 /**
@@ -60,7 +62,7 @@ export interface OpponentInstanceOptions {
    *
    * @description
    * 當 OpponentInstance 銷毀時呼叫（遊戲結束）。
-   * 用於讓 OpponentRegistry 清理 instances Map 和 opponentStore。
+   * 用於讓 AiNeededHandler 清理 instances Map 和 opponentStore。
    */
   readonly onCleanup?: () => void
 }
@@ -89,7 +91,8 @@ export class OpponentInstance {
    *
    * @description
    * 這是 OpponentInstance 的核心方法。
-   * 遵循 Tell, Don't Ask 原則：自己判斷是否該行動。
+   * 1. 先更新 StateTracker 的狀態
+   * 2. 遵循 Tell, Don't Ask 原則：自己判斷是否該行動
    *
    * 注意：有些事件（如 SelectionRequired、DecisionRequired）沒有 next_state，
    * 需要直接從事件的 player_id 判斷是否輪到 AI。
@@ -101,7 +104,10 @@ export class OpponentInstance {
       return
     }
 
-    // 特殊事件處理：SelectionRequired 和 DecisionRequired 沒有 next_state
+    // 1. 更新 StateTracker 的狀態
+    this.deps.stateTracker.handleEvent(event)
+
+    // 2. 特殊事件處理：SelectionRequired 和 DecisionRequired 沒有 next_state
     // 需要直接從 player_id 判斷是否輪到 AI
     if (event.event_type === 'SelectionRequired') {
       if (event.player_id === this.playerId) {
@@ -117,19 +123,19 @@ export class OpponentInstance {
       return
     }
 
-    // 終止事件處理：當遊戲結束時，銷毀實例
+    // 3. 終止事件處理：當遊戲結束時，銷毀實例
     if (event.event_type === 'GameFinished') {
       this.dispose()
       return
     }
 
-    // 回合結束時，取消已排程的 AI 操作（但不銷毀實例）
+    // 4. 回合結束時，取消已排程的 AI 操作（但不銷毀實例）
     if (event.event_type === 'RoundEnded') {
       aiActionScheduler.cancel(this.gameId)
       return
     }
 
-    // 標準事件處理：需要有 next_state 的事件
+    // 5. 標準事件處理：需要有 next_state 的事件
     if (!('next_state' in event) || !event.next_state) return
 
     const nextState = event.next_state
@@ -165,22 +171,17 @@ export class OpponentInstance {
       if (this.isDisposed) return
 
       try {
-        const game = this.deps.gameStore.get(this.gameId)
-        if (!game?.currentRound) {
-          return
-        }
+        // 從 StateTracker 取得手牌和場牌
+        const hand = this.deps.stateTracker.getMyHand()
+        const field = this.deps.stateTracker.getField()
 
-        // 取得 AI 的手牌
-        const playerState = game.currentRound.playerStates.find(
-          (ps) => ps.playerId === this.playerId
-        )
-        if (!playerState || playerState.hand.length === 0) {
+        if (hand.length === 0) {
           return
         }
 
         // 執行策略選擇卡片
-        const selectedCard = this.selectCardFromHand(playerState.hand)
-        const targetCardId = this.findMatchingTarget(selectedCard, game.currentRound.field)
+        const selectedCard = this.selectCardFromHand(hand)
+        const targetCardId = this.findMatchingTarget(selectedCard, field)
 
         await this.deps.playHandCard.execute({
           gameId: this.gameId,
@@ -242,9 +243,8 @@ export class OpponentInstance {
       if (this.isDisposed) return
 
       try {
-        // 從遊戲狀態取得當前役種資訊
-        const game = this.deps.gameStore.get(this.gameId)
-        const activeYaku = game?.currentRound?.pendingDecision?.activeYaku ?? []
+        // 從 StateTracker 取得當前役種資訊
+        const activeYaku = this.deps.stateTracker.getActiveYaku()
 
         // 執行策略選擇決策
         const decision = this.selectDecision(activeYaku)
@@ -273,8 +273,11 @@ export class OpponentInstance {
   private selectCardFromHand(hand: readonly string[]): string {
     // 目前所有策略都使用隨機選擇（MVP）
     // TODO: 未來可根據 strategyType 實作不同策略
+    if (hand.length === 0) {
+      throw new Error('Cannot select card from empty hand')
+    }
     const randomIndex = Math.floor(Math.random() * hand.length)
-    return hand[randomIndex]
+    return hand[randomIndex] as string
   }
 
   /**
@@ -285,8 +288,11 @@ export class OpponentInstance {
    */
   private selectTarget(possibleTargets: readonly string[]): string {
     // 目前所有策略都使用隨機選擇（MVP）
+    if (possibleTargets.length === 0) {
+      throw new Error('Cannot select from empty targets')
+    }
     const randomIndex = Math.floor(Math.random() * possibleTargets.length)
-    return possibleTargets[randomIndex]
+    return possibleTargets[randomIndex] as string
   }
 
   /**
@@ -368,7 +374,7 @@ export class OpponentInstance {
     this.isDisposed = true
     aiActionScheduler.cancel(this.gameId)
 
-    // 通知 OpponentRegistry 清理 instances Map 和 opponentStore
+    // 通知 AiNeededHandler 清理 instances Map 和 opponentStore
     this.onCleanup?.()
   }
 

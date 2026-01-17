@@ -39,13 +39,13 @@ import { HandleRoundEndedUseCase } from '../../application/use-cases/event-handl
 import { HandleGameFinishedUseCase } from '../../application/use-cases/event-handlers/HandleGameFinishedUseCase'
 import { HandleTurnErrorUseCase } from '../../application/use-cases/event-handlers/HandleTurnErrorUseCase'
 import { HandleGameErrorUseCase } from '../../application/use-cases/event-handlers/HandleGameErrorUseCase'
-import { HandleInitialStateUseCase } from '../../application/use-cases/HandleInitialStateUseCase'
 import { StartGameUseCase } from '../../application/use-cases/StartGameUseCase'
 import { HandleStateRecoveryUseCase } from '../../application/use-cases/HandleStateRecoveryUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ErrorHandlerPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ErrorHandlerPort, ConnectionReadyPort } from '../../application/ports/output'
+import { createConnectionReadyAdapter } from '../connection/ConnectionReadyAdapter'
 import type { HandleStateRecoveryPort } from '../../application/ports/input'
 import { createSessionContextAdapter } from '../session/SessionContextAdapter'
 import type { DomainFacade } from '../../application/types/domain-facade'
@@ -75,7 +75,6 @@ import { MATCHMAKING_EVENT_TYPES } from '#shared/contracts'
 import {
   HandleMatchmakingStatusUseCase,
   HandleMatchFoundUseCase,
-  HandleMatchmakingCancelledUseCase,
   HandleMatchmakingErrorUseCase,
   HandleMatchFailedUseCase,
 } from '../../application/use-cases/matchmaking'
@@ -331,6 +330,14 @@ function registerOutputPorts(container: DIContainer): void {
     () => new LayoutPortAdapter(),
     { singleton: true },
   )
+
+  // ConnectionReadyPort: 連線就緒通知
+  // 讓 HandleGatewayConnectedUseCase 通知 useGatewayConnection 初始狀態已接收
+  container.register(
+    TOKENS.ConnectionReadyPort,
+    () => createConnectionReadyAdapter(),
+    { singleton: true },
+  )
 }
 
 /**
@@ -522,22 +529,6 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  // Gateway: 註冊 HandleInitialStatePort（處理 WebSocket 連線後的第一個事件）
-  // 改用 OperationSessionPort 取代 OperationSessionManager
-  container.register(
-    TOKENS.HandleInitialStatePort,
-    () => new HandleInitialStateUseCase(
-      uiStatePort,
-      notificationPort,
-      navigationPort,
-      animationPort,
-      matchmakingStatePort,
-      gameStatePort,
-      operationSessionPort
-    ),
-    { singleton: true }
-  )
-
   // 註冊 HandleStateRecoveryPort（統一處理快照恢復）
   // 改用 OperationSessionPort 取代 OperationSessionManager
   container.register(
@@ -547,9 +538,12 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // Gateway: 註冊 HandleGatewayConnectedPort（處理 Gateway 連線後的初始狀態）
+  // 注入 ConnectionReadyPort 以通知 useGatewayConnection 初始狀態已接收
+  // 注意：不再注入 NavigationPort，因為 IDLE 狀態不再自動導航（由 middleware 處理）
+  const connectionReadyPort = container.resolve(TOKENS.ConnectionReadyPort) as ConnectionReadyPort
   container.register(
     TOKENS.HandleGatewayConnectedPort,
-    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, navigationPort, gameStatePort),
+    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, gameStatePort, connectionReadyPort),
     { singleton: true }
   )
 
@@ -760,10 +754,6 @@ function registerEventRoutes(container: DIContainer): void {
     register: (eventType: SSEEventType, port: { execute: (payload: unknown) => void }) => void
   }
 
-  // Gateway: 綁定 InitialState 事件（WebSocket 連線後的第一個事件）
-  const handleInitialStatePort = container.resolve(TOKENS.HandleInitialStatePort) as { execute: (payload: unknown) => void }
-  router.register('InitialState', handleInitialStatePort)
-
   // T030 [US1]: 綁定 GameStarted 和 RoundDealt 事件
   const gameStartedPort = container.resolve(TOKENS.HandleGameStartedPort) as { execute: (payload: unknown) => void }
   const roundDealtPort = container.resolve(TOKENS.HandleRoundDealtPort) as { execute: (payload: unknown) => void }
@@ -839,8 +829,8 @@ function registerLocalAdapters(container: DIContainer): void {
  * 事件類型:
  * - MatchmakingStatus: 更新配對狀態（搜尋中、低可用性）
  * - MatchFound: 配對成功，導航至遊戲
- * - MatchmakingCancelled: 配對取消
  * - MatchmakingError: 配對錯誤
+ * - MatchFailed: 遊戲創建失敗
  */
 function registerMatchmakingEventRoutes(container: DIContainer): void {
   const router = container.resolve(TOKENS.MatchmakingEventRouter) as MatchmakingEventRouter
@@ -854,14 +844,12 @@ function registerMatchmakingEventRoutes(container: DIContainer): void {
   // 建立 Use Cases
   const handleMatchmakingStatusUseCase = new HandleMatchmakingStatusUseCase(matchmakingStatePort)
   const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, gameStatePort, sessionContextPort)
-  const handleMatchmakingCancelledUseCase = new HandleMatchmakingCancelledUseCase(matchmakingStatePort, sessionContextPort)
   const handleMatchmakingErrorUseCase = new HandleMatchmakingErrorUseCase(matchmakingStatePort)
   const handleMatchFailedUseCase = new HandleMatchFailedUseCase(matchmakingStatePort, sessionContextPort)
 
   // 註冊事件處理器
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingStatus, handleMatchmakingStatusUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchFound, handleMatchFoundUseCase)
-  router.register(MATCHMAKING_EVENT_TYPES.MatchmakingCancelled, handleMatchmakingCancelledUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingError, handleMatchmakingErrorUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchFailed, handleMatchFailedUseCase)
 }

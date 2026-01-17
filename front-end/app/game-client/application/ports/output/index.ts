@@ -42,3 +42,6 @@ export type { UIStatePort } from './ui-state.port'
 
 // Telegram Ports
 export type { TelegramAuthPort, TelegramAuthResult, TelegramAuthPlayer } from './telegram-auth.port'
+
+// Connection Ready Port
+export type { ConnectionReadyPort, ConnectionReadyPayload, PlayerInitialStatus } from './connection-ready.port'

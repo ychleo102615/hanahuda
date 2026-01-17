@@ -110,20 +110,6 @@ const handlePlayerInfoCardClose = () => {
   isPlayerInfoCardOpen.value = false
 }
 
-// 取消配對
-const handleCancelMatchmaking = async () => {
-  if (!matchmakingApiClient) return
-
-  try {
-    await matchmakingApiClient.cancelMatchmaking()
-  } finally {
-    // 清除所有配對相關資訊
-    sessionContext.clearSession()
-    matchmakingStore.clearSession()
-    navigateTo('/lobby')
-  }
-}
-
 onMounted(() => {
   // 檢查是否已登入
   if (!authStore.isLoggedIn) {
@@ -133,32 +119,34 @@ onMounted(() => {
 
   // 根據模式建立連線
   if (gameMode === 'backend' && gatewayConnection) {
-    // 註冊連線成功回調：發送配對命令
-    gatewayConnection.onConnected(async () => {
-      // 檢查是否有 pending 配對請求（從 Lobby 頁面傳遞）
-      const pendingRoomTypeId = sessionContext.getPendingRoomTypeId()
-      if (pendingRoomTypeId && matchmakingApiClient) {
-        try {
-          // 發送 JOIN_MATCHMAKING 命令
-          matchmakingStore.setStatus('searching')
-          await matchmakingApiClient.enterMatchmaking(pendingRoomTypeId)
-          // 清除 pending（命令已發送，等待 MatchFound 事件）
-          sessionContext.setPendingRoomTypeId(null)
-        } catch (error) {
-          // 清除 pending
-          sessionContext.setPendingRoomTypeId(null)
-
-          // 錯誤處理
-          matchmakingStore.setStatus('error')
-          if (error instanceof MatchmakingError) {
-            matchmakingStore.setError(error.errorCode, error.message)
-          } else {
-            matchmakingStore.setError('NETWORK_ERROR', 'Failed to enter matchmaking')
+    // 註冊初始狀態回調：根據後端確認的玩家狀態決定行為
+    // 此回調在 GatewayConnected 事件處理完成後觸發，解決時序問題
+    gatewayConnection.onInitialState(async (payload) => {
+      // 只有在 IDLE 狀態且有選擇房間時才發送配對命令
+      // MATCHMAKING / IN_GAME 狀態由 HandleGatewayConnectedUseCase 處理
+      if (payload.status === 'IDLE') {
+        const selectedRoomTypeId = sessionContext.getSelectedRoomTypeId()
+        if (selectedRoomTypeId && matchmakingApiClient) {
+          try {
+            // 發送 JOIN_MATCHMAKING 命令
+            matchmakingStore.setStatus('searching')
+            await matchmakingApiClient.enterMatchmaking(selectedRoomTypeId)
+            // 成功後保留 selectedRoomTypeId（配對中狀態的標記）
+            // 會在 HandleMatchFoundUseCase 中清除
+          } catch (error) {
+            // 配對失敗：清除狀態並導航回 lobby
+            sessionContext.setSelectedRoomTypeId(null)
+            matchmakingStore.setStatus('error')
+            if (error instanceof MatchmakingError) {
+              matchmakingStore.setError(error.errorCode, error.message)
+            } else {
+              matchmakingStore.setError('NETWORK_ERROR', 'Failed to enter matchmaking')
+            }
+            navigateTo('/lobby')
           }
-          // 導回 Lobby 頁面顯示錯誤
-          navigateTo('/lobby')
         }
       }
+      // MATCHMAKING / IN_GAME 狀態：HandleGatewayConnectedUseCase 已處理，不需要額外操作
     })
 
     // Backend 模式：建立 Gateway WebSocket 連線
@@ -275,7 +263,7 @@ onUnmounted(() => {
     />
 
     <!-- 011-online-matchmaking: 配對狀態覆蓋層 -->
-    <MatchmakingStatusOverlay @cancel="handleCancelMatchmaking" />
+    <MatchmakingStatusOverlay />
   </div>
 </template>
 

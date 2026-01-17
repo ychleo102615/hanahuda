@@ -161,10 +161,10 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
    * 遊戲結束後 WebSocket 已斷線，因此 Rematch 需要重新建立連線。
    * 流程：
    * 1. 取得 roomTypeId（從 gameState）
-   * 2. 設定 pendingRoomTypeId
+   * 2. 設定 selectedRoomTypeId
    * 3. 重置 stores 並設定配對狀態
    * 4. 重新建立 WebSocket 連線
-   * 5. Game 頁面 onConnected 回調會偵測 pendingRoomTypeId 並發送配對命令
+   * 5. Game 頁面 onConnected 回調會偵測 selectedRoomTypeId 並發送配對命令
    */
   async function handleRematch(): Promise<void> {
     // 取得 roomTypeId（從 gameState，由 WebSocket 事件設定）
@@ -186,8 +186,8 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
     // 1. 隱藏 GameFinishedModal
     uiState.hideGameFinishedModal()
 
-    // 2. 設定 pendingRoomTypeId（供連線成功後使用）
-    sessionContext.setPendingRoomTypeId(roomTypeId as RoomTypeId)
+    // 2. 設定 selectedRoomTypeId（供連線成功後使用）
+    sessionContext.setSelectedRoomTypeId(roomTypeId as RoomTypeId)
 
     // 3. 重置遊戲狀態
     gameState.$reset()
@@ -198,7 +198,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
     matchmakingState.setStatus('searching')
 
     // 5. 重新建立 WebSocket 連線
-    // onConnected 回調會偵測 pendingRoomTypeId 並發送 JOIN_MATCHMAKING
+    // onConnected 回調會偵測 selectedRoomTypeId 並發送 JOIN_MATCHMAKING
     if (gatewayConnection) {
       gatewayConnection.connect()
     } else {
@@ -210,7 +210,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   }
 
   function clearLocalStateAndNavigate() {
-    // 清除 SessionContext 中的會話資訊（entryId）
+    // 清除 SessionContext 中的會話資訊（selectedRoomTypeId、currentGameId）
     sessionContext.clearSession()
 
     // 清理通知系統資源（倒數計時器等）

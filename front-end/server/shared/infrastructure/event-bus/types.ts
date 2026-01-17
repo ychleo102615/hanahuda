@@ -41,20 +41,15 @@ export interface MatchFoundPayload {
 }
 
 /**
- * Room Created Payload
+ * AI Opponent Needed Payload
  *
  * @description
- * 房間建立時發布的事件 Payload。
- * 由 Core Game BC 發布，Opponent BC 訂閱（用於 BOT 配對）。
- *
- * 此類型與 Core Game BC 的 InternalEventPublisherPort.RoomCreatedPayload 相同，
- * 移至 Shared Infrastructure 以便跨 BC 使用。
+ * 需要 AI 對手時發布的事件 Payload。
+ * 由 Core Game BC 發布，Opponent BC 訂閱。
  */
-export interface RoomCreatedPayload {
+export interface AiOpponentNeededPayload {
   /** 遊戲 ID */
   readonly gameId: string
-  /** 等待中玩家的 ID */
-  readonly waitingPlayerId: string
 }
 
 /**
@@ -62,7 +57,7 @@ export interface RoomCreatedPayload {
  */
 export const EVENT_TYPES = {
   MATCH_FOUND: 'MATCH_FOUND',
-  ROOM_CREATED: 'ROOM_CREATED',
+  AI_OPPONENT_NEEDED: 'AI_OPPONENT_NEEDED',
 } as const
 
 export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES]
