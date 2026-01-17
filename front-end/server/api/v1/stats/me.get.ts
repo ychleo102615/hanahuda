@@ -15,6 +15,7 @@ import { db } from '~~/server/utils/db'
 import { getLeaderboardContainer } from '~~/server/leaderboard/adapters/di/container'
 import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 import { isValidTimeRange } from '~~/server/leaderboard/domain/statistics/time-range'
+import { createEmptyStatistics } from '~~/server/leaderboard/domain/statistics/player-statistics'
 import type { PlayerStatistics } from '~~/server/leaderboard/domain/statistics/player-statistics'
 import type { TimeRange } from '~~/server/leaderboard/domain/statistics/time-range'
 
@@ -37,19 +38,11 @@ interface PersonalStatsApiResponse {
 const DEFAULT_TIME_RANGE: TimeRange = 'all'
 
 export default defineEventHandler(async (event): Promise<PersonalStatsApiResponse> => {
-  // T073: 驗證身份
+  // 取得玩家 ID（可能為 null）
   const identityPort = getIdentityPortAdapter()
   const playerId = await identityPort.getPlayerIdFromRequest(event)
 
-  if (!playerId) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-      message: 'Authentication required to view personal statistics',
-    })
-  }
-
-  // T074: 參數驗證
+  // 參數驗證
   const query = getQuery(event)
   const timeRangeParam = query.timeRange as string | undefined
 
@@ -63,6 +56,17 @@ export default defineEventHandler(async (event): Promise<PersonalStatsApiRespons
       })
     }
     timeRange = timeRangeParam
+  }
+
+  // 如果沒有 playerId，返回空統計
+  if (!playerId) {
+    return {
+      data: {
+        statistics: createEmptyStatistics(''),
+        timeRange,
+      },
+      timestamp: new Date().toISOString(),
+    }
   }
 
   // 取得玩家統計

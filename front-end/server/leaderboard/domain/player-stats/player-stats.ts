@@ -40,6 +40,8 @@ export interface PlayerStatsUpdateParams {
   readonly scoreChange: number
   /** 是否獲勝 */
   readonly isWin: boolean
+  /** 是否平手 */
+  readonly isDraw: boolean
   /** 達成的役種列表 */
   readonly achievedYaku: readonly string[]
   /** Koi-Koi 宣告次數 */
@@ -85,12 +87,15 @@ export function updatePlayerStats(
   }
   const newYakuCounts: YakuCounts = mutableYakuCounts
 
+  // 平手時不計入勝敗
+  const isLoss = !params.isWin && !params.isDraw
+
   return {
     ...stats,
     totalScore: stats.totalScore + params.scoreChange,
     gamesPlayed: stats.gamesPlayed + 1,
     gamesWon: stats.gamesWon + (params.isWin ? 1 : 0),
-    gamesLost: stats.gamesLost + (params.isWin ? 0 : 1),
+    gamesLost: stats.gamesLost + (isLoss ? 1 : 0),
     koiKoiCalls: stats.koiKoiCalls + params.koiKoiCalls,
     multiplierWins: stats.multiplierWins + (params.isMultiplierWin ? 1 : 0),
     yakuCounts: newYakuCounts,

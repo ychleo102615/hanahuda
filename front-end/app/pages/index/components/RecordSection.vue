@@ -17,19 +17,7 @@ import PersonalStatsBlock from './PersonalStatsBlock.vue'
 defineProps<{
   /** 當前登入的玩家 ID (可選) */
   currentPlayerId?: string
-  /** 是否已登入 */
-  isLoggedIn: boolean
 }>()
-
-// Emits
-const emit = defineEmits<{
-  login: []
-}>()
-
-// Methods
-const handleLogin = () => {
-  emit('login')
-}
 </script>
 
 <template>
@@ -88,10 +76,7 @@ const handleLogin = () => {
         <LeaderboardBlock :current-player-id="currentPlayerId" />
 
         <!-- Personal Statistics Block -->
-        <PersonalStatsBlock
-          :is-logged-in="isLoggedIn"
-          @login="handleLogin"
-        />
+        <PersonalStatsBlock />
       </div>
     </div>
   </section>

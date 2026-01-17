@@ -223,11 +223,7 @@ const handleLoginSuccess = () => {
       <NavigationSection @rules-click="handleRulesClick" />
 
       <!-- Record Section - Leaderboard and Personal Statistics -->
-      <RecordSection
-        :current-player-id="playerId ?? undefined"
-        :is-logged-in="isRegistered"
-        @login="handleLoginClick"
-      />
+      <RecordSection :current-player-id="playerId ?? undefined" />
 
       <!-- Rules Section -->
       <section id="rules" class="relative">

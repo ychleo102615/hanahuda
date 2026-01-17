@@ -41,6 +41,9 @@ export class UpdatePlayerRecordsUseCase implements UpdatePlayerRecordsInputPort 
   async execute(request: UpdatePlayerRecordsRequest): Promise<void> {
     const dateString = getDateString(request.finishedAt)
 
+    // 判斷是否為平手（winnerId 為 null 表示平手）
+    const isDraw = request.winnerId === null
+
     // 處理每位非 AI 玩家
     for (const scoreData of request.finalScores) {
       // 檢查是否為 AI
@@ -49,12 +52,14 @@ export class UpdatePlayerRecordsUseCase implements UpdatePlayerRecordsInputPort 
         continue
       }
 
-      const isWin = scoreData.playerId === request.winnerId
+      // 只有在非平手且玩家為贏家時才算獲勝
+      const isWin = !isDraw && scoreData.playerId === request.winnerId
 
       // 更新 player_stats
       await this.updatePlayerStats(scoreData.playerId, {
         scoreChange: scoreData.score,
         isWin,
+        isDraw,
         achievedYaku: scoreData.achievedYaku,
         koiKoiCalls: scoreData.koiKoiCalls,
         isMultiplierWin: scoreData.isMultiplierWin,
@@ -76,6 +81,7 @@ export class UpdatePlayerRecordsUseCase implements UpdatePlayerRecordsInputPort 
     params: {
       scoreChange: number
       isWin: boolean
+      isDraw: boolean
       achievedYaku: readonly string[]
       koiKoiCalls: number
       isMultiplierWin: boolean

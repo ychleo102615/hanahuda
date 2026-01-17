@@ -4,13 +4,14 @@
  *
  * @description
  * 個人統計區塊元件，顯示玩家的遊戲統計數據。
- * 支援時間範圍選擇、載入狀態、錯誤重試、空狀態、未登入提示。
+ * 支援時間範圍選擇、載入狀態、錯誤重試、空狀態。
  * 使用金箔蒔絵 (Kinpaku Maki-e) 設計風格。
+ * 無需登入即可查看（未登入時顯示空統計）。
  *
  * @module pages/index/components/PersonalStatsBlock
  */
 
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import YakuStatsList from './YakuStatsList.vue'
 
 // Types
@@ -40,17 +41,6 @@ interface StatsApiResponse {
   timestamp: string
 }
 
-// Props
-const props = defineProps<{
-  /** 是否已登入 */
-  isLoggedIn: boolean
-}>()
-
-// Emits
-const emit = defineEmits<{
-  login: []
-}>()
-
 // State
 const activeTimeRange = ref<TimeRange>('all')
 const statistics = ref<PlayerStatistics | null>(null)
@@ -72,13 +62,16 @@ const hasNoGames = computed(() =>
   statistics.value !== null && statistics.value.gamesPlayed === 0
 )
 
+// 計算平手場次 = 總場數 - 勝場 - 敗場
+const gamesDraw = computed(() => {
+  if (!statistics.value) return 0
+  return statistics.value.gamesPlayed - statistics.value.gamesWon - statistics.value.gamesLost
+})
+
 // Methods
 const fetchStatistics = async (timeRange: TimeRange) => {
-  if (!props.isLoggedIn) return
-
   isLoading.value = true
   error.value = null
-  // 注意：不清空 statistics，保留舊資料直到新資料到來
 
   try {
     const response = await $fetch<StatsApiResponse>('/api/v1/stats/me', {
@@ -106,25 +99,9 @@ const handleRetry = () => {
   fetchStatistics(activeTimeRange.value)
 }
 
-const handleLoginClick = () => {
-  emit('login')
-}
-
-// Watchers
-watch(() => props.isLoggedIn, (newValue) => {
-  if (newValue) {
-    fetchStatistics(activeTimeRange.value)
-  }
-  else {
-    statistics.value = null
-  }
-})
-
 // Lifecycle
 onMounted(() => {
-  if (props.isLoggedIn) {
-    fetchStatistics(activeTimeRange.value)
-  }
+  fetchStatistics(activeTimeRange.value)
 })
 </script>
 
@@ -158,8 +135,8 @@ onMounted(() => {
         </h3>
       </div>
 
-      <!-- Time Range Selector (only when logged in) -->
-      <div v-if="isLoggedIn" class="flex gap-1 p-1 rounded-lg tab-container">
+      <!-- Time Range Selector -->
+      <div class="flex gap-1 p-1 rounded-lg tab-container">
         <button
           v-for="range in timeRanges"
           :key="range.id"
@@ -175,36 +152,8 @@ onMounted(() => {
 
     <!-- Content Area with min-height to prevent layout shift -->
     <div class="min-h-[300px]">
-      <!-- Not Logged In State -->
-      <div v-if="!isLoggedIn" class="flex flex-col items-center justify-center py-12">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gold-dark/10 border border-gold-dark/20 mb-5">
-          <svg
-            class="w-8 h-8 text-gold-light/50"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.5"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            />
-          </svg>
-        </div>
-        <p class="text-gray-400 mb-5 text-center">Sign in to view your statistics</p>
-        <button
-          type="button"
-          class="cta-button px-6 py-2.5 rounded-lg font-medium cursor-pointer transition-all duration-200 ease-out"
-          @click="handleLoginClick"
-        >
-          Sign In
-        </button>
-      </div>
-
       <!-- Loading State (delayed to prevent flicker) -->
-      <div v-else-if="showSkeleton" class="space-y-4" role="status" aria-label="Loading statistics">
+      <div v-if="showSkeleton" class="space-y-4" role="status" aria-label="Loading statistics">
         <div class="grid grid-cols-2 gap-3">
           <div v-for="i in 4" :key="i" class="p-4 rounded-lg bg-lacquer-black/30">
             <div class="h-3 w-16 bg-gold-dark/20 rounded mb-3 animate-pulse" />
@@ -295,12 +244,14 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Win/Loss -->
+          <!-- Win / Draw / Loss -->
           <div class="stat-card p-4 rounded-lg">
-            <div class="text-xs text-gray-500 mb-1.5 uppercase tracking-wider">Win / Loss</div>
+            <div class="text-xs text-gray-500 mb-1.5 uppercase tracking-wider">W / D / L</div>
             <div class="text-xl font-bold tabular-nums">
               <span class="text-gold-light">{{ statistics.gamesWon }}</span>
-              <span class="text-gray-500 mx-1">/</span>
+              <span class="text-gray-500 mx-0.5">/</span>
+              <span class="text-gray-400">{{ gamesDraw }}</span>
+              <span class="text-gray-500 mx-0.5">/</span>
               <span class="text-red-400">{{ statistics.gamesLost }}</span>
             </div>
           </div>

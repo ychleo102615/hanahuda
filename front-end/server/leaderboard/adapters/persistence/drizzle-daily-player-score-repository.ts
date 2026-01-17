@@ -110,6 +110,7 @@ export class DrizzleDailyPlayerScoreRepository implements DailyPlayerScoreReposi
           : sql`TRUE`
       )
       .groupBy(dailyPlayerScores.playerId, players.displayName)
+      .having(sql`SUM(${dailyPlayerScores.score}) > 0`)
       .orderBy(desc(sql`total_score`))
       .limit(limit)
 
@@ -128,7 +129,7 @@ export class DrizzleDailyPlayerScoreRepository implements DailyPlayerScoreReposi
   async getPlayerRank(playerId: string, type: LeaderboardType): Promise<number | null> {
     const startDate = this.getStartDateForType(type)
 
-    // 使用 CTE 計算玩家排名
+    // 使用 CTE 計算玩家排名（排除 0 分玩家）
     const rankQuery = sql`
       WITH player_totals AS (
         SELECT
@@ -137,6 +138,7 @@ export class DrizzleDailyPlayerScoreRepository implements DailyPlayerScoreReposi
         FROM daily_player_scores
         ${startDate ? sql`WHERE date >= ${startDate}` : sql``}
         GROUP BY player_id
+        HAVING SUM(score) > 0
       ),
       ranked AS (
         SELECT
