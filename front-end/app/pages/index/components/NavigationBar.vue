@@ -134,10 +134,10 @@ onUnmounted(() => {
     :class="[
       'fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-out',
       isSticky
-        ? 'bg-primary-900/65 backdrop-blur-sm shadow-lg'
+        ? 'bg-game-table/65 backdrop-blur-sm shadow-lg'
         : transparent
           ? 'bg-transparent'
-          : 'bg-primary-900',
+          : 'bg-game-table',
     ]"
   >
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -146,7 +146,7 @@ onUnmounted(() => {
         <div class="shrink-0">
           <a
             href="/"
-            class="text-xl md:text-2xl font-bold text-white hover:text-accent-pink transition-colors"
+            class="text-xl md:text-2xl font-bold text-white hover:text-gold-light transition-colors"
             @click.prevent="router.push('/')"
           >
             {{ logo }}
@@ -162,13 +162,13 @@ onUnmounted(() => {
               :href="link.target"
               :target="link.external ? '_blank' : undefined"
               :rel="link.external ? 'noopener noreferrer' : undefined"
-              class="px-4 py-2 text-sm font-medium transition-all duration-200 text-white hover:text-accent-pink relative group"
+              class="px-4 py-2 text-sm font-medium transition-all duration-200 text-white hover:text-gold-light relative group"
               @click="handleLinkClick(link, $event)"
               @keydown.enter="handleLinkClick(link, $event)"
               tabindex="0"
             >
               {{ link.label }}
-              <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-accent-pink transition-all duration-300 group-hover:w-full"></span>
+              <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-gold-light transition-all duration-300 group-hover:w-full"></span>
             </a>
           </template>
 
@@ -186,10 +186,10 @@ onUnmounted(() => {
           <button
             v-else
             @click="emit('loginClick')"
-            class="px-4 py-2 text-sm font-medium text-white hover:text-accent-pink relative group transition-all duration-200"
+            class="px-4 py-2 text-sm font-medium text-white hover:text-gold-light relative group transition-all duration-200"
           >
             Sign In
-            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-accent-pink transition-all duration-300 group-hover:w-full"></span>
+            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-gold-light transition-all duration-300 group-hover:w-full"></span>
           </button>
 
           <!-- CTA Links (Start Game) - At the end -->
@@ -197,7 +197,7 @@ onUnmounted(() => {
             <a
               v-if="link.isCta"
               :href="link.target"
-              class="px-4 py-2 text-sm font-medium transition-all duration-200 bg-accent-red text-white rounded-md hover:bg-accent-red/90 hover:shadow-lg hover:scale-105 whitespace-nowrap"
+              class="px-4 py-2 text-sm font-medium transition-all duration-200 bg-accent-red text-white rounded-md hover:bg-accent-red/90 hover:shadow-lg whitespace-nowrap"
               @click="handleLinkClick(link, $event)"
               @keydown.enter="handleLinkClick(link, $event)"
               tabindex="0"
@@ -209,7 +209,7 @@ onUnmounted(() => {
 
         <!-- Mobile Menu Button -->
         <button
-          class="md:hidden text-white p-2 rounded-md hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-accent-pink"
+          class="md:hidden text-white p-2 rounded-md hover:bg-game-table-light focus:outline-none focus:ring-2 focus:ring-gold-light"
           @click="toggleMobileMenu"
           :aria-expanded="isMobileMenuOpen"
           aria-controls="mobile-menu"
@@ -292,7 +292,7 @@ onUnmounted(() => {
               :href="link.target"
               :target="link.external ? '_blank' : undefined"
               :rel="link.external ? 'noopener noreferrer' : undefined"
-              class="block px-4 py-3 text-sm font-medium rounded-md transition-colors text-white hover:bg-primary-800 hover:text-accent-pink"
+              class="block px-4 py-3 text-sm font-medium rounded-md transition-colors text-white hover:bg-game-table-light hover:text-gold-light"
               @click="handleLinkClick(link, $event)"
               @keydown.enter="handleLinkClick(link, $event)"
               tabindex="0"
@@ -305,7 +305,7 @@ onUnmounted(() => {
           <button
             v-if="!player"
             @click="emit('loginClick'); closeMobileMenu()"
-            class="block w-full text-left px-4 py-3 text-sm font-medium text-white hover:bg-primary-800 hover:text-accent-pink rounded-md transition-colors"
+            class="block w-full text-left px-4 py-3 text-sm font-medium text-white hover:bg-game-table-light hover:text-gold-light rounded-md transition-colors"
           >
             Sign In
           </button>

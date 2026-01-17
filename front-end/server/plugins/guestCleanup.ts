@@ -62,11 +62,6 @@ export default defineNitroPlugin((nitroApp) => {
     return
   }
 
-  logger.info('[GuestCleanup] Scheduler initialized', {
-    intervalHours: CLEANUP_INTERVAL_MS / 60 / 60 / 1000,
-    inactiveDays: GUEST_INACTIVE_DAYS,
-  })
-
   // 啟動定期清理
   cleanupTimer = setInterval(performCleanup, CLEANUP_INTERVAL_MS)
 

@@ -32,7 +32,7 @@
             headerClass,
           ]"
         >
-          <h2 id="round-end-title" class="text-2xl font-bold text-center">
+          <h2 id="round-end-title" class="text-2xl font-bold font-serif text-gold-light text-center">
             {{ headerTitle }}
           </h2>
         </div>
@@ -319,13 +319,13 @@ const displayCountdown = computed(() => {
 const headerClass = computed(() => {
   switch (panelType.value) {
     case 'roundScored':
-      return 'bg-gradient-to-r from-amber-600/80 to-amber-700/80'
+      return 'bg-gradient-to-r from-game-felt/90 to-game-table/90 border-b border-gold-dark/30'
     case 'roundEndedInstantly':
-      return 'bg-gradient-to-r from-blue-600/80 to-blue-700/80'
+      return 'bg-gradient-to-r from-game-felt/90 to-game-table/90 border-b border-gold-dark/30'
     case 'roundDrawn':
-      return 'bg-gradient-to-r from-gray-600/80 to-gray-700/80'
+      return 'bg-gradient-to-r from-game-table-light/90 to-game-table/90'
     default:
-      return 'bg-gradient-to-r from-gray-600/80 to-gray-700/80'
+      return 'bg-gradient-to-r from-game-table-light/90 to-game-table/90'
   }
 })
 

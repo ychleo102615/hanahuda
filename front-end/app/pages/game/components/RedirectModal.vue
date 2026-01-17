@@ -16,7 +16,7 @@
           class="px-6 py-5 text-white modal-header"
           :class="headerGradientClass"
         >
-          <h2 id="redirect-modal-title" class="text-2xl font-bold text-center">
+          <h2 id="redirect-modal-title" class="text-2xl font-bold font-serif text-gold-light text-center">
             {{ modalTitle }}
           </h2>
         </div>
@@ -108,8 +108,8 @@ const buttonText = computed(() =>
 
 const headerGradientClass = computed(() =>
   redirectTarget.value === 'home'
-    ? 'bg-gradient-to-r from-orange-600/80 to-orange-700/80'
-    : 'bg-gradient-to-r from-red-600/80 to-red-700/80'
+    ? 'bg-gradient-to-r from-game-felt/90 to-game-table/90'
+    : 'bg-gradient-to-r from-game-table-light/90 to-game-table/90'
 )
 
 const buttonClass = computed(() =>

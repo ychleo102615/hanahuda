@@ -8,8 +8,6 @@
  * @module server/gateway/wsRateLimiter
  */
 
-import { logger } from '../utils/logger'
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -150,17 +148,11 @@ class WsRateLimiter {
   cleanup(): void {
     const now = Date.now()
     const expiredThreshold = this.config.windowMs * 2
-    let cleanedCount = 0
 
     for (const [playerId, entry] of this.limits) {
       if (now - entry.windowStart >= expiredThreshold) {
         this.limits.delete(playerId)
-        cleanedCount++
       }
-    }
-
-    if (cleanedCount > 0) {
-      logger.info('WsRateLimiter cleanup', { cleanedCount, remaining: this.limits.size })
     }
   }
 

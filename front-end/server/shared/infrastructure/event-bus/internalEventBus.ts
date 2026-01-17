@@ -11,7 +11,7 @@
  */
 
 import { EventEmitter } from 'node:events'
-import type { MatchFoundPayload, AiOpponentNeededPayload } from './types'
+import type { MatchFoundPayload, AiOpponentNeededPayload, GameFinishedPayload } from './types'
 import { EVENT_TYPES } from './types'
 
 /**
@@ -30,6 +30,11 @@ export type MatchFoundHandler = (payload: MatchFoundPayload) => void
 export type AiOpponentNeededHandler = (payload: AiOpponentNeededPayload) => void
 
 /**
+ * 遊戲結束事件處理器類型
+ */
+export type GameFinishedHandler = (payload: GameFinishedPayload) => void | Promise<void>
+
+/**
  * Internal Event Bus Interface
  *
  * @description
@@ -43,6 +48,10 @@ export interface IInternalEventBus {
   // AI_OPPONENT_NEEDED events (Core Game → Opponent)
   publishAiOpponentNeeded(payload: AiOpponentNeededPayload): void
   onAiOpponentNeeded(handler: AiOpponentNeededHandler): Unsubscribe
+
+  // GAME_FINISHED events (Core Game → Leaderboard)
+  publishGameFinished(payload: GameFinishedPayload): void
+  onGameFinished(handler: GameFinishedHandler): Unsubscribe
 }
 
 /**
@@ -114,6 +123,34 @@ class InternalEventBus implements IInternalEventBus {
     this.emitter.on(EVENT_TYPES.AI_OPPONENT_NEEDED, handler)
     return () => {
       this.emitter.off(EVENT_TYPES.AI_OPPONENT_NEEDED, handler)
+    }
+  }
+
+  /**
+   * 發佈遊戲結束事件
+   *
+   * @description
+   * 由 Core Game BC 呼叫，通知 Leaderboard BC 遊戲已結束。
+   *
+   * @param payload - 遊戲結束事件 Payload
+   */
+  publishGameFinished(payload: GameFinishedPayload): void {
+    this.emitter.emit(EVENT_TYPES.GAME_FINISHED, payload)
+  }
+
+  /**
+   * 訂閱遊戲結束事件
+   *
+   * @description
+   * 由 Leaderboard BC 呼叫，監聽遊戲結束事件以更新統計。
+   *
+   * @param handler - 事件處理器
+   * @returns 取消訂閱函數
+   */
+  onGameFinished(handler: GameFinishedHandler): Unsubscribe {
+    this.emitter.on(EVENT_TYPES.GAME_FINISHED, handler)
+    return () => {
+      this.emitter.off(EVENT_TYPES.GAME_FINISHED, handler)
     }
   }
 }

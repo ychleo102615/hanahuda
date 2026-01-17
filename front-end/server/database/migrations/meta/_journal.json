@@ -64,6 +64,13 @@
       "when": 1767946656793,
       "tag": "0008_light_emma_frost",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1768314479766,
+      "tag": "0009_worthless_arclight",
+      "breakpoints": true
     }
   ]
 }

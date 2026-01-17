@@ -24,14 +24,8 @@ export class ConsoleAuthLogger extends AuthLoggingPort {
     })
   }
 
-  logLoginSuccess(info: LoginSuccessInfo): void {
-    logger.info('Login success', {
-      event: 'LOGIN_SUCCESS',
-      username: info.username,
-      playerId: info.playerId,
-      ip: info.ip ?? 'unknown',
-      userAgent: info.userAgent ?? 'unknown',
-    })
+  logLoginSuccess(_info: LoginSuccessInfo): void {
+    // 登入成功為常態操作，不記錄 info 層級 log
   }
 }
 

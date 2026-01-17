@@ -22,7 +22,6 @@
 import { initGameCreationHandler } from '~~/server/core-game/adapters/event-subscriber/gameCreationHandler'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import type { JoinGameInputPort } from '~~/server/core-game/application/ports/input/joinGameInputPort'
-import { logger } from '~~/server/utils/logger'
 
 export default defineNitroPlugin(() => {
   // 取得 Core Game BC 的依賴
@@ -30,6 +29,4 @@ export default defineNitroPlugin(() => {
 
   // 初始化 GameCreationHandler（監聽 MATCH_FOUND 事件）
   initGameCreationHandler(joinGameUseCase)
-
-  logger.info('[Matchmaking Plugin] GameCreationHandler initialized')
 })

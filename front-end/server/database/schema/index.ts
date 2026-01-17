@@ -12,8 +12,11 @@
 
 // Core Game BC Tables
 export { games, type Game, type NewGame, type GameStatus } from './games'
-export { playerStats, type PlayerStat, type NewPlayerStat, type YakuCounts } from './playerStats'
 export { gameLogs, type GameLog, type NewGameLog, type GameLogEventType } from './gameLogs'
+
+// Leaderboard BC Tables
+export { playerStats, type PlayerStat, type NewPlayerStat, type YakuCounts } from './playerStats'
+export { dailyPlayerScores, type DailyPlayerScore, type NewDailyPlayerScore } from './dailyPlayerScores'
 
 // Identity BC Tables
 export { players, type Player, type NewPlayer } from './players'

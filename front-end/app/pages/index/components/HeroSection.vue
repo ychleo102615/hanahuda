@@ -63,10 +63,10 @@ onMounted(() => {
     isVisible.value = true
   }, 100)
 
-  // Trigger mask fade after button animation completes (500ms delay + 600ms animation)
+  // Trigger mask fade after text animation starts
   setTimeout(() => {
     isMaskFaded.value = true
-  }, 1200)
+  }, 800)
 })
 
 onUnmounted(() => {
@@ -80,7 +80,7 @@ onUnmounted(() => {
 
 <template>
   <section
-    class="hero-section relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-primary-900 to-primary-700 px-6  text-white"
+    class="hero-section relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-game-table to-game-felt px-6  text-white"
     :style="backgroundImage ? `background-image: url('${backgroundImage}')` : ''"
     aria-labelledby="hero-title"
   >
@@ -103,7 +103,7 @@ onUnmounted(() => {
       <h1
         id="hero-title"
         :class="[
-          'mb-6 text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl',
+          'mb-6 text-4xl font-bold font-serif tracking-tight md:text-6xl lg:text-7xl',
           'bg-linear-to-r from-amber-200 via-yellow-100 to-white bg-clip-text text-transparent',
           'opacity-0',
           isVisible && 'animate-slide-up-fade-in'
@@ -113,7 +113,8 @@ onUnmounted(() => {
           textShadow: '0 0 30px rgba(251, 191, 36, 0.3)'
         }"
       >
-        {{ title }}
+        <span class="block">Hanafuda Koi-Koi</span>
+        <span class="block">こいこい</span>
       </h1>
 
       <!-- Subtitle -->
@@ -140,7 +141,7 @@ onUnmounted(() => {
         :aria-busy="isNavigating"
         :class="[
           'pointer-events-auto inline-flex items-center rounded-lg bg-accent-red px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 cursor-pointer',
-          'hover:scale-105 hover:bg-red-600 hover:shadow-xl',
+          'hover:bg-red-600 hover:shadow-xl',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-red',
           'disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100',
           'md:px-10 md:py-5 md:text-xl',

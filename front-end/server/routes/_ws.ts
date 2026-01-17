@@ -81,7 +81,7 @@ export default defineWebSocketHandler({
   /**
    * WebSocket 連線建立時
    */
-  async open(peer) {
+  async open(peer: Peer) {
     try {
       let playerId: string | null = null
 
@@ -98,10 +98,9 @@ export default defineWebSocketHandler({
           return
         }
         playerId = payload.playerId
-        logger.info('WebSocket authenticated via handoff token', { playerId, gameId: payload.gameId })
       } else {
         // Cookie 認證（單體模式）
-        const cookieHeader = peer.request?.headers.get('cookie')
+        const cookieHeader = peer.request?.headers?.get('cookie')
         const sessionId = parseSessionIdFromCookie(cookieHeader)
 
         if (!sessionId) {
@@ -122,8 +121,6 @@ export default defineWebSocketHandler({
 
       // 註冊連線到 WsConnectionManager
       wsConnectionManager.registerConnection(playerId, peer)
-
-      logger.info('WebSocket connected', { playerId })
 
       // 4. 查詢玩家狀態
       const playerStatus = await playerStatusService.getPlayerStatus(playerId)
@@ -154,7 +151,6 @@ export default defineWebSocketHandler({
             const gatewaySnapshotEvent = createGameEvent('GameSnapshotRestore', snapshotEvent)
 
             safeSend(peer, JSON.stringify(gatewaySnapshotEvent), playerId)
-            logger.info('WebSocket sent GameSnapshotRestore', { playerId, gameId: game.id })
           } else {
             logger.warn('WebSocket: game not found in memory for IN_GAME status', {
               playerId,
@@ -173,7 +169,7 @@ export default defineWebSocketHandler({
   /**
    * 接收到 WebSocket 訊息時
    */
-  async message(peer, message: Message) {
+  async message(peer: Peer, message: Message) {
     const playerId = getPlayerIdFromPeer(peer)
 
     if (!playerId) {
@@ -243,17 +239,12 @@ export default defineWebSocketHandler({
   /**
    * WebSocket 連線關閉時
    */
-  close(peer, details) {
+  close(peer: Peer, _details: { code: number; reason: string }) {
     try {
       const playerId = getPlayerIdFromPeer(peer)
 
       if (playerId) {
         wsConnectionManager.removeConnection(playerId)
-        logger.info('WebSocket disconnected', {
-          playerId,
-          code: details?.code,
-          reason: details?.reason,
-        })
       }
     } catch (error) {
       // 防止 close 處理器拋出未捕捉的異常
@@ -268,7 +259,7 @@ export default defineWebSocketHandler({
    * 處理網路層錯誤（ECONNRESET、EPIPE 等）。
    * 這些錯誤通常是客戶端斷線造成的，屬於正常現象。
    */
-  error(peer, error) {
+  error(peer: Peer, error: Error) {
     try {
       const playerId = getPlayerIdFromPeer(peer)
       const errorCode = (error as NodeJS.ErrnoException)?.code
