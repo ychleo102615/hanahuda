@@ -41,13 +41,13 @@ const formatDescription = (yaku: YakuCard): string => {
   return yaku.description;
 };
 
-// Get category badge color
+// Get category badge color（與 CardTypeBlock 使用相同的漸層配色）
 const getCategoryColor = (category: string): string => {
   const colors: Record<string, string> = {
-    hikari: 'bg-yellow-500 text-white',
-    tanzaku: 'bg-pink-500 text-white',
-    tane: 'bg-green-500 text-white',
-    kasu: 'bg-gray-500 text-white',
+    hikari: 'bg-gradient-to-r from-amber-600 to-yellow-700 text-white',
+    tanzaku: 'bg-gradient-to-r from-rose-600 to-pink-700 text-white',
+    tane: 'bg-gradient-to-r from-emerald-600 to-green-700 text-white',
+    kasu: 'bg-gradient-to-r from-gray-500 to-gray-600 text-white',
   };
   return colors[category] || 'bg-blue-500 text-white';
 };
@@ -60,13 +60,13 @@ const getCardIconClass = (category: string): string => {
   return 'h-32 w-auto drop-shadow-lg';
 };
 
-// Get category display name (matching RulesSection CardType naming)
+// Get category display name（與 CardTypeBlock 使用相同的日文原名 + 英文格式）
 const getCategoryDisplayName = (category: string): string => {
   const names: Record<string, string> = {
-    hikari: 'Bright',
-    tane: 'Animal/Object',
-    tanzaku: 'Ribbon',
-    kasu: 'Plain',
+    hikari: '光札 Bright',
+    tane: '種札 Animal/Object',
+    tanzaku: '短冊 Ribbon',
+    kasu: 'かす札 Plain',
   };
   return names[category] || category;
 };
@@ -102,7 +102,7 @@ const getCategoryDisplayName = (category: string): string => {
         <div class="flex justify-center">
           <span
             :class="getCategoryColor(currentYaku.category)"
-            class="px-4 py-1 rounded-full text-sm font-semibold uppercase tracking-wide"
+            class="px-4 py-1 rounded-full text-sm font-semibold tracking-wide"
           >
             {{ getCategoryDisplayName(currentYaku.category) }}
           </span>

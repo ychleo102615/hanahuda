@@ -113,7 +113,8 @@ onUnmounted(() => {
           textShadow: '0 0 30px rgba(251, 191, 36, 0.3)'
         }"
       >
-        {{ title }}
+        <span class="block">Hanafuda Koi-Koi</span>
+        <span class="block">こいこい</span>
       </h1>
 
       <!-- Subtitle -->
