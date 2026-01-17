@@ -63,10 +63,10 @@ onMounted(() => {
     isVisible.value = true
   }, 100)
 
-  // Trigger mask fade after button animation completes (500ms delay + 600ms animation)
+  // Trigger mask fade after text animation starts
   setTimeout(() => {
     isMaskFaded.value = true
-  }, 1200)
+  }, 800)
 })
 
 onUnmounted(() => {
