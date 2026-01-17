@@ -24,7 +24,6 @@ import { getIdentityContainer } from '../identity/adapters/di/container'
 import { getMatchmakingContainer } from '../matchmaking/adapters/di/container'
 import { getMatchmakingRegistry } from '../matchmaking/adapters/registry/matchmakingRegistrySingleton'
 import { getInMemoryMatchmakingPool } from '../matchmaking/adapters/persistence/inMemoryMatchmakingPool'
-import { CancelMatchmakingUseCase } from '../matchmaking/application/use-cases/cancelMatchmakingUseCase'
 import type { BotFallbackInfo } from '../matchmaking/adapters/registry/matchmakingRegistry'
 import type { RoomTypeId } from '#shared/constants/roomTypes'
 import type { PlayerId } from '../identity/domain/player/player'
@@ -95,10 +94,6 @@ class WsCommandHandler implements IWsCommandHandler {
 
         case 'JOIN_MATCHMAKING':
           await this.handleJoinMatchmaking(playerId, command, peer)
-          break
-
-        case 'CANCEL_MATCHMAKING':
-          await this.handleCancelMatchmaking(playerId, command, peer)
           break
 
         case 'PLAY_CARD':
@@ -303,49 +298,6 @@ class WsCommandHandler implements IWsCommandHandler {
     sendResponse(peer, createSuccessResponse(command.command_id))
   }
 
-  /**
-   * 處理取消配對命令
-   *
-   * @description
-   * 透過玩家 ID 查找配對條目並取消。
-   * 不需要 entry_id，簡化前端邏輯。
-   */
-  private async handleCancelMatchmaking(playerId: string, command: WsCommand, peer: Peer): Promise<void> {
-    // 1. 查找玩家的配對條目
-    const pool = getInMemoryMatchmakingPool()
-    const entry = await pool.findByPlayerId(playerId)
-
-    if (!entry) {
-      sendResponse(
-        peer,
-        createErrorResponse(command.command_id, 'NOT_IN_MATCHMAKING', 'Player is not in matchmaking queue')
-      )
-      return
-    }
-
-    // 2. 呼叫 Use Case 取消配對
-    const useCase = new CancelMatchmakingUseCase(pool)
-    const result = await useCase.execute({
-      entryId: entry.id,
-      playerId,
-    })
-
-    // 3. 處理結果
-    if (!result.success) {
-      sendResponse(
-        peer,
-        createErrorResponse(command.command_id, result.errorCode, result.message)
-      )
-      return
-    }
-
-    // 4. 清除 Registry 中的計時器
-    const registry = getMatchmakingRegistry()
-    registry.unregisterEntry(entry.id)
-
-    // 5. 回應成功
-    sendResponse(peer, createSuccessResponse(command.command_id))
-  }
 }
 
 /**

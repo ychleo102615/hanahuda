@@ -75,7 +75,6 @@ import { MATCHMAKING_EVENT_TYPES } from '#shared/contracts'
 import {
   HandleMatchmakingStatusUseCase,
   HandleMatchFoundUseCase,
-  HandleMatchmakingCancelledUseCase,
   HandleMatchmakingErrorUseCase,
   HandleMatchFailedUseCase,
 } from '../../application/use-cases/matchmaking'
@@ -830,8 +829,8 @@ function registerLocalAdapters(container: DIContainer): void {
  * 事件類型:
  * - MatchmakingStatus: 更新配對狀態（搜尋中、低可用性）
  * - MatchFound: 配對成功，導航至遊戲
- * - MatchmakingCancelled: 配對取消
  * - MatchmakingError: 配對錯誤
+ * - MatchFailed: 遊戲創建失敗
  */
 function registerMatchmakingEventRoutes(container: DIContainer): void {
   const router = container.resolve(TOKENS.MatchmakingEventRouter) as MatchmakingEventRouter
@@ -845,14 +844,12 @@ function registerMatchmakingEventRoutes(container: DIContainer): void {
   // 建立 Use Cases
   const handleMatchmakingStatusUseCase = new HandleMatchmakingStatusUseCase(matchmakingStatePort)
   const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, gameStatePort, sessionContextPort)
-  const handleMatchmakingCancelledUseCase = new HandleMatchmakingCancelledUseCase(matchmakingStatePort, sessionContextPort)
   const handleMatchmakingErrorUseCase = new HandleMatchmakingErrorUseCase(matchmakingStatePort)
   const handleMatchFailedUseCase = new HandleMatchFailedUseCase(matchmakingStatePort, sessionContextPort)
 
   // 註冊事件處理器
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingStatus, handleMatchmakingStatusUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchFound, handleMatchFoundUseCase)
-  router.register(MATCHMAKING_EVENT_TYPES.MatchmakingCancelled, handleMatchmakingCancelledUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingError, handleMatchmakingErrorUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchFailed, handleMatchFailedUseCase)
 }

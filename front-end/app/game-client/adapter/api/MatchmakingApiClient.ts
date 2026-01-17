@@ -8,7 +8,7 @@
  */
 
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
-import { createJoinMatchmakingCommand, createCancelMatchmakingCommand } from '#shared/contracts'
+import { createJoinMatchmakingCommand } from '#shared/contracts'
 import type { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
 
 /**
@@ -17,15 +17,6 @@ import type { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
 export interface EnterMatchmakingResponse {
   readonly success: boolean
   readonly entry_id?: string
-  readonly message: string
-  readonly error_code?: string
-}
-
-/**
- * Cancel Matchmaking Response
- */
-export interface CancelMatchmakingResponse {
-  readonly success: boolean
   readonly message: string
   readonly error_code?: string
 }
@@ -172,43 +163,6 @@ export class MatchmakingApiClient {
 
       // WebSocket error
       throw new MatchmakingError('NETWORK_ERROR', 'Failed to send matchmaking request')
-    }
-  }
-
-  /**
-   * 取消配對（透過 WebSocket）
-   *
-   * @throws {MatchmakingError} 取消失敗時拋出錯誤
-   *
-   * @description
-   * 透過 WebSocket 發送 CANCEL_MATCHMAKING 命令。
-   * 不需要 entryId，後端會自動查找玩家的配對條目。
-   */
-  async cancelMatchmaking(): Promise<void> {
-    if (!this.wsClient) {
-      throw new MatchmakingError('NOT_CONNECTED', 'WebSocket not connected')
-    }
-
-    if (!this.wsClient.isConnected()) {
-      throw new MatchmakingError('NOT_CONNECTED', 'WebSocket connection lost')
-    }
-
-    try {
-      const command = createCancelMatchmakingCommand(generateCommandId())
-      const response = await this.wsClient.sendCommand(command)
-
-      if (!response.success) {
-        const error = response.error
-        throw new MatchmakingError(
-          error?.code || 'UNKNOWN_ERROR',
-          error?.message || 'Failed to cancel matchmaking'
-        )
-      }
-    } catch (error) {
-      if (error instanceof MatchmakingError) {
-        throw error
-      }
-      throw new MatchmakingError('NETWORK_ERROR', 'Failed to send cancel request')
     }
   }
 

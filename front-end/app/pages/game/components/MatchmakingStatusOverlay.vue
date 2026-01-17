@@ -115,14 +115,6 @@ const subtitleText = computed(() => {
   return 'FINDING AN OPPONENT...'
 })
 
-// 取消事件
-const emit = defineEmits<{
-  cancel: []
-}>()
-
-const handleCancel = () => {
-  emit('cancel')
-}
 </script>
 
 <template>
@@ -183,16 +175,6 @@ const handleCancel = () => {
         </div>
         <div v-else class="pt-4 pb-6 h-20" />
 
-        <!-- 取消按鈕（固定高度，配對成功時直接隱藏） -->
-        <div class="h-14 flex items-center justify-center">
-          <button
-            v-if="!isMatched"
-            class="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg shadow-lg"
-            @click="handleCancel"
-          >
-            Cancel Matchmaking
-          </button>
-        </div>
       </div>
     </div>
   </Transition>

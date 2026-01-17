@@ -61,7 +61,6 @@ export { HandleStateRecoveryPort } from './handle-state-recovery.port'
 export type {
   HandleMatchmakingStatusPort,
   HandleMatchFoundPort,
-  HandleMatchmakingCancelledPort,
   HandleMatchmakingErrorPort,
   HandleMatchFailedPort,
 } from './matchmaking-event-handlers.port'

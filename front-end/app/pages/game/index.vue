@@ -110,20 +110,6 @@ const handlePlayerInfoCardClose = () => {
   isPlayerInfoCardOpen.value = false
 }
 
-// 取消配對
-const handleCancelMatchmaking = async () => {
-  if (!matchmakingApiClient) return
-
-  try {
-    await matchmakingApiClient.cancelMatchmaking()
-  } finally {
-    // 清除所有配對相關資訊
-    sessionContext.clearSession()
-    matchmakingStore.clearSession()
-    navigateTo('/lobby')
-  }
-}
-
 onMounted(() => {
   // 檢查是否已登入
   if (!authStore.isLoggedIn) {
@@ -277,7 +263,7 @@ onUnmounted(() => {
     />
 
     <!-- 011-online-matchmaking: 配對狀態覆蓋層 -->
-    <MatchmakingStatusOverlay @cancel="handleCancelMatchmaking" />
+    <MatchmakingStatusOverlay />
   </div>
 </template>
 
