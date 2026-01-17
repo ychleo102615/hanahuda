@@ -11,7 +11,7 @@
  */
 
 import type { GameFinishedEvent } from '#shared/contracts'
-import type { NotificationPort, UIStatePort, GameStatePort } from '../../ports/output'
+import type { NotificationPort, UIStatePort, GameStatePort, GameConnectionPort } from '../../ports/output'
 import type { HandleGameFinishedPort, ExecuteOptions } from '../../ports/input'
 
 export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
@@ -19,6 +19,7 @@ export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
     private readonly notification: NotificationPort,
     private readonly updateUIState: UIStatePort,
     private readonly gameState: GameStatePort,
+    private readonly gameConnection: GameConnectionPort,
   ) {}
 
   execute(event: GameFinishedEvent, _options: ExecuteOptions): void {
@@ -28,6 +29,9 @@ export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
     // 1. 標記遊戲已結束並清除 gameId（防止重連帶舊 ID）
     this.gameState.setGameEnded(true)
     this.gameState.setCurrentGameId(null)
+
+    // 1.1 設定預期斷線標記（後端會在發送此事件後主動關閉 WebSocket）
+    this.gameConnection.setExpectingDisconnect(true)
 
     // 2. 取得當前玩家 ID
     const currentPlayerId = this.updateUIState.getLocalPlayerId()

@@ -107,7 +107,7 @@ function handleEndRound() {
         <!-- T073 [US3]: Modal content -->
         <div class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg modal-panel p-6 mx-4">
           <!-- Title -->
-          <h2 class="mb-4 text-center text-2xl font-bold text-amber-400">
+          <h2 class="mb-4 text-center text-2xl font-bold font-serif text-gold-light">
             Yaku Achieved!
           </h2>
 

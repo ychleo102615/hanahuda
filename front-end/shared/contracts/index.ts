@@ -44,10 +44,6 @@ export type {
   SnapshotApiResponseFinished,
   SnapshotApiResponseExpired,
   SnapshotApiResponse,
-  // InitialState Types (SSE-First)
-  InitialStateResponseType,
-  GameWaitingData,
-  GameStartedData,
 } from './shared'
 
 // Shared Helper Functions
@@ -59,9 +55,6 @@ export type { TurnPlayHandCard, TurnSelectTarget, RoundMakeDecision } from './co
 // Events
 export type {
   BaseEvent,
-  // InitialState (SSE-First)
-  InitialStateData,
-  InitialStateEvent,
   // Game Events
   GameStartedEvent,
   RoundDealtEvent,
@@ -83,30 +76,74 @@ export type {
   SelectionContext,
   DecisionContext,
   RoundEndInfo,
-  // SSE Event Types
+  // Game Event Types
+  GameEventType,
+  // @deprecated - 請使用 GameEventType
   SSEEventType,
 } from './events'
 
-// SSE Event Types Constant (for runtime use)
-export { SSE_EVENT_TYPES, EVENT_TYPES } from './events'
+// Game Event Types Constant (for runtime use)
+export { GAME_EVENT_TYPES, EVENT_TYPES, SSE_EVENT_TYPES } from './events'
 export type { EventTypeValue } from './events'
 
 // Matchmaking Events
 export type {
   MatchmakingStatusEvent,
   MatchFoundEvent,
-  MatchmakingCancelledEvent,
   MatchmakingErrorEvent,
   MatchFailedEvent,
   MatchmakingEvent,
+  MatchmakingEventType,
+  // @deprecated - 請使用 MatchmakingEventType
   MatchmakingSSEEventType,
 } from './matchmaking-events'
-export { MATCHMAKING_EVENT_TYPES, SSE_MATCHMAKING_EVENT_TYPES } from './matchmaking-events'
+export {
+  MATCHMAKING_EVENT_TYPES,
+  MATCHMAKING_EVENT_TYPE_LIST,
+  SSE_MATCHMAKING_EVENT_TYPES,
+} from './matchmaking-events'
 
 // Gateway Events
 export type {
   GatewayEvent,
   GatewayEventDomain,
-  GatewaySSEEventType,
 } from './gateway-events'
-export { GATEWAY_DOMAINS, GATEWAY_SSE_EVENT_TYPES } from './gateway-events'
+export { GATEWAY_DOMAINS } from './gateway-events'
+
+// WebSocket Commands
+export type {
+  WsCommandType,
+  PingPayload,
+  JoinMatchmakingPayload,
+  PlayCardPayload,
+  SelectTargetPayload,
+  MakeDecisionPayload,
+  ConfirmContinuePayload,
+  LeaveGamePayload,
+  PingCommand,
+  JoinMatchmakingCommand,
+  PlayCardCommand,
+  SelectTargetCommand,
+  MakeDecisionCommand,
+  ConfirmContinueCommand,
+  LeaveGameCommand,
+  WsCommand,
+} from './ws-commands'
+export {
+  WS_COMMAND_TYPES,
+  createPingCommand,
+  createJoinMatchmakingCommand,
+  createPlayCardCommand,
+  createSelectTargetCommand,
+  createMakeDecisionCommand,
+  createConfirmContinueCommand,
+  createLeaveGameCommand,
+} from './ws-commands'
+
+// WebSocket Responses
+export type { WsCommandError, WsCommandResponse } from './ws-responses'
+export { createSuccessResponse, createErrorResponse, isWsCommandResponse } from './ws-responses'
+
+// WebSocket Command Schema (Server-side validation)
+export type { WsCommandValidationResult } from './ws-commands.schema'
+export { validateWsCommand, formatZodError, WsCommandSchema } from './ws-commands.schema'

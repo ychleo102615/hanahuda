@@ -7,7 +7,7 @@
  *
  * 使用者：
  * - TriggerStateRecoveryUseCase（主動請求快照後）
- * - SSE GameSnapshotRestore 事件處理（被動接收）
+ * - GameSnapshotRestore 事件處理（被動接收）
  *
  * 設計原則：
  * - 使用情境不同（主動請求 vs 被動接收），但本質相同（透過快照同步遊戲狀態）
@@ -33,7 +33,7 @@
  *   handleStateRecovery.handleFetchFailed(result.error)
  * }
  *
- * // SSE 事件處理器中使用
+ * // 事件處理器中使用
  * handleStateRecovery.handleSnapshotRestore(snapshot)
  * ```
  *
@@ -61,7 +61,7 @@ export abstract class HandleStateRecoveryPort {
    * @param snapshot - 遊戲狀態快照
    *
    * @description
-   * 用於 SSE 收到 GameSnapshotRestore 事件，或 TriggerStateRecovery 獲取到快照時。
+   * 用於收到 GameSnapshotRestore 事件，或 TriggerStateRecovery 獲取到快照時。
    * 執行：
    * 1. 中斷所有動畫
    * 2. 清除配對狀態

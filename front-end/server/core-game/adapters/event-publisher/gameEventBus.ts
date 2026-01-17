@@ -3,7 +3,7 @@
  *
  * @description
  * 基於 EventEmitter 的遊戲事件發布訂閱系統。
- * 用於在 Use Case 和 SSE 連線之間傳遞遊戲事件。
+ * 用於在 Use Case 和 WebSocket 連線之間傳遞遊戲事件。
  *
  * 參考: specs/008-nuxt-backend-server/research.md#事件發布機制
  */

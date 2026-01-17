@@ -112,7 +112,7 @@ const maxNameWidth = computed(() => ({
     <!-- Guest 標籤（可選） -->
     <span
       v-if="isGuest && showGuestLabel"
-      class="text-xs text-gray-400 bg-gray-600/50 px-1.5 py-0.5 rounded flex-shrink-0"
+      class="text-xs text-gray-300 bg-gray-600/50 px-1.5 py-0.5 rounded flex-shrink-0"
     >
       Guest
     </span>

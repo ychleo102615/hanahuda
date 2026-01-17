@@ -1,10 +1,10 @@
 /**
- * SSE 事件型別定義
+ * 遊戲事件型別定義
  *
  * 參考: doc/shared/protocol.md#Events
  *
  * @description
- * 這些事件由伺服器通過 SSE 推送到客戶端，
+ * 這些事件由伺服器通過 WebSocket 推送到客戶端，
  * 由對應的 Handle*UseCase 處理。
  */
 
@@ -13,7 +13,7 @@
 // ============================================================================
 
 /**
- * SSE 事件類型常數（Single Source of Truth）
+ * 遊戲事件類型常數（Single Source of Truth）
  *
  * @description
  * 所有事件類型的唯一定義處。
@@ -25,7 +25,6 @@
  */
 export const EVENT_TYPES = {
   // Game Lifecycle
-  InitialState: 'InitialState',
   GameStarted: 'GameStarted',
   GameFinished: 'GameFinished',
 
@@ -70,10 +69,6 @@ import type {
   ScoreMultipliers,
   KoiStatus,
   Ruleset,
-  InitialStateResponseType,
-  GameWaitingData,
-  GameStartedData,
-  GameFinishedInfo,
 } from './shared'
 import type { FlowState } from './flow-state'
 import type { ErrorCode, GameErrorCode, SuggestedAction, RoundEndReason, GameEndedReason } from './errors'
@@ -448,60 +443,10 @@ export interface GameSnapshotRestore extends BaseEvent {
   readonly round_end_info?: RoundEndInfo
 }
 
-// ============================================================================
-// InitialState 事件（SSE-First 架構）
-// ============================================================================
-
-/**
- * InitialState 事件的資料型別（根據 response_type 不同）
- */
-export type InitialStateData =
-  | GameWaitingData
-  | GameStartedData
-  | GameSnapshotRestore
-  | GameFinishedInfo
-  | null
-
-/**
- * InitialState 事件
- *
- * @description
- * SSE 連線後第一個推送的事件，包含完整的初始狀態。
- * 統一處理新遊戲加入和斷線重連的情境。
- *
- * 前端根據 response_type 決定處理方式：
- * - `game_waiting`: 顯示等待對手畫面
- * - `game_started`: 設定初始狀態，準備接收 RoundDealt
- * - `snapshot`: 恢復進行中的遊戲狀態（無動畫）
- * - `game_finished`: 顯示遊戲結果，導航回大廳
- * - `game_expired`: 顯示錯誤訊息，導航回大廳
- */
-export interface InitialStateEvent extends BaseEvent {
-  readonly event_type: typeof EVENT_TYPES.InitialState
-  /** 回應類型，決定 data 的型別 */
-  readonly response_type: InitialStateResponseType
-  /** 遊戲 ID */
-  readonly game_id: string
-  /** 玩家 ID（發出此請求的玩家） */
-  readonly player_id: string
-  /**
-   * 事件資料
-   *
-   * 根據 response_type 的不同：
-   * - game_waiting: GameWaitingData
-   * - game_started: GameStartedData
-   * - snapshot: GameSnapshotRestore
-   * - game_finished: GameFinishedInfo
-   * - game_expired: null
-   */
-  readonly data: InitialStateData
-}
-
 /**
  * 所有遊戲事件的聯合型別
  */
 export type GameEvent =
-  | InitialStateEvent
   | GameStartedEvent
   | RoundDealtEvent
   | TurnCompletedEvent
@@ -516,14 +461,13 @@ export type GameEvent =
   | GameSnapshotRestore
 
 /**
- * SSE 事件類型常數陣列（從 EVENT_TYPES 推導）
+ * 遊戲事件類型常數陣列（從 EVENT_TYPES 推導）
  *
  * @description
- * 所有 SSE 推送事件的類型列表。
- * 用於 SSE 客戶端註冊事件監聽器。
+ * 所有 WebSocket 推送事件的類型列表。
+ * 用於客戶端註冊事件監聽器。
  */
-export const SSE_EVENT_TYPES = [
-  EVENT_TYPES.InitialState,
+export const GAME_EVENT_TYPES = [
   EVENT_TYPES.GameStarted,
   EVENT_TYPES.RoundDealt,
   EVENT_TYPES.TurnCompleted,
@@ -539,6 +483,16 @@ export const SSE_EVENT_TYPES = [
 ] as const
 
 /**
- * SSE 事件類型（從常數陣列衍生）
+ * 遊戲事件類型（從常數陣列衍生）
  */
-export type SSEEventType = (typeof SSE_EVENT_TYPES)[number]
+export type GameEventType = (typeof GAME_EVENT_TYPES)[number]
+
+/**
+ * @deprecated 請使用 GAME_EVENT_TYPES
+ */
+export const SSE_EVENT_TYPES = GAME_EVENT_TYPES
+
+/**
+ * @deprecated 請使用 GameEventType
+ */
+export type SSEEventType = GameEventType

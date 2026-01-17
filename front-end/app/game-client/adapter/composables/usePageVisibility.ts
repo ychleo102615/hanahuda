@@ -3,17 +3,17 @@
  *
  * @description
  * 監聽頁面可見性變化，當頁面從隱藏狀態恢復為可見時，
- * 檢查 Gateway SSE 連線狀態並在必要時重新連線。
+ * 檢查 Gateway WebSocket 連線狀態並在必要時重新連線。
  *
  * Gateway Architecture 重連流程：
- * 1. 頁面恢復可見時，檢查 Gateway SSE 連線狀態
+ * 1. 頁面恢復可見時，檢查 Gateway WebSocket 連線狀態
  * 2. 如果連線已斷開，重新建立連線
  * 3. 後端推送 GatewayConnected 事件（包含玩家狀態）
  * 4. HandleGatewayConnectedUseCase 根據狀態恢復 UI
  *
  * 設計原則：
- * - Adapter 層 composable，負責監聽 DOM 事件
- * - 使用 singleton GatewayEventClient 確保單一連線
+ * - Adapter 層 composable，負責監聯 DOM 事件
+ * - 使用 singleton GatewayWebSocketClient 確保單一連線
  * - 僅在 backend 模式下有效
  *
  * @example
@@ -29,7 +29,7 @@ import { onMounted, onUnmounted } from 'vue'
 import { resolveDependency } from '../di/resolver'
 import { useGameMode } from './useGameMode'
 import { TOKENS } from '../di/tokens'
-import type { GatewayEventClient } from '../sse/GatewayEventClient'
+import type { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
 import { createCurrentPlayerContextAdapter } from '~/shared/adapters'
 
 /** 防抖間隔（毫秒）- iOS 上 visibilitychange 可能短時間內觸發多次 */
@@ -50,7 +50,7 @@ export function usePageVisibility(): void {
     return
   }
 
-  const gatewayClient = resolveDependency<GatewayEventClient>(TOKENS.GatewayEventClient)
+  const gatewayClient = resolveDependency<GatewayWebSocketClient>(TOKENS.GatewayWebSocketClient)
   const playerContext = createCurrentPlayerContextAdapter()
 
   // 防抖：記錄上次觸發時間，避免 iOS 上多次觸發

@@ -5,8 +5,8 @@
  * 啟動遊戲連線的 Use Case 介面。
  * 由 Game Page 和 GameFinishedModal 調用。
  *
- * SSE-First Architecture：
- * - 連線建立後，後端透過 InitialState 事件決定遊戲狀態
+ * Gateway Architecture：
+ * - 連線建立後，後端透過 GatewayConnected 事件返回玩家狀態（IDLE/MATCHMAKING/IN_GAME）
  * - playerId、playerName 由呼叫端提供（來自 authStore）
  * - roomTypeId 從 SessionContext 取得
  * - 調用者需提供必要資訊

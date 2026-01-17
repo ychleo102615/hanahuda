@@ -25,11 +25,11 @@ export const TOKENS = {
   // ===== Output Ports (Legacy - deprecated) =====
   UIStatePort: Symbol('UIStatePort'),
 
+  // ===== Output Ports - Connection =====
+  ConnectionReadyPort: Symbol('ConnectionReadyPort'),
+
   // ===== Input Ports - Game Initialization =====
   StartGamePort: Symbol('StartGamePort'),
-
-  // ===== Input Ports - InitialState Handler (SSE-First) =====
-  HandleInitialStatePort: Symbol('HandleInitialStatePort'),
 
   // ===== Input Ports - State Recovery =====
   HandleStateRecoveryPort: Symbol('HandleStateRecoveryPort'),
@@ -60,7 +60,6 @@ export const TOKENS = {
   HandleGameErrorPort: Symbol('HandleGameErrorPort'),
 
   // ===== Adapters =====
-  GameApiClient: Symbol('GameApiClient'),
   EventRouter: Symbol('EventRouter'),
 
   // ===== Stores =====
@@ -81,7 +80,7 @@ export const TOKENS = {
 
   // ===== Gateway Adapters =====
   GatewayEventRouter: Symbol('GatewayEventRouter'),
-  GatewayEventClient: Symbol('GatewayEventClient'),
+  GatewayWebSocketClient: Symbol('GatewayWebSocketClient'),
 
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),

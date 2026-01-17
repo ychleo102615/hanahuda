@@ -11,10 +11,22 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  // 啟用 Nitro WebSocket 支援
+  nitro: {
+    experimental: {
+      websocket: true,
+    },
+  },
+
   devtools: { enabled: false },
 
   app: {
     head: {
+      link: [
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&display=swap' },
+      ],
       meta: [
         // viewport-fit=cover: 讓內容延伸到 safe area
         // maximum-scale=1, user-scalable=no: 禁用雙擊放大和捏合縮放
@@ -24,6 +36,11 @@ export default defineNuxtConfig({
         // iOS Safari 狀態列樣式
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      ],
+      script: [
+        // Telegram WebApp SDK（用於 Telegram Mini App 整合）
+        // 注意：不使用 defer，確保 SDK 在 Plugin 執行前載入
+        { src: 'https://telegram.org/js/telegram-web-app.js' },
       ],
     },
   },

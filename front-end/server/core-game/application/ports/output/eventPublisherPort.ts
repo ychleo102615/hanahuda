@@ -14,7 +14,7 @@ import type { GameEvent, GameStartedEvent, RoundDealtEvent } from '#shared/contr
  * 事件發佈器介面
  *
  * Application Layer 透過此介面發佈遊戲事件，
- * 不需要知道具體的實作細節（SSE、WebSocket 等）。
+ * 不需要知道具體的實作細節（WebSocket 等）。
  */
 export interface EventPublisherPort {
   /**

@@ -1,0 +1,185 @@
+openapi: 3.0.3
+info:
+  title: Leaderboard API
+  description: 排行榜查詢 API
+  version: 1.0.0
+
+paths:
+  /api/v1/leaderboard:
+    get:
+      summary: 查詢排行榜
+      description: |
+        查詢日排行榜或週排行榜。
+        - 日排行榜：當日 (UTC+8) 分數排名
+        - 週排行榜：本週 (UTC+8 週一至今) 累計分數排名
+
+        若用戶已登入且排名在顯示範圍外，回應會額外包含該用戶的排名資訊。
+      operationId: getLeaderboard
+      tags:
+        - Leaderboard
+      parameters:
+        - name: type
+          in: query
+          required: true
+          description: 排行榜類型
+          schema:
+            type: string
+            enum: [daily, weekly]
+            example: daily
+        - name: limit
+          in: query
+          required: false
+          description: 返回的排名數量 (預設 10，最大 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+      responses:
+        '200':
+          description: 排行榜查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardResponse'
+              examples:
+                dailyLeaderboard:
+                  summary: 日排行榜範例
+                  value:
+                    data:
+                      type: daily
+                      entries:
+                        - rank: 1
+                          playerId: "550e8400-e29b-41d4-a716-446655440001"
+                          displayName: "Player A"
+                          score: 150
+                          gamesPlayed: 5
+                          isCurrentPlayer: false
+                        - rank: 2
+                          playerId: "550e8400-e29b-41d4-a716-446655440002"
+                          displayName: "Player B"
+                          score: 120
+                          gamesPlayed: 4
+                          isCurrentPlayer: true
+                        - rank: 2
+                          playerId: "550e8400-e29b-41d4-a716-446655440003"
+                          displayName: "Player C"
+                          score: 120
+                          gamesPlayed: 6
+                          isCurrentPlayer: false
+                      currentPlayerRank: null
+                      generatedAt: "2026-01-13T10:30:00Z"
+                userNotInTop:
+                  summary: 用戶不在前 10 名
+                  value:
+                    data:
+                      type: weekly
+                      entries:
+                        - rank: 1
+                          playerId: "..."
+                          displayName: "Top Player"
+                          score: 500
+                          gamesPlayed: 20
+                          isCurrentPlayer: false
+                      currentPlayerRank:
+                        rank: 15
+                        playerId: "current-user-id"
+                        displayName: "Current User"
+                        score: 80
+                        gamesPlayed: 3
+                        isCurrentPlayer: true
+                      generatedAt: "2026-01-13T10:30:00Z"
+        '400':
+          description: 參數錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: INVALID_LEADERBOARD_TYPE
+                  message: "Invalid leaderboard type. Must be 'daily' or 'weekly'."
+
+components:
+  schemas:
+    LeaderboardResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - entries
+            - generatedAt
+          properties:
+            type:
+              type: string
+              enum: [daily, weekly]
+              description: 排行榜類型
+            entries:
+              type: array
+              items:
+                $ref: '#/components/schemas/LeaderboardEntry'
+              description: 排行榜條目列表
+            currentPlayerRank:
+              $ref: '#/components/schemas/LeaderboardEntry'
+              nullable: true
+              description: |
+                當前玩家的排名資訊（若已登入且不在 entries 中）
+            generatedAt:
+              type: string
+              format: date-time
+              description: 排行榜生成時間
+
+    LeaderboardEntry:
+      type: object
+      required:
+        - rank
+        - playerId
+        - displayName
+        - score
+        - gamesPlayed
+        - isCurrentPlayer
+      properties:
+        rank:
+          type: integer
+          minimum: 1
+          description: 排名 (1-based)
+        playerId:
+          type: string
+          format: uuid
+          description: 玩家 ID
+        displayName:
+          type: string
+          description: 玩家顯示名稱
+        score:
+          type: integer
+          description: 分數
+        gamesPlayed:
+          type: integer
+          minimum: 0
+          description: 遊戲場數
+        isCurrentPlayer:
+          type: boolean
+          description: 是否為當前登入用戶
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: 錯誤代碼
+            message:
+              type: string
+              description: 錯誤訊息

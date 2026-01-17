@@ -72,7 +72,7 @@ defineExpose({
     <!-- Header Bar -->
     <div class="h-full px-4 py-2 flex items-center justify-between">
       <!-- Left: Title -->
-      <h1 data-testid="lobby-title" class="text-xl font-bold">{{ title }}</h1>
+      <h1 data-testid="lobby-title" class="text-xl font-bold font-serif">{{ title }}</h1>
 
       <!-- Right: Player info + Menu Button -->
       <div class="flex items-center gap-3">

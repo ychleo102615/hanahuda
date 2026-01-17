@@ -2,13 +2,16 @@
   MatchmakingErrorModal.vue - 配對錯誤 Modal
 
   @description
-  顯示配對相關錯誤的 Modal，根據錯誤類型提供不同操作選項。
+  在 Lobby 端顯示 getPlayerStatus API 的網路錯誤。
   設計風格參考 GameFinishedModal.vue。
+
+  注意：
+  - ALREADY_IN_QUEUE 和 ALREADY_IN_GAME 錯誤由狀態衝突對話框處理
+  - 此 Modal 只處理網路相關錯誤
 
   Features:
   - 淡入/淡出動畫
-  - 根據錯誤類型顯示不同標題和按鈕
-  - 支援多種操作：重試、返回遊戲、返回首頁、繼續配對、切換房間
+  - 顯示錯誤訊息和重試按鈕
 -->
 
 <template>
@@ -55,59 +58,8 @@
 
         <!-- Footer -->
         <div class="px-6 py-4 modal-footer">
-          <!-- Queue Conflict: 兩個選項 -->
-          <div v-if="actionType === 'queue-conflict'" class="flex flex-col gap-3">
-            <button
-              type="button"
-              data-testid="continue-queue-button"
-              class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
-              @click="$emit('continueQueue')"
-            >
-              Continue Current Queue
-            </button>
-            <button
-              type="button"
-              data-testid="cancel-and-switch-button"
-              class="w-full px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
-              @click="$emit('cancelAndSwitch')"
-            >
-              Cancel and Switch Room
-            </button>
-          </div>
-
-          <!-- Back to Game -->
-          <div v-else-if="actionType === 'back-to-game'" class="flex gap-3 justify-end">
-            <button
-              type="button"
-              class="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
-              @click="handleDismiss"
-            >
-              Close
-            </button>
-            <button
-              type="button"
-              data-testid="back-to-game-button"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
-              @click="$emit('backToGame')"
-            >
-              Back to Game
-            </button>
-          </div>
-
-          <!-- Back to Home -->
-          <div v-else-if="actionType === 'back-to-home'" class="flex justify-center">
-            <button
-              type="button"
-              data-testid="back-to-home-button"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
-              @click="$emit('backToHome')"
-            >
-              Back to Home
-            </button>
-          </div>
-
-          <!-- Default: Retry -->
-          <div v-else class="flex gap-3 justify-end">
+          <!-- Default: Retry (用於網路錯誤) -->
+          <div class="flex gap-3 justify-end">
             <button
               type="button"
               class="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
@@ -152,47 +104,23 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   dismiss: []
   retry: []
-  backToGame: []
-  backToHome: []
-  continueQueue: []
-  cancelAndSwitch: []
 }>()
 
 /**
  * 錯誤標題
+ *
+ * @description
+ * 此 Modal 在 Lobby 端只處理網路錯誤。
+ * ALREADY_IN_QUEUE 和 ALREADY_IN_GAME 由狀態衝突對話框處理。
  */
 const errorTitle = computed(() => {
   switch (props.errorCode) {
-    case 'ALREADY_IN_QUEUE':
-      return 'Already in Queue'
-    case 'ALREADY_IN_GAME':
-      return 'Game in Progress'
-    case 'INVALID_ROOM_TYPE':
-      return 'Invalid Room Type'
-    case 'SESSION_EXPIRED':
-      return 'Session Expired'
-    case 'RECOVERY_FAILED':
-      return 'Connection Lost'
     case 'NETWORK_ERROR':
       return 'Connection Error'
+    case 'RECOVERY_FAILED':
+      return 'Connection Lost'
     default:
-      return 'Matchmaking Failed'
-  }
-})
-
-/**
- * 操作類型
- */
-const actionType = computed(() => {
-  switch (props.errorCode) {
-    case 'ALREADY_IN_QUEUE':
-      return 'queue-conflict'
-    case 'ALREADY_IN_GAME':
-      return 'back-to-game'
-    case 'SESSION_EXPIRED':
-      return 'back-to-home'
-    default:
-      return 'retry'
+      return 'Error'
   }
 })
 

@@ -21,6 +21,7 @@
 <script setup lang="ts">
 import { useResponsiveMenu } from '~/composables/useResponsiveMenu'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
+import { useTelegram } from '~/composables/useTelegram'
 import { Z_INDEX } from '~/constants'
 import PlayerBadge from '~/components/PlayerBadge.vue'
 import { type MenuItem, iconPaths } from './types'
@@ -44,6 +45,9 @@ const emit = defineEmits<{
 
 // 取得玩家資訊
 const { displayName, isGuest } = useCurrentPlayer()
+
+// Telegram 環境偵測（用於隱藏登出按鈕）
+const { shouldShowLogout } = useTelegram()
 
 // 響應式偵測
 const { isMobile } = useResponsiveMenu()
@@ -101,6 +105,7 @@ const handleDeleteAccount = () => {
         <!-- Action buttons (only if showPlayerActions is true) -->
         <div v-if="showPlayerActions" class="mt-3 flex gap-4">
           <button
+            v-if="shouldShowLogout"
             @click="handleLogout"
             class="text-sm text-gray-300 hover:text-white transition-colors flex items-center gap-1.5"
           >
@@ -210,6 +215,7 @@ const handleDeleteAccount = () => {
           <!-- Action buttons (only if showPlayerActions is true) -->
           <div v-if="showPlayerActions" class="space-y-2">
             <button
+              v-if="shouldShowLogout"
               @click="handleLogout"
               class="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-3"
             >

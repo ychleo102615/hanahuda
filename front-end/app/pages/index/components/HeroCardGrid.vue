@@ -131,11 +131,14 @@ const getCardStyle = (index: number) => {
       filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))',
     }
   }
+  // 金色光暈邊緣效果（符合金箔蒔絵設計風格）
+  // #D4AF37 (gold-light) - 外層發光, #B8860B (gold) - 內層發光
   return {
     transform: 'scale(1.04)',
     filter: `
+      drop-shadow(0 0 3px rgba(212, 175, 55, 0.6))
+      drop-shadow(0 0 6px rgba(184, 134, 11, 0.4))
       drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))
-      drop-shadow(0 8px 12px rgba(0, 0, 0, 0.10))
     `.trim(),
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "front-end",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "nuxt dev",
+    "dev:test": "DATABASE_URL=postgresql://test:test@localhost:5433/hanafuda_test nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
@@ -22,12 +23,15 @@
     "format": "prettier --write src/",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:test:up": "docker compose -f docker-compose.test.yml up -d",
     "db:test:down": "docker compose -f docker-compose.test.yml down",
+    "db:test:migrate": "DATABASE_URL=postgresql://test:test@localhost:5433/hanafuda_test drizzle-kit migrate",
+    "db:test:studio": "DATABASE_URL=postgresql://test:test@localhost:5433/hanafuda_test drizzle-kit studio",
+    "db:test:setup": "pnpm db:test:up && sleep 3 && pnpm db:test:migrate",
     "expose": "./scripts/expose-dev.sh",
     "ci": "./scripts/ci-check.sh"
   },
@@ -37,6 +41,7 @@
     "@vueuse/nuxt": "^14.1.0",
     "arctic": "^3.7.0",
     "bcryptjs": "^3.0.3",
+    "crossws": "^0.3.5",
     "drizzle-orm": "^0.45.0",
     "nuxt": "^4.2.1",
     "pinia": "^3.0.4",
@@ -73,6 +78,7 @@
     "typescript": "~5.9.0",
     "vite-plugin-vue-devtools": "^8.0.3",
     "vitest": "^3.2.4",
-    "vue-tsc": "^3.1.1"
+    "vue-tsc": "^3.1.1",
+    "ws": "^8.19.0"
   }
 }

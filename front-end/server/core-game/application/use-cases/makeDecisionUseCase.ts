@@ -22,7 +22,6 @@ import {
 import type { GameRepositoryPort } from '~~/server/core-game/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/core-game/application/ports/output/eventPublisherPort'
 import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
-import type { RecordGameStatsInputPort } from '~~/server/core-game/application/ports/input/recordGameStatsInputPort'
 import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
 import type { DecisionEventMapperPort } from '~~/server/core-game/application/ports/output/eventMapperPort'
 import type { TurnFlowService } from '~~/server/core-game/application/services/turnFlowService'
@@ -55,7 +54,6 @@ export class MakeDecisionUseCase implements MakeDecisionInputPort {
     private readonly eventMapper: DecisionEventMapperPort,
     private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager?: GameTimeoutPort,
-    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
     private readonly gameLogRepository?: GameLogRepositoryPort
   ) {}
 

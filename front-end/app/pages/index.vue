@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import NavigationBar from '~/pages/index/components/NavigationBar.vue'
 import HeroSection from '~/pages/index/components/HeroSection.vue'
+import NavigationSection from '~/pages/index/components/NavigationSection.vue'
+import RecordSection from '~/pages/index/components/RecordSection.vue'
 import RulesSection from '~/pages/index/components/RulesSection.vue'
 import Footer from '~/components/Footer.vue'
 import LoginModal from '~/identity/adapter/components/LoginModal.vue'
@@ -23,7 +25,7 @@ import type { ClearOrphanedSessionPort } from '~/game-client/application/ports/i
 onMounted(() => {
   document.documentElement.style.scrollbarGutter = 'stable'
 
-  // 清除孤立的會話資訊（roomTypeId、entryId）
+  // 清除孤立的會話資訊（selectedRoomTypeId）
   // 如果沒有活躍的遊戲，進入首頁時應清除所有配對相關資訊
   const clearOrphanedSession = resolveDependency<ClearOrphanedSessionPort>(TOKENS.ClearOrphanedSessionPort)
   clearOrphanedSession.execute()
@@ -34,13 +36,14 @@ onUnmounted(() => {
 
 // Navigation Bar data
 // FR-024, FR-026, FR-028: 根據登入狀態動態顯示導航連結與玩家 icon
-const { isRegistered, displayName, isGuest } = useCurrentPlayer()
+const { isRegistered, displayName, isGuest, playerId } = useCurrentPlayer()
 const { logout, deleteAccount } = useAuth()
 
 // 導航連結不再包含 Sign In（由 NavigationBar 的 player prop 控制）
+// Rules 和 About 為錨點連結，顯示於桌面版 header 和手機選單
 const navigationLinks = computed<NavigationLink[]>(() => [
-  { label: 'Rules', target: '#rules', isCta: false },
-  { label: 'About', target: '#about', isCta: false },
+  { label: 'Rules', target: '#rules' },
+  { label: 'About', target: '#about' },
   { label: 'Start Game', target: '/lobby', isCta: true },
 ])
 
@@ -216,6 +219,12 @@ const handleLoginSuccess = () => {
         />
       </section>
 
+      <!-- Navigation Section - Records, Rules, About anchor links -->
+      <NavigationSection @rules-click="handleRulesClick" />
+
+      <!-- Record Section - Leaderboard and Personal Statistics -->
+      <RecordSection :current-player-id="playerId ?? undefined" />
+
       <!-- Rules Section -->
       <section id="rules" class="relative">
         <RulesSection
@@ -226,22 +235,28 @@ const handleLoginSuccess = () => {
       </section>
 
       <!-- About Section - Project Introduction -->
-      <section id="about" class="relative py-16 px-4 bg-primary-900 overflow-hidden">
+      <section id="about" class="relative py-16 px-4 bg-game-table overflow-hidden">
+        <!-- Gold Border Top -->
+        <div
+          class="absolute top-0 left-0 right-0 h-px gold-border z-10"
+          aria-hidden="true"
+        />
+
         <!-- 裝飾元素 -->
         <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
           <!-- 右上角圓形裝飾 -->
-          <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full border-2 border-primary-700/30" />
+          <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full border-2 border-gold-dark/30" />
           <!-- 左下角線條裝飾 -->
-          <div class="absolute left-8 bottom-8 w-24 h-1 rotate-45 bg-primary-700/20" />
+          <div class="absolute left-8 bottom-8 w-24 h-1 rotate-45 bg-gold-dark/20" />
         </div>
 
         <div class="container mx-auto max-w-6xl relative z-10">
           <!-- 外框卡片 -->
-          <div class="bg-primary-800/80 rounded-2xl p-8 md:p-12 border border-primary-700/50">
+          <div class="bg-game-felt/80 rounded-2xl p-8 md:p-12 border border-gold-dark/50">
             <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
               <!-- 左側：文字內容 -->
               <div class="flex-1 space-y-6">
-                <h2 class="text-3xl md:text-4xl font-bold text-white">
+                <h2 class="text-3xl md:text-4xl font-bold font-serif text-white">
                   About the Project
                 </h2>
                 <p class="text-gray-300 text-lg leading-relaxed">
@@ -269,22 +284,22 @@ const handleLoginSuccess = () => {
               <div class="flex-1 lg:max-w-md">
                 <div class="grid grid-cols-2 gap-4">
                   <!-- Nuxt 4 -->
-                  <div class="bg-primary-700/50 rounded-xl p-6 border border-primary-600/30">
+                  <div class="bg-game-table-light/50 rounded-xl p-6 border border-gold-dark/30">
                     <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">Nuxt 4</div>
                     <div class="text-gray-300 text-sm">Full-Stack Framework</div>
                   </div>
-                  <!-- SSE -->
-                  <div class="bg-primary-700/50 rounded-xl p-6 border border-primary-600/30">
-                    <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">SSE</div>
+                  <!-- WebSocket -->
+                  <div class="bg-game-table-light/50 rounded-xl p-6 border border-gold-dark/30">
+                    <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">WS</div>
                     <div class="text-gray-300 text-sm">Real-time Events</div>
                   </div>
                   <!-- Clean Architecture -->
-                  <div class="bg-primary-700/50 rounded-xl p-6 border border-primary-600/30">
+                  <div class="bg-game-table-light/50 rounded-xl p-6 border border-gold-dark/30">
                     <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">CA</div>
                     <div class="text-gray-300 text-sm">Clean Architecture</div>
                   </div>
                   <!-- Drizzle ORM -->
-                  <div class="bg-primary-700/50 rounded-xl p-6 border border-primary-600/30">
+                  <div class="bg-game-table-light/50 rounded-xl p-6 border border-gold-dark/30">
                     <div class="text-2xl md:text-3xl font-bold text-amber-400 mb-2">Drizzle</div>
                     <div class="text-gray-300 text-sm">Type-Safe ORM</div>
                   </div>

@@ -8,7 +8,7 @@
  * 2. 若無等待中遊戲 → 建立新遊戲（WAITING 狀態）
  * 3. 若有等待中遊戲 → 加入成為 Player 2（IN_PROGRESS 狀態）
  *
- * 注意：不直接建立 AI 對手，AI 配對由 OpponentService 透過事件監聽處理（T056）
+ * 注意：不直接建立 AI 對手，AI 配對由 GameCreationHandler 透過 AiOpponentPort 處理
  *
  * @module server/application/use-cases/joinGameUseCase
  */
@@ -23,7 +23,6 @@ import {
 import type { RoomTypeId } from '#shared/constants/roomTypes'
 import type { GameRepositoryPort } from '~~/server/core-game/application/ports/output/gameRepositoryPort'
 import type { EventPublisherPort } from '~~/server/core-game/application/ports/output/eventPublisherPort'
-import type { InternalEventPublisherPort } from '~~/server/core-game/application/ports/output/internalEventPublisherPort'
 import type { GameStorePort } from '~~/server/core-game/application/ports/output/gameStorePort'
 import type { FullEventMapperPort } from '~~/server/core-game/application/ports/output/eventMapperPort'
 import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
@@ -49,8 +48,11 @@ import type { GameStartService } from '~~/server/core-game/application/services/
  * 處理玩家加入遊戲的完整流程，實作 Server 中立的配對邏輯。
  *
  * 事件發布設計：
- * - 建立新遊戲時 → 發布 ROOM_CREATED 內部事件（通知 OpponentService）
+ * - 建立新遊戲時 → 返回 game_waiting 狀態
  * - 加入現有遊戲時 → 發布 GameStarted SSE 事件
+ *
+ * 注意：AI 配對由 GameCreationHandler 透過 AiOpponentPort 處理，
+ * 本 UseCase 不負責通知 AI 加入。
  */
 export class JoinGameUseCase implements JoinGameInputPort {
   constructor(
@@ -58,7 +60,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: FullEventMapperPort,
-    private readonly internalEventPublisher: InternalEventPublisherPort,
     private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager: GameTimeoutPort,
     private readonly gameLogRepository: GameLogRepositoryPort | undefined,
@@ -149,7 +150,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
   /**
    * 處理重連
    *
-   * SSE-First 架構：
+   * Gateway 架構：
    * - 若遊戲 IN_PROGRESS → 返回 snapshot（包含完整遊戲狀態）
    * - 若遊戲 WAITING → 返回 game_waiting（等待對手）
    * - 若遊戲 FINISHED → 不應該到達這裡（已在 handleReconnectionMode 處理）
@@ -218,7 +219,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * 建立新遊戲（WAITING 狀態）
    *
    * 不發牌、不開始遊戲，等待第二位玩家加入。
-   * SSE-First 架構：返回 game_waiting 狀態。
+   * Gateway 架構：返回 game_waiting 狀態。
    *
    * @param playerId - 玩家 ID
    * @param playerName - 玩家名稱
@@ -255,12 +256,6 @@ export class JoinGameUseCase implements JoinGameInputPort {
     // 建立 playerId -> gameId 映射
     this.gameStore.addPlayerGame(playerId, gameId)
 
-    // 發布 ROOM_CREATED 內部事件（通知 OpponentService 有新房間需要 AI 加入）
-    this.internalEventPublisher.publishRoomCreated({
-      gameId: game.id,
-      waitingPlayerId: playerId,
-    })
-
     // 啟動配對超時計時器
     this.gameTimeoutManager.startMatchmakingTimeout(game.id, () => {
       this.handleMatchmakingTimeout(game.id)
@@ -274,7 +269,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
       payload: { playerName, roomType: effectiveRoomType },
     })
 
-    // SSE-First: 返回 game_waiting 狀態（前端顯示等待畫面）
+    // Gateway: 返回 game_waiting 狀態（前端顯示等待畫面）
     return {
       status: 'game_waiting',
       gameId: game.id,
@@ -288,7 +283,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
    * 加入現有遊戲（成為 Player 2）
    *
    * 將遊戲狀態改為 IN_PROGRESS，發牌，並推送初始事件。
-   * SSE-First 架構：返回 game_started 狀態。
+   * Gateway 架構：返回 game_started 狀態。
    *
    * 委託 GameStartService 處理共用的遊戲開始邏輯。
    */
@@ -323,7 +318,7 @@ export class JoinGameUseCase implements JoinGameInputPort {
         playerName,
       })
 
-      // SSE-First: 返回 game_started 狀態
+      // Gateway: 返回 game_started 狀態
       return {
         status: 'game_started',
         gameId: result.game.id,

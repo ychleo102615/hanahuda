@@ -22,7 +22,7 @@ export type OAuthLinkId = string & { readonly _brand: unique symbol }
 /**
  * 支援的 OAuth Provider
  */
-export type OAuthProvider = 'google' | 'line'
+export type OAuthProvider = 'google' | 'line' | 'telegram'
 
 /**
  * OAuthLink Entity
@@ -43,7 +43,7 @@ export interface OAuthLink {
 /**
  * 支援的 OAuth Provider 列表
  */
-export const SUPPORTED_PROVIDERS: readonly OAuthProvider[] = ['google', 'line'] as const
+export const SUPPORTED_PROVIDERS: readonly OAuthProvider[] = ['google', 'line', 'telegram'] as const
 
 // =============================================================================
 // Validation Functions

@@ -15,7 +15,6 @@ import {
   createEventPublisherMock,
   createGameStoreMock,
   createEventMapperMock,
-  createInternalEventPublisherMock,
   createGameLockMock,
   createGameTimeoutMock,
 } from '../../mocks'
@@ -32,9 +31,14 @@ describe('JoinGameUseCase', () => {
   let eventPublisher: ReturnType<typeof createEventPublisherMock>
   let gameStore: ReturnType<typeof createGameStoreMock>
   let eventMapper: ReturnType<typeof createEventMapperMock>
-  let internalEventPublisher: ReturnType<typeof createInternalEventPublisherMock>
   let gameLock: ReturnType<typeof createGameLockMock>
   let gameTimeoutManager: ReturnType<typeof createGameTimeoutMock>
+
+  // Mock GameStartService
+  const gameStartService = {
+    startGameWithSecondPlayer: vi.fn(),
+    setTurnFlowService: vi.fn(),
+  }
 
   // Use Case
   let useCase: JoinGameUseCase
@@ -46,7 +50,6 @@ describe('JoinGameUseCase', () => {
     eventPublisher = createEventPublisherMock()
     gameStore = createGameStoreMock()
     eventMapper = createEventMapperMock()
-    internalEventPublisher = createInternalEventPublisherMock()
     gameLock = createGameLockMock()
     gameTimeoutManager = createGameTimeoutMock()
 
@@ -55,9 +58,10 @@ describe('JoinGameUseCase', () => {
       eventPublisher,
       gameStore,
       eventMapper,
-      internalEventPublisher,
       gameLock,
-      gameTimeoutManager
+      gameTimeoutManager,
+      undefined, // gameLogRepository
+      gameStartService as never
     )
   })
 

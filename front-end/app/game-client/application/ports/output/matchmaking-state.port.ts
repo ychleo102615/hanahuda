@@ -57,7 +57,7 @@ export interface MatchmakingStatePort {
    *
    * @description
    * GameRequestJoin 成功後，伺服器返回 game_id。
-   * 保存此 ID 用於建立 SSE 連線。
+   * 保存此 ID 用於建立 WebSocket 連線。
    */
   setGameId(gameId: string | null): void
 
@@ -99,17 +99,7 @@ export interface MatchmakingStatePort {
    */
   clearSession(): void
 
-  // === Online Matchmaking (011-online-matchmaking) ===
-
-  /**
-   * 設定配對條目 ID
-   */
-  setEntryId(entryId: string | null): void
-
-  /**
-   * 取得配對條目 ID
-   */
-  readonly entryId: string | null
+  // === Online Matchmaking ===
 
   /**
    * 設定配對經過秒數
@@ -145,6 +135,24 @@ export interface MatchmakingStatePort {
    * 取得是否為 Bot 對手
    */
   readonly isBot: boolean
+
+  /**
+   * 批量設定配對成功狀態
+   *
+   * @description
+   * 使用 Pinia $patch 一次性更新多個屬性，減少響應式更新次數。
+   * 解決 iPad 等低端設備上多次響應式更新導致的動畫卡頓問題。
+   */
+  setMatchedState(payload: MatchedStatePayload): void
+}
+
+/**
+ * 配對成功狀態 Payload
+ */
+export interface MatchedStatePayload {
+  opponentName: string
+  isBot: boolean
+  gameId: string
 }
 
 /**
@@ -159,13 +167,12 @@ export type MatchmakingStatus =
   | 'searching' // 搜尋對手中 (0-10s)
   | 'low_availability' // 低可用性狀態 (10-15s)
   | 'matched' // 已配對成功
+  | 'starting' // 遊戲正在啟動中（已配對，等待發牌）
 
 /**
  * OnlineMatchmakingState - 線上配對狀態
  */
 export interface OnlineMatchmakingState {
-  /** 配對條目 ID (從 POST /matchmaking/enter 取得) */
-  readonly entryId: string | null
   /** 配對經過秒數 */
   readonly elapsedSeconds: number
   /** 狀態訊息 */

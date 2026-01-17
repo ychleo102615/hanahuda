@@ -11,7 +11,7 @@
  */
 
 import type { Game } from '~~/server/core-game/domain/game/game'
-import { addSecondPlayerAndStart, startRound } from '~~/server/core-game/domain/game/game'
+import { addSecondPlayerToStarting, startRound } from '~~/server/core-game/domain/game/game'
 import type { Player } from '~~/server/core-game/domain/game/player'
 import { checkSpecialRules, type SpecialRuleResult } from '~~/server/core-game/domain/services/specialRulesService'
 import type { GameRepositoryPort } from '~~/server/core-game/application/ports/output/gameRepositoryPort'
@@ -26,11 +26,12 @@ import { logger } from '~~/server/utils/logger'
 import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 
 /**
- * 初始事件延遲（毫秒）
+ * 遊戲啟動延遲（毫秒）
  *
- * 給予客戶端時間建立 SSE 連線
+ * 延遲發牌和遊戲開始，給予客戶端時間建立 WebSocket 連線並完成應用層初始化。
+ * 在這段期間，遊戲狀態為 STARTING，重連時會看到「遊戲開始中」而非遊戲畫面。
  */
-const INITIAL_EVENT_DELAY_MS = 100
+const GAME_START_DELAY_MS = 1000
 
 /**
  * 開始遊戲參數
@@ -69,7 +70,7 @@ export class GameStartService {
     private readonly eventPublisher: EventPublisherPort,
     private readonly gameStore: GameStorePort,
     private readonly eventMapper: FullEventMapperPort,
-    private readonly gameTimeoutManager: GameTimeoutPort,
+    private readonly _gameTimeoutManager: GameTimeoutPort,
     private readonly gameLogRepository?: GameLogRepositoryPort
   ) {}
 
@@ -81,62 +82,117 @@ export class GameStartService {
   }
 
   /**
-   * 執行第二位玩家加入並開始遊戲
+   * 執行第二位玩家加入並準備開始遊戲
    *
    * @description
-   * 處理完整的遊戲開始流程：
-   * 1. 加入遊戲並轉換狀態為 IN_PROGRESS
-   * 2. 發牌並開始第一局
-   * 3. 檢查特殊規則（手四、喰付、場上手四）
-   * 4. 儲存遊戲狀態
-   * 5. 建立 session 映射（人類玩家）
-   * 6. 排程初始事件
-   * 7. 記錄日誌
+   * 處理完整的遊戲開始流程（兩步驟設計）：
+   *
+   * **步驟 1（立即執行）**：
+   * 1. 加入遊戲，狀態變為 STARTING（尚未發牌）
+   * 2. 儲存遊戲狀態
+   * 3. 建立 session 映射
+   * 4. 記錄日誌
+   *
+   * **步驟 2（延遲 500ms 後執行）**：
+   * 1. 發牌並開始第一局
+   * 2. 檢查特殊規則
+   * 3. 狀態變為 IN_PROGRESS
+   * 4. 發送事件
+   *
+   * 這種設計確保在 500ms 內重連時，玩家看到的是「遊戲開始中」
+   * 而非「遊戲進行中」，符合業務語意。
    *
    * @param params - 開始遊戲參數
-   * @returns 開始遊戲結果
+   * @returns 開始遊戲結果（返回 STARTING 狀態的遊戲）
    */
   async startGameWithSecondPlayer(params: StartGameParams): Promise<StartGameResult> {
     const { waitingGame, secondPlayer, isAi, playerName } = params
 
-    // 1. 加入遊戲並開始
-    let game = addSecondPlayerAndStart(waitingGame, secondPlayer)
+    // ===== 步驟 1：進入 STARTING 狀態（立即執行）=====
 
-    // 2. 發牌並開始第一局（可使用測試牌組）
-    game = startRound(game, gameConfig.use_test_deck)
+    // 1. 加入遊戲，狀態變為 STARTING（尚未發牌）
+    const startingGame = addSecondPlayerToStarting(waitingGame, secondPlayer)
 
-    // 3. 檢查特殊規則（手四、喰付、場上手四）
-    const specialRuleResult = this.checkAndHandleSpecialRules(game)
+    // 2. 儲存遊戲狀態
+    this.gameStore.set(startingGame)
+    await this.gameRepository.save(startingGame)
 
-    // 4. 儲存 startingPlayerId
-    const startingPlayerId = game.currentRound?.activePlayerId ?? game.players[0]?.id ?? ''
+    // 3. 建立 playerId -> gameId 映射
+    this.gameStore.addPlayerGame(secondPlayer.id, startingGame.id)
 
-    // 5. 儲存遊戲狀態
-    this.gameStore.set(game)
-    await this.gameRepository.save(game)
-
-    // 6. 建立 playerId -> gameId 映射
-    this.gameStore.addPlayerGame(secondPlayer.id, game.id)
-
-    // 7. 排程初始事件（延遲讓客戶端建立 SSE 連線）
-    if (specialRuleResult.triggered && game.currentRound) {
-      this.scheduleSpecialRuleEvents(game, specialRuleResult)
-    } else {
-      this.scheduleInitialEvents(game)
-    }
-
-    // 8. 記錄日誌
+    // 4. 記錄日誌
     const commandType = isAi ? COMMAND_TYPES.JoinGameAsAi : COMMAND_TYPES.JoinExistingGame
     this.gameLogRepository?.logAsync({
-      gameId: game.id,
+      gameId: startingGame.id,
       playerId: secondPlayer.id,
       eventType: commandType,
       payload: { playerName, isAi },
     })
 
+    // ===== 步驟 2：排程遊戲真正開始（延遲執行）=====
+    this.scheduleGameStart(startingGame.id)
+
+    // 返回 STARTING 狀態的遊戲
+    // 注意：此時還沒發牌，沒有 currentRound，所以 startingPlayerId 無法確定
     return {
-      game,
-      startingPlayerId,
+      game: startingGame,
+      startingPlayerId: startingGame.players[0]?.id ?? '',
+    }
+  }
+
+  /**
+   * 排程遊戲開始
+   *
+   * @description
+   * 500ms 後執行真正的遊戲開始邏輯：發牌、檢查特殊規則、發送事件。
+   *
+   * @param gameId - 遊戲 ID
+   */
+  private scheduleGameStart(gameId: string): void {
+    setTimeout(() => {
+      this.executeGameStart(gameId).catch((err) => {
+        logger.error('Failed to execute game start', { gameId, error: String(err) })
+      })
+    }, GAME_START_DELAY_MS)
+  }
+
+  /**
+   * 執行遊戲開始
+   *
+   * @description
+   * 發牌、檢查特殊規則、狀態變為 IN_PROGRESS、發送事件。
+   *
+   * @param gameId - 遊戲 ID
+   */
+  private async executeGameStart(gameId: string): Promise<void> {
+    // 取得當前遊戲狀態
+    const currentGame = this.gameStore.get(gameId)
+    if (!currentGame) {
+      logger.warn('Game not found for executeGameStart', { gameId })
+      return
+    }
+
+    // 確認遊戲狀態是 STARTING
+    if (currentGame.status !== 'STARTING') {
+      logger.warn('Game is not in STARTING status', { gameId, status: currentGame.status })
+      return
+    }
+
+    // 1. 發牌並開始第一局（狀態變為 IN_PROGRESS）
+    const game = startRound(currentGame, gameConfig.use_test_deck)
+
+    // 2. 檢查特殊規則（手四、喰付、場上手四）
+    const specialRuleResult = this.checkAndHandleSpecialRules(game)
+
+    // 3. 儲存遊戲狀態
+    this.gameStore.set(game)
+    await this.gameRepository.save(game)
+
+    // 4. 發送事件
+    if (specialRuleResult.triggered && game.currentRound) {
+      this.publishSpecialRuleEvents(game, specialRuleResult)
+    } else {
+      this.publishInitialEvents(game)
     }
   }
 
@@ -163,37 +219,35 @@ export class GameStartService {
   }
 
   /**
-   * 排程初始事件（正常流程）
+   * 發送初始事件（正常流程）
    *
    * @param game - 遊戲狀態
    */
-  private scheduleInitialEvents(game: Game): void {
-    setTimeout(() => {
-      try {
-        // 發送 GameStarted 事件（所有人相同）
-        const gameStartedEvent = this.eventMapper.toGameStartedEvent(game)
-        this.eventPublisher.publishToGame(game.id, gameStartedEvent)
+  private publishInitialEvents(game: Game): void {
+    try {
+      // 發送 GameStarted 事件（所有人相同）
+      const gameStartedEvent = this.eventMapper.toGameStartedEvent(game)
+      this.eventPublisher.publishToGame(game.id, gameStartedEvent)
 
-        // 發送 RoundDealt 事件（每個玩家收到過濾後的版本）
-        // 業務規則：自己的手牌完整，對手只有數量
-        for (const player of game.players) {
-          const filteredEvent = this.eventMapper.toRoundDealtEventForPlayer(game, player.id)
-          this.eventPublisher.publishToPlayer(game.id, player.id, filteredEvent)
-        }
-
-        // 啟動第一位玩家的操作超時計時器
-        const firstPlayerId = game.currentRound?.activePlayerId
-        if (firstPlayerId) {
-          this.turnFlowService?.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
-        }
-      } catch (err) {
-        logger.error('Failed to publish initial events', { gameId: game.id, error: String(err) })
+      // 發送 RoundDealt 事件（每個玩家收到過濾後的版本）
+      // 業務規則：自己的手牌完整，對手只有數量
+      for (const player of game.players) {
+        const filteredEvent = this.eventMapper.toRoundDealtEventForPlayer(game, player.id)
+        this.eventPublisher.publishToPlayer(game.id, player.id, filteredEvent)
       }
-    }, INITIAL_EVENT_DELAY_MS)
+
+      // 啟動第一位玩家的操作超時計時器
+      const firstPlayerId = game.currentRound?.activePlayerId
+      if (firstPlayerId) {
+        this.turnFlowService?.startTimeoutForPlayer(game.id, firstPlayerId, 'AWAITING_HAND_PLAY')
+      }
+    } catch (err) {
+      logger.error('Failed to publish initial events', { gameId: game.id, error: String(err) })
+    }
   }
 
   /**
-   * 排程特殊規則事件
+   * 發送特殊規則事件
    *
    * @description
    * 委託 TurnFlowService 處理特殊規則：
@@ -203,24 +257,22 @@ export class GameStartService {
    * @param game - 遊戲狀態（currentRound 存在）
    * @param result - 特殊規則結果
    */
-  private scheduleSpecialRuleEvents(
+  private publishSpecialRuleEvents(
     game: Game,
     result: SpecialRuleResult
   ): void {
-    setTimeout(() => {
-      try {
-        // 發送 GameStarted 事件
-        const gameStartedEvent = this.eventMapper.toGameStartedEvent(game)
-        this.eventPublisher.publishToGame(game.id, gameStartedEvent)
+    try {
+      // 發送 GameStarted 事件
+      const gameStartedEvent = this.eventMapper.toGameStartedEvent(game)
+      this.eventPublisher.publishToGame(game.id, gameStartedEvent)
 
-        // 委託 TurnFlowService 處理特殊規則流程
-        this.turnFlowService?.handleSpecialRuleTriggered(game.id, game, result)
-          .catch(() => {
-            // Failed to handle special rule
-          })
-      } catch {
-        // Failed to schedule special rule events
-      }
-    }, INITIAL_EVENT_DELAY_MS)
+      // 委託 TurnFlowService 處理特殊規則流程
+      this.turnFlowService?.handleSpecialRuleTriggered(game.id, game, result)
+        .catch(() => {
+          // Failed to handle special rule
+        })
+    } catch {
+      // Failed to publish special rule events
+    }
   }
 }

@@ -3,7 +3,7 @@
  *
  * @description
  * 查詢玩家目前的狀態（閒置、配對中、遊戲中）。
- * 用於 Gateway SSE 連線建立時，決定要發送什麼初始事件。
+ * 用於 Gateway WebSocket 連線建立時，決定要發送什麼初始事件。
  *
  * @module server/gateway/playerStatusService
  */
@@ -80,7 +80,7 @@ class PlayerStatusService implements IPlayerStatusService {
 
     // 2. 檢查是否在遊戲中（優先 in-memory store）
     const game = inMemoryGameStore.getByPlayerId(playerId)
-    if (game && (game.status === 'WAITING' || game.status === 'IN_PROGRESS')) {
+    if (game && (game.status === 'WAITING' || game.status === 'STARTING' || game.status === 'IN_PROGRESS')) {
       return {
         status: 'IN_GAME',
         gameId: game.id,

@@ -18,6 +18,7 @@ export type {
 export {
   getDefaultRuleset,
   createGame,
+  addSecondPlayerToStarting,
   addSecondPlayerAndStart,
   startRound,
   updateRound,

@@ -1,0 +1,210 @@
+openapi: 3.0.3
+info:
+  title: Player Statistics API
+  description: 玩家統計資料查詢 API
+  version: 1.0.0
+
+paths:
+  /api/v1/stats/me:
+    get:
+      summary: 查詢當前玩家統計
+      description: |
+        查詢當前登入玩家的遊戲統計資料。
+        支援不同時間範圍的統計查詢：
+        - all: 全部累計統計（從 player_stats 表）
+        - day: 當日統計
+        - week: 本週統計
+        - month: 本月統計
+
+        時間範圍統計基於 daily_player_scores 表聚合計算。
+      operationId: getMyStats
+      tags:
+        - Statistics
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: range
+          in: query
+          required: false
+          description: 統計時間範圍
+          schema:
+            type: string
+            enum: [all, day, week, month]
+            default: all
+            example: all
+      responses:
+        '200':
+          description: 統計查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerStatisticsResponse'
+              examples:
+                allTimeStats:
+                  summary: 全時間統計
+                  value:
+                    data:
+                      playerId: "550e8400-e29b-41d4-a716-446655440001"
+                      totalScore: 1234
+                      gamesPlayed: 50
+                      gamesWon: 28
+                      gamesLost: 22
+                      winRate: 56
+                      koiKoiCalls: 35
+                      multiplierWins: 12
+                      yakuCounts:
+                        tane: 15
+                        tanzaku: 22
+                        kasu: 8
+                        hikari: 5
+                        inoshikacho: 3
+                        hanami_zake: 2
+                        tsukimi_zake: 1
+                      timeRange: all
+                weeklyStats:
+                  summary: 本週統計
+                  value:
+                    data:
+                      playerId: "550e8400-e29b-41d4-a716-446655440001"
+                      totalScore: 85
+                      gamesPlayed: 8
+                      gamesWon: 5
+                      gamesLost: 3
+                      winRate: 63
+                      koiKoiCalls: 4
+                      multiplierWins: 2
+                      yakuCounts: {}
+                      timeRange: week
+                emptyStats:
+                  summary: 無遊戲紀錄
+                  value:
+                    data:
+                      playerId: "550e8400-e29b-41d4-a716-446655440001"
+                      totalScore: 0
+                      gamesPlayed: 0
+                      gamesWon: 0
+                      gamesLost: 0
+                      winRate: 0
+                      koiKoiCalls: 0
+                      multiplierWins: 0
+                      yakuCounts: {}
+                      timeRange: all
+        '400':
+          description: 參數錯誤
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: INVALID_TIME_RANGE
+                  message: "Invalid time range. Must be one of: all, day, week, month."
+        '401':
+          description: 未登入
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: UNAUTHORIZED
+                  message: "Authentication required to view personal statistics."
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Session cookie authentication
+
+  schemas:
+    PlayerStatisticsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/PlayerStatistics'
+
+    PlayerStatistics:
+      type: object
+      required:
+        - playerId
+        - totalScore
+        - gamesPlayed
+        - gamesWon
+        - gamesLost
+        - winRate
+        - koiKoiCalls
+        - multiplierWins
+        - yakuCounts
+        - timeRange
+      properties:
+        playerId:
+          type: string
+          format: uuid
+          description: 玩家 ID
+        totalScore:
+          type: integer
+          description: 總分數（時間範圍內）
+        gamesPlayed:
+          type: integer
+          minimum: 0
+          description: 遊戲場數
+        gamesWon:
+          type: integer
+          minimum: 0
+          description: 獲勝場數
+        gamesLost:
+          type: integer
+          minimum: 0
+          description: 失敗場數
+        winRate:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: 勝率百分比 (0-100)
+        koiKoiCalls:
+          type: integer
+          minimum: 0
+          description: Koi-Koi 宣告次數
+        multiplierWins:
+          type: integer
+          minimum: 0
+          description: 倍率獲勝次數
+        yakuCounts:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          description: |
+            各役種達成次數。
+            Key 為役種類型（如 tane, tanzaku, kasu, hikari 等）。
+            僅在 timeRange=all 時包含詳細役種統計。
+          example:
+            tane: 15
+            tanzaku: 22
+            kasu: 8
+        timeRange:
+          type: string
+          enum: [all, day, week, month]
+          description: 統計時間範圍
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: 錯誤代碼
+            message:
+              type: string
+              description: 錯誤訊息

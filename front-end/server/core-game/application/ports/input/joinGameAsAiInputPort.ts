@@ -8,7 +8,7 @@
  * 設計理由：
  * - AI 有額外的 metadata（strategyType）
  * - AI 不需要 sessionToken（不會斷線重連）
- * - AI 加入時不建立 SSE 連線
+ * - AI 加入時不建立 WebSocket 連線
  * - 符合 Single Responsibility Principle
  *
  * @module server/application/ports/input/joinGameAsAiInputPort

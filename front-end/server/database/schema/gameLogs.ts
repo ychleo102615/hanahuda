@@ -21,7 +21,7 @@ import { EVENT_TYPES } from '#shared/contracts'
  *
  * @description
  * Use Case 記錄的命令類型。
- * 這些不是 SSE 事件，而是玩家/系統的輸入命令。
+ * 這些不是推送事件，而是玩家/系統的輸入命令。
  */
 export const COMMAND_TYPES = {
   PlayHandCard: 'PlayHandCard',
@@ -45,7 +45,7 @@ export type CommandTypeValue = typeof COMMAND_TYPES[keyof typeof COMMAND_TYPES]
 // ============================================================================
 
 /**
- * 需要記錄的 SSE 事件類型（從 GameEvent 推導）
+ * 需要記錄的事件類型（從 GameEvent 推導）
  *
  * @description
  * 使用 Extract 從 GameEvent 聯合型別中提取需要記錄的事件類型。
@@ -71,7 +71,7 @@ type LoggableSseEventType = Extract<
  * 遊戲日誌事件類型
  *
  * @description
- * 結合命令類型和可記錄的 SSE 事件類型。
+ * 結合命令類型和可記錄的事件類型。
  *
  * Commands (由 Use Cases 記錄):
  * - PlayHandCard, SelectTarget, MakeDecision, LeaveGame

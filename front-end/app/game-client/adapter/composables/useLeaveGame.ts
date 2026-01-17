@@ -15,31 +15,22 @@ import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../stores/gameState'
 import { useUIStateStore } from '../stores/uiState'
 import { useMatchmakingStateStore } from '../stores/matchmakingState'
-import { resolveDependency, tryResolveDependency } from '../di/resolver'
+import { resolveDependency } from '../di/resolver'
 import { TOKENS } from '../di/tokens'
 import type { SendCommandPort, NotificationPort, SessionContextPort } from '../../application/ports/output'
-import { MatchmakingError, type MatchmakingApiClient } from '../api/MatchmakingApiClient'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import type { MenuItem } from '../types/menu-item'
-
-/**
- * 配對錯誤代碼對應的使用者友善訊息
- */
-const MATCHMAKING_ERROR_MESSAGES: Record<string, string> = {
-  ALREADY_IN_QUEUE: 'You are already in the matchmaking queue.',
-  ALREADY_IN_GAME: 'You are already in a game.',
-  INVALID_ROOM_TYPE: 'Invalid game mode selected.',
-  UNAUTHORIZED: 'Session expired. Please refresh the page.',
-  NETWORK_ERROR: 'Connection error. Please check your network.',
-}
+import type { useGatewayConnection } from './useGatewayConnection'
 
 export interface UseLeaveGameOptions {
   /** 是否需要確認對話框（預設: false） */
   requireConfirmation?: boolean
+  /** Gateway 連線實例（用於 Rematch 直接重連） */
+  gatewayConnection?: ReturnType<typeof useGatewayConnection> | null
 }
 
 export function useLeaveGame(options: UseLeaveGameOptions = {}) {
-  const { requireConfirmation = false } = options
+  const { requireConfirmation = false, gatewayConnection = null } = options
 
   // Dependencies
   const router = useRouter()
@@ -49,7 +40,6 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
   const gameApiClient = resolveDependency<SendCommandPort>(TOKENS.SendCommandPort)
   const notification = resolveDependency<NotificationPort>(TOKENS.NotificationPort)
   const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
-  const matchmakingApiClient = tryResolveDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
 
   // 響應式狀態
   const { gameEnded } = storeToRefs(gameState)
@@ -168,14 +158,16 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
    * Rematch - 使用相同房間類型重新配對
    *
    * @description
-   * 1. 隱藏 GameFinishedModal
-   * 2. 重置遊戲狀態（保留 identity）
-   * 3. 從 gameState 取得 roomTypeId（透過 SSE 事件傳送）
-   * 4. 呼叫配對 API
-   * 5. MatchmakingStatusOverlay 會自動顯示
+   * 遊戲結束後 WebSocket 已斷線，因此 Rematch 需要重新建立連線。
+   * 流程：
+   * 1. 取得 roomTypeId（從 gameState）
+   * 2. 設定 selectedRoomTypeId
+   * 3. 重置 stores 並設定配對狀態
+   * 4. 重新建立 WebSocket 連線
+   * 5. Game 頁面 onConnected 回調會偵測 selectedRoomTypeId 並發送配對命令
    */
   async function handleRematch(): Promise<void> {
-    // 取得 roomTypeId（從 gameState，由 SSE 事件設定）
+    // 取得 roomTypeId（從 gameState，由 WebSocket 事件設定）
     const roomTypeId = gameState.roomTypeId
     if (!roomTypeId) {
       // 沒有 roomTypeId，導航回 lobby
@@ -189,60 +181,36 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
       return
     }
 
-    // 沒有 matchmakingApiClient，導航回 lobby
-    if (!matchmakingApiClient) {
-      navigateTo('/lobby')
-      return
-    }
-
     isRematching.value = true
 
-    try {
-      // 1. 隱藏 GameFinishedModal
-      uiState.hideGameFinishedModal()
+    // 1. 隱藏 GameFinishedModal
+    uiState.hideGameFinishedModal()
 
-      // 2. 重置遊戲狀態（保留 roomTypeId）
-      gameState.$reset()
-      uiState.$reset()
-      matchmakingState.$reset()
+    // 2. 設定 selectedRoomTypeId（供連線成功後使用）
+    sessionContext.setSelectedRoomTypeId(roomTypeId as RoomTypeId)
 
-      // 4. 設定配對狀態
-      matchmakingState.setStatus('finding')
+    // 3. 重置遊戲狀態
+    gameState.$reset()
+    uiState.$reset()
+    matchmakingState.$reset()
 
-      // 5. 呼叫配對 API
-      const entryId = await matchmakingApiClient.enterMatchmaking(roomTypeId as RoomTypeId)
+    // 4. 設定配對狀態為 searching（讓 UI 顯示配對中覆蓋層）
+    matchmakingState.setStatus('searching')
 
-      // 6. 儲存 entryId（供取消配對使用）
-      sessionContext.setEntryId(entryId)
-
-      // 7. 配對請求成功，重置 isRematching（配對中會顯示 overlay，不需要再禁用按鈕）
-      isRematching.value = false
-
-      // MatchmakingStatusOverlay 會自動顯示（因為 matchmakingState.status === 'finding'）
-    } catch (error: unknown) {
-      isRematching.value = false
-      matchmakingState.setStatus('idle')
-
-      // 根據錯誤類型顯示對應的 toast 訊息
-      let errorMessage = 'Failed to start rematch. Please try again.'
-
-      if (error instanceof MatchmakingError) {
-        errorMessage = MATCHMAKING_ERROR_MESSAGES[error.errorCode] ?? error.message
-      } else if (error instanceof Error) {
-        errorMessage = error.message
-      }
-
-      uiState.addToast({
-        type: 'error',
-        message: errorMessage,
-        duration: 5000,
-        dismissible: true,
-      })
+    // 5. 重新建立 WebSocket 連線
+    // onConnected 回調會偵測 selectedRoomTypeId 並發送 JOIN_MATCHMAKING
+    if (gatewayConnection) {
+      gatewayConnection.connect()
+    } else {
+      // 降級方案：導航回 /game 觸發 onMounted 重新連線
+      navigateTo('/game')
     }
+
+    isRematching.value = false
   }
 
   function clearLocalStateAndNavigate() {
-    // 清除 SessionContext 中的會話資訊（entryId）
+    // 清除 SessionContext 中的會話資訊（selectedRoomTypeId、currentGameId）
     sessionContext.clearSession()
 
     // 清理通知系統資源（倒數計時器等）

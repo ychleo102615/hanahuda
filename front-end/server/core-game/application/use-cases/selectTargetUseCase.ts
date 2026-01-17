@@ -38,7 +38,6 @@ import type { GameLogRepositoryPort } from '~~/server/core-game/application/port
 import type { GameLockPort } from '~~/server/core-game/application/ports/output/gameLockPort'
 import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 import type { TurnFlowService } from '~~/server/core-game/application/services/turnFlowService'
-import type { RecordGameStatsInputPort } from '~~/server/core-game/application/ports/input/recordGameStatsInputPort'
 import {
   SelectTargetError,
   type SelectTargetInputPort,
@@ -65,7 +64,6 @@ export class SelectTargetUseCase implements SelectTargetInputPort {
     private readonly eventMapper: SelectionEventMapperPort,
     private readonly gameLock: GameLockPort,
     private readonly gameTimeoutManager?: GameTimeoutPort,
-    private readonly recordGameStatsUseCase?: RecordGameStatsInputPort,
     private readonly gameLogRepository?: GameLogRepositoryPort
   ) {}
 

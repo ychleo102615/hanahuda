@@ -48,4 +48,15 @@ export abstract class PlayerRepositoryPort {
    * @returns 被刪除的訪客數量
    */
   abstract deleteInactiveGuests(inactiveDays: number): Promise<number>
+
+  /**
+   * 硬刪除無任何遊戲記錄的訪客
+   *
+   * @description
+   * 刪除已軟刪除且在 game_logs 中沒有任何記錄的訪客。
+   * 這些訪客資料沒有保留價值，可以永久刪除以節省儲存空間。
+   *
+   * @returns 被刪除的訪客數量
+   */
+  abstract hardDeleteGuestsWithoutGameLogs(): Promise<number>
 }

@@ -44,14 +44,13 @@ export default defineEventHandler(async (event) => {
 
   try {
     const lineAdapter = createLineOAuthAdapter()
-    const { oauthLoginUseCase } = getIdentityContainer()
+    const { externalAuthLoginUseCase } = getIdentityContainer()
 
-    // 執行 OAuth 登入流程
-    const result = await oauthLoginUseCase.execute({
-      provider: lineAdapter,
-      code,
-      codeVerifier: storedEntry.codeVerifier,
-    })
+    // Step 1: Adapter 處理 OAuth 技術細節（code exchange + getUserInfo）
+    const userInfo = await lineAdapter.authenticate(code, storedEntry.codeVerifier)
+
+    // Step 2: UseCase 處理業務邏輯（檢查連結、自動連結、建立帳號）
+    const result = await externalAuthLoginUseCase.execute({ userInfo })
 
     if (!result.success) {
       return sendRedirect(event, `/login?error=${encodeURIComponent(result.message || 'OAuth login failed')}`)
@@ -76,9 +75,9 @@ export default defineEventHandler(async (event) => {
         // 新帳號建立成功
         return sendRedirect(event, '/lobby?welcome=true')
 
-      case 'LINK_PROMPT':
-        // 需要手動連結（預留功能）
-        return sendRedirect(event, `/link-account?token=${encodeURIComponent(result.data.oauthToken)}`)
+      case 'AUTO_LINKED':
+        // Email 匹配現有帳號，自動連結
+        return sendRedirect(event, '/lobby')
 
       default:
         return sendRedirect(event, '/lobby')

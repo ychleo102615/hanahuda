@@ -29,7 +29,13 @@ const attributions = [
 </script>
 
 <template>
-  <footer class="bg-primary-900 text-white py-12">
+  <footer class="relative bg-game-table text-white py-12">
+    <!-- Gold Border Top -->
+    <div
+      class="absolute top-0 left-0 right-0 h-px gold-border"
+      aria-hidden="true"
+    />
+
     <div class="container mx-auto px-4">
       <!-- Desktop: horizontal layout | Mobile: stacked content -->
       <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-8">
@@ -38,7 +44,7 @@ const attributions = [
           <p class="text-sm text-gray-300">
             &copy; {{ copyrightYear }} {{ projectName }}
           </p>
-          <p class="text-xs text-gray-400 mt-2">
+          <p class="text-xs text-gray-300 mt-2">
             Built with Vue 3, TypeScript, and Tailwind CSS
           </p>
         </div>
@@ -77,7 +83,7 @@ const attributions = [
                   :href="attr.licenseUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1 text-accent-pink hover:text-accent-red transition-colors underline"
+                  class="inline-flex items-center gap-1 text-gold-light hover:text-white transition-colors underline"
                   :aria-label="`${attr.name} license: ${attr.license}`"
                 >
                   <span>{{ attr.license }}</span>
@@ -100,7 +106,7 @@ const attributions = [
                 :href="personalInfo.linkedInUrl"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center gap-1 text-accent-pink hover:text-accent-red transition-colors"
+                class="inline-flex items-center gap-1 text-gold-light hover:text-white transition-colors"
               >
                 <span>LinkedIn</span>
                 <ExternalLinkIcon />
@@ -111,7 +117,7 @@ const attributions = [
                 :href="personalInfo.projectUrl"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center gap-1 text-accent-pink hover:text-accent-red transition-colors"
+                class="inline-flex items-center gap-1 text-gold-light hover:text-white transition-colors"
               >
                 <span>Project Repository</span>
                 <ExternalLinkIcon />

@@ -12,7 +12,7 @@
  *
  * 特性:
  * - 參與快照恢復 (restoreGameState 完全覆蓋狀態)
- * - 不持久化 (所有狀態從 SSE 事件恢復)
+ * - 不持久化 (所有狀態從 WebSocket 事件恢復)
  * - 單例模式 (整個應用程式生命週期只有一個實例)
  */
 
@@ -300,7 +300,7 @@ export const useGameStateStore = defineStore('gameState', {
     /**
      * 初始化遊戲上下文（GameStarted 使用）
      *
-     * @param gameId - 遊戲 ID（由 SSE 事件傳入）
+     * @param gameId - 遊戲 ID（由 WebSocket 事件傳入）
      * @param roomTypeId - 房間類型 ID（用於 Rematch 功能）
      * @param players - 玩家資訊列表
      * @param ruleset - 遊戲規則集

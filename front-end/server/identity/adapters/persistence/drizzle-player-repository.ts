@@ -7,7 +7,7 @@
  * 參考: specs/010-player-account/plan.md - Adapter Layer
  */
 
-import { eq, and, lt, isNull } from 'drizzle-orm'
+import { eq, and, lt, isNull, isNotNull, sql } from 'drizzle-orm'
 import { PlayerRepositoryPort } from '../../application/ports/output/player-repository-port'
 import { players, type NewPlayer } from '~~/server/database/schema'
 import type { Player, PlayerId } from '../../domain/player/player'
@@ -128,6 +128,26 @@ export class DrizzlePlayerRepository extends PlayerRepositoryPort {
           eq(players.isGuest, true),
           lt(players.updatedAt, cutoffDate),
           isNull(players.deletedAt),
+        ),
+      )
+      .returning({ id: players.id })
+
+    return deleted.length
+  }
+
+  async hardDeleteGuestsWithoutGameLogs(): Promise<number> {
+    // 硬刪除已軟刪除且無遊戲記錄的訪客
+    // 使用 NOT EXISTS 子查詢檢查 game_logs 中是否有該玩家的記錄
+    const deleted = await this.db
+      .delete(players)
+      .where(
+        and(
+          eq(players.isGuest, true),
+          isNotNull(players.deletedAt),
+          sql`NOT EXISTS (
+            SELECT 1 FROM game_logs
+            WHERE game_logs.player_id = ${players.id}::text
+          )`,
         ),
       )
       .returning({ id: players.id })

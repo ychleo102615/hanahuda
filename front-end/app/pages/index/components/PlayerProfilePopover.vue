@@ -16,6 +16,9 @@
 
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { Z_INDEX } from '~/constants/z-index'
+import { useTelegram } from '~/composables/useTelegram'
+
+const { shouldShowLogout } = useTelegram()
 
 interface Props {
   /** 是否顯示 */
@@ -164,6 +167,7 @@ onUnmounted(() => {
         <!-- 操作按鈕區（僅已註冊用戶顯示） -->
         <div v-if="!isGuest" class="p-2 space-y-1">
           <button
+            v-if="shouldShowLogout"
             @click="handleLogout"
             class="w-full px-4 py-2.5 text-left text-sm text-gray-300 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-3"
           >

@@ -28,8 +28,13 @@ import { createShuffledDeck, deal } from '../services/deckService'
 
 /**
  * 遊戲狀態
+ *
+ * - WAITING: 等待第二位玩家加入
+ * - STARTING: 第二位玩家已加入，等待遊戲初始化（500ms 延遲）
+ * - IN_PROGRESS: 遊戲進行中（已發牌）
+ * - FINISHED: 遊戲結束
  */
-export type GameStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED'
+export type GameStatus = 'WAITING' | 'STARTING' | 'IN_PROGRESS' | 'FINISHED'
 
 /**
  * Game Aggregate Root
@@ -116,11 +121,44 @@ export function createGame(params: CreateGameParams): Game {
 }
 
 /**
+ * 加入第二位玩家並進入啟動狀態
+ *
+ * 將任意玩家（人類或 AI）加入遊戲，狀態改為 STARTING。
+ * 此狀態表示等待遊戲初始化（500ms 延遲），尚未發牌。
+ *
+ * @param game - 等待中的遊戲
+ * @param player - 要加入的玩家
+ * @returns 更新後的遊戲（狀態改為 STARTING）
+ */
+export function addSecondPlayerToStarting(game: Game, player: Player): Game {
+  if (game.status !== 'WAITING') {
+    throw new Error(`Cannot add player to game with status: ${game.status}`)
+  }
+
+  if (game.players.length !== 1) {
+    throw new Error(`Expected 1 player, got ${game.players.length}`)
+  }
+
+  return Object.freeze({
+    ...game,
+    players: Object.freeze([...game.players, player]),
+    cumulativeScores: Object.freeze([...game.cumulativeScores, { player_id: player.id, score: 0 }]),
+    playerConnectionStatuses: Object.freeze([
+      ...game.playerConnectionStatuses,
+      { player_id: player.id, status: 'CONNECTED' as const },
+    ]),
+    status: 'STARTING' as GameStatus,
+    updatedAt: new Date(),
+  })
+}
+
+/**
  * 加入第二位玩家並開始遊戲
  *
  * 將任意玩家（人類或 AI）加入遊戲，並將狀態改為 IN_PROGRESS。
  * 這是 Server 中立的配對邏輯核心函數。
  *
+ * @deprecated 請使用 addSecondPlayerToStarting + startRound 替代
  * @param game - 等待中的遊戲
  * @param player - 要加入的玩家
  * @returns 更新後的遊戲（狀態改為 IN_PROGRESS）
@@ -150,14 +188,15 @@ export function addSecondPlayerAndStart(game: Game, player: Player): Game {
 /**
  * 開始新局
  *
- * 洗牌、發牌，建立新的 Round
+ * 洗牌、發牌，建立新的 Round。
+ * 如果遊戲狀態是 STARTING，會同時將狀態改為 IN_PROGRESS。
  *
- * @param game - 進行中的遊戲
+ * @param game - 進行中或啟動中的遊戲
  * @param useTestDeck - 是否使用測試牌組（預設 false）
- * @returns 更新後的遊戲（包含新的 currentRound）
+ * @returns 更新後的遊戲（包含新的 currentRound，狀態為 IN_PROGRESS）
  */
 export function startRound(game: Game, useTestDeck = false): Game {
-  if (game.status !== 'IN_PROGRESS') {
+  if (game.status !== 'IN_PROGRESS' && game.status !== 'STARTING') {
     throw new Error(`Cannot start round for game with status: ${game.status}`)
   }
 
@@ -193,6 +232,8 @@ export function startRound(game: Game, useTestDeck = false): Game {
   return Object.freeze({
     ...game,
     currentRound: round,
+    // 如果是 STARTING 狀態，轉換為 IN_PROGRESS
+    status: 'IN_PROGRESS' as GameStatus,
     updatedAt: new Date(),
   })
 }

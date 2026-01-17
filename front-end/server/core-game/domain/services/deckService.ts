@@ -10,7 +10,8 @@
 
 import { ALL_CARD_IDS, TOTAL_DECK_SIZE, ALL_CARD_IDS_SET } from '#shared/constants/cardConstants'
 import { DEAL_CONFIG } from '../card/dealConfig'
-import { getTestDeck } from './testDecks'
+import { getTestDeck, type TestDeckType } from './testDecks'
+import { gameConfig } from '~~/server/utils/config'
 
 // Re-export 維持向後相容
 export { ALL_CARD_IDS, TOTAL_DECK_SIZE, ALL_CARD_IDS_SET } from '#shared/constants/cardConstants'
@@ -81,8 +82,9 @@ function fisherYatesShuffle<T>(array: readonly T[]): T[] {
  */
 export function createShuffledDeck(useTestDeck = false): string[] {
   if (useTestDeck) {
-    // 測試模式：返回固定順序的牌組
-    return getTestDeck('yaku_before_selection')
+    // 測試模式：根據環境變數選擇測試牌組類型
+    const deckType = gameConfig.test_deck_type as TestDeckType
+    return getTestDeck(deckType)
   }
   return fisherYatesShuffle(ALL_CARD_IDS)
 }

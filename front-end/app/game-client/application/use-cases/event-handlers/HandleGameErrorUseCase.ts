@@ -8,7 +8,7 @@
  * - NotificationPort: 顯示 RedirectModal（5 秒倒數後導向大廳）
  * - GameStatePort: 清除遊戲 ID
  * - MatchmakingStatePort: 重置配對狀態（讓大廳按鈕恢復可點擊）
- * - SessionContextPort: 清除 roomTypeId 和 entryId
+ * - SessionContextPort: 清除 selectedRoomTypeId 和 currentGameId
  *
  * @note
  * GameError 是各 Use Case 的 fallback 結果，此 Use Case 負責統一處理前端展示。
@@ -53,7 +53,7 @@ export class HandleGameErrorUseCase implements HandleGameErrorPort {
     // 3. 重置配對狀態（讓大廳按鈕恢復可點擊）
     this.matchmakingState.clearSession()
 
-    // 4. 清除 SessionContext（roomTypeId、entryId）
+    // 4. 清除 SessionContext（selectedRoomTypeId、currentGameId）
     this.sessionContext.clearSession()
 
     // 5. 顯示 RedirectModal（5 秒倒數後導向大廳）

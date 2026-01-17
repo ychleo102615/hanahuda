@@ -41,7 +41,7 @@ export interface GameConfig {
   /** 假玩家思考時間上限（毫秒） */
   readonly opponent_thinking_max_ms: number
 
-  /** SSE 心跳間隔（秒） */
+  /** WebSocket 心跳間隔（秒） */
   readonly sse_heartbeat_interval_seconds: number
 
   /** 超時冗餘時間（秒） - 後端判定超時前的額外緩衝 */
@@ -55,6 +55,9 @@ export interface GameConfig {
 
   /** 使用測試牌組（用於測試 TRIPLE_MATCH 等場景） */
   readonly use_test_deck: boolean
+
+  /** 測試牌組類型（teshi, kuttsuki, field_teshi, triple_match, yaku_before_selection） */
+  readonly test_deck_type: string
 
   /** 配對超時（秒） - 等待對手加入的最大時間 */
   readonly matchmaking_timeout_seconds: number
@@ -128,6 +131,7 @@ export const gameConfig: GameConfig = {
   session_timeout_ms: parseEnvNumber('SESSION_TIMEOUT_MS', 24 * 60 * 60 * 1000), // 24 hours
   default_room_type: parseRoomType(),
   use_test_deck: process.env.USE_TEST_DECK === 'true',
+  test_deck_type: process.env.TEST_DECK_TYPE || 'yaku_before_selection',
   matchmaking_timeout_seconds: parseEnvNumber('MATCHMAKING_TIMEOUT_SECONDS', 30),
   dealing_animation_seconds: parseEnvNumber('DEALING_ANIMATION_SECONDS', 3),
 }

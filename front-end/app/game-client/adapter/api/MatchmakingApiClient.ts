@@ -2,12 +2,14 @@
  * Matchmaking API Client
  *
  * @description
- * 與配對 API 互動的客戶端。
+ * 配對功能客戶端。使用 WebSocket 命令進行配對操作。
  *
  * @module app/game-client/adapter/api/MatchmakingApiClient
  */
 
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
+import { createJoinMatchmakingCommand } from '#shared/contracts'
+import type { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
 
 /**
  * Enter Matchmaking Response
@@ -15,15 +17,6 @@ import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 export interface EnterMatchmakingResponse {
   readonly success: boolean
   readonly entry_id?: string
-  readonly message: string
-  readonly error_code?: string
-}
-
-/**
- * Cancel Matchmaking Response
- */
-export interface CancelMatchmakingResponse {
-  readonly success: boolean
   readonly message: string
   readonly error_code?: string
 }
@@ -106,74 +99,71 @@ function extractServerError(error: unknown): { errorCode: string; message: strin
 }
 
 /**
+ * 產生唯一命令 ID
+ */
+function generateCommandId(): string {
+  return `cmd-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+}
+
+/**
  * Matchmaking API Client
+ *
+ * @description
+ * 使用 WebSocket 命令進行配對操作。
+ * 確保 WebSocket 連線建立後才能發送配對命令，避免 Race Condition。
  */
 export class MatchmakingApiClient {
+  private wsClient: GatewayWebSocketClient | null = null
+
   /**
-   * 進入配對佇列
+   * 設定 WebSocket 客戶端
+   *
+   * @description
+   * 由 DI 容器在 WebSocket 連線建立後注入。
+   */
+  setWebSocketClient(client: GatewayWebSocketClient): void {
+    this.wsClient = client
+  }
+
+  /**
+   * 進入配對佇列（透過 WebSocket）
    *
    * @param roomType - 房間類型
-   * @returns 配對條目 ID
-   * @throws {MatchmakingError} 配對失敗時拋出錯誤（包含伺服器錯誤代碼與訊息）
+   * @throws {MatchmakingError} 配對失敗時拋出錯誤
+   *
+   * @description
+   * 透過 WebSocket 發送 JOIN_MATCHMAKING 命令。
+   * 必須先建立 WebSocket 連線並呼叫 setWebSocketClient。
    */
-  async enterMatchmaking(roomType: RoomTypeId): Promise<string> {
-    try {
-      const response = await $fetch<EnterMatchmakingResponse>('/api/v1/matchmaking/enter', {
-        method: 'POST',
-        body: { room_type: roomType },
-      })
+  async enterMatchmaking(roomType: RoomTypeId): Promise<void> {
+    if (!this.wsClient) {
+      throw new MatchmakingError('NOT_CONNECTED', 'WebSocket not connected. Please wait for connection.')
+    }
 
-      if (!response.success || !response.entry_id) {
+    if (!this.wsClient.isConnected()) {
+      throw new MatchmakingError('NOT_CONNECTED', 'WebSocket connection lost. Please try again.')
+    }
+
+    try {
+      const command = createJoinMatchmakingCommand(generateCommandId(), roomType)
+      const response = await this.wsClient.sendCommand(command)
+
+      if (!response.success) {
+        const error = response.error
         throw new MatchmakingError(
-          response.error_code || 'UNKNOWN_ERROR',
-          response.message || 'Failed to enter matchmaking'
+          error?.code || 'UNKNOWN_ERROR',
+          error?.message || 'Failed to enter matchmaking'
         )
       }
-
-      return response.entry_id
     } catch (error) {
       // Already a MatchmakingError, re-throw
       if (error instanceof MatchmakingError) {
         throw error
       }
 
-      // Extract server error from FetchError (400/4xx responses)
-      const serverError = extractServerError(error)
-      if (serverError) {
-        throw new MatchmakingError(serverError.errorCode, serverError.message)
-      }
-
-      // Network or unknown error
-      throw new MatchmakingError('NETWORK_ERROR', 'Unable to connect to server')
+      // WebSocket error
+      throw new MatchmakingError('NETWORK_ERROR', 'Failed to send matchmaking request')
     }
-  }
-
-  /**
-   * 取消配對
-   *
-   * @param entryId - 配對條目 ID
-   * @throws 取消失敗時拋出錯誤
-   */
-  async cancelMatchmaking(entryId: string): Promise<void> {
-    const response = await $fetch<CancelMatchmakingResponse>('/api/v1/matchmaking/cancel', {
-      method: 'POST',
-      body: { entry_id: entryId },
-    })
-
-    if (!response.success) {
-      throw new Error(response.message || 'Failed to cancel matchmaking')
-    }
-  }
-
-  /**
-   * 建立配對狀態 SSE 連線
-   *
-   * @param entryId - 配對條目 ID
-   * @returns EventSource 實例
-   */
-  createStatusConnection(entryId: string): EventSource {
-    const url = `/api/v1/matchmaking/status?entry_id=${encodeURIComponent(entryId)}`
-    return new EventSource(url)
   }
 
   /**

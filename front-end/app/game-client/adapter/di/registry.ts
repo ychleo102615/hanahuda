@@ -10,7 +10,7 @@
  * 3. Mode-specific Adapters (Backend / Mock / Local) - 提供 SendCommandPort
  * 4. Use Cases as Input Ports (18 個)
  * 5. Event Router (事件路由)
- * 6. SSE Client & Event Emitter (根據模式初始化)
+ * 6. WebSocket Client & Event Emitter (根據模式初始化)
  *
  * @example
  * ```typescript
@@ -39,24 +39,24 @@ import { HandleRoundEndedUseCase } from '../../application/use-cases/event-handl
 import { HandleGameFinishedUseCase } from '../../application/use-cases/event-handlers/HandleGameFinishedUseCase'
 import { HandleTurnErrorUseCase } from '../../application/use-cases/event-handlers/HandleTurnErrorUseCase'
 import { HandleGameErrorUseCase } from '../../application/use-cases/event-handlers/HandleGameErrorUseCase'
-import { HandleInitialStateUseCase } from '../../application/use-cases/HandleInitialStateUseCase'
 import { StartGameUseCase } from '../../application/use-cases/StartGameUseCase'
 import { HandleStateRecoveryUseCase } from '../../application/use-cases/HandleStateRecoveryUseCase'
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ErrorHandlerPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ErrorHandlerPort, ConnectionReadyPort } from '../../application/ports/output'
+import { createConnectionReadyAdapter } from '../connection/ConnectionReadyAdapter'
 import type { HandleStateRecoveryPort } from '../../application/ports/input'
 import { createSessionContextAdapter } from '../session/SessionContextAdapter'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import * as domain from '../../domain'
 import { MockApiClient } from '../mock/MockApiClient'
 import { MockEventEmitter } from '../mock/MockEventEmitter'
-import { EventRouter } from '../sse/EventRouter'
-import { MatchmakingEventRouter } from '../sse/MatchmakingEventRouter'
-import { GatewayEventRouter } from '../sse/GatewayEventRouter'
-import { GatewayEventClient } from '../sse/GatewayEventClient'
-import { GameApiClient } from '../api/GameApiClient'
+import { EventRouter } from '../ws/EventRouter'
+import { MatchmakingEventRouter } from '../ws/MatchmakingEventRouter'
+import { GatewayEventRouter } from '../ws/GatewayEventRouter'
+import { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
+import { WsSendCommandAdapter } from '../ws/WsSendCommandAdapter'
 import { AnimationPortAdapter } from '../animation/AnimationPortAdapter'
 import { zoneRegistry } from '../animation/ZoneRegistry'
 import { createNotificationPortAdapter } from '../notification/NotificationPortAdapter'
@@ -75,7 +75,6 @@ import { MATCHMAKING_EVENT_TYPES } from '#shared/contracts'
 import {
   HandleMatchmakingStatusUseCase,
   HandleMatchFoundUseCase,
-  HandleMatchmakingCancelledUseCase,
   HandleMatchmakingErrorUseCase,
   HandleMatchFailedUseCase,
 } from '../../application/use-cases/matchmaking'
@@ -125,7 +124,7 @@ export function registerDependencies(container: DIContainer, mode: GameMode, pin
   if (mode === 'mock') {
     initializeMockEventEmitter(container)
   }
-  // Backend 模式的 SSE 相關元件已在 registerBackendAdapters 中註冊
+  // Backend 模式的 WebSocket 相關元件已在 registerBackendAdapters 中註冊
 }
 
 /**
@@ -331,6 +330,14 @@ function registerOutputPorts(container: DIContainer): void {
     () => new LayoutPortAdapter(),
     { singleton: true },
   )
+
+  // ConnectionReadyPort: 連線就緒通知
+  // 讓 HandleGatewayConnectedUseCase 通知 useGatewayConnection 初始狀態已接收
+  container.register(
+    TOKENS.ConnectionReadyPort,
+    () => createConnectionReadyAdapter(),
+    { singleton: true },
+  )
 }
 
 /**
@@ -364,7 +371,7 @@ function registerInputPorts(container: DIContainer): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendCommandPort = container.resolve(TOKENS.SendCommandPort) as any
 
-  // 註冊 StartGamePort（SSE-First Architecture）
+  // 註冊 StartGamePort（Gateway Architecture）
   // 依賴 GameConnectionPort、GameStatePort、NotificationPort、AnimationPort、OperationSessionPort
   container.register(
     TOKENS.StartGamePort,
@@ -497,9 +504,13 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T084 [US4]: 註冊 GameFinished 事件處理器
+  // 需要 GameConnectionPort 以設定預期斷線標記（後端會在發送此事件後主動關閉 WebSocket）
   container.register(
     TOKENS.HandleGameFinishedPort,
-    () => new HandleGameFinishedUseCase(notificationPort, uiStatePort, gameStatePort),
+    () => {
+      const gameConnectionPort = container.resolve(TOKENS.GameConnectionPort) as GameConnectionPort
+      return new HandleGameFinishedUseCase(notificationPort, uiStatePort, gameStatePort, gameConnectionPort)
+    },
     { singleton: true }
   )
 
@@ -518,22 +529,6 @@ function registerInputPorts(container: DIContainer): void {
     { singleton: true }
   )
 
-  // SSE-First: 註冊 HandleInitialStatePort（處理 SSE 連線後的第一個事件）
-  // 改用 OperationSessionPort 取代 OperationSessionManager
-  container.register(
-    TOKENS.HandleInitialStatePort,
-    () => new HandleInitialStateUseCase(
-      uiStatePort,
-      notificationPort,
-      navigationPort,
-      animationPort,
-      matchmakingStatePort,
-      gameStatePort,
-      operationSessionPort
-    ),
-    { singleton: true }
-  )
-
   // 註冊 HandleStateRecoveryPort（統一處理快照恢復）
   // 改用 OperationSessionPort 取代 OperationSessionManager
   container.register(
@@ -543,9 +538,12 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // Gateway: 註冊 HandleGatewayConnectedPort（處理 Gateway 連線後的初始狀態）
+  // 注入 ConnectionReadyPort 以通知 useGatewayConnection 初始狀態已接收
+  // 注意：不再注入 NavigationPort，因為 IDLE 狀態不再自動導航（由 middleware 處理）
+  const connectionReadyPort = container.resolve(TOKENS.ConnectionReadyPort) as ConnectionReadyPort
   container.register(
     TOKENS.HandleGatewayConnectedPort,
-    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, navigationPort, gameStatePort),
+    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, gameStatePort, connectionReadyPort),
     { singleton: true }
   )
 
@@ -562,29 +560,18 @@ function registerInputPorts(container: DIContainer): void {
  * 註冊 Backend 模式的 Adapters
  *
  * @description
- * 註冊 GameApiClient 作為 SendCommandPort 的實作。
- * Nuxt 4 前後端同域，baseURL 使用空字串。
- * 注入 SessionContextPort 以取得 gameId, playerId。
+ * 註冊 WsSendCommandAdapter 作為 SendCommandPort 的實作。
+ * 透過 WebSocket 發送命令到後端伺服器。
  *
- * 同時註冊 SSE 相關元件：
- * - GameEventClient
- * - SSEConnectionManager
+ * 同時註冊 WebSocket 相關元件：
+ * - GatewayWebSocketClient
+ * - GatewayEventRouter
  * - GameConnectionPort
  */
 function registerBackendAdapters(container: DIContainer): void {
 
   // Nuxt 同域，使用空字串作為 baseURL
   const baseURL = ''
-
-  // SendCommandPort: GameApiClient（注入 GameStatePort）
-  container.register(
-    TOKENS.SendCommandPort,
-    () => {
-      const gameState = container.resolve(TOKENS.GameStatePort) as GameStatePort
-      return new GameApiClient(baseURL, gameState)
-    },
-    { singleton: true },
-  )
 
   // RoomApiClient: 取得房間類型列表
   container.register(
@@ -622,7 +609,7 @@ function registerBackendAdapters(container: DIContainer): void {
     { singleton: true },
   )
 
-  // ===== Gateway SSE (Game Gateway 統一架構) =====
+  // ===== Gateway WebSocket (Game Gateway 統一架構) =====
 
   // GatewayEventRouter: 統一 Gateway 事件路由器
   // 整合 EventRouter (遊戲) 與 MatchmakingEventRouter (配對)
@@ -636,25 +623,44 @@ function registerBackendAdapters(container: DIContainer): void {
     { singleton: true },
   )
 
-  // GatewayEventClient: 統一 Gateway SSE 客戶端
-  // 連線到 /api/v1/events，接收所有遊戲相關事件
+  // GatewayWebSocketClient: 統一 Gateway WebSocket 客戶端
+  // 連線到 /_ws，接收所有遊戲相關事件並發送命令
   container.register(
-    TOKENS.GatewayEventClient,
+    TOKENS.GatewayWebSocketClient,
     () => {
       const router = container.resolve(TOKENS.GatewayEventRouter) as GatewayEventRouter
-      return new GatewayEventClient(router)
+      const wsClient = new GatewayWebSocketClient(router)
+
+      // 注入 WebSocket 客戶端到 MatchmakingApiClient
+      // 這確保配對操作透過 WebSocket 進行，避免 Race Condition
+      const matchmakingClient = container.resolve(TOKENS.MatchmakingApiClient) as MatchmakingApiClient
+      matchmakingClient.setWebSocketClient(wsClient)
+
+      return wsClient
     },
     { singleton: true },
   )
 
-  // GameConnectionPort: 包裝 GatewayEventClient 提供 Application Layer 介面
+  // SendCommandPort: WsSendCommandAdapter（透過 WebSocket 發送命令）
+  // 必須在 GatewayWebSocketClient 之後註冊
+  container.register(
+    TOKENS.SendCommandPort,
+    () => {
+      const wsClient = container.resolve(TOKENS.GatewayWebSocketClient) as GatewayWebSocketClient
+      const gameState = container.resolve(TOKENS.GameStatePort) as GameStatePort
+      return new WsSendCommandAdapter(wsClient, gameState)
+    },
+    { singleton: true },
+  )
+
+  // GameConnectionPort: 包裝 GatewayWebSocketClient 提供 Application Layer 介面
   // Gateway 架構下，connect() 參數由 Cookie 身份驗證取代
   container.register(
     TOKENS.GameConnectionPort,
     () => {
-      const gatewayClient = container.resolve(TOKENS.GatewayEventClient) as GatewayEventClient
+      const gatewayClient = container.resolve(TOKENS.GatewayWebSocketClient) as GatewayWebSocketClient
 
-      // 建立內聯 Adapter，將 GatewayEventClient 適配為 GameConnectionPort
+      // 建立內聯 Adapter，將 GatewayWebSocketClient 適配為 GameConnectionPort
       return new (class extends GameConnectionPort {
         connect(_params: GameConnectionParams): void {
           // Gateway 架構：身份由 Cookie 驗證，不需要傳遞參數
@@ -667,6 +673,10 @@ function registerBackendAdapters(container: DIContainer): void {
 
         isConnected(): boolean {
           return gatewayClient.isConnected()
+        }
+
+        setExpectingDisconnect(expecting: boolean): void {
+          gatewayClient.setExpectingDisconnect(expecting)
         }
       })()
     },
@@ -737,16 +747,12 @@ function initializeMockEventEmitter(container: DIContainer): void {
  * 註冊事件路由
  *
  * @description
- * 將 SSE 事件類型綁定到對應的 Input Ports。
+ * 將事件類型綁定到對應的 Input Ports。
  */
 function registerEventRoutes(container: DIContainer): void {
   const router = container.resolve(TOKENS.EventRouter) as {
     register: (eventType: SSEEventType, port: { execute: (payload: unknown) => void }) => void
   }
-
-  // SSE-First: 綁定 InitialState 事件（SSE 連線後的第一個事件）
-  const handleInitialStatePort = container.resolve(TOKENS.HandleInitialStatePort) as { execute: (payload: unknown) => void }
-  router.register('InitialState', handleInitialStatePort)
 
   // T030 [US1]: 綁定 GameStarted 和 RoundDealt 事件
   const gameStartedPort = container.resolve(TOKENS.HandleGameStartedPort) as { execute: (payload: unknown) => void }
@@ -793,7 +799,7 @@ function registerEventRoutes(container: DIContainer): void {
   const gameErrorPort = container.resolve(TOKENS.HandleGameErrorPort) as { execute: (payload: unknown) => void }
   router.register('GameError', gameErrorPort)
 
-  // Gateway: 綁定 GatewayConnected 事件（Gateway SSE 連線後的初始狀態）
+  // Gateway: 綁定 GatewayConnected 事件（Gateway WebSocket 連線後的初始狀態）
   const gatewayConnectedPort = container.resolve(TOKENS.HandleGatewayConnectedPort) as { execute: (payload: unknown) => void }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   router.register('GatewayConnected' as any, gatewayConnectedPort)
@@ -817,14 +823,14 @@ function registerLocalAdapters(container: DIContainer): void {
  * 註冊配對事件路由
  *
  * @description
- * 將配對 SSE 事件類型綁定到對應的 Input Ports (Use Cases)。
+ * 將配對事件類型綁定到對應的 Input Ports (Use Cases)。
  * 僅在 Backend 模式下呼叫。
  *
  * 事件類型:
  * - MatchmakingStatus: 更新配對狀態（搜尋中、低可用性）
  * - MatchFound: 配對成功，導航至遊戲
- * - MatchmakingCancelled: 配對取消
  * - MatchmakingError: 配對錯誤
+ * - MatchFailed: 遊戲創建失敗
  */
 function registerMatchmakingEventRoutes(container: DIContainer): void {
   const router = container.resolve(TOKENS.MatchmakingEventRouter) as MatchmakingEventRouter
@@ -838,14 +844,12 @@ function registerMatchmakingEventRoutes(container: DIContainer): void {
   // 建立 Use Cases
   const handleMatchmakingStatusUseCase = new HandleMatchmakingStatusUseCase(matchmakingStatePort)
   const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, gameStatePort, sessionContextPort)
-  const handleMatchmakingCancelledUseCase = new HandleMatchmakingCancelledUseCase(matchmakingStatePort, sessionContextPort)
   const handleMatchmakingErrorUseCase = new HandleMatchmakingErrorUseCase(matchmakingStatePort)
   const handleMatchFailedUseCase = new HandleMatchFailedUseCase(matchmakingStatePort, sessionContextPort)
 
   // 註冊事件處理器
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingStatus, handleMatchmakingStatusUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchFound, handleMatchFoundUseCase)
-  router.register(MATCHMAKING_EVENT_TYPES.MatchmakingCancelled, handleMatchmakingCancelledUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingError, handleMatchmakingErrorUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchFailed, handleMatchFailedUseCase)
 }

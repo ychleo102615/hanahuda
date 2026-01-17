@@ -3,8 +3,8 @@
  *
  * @description
  * 組合式事件發佈器，統一發佈事件到所有訂閱者：
- * 1. SSE 連線（透過 ConnectionStore）
- * 2. AI 對手（透過 OpponentStore）
+ * 1. AI 對手（透過 OpponentStore）
+ * 2. 玩家連線（透過 PlayerEventBus，WebSocket Gateway 架構）
  * 3. 資料庫日誌（透過 GameLogRepository）
  *
  * 設計原則：
@@ -22,13 +22,23 @@ import type { GameLogRepositoryPort } from '~~/server/core-game/application/port
 import type { GameEvent, GameStartedEvent, RoundDealtEvent, CardPlay } from '#shared/contracts'
 import { EVENT_TYPES } from '#shared/contracts'
 import type { GameLogEventType } from '~~/server/database/schema/gameLogs'
-import { connectionStore } from './connectionStore'
-import { opponentStore } from '~~/server/core-game/adapters/opponent/opponentStore'
+import { opponentStore } from '~~/server/opponent/adapter/store/opponentStore'
 import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
 import {
   playerEventBus,
   createGameEvent,
 } from '~~/server/shared/infrastructure/event-bus'
+import { wsConnectionManager } from '~~/server/gateway/wsConnectionManager'
+
+/**
+ * GameFinished 後關閉連線的延遲時間（毫秒）
+ *
+ * @description
+ * 確保 GameFinished 事件送達客戶端後再關閉連線。
+ * 前端收到事件後會設置 `expectingDisconnect = true`，
+ * 避免觸發不必要的重連。
+ */
+const DISCONNECT_DELAY_MS = 100
 
 // ============================================================================
 // Payload 精簡工具（儲存優化，不影響業務契約）
@@ -77,7 +87,7 @@ function omitNullValues<T extends Record<string, unknown>>(obj: T): Record<strin
 }
 
 /**
- * 需要記錄的 SSE 事件類型（使用 EVENT_TYPES 常數）
+ * 需要記錄的事件類型（使用 EVENT_TYPES 常數）
  *
  * 不記錄的事件：
  * - TurnError, GameError: 錯誤事件由日誌框架處理
@@ -102,7 +112,7 @@ const LOGGABLE_EVENT_TYPES: Set<GameLogEventType> = new Set([
 /**
  * CompositeEventPublisher
  *
- * 實作 EventPublisherPort，將事件廣播到 SSE、AI 對手，並記錄到資料庫。
+ * 實作 EventPublisherPort，將事件廣播到 WebSocket、AI 對手，並記錄到資料庫。
  */
 export class CompositeEventPublisher implements EventPublisherPort {
   constructor(
@@ -113,32 +123,55 @@ export class CompositeEventPublisher implements EventPublisherPort {
    * 發佈通用遊戲事件到指定遊戲
    *
    * @description
-   * 1. 發布到傳統 SSE 連線（向後兼容 /api/v1/games/connect）
-   * 2. 發布到 AI 對手
-   * 3. 發布到 PlayerEventBus（新 Gateway 架構 /api/v1/events）
-   * 4. 記錄到資料庫
+   * 1. 發布到 AI 對手
+   * 2. 發布到 PlayerEventBus（WebSocket Gateway 架構 /_ws）
+   * 3. 記錄到資料庫
+   * 4. 若為 GameFinished 事件，延遲後關閉玩家連線
    *
    * @param gameId - 遊戲 ID
    * @param event - 遊戲事件
    */
   publishToGame(gameId: string, event: GameEvent): void {
-    // 1. 發布到 SSE 連線（傳統 Clients，向後兼容）
-    const connectionCount = connectionStore.getConnectionCount(gameId)
-    if (connectionCount > 0) {
-      connectionStore.broadcast(gameId, event)
-    }
+    // 取得玩家 ID 列表（需在事件發送前取得，因為遊戲可能在發送後被刪除）
+    const game = inMemoryGameStore.get(gameId)
+    const playerIds = game?.players.map((p) => p.id) ?? []
 
-    // 2. 發布到 AI 對手（若有註冊）
+    // 1. 發布到 AI 對手（若有註冊）
     const hasOpponent = opponentStore.hasOpponent(gameId)
     if (hasOpponent) {
       opponentStore.sendEvent(gameId, event)
     }
 
-    // 3. 發布到 PlayerEventBus（新 Gateway 架構）
+    // 2. 發布到 PlayerEventBus（WebSocket Gateway 架構）
     this.publishToPlayerEventBus(gameId, event)
 
-    // 4. 記錄到資料庫（Fire-and-Forget）
+    // 3. 記錄到資料庫（Fire-and-Forget）
     this.logEventToDatabase(gameId, event)
+
+    // 4. 若為 GameFinished 事件，延遲後關閉玩家連線
+    if (event.event_type === EVENT_TYPES.GameFinished) {
+      this.scheduleDisconnectAfterGameEnd(playerIds)
+    }
+  }
+
+  /**
+   * 遊戲結束後排程關閉玩家連線
+   *
+   * @description
+   * GameFinished 事件發送後，等待一小段時間確保事件送達，
+   * 然後主動關閉玩家的 WebSocket 連線。
+   * 前端收到 GameFinished 後會設置 expectingDisconnect，
+   * 收到 onclose 時不會觸發重連。
+   *
+   * @param playerIds - 玩家 ID 列表
+   */
+  private scheduleDisconnectAfterGameEnd(playerIds: string[]): void {
+    setTimeout(() => {
+      for (const playerId of playerIds) {
+        // 使用 4000 代碼表示「正常遊戲結束」
+        wsConnectionManager.forceDisconnect(playerId, 4000, 'Game finished')
+      }
+    }, DISCONNECT_DELAY_MS)
   }
 
   /**
@@ -290,19 +323,27 @@ export class CompositeEventPublisher implements EventPublisherPort {
    * 發佈事件到指定玩家
    *
    * @description
-   * 用於重連時發送 GameSnapshotRestore 事件給單一玩家。
-   * 1. 發送到傳統 SSE 連線（向後兼容）
-   * 2. 發送到 PlayerEventBus（新 Gateway 架構）
+   * 用於：
+   * - RoundDealt 事件（每個玩家收到過濾後的版本）
+   * - 重連時發送 GameSnapshotRestore 事件給單一玩家
+   *
+   * 若目標玩家是 AI 對手，透過 OpponentStore 發送。
+   * 否則透過 PlayerEventBus（WebSocket Gateway 架構）發送。
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
    * @param event - 遊戲事件
    */
   publishToPlayer(gameId: string, playerId: string, event: GameEvent): void {
-    // 1. 傳統 SSE 連線（向後兼容）
-    connectionStore.sendToPlayer(gameId, playerId, event)
+    // 檢查目標玩家是否為 AI 對手
+    const opponentInfo = opponentStore.get(gameId)
+    if (opponentInfo && opponentInfo.playerId === playerId) {
+      // AI 玩家：透過 OpponentStore 發送
+      opponentStore.sendEvent(gameId, event)
+      return
+    }
 
-    // 2. PlayerEventBus（新 Gateway 架構）
+    // 人類玩家：透過 PlayerEventBus（WebSocket Gateway 架構）發送
     const gatewayEvent = createGameEvent(event.event_type, event)
     playerEventBus.publishToPlayer(playerId, gatewayEvent)
   }

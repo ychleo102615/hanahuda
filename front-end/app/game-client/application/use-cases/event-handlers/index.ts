@@ -2,7 +2,7 @@
  * Event Handler Use Cases
  *
  * @description
- * 匯出所有事件處理器 Use Cases（10 個 SSE 事件處理器）。
+ * 匯出所有事件處理器 Use Cases（10 個事件處理器）。
  *
  * 分類：
  * - Core Game Flow Events (7): GameStarted, RoundDealt, TurnCompleted, SelectionRequired, TurnProgressAfterSelection, DecisionRequired, DecisionMade

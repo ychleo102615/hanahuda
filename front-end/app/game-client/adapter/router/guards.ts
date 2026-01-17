@@ -46,9 +46,9 @@ export function gamePageGuard(
   next: NavigationGuardNext
 ): void {
 
-  // 檢查是否正在配對中（有 entryId）
+  // 檢查是否有選擇的房間（配對中或準備配對）或有活躍遊戲
   // 注意：此檔案主要用於測試，實際應使用 Nuxt middleware
-  if (!sessionContext.isMatchmakingMode()) {
+  if (!sessionContext.hasSelectedRoom() && !sessionContext.hasActiveGame()) {
     next({ name: 'lobby' })
     return
   }
@@ -87,9 +87,9 @@ export function lobbyPageGuard(
   from: RouteLocationNormalized,
   next: NavigationGuardNext
 ): void {
-  // 若正在配對中，重定向至遊戲畫面
+  // 若有選擇的房間或活躍遊戲，重定向至遊戲畫面
   // 注意：此檔案主要用於測試，實際應使用 gameState.currentGameId 判斷
-  if (sessionContext.isMatchmakingMode()) {
+  if (sessionContext.hasSelectedRoom() || sessionContext.hasActiveGame()) {
     next({ name: 'game' })
     return
   }

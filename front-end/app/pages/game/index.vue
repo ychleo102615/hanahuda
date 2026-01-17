@@ -8,7 +8,7 @@
  * - 小螢幕：各區域使用最小高度，頁面可垂直滾動
  *
  * Gateway Architecture:
- * - 頁面載入時建立單一 Gateway SSE 連線
+ * - 頁面載入時建立單一 Gateway WebSocket 連線
  * - Gateway 自動處理配對和遊戲事件
  * - 後端推送 GatewayConnected 事件決定初始狀態
  * - 重連由 GatewayEventClient 自動處理
@@ -19,11 +19,11 @@ definePageMeta({
   middleware: 'game',
 })
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, provide, onMounted, onUnmounted } from 'vue'
 import { resolveDependency, tryResolveDependency } from '~/game-client/adapter/di/resolver'
 import type { MockEventEmitter } from '~/game-client/adapter/mock/MockEventEmitter'
 import type { SessionContextPort } from '~/game-client/application/ports/output'
-import type { MatchmakingApiClient } from '~/game-client/adapter/api/MatchmakingApiClient'
+import { MatchmakingError, type MatchmakingApiClient } from '~/game-client/adapter/api/MatchmakingApiClient'
 import { useAuthStore } from '~/identity/adapter/stores/auth-store'
 import GameTopInfoBar from './components/GameTopInfoBar.vue'
 import FieldZone from './components/FieldZone.vue'
@@ -69,8 +69,11 @@ const matchmakingApiClient = gameMode === 'backend'
   ? tryResolveDependency<MatchmakingApiClient>(TOKENS.MatchmakingApiClient)
   : null
 
-// Gateway SSE 連線（Backend 模式）
+// Gateway WebSocket 連線（Backend 模式）
 const gatewayConnection = gameMode === 'backend' ? useGatewayConnection() : null
+
+// 提供 gatewayConnection 給子元件（GameFinishedModal 需要用於 Rematch）
+provide('gatewayConnection', gatewayConnection)
 
 // 頁面可見性監控（自動重連）
 usePageVisibility()
@@ -88,6 +91,7 @@ const {
   handleLeaveGameCancel,
 } = useLeaveGame({
   requireConfirmation: true,
+  gatewayConnection,
 })
 
 // Identity BC - 玩家資訊
@@ -106,21 +110,6 @@ const handlePlayerInfoCardClose = () => {
   isPlayerInfoCardOpen.value = false
 }
 
-// 取消配對
-const handleCancelMatchmaking = async () => {
-  const entryId = sessionContext.getEntryId()
-  if (entryId && matchmakingApiClient) {
-    try {
-      await matchmakingApiClient.cancelMatchmaking(entryId)
-    } finally {
-      // 清除所有配對相關資訊（roomTypeId + entryId）
-      sessionContext.clearSession()
-      matchmakingStore.clearSession()
-      navigateTo('/lobby')
-    }
-  }
-}
-
 onMounted(() => {
   // 檢查是否已登入
   if (!authStore.isLoggedIn) {
@@ -130,8 +119,42 @@ onMounted(() => {
 
   // 根據模式建立連線
   if (gameMode === 'backend' && gatewayConnection) {
-    // Backend 模式：建立 Gateway SSE 連線
-    // Gateway 自動處理配對和遊戲事件
+    // 重置配對狀態，確保 MatchmakingStatusOverlay 的 watch 不會使用殘留值
+    // 正確的狀態會由 HandleGatewayConnectedUseCase 根據後端回應設定（SSOT）
+    matchmakingStore.setStatus('idle')
+    matchmakingStore.setElapsedSeconds(0)
+
+    // 註冊初始狀態回調：根據後端確認的玩家狀態決定行為
+    // 此回調在 GatewayConnected 事件處理完成後觸發，解決時序問題
+    gatewayConnection.onInitialState(async (payload) => {
+      // 只有在 IDLE 狀態且有選擇房間時才發送配對命令
+      // MATCHMAKING / IN_GAME 狀態由 HandleGatewayConnectedUseCase 處理
+      if (payload.status === 'IDLE') {
+        const selectedRoomTypeId = sessionContext.getSelectedRoomTypeId()
+        if (selectedRoomTypeId && matchmakingApiClient) {
+          try {
+            // 發送 JOIN_MATCHMAKING 命令
+            matchmakingStore.setStatus('searching')
+            await matchmakingApiClient.enterMatchmaking(selectedRoomTypeId)
+            // 成功後保留 selectedRoomTypeId（配對中狀態的標記）
+            // 會在 HandleMatchFoundUseCase 中清除
+          } catch (error) {
+            // 配對失敗：清除狀態並導航回 lobby
+            sessionContext.setSelectedRoomTypeId(null)
+            matchmakingStore.setStatus('error')
+            if (error instanceof MatchmakingError) {
+              matchmakingStore.setError(error.errorCode, error.message)
+            } else {
+              matchmakingStore.setError('NETWORK_ERROR', 'Failed to enter matchmaking')
+            }
+            navigateTo('/lobby')
+          }
+        }
+      }
+      // MATCHMAKING / IN_GAME 狀態：HandleGatewayConnectedUseCase 已處理，不需要額外操作
+    })
+
+    // Backend 模式：建立 Gateway WebSocket 連線
     gatewayConnection.connect()
   } else if (gameMode === 'mock' && mockEventEmitter) {
     // Mock 模式：啟動事件腳本
@@ -245,7 +268,7 @@ onUnmounted(() => {
     />
 
     <!-- 011-online-matchmaking: 配對狀態覆蓋層 -->
-    <MatchmakingStatusOverlay @cancel="handleCancelMatchmaking" />
+    <MatchmakingStatusOverlay />
   </div>
 </template>
 

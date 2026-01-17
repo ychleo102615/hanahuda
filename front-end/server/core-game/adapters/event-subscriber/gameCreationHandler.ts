@@ -6,7 +6,7 @@
  *
  * 事件處理流程:
  * - HUMAN match: 直接建立雙人遊戲
- * - BOT match: 建立等待遊戲，發布 ROOM_CREATED 觸發 Opponent BC
+ * - BOT match: 建立等待遊戲，發布 AI_OPPONENT_NEEDED 事件
  *
  * @module server/core-game/adapters/event-subscriber/gameCreationHandler
  */
@@ -19,9 +19,9 @@ import {
   type Unsubscribe,
 } from '~~/server/shared/infrastructure/event-bus'
 import type { JoinGameInputPort } from '../../application/ports/input/joinGameInputPort'
-import type { InternalEventPublisherPort } from '../../application/ports/output/internalEventPublisherPort'
 import { inMemoryGameStore } from '../persistence/inMemoryGameStore'
 import { gameTimeoutManager } from '../timeout/gameTimeoutManager'
+import { logger } from '~~/server/utils/logger'
 
 /**
  * Game Creation Handler
@@ -33,12 +33,11 @@ export class GameCreationHandler {
   private unsubscribe: Unsubscribe | null = null
 
   constructor(
-    private readonly joinGameUseCase: JoinGameInputPort,
-    private readonly internalEventPublisher: InternalEventPublisherPort
+    private readonly joinGameUseCase: JoinGameInputPort
   ) {}
 
   /**
-   * 啟動監聽
+   * 啟動監聯
    */
   start(): void {
     if (this.unsubscribe) {
@@ -88,7 +87,7 @@ export class GameCreationHandler {
     })
 
     if (player1Result.status !== 'game_waiting') {
-      console.error('[GameCreationHandler] Failed to create game for player1:', player1Result)
+      logger.error('Failed to create game for player1', { result: player1Result })
       this.notifyMatchFailed(payload.player1Id, payload.player2Id, 'GAME_CREATION_FAILED')
       return
     }
@@ -101,7 +100,7 @@ export class GameCreationHandler {
     })
 
     if (player2Result.status !== 'game_started') {
-      console.error('[GameCreationHandler] Failed to join game for player2:', player2Result)
+      logger.error('Failed to join game for player2', { result: player2Result })
       // 清理 player1 的遊戲並通知兩個玩家
       this.cleanupFailedGame(player1Result.gameId)
       this.notifyMatchFailed(payload.player1Id, payload.player2Id, 'OPPONENT_JOIN_FAILED')
@@ -155,7 +154,7 @@ export class GameCreationHandler {
    *
    * @description
    * 1. Player 建立遊戲 (WAITING 狀態)
-   * 2. 發布 ROOM_CREATED 事件，觸發 Opponent BC 加入
+   * 2. 發布 AI_OPPONENT_NEEDED 事件（由 Opponent BC 處理）
    * 3. 發布 MatchFound 到 PlayerEventBus（包含有效 game_id）
    */
   private async handleBotMatch(payload: MatchFoundPayload): Promise<void> {
@@ -167,11 +166,13 @@ export class GameCreationHandler {
     })
 
     if (result.status !== 'game_waiting') {
-      console.error('[GameCreationHandler] Failed to create game for bot match:', result)
+      logger.error('Failed to create game for bot match', { result })
       return
     }
 
-    // 注意：ROOM_CREATED 事件已由 JoinGameUseCase 發布，此處不需重複發布
+    // 發布 AI_OPPONENT_NEEDED 事件（由 Opponent BC 訂閱處理）
+    // AI 會立即加入遊戲，遊戲在 1 秒後開始（GAME_START_DELAY_MS）
+    internalEventBus.publishAiOpponentNeeded({ gameId: result.gameId })
 
     // 遊戲建立成功後，發布 MatchFound 到 PlayerEventBus
     const matchFoundEvent = createMatchmakingEvent('MatchFound', {
@@ -192,14 +193,13 @@ let instance: GameCreationHandler | null = null
  * 初始化 GameCreationHandler
  */
 export function initGameCreationHandler(
-  joinGameUseCase: JoinGameInputPort,
-  internalEventPublisher: InternalEventPublisherPort
+  joinGameUseCase: JoinGameInputPort
 ): GameCreationHandler {
   if (instance) {
     instance.stop()
   }
 
-  instance = new GameCreationHandler(joinGameUseCase, internalEventPublisher)
+  instance = new GameCreationHandler(joinGameUseCase)
   instance.start()
   return instance
 }

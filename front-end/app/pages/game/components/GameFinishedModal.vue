@@ -17,14 +17,14 @@
           :class="[
             'px-6 py-5 text-white modal-header',
             uiStateStore.gameFinishedModalData.isPlayerWinner
-              ? 'bg-gradient-to-r from-green-600/80 to-green-700/80'
-              : 'bg-gradient-to-r from-blue-600/80 to-blue-700/80',
+              ? 'bg-gradient-to-r from-game-felt/90 to-game-table/90 border-b border-gold-dark/30'
+              : 'bg-gradient-to-r from-game-table-light/90 to-game-table/90',
           ]"
         >
-          <h2 id="game-finished-title" class="text-2xl font-bold text-center">
+          <h2 id="game-finished-title" class="text-2xl font-bold font-serif text-gold-light text-center">
             {{
               uiStateStore.gameFinishedModalData.isPlayerWinner
-                ? '🎉 Victory!'
+                ? 'Victory!'
                 : 'Game Over'
             }}
           </h2>
@@ -118,16 +118,21 @@
  * - 根據勝負顯示不同顏色主題
  */
 
+import { inject } from 'vue'
 import { Z_INDEX } from '~/constants'
 import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
 import { useLeaveGame } from '~/game-client/adapter/composables/useLeaveGame'
+import type { useGatewayConnection } from '~/game-client/adapter/composables/useGatewayConnection'
 
 const uiStateStore = useUIStateStore()
 const gameStateStore = useGameStateStore()
 
+// 從父元件注入 gatewayConnection（用於 Rematch 直接重連）
+const gatewayConnection = inject<ReturnType<typeof useGatewayConnection> | null>('gatewayConnection', null)
+
 // 使用 useLeaveGame 處理 Rematch 邏輯
-const { handleRematch, isRematching } = useLeaveGame()
+const { handleRematch, isRematching } = useLeaveGame({ gatewayConnection })
 
 /**
  * 取得玩家名稱

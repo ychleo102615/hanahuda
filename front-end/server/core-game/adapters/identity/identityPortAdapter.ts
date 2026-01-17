@@ -61,6 +61,37 @@ export class IdentityPortAdapter extends PlayerIdentityPort {
     // 4. 回傳 playerId
     return session.playerId
   }
+
+  /**
+   * 從 session_id 取得玩家 ID
+   *
+   * @param sessionId - Session ID 字串
+   * @returns playerId 或 null
+   *
+   * @description
+   * 用於 WebSocket 連線時的認證。
+   * WebSocket 升級階段無法使用 H3Event，需要直接傳入 sessionId。
+   */
+  async getPlayerIdFromSessionId(sessionId: string): Promise<string | null> {
+    if (!sessionId) {
+      return null
+    }
+
+    // 透過 Identity BC 查詢 Session
+    const container = getIdentityContainer()
+    const session = await container.sessionStore.findById(sessionId as SessionId)
+
+    if (!session) {
+      return null
+    }
+
+    // 檢查 Session 是否過期
+    if (session.expiresAt <= new Date()) {
+      return null
+    }
+
+    return session.playerId
+  }
 }
 
 /**

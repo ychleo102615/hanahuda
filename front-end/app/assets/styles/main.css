@@ -425,9 +425,9 @@
    * Modal 統一樣式 - 深色毛玻璃
    * ============================================ */
 
-  /* Modal 面板 - 深色毛玻璃效果 */
+  /* Modal 面板 - 深翠綠毛玻璃效果 */
   .modal-panel {
-    background: rgba(17, 24, 39, 0.95); /* gray-900/95 */
+    background: rgba(13, 31, 23, 0.95); /* game-table/95 */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(139, 105, 20, 0.2);
@@ -458,10 +458,10 @@
     );
   }
 
-  /* Modal 內部區塊 - 半透明深色 */
+  /* Modal 內部區塊 - 半透明深翠綠 */
   .modal-section {
-    background: rgba(31, 41, 55, 0.5); /* gray-800/50 */
-    border: 1px solid rgba(75, 85, 99, 0.3); /* gray-600/30 */
+    background: rgba(22, 48, 40, 0.5); /* game-table-light/50 */
+    border: 1px solid rgba(139, 105, 20, 0.2); /* gold-dark/20 */
   }
 
   /* Modal 高亮區塊（用於役種等） */
@@ -472,7 +472,7 @@
 
   /* Modal Footer - 微妙分隔 */
   .modal-footer {
-    background: rgba(17, 24, 39, 0.5);
+    background: rgba(13, 31, 23, 0.5); /* game-table/50 */
     border-top: 1px solid rgba(139, 105, 20, 0.15);
   }
 
@@ -480,7 +480,7 @@
   .topbar-glass {
     position: relative;
     /* z-index 由組件 inline style 設定，使用 Z_INDEX 常數 */
-    background: rgba(17, 24, 39, 0.88); /* gray-900/88 */
+    background: rgba(13, 31, 23, 0.88); /* game-table/88 */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     /* 金色底部邊線 */
@@ -528,5 +528,33 @@
     bottom: 6px;
     border: 1px solid rgba(212, 175, 55, 0.1);
     pointer-events: none;
+  }
+
+  /* ============================================
+   * 金色分隔線 - Section 邊緣裝飾
+   * ============================================ */
+
+  /* 金色漸層分隔線 */
+  .gold-border {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(139, 105, 20, 0.6) 20%,
+      rgba(212, 175, 55, 0.8) 50%,
+      rgba(139, 105, 20, 0.6) 80%,
+      transparent 100%
+    );
+  }
+
+  /* 較淡的金色分隔線（用於次要區塊） */
+  .gold-border-subtle {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(139, 105, 20, 0.3) 20%,
+      rgba(212, 175, 55, 0.5) 50%,
+      rgba(139, 105, 20, 0.3) 80%,
+      transparent 100%
+    );
   }
 }

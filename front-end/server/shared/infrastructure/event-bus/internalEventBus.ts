@@ -11,7 +11,7 @@
  */
 
 import { EventEmitter } from 'node:events'
-import type { MatchFoundPayload, RoomCreatedPayload } from './types'
+import type { MatchFoundPayload, AiOpponentNeededPayload, GameFinishedPayload } from './types'
 import { EVENT_TYPES } from './types'
 
 /**
@@ -25,9 +25,14 @@ export type Unsubscribe = () => void
 export type MatchFoundHandler = (payload: MatchFoundPayload) => void
 
 /**
- * 房間建立事件處理器類型
+ * AI 對手需求事件處理器類型
  */
-export type RoomCreatedHandler = (payload: RoomCreatedPayload) => void
+export type AiOpponentNeededHandler = (payload: AiOpponentNeededPayload) => void
+
+/**
+ * 遊戲結束事件處理器類型
+ */
+export type GameFinishedHandler = (payload: GameFinishedPayload) => void | Promise<void>
 
 /**
  * Internal Event Bus Interface
@@ -40,9 +45,13 @@ export interface IInternalEventBus {
   publishMatchFound(payload: MatchFoundPayload): void
   onMatchFound(handler: MatchFoundHandler): Unsubscribe
 
-  // ROOM_CREATED events (Core Game → Opponent)
-  publishRoomCreated(payload: RoomCreatedPayload): void
-  onRoomCreated(handler: RoomCreatedHandler): Unsubscribe
+  // AI_OPPONENT_NEEDED events (Core Game → Opponent)
+  publishAiOpponentNeeded(payload: AiOpponentNeededPayload): void
+  onAiOpponentNeeded(handler: AiOpponentNeededHandler): Unsubscribe
+
+  // GAME_FINISHED events (Core Game → Leaderboard)
+  publishGameFinished(payload: GameFinishedPayload): void
+  onGameFinished(handler: GameFinishedHandler): Unsubscribe
 }
 
 /**
@@ -50,7 +59,7 @@ export interface IInternalEventBus {
  *
  * @description
  * 使用 Node.js EventEmitter 實現的事件發佈訂閱系統 (MVP)。
- * 支援 MATCH_FOUND 和 ROOM_CREATED 兩種事件類型。
+ * 支援 MATCH_FOUND 事件類型（Matchmaking BC → Core Game BC）。
  */
 class InternalEventBus implements IInternalEventBus {
   private readonly emitter: EventEmitter
@@ -77,7 +86,7 @@ class InternalEventBus implements IInternalEventBus {
    * 訂閱配對成功事件
    *
    * @description
-   * 由 Core Game BC 呼叫，監聽配對成功事件以建立遊戲。
+   * 由 Core Game BC 呼叫，監聯配對成功事件以建立遊戲。
    *
    * @param handler - 事件處理器
    * @returns 取消訂閱函數
@@ -90,30 +99,58 @@ class InternalEventBus implements IInternalEventBus {
   }
 
   /**
-   * 發佈房間建立事件
+   * 發佈 AI 對手需求事件
    *
    * @description
-   * 由 Core Game BC 呼叫，通知 Opponent BC 有新房間需要 AI 加入。
+   * 由 Core Game BC 呼叫，通知 Opponent BC 需要建立 AI 對手。
    *
-   * @param payload - 房間建立事件 Payload
+   * @param payload - AI 對手需求事件 Payload
    */
-  publishRoomCreated(payload: RoomCreatedPayload): void {
-    this.emitter.emit(EVENT_TYPES.ROOM_CREATED, payload)
+  publishAiOpponentNeeded(payload: AiOpponentNeededPayload): void {
+    this.emitter.emit(EVENT_TYPES.AI_OPPONENT_NEEDED, payload)
   }
 
   /**
-   * 訂閱房間建立事件
+   * 訂閱 AI 對手需求事件
    *
    * @description
-   * 由 Opponent BC 呼叫，監聽房間建立事件以產生 AI 對手。
+   * 由 Opponent BC 呼叫，監聽 AI 對手需求事件以建立 AI 實例。
    *
    * @param handler - 事件處理器
    * @returns 取消訂閱函數
    */
-  onRoomCreated(handler: RoomCreatedHandler): Unsubscribe {
-    this.emitter.on(EVENT_TYPES.ROOM_CREATED, handler)
+  onAiOpponentNeeded(handler: AiOpponentNeededHandler): Unsubscribe {
+    this.emitter.on(EVENT_TYPES.AI_OPPONENT_NEEDED, handler)
     return () => {
-      this.emitter.off(EVENT_TYPES.ROOM_CREATED, handler)
+      this.emitter.off(EVENT_TYPES.AI_OPPONENT_NEEDED, handler)
+    }
+  }
+
+  /**
+   * 發佈遊戲結束事件
+   *
+   * @description
+   * 由 Core Game BC 呼叫，通知 Leaderboard BC 遊戲已結束。
+   *
+   * @param payload - 遊戲結束事件 Payload
+   */
+  publishGameFinished(payload: GameFinishedPayload): void {
+    this.emitter.emit(EVENT_TYPES.GAME_FINISHED, payload)
+  }
+
+  /**
+   * 訂閱遊戲結束事件
+   *
+   * @description
+   * 由 Leaderboard BC 呼叫，監聽遊戲結束事件以更新統計。
+   *
+   * @param handler - 事件處理器
+   * @returns 取消訂閱函數
+   */
+  onGameFinished(handler: GameFinishedHandler): Unsubscribe {
+    this.emitter.on(EVENT_TYPES.GAME_FINISHED, handler)
+    return () => {
+      this.emitter.off(EVENT_TYPES.GAME_FINISHED, handler)
     }
   }
 }
