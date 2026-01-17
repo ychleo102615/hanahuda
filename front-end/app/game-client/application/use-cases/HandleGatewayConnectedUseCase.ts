@@ -63,10 +63,12 @@ export class HandleGatewayConnectedUseCase implements EventHandlerPort<GatewayCo
         // 配對中：恢復配對 UI
         // 注意：不清除 selectedRoomTypeId，保留作為 middleware 判斷依據
         // selectedRoomTypeId 會在遊戲開始時（HandleMatchFoundUseCase）清除
-        this.matchmakingState.setStatus('searching')
+        // 重要：先設定 elapsedSeconds，再設定 status
+        // 避免 status 變更觸發 UI 更新時，elapsedSeconds 還是 0 的時序問題
         if (payload.elapsedSeconds !== undefined) {
           this.matchmakingState.setElapsedSeconds(payload.elapsedSeconds)
         }
+        this.matchmakingState.setStatus('searching')
         break
 
       case 'IN_GAME':

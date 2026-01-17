@@ -119,6 +119,11 @@ onMounted(() => {
 
   // 根據模式建立連線
   if (gameMode === 'backend' && gatewayConnection) {
+    // 重置配對狀態，確保 MatchmakingStatusOverlay 的 watch 不會使用殘留值
+    // 正確的狀態會由 HandleGatewayConnectedUseCase 根據後端回應設定（SSOT）
+    matchmakingStore.setStatus('idle')
+    matchmakingStore.setElapsedSeconds(0)
+
     // 註冊初始狀態回調：根據後端確認的玩家狀態決定行為
     // 此回調在 GatewayConnected 事件處理完成後觸發，解決時序問題
     gatewayConnection.onInitialState(async (payload) => {
