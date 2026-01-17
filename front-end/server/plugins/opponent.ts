@@ -19,11 +19,8 @@
  */
 
 import { opponentContainer } from '~~/server/utils/container'
-import { logger } from '~~/server/utils/logger'
 
 export default defineNitroPlugin(() => {
   // 啟動 Opponent BC（訂閱 AI_OPPONENT_NEEDED 事件）
   opponentContainer.start()
-
-  logger.info('[Opponent Plugin] AI opponent service started (event-driven)')
 })

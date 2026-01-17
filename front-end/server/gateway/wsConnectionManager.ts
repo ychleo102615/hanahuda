@@ -111,7 +111,6 @@ class WsConnectionManager implements IWsConnectionManager {
     this.connections.set(playerId, connectionInfo)
     this.peerToPlayerId.set(peer, playerId)
 
-    logger.info('WebSocket connection registered', { playerId })
     return connectionInfo
   }
 
@@ -122,7 +121,6 @@ class WsConnectionManager implements IWsConnectionManager {
       connection.unsubscribe()
       this.peerToPlayerId.delete(connection.peer)
       this.connections.delete(playerId)
-      logger.info('WebSocket connection removed', { playerId })
     }
   }
 
@@ -173,7 +171,6 @@ class WsConnectionManager implements IWsConnectionManager {
       try {
         // 先關閉 WebSocket 連線
         connection.peer.close(code, reason)
-        logger.info('WebSocket force disconnected', { playerId, code, reason })
       } catch (error) {
         // ECONNRESET/EPIPE 是連線已斷開的正常情況
         const errorCode = (error as NodeJS.ErrnoException)?.code

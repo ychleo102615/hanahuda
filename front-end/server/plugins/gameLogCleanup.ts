@@ -53,11 +53,6 @@ export default defineNitroPlugin((nitroApp) => {
     return
   }
 
-  logger.info('[GameLogCleanup] Scheduler initialized', {
-    intervalHours: CLEANUP_INTERVAL_MS / 60 / 60 / 1000,
-    retentionDays: RETENTION_DAYS,
-  })
-
   // 啟動定期清理
   cleanupTimer = setInterval(performCleanup, CLEANUP_INTERVAL_MS)
 

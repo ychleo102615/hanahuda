@@ -98,7 +98,6 @@ export default defineWebSocketHandler({
           return
         }
         playerId = payload.playerId
-        logger.info('WebSocket authenticated via handoff token', { playerId, gameId: payload.gameId })
       } else {
         // Cookie 認證（單體模式）
         const cookieHeader = peer.request?.headers.get('cookie')
@@ -122,8 +121,6 @@ export default defineWebSocketHandler({
 
       // 註冊連線到 WsConnectionManager
       wsConnectionManager.registerConnection(playerId, peer)
-
-      logger.info('WebSocket connected', { playerId })
 
       // 4. 查詢玩家狀態
       const playerStatus = await playerStatusService.getPlayerStatus(playerId)
@@ -154,7 +151,6 @@ export default defineWebSocketHandler({
             const gatewaySnapshotEvent = createGameEvent('GameSnapshotRestore', snapshotEvent)
 
             safeSend(peer, JSON.stringify(gatewaySnapshotEvent), playerId)
-            logger.info('WebSocket sent GameSnapshotRestore', { playerId, gameId: game.id })
           } else {
             logger.warn('WebSocket: game not found in memory for IN_GAME status', {
               playerId,
@@ -243,17 +239,12 @@ export default defineWebSocketHandler({
   /**
    * WebSocket 連線關閉時
    */
-  close(peer, details) {
+  close(peer, _details) {
     try {
       const playerId = getPlayerIdFromPeer(peer)
 
       if (playerId) {
         wsConnectionManager.removeConnection(playerId)
-        logger.info('WebSocket disconnected', {
-          playerId,
-          code: details?.code,
-          reason: details?.reason,
-        })
       }
     } catch (error) {
       // 防止 close 處理器拋出未捕捉的異常

@@ -80,12 +80,6 @@ class WsCommandHandler implements IWsCommandHandler {
   async handle(playerId: string, command: WsCommand, peer: Peer): Promise<void> {
     const commandType = command.type as WsCommandType
 
-    logger.info('Handling WebSocket command', {
-      playerId,
-      commandType,
-      commandId: command.command_id,
-    })
-
     try {
       switch (commandType) {
         case 'PING':

@@ -133,7 +133,6 @@ class HandoffTokenService implements IHandoffTokenService {
     const tokenData: TokenData = { payload, exp, sig }
     const token = Buffer.from(JSON.stringify(tokenData)).toString('base64url')
 
-    logger.info('Handoff token created', { playerId, gameId, expiresIn: TOKEN_EXPIRY_MS / 1000 })
     return token
   }
 
@@ -158,7 +157,6 @@ class HandoffTokenService implements IHandoffTokenService {
         return null
       }
 
-      logger.info('Handoff token verified', { playerId: tokenData.payload.playerId })
       return tokenData.payload
     } catch (error) {
       logger.warn('Handoff token parse error', { error })
