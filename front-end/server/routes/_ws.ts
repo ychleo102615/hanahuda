@@ -81,7 +81,7 @@ export default defineWebSocketHandler({
   /**
    * WebSocket 連線建立時
    */
-  async open(peer) {
+  async open(peer: Peer) {
     try {
       let playerId: string | null = null
 
@@ -100,7 +100,7 @@ export default defineWebSocketHandler({
         playerId = payload.playerId
       } else {
         // Cookie 認證（單體模式）
-        const cookieHeader = peer.request?.headers.get('cookie')
+        const cookieHeader = peer.request?.headers?.get('cookie')
         const sessionId = parseSessionIdFromCookie(cookieHeader)
 
         if (!sessionId) {
@@ -169,7 +169,7 @@ export default defineWebSocketHandler({
   /**
    * 接收到 WebSocket 訊息時
    */
-  async message(peer, message: Message) {
+  async message(peer: Peer, message: Message) {
     const playerId = getPlayerIdFromPeer(peer)
 
     if (!playerId) {
@@ -239,7 +239,7 @@ export default defineWebSocketHandler({
   /**
    * WebSocket 連線關閉時
    */
-  close(peer, _details) {
+  close(peer: Peer, _details: { code: number; reason: string }) {
     try {
       const playerId = getPlayerIdFromPeer(peer)
 
@@ -259,7 +259,7 @@ export default defineWebSocketHandler({
    * 處理網路層錯誤（ECONNRESET、EPIPE 等）。
    * 這些錯誤通常是客戶端斷線造成的，屬於正常現象。
    */
-  error(peer, error) {
+  error(peer: Peer, error: Error) {
     try {
       const playerId = getPlayerIdFromPeer(peer)
       const errorCode = (error as NodeJS.ErrnoException)?.code

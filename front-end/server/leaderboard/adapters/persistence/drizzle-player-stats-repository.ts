@@ -34,11 +34,11 @@ export class DrizzlePlayerStatsRepository implements PlayerStatsRepositoryPort {
       .where(eq(playerStats.playerId, playerId))
       .limit(1)
 
-    if (results.length === 0) {
+    const row = results[0]
+    if (!row) {
       return null
     }
 
-    const row = results[0]
     return {
       playerId: row.playerId,
       totalScore: row.totalScore,

@@ -49,11 +49,11 @@ export class DrizzleDailyPlayerScoreRepository implements DailyPlayerScoreReposi
       )
       .limit(1)
 
-    if (results.length === 0) {
+    const row = results[0]
+    if (!row) {
       return null
     }
 
-    const row = results[0]
     return {
       playerId: row.playerId,
       dateString: row.date,
@@ -151,11 +151,12 @@ export class DrizzleDailyPlayerScoreRepository implements DailyPlayerScoreReposi
 
     const results = await this.db.execute(rankQuery)
 
-    if (results.length === 0) {
+    const firstResult = results[0]
+    if (!firstResult) {
       return null
     }
 
-    return Number(results[0].rank)
+    return Number(firstResult.rank)
   }
 
   /**

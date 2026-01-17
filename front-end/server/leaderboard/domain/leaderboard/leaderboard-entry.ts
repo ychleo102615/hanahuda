@@ -97,19 +97,33 @@ export function calculateRanks(scores: ScoreData[]): LeaderboardEntry[] {
 
   for (let i = 0; i < sorted.length; i++) {
     const score = sorted[i]
+    if (!score) {
+      continue
+    }
+
+    const previousScore = sorted[i - 1]
+    const previousEntry = ranked[i - 1]
 
     // 如果不是第一個且分數與前一個相同，使用相同排名
-    if (i > 0 && score.totalScore === sorted[i - 1].totalScore) {
+    if (i > 0 && previousScore && previousEntry && score.totalScore === previousScore.totalScore) {
       // 同分使用前一個的排名
       ranked.push(createLeaderboardEntry({
-        ...score,
-        rank: ranked[i - 1].rank,
+        playerId: score.playerId,
+        displayName: score.displayName,
+        totalScore: score.totalScore,
+        gamesPlayed: score.gamesPlayed,
+        gamesWon: score.gamesWon,
+        rank: previousEntry.rank,
       }))
     }
     else {
       // 排名 = 當前位置 + 1
       ranked.push(createLeaderboardEntry({
-        ...score,
+        playerId: score.playerId,
+        displayName: score.displayName,
+        totalScore: score.totalScore,
+        gamesPlayed: score.gamesPlayed,
+        gamesWon: score.gamesWon,
         rank: currentRank,
       }))
     }
