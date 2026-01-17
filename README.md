@@ -8,10 +8,11 @@ A Japanese Hanafuda card game showcasing **Clean Architecture**, **Domain-Driven
 |------|-------------------------|
 | **Architecture** | Strict Clean Architecture layering, DDD Bounded Contexts, Dependency Inversion |
 | **Frontend** | Nuxt 4 + Vue 3 + TypeScript, Custom DI Container, SVG Sprite optimization |
-| **Backend** | Nuxt 4 Nitro + Drizzle ORM + PostgreSQL, SSE real-time communication, Pessimistic locking |
+| **Backend** | Nuxt 4 Nitro + Drizzle ORM + PostgreSQL, WebSocket real-time communication, Pessimistic locking |
 | **Game Logic** | Complete Yaku detection engine (12 hand types), Koi-Koi rule implementation, Special rule handling |
 | **Matchmaking** | Online human vs human, AI opponent matching, Room type management, PlayerEventBus |
-| **Identity** | Player accounts, Guest mode, Soft delete mechanism, Session management |
+| **Identity** | Player accounts, Guest mode, Soft delete mechanism, Telegram Mini App OAuth |
+| **Leaderboard** | Player rankings, Win rate statistics, Yaku achievement tracking |
 | **State Management** | Reconnection mechanism, Operation timer, Page visibility state recovery |
 | **Animation System** | Interruptible animations, AbortController integration, Dynamic coordinate calculation |
 
@@ -25,7 +26,7 @@ A Japanese Hanafuda card game showcasing **Clean Architecture**, **Domain-Driven
 │  Nuxt 4 • Vue 3 • TypeScript • Tailwind CSS v4 • Pinia     │
 ├─────────────────────────────────────────────────────────────┤
 │                        Backend                               │
-│  Nuxt 4 Nitro • Drizzle ORM • PostgreSQL • SSE             │
+│  Nuxt 4 Nitro • Drizzle ORM • PostgreSQL • WebSocket       │
 ├─────────────────────────────────────────────────────────────┤
 │                     Architecture                             │
 │  Clean Architecture • DDD • Event-Driven • CQRS-like        │
@@ -62,32 +63,34 @@ This project strictly follows Clean Architecture with four-layer structure on bo
 | **Core Game BC** | Game rule engine, turn control, scoring | Backend |
 | **Identity BC** | Player accounts, authentication, guest mode | Backend |
 | **Matchmaking BC** | Online matchmaking, room management | Backend |
+| **Leaderboard BC** | Player rankings, statistics tracking | Backend |
 | **Opponent BC** | AI opponent decision logic | Backend |
 
 ---
 
 ## Core Feature Implementations
 
-### 1. SSE (Server-Sent Events) Architecture
+### 1. WebSocket Real-time Communication
 
-**Design Decision**: Adopted REST + SSE hybrid architecture instead of WebSocket
+**Design Decision**: Migrated from SSE to WebSocket for bidirectional communication
 
 - **REST API**: Handles player commands (play card, select, decide)
-- **SSE**: Pushes game events (turn updates, yaku formation, score settlement)
+- **WebSocket**: Pushes game events with full-duplex support
 
 ```typescript
 // Event flow example
 Client → REST: POST /games/{id}/turns/play-card
-Server → SSE:  TurnCompleted { hand_card_play, draw_card_play, next_state }
-Server → SSE:  DecisionRequired { yaku_update, current_multipliers }
+Server → WS:   TurnCompleted { hand_card_play, draw_card_play, next_state }
+Server → WS:   DecisionRequired { yaku_update, current_multipliers }
 Client → REST: POST /games/{id}/rounds/decision
-Server → SSE:  RoundScored { winner_id, final_points }
+Server → WS:   RoundScored { winner_id, final_points }
 ```
 
 **Technical Highlights**:
 - Event serialization mechanism (Promise chain ensures no animation conflicts)
 - Reconnection support (Snapshot mode for full state recovery)
 - Visibility Change handling (reconnect after page hidden)
+- Enhanced error handling (ECONNRESET, unhandled rejection prevention)
 
 ### 2. Animation System
 
@@ -182,12 +185,12 @@ Uses Drizzle ORM with PostgreSQL for game state management:
 // Matchmaking flow
 Player → REST: POST /matchmaking/enter { roomType: 'SINGLE' | 'HUMAN' }
 Server → PlayerEventBus: MatchFound { game_id, opponent_name, is_bot }
-Player → SSE: Connect to /games/{id}/join
+Player → WS: Connect to /games/{id}/join
 ```
 
 **Architecture Highlights**:
 - **MatchmakingPool**: Manages waiting players per room type
-- **PlayerEventBus**: Dedicated SSE channel for pre-game events (separate from GameEventBus)
+- **PlayerEventBus**: Dedicated WebSocket channel for pre-game events (separate from GameEventBus)
 - **GameCreationHandler**: Subscribes to MATCH_FOUND, creates game via JoinGameUseCase
 - **Room Types**: SINGLE (vs AI), HUMAN (vs player)
 
@@ -199,31 +202,47 @@ class PlayerEventBus {
 }
 ```
 
+### 7. Leaderboard System
+
+**Design Decision**: Event-driven statistics with separation of concerns
+
+```typescript
+// Statistics tracking flow
+GAME_FINISHED event → GameFinishedEventHandler
+  → UpdatePlayerStatsUseCase (winner stats, loser stats)
+  → PlayerStatsRepository (persist to player_stats table)
+```
+
+**Architecture Highlights**:
+- **PlayerStats Entity**: Tracks games played, wins, yaku achievements
+- **LeaderboardQuery**: Aggregates rankings by win rate and total games
+- **Personal Stats**: Per-player yaku breakdown and historical performance
+
 ---
 
 ## Key Technical Decisions
 
 The following are important architectural and implementation decisions made during development:
 
-### 1. SSE Connection Rebuild Strategy
+### 1. WebSocket Connection Rebuild Strategy
 
-**Problem**: After page Visibility Change, SSE connection may receive stale events, causing state inconsistency
+**Problem**: After page Visibility Change, WebSocket connection may receive stale events, causing state inconsistency
 
-**Solution**: When visibility change recovery is detected, proactively disconnect and re-establish SSE connection, requesting full state snapshot
+**Solution**: When visibility change recovery is detected, proactively disconnect and re-establish WebSocket connection, requesting full state snapshot
 
 ```typescript
 // usePageVisibility.ts
 watch(isVisible, async (visible) => {
   if (visible && wasHidden) {
-    sseConnectionManager.disconnect()
+    wsConnectionManager.disconnect()
     await startGameUseCase.execute({ reconnect: true })
   }
 })
 ```
 
-### 2. Unified SSE Join/Reconnect Design
+### 2. Unified WebSocket Join/Reconnect Design
 
-**Problem**: Different scenarios (new game, reconnection, matching) require different SSE endpoints
+**Problem**: Different scenarios (new game, reconnection, matching) require different WebSocket endpoints
 
 **Solution**: Unified `/join` endpoint that automatically determines scenario based on `gameId` and `sessionToken`
 
@@ -367,7 +386,7 @@ front-end/
 │   ├── game-client/             # Game Client BC (Frontend)
 │   │   ├── domain/              # Frontend game logic (pure functions)
 │   │   ├── application/         # Use Cases & Event Handlers
-│   │   └── adapter/             # Pinia, SSE, Animation, DI
+│   │   └── adapter/             # Pinia, WebSocket, Animation, DI
 │   └── plugins/                  # DI Container initialization
 │
 ├── server/                       # Nuxt 4 Nitro Backend
@@ -383,23 +402,27 @@ front-end/
 │   │   ├── domain/             # MatchmakingPool
 │   │   ├── application/        # Enter/Cancel Matchmaking Use Cases
 │   │   └── adapters/           # Registry, PlayerEventBus
+│   ├── leaderboard/             # Leaderboard BC
+│   │   ├── domain/             # PlayerStats Entity
+│   │   ├── application/        # Stats Use Cases & Queries
+│   │   └── adapters/           # PlayerStatsRepository
 │   └── database/                # Drizzle schema & migrations
 │
 └── shared/                       # Shared contracts between frontend and backend
-    └── contracts/               # SSE event types, API formats
+    └── contracts/               # WebSocket event types, API formats
 ```
 
 ---
 
 ## Current Version
 
-**v1.1.0** (2025-01-12)
+**v1.2.0** (2025-01-17)
 
 ### Recent Changes
-- 線上配對功能（人類對戰與 AI 對戰）
-- 玩家帳號系統（註冊、登入、訪客模式）
-- 重新設計牌背為菊花紋章
-- 套用金箔蒔絵設計系統
+- Leaderboard and personal statistics feature
+- Migrated real-time communication from SSE to WebSocket
+- Telegram Mini App authentication integration
+- Unified homepage with gold-leaf Makie style and emerald Modal design
 
 [View Full Changelog](./CHANGELOG.md)
 
@@ -464,10 +487,10 @@ pnpm type-check
 
 ### Mid-term Plans
 
-- [ ] Leaderboard system
+- [x] Leaderboard system ✅ v1.2.0
 - [ ] Game history and replay
 - [ ] Multiple AI difficulty levels
-- [ ] WebSocket to replace SSE (bidirectional communication support)
+- [x] WebSocket to replace SSE (bidirectional communication support) ✅ v1.2.0
 - [ ] Internationalization (i18n) support
 
 ### Long-term Vision

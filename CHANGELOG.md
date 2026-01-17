@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-01-17
+
+### Added
+- 排行榜與個人統計功能
+- 將即時通訊從 SSE 遷移至 WebSocket
+- WebSocket 安全性與多實例架構準備
+- Telegram Mini App 認證整合
+- 資料清理排程器強化
+- NavigationSection 卡片化重設計
+
+### Changed
+- Opponent BC 獨立化並修正架構違反
+- OpponentRegistry 從事件驅動改為請求驅動
+- OAuth 架構重構並重命名 TelegramSdkAdapter
+- 移除配對取消功能
+- 移除 SSE 相關遺留程式碼
+- 統一首頁為金箔蒔絵風格
+- 首頁 Records 區塊套用金箔蒔絵風格
+- 遊戲 Modal 統一為翠綠風格
+- 清理 console logs 並統一使用 logger
+
+### Fixed
+- 修正排行榜與統計業務規則
+- 修正排行榜與個人統計切換時的閃爍問題
+- 修正重連時經過秒數顯示為 0 的問題
+- 修復 Rematch 功能與遊戲結束後連線管理
+- 修復遊戲開始延遲與重連狀態同步問題
+- 修復 Lobby 房間選擇的玩家狀態檢查
+- 加強 WebSocket 錯誤處理避免 unhandled rejection
+- 新增全域錯誤處理器捕捉 ECONNRESET
+
 ## [1.1.0] - 2025-01-12
 
 ### Added
@@ -51,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Interruptible animation system
 - Reconnection and state recovery mechanism
 
-[Unreleased]: https://github.com/ychleo102615/hanahuda/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/ychleo102615/hanahuda/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/ychleo102615/hanahuda/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ychleo102615/hanahuda/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ychleo102615/hanahuda/releases/tag/v1.0.0
