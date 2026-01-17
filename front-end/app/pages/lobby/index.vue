@@ -328,48 +328,6 @@ const conflictDialogConfirmText = computed(() => {
     : 'Return to Game'
 })
 
-/**
- * 取消當前配對並切換到新房間
- *
- * @description
- * 當用戶選擇不同房間但已在配對中時，導航到 Game 頁面處理。
- * Game 頁面會先取消配對，再發送新的 JOIN_MATCHMAKING 命令。
- */
-const handleCancelAndSwitch = () => {
-  if (!pendingRoomTypeId.value) return
-
-  // 清除狀態
-  matchmakingStore.clearSession()
-  conflictingEntryId.value = null
-
-  // 儲存新房間類型並導航到 Game 頁面
-  sessionContext.setSelectedRoomTypeId(pendingRoomTypeId.value as RoomTypeId)
-  pendingRoomTypeId.value = null
-
-  navigateTo('/game')
-}
-
-/**
- * 返回遊戲
- *
- * @description
- * 當玩家已在遊戲中時，直接導向遊戲頁面。
- * roomTypeId 由 GameSnapshotRestore 事件提供。
- */
-const handleBackToGame = async () => {
-  try {
-    const status = await matchmakingApiClient.getPlayerStatus()
-
-    if (status.status === 'IN_GAME') {
-      navigateToGameWithGameId(status.gameId)
-    } else {
-      // 玩家已不在遊戲中，清除錯誤狀態
-      clearLocalMatchmakingState()
-    }
-  } catch (error: unknown) {
-    setMatchmakingError(error, 'Unable to retrieve game status')
-  }
-}
 </script>
 
 <template>

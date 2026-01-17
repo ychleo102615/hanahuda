@@ -467,7 +467,7 @@ export type GameEvent =
  * 所有 WebSocket 推送事件的類型列表。
  * 用於客戶端註冊事件監聽器。
  */
-export const SSE_EVENT_TYPES = [
+export const GAME_EVENT_TYPES = [
   EVENT_TYPES.GameStarted,
   EVENT_TYPES.RoundDealt,
   EVENT_TYPES.TurnCompleted,
