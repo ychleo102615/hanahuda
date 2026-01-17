@@ -33,10 +33,13 @@ primary_region = 'nrt'
     hard_limit = 250
     soft_limit = 200
 
+  # 強制使用 HTTP/1.1 以支援 WebSocket（WebSocket 無法在 HTTP/2 上進行協議升級）
+  [http_service.tls_options]
+    alpn = ['http/1.1']
+
   [http_service.http_options]
-    [http_service.http_options.response]
-      [http_service.http_options.response.headers]
-        Connection = 'keep-alive'
+    h2_backend = false
+
 
 [[vm]]
   memory = '256mb'
