@@ -194,8 +194,8 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
     uiState.$reset()
     matchmakingState.$reset()
 
-    // 4. 設定配對狀態為 searching（讓 UI 顯示配對中覆蓋層）
-    matchmakingState.setStatus('searching')
+    // 4. 設定配對狀態為 connecting（等待 GatewayConnected 確認後才切換到 searching）
+    matchmakingState.setStatus('connecting')
 
     // 5. 重新建立 WebSocket 連線
     // onConnected 回調會偵測 selectedRoomTypeId 並發送 JOIN_MATCHMAKING

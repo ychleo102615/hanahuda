@@ -24,8 +24,12 @@ import { resolveDependency } from '../di/resolver'
 import { TOKENS } from '../di/tokens'
 import type { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
 import type { useUIStateStore } from '../stores/uiState'
+import type { useMatchmakingStateStore } from '../stores/matchmakingState'
 import type { SessionContextPort, ConnectionReadyPayload } from '../../application/ports/output'
 import type { ConnectionReadyAdapter } from '../connection/ConnectionReadyAdapter'
+
+// GatewayConnected 超時時間（毫秒）
+const GATEWAY_CONNECTED_TIMEOUT_MS = 10000
 
 // Re-export for consumers
 export type { ConnectionReadyPayload, PlayerInitialStatus } from '../../application/ports/output'
@@ -78,6 +82,7 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
   // DI - 取得已組裝好的元件
   const gatewayClient = resolveDependency<GatewayWebSocketClient>(TOKENS.GatewayWebSocketClient)
   const uiStateStore = resolveDependency<ReturnType<typeof useUIStateStore>>(TOKENS.UIStateStore)
+  const matchmakingStateStore = resolveDependency<ReturnType<typeof useMatchmakingStateStore>>(TOKENS.MatchmakingStateStore)
   const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
   const connectionReadyAdapter = resolveDependency<ConnectionReadyAdapter>(TOKENS.ConnectionReadyPort)
 
@@ -93,8 +98,59 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
   // 初始狀態回調列表（GatewayConnected 事件處理完成後觸發）
   const initialStateCallbacks: Array<(payload: ConnectionReadyPayload) => void | Promise<void>> = []
 
+  // GatewayConnected 超時計時器
+  let gatewayConnectedTimeoutId: ReturnType<typeof setTimeout> | null = null
+
+  /**
+   * 啟動 GatewayConnected 超時計時器
+   *
+   * @description
+   * 在建立 WebSocket 連線後啟動。如果在超時時間內未收到 GatewayConnected 事件，
+   * 視為連線失敗，斷開連線並設定錯誤狀態。
+   */
+  function startGatewayConnectedTimeout(): void {
+    clearGatewayConnectedTimeout()
+    gatewayConnectedTimeoutId = setTimeout(() => {
+      handleGatewayConnectedTimeout()
+    }, GATEWAY_CONNECTED_TIMEOUT_MS)
+  }
+
+  /**
+   * 清除 GatewayConnected 超時計時器
+   */
+  function clearGatewayConnectedTimeout(): void {
+    if (gatewayConnectedTimeoutId) {
+      clearTimeout(gatewayConnectedTimeoutId)
+      gatewayConnectedTimeoutId = null
+    }
+  }
+
+  /**
+   * 處理 GatewayConnected 超時
+   *
+   * @description
+   * 超時後斷開連線，並設定 matchmakingState 為錯誤狀態，
+   * 讓 UI 顯示錯誤訊息和重整按鈕。
+   */
+  function handleGatewayConnectedTimeout(): void {
+    // 斷開連線
+    gatewayClient.disconnect()
+
+    // 設定本地連線狀態
+    state.value.status = 'disconnected'
+    state.value.errorMessage = 'Connection timeout'
+    uiStateStore.setConnectionStatus('disconnected')
+
+    // 設定 matchmakingState 錯誤狀態（讓 MatchmakingStatusOverlay 顯示錯誤 UI）
+    matchmakingStateStore.setStatus('error')
+    matchmakingStateStore.setError('CONNECTION_TIMEOUT', 'Unable to connect to server. Please refresh the page.')
+  }
+
   // 監聯 ConnectionReadyAdapter 的 onReady 事件
   const handleConnectionReady = async (payload: ConnectionReadyPayload) => {
+    // 收到 GatewayConnected 事件，清除超時計時器
+    clearGatewayConnectedTimeout()
+
     for (const callback of initialStateCallbacks) {
       try {
         await callback(payload)
@@ -158,11 +214,15 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
    * @description
    * 連線到統一的 Gateway 端點 /_ws。身份由 Cookie 驗證。
    * 連線成功後會收到 GatewayConnected 事件，包含玩家目前狀態。
+   * 啟動超時計時器，若超時未收到 GatewayConnected 則設定錯誤狀態。
    */
   function connect(): void {
     state.value.status = 'connecting'
     state.value.errorMessage = null
     uiStateStore.setConnectionStatus('connecting')
+
+    // 啟動 GatewayConnected 超時計時器
+    startGatewayConnectedTimeout()
 
     // Gateway 連線不需要參數，身份由 Cookie 驗證
     gatewayClient.connect()
@@ -172,6 +232,8 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
    * 關閉連線
    */
   function disconnect(): void {
+    // 清除超時計時器
+    clearGatewayConnectedTimeout()
     gatewayClient.disconnect()
     state.value.status = 'disconnected'
     uiStateStore.setConnectionStatus('disconnected')
@@ -250,6 +312,8 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
 
   // 清理
   onUnmounted(() => {
+    // 清除超時計時器
+    clearGatewayConnectedTimeout()
     disconnect()
     // 移除 ConnectionReadyAdapter 的回調
     connectionReadyAdapter.offReady(handleConnectionReady)
