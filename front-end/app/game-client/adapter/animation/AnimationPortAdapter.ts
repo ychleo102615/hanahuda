@@ -465,8 +465,6 @@ export class AnimationPortAdapter implements AnimationPort {
     // 配對時場牌在 field zone
     const fieldCardElement = this.registry.findCard(fieldCardId, 'field')
 
-    console.trace()
-
     let fieldPosition: { x: number; y: number } | null = null
 
     // 使用 AnimationLayer 播放合併特效
@@ -754,7 +752,6 @@ export class AnimationPortAdapter implements AnimationPort {
     setTimeout(() => {
       this._interrupted = false
     }, 0)
-
   }
 
   isAnimating(): boolean {
