@@ -12,7 +12,7 @@ import { db } from '~~/server/utils/db'
 import { DrizzlePlayerRepository } from '../persistence/drizzle-player-repository'
 import { DrizzleAccountRepository } from '../persistence/drizzle-account-repository'
 import { DrizzleOAuthLinkRepository } from '../persistence/drizzle-oauth-link-repository'
-import { getSessionStore } from '../session/in-memory-session-store'
+import { DrizzleSessionStore } from '../persistence/drizzle-session-store'
 import { BcryptPasswordHasher } from '../crypto/bcrypt-password-hasher'
 import { DrizzlePlayerStatsRepository } from '~~/server/leaderboard/adapters/persistence/drizzle-player-stats-repository'
 import { CreateGuestUseCase } from '../../application/use-cases/create-guest-use-case'
@@ -79,7 +79,7 @@ export function getIdentityContainer(): IdentityContainer {
   const playerRepository = new DrizzlePlayerRepository(db)
   const accountRepository = new DrizzleAccountRepository(db)
   const oauthLinkRepository = new DrizzleOAuthLinkRepository(db)
-  const sessionStore = getSessionStore()
+  const sessionStore = new DrizzleSessionStore(db)
   const passwordHasher = new BcryptPasswordHasher()
 
   // 建立 Use Cases

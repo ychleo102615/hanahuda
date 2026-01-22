@@ -3,13 +3,12 @@
  *
  * @description
  * 監聽頁面可見性變化，當頁面從隱藏狀態恢復為可見時，
- * 檢查 Gateway WebSocket 連線狀態並在必要時重新連線。
+ * 強制重新建立 Gateway WebSocket 連線。
  *
  * Gateway Architecture 重連流程：
- * 1. 頁面恢復可見時，檢查 Gateway WebSocket 連線狀態
- * 2. 如果連線已斷開，重新建立連線
- * 3. 後端推送 GatewayConnected 事件（包含玩家狀態）
- * 4. HandleGatewayConnectedUseCase 根據狀態恢復 UI
+ * 1. 頁面恢復可見時，強制斷開現有連線並重新連線
+ * 2. 後端推送 GatewayConnected 事件（包含玩家狀態）
+ * 3. HandleGatewayConnectedUseCase 根據狀態恢復 UI
  *
  * 設計原則：
  * - Adapter 層 composable，負責監聯 DOM 事件
@@ -30,6 +29,7 @@ import { resolveDependency } from '../di/resolver'
 import { useGameMode } from './useGameMode'
 import { TOKENS } from '../di/tokens'
 import type { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
+import type { AnimationPort } from '../../application/ports/output'
 import { createCurrentPlayerContextAdapter } from '~/shared/adapters'
 
 /** 防抖間隔（毫秒）- iOS 上 visibilitychange 可能短時間內觸發多次 */
@@ -40,7 +40,7 @@ const RECONNECT_DEBOUNCE_MS = 2000
  *
  * @description
  * 自動監聯 document.visibilitychange 事件，
- * 當頁面從隱藏變為可見時，檢查 Gateway 連線並在必要時重連。
+ * 當頁面從隱藏變為可見時，強制重新建立 Gateway 連線。
  */
 export function usePageVisibility(): void {
   const gameMode = useGameMode()
@@ -51,6 +51,7 @@ export function usePageVisibility(): void {
   }
 
   const gatewayClient = resolveDependency<GatewayWebSocketClient>(TOKENS.GatewayWebSocketClient)
+  const animationPort = resolveDependency<AnimationPort>(TOKENS.AnimationPort)
   const playerContext = createCurrentPlayerContextAdapter()
 
   // 防抖：記錄上次觸發時間，避免 iOS 上多次觸發
@@ -66,25 +67,28 @@ export function usePageVisibility(): void {
     }
 
     // 頁面恢復可見
+    const now = Date.now()
+    const timeSinceLastTrigger = now - lastTriggerTime
+    const { isLoggedIn } = playerContext.getContext()
 
     // 防抖檢查：2 秒內不重複觸發
-    const now = Date.now()
-    if (now - lastTriggerTime < RECONNECT_DEBOUNCE_MS) {
+    if (timeSinceLastTrigger < RECONNECT_DEBOUNCE_MS) {
       return
     }
     lastTriggerTime = now
 
     // 檢查是否已登入
-    const { isLoggedIn } = playerContext.getContext()
     if (!isLoggedIn) {
       return
     }
 
-    // 檢查 Gateway 連線狀態
-    // 如果連線已斷開，重新建立連線
-    if (!gatewayClient.isConnected()) {
-      gatewayClient.connect()
-    }
+    // 中斷進行中的動畫，重置動畫狀態
+    // 避免重連後 isAnimating() 仍為 true 導致無法操作
+    animationPort.interrupt()
+
+    // 強制重新連線（無論當前連線狀態）
+    // 確保與後端狀態同步
+    gatewayClient.forceReconnect()
   }
 
   onMounted(() => {

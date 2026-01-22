@@ -153,6 +153,9 @@ export class GatewayWebSocketClient {
       // WebSocket 會自動包含同源 Cookie（包含 session_id）
       this.ws = new WebSocket(url)
 
+      // 保存當前 WebSocket 實例的引用，用於 onclose 中判斷是否為舊連線
+      const currentWs = this.ws
+
       // 連線建立成功
       this.ws.onopen = () => {
         this.reconnectAttempts = 0
@@ -167,18 +170,26 @@ export class GatewayWebSocketClient {
 
       // 連線關閉
       this.ws.onclose = () => {
+        // 關鍵檢查：如果 this.ws 已經是不同的實例（forceReconnect 建立了新連線），
+        // 則忽略這個舊連線的 onclose 事件
+        if (this.ws !== currentWs) {
+          return
+        }
+
         this.stopHeartbeat()
         this.rejectAllPendingCommands()
-        this.ws = null
 
         // 預期斷線（遊戲正常結束）：不觸發重連
         if (this.expectingDisconnect) {
           this.expectingDisconnect = false // 重置標記
           this.shouldReconnect = false
+          this.ws = null
           // 不呼叫 onConnectionLostCallback，因為這是預期行為
           return
         }
 
+        // 非預期斷線：清除 ws 並觸發重連
+        this.ws = null
         this.onConnectionLostCallback?.()
         void this.reconnect()
       }
@@ -309,6 +320,36 @@ export class GatewayWebSocketClient {
    */
   setExpectingDisconnect(expecting: boolean): void {
     this.expectingDisconnect = expecting
+  }
+
+  /**
+   * 強制重新連線（斷開現有連線並建立新連線）
+   *
+   * @description
+   * 無條件斷開現有連線並建立新連線。
+   * 用於頁面可見性恢復等場景，確保連線狀態與後端同步。
+   *
+   * Race Condition 處理：
+   * - 設置 expectingDisconnect 防止舊連線的 onclose 觸發意外重連
+   * - 重置 reconnectAttempts 確保新連線有完整的重連次數
+   */
+  forceReconnect(): void {
+    // 如果有現有連線，先安全關閉
+    if (this.ws) {
+      // 設置預期斷線標記，防止 onclose 觸發意外重連
+      this.expectingDisconnect = true
+      this.stopHeartbeat()
+      this.rejectAllPendingCommands()
+      this.ws.close()
+      this.ws = null
+      this.eventRouter.clearEventChain()
+    }
+
+    // 重置重連計數
+    this.reconnectAttempts = 0
+
+    // 建立新連線
+    this.connect()
   }
 
   /**
