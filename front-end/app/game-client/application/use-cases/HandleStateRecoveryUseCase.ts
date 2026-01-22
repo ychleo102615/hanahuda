@@ -118,6 +118,17 @@ export class HandleStateRecoveryUseCase extends HandleStateRecoveryPort {
       case 'AWAITING_SELECTION':
         // selection_context 已由 restoreGameState 恢復到 GameStateStore
         // Adapter Layer 的 watcher 會監聽 FlowStage 變化，觸發場牌選擇 UI
+        //
+        // 把 drawn_card 加入場牌區（模擬正常流程的行為）
+        // Server 端的 field_cards 不含 drawn_card（設計正確，翻出的牌尚未決定去向）
+        // 但客戶端需要顯示翻出的牌，讓玩家可以選擇配對目標
+        if (snapshot.selection_context) {
+          const fieldCardsWithDrawn = [
+            ...snapshot.field_cards,
+            snapshot.selection_context.drawn_card,
+          ]
+          this.updateUIState.updateFieldCards(fieldCardsWithDrawn)
+        }
         break
 
       case 'AWAITING_DECISION':
