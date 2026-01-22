@@ -169,7 +169,7 @@ watch(isMyTurn, (newIsMyTurn) => {
   }
 })
 
-// 監聽 FlowStage 變化，處理 AWAITING_SELECTION 狀態
+// 監聯 FlowStage 變化，處理 AWAITING_SELECTION 狀態
 // 當 HandleSelectionRequiredUseCase 設定 FlowStage 為 AWAITING_SELECTION 時，
 // 根據 possibleTargetCardIds 數量來決定 UI 行為
 // 注意：只有自己的回合才進入選擇模式
@@ -196,7 +196,6 @@ watch(flowStage, (newStage, oldStage) => {
       possibleTargetCardIds.value,
       highlightType
     )
-
   } else if (oldStage === 'AWAITING_SELECTION' && newStage !== 'AWAITING_SELECTION') {
     // 離開場牌選擇模式（當 FlowStage 變化時自動清除）
     uiState.exitFieldCardSelectionMode()

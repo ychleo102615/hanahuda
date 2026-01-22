@@ -23,6 +23,8 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
+        // Emoji favicon（花牌 🎴）
+        { rel: 'icon', href: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎴</text></svg>' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&display=swap' },
@@ -35,13 +37,11 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#1f2937' }, // gray-800
         // iOS Safari 狀態列樣式
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
-        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        // PWA capable（新版標準）
+        { name: 'mobile-web-app-capable', content: 'yes' },
       ],
-      script: [
-        // Telegram WebApp SDK（用於 Telegram Mini App 整合）
-        // 注意：不使用 defer，確保 SDK 在 Plugin 執行前載入
-        { src: 'https://telegram.org/js/telegram-web-app.js' },
-      ],
+      // Telegram WebApp SDK 改為動態載入（見 TelegramSdkClient.ts）
+      // 避免在非 Telegram 環境產生 console 輸出
     },
   },
 

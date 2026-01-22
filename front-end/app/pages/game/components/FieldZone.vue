@@ -101,7 +101,9 @@ function isMultipleMatchHighlight(cardId: string): boolean {
 // 處理卡片點擊
 function handleCardClick(cardId: string) {
   // 前置條件檢查：操作超時時禁止選擇
-  if (!canSelectFieldCard.value) return
+  if (!canSelectFieldCard.value) {
+    return
+  }
 
   // 情境 1: 翻牌選擇模式（AWAITING_SELECTION）
   if (fieldCardSelectionMode.value && fieldCardSelectableTargets.value.includes(cardId)) {

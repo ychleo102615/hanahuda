@@ -8,6 +8,11 @@
  * 注意：這是工具類（SDK 封裝），不是 Clean Architecture 中的 Adapter。
  * 命名為 Client 以避免與 Ports & Adapters 模式混淆。
  *
+ * SDK 載入策略：
+ * - 不在 nuxt.config.ts 預載入 telegram-web-app.js
+ * - 依賴 Telegram 客戶端自動注入 window.Telegram 物件
+ * - 避免在非 Telegram 環境產生 SDK 的 debug console 輸出
+ *
  * @module app/game-client/adapter/telegram/TelegramSdkClient
  */
 
