@@ -66,6 +66,146 @@ This project strictly follows Clean Architecture with four-layer structure on bo
 | **Leaderboard BC** | Player rankings, statistics tracking | Backend |
 | **Opponent BC** | AI opponent decision logic | Backend |
 
+### BC Dependency Map
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FRONTEND                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                      game-client BC                                  │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────────┐  │    │
+│  │  │   Domain    │←─│ Application │←─│         Adapter             │  │    │
+│  │  │ card-logic  │  │  Use Cases  │  │ Pinia, WebSocket, Animation │  │    │
+│  │  │  matching   │  │   Ports     │  │    DI Container             │  │    │
+│  │  └─────────────┘  └─────────────┘  └─────────────────────────────┘  │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                    │                                                         │
+│                    ▼ uses                                                    │
+│  ┌────────────────────────────┐  ┌────────────────────────────┐             │
+│  │    app/identity BC         │  │      app/shared            │             │
+│  │  (current player state)    │  │ (notifications, context)   │             │
+│  └────────────────────────────┘  └────────────────────────────┘             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                    │
+                    │ WebSocket / HTTP
+                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         #shared/contracts                                    │
+│              (Commands, Events, Types, Error Codes)                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              BACKEND                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                          Gateway                                     │    │
+│  │            (WebSocket routing, connection management)                │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                    │                                                         │
+│       ┌───────────┼───────────┬───────────────────┐                         │
+│       ▼           ▼           ▼                   ▼                         │
+│  ┌─────────┐ ┌─────────┐ ┌──────────┐ ┌─────────────────┐                   │
+│  │core-game│ │matchmak-│ │ identity │ │   leaderboard   │                   │
+│  │   BC    │ │  ing BC │ │    BC    │ │       BC        │                   │
+│  └────┬────┘ └─────────┘ └──────────┘ └────────▲────────┘                   │
+│       │                                        │                             │
+│       │ AI needed                              │ GameFinished                │
+│       ▼                                        │ event                       │
+│  ┌─────────┐                                   │                             │
+│  │opponent │───────────────────────────────────┘                             │
+│  │   BC    │                                                                 │
+│  └─────────┘                                                                 │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                     server/shared (Event Bus)                        │    │
+│  │                    (Internal BC communication)                       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### BC Layer Structure
+
+Each BC follows Clean Architecture with consistent layering:
+
+| BC | Domain | Application | Adapter | Total Files |
+|----|--------|-------------|---------|-------------|
+| **game-client** | 7 | 47 | 54 | 108 |
+| **core-game** | 11 | 14 | 14 | 39 |
+| **identity** | 6 | 9 | 15 | 30 |
+| **matchmaking** | 5 | 2 | 5 | 12 |
+| **leaderboard** | 8 | 4 | 4 | 16 |
+| **opponent** | 1 | 1 | 6 | 8 |
+
+### Cross-BC Communication
+
+| Communication | Channel | Direction |
+|--------------|---------|-----------|
+| Player Commands | WebSocket | Frontend → Backend |
+| Game Events | WebSocket | Backend → Frontend |
+| Matchmaking Events | WebSocket | Backend → Frontend |
+| AI Actions | Event Bus | core-game ↔ opponent |
+| Stats Update | Event Bus | core-game → leaderboard |
+| Authentication | HTTP REST | Frontend ↔ identity BC |
+
+### Directory Structure
+
+```
+front-end/
+├── app/                              # Frontend Application
+│   ├── game-client/                  # Game Client BC
+│   │   ├── domain/                   #   Pure game logic (card, matching, yaku)
+│   │   ├── application/              #   Use Cases & Ports (26 use cases)
+│   │   │   ├── ports/input/          #     Input Ports (event handlers)
+│   │   │   └── ports/output/         #     Output Ports (state, animation, API)
+│   │   └── adapter/                  #   Pinia, WebSocket, Animation, DI
+│   │
+│   ├── identity/                     # Frontend Identity BC
+│   │   ├── domain/                   #   Current player types
+│   │   ├── application/              #   Auth status use case
+│   │   └── adapter/                  #   Auth API client, Pinia store
+│   │
+│   └── shared/                       # Frontend shared ports
+│
+├── server/                           # Backend Application
+│   ├── core-game/                    # Core Game BC
+│   │   ├── domain/                   #   Game & Round aggregates, services
+│   │   ├── application/              #   Game operation use cases
+│   │   └── adapters/                 #   Drizzle repos, Event publishers
+│   │
+│   ├── identity/                     # Identity BC
+│   │   ├── domain/                   #   Account, Player, OAuth aggregates
+│   │   ├── application/              #   Auth use cases
+│   │   └── adapters/                 #   Drizzle repos, OAuth adapters
+│   │
+│   ├── matchmaking/                  # Matchmaking BC
+│   │   ├── domain/                   #   Pool, Entry, Status entities
+│   │   ├── application/              #   Enter/Process matchmaking
+│   │   └── adapters/                 #   In-memory pool, Event bus
+│   │
+│   ├── leaderboard/                  # Leaderboard BC
+│   │   ├── domain/                   #   Stats, Rankings, Daily scores
+│   │   ├── application/              #   Leaderboard queries
+│   │   └── adapters/                 #   Drizzle repos, Event subscribers
+│   │
+│   ├── opponent/                     # Opponent (AI) BC
+│   │   ├── domain/                   #   AI types
+│   │   ├── application/              #   AI ports
+│   │   └── adapter/                  #   AI instance, Scheduler, State
+│   │
+│   ├── gateway/                      # API Gateway
+│   │   └── (WebSocket routing, rate limiting, connection management)
+│   │
+│   └── shared/                       # Backend shared infrastructure
+│       └── infrastructure/event-bus/ #   Internal & Player event buses
+│
+└── shared/                           # Cross-layer Contracts
+    ├── contracts/                    #   WebSocket commands, events, types
+    ├── constants/                    #   Card constants, room types
+    └── errors/                       #   HTTP errors, error handlers
+```
+
 ---
 
 ## Core Feature Implementations
