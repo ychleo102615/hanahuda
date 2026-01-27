@@ -471,6 +471,7 @@ async function executeSimpleGroupAnimation(
         top: `${getCardPosition(card).y}px`,
         width: `${card.fromRect.width}px`,
         height: `${card.fromRect.height}px`,
+        willChange: 'transform, opacity',
       }"
     >
       <CardComponent
@@ -491,6 +492,7 @@ async function executeSimpleGroupAnimation(
         top: `${getGroupPosition(group).y}px`,
         width: `${group.boundingBox.width}px`,
         height: `${group.boundingBox.height}px`,
+        willChange: 'transform, opacity',
       }"
     >
       <div

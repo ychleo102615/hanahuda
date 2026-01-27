@@ -190,6 +190,7 @@ function handleCardClick(cardId: string) {
 /* FLIP 動畫 - 只動畫 transform */
 .field-cards-move {
   transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform;
 }
 
 /* 移除 leave 動畫 - 讓卡片直接消失 */
