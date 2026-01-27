@@ -131,6 +131,13 @@ const supportsHover = typeof window !== 'undefined'
   ? window.matchMedia('(hover: hover)').matches
   : true
 
+// 動態 will-change 優化：僅在需要動畫時提示瀏覽器
+const willChangeValue = computed(() => {
+  if (props.isAnimationClone) return 'transform, opacity'
+  if (props.isSelectable && supportsHover) return 'transform'
+  return 'auto'
+})
+
 // 使用 @vueuse/motion 設定動畫
 const { apply } = useMotion(cardRef, {
   initial: {
@@ -203,6 +210,7 @@ watch(() => props.enableShake, (shouldShake) => {
 <template>
   <div
     ref="cardRef"
+    :style="{ willChange: willChangeValue }"
     :class="[containerClasses, { 'opacity-0': isHidden }]"
     :data-card-id="isAnimationClone ? undefined : cardId"
     @click="handleClick"
