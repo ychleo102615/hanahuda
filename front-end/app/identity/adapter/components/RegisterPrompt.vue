@@ -17,8 +17,13 @@ const { displayName, shouldShowRegisterPrompt } = useCurrentPlayer()
 const isDismissed = ref(false)
 const skipPromptForSession = ref(false)
 
-// 透過 useCookie 讀取 cookie 狀態（SSR 安全）
-const skipPromptCookie = useCookie('skip_register_prompt')
+const DISMISS_COOKIE_MAX_AGE = 86400 // 24 小時
+
+const skipPromptCookie = useCookie('skip_register_prompt', {
+  maxAge: DISMISS_COOKIE_MAX_AGE,
+  sameSite: 'lax',
+  path: '/',
+})
 
 // 延遲顯示以觸發 enter 動畫
 const isMounted = ref(false)
@@ -29,11 +34,10 @@ onMounted(() => {
 /**
  * 關閉提示
  */
-async function dismiss() {
+function dismiss() {
   isDismissed.value = true
   if (skipPromptForSession.value) {
-    // 透過 server API 設定 HttpOnly cookie
-    await $fetch('/api/v1/auth/dismiss-register-prompt', { method: 'POST' })
+    skipPromptCookie.value = '1'
   }
 }
 
