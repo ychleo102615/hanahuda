@@ -19,8 +19,7 @@ export default defineEventHandler(async (event) => {
 
   // 檢查 OAuth 錯誤
   if (query.error) {
-    const errorDescription = query.error_description || 'OAuth authorization failed'
-    return sendRedirect(event, `/login?error=${encodeURIComponent(String(errorDescription))}`)
+    return sendRedirect(event, '/login?error=OAuth+authorization+failed')
   }
 
   // 驗證必要參數
@@ -83,8 +82,7 @@ export default defineEventHandler(async (event) => {
         return sendRedirect(event, '/lobby')
     }
 
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'OAuth callback failed'
-    return sendRedirect(event, `/login?error=${encodeURIComponent(message)}`)
+  } catch (_error) {
+    return sendRedirect(event, '/login?error=OAuth+callback+failed')
   }
 })

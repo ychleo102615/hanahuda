@@ -18,7 +18,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onUnmounted } from 'vue'
 import { useMotion } from '@vueuse/motion'
 import { Z_INDEX, ENABLE_OAUTH_LOGIN } from '~/constants'
 
@@ -123,6 +123,11 @@ watch(
   },
   { immediate: true },
 )
+
+onUnmounted(() => {
+  document.body.style.overflow = ''
+  window.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <template>

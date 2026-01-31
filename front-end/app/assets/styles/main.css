@@ -82,8 +82,9 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* 防止 iOS Safari 過度捲動（橡皮筋效果） */
-    overflow-x: hidden;
+    /* 使用 clip 而非 hidden：clip 裁剪溢出但不建立 scroll container，
+       避免 body 攔截 wheel 事件導致頁面無法滾動 */
+    overflow-x: clip;
     overscroll-behavior: none;
     /* 背景色：深色調配合 TopInfoBar 毛玻璃效果 */
     background-color: #111827; /* gray-900 */
