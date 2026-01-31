@@ -98,6 +98,11 @@ export default defineNuxtConfig({
   modules: ['@pinia/nuxt', '@vueuse/nuxt'],
 
   runtimeConfig: {
+    // 私有變數（僅 server 可用）
+    // 允許的 CORS origin，可被 NUXT_ALLOWED_ORIGINS 覆蓋
+    // 多個 origin 以逗號分隔，例: "https://example.com,https://staging.example.com"
+    allowedOrigins: '',
+
     // 公開變數（client 可用）
     public: {
       gameMode: 'backend', // 預設值，可被 NUXT_PUBLIC_GAME_MODE 覆蓋

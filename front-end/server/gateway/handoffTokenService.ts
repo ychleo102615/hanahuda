@@ -74,9 +74,9 @@ function getSecret(): string {
   const secret = process.env.HANDOFF_SECRET
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {
-      logger.error('HANDOFF_SECRET is not set in production environment')
+      throw new Error('HANDOFF_SECRET must be set in production environment')
     }
-    return 'dev-handoff-secret-change-in-production'
+    return 'dev-handoff-secret-do-not-use-in-production'
   }
   return secret
 }

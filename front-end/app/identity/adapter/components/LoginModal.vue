@@ -53,6 +53,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeyDown)
+  document.documentElement.style.overflow = ''
+  document.body.style.overflow = ''
 })
 
 // FR-024d: Handle backdrop click
