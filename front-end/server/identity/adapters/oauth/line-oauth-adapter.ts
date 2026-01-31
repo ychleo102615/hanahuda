@@ -177,10 +177,10 @@ export class LineOAuthAdapter extends OAuthProviderPort {
 export function createLineOAuthAdapter(): LineOAuthAdapter {
   const clientId = process.env.LINE_CLIENT_ID
   const clientSecret = process.env.LINE_CLIENT_SECRET
-  const redirectUri = process.env.LINE_REDIRECT_URI || 'http://localhost:5173/api/v1/auth/oauth/line/callback'
+  const redirectUri = process.env.LINE_REDIRECT_URI
 
-  if (!clientId || !clientSecret) {
-    throw new Error('Line OAuth credentials not configured')
+  if (!clientId || !clientSecret || !redirectUri) {
+    throw new Error('Line OAuth credentials not configured: LINE_CLIENT_ID, LINE_CLIENT_SECRET, LINE_REDIRECT_URI are required')
   }
 
   return new LineOAuthAdapter({

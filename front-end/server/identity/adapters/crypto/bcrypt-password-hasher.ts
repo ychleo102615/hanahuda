@@ -19,10 +19,10 @@ import type { PasswordHash } from '../../domain/account/password-hash'
 /**
  * bcrypt 成本因子（rounds）
  *
- * 10 rounds ≈ 100ms 在現代硬體上
- * 可透過環境變數調整（生產環境可考慮 12）
+ * 12 rounds ≈ 250ms 在現代硬體上
+ * 可透過環境變數 BCRYPT_ROUNDS 調整
  */
-const BCRYPT_ROUNDS = 10
+const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS) || 12
 
 // =============================================================================
 // Adapter Implementation
