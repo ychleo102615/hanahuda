@@ -75,12 +75,12 @@ onUnmounted(() => {
 </script>
 <!--
   relative: Allows absolute positioning of inner elements based on this container
-  overflow: hidden: Hides content that overflows the container
+  overflow: clip: Clips overflowing content without creating a scroll container
  -->
 
 <template>
   <section
-    class="hero-section relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-game-table to-game-felt px-6  text-white"
+    class="hero-section relative flex min-h-screen items-center justify-center overflow-clip bg-gradient-to-br from-game-table to-game-felt px-6  text-white"
     :style="backgroundImage ? `background-image: url('${backgroundImage}')` : ''"
     aria-labelledby="hero-title"
   >

@@ -146,12 +146,12 @@ const getCardStyle = (index: number) => {
 
 <template>
   <div
-    class="hero-card-grid absolute inset-0 overflow-hidden"
+    class="hero-card-grid absolute inset-0 overflow-clip"
     :style="{ transform: `translateY(${parallaxOffset * 0.2}px)` }"
     aria-hidden="true"
   >
     <!-- 網格容器 - 置中顯示，自動行高 -->
-    <div class="grid-container absolute inset-0 flex items-center justify-center overflow-hidden">
+    <div class="grid-container absolute inset-0 flex items-center justify-center overflow-clip">
       <div
         class="grid grid-cols-5 md:grid-cols-7 lg:grid-cols-9 auto-rows-auto w-full"
       >

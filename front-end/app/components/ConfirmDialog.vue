@@ -21,7 +21,7 @@
 -->
 
 <script setup lang="ts">
-import { watch, ref } from 'vue'
+import { watch, ref, onUnmounted } from 'vue'
 import { useMotion } from '@vueuse/motion'
 import { Z_INDEX } from '~/constants'
 
@@ -104,6 +104,10 @@ watch(
   },
   { immediate: true }
 )
+
+onUnmounted(() => {
+  document.body.style.overflow = ''
+})
 </script>
 
 <template>
