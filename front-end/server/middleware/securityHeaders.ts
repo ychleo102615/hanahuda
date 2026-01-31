@@ -4,15 +4,21 @@
  * @description
  * 為所有回應添加安全相關的 HTTP Headers。
  * 防禦 XSS、Clickjacking、MIME Sniffing、資訊洩漏等攻擊。
+ * 使用 per-request nonce 取代 script-src 'unsafe-inline'，
+ * 僅允許帶有正確 nonce 的 <script> 標籤執行。
  *
  * @see https://owasp.org/www-project-secure-headers/
  */
+import crypto from 'node:crypto'
 
 export default defineEventHandler((event) => {
+  const nonce = crypto.randomUUID()
+  event.context.security = { nonce }
+
   // Content-Security-Policy: 限制資源載入來源，防止 XSS
   setHeader(event, 'Content-Security-Policy', [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://telegram.org",  // Telegram SDK
+    `script-src 'self' 'nonce-${nonce}' https://telegram.org`,  // Telegram SDK
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",  // Tailwind + Google Fonts
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob:",              // SVG sprites 使用 data URI
