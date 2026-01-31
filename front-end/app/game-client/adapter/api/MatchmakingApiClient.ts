@@ -2,14 +2,12 @@
  * Matchmaking API Client
  *
  * @description
- * 配對功能客戶端。使用 WebSocket 命令進行配對操作。
+ * 配對功能客戶端。使用 REST API 進行配對操作。
  *
  * @module app/game-client/adapter/api/MatchmakingApiClient
  */
 
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
-import { createJoinMatchmakingCommand } from '#shared/contracts'
-import type { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
 
 /**
  * Enter Matchmaking Response
@@ -99,69 +97,37 @@ function extractServerError(error: unknown): { errorCode: string; message: strin
 }
 
 /**
- * 產生唯一命令 ID
- */
-function generateCommandId(): string {
-  return `cmd-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-}
-
-/**
  * Matchmaking API Client
  *
  * @description
- * 使用 WebSocket 命令進行配對操作。
- * 確保 WebSocket 連線建立後才能發送配對命令，避免 Race Condition。
+ * 使用 REST API 進行配對操作。
  */
 export class MatchmakingApiClient {
-  private wsClient: GatewayWebSocketClient | null = null
-
   /**
-   * 設定 WebSocket 客戶端
-   *
-   * @description
-   * 由 DI 容器在 WebSocket 連線建立後注入。
-   */
-  setWebSocketClient(client: GatewayWebSocketClient): void {
-    this.wsClient = client
-  }
-
-  /**
-   * 進入配對佇列（透過 WebSocket）
+   * 進入配對佇列（透過 REST API）
    *
    * @param roomType - 房間類型
    * @throws {MatchmakingError} 配對失敗時拋出錯誤
-   *
-   * @description
-   * 透過 WebSocket 發送 JOIN_MATCHMAKING 命令。
-   * 必須先建立 WebSocket 連線並呼叫 setWebSocketClient。
    */
   async enterMatchmaking(roomType: RoomTypeId): Promise<void> {
-    if (!this.wsClient) {
-      throw new MatchmakingError('NOT_CONNECTED', 'WebSocket not connected. Please wait for connection.')
-    }
-
-    if (!this.wsClient.isConnected()) {
-      throw new MatchmakingError('NOT_CONNECTED', 'WebSocket connection lost. Please try again.')
-    }
-
     try {
-      const command = createJoinMatchmakingCommand(generateCommandId(), roomType)
-      const response = await this.wsClient.sendCommand(command)
-
-      if (!response.success) {
-        const error = response.error
-        throw new MatchmakingError(
-          error?.code || 'UNKNOWN_ERROR',
-          error?.message || 'Failed to enter matchmaking'
-        )
-      }
+      await $fetch('/api/v1/matchmaking/enter', {
+        method: 'POST',
+        body: { room_type: roomType },
+      })
     } catch (error) {
       // Already a MatchmakingError, re-throw
       if (error instanceof MatchmakingError) {
         throw error
       }
 
-      // WebSocket error
+      // Extract server error from FetchError
+      const serverError = extractServerError(error)
+      if (serverError) {
+        throw new MatchmakingError(serverError.errorCode, serverError.message)
+      }
+
+      // Network or unknown error
       throw new MatchmakingError('NETWORK_ERROR', 'Failed to send matchmaking request')
     }
   }

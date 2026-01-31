@@ -486,13 +486,3 @@ export const GAME_EVENT_TYPES = [
  * 遊戲事件類型（從常數陣列衍生）
  */
 export type GameEventType = (typeof GAME_EVENT_TYPES)[number]
-
-/**
- * @deprecated 請使用 GAME_EVENT_TYPES
- */
-export const SSE_EVENT_TYPES = GAME_EVENT_TYPES
-
-/**
- * @deprecated 請使用 GameEventType
- */
-export type SSEEventType = GameEventType

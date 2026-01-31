@@ -1,19 +1,19 @@
 /**
- * useGatewayConnection - Gateway WebSocket 連線管理 Composable
+ * useGatewayConnection - Gateway SSE 連線管理 Composable
  *
  * @description
- * 統一的 Gateway WebSocket 連線管理。使用單一 WebSocket 連線處理雙向通訊：
- * - 接收：Server → Client 的事件
- * - 發送：Client → Server 的命令（透過 WsSendCommandAdapter）
+ * 統一的 Gateway 連線管理。使用 SSE + REST API 架構：
+ * - 接收：Server → Client 的事件（SSE）
+ * - 發送：Client → Server 的命令（REST API，透過 GameApiClient）
  *
  * Gateway Architecture:
- * - 單一 WebSocket 端點：/_ws
+ * - SSE 端點：/api/v1/events
  * - 身份驗證：透過 session_id Cookie
  * - 事件格式：GatewayEvent（包含 domain, type, payload）
  * - 初始事件：GatewayConnected（包含玩家狀態）
  *
  * 控制流：
- * - GatewayWebSocketClient → GatewayEventRouter → Domain Routers → Use Cases
+ * - GatewayEventClient → GatewayEventRouter → Domain Routers → Use Cases
  *
  * @module app/game-client/adapter/composables/useGatewayConnection
  */
@@ -22,7 +22,7 @@ import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { resolveDependency } from '../di/resolver'
 import { TOKENS } from '../di/tokens'
-import type { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
+import type { GatewayEventClient } from '../sse/GatewayEventClient'
 import type { useUIStateStore } from '../stores/uiState'
 import type { useMatchmakingStateStore } from '../stores/matchmakingState'
 import type { SessionContextPort, ConnectionReadyPayload } from '../../application/ports/output'
@@ -64,11 +64,11 @@ export interface UseGatewayConnectionOptions {
  * Gateway 連線 Composable
  *
  * @description
- * 使用 DI 注入的 GatewayWebSocketClient 進行統一 WebSocket 連線管理。
+ * 使用 DI 注入的 GatewayEventClient 進行統一 SSE 連線管理。
  * 事件由 GatewayEventRouter 根據 domain 路由到對應的子路由器。
  *
  * 職責：
- * - 啟動/關閉 Gateway WebSocket 連線
+ * - 啟動/關閉 Gateway SSE 連線
  * - 管理 Vue 響應式連線狀態
  * - 同步連線狀態到 UIStateStore
  * - 連線永久失敗時導向首頁（可選）
@@ -80,7 +80,7 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
   const router = useRouter()
 
   // DI - 取得已組裝好的元件
-  const gatewayClient = resolveDependency<GatewayWebSocketClient>(TOKENS.GatewayWebSocketClient)
+  const gatewayClient = resolveDependency<GatewayEventClient>(TOKENS.GatewayEventClient)
   const uiStateStore = resolveDependency<ReturnType<typeof useUIStateStore>>(TOKENS.UIStateStore)
   const matchmakingStateStore = resolveDependency<ReturnType<typeof useMatchmakingStateStore>>(TOKENS.MatchmakingStateStore)
   const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
@@ -92,7 +92,7 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
     errorMessage: null,
   })
 
-  // 連線成功回調列表（WebSocket onopen 時觸發）
+  // 連線成功回調列表（SSE onopen 時觸發）
   const connectedCallbacks: Array<() => void | Promise<void>> = []
 
   // 初始狀態回調列表（GatewayConnected 事件處理完成後觸發）
@@ -105,7 +105,7 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
    * 啟動 GatewayConnected 超時計時器
    *
    * @description
-   * 在建立 WebSocket 連線後啟動。如果在超時時間內未收到 GatewayConnected 事件，
+   * 在建立 SSE 連線後啟動。如果在超時時間內未收到 GatewayConnected 事件，
    * 視為連線失敗，斷開連線並設定錯誤狀態。
    */
   function startGatewayConnectedTimeout(): void {
@@ -161,14 +161,14 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
   }
   connectionReadyAdapter.onReady(handleConnectionReady)
 
-  // 設定連線狀態回調（WebSocket 連線建立時）
+  // 設定連線狀態回調（SSE 連線建立時）
   gatewayClient.onConnectionEstablished(async () => {
     state.value.status = 'connected'
     state.value.errorMessage = null
     uiStateStore.setConnectionStatus('connected')
     uiStateStore.hideReconnectionMessage()
 
-    // 執行 WebSocket 連線成功回調（用於 UI 更新，不涉及業務邏輯）
+    // 執行 SSE 連線成功回調（用於 UI 更新，不涉及業務邏輯）
     for (const callback of connectedCallbacks) {
       try {
         await callback()
@@ -209,10 +209,10 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
   })
 
   /**
-   * 建立 Gateway WebSocket 連線
+   * 建立 Gateway SSE 連線
    *
    * @description
-   * 連線到統一的 Gateway 端點 /_ws。身份由 Cookie 驗證。
+   * 連線到統一的 Gateway 端點 /api/v1/events。身份由 Cookie 驗證。
    * 連線成功後會收到 GatewayConnected 事件，包含玩家目前狀態。
    * 啟動超時計時器，若超時未收到 GatewayConnected 則設定錯誤狀態。
    */
@@ -247,10 +247,10 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
   }
 
   /**
-   * 註冊連線成功回調（WebSocket onopen）
+   * 註冊連線成功回調（SSE onopen）
    *
    * @description
-   * 在 WebSocket 連線建立後執行的回調。
+   * 在 SSE 連線建立後執行的回調。
    * 注意：此回調在收到 GatewayConnected 事件之前觸發，不知道玩家狀態。
    * 若需要根據玩家狀態執行邏輯，請使用 onInitialState。
    *

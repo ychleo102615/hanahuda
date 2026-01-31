@@ -36,7 +36,7 @@ export interface ConnectionReadyPayload {
  *
  * @description
  * Output Port：讓 UseCase 通知連線已就緒。
- * 由 GatewayWebSocketClient 或 useGatewayConnection 實現。
+ * 由 GatewayEventClient 或 useGatewayConnection 實現。
  */
 export interface ConnectionReadyPort {
   /**

@@ -17,10 +17,10 @@
  * gatewayRouter.route(gatewayEvent)
  * ```
  *
- * @module app/game-client/adapter/ws/GatewayEventRouter
+ * @module app/game-client/adapter/router/GatewayEventRouter
  */
 
-import type { GatewayEvent, SSEEventType, MatchmakingSSEEventType } from '#shared/contracts'
+import type { GatewayEvent, GameEventType, MatchmakingEventType } from '#shared/contracts'
 import type { EventRouter } from './EventRouter'
 import type { MatchmakingEventRouter } from './MatchmakingEventRouter'
 
@@ -77,12 +77,12 @@ export class GatewayEventRouter {
         if (event.domain === 'MATCHMAKING') {
           // 路由到配對路由器
           this.matchmakingRouter.route(
-            event.type as MatchmakingSSEEventType,
+            event.type as MatchmakingEventType,
             event.payload
           )
         } else if (event.domain === 'GAME') {
           // 路由到遊戲路由器（GatewayConnected 由遊戲路由器處理）
-          this.gameRouter.route(event.type as SSEEventType, event.payload)
+          this.gameRouter.route(event.type as GameEventType, event.payload)
         }
       })
       .catch(() => {

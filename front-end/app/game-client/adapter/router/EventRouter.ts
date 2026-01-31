@@ -14,7 +14,7 @@
 
 import type { OperationSessionManager } from '../abort'
 import type { ExecuteOptions, EventHandlerPort } from '~/game-client/application/ports/input'
-import type { SSEEventType } from '#shared/contracts'
+import type { GameEventType } from '#shared/contracts'
 
 /**
  * EventRouter 類別
@@ -28,12 +28,12 @@ import type { SSEEventType } from '#shared/contracts'
  * 使用 Promise 鏈確保事件依序處理。每個事件會等待前一個事件的 Use Case
  * 完全執行完畢（包括動畫）後才開始處理。
  *
- * **注意**：WebSocket 連線管理由 Adapter 層負責（GatewayWebSocketClient）。
- * 在呼叫 clearEventChain() 前，WebSocket 應已斷開，因此不會有舊事件需要過濾。
+ * **注意**：SSE 連線管理由 Adapter 層負責（GatewayEventClient）。
+ * 在呼叫 clearEventChain() 前，SSE 連線應已斷開，因此不會有舊事件需要過濾。
  */
 export class EventRouter {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private handlers: Map<SSEEventType, EventHandlerPort<any>>
+  private handlers: Map<GameEventType, EventHandlerPort<any>>
 
   /**
    * 事件處理鏈，用於序列化事件處理
@@ -73,7 +73,7 @@ export class EventRouter {
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  register(eventType: SSEEventType, port: EventHandlerPort<any>): void {
+  register(eventType: GameEventType, port: EventHandlerPort<any>): void {
     this.handlers.set(eventType, port)
   }
 
@@ -105,7 +105,7 @@ export class EventRouter {
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  route(eventType: SSEEventType, payload: any): void {
+  route(eventType: GameEventType, payload: any): void {
     const port = this.handlers.get(eventType)
 
     if (!port) {
@@ -143,7 +143,7 @@ export class EventRouter {
    * router.unregister('GameStarted')
    * ```
    */
-  unregister(eventType: SSEEventType): void {
+  unregister(eventType: GameEventType): void {
     this.handlers.delete(eventType)
   }
 
@@ -165,8 +165,8 @@ export class EventRouter {
    * @description
    * 用於狀態恢復時，重置 Promise chain，新事件將從乾淨的起點開始。
    *
-   * **前置條件**：呼叫此方法前，WebSocket 連線應已斷開。
-   * 這由 Adapter 層（GatewayWebSocketClient）負責確保。
+   * **前置條件**：呼叫此方法前，SSE 連線應已斷開。
+   * 這由 Adapter 層（GatewayEventClient）負責確保。
    *
    * @example
    * ```typescript

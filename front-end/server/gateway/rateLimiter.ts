@@ -1,11 +1,11 @@
 /**
- * WebSocket Rate Limiter
+ * Rate Limiter
  *
  * @description
- * 應用層的 WebSocket 命令限流器。
- * 使用滑動視窗算法限制每個玩家的命令發送頻率。
+ * 應用層的命令限流器。
+ * 使用固定視窗算法限制每個玩家的請求頻率。
  *
- * @module server/gateway/wsRateLimiter
+ * @module server/gateway/rateLimiter
  */
 
 // ============================================================================
@@ -51,12 +51,12 @@ export interface RateLimitResult {
 /**
  * 預設 Rate Limit 配置
  *
- * 每秒最多 10 個命令，對於卡牌遊戲來說已經很寬鬆。
+ * 每秒最多 10 個請求，對於卡牌遊戲來說已經很寬鬆。
  * 正常遊戲操作（打牌、選擇目標、決策）不可能超過這個頻率。
  */
 const DEFAULT_CONFIG: RateLimitConfig = {
   windowMs: 1000,     // 1 秒
-  maxRequests: 10,    // 每秒最多 10 個命令
+  maxRequests: 10,    // 每秒最多 10 個請求
 }
 
 /**
@@ -65,11 +65,11 @@ const DEFAULT_CONFIG: RateLimitConfig = {
 const CLEANUP_INTERVAL_MS = 10000  // 10 秒
 
 // ============================================================================
-// WsRateLimiter Class
+// RateLimiter Class
 // ============================================================================
 
 /**
- * WebSocket 命令限流器
+ * 命令限流器
  *
  * @description
  * 使用固定視窗算法實現簡單的限流。
@@ -77,13 +77,13 @@ const CLEANUP_INTERVAL_MS = 10000  // 10 秒
  *
  * @example
  * ```typescript
- * const result = wsRateLimiter.check(playerId)
+ * const result = rateLimiter.check(playerId)
  * if (!result.allowed) {
  *   // 回傳 RATE_LIMIT_EXCEEDED 錯誤
  * }
  * ```
  */
-class WsRateLimiter {
+class RateLimiter {
   private readonly limits = new Map<string, RateLimitEntry>()
   private readonly config: RateLimitConfig
   private cleanupTimer: NodeJS.Timeout | null = null
@@ -141,9 +141,6 @@ class WsRateLimiter {
 
   /**
    * 清理過期的限流條目
-   *
-   * @description
-   * 移除超過兩個視窗時間的條目，避免記憶體洩漏。
    */
   cleanup(): void {
     const now = Date.now()
@@ -163,9 +160,6 @@ class WsRateLimiter {
     return this.limits.size
   }
 
-  /**
-   * 啟動定期清理計時器
-   */
   private startCleanupTimer(): void {
     if (this.cleanupTimer) return
 
@@ -173,7 +167,6 @@ class WsRateLimiter {
       this.cleanup()
     }, CLEANUP_INTERVAL_MS)
 
-    // 避免 Node.js 因為這個計時器無法退出
     this.cleanupTimer.unref()
   }
 
@@ -193,13 +186,13 @@ class WsRateLimiter {
 // ============================================================================
 
 /**
- * 全域 WebSocket 限流器實例
+ * 全域限流器實例
  */
-export const wsRateLimiter = new WsRateLimiter()
+export const rateLimiter = new RateLimiter()
 
 /**
  * 建立自訂配置的限流器（用於測試）
  */
-export function createWsRateLimiter(config: RateLimitConfig): WsRateLimiter {
-  return new WsRateLimiter(config)
+export function createRateLimiter(config: RateLimitConfig): RateLimiter {
+  return new RateLimiter(config)
 }

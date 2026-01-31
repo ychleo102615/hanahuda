@@ -9,7 +9,7 @@
  */
 
 import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
-import { wsConnectionManager } from '~~/server/gateway/wsConnectionManager'
+import { playerConnectionManager } from '~~/server/gateway/playerConnectionManager'
 
 /**
  * 健康檢查回應
@@ -51,7 +51,7 @@ export default defineEventHandler((): HealthResponse => {
     },
     games: {
       active: inMemoryGameStore.getCount(),
-      connections: wsConnectionManager.getConnectionCount(),
+      connections: playerConnectionManager.getConnectionCount(),
     },
   }
 })

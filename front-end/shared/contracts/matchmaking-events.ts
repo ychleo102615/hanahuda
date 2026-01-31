@@ -37,16 +37,6 @@ export const MATCHMAKING_EVENT_TYPE_LIST = [
  */
 export type MatchmakingEventType = (typeof MATCHMAKING_EVENT_TYPE_LIST)[number]
 
-/**
- * @deprecated 請使用 MATCHMAKING_EVENT_TYPE_LIST
- */
-export const SSE_MATCHMAKING_EVENT_TYPES = MATCHMAKING_EVENT_TYPE_LIST
-
-/**
- * @deprecated 請使用 MatchmakingEventType
- */
-export type MatchmakingSSEEventType = MatchmakingEventType
-
 // ============================================================================
 // Event Interfaces
 // ============================================================================

@@ -4,7 +4,7 @@
  * @description
  * 組合式事件發佈器，統一發佈事件到所有訂閱者：
  * 1. AI 對手（透過 OpponentStore）
- * 2. 玩家連線（透過 PlayerEventBus，WebSocket Gateway 架構）
+ * 2. 玩家連線（透過 PlayerEventBus，SSE Gateway 架構）
  * 3. 資料庫日誌（透過 GameLogRepository）
  *
  * 設計原則：
@@ -28,7 +28,7 @@ import {
   playerEventBus,
   createGameEvent,
 } from '~~/server/shared/infrastructure/event-bus'
-import { wsConnectionManager } from '~~/server/gateway/wsConnectionManager'
+import { playerConnectionManager } from '~~/server/gateway/playerConnectionManager'
 
 /**
  * GameFinished 後關閉連線的延遲時間（毫秒）
@@ -155,21 +155,19 @@ export class CompositeEventPublisher implements EventPublisherPort {
   }
 
   /**
-   * 遊戲結束後排程關閉玩家連線
+   * 遊戲結束後排程清理玩家連線
    *
    * @description
    * GameFinished 事件發送後，等待一小段時間確保事件送達，
-   * 然後主動關閉玩家的 WebSocket 連線。
-   * 前端收到 GameFinished 後會設置 expectingDisconnect，
-   * 收到 onclose 時不會觸發重連。
+   * 然後取消訂閱玩家的事件（移除連線）。
+   * 前端收到 GameFinished 後會設置 expectingDisconnect 並自行斷線。
    *
    * @param playerIds - 玩家 ID 列表
    */
   private scheduleDisconnectAfterGameEnd(playerIds: string[]): void {
     setTimeout(() => {
       for (const playerId of playerIds) {
-        // 使用 4000 代碼表示「正常遊戲結束」
-        wsConnectionManager.forceDisconnect(playerId, 4000, 'Game finished')
+        playerConnectionManager.removeConnection(playerId)
       }
     }, DISCONNECT_DELAY_MS)
   }
