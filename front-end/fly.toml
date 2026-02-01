@@ -33,9 +33,9 @@ primary_region = 'nrt'
     hard_limit = 250
     soft_limit = 200
 
-  # 使用 HTTP/2（SSE + REST API 架構，不需要 WebSocket 協議升級）
-  [http_service.http_options]
-    h2_backend = true
+  # HTTP/2 在 fly-proxy ↔ 瀏覽器之間自動啟用
+  # h2_backend 維持 false：Nitro 不支援 h2c（HTTP/2 over cleartext）
+  # 移除 WebSocket 時代的 alpn/h2_backend 限制後，fly-proxy 預設即走 HTTP/2 對外
 
 
 [[vm]]
