@@ -8,7 +8,7 @@ A Japanese Hanafuda card game showcasing **Clean Architecture**, **Domain-Driven
 |------|-------------------------|
 | **Architecture** | Strict Clean Architecture layering, DDD Bounded Contexts, Dependency Inversion |
 | **Frontend** | Nuxt 4 + Vue 3 + TypeScript, Custom DI Container, SVG Sprite optimization |
-| **Backend** | Nuxt 4 Nitro + Drizzle ORM + PostgreSQL, WebSocket real-time communication, Pessimistic locking |
+| **Backend** | Nuxt 4 Nitro + Drizzle ORM + PostgreSQL, SSE + REST API real-time communication, Pessimistic locking |
 | **Game Logic** | Complete Yaku detection engine (12 hand types), Koi-Koi rule implementation, Special rule handling |
 | **Matchmaking** | Online human vs human, AI opponent matching, Room type management, PlayerEventBus |
 | **Identity** | Player accounts, Guest mode, Soft delete mechanism, Telegram Mini App OAuth |
@@ -26,7 +26,7 @@ A Japanese Hanafuda card game showcasing **Clean Architecture**, **Domain-Driven
 │  Nuxt 4 • Vue 3 • TypeScript • Tailwind CSS v4 • Pinia     │
 ├─────────────────────────────────────────────────────────────┤
 │                        Backend                               │
-│  Nuxt 4 Nitro • Drizzle ORM • PostgreSQL • WebSocket       │
+│  Nuxt 4 Nitro • Drizzle ORM • PostgreSQL • SSE             │
 ├─────────────────────────────────────────────────────────────┤
 │                     Architecture                             │
 │  Clean Architecture • DDD • Event-Driven • CQRS-like        │
@@ -76,7 +76,7 @@ This project strictly follows Clean Architecture with four-layer structure on bo
 │  │                      game-client BC                                  │    │
 │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────────┐  │    │
 │  │  │   Domain    │←─│ Application │←─│         Adapter             │  │    │
-│  │  │ card-logic  │  │  Use Cases  │  │ Pinia, WebSocket, Animation │  │    │
+│  │  │ card-logic  │  │  Use Cases  │  │ Pinia, SSE, Animation       │  │    │
 │  │  │  matching   │  │   Ports     │  │    DI Container             │  │    │
 │  │  └─────────────┘  └─────────────┘  └─────────────────────────────┘  │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
@@ -88,7 +88,7 @@ This project strictly follows Clean Architecture with four-layer structure on bo
 │  └────────────────────────────┘  └────────────────────────────┘             │
 └─────────────────────────────────────────────────────────────────────────────┘
                     │
-                    │ WebSocket / HTTP
+                    │ SSE / REST API
                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         #shared/contracts                                    │
@@ -101,7 +101,7 @@ This project strictly follows Clean Architecture with four-layer structure on bo
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │                          Gateway                                     │    │
-│  │            (WebSocket routing, connection management)                │    │
+│  │            (SSE streaming, REST API, connection management)          │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                    │                                                         │
 │       ┌───────────┼───────────┬───────────────────┐                         │
@@ -142,9 +142,9 @@ Each BC follows Clean Architecture with consistent layering:
 
 | Communication | Channel | Direction |
 |--------------|---------|-----------|
-| Player Commands | WebSocket | Frontend → Backend |
-| Game Events | WebSocket | Backend → Frontend |
-| Matchmaking Events | WebSocket | Backend → Frontend |
+| Player Commands | REST API | Frontend → Backend |
+| Game Events | SSE | Backend → Frontend |
+| Matchmaking Events | SSE | Backend → Frontend |
 | AI Actions | Event Bus | core-game ↔ opponent |
 | Stats Update | Event Bus | core-game → leaderboard |
 | Authentication | HTTP REST | Frontend ↔ identity BC |
@@ -159,7 +159,7 @@ front-end/
 │   │   ├── application/              #   Use Cases & Ports (26 use cases)
 │   │   │   ├── ports/input/          #     Input Ports (event handlers)
 │   │   │   └── ports/output/         #     Output Ports (state, animation, API)
-│   │   └── adapter/                  #   Pinia, WebSocket, Animation, DI
+│   │   └── adapter/                  #   Pinia, SSE, REST API, Animation, DI
 │   │
 │   ├── identity/                     # Frontend Identity BC
 │   │   ├── domain/                   #   Current player types
@@ -195,13 +195,13 @@ front-end/
 │   │   └── adapter/                  #   AI instance, Scheduler, State
 │   │
 │   ├── gateway/                      # API Gateway
-│   │   └── (WebSocket routing, rate limiting, connection management)
+│   │   └── (SSE streaming, REST API, rate limiting, connection management)
 │   │
 │   └── shared/                       # Backend shared infrastructure
 │       └── infrastructure/event-bus/ #   Internal & Player event buses
 │
 └── shared/                           # Cross-layer Contracts
-    ├── contracts/                    #   WebSocket commands, events, types
+    ├── contracts/                    #   Events, types, gateway contracts
     ├── constants/                    #   Card constants, room types
     └── errors/                       #   HTTP errors, error handlers
 ```
@@ -210,27 +210,29 @@ front-end/
 
 ## Core Feature Implementations
 
-### 1. WebSocket Real-time Communication
+### 1. SSE + REST API Real-time Communication
 
-**Design Decision**: Migrated from SSE to WebSocket for bidirectional communication
+**Design Decision**: Migrated from WebSocket back to SSE + REST API for HTTP/2 compatibility
+
+WebSocket requires HTTP/1.1 Upgrade handshake, forcing the entire connection to downgrade from HTTP/2. On Fly.io this meant setting `alpn = ['http/1.1']` and `h2_backend = false`, losing HTTP/2 multiplexing for all traffic. SSE is a standard HTTP response that works natively with HTTP/2 — a single TCP connection can multiplex the SSE event stream alongside REST API requests without head-of-line blocking. Since the game only needs server-to-client push (events) and client-to-server request-response (commands), full-duplex WebSocket was unnecessary overhead.
 
 - **REST API**: Handles player commands (play card, select, decide)
-- **WebSocket**: Pushes game events with full-duplex support
+- **SSE**: Pushes game events via `/api/v1/events` endpoint
 
 ```typescript
 // Event flow example
-Client → REST: POST /games/{id}/turns/play-card
-Server → WS:   TurnCompleted { hand_card_play, draw_card_play, next_state }
-Server → WS:   DecisionRequired { yaku_update, current_multipliers }
-Client → REST: POST /games/{id}/rounds/decision
-Server → WS:   RoundScored { winner_id, final_points }
+Client → REST: POST /api/v1/games/{id}/turns/play-card
+Server → SSE:  TurnCompleted { hand_card_play, draw_card_play, next_state }
+Server → SSE:  DecisionRequired { yaku_update, current_multipliers }
+Client → REST: POST /api/v1/games/{id}/rounds/decision
+Server → SSE:  RoundScored { winner_id, final_points }
 ```
 
 **Technical Highlights**:
+- HTTP/2 multiplexing: SSE stream + REST API on single TCP connection
 - Event serialization mechanism (Promise chain ensures no animation conflicts)
 - Reconnection support (Snapshot mode for full state recovery)
 - Visibility Change handling (reconnect after page hidden)
-- Enhanced error handling (ECONNRESET, unhandled rejection prevention)
 
 ### 2. Animation System
 
@@ -325,12 +327,12 @@ Uses Drizzle ORM with PostgreSQL for game state management:
 // Matchmaking flow
 Player → REST: POST /matchmaking/enter { roomType: 'SINGLE' | 'HUMAN' }
 Server → PlayerEventBus: MatchFound { game_id, opponent_name, is_bot }
-Player → WS: Connect to /games/{id}/join
+Player → SSE: Connect to /api/v1/events
 ```
 
 **Architecture Highlights**:
 - **MatchmakingPool**: Manages waiting players per room type
-- **PlayerEventBus**: Dedicated WebSocket channel for pre-game events (separate from GameEventBus)
+- **PlayerEventBus**: Dedicated SSE channel for pre-game events (separate from GameEventBus)
 - **GameCreationHandler**: Subscribes to MATCH_FOUND, creates game via JoinGameUseCase
 - **Room Types**: SINGLE (vs AI), HUMAN (vs player)
 
@@ -364,27 +366,27 @@ GAME_FINISHED event → GameFinishedEventHandler
 
 The following are important architectural and implementation decisions made during development:
 
-### 1. WebSocket Connection Rebuild Strategy
+### 1. SSE Connection Rebuild Strategy
 
-**Problem**: After page Visibility Change, WebSocket connection may receive stale events, causing state inconsistency
+**Problem**: After page Visibility Change, SSE connection may receive stale events, causing state inconsistency
 
-**Solution**: When visibility change recovery is detected, proactively disconnect and re-establish WebSocket connection, requesting full state snapshot
+**Solution**: When visibility change recovery is detected, proactively disconnect and re-establish SSE connection, requesting full state snapshot
 
 ```typescript
 // usePageVisibility.ts
-watch(isVisible, async (visible) => {
-  if (visible && wasHidden) {
-    wsConnectionManager.disconnect()
-    await startGameUseCase.execute({ reconnect: true })
+function handleVisibilityChange(): void {
+  if (!document.hidden && isLoggedIn) {
+    animationPort.interrupt()
+    gatewayClient.forceReconnect()
   }
-})
+}
 ```
 
-### 2. Unified WebSocket Join/Reconnect Design
+### 2. Unified Gateway Connection Design
 
-**Problem**: Different scenarios (new game, reconnection, matching) require different WebSocket endpoints
+**Problem**: Different scenarios (new game, reconnection, matching) require different handling
 
-**Solution**: Unified `/join` endpoint that automatically determines scenario based on `gameId` and `sessionToken`
+**Solution**: Unified `/api/v1/events` SSE endpoint that automatically determines scenario via `GatewayConnected` event
 
 ```typescript
 // JoinGameUseCase return type
@@ -526,7 +528,7 @@ front-end/
 │   ├── game-client/             # Game Client BC (Frontend)
 │   │   ├── domain/              # Frontend game logic (pure functions)
 │   │   ├── application/         # Use Cases & Event Handlers
-│   │   └── adapter/             # Pinia, WebSocket, Animation, DI
+│   │   └── adapter/             # Pinia, SSE, REST API, Animation, DI
 │   └── plugins/                  # DI Container initialization
 │
 ├── server/                       # Nuxt 4 Nitro Backend
@@ -549,7 +551,7 @@ front-end/
 │   └── database/                # Drizzle schema & migrations
 │
 └── shared/                       # Shared contracts between frontend and backend
-    └── contracts/               # WebSocket event types, API formats
+    └── contracts/               # Event types, gateway contracts, API formats
 ```
 
 ---
@@ -560,7 +562,7 @@ front-end/
 
 ### Recent Changes
 - Leaderboard and personal statistics feature
-- Migrated real-time communication from SSE to WebSocket
+- SSE + REST API real-time communication architecture
 - Telegram Mini App authentication integration
 - Unified homepage with gold-leaf Makie style and emerald Modal design
 
@@ -630,7 +632,7 @@ pnpm type-check
 - [x] Leaderboard system ✅ v1.2.0
 - [ ] Game history and replay
 - [ ] Multiple AI difficulty levels
-- [x] WebSocket to replace SSE (bidirectional communication support) ✅ v1.2.0
+- [x] SSE + REST API real-time architecture ✅ v1.2.0
 - [ ] Internationalization (i18n) support
 
 ### Long-term Vision

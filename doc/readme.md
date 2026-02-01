@@ -373,7 +373,7 @@ Phase 3 (分散式):
 
 **多人對戰**
 - 配對系統（Matchmaking）
-- 即時對戰（WebSocket）
+- 即時對戰（SSE + REST API）
 - 觀戰功能
 - 重播系統
 
