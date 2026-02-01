@@ -16,7 +16,7 @@
  */
 
 import type { EventHandlerPort, ExecuteOptions } from '~/game-client/application/ports/input'
-import type { MatchmakingSSEEventType } from '#shared/contracts'
+import type { MatchmakingEventType } from '#shared/contracts'
 
 /**
  * MatchmakingEventRouter 類別
@@ -27,7 +27,7 @@ import type { MatchmakingSSEEventType } from '#shared/contracts'
  */
 export class MatchmakingEventRouter {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private handlers: Map<MatchmakingSSEEventType, EventHandlerPort<any>> = new Map()
+  private handlers: Map<MatchmakingEventType, EventHandlerPort<any>> = new Map()
 
   /**
    * 註冊事件處理器
@@ -36,7 +36,7 @@ export class MatchmakingEventRouter {
    * @param port - Event Handler Port 實例
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  register(eventType: MatchmakingSSEEventType, port: EventHandlerPort<any>): void {
+  register(eventType: MatchmakingEventType, port: EventHandlerPort<any>): void {
     this.handlers.set(eventType, port)
   }
 
@@ -47,7 +47,7 @@ export class MatchmakingEventRouter {
    * @param payload - 事件 payload
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  route(eventType: MatchmakingSSEEventType, payload: any): void {
+  route(eventType: MatchmakingEventType, payload: any): void {
     const port = this.handlers.get(eventType)
 
     if (!port) {
@@ -61,7 +61,7 @@ export class MatchmakingEventRouter {
   /**
    * 取消註冊事件處理器
    */
-  unregister(eventType: MatchmakingSSEEventType): void {
+  unregister(eventType: MatchmakingEventType): void {
     this.handlers.delete(eventType)
   }
 

@@ -3,7 +3,7 @@
  *
  * @description
  * 監聽頁面可見性變化，當頁面從隱藏狀態恢復為可見時，
- * 強制重新建立 Gateway WebSocket 連線。
+ * 強制重新建立 Gateway SSE 連線。
  *
  * Gateway Architecture 重連流程：
  * 1. 頁面恢復可見時，強制斷開現有連線並重新連線
@@ -12,7 +12,7 @@
  *
  * 設計原則：
  * - Adapter 層 composable，負責監聯 DOM 事件
- * - 使用 singleton GatewayWebSocketClient 確保單一連線
+ * - 使用 singleton GatewayEventClient 確保單一連線
  * - 僅在 backend 模式下有效
  *
  * @example
@@ -28,7 +28,7 @@ import { onMounted, onUnmounted } from 'vue'
 import { resolveDependency } from '../di/resolver'
 import { useGameMode } from './useGameMode'
 import { TOKENS } from '../di/tokens'
-import type { GatewayWebSocketClient } from '../ws/GatewayWebSocketClient'
+import type { GatewayEventClient } from '../sse/GatewayEventClient'
 import type { AnimationPort } from '../../application/ports/output'
 import { createCurrentPlayerContextAdapter } from '~/shared/adapters'
 
@@ -50,7 +50,7 @@ export function usePageVisibility(): void {
     return
   }
 
-  const gatewayClient = resolveDependency<GatewayWebSocketClient>(TOKENS.GatewayWebSocketClient)
+  const gatewayClient = resolveDependency<GatewayEventClient>(TOKENS.GatewayEventClient)
   const animationPort = resolveDependency<AnimationPort>(TOKENS.AnimationPort)
   const playerContext = createCurrentPlayerContextAdapter()
 

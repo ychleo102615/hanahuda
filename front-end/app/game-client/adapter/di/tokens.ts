@@ -80,7 +80,7 @@ export const TOKENS = {
 
   // ===== Gateway Adapters =====
   GatewayEventRouter: Symbol('GatewayEventRouter'),
-  GatewayWebSocketClient: Symbol('GatewayWebSocketClient'),
+  GatewayEventClient: Symbol('GatewayEventClient'),
 
   // ===== Domain Facade =====
   DomainFacade: Symbol('DomainFacade'),

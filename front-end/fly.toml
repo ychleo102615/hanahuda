@@ -33,12 +33,9 @@ primary_region = 'nrt'
     hard_limit = 250
     soft_limit = 200
 
-  # 強制使用 HTTP/1.1 以支援 WebSocket（WebSocket 無法在 HTTP/2 上進行協議升級）
-  [http_service.tls_options]
-    alpn = ['http/1.1']
-
+  # 使用 HTTP/2（SSE + REST API 架構，不需要 WebSocket 協議升級）
   [http_service.http_options]
-    h2_backend = false
+    h2_backend = true
 
 
 [[vm]]

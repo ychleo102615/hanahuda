@@ -4,7 +4,7 @@
   @description
   使用者在此選擇房間類型並開始配對。
   點擊房間卡片後直接導航到遊戲頁面。
-  WebSocket 連線在遊戲頁面建立，由後端透過 GatewayConnected 事件決定玩家狀態。
+  SSE 連線在遊戲頁面建立，由後端透過 GatewayConnected 事件決定玩家狀態。
 
   功能:
   - 顯示房間類型列表（QUICK/STANDARD/MARATHON）
@@ -14,7 +14,7 @@
 
   Gateway 架構:
   - Lobby: 選擇房間 → 儲存 roomTypeId → 導航到 /game
-  - Game Page: 建立 WebSocket → GatewayConnected 事件返回玩家狀態（IDLE/MATCHMAKING/IN_GAME）
+  - Game Page: 建立 SSE 連線 → GatewayConnected 事件返回玩家狀態（IDLE/MATCHMAKING/IN_GAME）
 -->
 
 <script setup lang="ts">

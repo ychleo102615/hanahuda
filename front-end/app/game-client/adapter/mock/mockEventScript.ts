@@ -8,14 +8,14 @@
  * 資料結構參考: front-end/src/game-client/application/types/shared.ts
  */
 
-import type { SSEEventType } from '#shared/contracts'
+import type { GameEventType } from '#shared/contracts'
 
 /**
  * Mock 事件項目
  */
 export interface MockEventItem {
   /** 事件類型（SSOT: 來自 shared/contracts） */
-  eventType: SSEEventType
+  eventType: GameEventType
   /** 事件 payload */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any

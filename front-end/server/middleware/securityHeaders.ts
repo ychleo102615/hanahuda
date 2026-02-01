@@ -22,7 +22,7 @@ export default defineEventHandler((event) => {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",  // Tailwind + Google Fonts
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob:",              // SVG sprites 使用 data URI
-    "connect-src 'self' wss: ws:",             // WebSocket 連線
+    "connect-src 'self'",                       // SSE + REST API（同源）
     "frame-ancestors 'none'",                  // 禁止被 iframe 嵌入
     "base-uri 'self'",                         // 限制 <base> 標籤
     "form-action 'self'",                      // 限制表單提交目標
