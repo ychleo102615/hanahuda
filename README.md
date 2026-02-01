@@ -214,7 +214,7 @@ front-end/
 
 **Design Decision**: Migrated from WebSocket back to SSE + REST API for HTTP/2 compatibility
 
-WebSocket requires HTTP/1.1 Upgrade handshake, forcing the entire connection to downgrade from HTTP/2. On Fly.io this meant setting `alpn = ['http/1.1']` and `h2_backend = false`, losing HTTP/2 multiplexing for all traffic. SSE is a standard HTTP response that works natively with HTTP/2 — a single TCP connection can multiplex the SSE event stream alongside REST API requests without head-of-line blocking. Since the game only needs server-to-client push (events) and client-to-server request-response (commands), full-duplex WebSocket was unnecessary overhead.
+WebSocket requires HTTP/1.1 Upgrade handshake (RFC 8441 defines HTTP/2 WebSocket, but Fly.io's proxy and Nitro do not support it), forcing the entire connection to downgrade from HTTP/2. On Fly.io this meant setting `alpn = ['http/1.1']` and `h2_backend = false`, losing HTTP/2 multiplexing for all traffic. Removing these restrictions allows fly-proxy to serve HTTP/2 to browsers by default (the proxy-to-app hop remains HTTP/1.1 since Nitro doesn't support h2c, but this doesn't affect client-facing multiplexing). SSE is a standard HTTP response that works natively with HTTP/2 — a single TCP connection can multiplex the SSE event stream alongside REST API requests without head-of-line blocking. Since the game only needs server-to-client push (events) and client-to-server request-response (commands), full-duplex WebSocket was unnecessary overhead.
 
 - **REST API**: Handles player commands (play card, select, decide)
 - **SSE**: Pushes game events via `/api/v1/events` endpoint
