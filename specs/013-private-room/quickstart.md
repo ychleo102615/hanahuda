@@ -45,7 +45,7 @@ pnpm --prefix front-end dev
 
 ```
 front-end/server/matchmaking/domain/
-└── privateRoom.ts           # PrivateRoom Aggregate Root (含 shareUrl 衍生方法)
+└── privateRoom.ts           # PrivateRoom Aggregate Root
 ```
 
 ### Application Layer (新增)
@@ -60,7 +60,8 @@ front-end/server/matchmaking/application/
 │   │   └── startPrivateRoomGameInputPort.ts
 │   └── output/
 │       ├── privateRoomRepositoryPort.ts
-│       └── playerConnectionPort.ts          # 查詢玩家 SSE 連線狀態
+│       ├── playerConnectionPort.ts          # 查詢玩家 SSE 連線狀態
+│       └── privateRoomTimerPort.ts          # 計時器抽象 (過期/警告/斷線)
 └── use-cases/
     ├── createPrivateRoomUseCase.ts
     ├── joinPrivateRoomUseCase.ts
@@ -248,10 +249,10 @@ interface CreatePrivateRoomInput {
 interface CreatePrivateRoomOutput {
   success: boolean
   roomId?: string
-  shareUrl?: string
   expiresAt?: Date
   error?: CreateRoomError
 }
+// 注意：shareUrl 由 API Adapter 層根據 roomId 組裝 (${baseUrl}/room/${roomId})，不在 UseCase output 中
 ```
 
 ---

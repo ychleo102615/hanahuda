@@ -34,14 +34,15 @@
 
 > **Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T003 [P] PrivateRoom aggregate unit tests: create, join (→FULL), state transitions, validation rules, shareUrl generation in `front-end/tests/server/matchmaking/domain/privateRoom.test.ts`
+- [ ] T003 [P] PrivateRoom aggregate unit tests: create, join (→FULL), state transitions, validation rules in `front-end/tests/server/matchmaking/domain/privateRoom.test.ts`
 - [ ] T004 [P] InMemoryPrivateRoomStore unit tests: save, findByRoomId, findByPlayerId, findAllWaiting, findAllFull, delete in `front-end/tests/server/matchmaking/adapters/persistence/inMemoryPrivateRoomStore.test.ts`
 
 ### Implementation for Foundational
 
-- [ ] T005 [P] Create PrivateRoom aggregate root with state machine (WAITING/FULL/IN_GAME/EXPIRED/DISSOLVED), factory methods (create/reconstitute), transition methods, Room ID generation (NanoID + custom alphabet per R-002), shareUrl derived method (`${baseUrl}/room/${roomId}`) in `front-end/server/matchmaking/domain/privateRoom.ts`
+- [ ] T005 [P] Create PrivateRoom aggregate root with state machine (WAITING/FULL/IN_GAME/EXPIRED/DISSOLVED), factory methods (create/reconstitute), transition methods, Room ID generation (NanoID + custom alphabet per R-002) in `front-end/server/matchmaking/domain/privateRoom.ts`. Note: shareUrl 不在 Domain 層，由 API Adapter 層組裝
 - [ ] T006 [P] Create PrivateRoomRepositoryPort abstract class (save, findByRoomId, findById, findByPlayerId, delete, findAllWaiting, findAllFull) in `front-end/server/matchmaking/application/ports/output/privateRoomRepositoryPort.ts`
 - [ ] T007 [P] Create PlayerConnectionPort abstract class (isConnected) in `front-end/server/matchmaking/application/ports/output/playerConnectionPort.ts`
+- [ ] T007b [P] Create PrivateRoomTimerPort abstract class (setExpirationTimer, setWarningTimer, clearTimers) in `front-end/server/matchmaking/application/ports/output/privateRoomTimerPort.ts`. UseCase 透過此 Port 操作計時器，避免直接依賴 Adapter
 - [ ] T008 Create InMemoryPrivateRoomStore implementing PrivateRoomRepositoryPort, with singleton pattern (getInMemoryPrivateRoomStore/resetInMemoryPrivateRoomStore) in `front-end/server/matchmaking/adapters/persistence/inMemoryPrivateRoomStore.ts`
 
 **Checkpoint**: Foundation ready - Domain model tested, repository operational
@@ -63,12 +64,12 @@
 ### Implementation for User Story 1
 
 - [ ] T012 [P] [US1] Create CreatePrivateRoomInputPort abstract class (execute with playerId, playerName, roomType → success/error response) in `front-end/server/matchmaking/application/ports/input/createPrivateRoomInputPort.ts`
-- [ ] T013 [US1] Implement CreatePrivateRoomUseCase: mutual exclusion checks (hasActiveGame, hasPlayer in pool, findByPlayerId in repo), create PrivateRoom, save, return roomId/shareUrl/expiresAt in `front-end/server/matchmaking/application/use-cases/createPrivateRoomUseCase.ts`
-- [ ] T014 [US1] Create POST /api/private-room/create.post.ts endpoint: cookie auth, Zod validation, call use case, return response per API contract in `front-end/server/api/private-room/create.post.ts`
+- [ ] T013 [US1] Implement CreatePrivateRoomUseCase: mutual exclusion checks (hasActiveGame, hasPlayer in pool, findByPlayerId in repo), create PrivateRoom, save, return roomId/expiresAt in `front-end/server/matchmaking/application/use-cases/createPrivateRoomUseCase.ts`. Note: UseCase 不回傳 shareUrl，由 API endpoint 組裝
+- [ ] T014 [US1] Create POST /api/private-room/create.post.ts endpoint: cookie auth, Zod validation, call use case, **組裝 shareUrl** (`${useRuntimeConfig().public.baseUrl}/room/${roomId}`), return response per API contract in `front-end/server/api/private-room/create.post.ts`
 - [ ] T015 [US1] Register CreatePrivateRoomUseCase in DI container, extend MatchmakingContainer type in `front-end/server/matchmaking/adapters/di/container.ts`
 - [ ] T016 [US1] Extend PlayerStatusService to detect private room status (IN_PRIVATE_ROOM) by checking InMemoryPrivateRoomStore.findByPlayerId in `front-end/server/gateway/playerStatusService.ts`
 - [ ] T017 [US1] Extend HandleGatewayConnectedUseCase to handle IN_PRIVATE_ROOM status (set privateRoomStore state) in `front-end/app/game-client/application/use-cases/HandleGatewayConnectedUseCase.ts`
-- [ ] T018 [P] [US1] Create privateRoomStore (Pinia): roomId, shareUrl, expiresAt, hostName, status (waiting/full/playing), actions for setWaitingState/clearState in `front-end/app/game-client/adapter/stores/privateRoomStore.ts`
+- [ ] T018 [P] [US1] Create privateRoomStore (Pinia): roomId, expiresAt, hostName, status (waiting/full/playing), computed shareUrl (from roomId + window.location.origin), actions for setWaitingState/clearState in `front-end/app/game-client/adapter/stores/privateRoomStore.ts`
 - [ ] T019 [US1] Create PrivateRoomPanel component: display roomId, shareUrl (copy button), countdown timer, shown on Game Page when privateRoomStore.status === 'waiting' in `front-end/app/game-client/adapter/components/PrivateRoomPanel.vue`
 - [ ] T020 [US1] Add Lobby UI for creating private room: "建立私房" button, roomType selection dialog, call POST /create API, navigateTo('/game') on success in Lobby page component
 - [ ] T021 [US1] Add HandleGatewayConnectedUseCase test for IN_PRIVATE_ROOM status branch in `front-end/tests/client/application/use-cases/HandleGatewayConnectedUseCase.test.ts`
@@ -142,12 +143,12 @@
 
 ### Implementation for User Story 4
 
-- [ ] T044 [US4] Create PrivateRoomTimeoutManager: expirationTimers (Map), warningTimers (Map), disconnectionTimers (Map), setExpirationTimeout/setWarningTimeout/setDisconnectionTimeout/clearAllTimeouts per R-003 in `front-end/server/matchmaking/adapters/timeout/privateRoomTimeoutManager.ts`
-- [ ] T045 [US4] Integrate TimeoutManager with CreatePrivateRoomUseCase: start expiration (10min) and warning (8min) timers on room creation in `front-end/server/matchmaking/application/use-cases/createPrivateRoomUseCase.ts`
-- [ ] T046 [US4] Implement expiry callback: transition room to EXPIRED, publish RoomDissolved (reason: EXPIRED) SSE event, clean up room in `front-end/server/matchmaking/application/use-cases/createPrivateRoomUseCase.ts`
-- [ ] T047 [US4] Implement warning callback: publish RoomExpiring SSE event with remaining_seconds in `front-end/server/matchmaking/application/use-cases/createPrivateRoomUseCase.ts`
+- [ ] T044 [US4] Create PrivateRoomTimeoutManager implementing PrivateRoomTimerPort: expirationTimers (Map), warningTimers (Map), disconnectionTimers (Map), callbacks 在 DI 容器組裝時注入 in `front-end/server/matchmaking/adapters/timeout/privateRoomTimeoutManager.ts`
+- [ ] T045 [US4] Integrate PrivateRoomTimerPort with CreatePrivateRoomUseCase: UseCase 透過注入的 PrivateRoomTimerPort 啟動 expiration (10min) 和 warning (8min) timers in `front-end/server/matchmaking/application/use-cases/createPrivateRoomUseCase.ts`
+- [ ] T046 [US4] Implement expiry callback in DI container: callback 透過 repository + event publisher 執行 transition room to EXPIRED, publish RoomDissolved (reason: EXPIRED), clean up room. Callback 在 `front-end/server/matchmaking/adapters/di/container.ts` 組裝時注入 TimeoutManager
+- [ ] T047 [US4] Implement warning callback in DI container: callback 透過 event publisher 發布 RoomExpiring SSE event with remaining_seconds. 同樣在 DI 容器組裝時注入
 - [ ] T048 [US4] Add RoomExpiring event handler on frontend: register in MatchmakingEventRouter, create HandleRoomExpiringUseCase (show warning in PrivateRoomPanel) in `front-end/app/game-client/application/use-cases/private-room/HandleRoomExpiringUseCase.ts` and register in `front-end/app/game-client/adapter/router/MatchmakingEventRouter.ts`
-- [ ] T049 [US4] Clear timeouts on dissolve and game start: integrate with DissolvePrivateRoomUseCase and StartPrivateRoomGameUseCase in respective use case files
+- [ ] T049 [US4] Clear timeouts on dissolve and game start: DissolvePrivateRoomUseCase 和 StartPrivateRoomGameUseCase 透過注入的 PrivateRoomTimerPort.clearTimers() 清除計時器
 
 **Checkpoint**: Room auto-expires at 10 minutes, warning shown at 8 minutes
 

@@ -141,8 +141,7 @@
 
 ### Key Entities
 
-- **PrivateRoom（私人房間）**: 代表一個私人遊戲房間。包含房間 ID、房主、訪客、遊戲規則設定、建立時間、有效期限、狀態（等待中/滿人/遊戲中/已過期/已解散）
-- **RoomInvitation（房間邀請）**: 代表房間的分享資訊。包含房間連結、房間 ID、過期時間
+- **PrivateRoom（私人房間）**: 代表一個私人遊戲房間。包含房間 ID、房主、訪客、遊戲規則設定、建立時間、有效期限、狀態（等待中/滿人/遊戲中/已過期/已解散）。分享連結（shareUrl）由 API Adapter 層根據 roomId 組裝，不屬於 Domain Model
 
 ## Success Criteria *(mandatory)*
 

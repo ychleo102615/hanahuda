@@ -59,11 +59,11 @@
 Lobby
   → 點擊「建立房間」→ 選擇場數規則
   → POST /api/private-room/create
-  → HTTP response: { roomId, shareUrl, expiresAt }
+  → HTTP response: { roomId, shareUrl (API Adapter 組裝), expiresAt }
   → navigateTo('/game')
   → Game Page 建立 SSE 連線
   → GatewayConnected { status: 'IN_PRIVATE_ROOM', roomId, ... }
-  → 顯示等待畫面（roomId、shareUrl、倒數計時）
+  → 顯示等待畫面（roomId、shareUrl (前端從 roomId 衍生)、倒數計時）
   → 等待事件:
       RoomExpiring  → 顯示即將過期提醒
       RoomDissolved → 房間結束，返回大廳
@@ -166,7 +166,7 @@ front-end/
 └── server/
     └── matchmaking/              # 後端 Matchmaking BC (擴展)
         ├── domain/
-        │   ├── privateRoom.ts           # 新增：私房 Aggregate Root (含 shareUrl 衍生方法)
+        │   ├── privateRoom.ts           # 新增：私房 Aggregate Root
         │   └── matchResult.ts           # 擴展：加入 PRIVATE 類型
         ├── application/
         │   ├── ports/
@@ -177,7 +177,8 @@ front-end/
         │   │   │   └── startPrivateRoomGameInputPort.ts # 新增
         │   │   └── output/
         │   │       ├── privateRoomRepositoryPort.ts     # 新增
-        │   │       └── playerConnectionPort.ts          # 新增：查詢玩家 SSE 連線狀態
+        │   │       ├── playerConnectionPort.ts          # 新增：查詢玩家 SSE 連線狀態
+        │   │       └── privateRoomTimerPort.ts          # 新增：計時器抽象 (過期/警告/斷線)
         │   └── use-cases/
         │       ├── createPrivateRoomUseCase.ts    # 新增
         │       ├── joinPrivateRoomUseCase.ts      # 新增
@@ -194,11 +195,10 @@ front-end/
 front-end/server/api/
 └── private-room/
     ├── create.post.ts      # 新增：建立房間 API
-    ├── [roomId]/
-    │   ├── join.post.ts    # 新增：加入房間 API
-    │   ├── dissolve.post.ts # 新增：解散房間 API
-    │   └── status.get.ts   # 新增：查詢房間狀態 API
-    └── index.ts            # 新增：API 路由設定
+    └── [roomId]/
+        ├── join.post.ts    # 新增：加入房間 API
+        ├── dissolve.post.ts # 新增：解散房間 API
+        └── status.get.ts   # 新增：查詢房間狀態 API
 ```
 
 **Structure Decision**: 採用現有 Nuxt 4 專案結構，在 Matchmaking BC 下擴展私房功能。前端新增專用頁面和狀態管理，後端新增 Domain/Application/Adapter 層級的私房相關模組。

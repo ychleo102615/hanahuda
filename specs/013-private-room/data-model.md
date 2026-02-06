@@ -93,30 +93,6 @@ type PrivateRoomStatus =
 
 ## Value Objects
 
-### RoomInvitation
-
-代表房間的分享資訊。
-
-```typescript
-/**
- * Room Invitation Value Object
- *
- * 用於生成可分享的房間連結
- */
-interface RoomInvitation {
-  readonly roomId: string                // 6 位英數字元
-  readonly shareUrl: string              // 完整分享連結
-  readonly expiresAt: Date               // 過期時間
-}
-
-// 範例
-{
-  roomId: 'ABC123',
-  shareUrl: 'https://hanahuda.example.com/room/ABC123',
-  expiresAt: new Date('2026-02-05T12:10:00Z')
-}
-```
-
 ### RoomTypeId (Existing)
 
 重用現有的房間類型定義。
@@ -176,7 +152,7 @@ interface CreatePrivateRoomRequest {
 interface CreatePrivateRoomResponse {
   readonly success: boolean
   readonly roomId?: string           // 房間 ID (成功時)
-  readonly shareUrl?: string         // 分享連結 (成功時)
+  readonly shareUrl?: string         // 分享連結 (成功時，由 API Adapter 層組裝)
   readonly expiresAt?: string        // ISO 8601 格式 (成功時)
   readonly error?: CreateRoomError   // 錯誤碼 (失敗時)
 }
@@ -264,7 +240,7 @@ interface GetRoomStatusResponse {
 ### PrivateRoom Events
 
 房主建立房間後立即導航至 Game Page，在 Game Page 建立 SSE 連線。
-房間建立資訊（roomId、shareUrl、expiresAt）由 HTTP response 提供，不需要 SSE 事件。
+房間建立資訊（roomId、expiresAt）由 HTTP response 提供，shareUrl 由 API Adapter 層組裝，不需要 SSE 事件。
 訪客加入後房間進入 FULL 狀態，等待雙方 SSE 連線就位後才觸發 `MatchFound`。
 這確保雙方都能收到完整的遊戲首發事件（GameStarted、RoundDealt 等）。
 
@@ -336,6 +312,30 @@ abstract class PlayerConnectionPort {
 }
 ```
 
+### PrivateRoomTimerPort
+
+```typescript
+/**
+ * 私房計時器 Output Port
+ *
+ * UseCase 透過此 Port 操作計時器，避免直接依賴 Adapter 層的 TimeoutManager。
+ * 由 PrivateRoomTimeoutManager (Adapter 層) 實作。
+ * Timer 到期的 callback 在 DI 容器組裝時注入。
+ */
+abstract class PrivateRoomTimerPort {
+  /** 設定房間過期計時器 (10 分鐘) */
+  abstract setExpirationTimer(roomId: string, durationMs: number): void
+  /** 設定即將過期警告計時器 (8 分鐘後) */
+  abstract setWarningTimer(roomId: string, durationMs: number): void
+  /** 設定房主斷線計時器 (30 秒) */
+  abstract setDisconnectionTimer(playerId: string, durationMs: number): void
+  /** 清除指定房間的所有計時器 */
+  abstract clearTimers(roomId: string): void
+  /** 清除指定玩家的斷線計時器 */
+  abstract clearDisconnectionTimer(playerId: string): void
+}
+```
+
 ---
 
 ## Relationships
@@ -347,14 +347,14 @@ abstract class PlayerConnectionPort {
 │  ┌─────────────────┐         ┌─────────────────┐                │
 │  │ MatchmakingPool │         │   PrivateRoom   │                │
 │  │  (Aggregate)    │         │   (Aggregate)   │                │
-│  └────────┬────────┘         └────────┬────────┘                │
-│           │                           │                          │
-│           │ has many                  │ contains                 │
-│           ▼                           ▼                          │
-│  ┌─────────────────┐         ┌─────────────────┐                │
-│  │MatchmakingEntry │         │ RoomInvitation  │                │
-│  │   (Entity)      │         │ (Value Object)  │                │
-│  └─────────────────┘         └─────────────────┘                │
+│  └────────┬────────┘         └─────────────────┘                │
+│           │                                                      │
+│           │ has many                                             │
+│           ▼                                                      │
+│  ┌─────────────────┐                                            │
+│  │MatchmakingEntry │                                            │
+│  │   (Entity)      │                                            │
+│  └─────────────────┘                                            │
 │                                                                  │
 │           └──────────────┬───────────────┘                      │
 │                          │ both produce                         │

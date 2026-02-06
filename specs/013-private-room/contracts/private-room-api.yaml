@@ -237,7 +237,7 @@ components:
         shareUrl:
           type: string
           format: uri
-          description: 可分享的房間連結
+          description: 可分享的房間連結 (由 API Adapter 層根據 roomId 組裝)
           example: 'https://hanahuda.example.com/room/ABC123'
         expiresAt:
           type: string
