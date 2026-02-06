@@ -45,8 +45,7 @@ pnpm --prefix front-end dev
 
 ```
 front-end/server/matchmaking/domain/
-├── privateRoom.ts           # PrivateRoom Aggregate Root
-└── roomParticipant.ts       # (可選) 如需要獨立 Entity
+└── privateRoom.ts           # PrivateRoom Aggregate Root (含 shareUrl 衍生方法)
 ```
 
 ### Application Layer (新增)
@@ -128,17 +127,20 @@ pnpm --prefix front-end test:unit -- --filter=privateRoom
 ### 測試檔案結構
 
 ```
-front-end/server/matchmaking/
+front-end/tests/server/matchmaking/
 ├── domain/
-│   └── __tests__/
-│       └── privateRoom.spec.ts
-└── application/
-    └── use-cases/
-        └── __tests__/
-            ├── createPrivateRoomUseCase.spec.ts
-            ├── joinPrivateRoomUseCase.spec.ts
-            ├── dissolvePrivateRoomUseCase.spec.ts
-            └── startPrivateRoomGameUseCase.spec.ts
+│   └── privateRoom.test.ts
+├── application/
+│   └── use-cases/
+│       ├── createPrivateRoomUseCase.test.ts
+│       ├── joinPrivateRoomUseCase.test.ts
+│       ├── dissolvePrivateRoomUseCase.test.ts
+│       └── startPrivateRoomGameUseCase.test.ts
+└── adapters/
+    ├── persistence/
+    │   └── inMemoryPrivateRoomStore.test.ts
+    └── timeout/
+        └── privateRoomTimeoutManager.test.ts
 ```
 
 ---

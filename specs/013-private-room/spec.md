@@ -81,7 +81,7 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** 房主在私房等待畫面, **When** 點擊「解散房間」按鈕並確認, **Then** 房間解散，房主返回大廳
+1. **Given** 房主在私房等待畫面, **When** 點擊「解散房間」按鈕, **Then** 房間解散，房主返回大廳
 2. **Given** 私房中有房主和一位已加入的玩家, **When** 房主解散房間, **Then** 兩位玩家都被通知房間已解散並返回大廳
 
 ---
@@ -141,8 +141,7 @@
 
 ### Key Entities
 
-- **PrivateRoom（私人房間）**: 代表一個私人遊戲房間。包含房間 ID、房主、遊戲規則設定、建立時間、有效期限、狀態（等待中/遊戲中/已結束）
-- **RoomParticipant（房間參與者）**: 代表房間內的玩家。包含玩家身份、加入時間、是否為房主
+- **PrivateRoom（私人房間）**: 代表一個私人遊戲房間。包含房間 ID、房主、訪客、遊戲規則設定、建立時間、有效期限、狀態（等待中/滿人/遊戲中/已過期/已解散）
 - **RoomInvitation（房間邀請）**: 代表房間的分享資訊。包含房間連結、房間 ID、過期時間
 
 ## Success Criteria *(mandatory)*
@@ -189,8 +188,7 @@ matchmaking/
 ├── domain/
 │   ├── matchmakingPool.ts      # 現有：配對佇列 Aggregate
 │   ├── matchmakingEntry.ts     # 現有
-│   ├── privateRoom.ts          # 新增：私房 Aggregate Root
-│   ├── roomParticipant.ts      # 新增：房間參與者 Entity
+│   ├── privateRoom.ts          # 新增：私房 Aggregate Root (含 shareUrl 衍生方法)
 │   └── matchResult.ts          # 擴展：加入 PRIVATE 類型
 ├── application/
 │   └── use-cases/

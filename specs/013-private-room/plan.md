@@ -166,8 +166,7 @@ front-end/
 └── server/
     └── matchmaking/              # 後端 Matchmaking BC (擴展)
         ├── domain/
-        │   ├── privateRoom.ts           # 新增：私房 Aggregate Root
-        │   ├── roomParticipant.ts       # 新增：房間參與者 Entity
+        │   ├── privateRoom.ts           # 新增：私房 Aggregate Root (含 shareUrl 衍生方法)
         │   └── matchResult.ts           # 擴展：加入 PRIVATE 類型
         ├── application/
         │   ├── ports/

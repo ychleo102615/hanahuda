@@ -51,7 +51,7 @@ paths:
       summary: 加入私人房間
       description: |
         透過房間 ID 加入私人房間。
-        加入成功後遊戲自動開始。
+        加入成功後房間進入 FULL 狀態，待雙方 SSE 連線就位後遊戲自動開始。
       operationId: joinPrivateRoom
       tags:
         - Private Room
@@ -191,7 +191,7 @@ components:
 
     PrivateRoomStatus:
       type: string
-      enum: [WAITING, IN_GAME, EXPIRED, DISSOLVED]
+      enum: [WAITING, FULL, IN_GAME, EXPIRED, DISSOLVED]
       description: 房間狀態
 
     CreateRoomError:
