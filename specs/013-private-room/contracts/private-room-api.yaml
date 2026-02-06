@@ -1,0 +1,368 @@
+openapi: 3.0.3
+info:
+  title: Private Room API
+  description: 私人房間功能 API 契約
+  version: 1.0.0
+
+servers:
+  - url: /api/private-room
+    description: Private Room API base path
+
+paths:
+  /create:
+    post:
+      summary: 建立私人房間
+      description: |
+        建立一個新的私人房間，呼叫者自動成為房主。
+        房間有效期限為 10 分鐘。
+      operationId: createPrivateRoom
+      tags:
+        - Private Room
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePrivateRoomRequest'
+      responses:
+        '200':
+          description: 房間建立成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePrivateRoomSuccessResponse'
+        '400':
+          description: 請求無效或玩家狀態不允許
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePrivateRoomErrorResponse'
+        '401':
+          description: 未授權
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+
+  /{roomId}/join:
+    post:
+      summary: 加入私人房間
+      description: |
+        透過房間 ID 加入私人房間。
+        加入成功後遊戲自動開始。
+      operationId: joinPrivateRoom
+      tags:
+        - Private Room
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          description: 6 位英數字元的房間 ID
+          schema:
+            type: string
+            pattern: '^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$'
+            example: 'ABC123'
+      responses:
+        '200':
+          description: 加入成功，遊戲即將開始
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinPrivateRoomSuccessResponse'
+        '400':
+          description: 請求無效或玩家狀態不允許
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinPrivateRoomErrorResponse'
+        '401':
+          description: 未授權
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '404':
+          description: 房間不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomNotFoundResponse'
+
+  /{roomId}/dissolve:
+    post:
+      summary: 解散私人房間
+      description: |
+        房主解散私人房間。
+        只有房主可以執行此操作。
+        房間在遊戲進行中時無法解散。
+      operationId: dissolvePrivateRoom
+      tags:
+        - Private Room
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          description: 6 位英數字元的房間 ID
+          schema:
+            type: string
+            pattern: '^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$'
+      responses:
+        '200':
+          description: 解散成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DissolvePrivateRoomSuccessResponse'
+        '400':
+          description: 請求無效（非房主或遊戲進行中）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DissolvePrivateRoomErrorResponse'
+        '401':
+          description: 未授權
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '404':
+          description: 房間不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomNotFoundResponse'
+
+  /{roomId}/status:
+    get:
+      summary: 查詢房間狀態
+      description: 取得指定房間的當前狀態
+      operationId: getPrivateRoomStatus
+      tags:
+        - Private Room
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          description: 6 位英數字元的房間 ID
+          schema:
+            type: string
+            pattern: '^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$'
+      responses:
+        '200':
+          description: 房間狀態
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRoomStatusResponse'
+        '401':
+          description: 未授權
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedResponse'
+        '404':
+          description: 房間不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomNotFoundResponse'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+
+  schemas:
+    # Enums
+    RoomTypeId:
+      type: string
+      enum: [SINGLE, QUICK, STANDARD, MARATHON]
+      description: 遊戲場數規則
+
+    PrivateRoomStatus:
+      type: string
+      enum: [WAITING, IN_GAME, EXPIRED, DISSOLVED]
+      description: 房間狀態
+
+    CreateRoomError:
+      type: string
+      enum: [PLAYER_IN_GAME, PLAYER_IN_MATCHMAKING, PLAYER_IN_ROOM, UNAUTHORIZED]
+      description: 建立房間錯誤碼
+
+    JoinRoomError:
+      type: string
+      enum: [ROOM_NOT_FOUND, ROOM_EXPIRED, ROOM_FULL, ROOM_DISSOLVED, PLAYER_IN_GAME, PLAYER_IN_MATCHMAKING, PLAYER_IN_ROOM, CANNOT_JOIN_OWN_ROOM, UNAUTHORIZED]
+      description: 加入房間錯誤碼
+
+    DissolveRoomError:
+      type: string
+      enum: [ROOM_NOT_FOUND, NOT_HOST, ROOM_IN_GAME, UNAUTHORIZED]
+      description: 解散房間錯誤碼
+
+    # Requests
+    CreatePrivateRoomRequest:
+      type: object
+      required:
+        - roomType
+      properties:
+        roomType:
+          $ref: '#/components/schemas/RoomTypeId'
+
+    # Responses
+    CreatePrivateRoomSuccessResponse:
+      type: object
+      required:
+        - success
+        - roomId
+        - shareUrl
+        - expiresAt
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        roomId:
+          type: string
+          description: 6 位英數字元的房間 ID
+          example: 'ABC123'
+        shareUrl:
+          type: string
+          format: uri
+          description: 可分享的房間連結
+          example: 'https://hanahuda.example.com/room/ABC123'
+        expiresAt:
+          type: string
+          format: date-time
+          description: 房間過期時間 (ISO 8601)
+
+    CreatePrivateRoomErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          $ref: '#/components/schemas/CreateRoomError'
+
+    JoinPrivateRoomSuccessResponse:
+      type: object
+      required:
+        - success
+        - hostName
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        hostName:
+          type: string
+          description: 房主名稱
+
+    JoinPrivateRoomErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          $ref: '#/components/schemas/JoinRoomError'
+
+    DissolvePrivateRoomSuccessResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+
+    DissolvePrivateRoomErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          $ref: '#/components/schemas/DissolveRoomError'
+
+    GetRoomStatusResponse:
+      type: object
+      required:
+        - roomId
+        - status
+        - hostId
+        - hostName
+        - roomType
+        - expiresAt
+        - remainingSeconds
+      properties:
+        roomId:
+          type: string
+          example: 'ABC123'
+        status:
+          $ref: '#/components/schemas/PrivateRoomStatus'
+        hostId:
+          type: string
+          format: uuid
+        hostName:
+          type: string
+        guestId:
+          type: string
+          format: uuid
+          nullable: true
+        guestName:
+          type: string
+          nullable: true
+        roomType:
+          $ref: '#/components/schemas/RoomTypeId'
+        expiresAt:
+          type: string
+          format: date-time
+        remainingSeconds:
+          type: integer
+          minimum: 0
+          description: 剩餘秒數
+
+    # Common Error Responses
+    UnauthorizedResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+          enum: [UNAUTHORIZED]
+
+    RoomNotFoundResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+          enum: [ROOM_NOT_FOUND]
