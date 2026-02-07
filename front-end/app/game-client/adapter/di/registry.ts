@@ -858,7 +858,7 @@ function registerMatchmakingEventRoutes(container: DIContainer): void {
 
   // 建立 Use Cases
   const handleMatchmakingStatusUseCase = new HandleMatchmakingStatusUseCase(matchmakingStatePort)
-  const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, gameStatePort, sessionContextPort)
+  const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, gameStatePort, sessionContextPort, privateRoomStatePort)
   const handleMatchmakingErrorUseCase = new HandleMatchmakingErrorUseCase(matchmakingStatePort)
   const handleMatchFailedUseCase = new HandleMatchFailedUseCase(matchmakingStatePort, sessionContextPort)
   const handleRoomDissolvedUseCase = new HandleRoomDissolvedUseCase(privateRoomStatePort, navigationPort, notificationPort)

@@ -15,10 +15,15 @@ definePageMeta({
 import { ref, onMounted } from 'vue'
 import { usePrivateRoomStateStore } from '~/game-client/adapter/stores/privateRoomState'
 import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { resolveDependency } from '~/game-client/adapter/di/resolver'
+import { TOKENS } from '~/game-client/adapter/di/tokens'
+import type { SessionContextPort } from '~/game-client/application/ports/output'
+import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 
 const route = useRoute()
 const privateRoomStore = usePrivateRoomStateStore()
 const uiStore = useUIStateStore()
+const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
 const isJoining = ref(true)
 const errorMessage = ref<string | null>(null)
@@ -50,6 +55,8 @@ onMounted(async () => {
         hostName: response.host_name,
         roomStatus: 'FULL',
       })
+      // 設定 sessionContext 以通過 game middleware
+      sessionContext.setSelectedRoomTypeId(response.room_type as RoomTypeId)
       navigateTo('/game')
     }
   } catch (error: unknown) {

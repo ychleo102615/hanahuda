@@ -358,6 +358,9 @@ const handleCreateRoom = async (roomTypeId: string) => {
         hostName: displayName.value,
         roomStatus: 'WAITING',
       })
+      // 導航到遊戲頁面，建立 SSE 連線等待訪客加入
+      sessionContext.setSelectedRoomTypeId(roomTypeId as RoomTypeId)
+      navigateTo('/game')
     }
   } catch (error: unknown) {
     const errorData = error as { data?: { error?: { code?: string; message?: string } } }
@@ -421,6 +424,8 @@ const handleJoinRoom = async () => {
         hostName: response.host_name,
         roomStatus: 'FULL',
       })
+      // 設定 sessionContext 以通過 game middleware
+      sessionContext.setSelectedRoomTypeId(response.room_type as RoomTypeId)
       // 導航到遊戲頁面，SSE 連線後觸發 StartPrivateRoomGame
       navigateTo('/game')
     }

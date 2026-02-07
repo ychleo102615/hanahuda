@@ -21,6 +21,7 @@ import {
 import type { JoinGameInputPort } from '../../application/ports/input/joinGameInputPort'
 import { inMemoryGameStore } from '../persistence/inMemoryGameStore'
 import { gameTimeoutManager } from '../timeout/gameTimeoutManager'
+import { getInMemoryPrivateRoomStore } from '~~/server/matchmaking/adapters/persistence/inMemoryPrivateRoomStore'
 import { logger } from '~~/server/utils/logger'
 
 /**
@@ -109,6 +110,20 @@ export class GameCreationHandler {
 
     // 遊戲建立成功後，發布 MatchFound 到 PlayerEventBus（解決 game_id 時序問題）
     const gameId = player1Result.gameId
+
+    // PRIVATE match: 更新私人房間為 IN_GAME
+    if (payload.matchType === 'PRIVATE') {
+      try {
+        const privateRoomStore = getInMemoryPrivateRoomStore()
+        const room = await privateRoomStore.findByPlayerId(payload.player1Id)
+        if (room && room.status === 'FULL') {
+          room.startGame(gameId)
+          await privateRoomStore.save(room)
+        }
+      } catch (error) {
+        logger.warn('Failed to update private room to IN_GAME', { gameId, error })
+      }
+    }
 
     // 通知 Player1
     const event1 = createMatchmakingEvent('MatchFound', {
