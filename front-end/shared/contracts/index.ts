@@ -90,6 +90,8 @@ export type {
   MatchFoundEvent,
   MatchmakingErrorEvent,
   MatchFailedEvent,
+  RoomDissolvedEvent,
+  RoomExpiringEvent,
   MatchmakingEvent,
   MatchmakingEventType,
 } from './matchmaking-events'

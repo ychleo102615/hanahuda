@@ -14,3 +14,5 @@ export { HandleMatchmakingStatusUseCase } from './HandleMatchmakingStatusUseCase
 export { HandleMatchFoundUseCase } from './HandleMatchFoundUseCase'
 export { HandleMatchmakingErrorUseCase } from './HandleMatchmakingErrorUseCase'
 export { HandleMatchFailedUseCase } from './HandleMatchFailedUseCase'
+export { HandleRoomDissolvedUseCase } from './HandleRoomDissolvedUseCase'
+export { HandleRoomExpiringUseCase } from './HandleRoomExpiringUseCase'

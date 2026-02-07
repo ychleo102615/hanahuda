@@ -48,6 +48,9 @@ interface MatchmakingState {
 
   /** 是否為 Bot 對手 */
   isBot: boolean
+
+  /** 是否為私人房間配對 */
+  isPrivateMatch: boolean
 }
 
 export const useMatchmakingStateStore = defineStore('matchmakingState', {
@@ -62,6 +65,7 @@ export const useMatchmakingStateStore = defineStore('matchmakingState', {
     statusMessage: null,
     opponentName: null,
     isBot: false,
+    isPrivateMatch: false,
   }),
 
   getters: {
@@ -142,12 +146,13 @@ export const useMatchmakingStateStore = defineStore('matchmakingState', {
      *
      * 使用 $patch 一次性更新多個屬性，只觸發一次響應式更新。
      */
-    setMatchedState(payload: { opponentName: string; isBot: boolean; gameId: string }): void {
+    setMatchedState(payload: { opponentName: string; isBot: boolean; gameId: string; isPrivateMatch: boolean }): void {
       this.$patch({
         status: 'matched' as const,
         opponentName: payload.opponentName,
         isBot: payload.isBot,
         gameId: payload.gameId,
+        isPrivateMatch: payload.isPrivateMatch,
       })
     },
   },

@@ -20,6 +20,8 @@ export const MATCHMAKING_EVENT_TYPES = {
   MatchFound: 'MatchFound',
   MatchmakingError: 'MatchmakingError',
   MatchFailed: 'MatchFailed',
+  RoomDissolved: 'RoomDissolved',
+  RoomExpiring: 'RoomExpiring',
 } as const
 
 /**
@@ -30,6 +32,8 @@ export const MATCHMAKING_EVENT_TYPE_LIST = [
   MATCHMAKING_EVENT_TYPES.MatchFound,
   MATCHMAKING_EVENT_TYPES.MatchmakingError,
   MATCHMAKING_EVENT_TYPES.MatchFailed,
+  MATCHMAKING_EVENT_TYPES.RoomDissolved,
+  MATCHMAKING_EVENT_TYPES.RoomExpiring,
 ] as const
 
 /**
@@ -90,6 +94,15 @@ export interface MatchFoundEvent {
    * 與 game_server_url 一起提供。
    */
   readonly handoff_token?: string
+  /**
+   * 配對類型
+   *
+   * @description
+   * HUMAN: 人類對手配對
+   * BOT: AI 對手
+   * PRIVATE: 私人房間配對
+   */
+  readonly match_type?: 'HUMAN' | 'BOT' | 'PRIVATE'
 }
 
 /**
@@ -117,6 +130,32 @@ export interface MatchFailedEvent {
 }
 
 /**
+ * RoomDissolved 事件
+ *
+ * @description
+ * 私人房間被解散事件（房主解散或房間過期）。
+ * 發送給房間中的訪客。
+ */
+export interface RoomDissolvedEvent {
+  readonly event_type: typeof MATCHMAKING_EVENT_TYPES.RoomDissolved
+  readonly room_id: string
+  readonly reason: 'HOST_DISSOLVED' | 'EXPIRED'
+}
+
+/**
+ * RoomExpiring 事件
+ *
+ * @description
+ * 私人房間即將過期警告事件。
+ * 發送給房間中所有玩家（房主和訪客）。
+ */
+export interface RoomExpiringEvent {
+  readonly event_type: typeof MATCHMAKING_EVENT_TYPES.RoomExpiring
+  readonly room_id: string
+  readonly expires_in_seconds: number
+}
+
+/**
  * 配對事件聯合類型
  */
 export type MatchmakingEvent =
@@ -124,3 +163,5 @@ export type MatchmakingEvent =
   | MatchFoundEvent
   | MatchmakingErrorEvent
   | MatchFailedEvent
+  | RoomDissolvedEvent
+  | RoomExpiringEvent

@@ -151,6 +151,11 @@ onMounted(() => {
           }
         }
       }
+      // 私人房間：顯示等待覆蓋層
+      // FULL 狀態由 events.get.ts 的 startPrivateRoomGameUseCase 處理
+      if (payload.status === 'IN_PRIVATE_ROOM') {
+        matchmakingStore.setStatus('waiting_for_room')
+      }
       // MATCHMAKING / IN_GAME 狀態：HandleGatewayConnectedUseCase 已處理，不需要額外操作
     })
 

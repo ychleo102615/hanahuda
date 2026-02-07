@@ -45,3 +45,6 @@ export type { TelegramAuthPort, TelegramAuthResult, TelegramAuthPlayer } from '.
 
 // Connection Ready Port
 export type { ConnectionReadyPort, ConnectionReadyPayload, PlayerInitialStatus } from './connection-ready.port'
+
+// Private Room Port
+export type { PrivateRoomStatePort, PrivateRoomInfoPayload, PrivateRoomUiStatus } from './private-room-state.port'

@@ -1,0 +1,124 @@
+asyncapi: 2.6.0
+info:
+  title: Private Room SSE Events
+  description: 私人房間功能 Server-Sent Events 契約
+  version: 1.1.0
+
+channels:
+  /api/sse:
+    description: 統一的 SSE 端點 (現有)
+    subscribe:
+      message:
+        oneOf:
+          - $ref: '#/components/messages/RoomDissolved'
+          - $ref: '#/components/messages/RoomExpiring'
+          - $ref: '#/components/messages/MatchFound'
+
+# 設計決策:
+# - RoomCreated 已移除：房間建立資訊由 POST /create HTTP response 提供
+# - RoomJoined 已移除：訪客加入即觸發 MatchFound，無需額外事件
+
+components:
+  messages:
+    RoomDissolved:
+      name: RoomDissolved
+      title: 房間解散
+      summary: 房間因任何原因解散時，房內玩家（等待中的房主）收到此事件
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RoomDissolvedPayload'
+
+    RoomExpiring:
+      name: RoomExpiring
+      title: 房間即將過期
+      summary: 房間剩餘時間少於 2 分鐘時，房內玩家（等待中的房主）收到此事件
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RoomExpiringPayload'
+
+    MatchFound:
+      name: MatchFound
+      title: 配對成功 (現有事件，重用)
+      summary: 私房滿人後，兩位玩家都收到此事件，包含 game_id。與普通配對使用完全相同的事件格式。
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MatchFoundPayload'
+
+  schemas:
+    # Event wrapper (follows existing GatewayEvent structure)
+    GatewayEvent:
+      type: object
+      required:
+        - domain
+        - type
+        - payload
+        - timestamp
+      properties:
+        domain:
+          type: string
+          enum: [matchmaking]
+          description: 事件領域
+        type:
+          type: string
+          description: 事件類型
+        payload:
+          type: object
+          description: 事件內容
+        timestamp:
+          type: string
+          format: date-time
+          description: 事件時間戳
+
+    # Payloads
+    RoomDissolvedPayload:
+      type: object
+      required:
+        - room_id
+        - reason
+      properties:
+        room_id:
+          type: string
+          example: 'ABC123'
+        reason:
+          type: string
+          enum: [HOST_DISSOLVED, HOST_DISCONNECTED, EXPIRED]
+          description: |
+            解散原因:
+            - HOST_DISSOLVED: 房主主動解散
+            - HOST_DISCONNECTED: 房主斷線超過 30 秒
+            - EXPIRED: 房間達到 10 分鐘有效期限
+
+    RoomExpiringPayload:
+      type: object
+      required:
+        - room_id
+        - remaining_seconds
+      properties:
+        room_id:
+          type: string
+          example: 'ABC123'
+        remaining_seconds:
+          type: integer
+          minimum: 0
+          maximum: 120
+          description: 剩餘秒數 (小於 120)
+
+    MatchFoundPayload:
+      type: object
+      description: 現有事件，私房滿人時發送。格式與普通配對完全相同。
+      required:
+        - game_id
+        - opponent_name
+        - is_bot
+      properties:
+        game_id:
+          type: string
+          format: uuid
+          description: 遊戲 ID (由 Core-Game BC 產生)
+        opponent_name:
+          type: string
+          description: 對手名稱
+        is_bot:
+          type: boolean
+          enum: [false]
+          description: 私房永遠為 false (人類對戰)

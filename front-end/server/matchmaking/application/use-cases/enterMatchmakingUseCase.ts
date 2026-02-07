@@ -17,6 +17,7 @@ import { EnterMatchmakingInputPort } from '../ports/input/enterMatchmakingInputP
 import type { MatchmakingPoolPort } from '../ports/output/matchmakingPoolPort'
 import type { PlayerGameStatusPort } from '../ports/output/playerGameStatusPort'
 import type { MatchmakingEventPublisherPort } from '../ports/output/matchmakingEventPublisherPort'
+import type { PrivateRoomRepositoryPort } from '../ports/output/privateRoomRepositoryPort'
 import { MatchmakingEntry } from '../../domain/matchmakingEntry'
 import { STATUS_MESSAGES } from '../../domain/matchmakingStatus'
 
@@ -27,7 +28,8 @@ export class EnterMatchmakingUseCase extends EnterMatchmakingInputPort {
   constructor(
     private readonly poolPort: MatchmakingPoolPort,
     private readonly playerGameStatusPort: PlayerGameStatusPort,
-    private readonly eventPublisher: MatchmakingEventPublisherPort
+    private readonly eventPublisher: MatchmakingEventPublisherPort,
+    private readonly privateRoomRepo?: PrivateRoomRepositoryPort
   ) {
     super()
   }
@@ -53,7 +55,19 @@ export class EnterMatchmakingUseCase extends EnterMatchmakingInputPort {
       }
     }
 
-    // 3. 建立配對條目
+    // 3. 檢查玩家是否有活躍的私人房間
+    if (this.privateRoomRepo) {
+      const existingRoom = await this.privateRoomRepo.findByPlayerId(input.playerId)
+      if (existingRoom) {
+        return {
+          success: false,
+          errorCode: 'PLAYER_IN_ROOM',
+          message: 'You have an active private room',
+        }
+      }
+    }
+
+    // 4. 建立配對條目
     const entry = MatchmakingEntry.create({
       id: randomUUID(),
       playerId: input.playerId,

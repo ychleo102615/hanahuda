@@ -13,7 +13,7 @@
  * @module app/game-client/application/use-cases/matchmaking/HandleMatchFoundUseCase
  */
 
-import type { MatchmakingStatePort, NavigationPort, GameStatePort, SessionContextPort } from '../../ports/output'
+import type { MatchmakingStatePort, NavigationPort, GameStatePort, SessionContextPort, PrivateRoomStatePort } from '../../ports/output'
 import type { HandleMatchFoundPort, ExecuteOptions } from '../../ports/input'
 import type { MatchFoundEvent } from '#shared/contracts'
 
@@ -27,7 +27,8 @@ export class HandleMatchFoundUseCase implements HandleMatchFoundPort {
     private readonly matchmakingState: MatchmakingStatePort,
     private readonly navigation: NavigationPort,
     private readonly gameState: GameStatePort,
-    private readonly sessionContext: SessionContextPort
+    private readonly sessionContext: SessionContextPort,
+    private readonly privateRoomState: PrivateRoomStatePort
   ) {}
 
   /**
@@ -39,6 +40,7 @@ export class HandleMatchFoundUseCase implements HandleMatchFoundPort {
       opponentName: event.opponent_name,
       isBot: event.is_bot,
       gameId: event.game_id,
+      isPrivateMatch: event.match_type === 'PRIVATE',
     })
 
     // 2. 設定 gameState 的 currentGameId
@@ -50,5 +52,8 @@ export class HandleMatchFoundUseCase implements HandleMatchFoundPort {
 
     // 4. 清除 selectedRoomTypeId（配對完成，遊戲已開始）
     this.sessionContext.setSelectedRoomTypeId(null)
+
+    // 5. 清除私人房間狀態（若有）
+    this.privateRoomState.clearRoom()
   }
 }

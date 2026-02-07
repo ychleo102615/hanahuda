@@ -19,12 +19,15 @@
 
 import { getIdentityPortAdapter } from '~~/server/core-game/adapters/identity/identityPortAdapter'
 import { playerConnectionManager } from '~~/server/gateway/playerConnectionManager'
-import { playerStatusService, type PlayerStatusInGame } from '~~/server/gateway/playerStatusService'
+import { playerStatusService, type PlayerStatusInGame, type PlayerStatusInPrivateRoom } from '~~/server/gateway/playerStatusService'
 import { createGatewayEvent, createGameEvent, type GatewayEvent } from '~~/server/shared/infrastructure/event-bus'
 import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
 import { eventMapper } from '~~/server/core-game/adapters/mappers/eventMapper'
 import { resolve, BACKEND_TOKENS } from '~~/server/utils/container'
 import type { GameTimeoutPort } from '~~/server/core-game/application/ports/output/gameTimeoutPort'
+import { getMatchmakingContainer } from '~~/server/matchmaking/adapters/di/container'
+import { getInMemoryPrivateRoomStore } from '~~/server/matchmaking/adapters/persistence/inMemoryPrivateRoomStore'
+import { getPrivateRoomTimeoutManager } from '~~/server/matchmaking/adapters/timeout/privateRoomTimeoutManager'
 import { gameConfig } from '~~/server/utils/config'
 import { logger } from '~~/server/utils/logger'
 
@@ -75,6 +78,13 @@ export default defineEventHandler(async (event) => {
       // 4. 註冊連線到 PlayerConnectionManager
       playerConnectionManager.registerConnection(playerId, sendSSE)
 
+      // 4.1 Private Room: 清除斷線計時器（重新連線時）
+      try {
+        getPrivateRoomTimeoutManager().clearDisconnectionTimer(playerId)
+      } catch {
+        // Timer manager 尚未初始化（非私房功能運作中），忽略
+      }
+
       // 5. 發送初始狀態事件
       void (async () => {
         try {
@@ -87,7 +97,16 @@ export default defineEventHandler(async (event) => {
           })
           sendSSE(initialEvent)
 
-          // 6. 若玩家在遊戲中且已開始（IN_PROGRESS），發送 GameSnapshotRestore
+          // 6. Private Room: FULL 房間 SSE 觸發（雙方就位 → 遊戲開始）
+          if (playerStatus.status === 'IN_PRIVATE_ROOM') {
+            const { roomStatus } = playerStatus as PlayerStatusInPrivateRoom
+            if (roomStatus === 'FULL') {
+              const { startPrivateRoomGameUseCase } = getMatchmakingContainer()
+              await startPrivateRoomGameUseCase.execute({ playerId })
+            }
+          }
+
+          // 7. 若玩家在遊戲中且已開始（IN_PROGRESS），發送 GameSnapshotRestore
           if (playerStatus.status === 'IN_GAME') {
             const inGameStatus = playerStatus as PlayerStatusInGame
             if (inGameStatus.gameStatus === 'IN_PROGRESS') {
@@ -125,6 +144,20 @@ export default defineEventHandler(async (event) => {
       event.node.req.on('close', () => {
         clearInterval(heartbeatTimer)
         playerConnectionManager.removeConnection(playerId)
+
+        // Private Room: 房主斷線 → 啟動 30 秒計時器
+        void (async () => {
+          try {
+            const privateRoomStore = getInMemoryPrivateRoomStore()
+            const room = await privateRoomStore.findByPlayerId(playerId)
+            if (room && room.isHost(playerId) && (room.status === 'WAITING' || room.status === 'FULL')) {
+              getPrivateRoomTimeoutManager().setDisconnectionTimer(playerId, 30_000)
+              logger.info('Host disconnection timer started', { roomId: room.roomId, playerId })
+            }
+          } catch {
+            // Timer manager 尚未初始化，忽略
+          }
+        })()
       })
     },
   })

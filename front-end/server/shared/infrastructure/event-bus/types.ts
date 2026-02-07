@@ -14,7 +14,7 @@ import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 /**
  * Match Type - 配對類型
  */
-export type MatchType = 'HUMAN' | 'BOT'
+export type MatchType = 'HUMAN' | 'BOT' | 'PRIVATE'
 
 /**
  * Match Found Payload

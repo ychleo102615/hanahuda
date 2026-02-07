@@ -9,9 +9,11 @@
  */
 
 import { getInMemoryMatchmakingPool } from '../matchmaking/adapters/persistence/inMemoryMatchmakingPool'
+import { getInMemoryPrivateRoomStore } from '../matchmaking/adapters/persistence/inMemoryPrivateRoomStore'
 import { inMemoryGameStore } from '../core-game/adapters/persistence/inMemoryGameStore'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import type { GameStatus } from '../core-game/domain/game/game'
+import type { PrivateRoomStatus } from '../matchmaking/domain/privateRoom'
 
 /**
  * 玩家狀態：閒置
@@ -41,12 +43,24 @@ export interface PlayerStatusInGame {
 }
 
 /**
+ * 玩家狀態：私人房間中
+ */
+export interface PlayerStatusInPrivateRoom {
+  readonly status: 'IN_PRIVATE_ROOM'
+  readonly roomId: string
+  readonly roomType: RoomTypeId
+  readonly hostName: string
+  readonly roomStatus: PrivateRoomStatus
+}
+
+/**
  * 玩家狀態聯合類型
  */
 export type PlayerStatus =
   | PlayerStatusIdle
   | PlayerStatusMatchmaking
   | PlayerStatusInGame
+  | PlayerStatusInPrivateRoom
 
 /**
  * PlayerStatusService 介面
@@ -89,7 +103,20 @@ class PlayerStatusService implements IPlayerStatusService {
       }
     }
 
-    // 3. 閒置狀態
+    // 3. 檢查是否在私人房間中
+    const privateRoomStore = getInMemoryPrivateRoomStore()
+    const privateRoom = await privateRoomStore.findByPlayerId(playerId)
+    if (privateRoom) {
+      return {
+        status: 'IN_PRIVATE_ROOM',
+        roomId: privateRoom.roomId,
+        roomType: privateRoom.roomType,
+        hostName: privateRoom.hostName,
+        roomStatus: privateRoom.status,
+      }
+    }
+
+    // 4. 閒置狀態
     return { status: 'IDLE' }
   }
 }

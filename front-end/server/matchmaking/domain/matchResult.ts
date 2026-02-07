@@ -26,7 +26,7 @@ export const BOT_PLAYER_ID = 'BOT'
 /**
  * Match Type - 配對類型
  */
-export type MatchType = 'HUMAN' | 'BOT'
+export type MatchType = 'HUMAN' | 'BOT' | 'PRIVATE'
 
 /**
  * Match Result Properties
