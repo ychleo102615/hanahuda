@@ -39,7 +39,6 @@ import type { MenuItem } from './components/LobbyTopInfoBar.vue'
 import PlayerInfoCard from '~/components/PlayerInfoCard.vue'
 import RegisterPrompt from '~/identity/adapter/components/RegisterPrompt.vue'
 import MatchmakingErrorModal from './components/MatchmakingErrorModal.vue'
-import PrivateRoomPanel from './components/PrivateRoomPanel.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
 import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
@@ -376,29 +375,6 @@ const handleCreateRoom = async (roomTypeId: string) => {
   }
 }
 
-const handleDissolveRoom = async () => {
-  const roomId = privateRoomStore.roomId
-  if (!roomId) return
-
-  const uiStore = useUIStateStore()
-
-  try {
-    await $fetch(`/api/private-room/${roomId}/dissolve`, {
-      method: 'POST',
-    })
-    privateRoomStore.clearRoom()
-  } catch (error: unknown) {
-    const errorData = error as { data?: { error?: { code?: string; message?: string } } }
-    const message = errorData?.data?.error?.message ?? 'Failed to dissolve room'
-    uiStore.addToast({
-      type: 'error',
-      message,
-      duration: 4000,
-      dismissible: true,
-    })
-  }
-}
-
 const handleJoinRoom = async () => {
   const roomId = joinRoomId.value.trim().toUpperCase()
   if (!roomId) return
@@ -484,12 +460,6 @@ const conflictDialogConfirmText = computed(() => {
     <!-- 主要內容區 -->
     <main class="flex-1 flex items-center justify-center p-4 relative z-0">
       <div class="max-w-4xl w-full space-y-6">
-
-        <!-- Private Room Panel（有活躍房間時顯示） -->
-        <PrivateRoomPanel
-          v-if="privateRoomStore.hasActiveRoom"
-          @dissolve="handleDissolveRoom"
-        />
 
         <!-- 卡片清單容器 - 金箔蒔絵風格 -->
         <div class="lobby-card rounded-xl p-6 md:p-8">
