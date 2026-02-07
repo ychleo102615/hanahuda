@@ -47,9 +47,18 @@ export interface PlayerStatusInGame {
 }
 
 /**
+ * Player Status - IN_PRIVATE_ROOM
+ */
+export interface PlayerStatusInPrivateRoom {
+  readonly status: 'IN_PRIVATE_ROOM'
+  readonly roomId: string
+  readonly roomType: RoomTypeId
+}
+
+/**
  * Player Status Union
  */
-export type PlayerStatus = PlayerStatusIdle | PlayerStatusMatchmaking | PlayerStatusInGame
+export type PlayerStatus = PlayerStatusIdle | PlayerStatusMatchmaking | PlayerStatusInGame | PlayerStatusInPrivateRoom
 
 /**
  * Get Player Status Response

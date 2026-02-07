@@ -169,15 +169,23 @@ function handleRefresh() {
 
 // === Private Room 操作 ===
 
-async function handleCopyRoomId() {
-  const roomId = privateRoomStore.roomId
-  if (!roomId) return
-
+async function copyToClipboard(text: string, successMessage: string) {
   try {
-    await navigator.clipboard.writeText(roomId)
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
     uiStore.addToast({
       type: 'success',
-      message: 'Room ID copied!',
+      message: successMessage,
       duration: 2000,
       dismissible: false,
     })
@@ -191,26 +199,16 @@ async function handleCopyRoomId() {
   }
 }
 
+async function handleCopyRoomId() {
+  const roomId = privateRoomStore.roomId
+  if (!roomId) return
+  await copyToClipboard(roomId, 'Room ID copied!')
+}
+
 async function handleCopyShareUrl() {
   const url = privateRoomStore.shareUrl
   if (!url) return
-
-  try {
-    await navigator.clipboard.writeText(url)
-    uiStore.addToast({
-      type: 'success',
-      message: 'Share link copied!',
-      duration: 2000,
-      dismissible: false,
-    })
-  } catch {
-    uiStore.addToast({
-      type: 'error',
-      message: 'Failed to copy',
-      duration: 2000,
-      dismissible: false,
-    })
-  }
+  await copyToClipboard(url, 'Share link copied!')
 }
 
 async function handleDissolveRoom() {

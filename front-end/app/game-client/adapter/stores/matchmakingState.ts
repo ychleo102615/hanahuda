@@ -124,7 +124,6 @@ export const useMatchmakingStateStore = defineStore('matchmakingState', {
       this.statusMessage = null
       this.opponentName = null
       this.isBot = false
-      this.isPrivateMatch = false
     },
 
     // === Online Matchmaking ===
