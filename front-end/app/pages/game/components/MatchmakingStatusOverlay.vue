@@ -9,6 +9,7 @@
   - connecting: 正在連線到伺服器...
   - searching: 正在尋找對手... (0-10秒)
   - low_availability: 對手較少，繼續等待... (10-15秒)
+  - waiting_for_room: 私人房間等待中（顯示 Room ID、分享連結、解散按鈕）
   - matched: 配對成功！準備開始遊戲...
   - starting: 遊戲開始中...（等待發牌）
   - error: 連線錯誤（顯示重整按鈕）
@@ -19,8 +20,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useMatchmakingStateStore } from '~/game-client/adapter/stores/matchmakingState'
+import { usePrivateRoomStateStore } from '~/game-client/adapter/stores/privateRoomState'
+import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 
 const matchmakingStore = useMatchmakingStateStore()
+const privateRoomStore = usePrivateRoomStateStore()
+const uiStore = useUIStateStore()
+
+const isDissolving = ref(false)
 
 // 本地計時器（非響應式，避免不必要的追蹤）
 let localElapsedSeconds = 0
@@ -28,7 +35,7 @@ let timerInterval: ReturnType<typeof setInterval> | null = null
 const displayedSeconds = ref(0)
 
 // UI 階段：單一狀態來源，減少多個 computed 的重複計算
-type UIPhase = 'hidden' | 'connecting' | 'searching' | 'matched' | 'error'
+type UIPhase = 'hidden' | 'connecting' | 'searching' | 'waiting_for_room' | 'matched' | 'error'
 const uiPhase = computed<UIPhase>(() => {
   const status = matchmakingStore.status
   if (status === 'error') {
@@ -39,6 +46,9 @@ const uiPhase = computed<UIPhase>(() => {
   }
   if (status === 'connecting') {
     return 'connecting'
+  }
+  if (status === 'waiting_for_room') {
+    return 'waiting_for_room'
   }
   if (status === 'searching' || status === 'low_availability') {
     return 'searching'
@@ -62,6 +72,11 @@ watch(uiPhase, (phase, oldPhase) => {
     startTimer()
   } else if (oldPhase === 'searching') {
     // 從 searching 離開時停止計時器
+    stopTimer()
+  }
+
+  // waiting_for_room 離開時也停止計時器（雖然不啟動，但防禦性清理）
+  if (oldPhase === 'waiting_for_room' && phase !== 'waiting_for_room') {
     stopTimer()
   }
 
@@ -112,6 +127,9 @@ const titleText = computed(() => {
   if (phase === 'connecting') {
     return 'Connecting'
   }
+  if (phase === 'waiting_for_room') {
+    return 'Private Room'
+  }
   return 'Searching'
 })
 
@@ -135,6 +153,9 @@ const subtitleText = computed(() => {
   if (phase === 'connecting') {
     return 'CONNECTING TO SERVER...'
   }
+  if (phase === 'waiting_for_room') {
+    return 'WAITING FOR OPPONENT...'
+  }
   // searching 狀態：需要區分 low_availability
   const status = matchmakingStore.status
   if (status === 'low_availability') return 'FEW PLAYERS ONLINE...'
@@ -144,6 +165,74 @@ const subtitleText = computed(() => {
 // 重整頁面
 function handleRefresh() {
   window.location.reload()
+}
+
+// === Private Room 操作 ===
+
+async function copyToClipboard(text: string, successMessage: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
+    uiStore.addToast({
+      type: 'success',
+      message: successMessage,
+      duration: 2000,
+      dismissible: false,
+    })
+  } catch {
+    uiStore.addToast({
+      type: 'error',
+      message: 'Failed to copy',
+      duration: 2000,
+      dismissible: false,
+    })
+  }
+}
+
+async function handleCopyRoomId() {
+  const roomId = privateRoomStore.roomId
+  if (!roomId) return
+  await copyToClipboard(roomId, 'Room ID copied!')
+}
+
+async function handleCopyShareUrl() {
+  const url = privateRoomStore.shareUrl
+  if (!url) return
+  await copyToClipboard(url, 'Share link copied!')
+}
+
+async function handleDissolveRoom() {
+  const roomId = privateRoomStore.roomId
+  if (!roomId || isDissolving.value) return
+
+  isDissolving.value = true
+  try {
+    await $fetch(`/api/private-room/${roomId}/dissolve`, {
+      method: 'POST',
+    })
+    privateRoomStore.clearRoom()
+    matchmakingStore.setStatus('idle')
+    navigateTo('/lobby')
+  } catch {
+    uiStore.addToast({
+      type: 'error',
+      message: 'Failed to dissolve room',
+      duration: 4000,
+      dismissible: true,
+    })
+  } finally {
+    isDissolving.value = false
+  }
 }
 
 </script>
@@ -210,10 +299,13 @@ function handleRefresh() {
         </p>
 
         <!--
-          底部區域：所有狀態統一 h-24 (96px)
-          內部使用 flex 置中，內容不同但外框高度一致
+          底部區域：waiting_for_room 需要更大空間顯示 Room ID 與分享連結，
+          其他狀態維持 h-24。外框高度動態切換以確保 overlay 整體置中穩定。
         -->
-        <div class="h-24 mt-4 flex flex-col items-center justify-center">
+        <div
+          class="mt-4 flex flex-col items-center justify-center transition-[height] duration-200"
+          :class="uiPhase === 'waiting_for_room' ? 'h-56' : 'h-24'"
+        >
           <!-- 搜尋狀態：顯示計時器 -->
           <template v-if="uiPhase === 'searching'">
             <p class="text-xs text-gray-500 tracking-wider mb-1">
@@ -222,6 +314,61 @@ function handleRefresh() {
             <p class="text-2xl font-mono text-white">
               {{ displayedSeconds }}s
             </p>
+          </template>
+
+          <!-- 私人房間等待狀態：Room ID、分享連結、解散按鈕 -->
+          <template v-else-if="uiPhase === 'waiting_for_room'">
+            <div class="w-full space-y-3">
+              <!-- Room ID -->
+              <div class="flex items-center justify-center gap-3">
+                <span class="text-xs text-gray-500 uppercase tracking-wider">Room ID</span>
+                <span class="text-2xl font-mono font-bold tracking-widest text-white">
+                  {{ privateRoomStore.roomId }}
+                </span>
+                <button
+                  type="button"
+                  class="text-xs text-gray-400 hover:text-white transition-colors underline"
+                  @click="handleCopyRoomId"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <!-- 分隔線 -->
+              <div class="border-t border-gray-700" />
+
+              <!-- Share Link -->
+              <div class="flex items-center gap-2">
+                <input
+                  :value="privateRoomStore.shareUrl"
+                  type="text"
+                  readonly
+                  class="flex-1 px-3 py-1.5 bg-black/30 text-gray-400 text-xs rounded border border-gray-700 truncate"
+                />
+                <button
+                  type="button"
+                  class="px-3 py-1.5 text-xs text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded transition-colors shrink-0"
+                  @click="handleCopyShareUrl"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <!-- 分隔線 -->
+              <div class="border-t border-gray-700" />
+
+              <!-- Dissolve Room -->
+              <div class="text-center">
+                <button
+                  type="button"
+                  :disabled="isDissolving"
+                  class="text-sm text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                  @click="handleDissolveRoom"
+                >
+                  {{ isDissolving ? 'Dissolving...' : 'Dissolve Room' }}
+                </button>
+              </div>
+            </div>
           </template>
 
           <!-- 錯誤狀態：顯示詳細訊息和重整按鈕 -->

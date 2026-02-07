@@ -12,6 +12,14 @@ Execute a comprehensive validation sequence to guarantee CI/CD success. You must
 
 ## Validation Sequence (Execute in Order)
 
+### Step 0: Dependency Integrity Check
+```bash
+pnpm --prefix front-end install --frozen-lockfile
+```
+- Verify that `pnpm-lock.yaml` is in sync with `package.json`
+- If this fails, it means the lockfile is outdated — run `pnpm --prefix front-end install` to regenerate it, then report the change
+- This check mirrors the CI environment's first step and catches lockfile drift
+
 ### Step 1: Unit Tests
 ```bash
 pnpm --prefix front-end test:unit
@@ -50,7 +58,7 @@ pnpm --prefix front-end build
 
 ## Execution Protocol
 
-1. **Always run checks in the specified order** - Tests → Lint → Type Check → Build
+1. **Always run checks in the specified order** - Dependency Integrity → Tests → Lint → Type Check → Build
 2. **Fix issues immediately** - When a check fails, fix the problem before proceeding
 3. **Re-run after fixes** - After any fix, re-run the failed check to verify the fix
 4. **Report progress** - Clearly communicate which step you're on and its status

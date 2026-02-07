@@ -16,7 +16,7 @@
 /**
  * 玩家初始狀態
  */
-export type PlayerInitialStatus = 'IDLE' | 'MATCHMAKING' | 'IN_GAME'
+export type PlayerInitialStatus = 'IDLE' | 'MATCHMAKING' | 'IN_GAME' | 'IN_PRIVATE_ROOM'
 
 /**
  * 連線就緒事件 Payload
@@ -29,6 +29,8 @@ export interface ConnectionReadyPayload {
   readonly elapsedSeconds?: number
   // IN_GAME 狀態附加資訊
   readonly gameId?: string
+  // IN_PRIVATE_ROOM 狀態附加資訊
+  readonly roomId?: string
 }
 
 /**

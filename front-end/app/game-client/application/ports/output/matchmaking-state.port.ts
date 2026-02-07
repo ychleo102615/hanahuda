@@ -153,6 +153,7 @@ export interface MatchedStatePayload {
   opponentName: string
   isBot: boolean
   gameId: string
+  isPrivateMatch: boolean
 }
 
 /**
@@ -169,6 +170,8 @@ export type MatchmakingStatus =
   | 'low_availability' // 低可用性狀態 (10-15s)
   | 'matched' // 已配對成功
   | 'starting' // 遊戲正在啟動中（已配對，等待發牌）
+  // === Private Room (013-private-room) ===
+  | 'waiting_for_room' // 私人房間等待對手加入
 
 /**
  * OnlineMatchmakingState - 線上配對狀態

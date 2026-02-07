@@ -18,6 +18,7 @@ import { useMatchmakingStateStore } from '../stores/matchmakingState'
 import { resolveDependency } from '../di/resolver'
 import { TOKENS } from '../di/tokens'
 import type { SendCommandPort, NotificationPort, SessionContextPort } from '../../application/ports/output'
+import { usePrivateRoomStateStore } from '../stores/privateRoomState'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import type { MenuItem } from '../types/menu-item'
 import type { useGatewayConnection } from './useGatewayConnection'
@@ -64,17 +65,31 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
     const isFinished = gameEnded.value
     const items: MenuItem[] = []
 
-    // Rematch（遊戲結束後可用）
-    items.push({
-      id: 'rematch',
-      label: 'Rematch',
-      icon: 'refresh',
-      onClick: () => {
-        isActionPanelOpen.value = false
-        handleRematch()
-      },
-      disabled: !isFinished || isRematching.value,
-    })
+    if (matchmakingState.isPrivateMatch) {
+      // 私房遊戲：顯示「Return to Lobby」取代 Rematch
+      items.push({
+        id: 'return-to-lobby',
+        label: 'Return to Lobby',
+        icon: 'door-exit',
+        onClick: () => {
+          isActionPanelOpen.value = false
+          handleReturnToLobby()
+        },
+        disabled: !isFinished,
+      })
+    } else {
+      // 公開配對：顯示 Rematch
+      items.push({
+        id: 'rematch',
+        label: 'Rematch',
+        icon: 'refresh',
+        onClick: () => {
+          isActionPanelOpen.value = false
+          handleRematch()
+        },
+        disabled: !isFinished || isRematching.value,
+      })
+    }
 
     // Leave Game
     items.push({
@@ -209,6 +224,32 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
     isRematching.value = false
   }
 
+  /**
+   * Return to Lobby - 私房遊戲結束後回到大廳
+   *
+   * @description
+   * 私房遊戲結束後，不提供 Rematch（因為會進入公開配對，違反玩家預期），
+   * 改為導航回大廳讓玩家自行決定下一步。
+   */
+  function handleReturnToLobby(): void {
+    uiState.hideGameFinishedModal()
+
+    // 清除 SessionContext
+    sessionContext.clearSession()
+
+    // 清理通知系統資源
+    notification.cleanup()
+
+    // 清除所有 stores
+    gameState.$reset()
+    uiState.$reset()
+    matchmakingState.$reset()
+    const privateRoomState = usePrivateRoomStateStore()
+    privateRoomState.clearRoom()
+
+    router.push('/lobby')
+  }
+
   function clearLocalStateAndNavigate() {
     // 清除 SessionContext 中的會話資訊（selectedRoomTypeId、currentGameId）
     sessionContext.clearSession()
@@ -241,5 +282,6 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
     handleLeaveGameConfirm,
     handleLeaveGameCancel,
     handleRematch,
+    handleReturnToLobby,
   }
 }

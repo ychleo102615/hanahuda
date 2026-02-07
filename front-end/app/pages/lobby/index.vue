@@ -25,11 +25,12 @@ definePageMeta({
 
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useMatchmakingStateStore } from '~/game-client/adapter/stores/matchmakingState'
+import { usePrivateRoomStateStore } from '~/game-client/adapter/stores/privateRoomState'
 import { resolveDependency } from '~/game-client/adapter/di/resolver'
 import { TOKENS } from '~/game-client/adapter/di/tokens'
 import type { SessionContextPort } from '~/game-client/application/ports/output'
 import { RoomApiClient, type RoomType } from '~/game-client/adapter/api/RoomApiClient'
-import { MatchmakingApiClient, MatchmakingError } from '~/game-client/adapter/api/MatchmakingApiClient'
+import { MatchmakingApiClient, MatchmakingError, type PlayerStatus } from '~/game-client/adapter/api/MatchmakingApiClient'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
 import DeleteAccountModal from '~/components/DeleteAccountModal.vue'
 import ConfirmDialog from '~/components/ConfirmDialog.vue'
@@ -44,6 +45,7 @@ import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()
+const privateRoomStore = usePrivateRoomStateStore()
 
 // Identity BC - 使用後端提供的玩家資訊
 const { displayName, isGuest } = useCurrentPlayer()
@@ -78,6 +80,17 @@ const deleteAccountError = ref('')
 const roomTypes = ref<RoomType[]>([])
 const isLoadingRooms = ref(true)
 const loadError = ref<string | null>(null)
+
+// Tab 狀態
+const activeTab = ref<'public' | 'private'>('public')
+
+// 玩家狀態（用於活躍狀態提示橫幅）
+const initialPlayerStatus = ref<PlayerStatus | null>(null)
+
+// Private Room 狀態
+const isCreatingRoom = ref(false)
+const joinRoomId = ref('')
+const isJoiningRoom = ref(false)
 
 // Computed properties
 const hasError = computed(() => matchmakingStore.status === 'error')
@@ -115,21 +128,27 @@ const menuItems = computed<MenuItem[]>(() => [
   },
 ])
 
-// 載入房間類型
+// 載入房間類型 + 玩家狀態
 onMounted(async () => {
   // 重設本地狀態（確保從其他頁面返回時按鈕可點擊）
   isCheckingStatus.value = false
   pendingStatusInfo.value = null
   isStatusConflictDialogOpen.value = false
 
-  // 載入房間類型
-  try {
-    roomTypes.value = await roomApiClient.getRoomTypes()
-  } catch (_error) {
+  // 平行載入：房間類型 + 玩家狀態
+  const [roomResult] = await Promise.allSettled([
+    roomApiClient.getRoomTypes(),
+    matchmakingApiClient.getPlayerStatus()
+      .then((status) => { initialPlayerStatus.value = status })
+      .catch(() => {}), // 靜默失敗：banner 不顯示即可
+  ])
+
+  if (roomResult.status === 'fulfilled') {
+    roomTypes.value = roomResult.value
+  } else {
     loadError.value = 'Failed to load room types'
-  } finally {
-    isLoadingRooms.value = false
   }
+  isLoadingRooms.value = false
 })
 
 // 離開頁面時清理錯誤狀態
@@ -270,6 +289,17 @@ const handleSelectRoom = async (roomTypeId: string) => {
       }
       return
     }
+
+    if (status.status === 'IN_PRIVATE_ROOM') {
+      const uiStore = useUIStateStore()
+      uiStore.addToast({
+        type: 'warning',
+        message: 'You have an active private room. Dissolve it first.',
+        duration: 4000,
+        dismissible: true,
+      })
+      return
+    }
   } catch (error) {
     // API 失敗：顯示錯誤
     setMatchmakingError(error, 'Unable to check player status')
@@ -301,9 +331,114 @@ const handleStayInLobby = () => {
   pendingStatusInfo.value = null
 }
 
+/**
+ * 返回活躍的配對/遊戲/私人房間
+ */
+function handleReturnToActiveSession(): void {
+  const status = initialPlayerStatus.value
+  if (!status || status.status === 'IDLE') return
+
+  if (status.status === 'MATCHMAKING') {
+    sessionContext.setSelectedRoomTypeId(status.roomType)
+  } else if (status.status === 'IN_GAME') {
+    sessionContext.setCurrentGameId(status.gameId)
+  } else if (status.status === 'IN_PRIVATE_ROOM') {
+    sessionContext.setSelectedRoomTypeId(status.roomType)
+  }
+  navigateTo('/game')
+}
+
 // 重試配對
 const handleRetry = () => {
   clearLocalMatchmakingState()
+}
+
+// === Private Room ===
+
+const handleCreateRoom = async (roomTypeId: string) => {
+  isCreatingRoom.value = true
+  const uiStore = useUIStateStore()
+
+  try {
+    const response = await $fetch<{
+      success: boolean
+      room_id: string
+      share_url: string
+      expires_at: string
+      error?: { code: string; message: string }
+    }>('/api/private-room/create', {
+      method: 'POST',
+      body: { room_type: roomTypeId },
+    })
+
+    if (response.success) {
+      privateRoomStore.setRoomInfo({
+        roomId: response.room_id,
+        roomType: roomTypeId,
+        hostName: displayName.value,
+        roomStatus: 'WAITING',
+      })
+      // 導航到遊戲頁面，建立 SSE 連線等待訪客加入
+      sessionContext.setSelectedRoomTypeId(roomTypeId as RoomTypeId)
+      navigateTo('/game')
+    }
+  } catch (error: unknown) {
+    const errorData = error as { data?: { error?: { code?: string; message?: string } } }
+    const message = errorData?.data?.error?.message ?? 'Failed to create private room'
+    uiStore.addToast({
+      type: 'error',
+      message,
+      duration: 4000,
+      dismissible: true,
+    })
+  } finally {
+    isCreatingRoom.value = false
+  }
+}
+
+const handleJoinRoom = async () => {
+  const roomId = joinRoomId.value.trim().toUpperCase()
+  if (!roomId) return
+
+  isJoiningRoom.value = true
+  const uiStore = useUIStateStore()
+
+  try {
+    const response = await $fetch<{
+      success: boolean
+      room_id: string
+      host_name: string
+      room_type: string
+      error?: { code: string; message: string }
+    }>(`/api/private-room/${roomId}/join`, {
+      method: 'POST',
+    })
+
+    if (response.success) {
+      privateRoomStore.setRoomInfo({
+        roomId: response.room_id,
+        roomType: response.room_type,
+        hostName: response.host_name,
+        roomStatus: 'FULL',
+      })
+      // 設定 sessionContext 以通過 game middleware
+      sessionContext.setSelectedRoomTypeId(response.room_type as RoomTypeId)
+      // 導航到遊戲頁面，SSE 連線後觸發 StartPrivateRoomGame
+      navigateTo('/game')
+    }
+  } catch (error: unknown) {
+    const errorData = error as { data?: { error?: { code?: string; message?: string } } }
+    const message = errorData?.data?.error?.message ?? 'Failed to join room'
+    uiStore.addToast({
+      type: 'error',
+      message,
+      duration: 4000,
+      dismissible: true,
+    })
+  } finally {
+    isJoiningRoom.value = false
+    joinRoomId.value = ''
+  }
 }
 
 // 狀態衝突對話框的 computed properties
@@ -344,11 +479,55 @@ const conflictDialogConfirmText = computed(() => {
     </header>
 
     <!-- 主要內容區 -->
-    <main class="flex-1 flex items-center justify-center p-4 relative z-0">
-      <div class="max-w-4xl w-full">
+    <main class="flex-1 flex items-start justify-center p-4 pt-8 relative z-0">
+      <div class="max-w-4xl w-full space-y-6">
+
+        <!-- 活躍狀態提示橫幅 -->
+        <div
+          v-if="initialPlayerStatus && initialPlayerStatus.status !== 'IDLE'"
+          class="lobby-card rounded-xl p-4 flex items-center justify-between gap-4"
+        >
+          <p class="text-sm text-gray-300">
+            <template v-if="initialPlayerStatus.status === 'MATCHMAKING'">
+              You are currently in matchmaking queue.
+            </template>
+            <template v-else-if="initialPlayerStatus.status === 'IN_GAME'">
+              You have a game in progress.
+            </template>
+            <template v-else-if="initialPlayerStatus.status === 'IN_PRIVATE_ROOM'">
+              You have an active private room.
+            </template>
+          </p>
+          <button
+            class="shrink-0 px-4 py-1.5 text-sm font-medium rounded-lg bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-light hover:to-gold transition-all"
+            @click="handleReturnToActiveSession"
+          >
+            Return
+          </button>
+        </div>
+
+        <!-- 標籤列（獨立 sibling） -->
+        <div class="flex gap-1 p-1 rounded-lg tab-container justify-center">
+          <button
+            type="button"
+            class="tab-button px-4 py-2 text-sm font-medium rounded-md cursor-pointer transition-all duration-200 ease-out"
+            :class="activeTab === 'public' ? 'tab-button-active' : 'text-gray-400 hover:text-white hover:bg-gold-dark/20'"
+            @click="activeTab = 'public'"
+          >
+            Public Match
+          </button>
+          <button
+            type="button"
+            class="tab-button px-4 py-2 text-sm font-medium rounded-md cursor-pointer transition-all duration-200 ease-out"
+            :class="activeTab === 'private' ? 'tab-button-active' : 'text-gray-400 hover:text-white hover:bg-gold-dark/20'"
+            @click="activeTab = 'private'"
+          >
+            Private Room
+          </button>
+        </div>
+
         <!-- 卡片清單容器 - 金箔蒔絵風格 -->
         <div class="lobby-card rounded-xl p-6 md:p-8">
-          <!-- 標題 - 金色字體 -->
           <h1 class="text-2xl md:text-3xl font-bold text-center mb-8">
             <span class="bg-gradient-to-r from-gold-pale via-gold-light to-gold bg-clip-text text-transparent">
               Select Game Mode
@@ -371,12 +550,12 @@ const conflictDialogConfirmText = computed(() => {
             </button>
           </div>
 
-          <!-- 房間類型列表 -->
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <!-- Quick Match 標籤 -->
+          <div v-else-if="activeTab === 'public'" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <button
               v-for="room in roomTypes"
               :key="room.id"
-              :disabled="isLoadingRooms"
+              :disabled="isCheckingStatus"
               class="group lobby-card rounded-lg p-6 text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
               @click="handleSelectRoom(room.id)"
             >
@@ -395,6 +574,57 @@ const conflictDialogConfirmText = computed(() => {
                 <span>{{ room.rounds }} rounds</span>
               </div>
             </button>
+          </div>
+
+          <!-- Private Room 標籤 -->
+          <div v-else>
+            <!-- 建立房間 — 與公開配對相同的卡片設計 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <button
+                v-for="room in roomTypes"
+                :key="room.id"
+                :disabled="isCreatingRoom"
+                class="group lobby-card rounded-lg p-6 text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
+                @click="handleCreateRoom(room.id)"
+              >
+                <!-- 房間名稱 - 金色漸層 -->
+                <h2 class="text-xl font-bold mb-2 bg-gradient-to-r from-gold-light to-gold-pale bg-clip-text text-transparent group-hover:from-gold-bright group-hover:to-gold-light transition-all">
+                  {{ room.name }}
+                </h2>
+
+                <!-- 房間描述 -->
+                <p class="text-gray-400 text-sm mb-4 leading-relaxed">
+                  {{ room.description }}
+                </p>
+
+                <!-- 房間規格 - 金色分隔線 -->
+                <div class="text-xs text-gold-dark pt-4 border-t border-gold-dark/30">
+                  <span>{{ room.rounds }} rounds</span>
+                </div>
+              </button>
+            </div>
+
+            <!-- 加入房間 -->
+            <div class="mt-6 pt-6 border-t border-gold-dark/30">
+              <p class="text-center text-sm text-gray-400 mb-3">Or join an existing room</p>
+              <div class="flex justify-center gap-2">
+                <input
+                  v-model="joinRoomId"
+                  type="text"
+                  placeholder="Room ID"
+                  maxlength="6"
+                  class="w-24 px-3 py-2 text-sm text-center font-mono uppercase bg-black/30 text-gray-300 rounded border border-gold-dark/30 focus:border-gold-light/50 focus:outline-none placeholder:text-gray-600"
+                  @keyup.enter="handleJoinRoom"
+                />
+                <button
+                  :disabled="isJoiningRoom || !joinRoomId.trim()"
+                  class="px-4 py-2 text-sm text-gold-dark hover:text-gold-light border border-gold-dark/50 hover:border-gold-light/50 rounded-lg transition-colors disabled:opacity-50"
+                  @click="handleJoinRoom"
+                >
+                  Join
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -446,12 +676,14 @@ const conflictDialogConfirmText = computed(() => {
     <!-- Loading Overlay -->
     <Transition name="fade">
       <div
-        v-if="isCheckingStatus"
+        v-if="isCheckingStatus || isCreatingRoom"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       >
         <div class="flex flex-col items-center gap-4">
           <div class="animate-spin rounded-full h-10 w-10 border-2 border-gold-dark border-t-gold-light" />
-          <span class="text-gold-light text-sm">Checking status...</span>
+          <span class="text-gold-light text-sm">
+            {{ isCreatingRoom ? 'Creating room...' : 'Checking status...' }}
+          </span>
         </div>
       </div>
     </Transition>
@@ -468,5 +700,18 @@ const conflictDialogConfirmText = computed(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Tab Container */
+.tab-container {
+  background: rgba(26, 26, 26, 0.5);
+  border: 1px solid rgba(139, 105, 20, 0.2);
+}
+
+/* Tab Buttons */
+.tab-button-active {
+  background: linear-gradient(180deg, #D4AF37 0%, #B8860B 100%);
+  color: #1a1a1a;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
 }
 </style>

@@ -28,6 +28,7 @@ import { useGameStateStore, createUIStatePortAdapter } from '../stores/gameState
 import { useUIStateStore } from '../stores/uiState'
 import { useAnimationLayerStore } from '../stores/animationLayerStore'
 import { useMatchmakingStateStore } from '../stores/matchmakingState'
+import { usePrivateRoomStateStore } from '../stores/privateRoomState'
 import { HandleGameStartedUseCase } from '../../application/use-cases/event-handlers/HandleGameStartedUseCase'
 import { HandleRoundDealtUseCase } from '../../application/use-cases/event-handlers/HandleRoundDealtUseCase'
 import { HandleTurnCompletedUseCase } from '../../application/use-cases/event-handlers/HandleTurnCompletedUseCase'
@@ -44,7 +45,7 @@ import { HandleStateRecoveryUseCase } from '../../application/use-cases/HandleSt
 import { PlayHandCardUseCase } from '../../application/use-cases/player-operations/PlayHandCardUseCase'
 import { SelectMatchTargetUseCase } from '../../application/use-cases/player-operations/SelectMatchTargetUseCase'
 import { MakeKoiKoiDecisionUseCase } from '../../application/use-cases/player-operations/MakeKoiKoiDecisionUseCase'
-import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ErrorHandlerPort, ConnectionReadyPort } from '../../application/ports/output'
+import type { UIStatePort, GameStatePort, AnimationPort, NotificationPort, MatchmakingStatePort, NavigationPort, SessionContextPort, ErrorHandlerPort, ConnectionReadyPort, PrivateRoomStatePort } from '../../application/ports/output'
 import { createConnectionReadyAdapter } from '../connection/ConnectionReadyAdapter'
 import type { HandleStateRecoveryPort } from '../../application/ports/input'
 import { createSessionContextAdapter } from '../session/SessionContextAdapter'
@@ -77,6 +78,8 @@ import {
   HandleMatchFoundUseCase,
   HandleMatchmakingErrorUseCase,
   HandleMatchFailedUseCase,
+  HandleRoomDissolvedUseCase,
+  HandleRoomExpiringUseCase,
 } from '../../application/use-cases/matchmaking'
 import { HandleGatewayConnectedUseCase } from '../../application/use-cases/HandleGatewayConnectedUseCase'
 import { ClearOrphanedSessionUseCase } from '../../application/use-cases/ClearOrphanedSessionUseCase'
@@ -176,6 +179,12 @@ function registerStores(container: DIContainer, pinia: Pinia): void {
     { singleton: true },
   )
 
+  container.register(
+    TOKENS.PrivateRoomStateStore,
+    () => usePrivateRoomStateStore(pinia),
+    { singleton: true },
+  )
+
   // 註冊 CountdownManager 為單例
   container.register(
     TOKENS.CountdownManager,
@@ -263,6 +272,16 @@ function registerOutputPorts(container: DIContainer): void {
     () => {
       const store = container.resolve(TOKENS.MatchmakingStateStore) as ReturnType<typeof useMatchmakingStateStore>
       return store as MatchmakingStatePort
+    },
+    { singleton: true },
+  )
+
+  // PrivateRoomStatePort: 由 PrivateRoomStateStore 實作
+  container.register(
+    TOKENS.PrivateRoomStatePort,
+    () => {
+      const store = container.resolve(TOKENS.PrivateRoomStateStore) as ReturnType<typeof usePrivateRoomStateStore>
+      return store as PrivateRoomStatePort
     },
     { singleton: true },
   )
@@ -541,9 +560,10 @@ function registerInputPorts(container: DIContainer): void {
   // 注入 ConnectionReadyPort 以通知 useGatewayConnection 初始狀態已接收
   // 注意：不再注入 NavigationPort，因為 IDLE 狀態不再自動導航（由 middleware 處理）
   const connectionReadyPort = container.resolve(TOKENS.ConnectionReadyPort) as ConnectionReadyPort
+  const privateRoomStatePort = container.resolve(TOKENS.PrivateRoomStatePort) as PrivateRoomStatePort
   container.register(
     TOKENS.HandleGatewayConnectedPort,
-    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, gameStatePort, connectionReadyPort),
+    () => new HandleGatewayConnectedUseCase(matchmakingStatePort, sessionContextPort, gameStatePort, connectionReadyPort, privateRoomStatePort),
     { singleton: true }
   )
 
@@ -832,15 +852,23 @@ function registerMatchmakingEventRoutes(container: DIContainer): void {
   const gameStatePort = container.resolve(TOKENS.GameStatePort) as GameStatePort
   const sessionContextPort = container.resolve(TOKENS.SessionContextPort) as SessionContextPort
 
+  // 取得 Private Room Output Ports
+  const privateRoomStatePort = container.resolve(TOKENS.PrivateRoomStatePort) as PrivateRoomStatePort
+  const notificationPort = container.resolve(TOKENS.NotificationPort) as NotificationPort
+
   // 建立 Use Cases
   const handleMatchmakingStatusUseCase = new HandleMatchmakingStatusUseCase(matchmakingStatePort)
-  const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, gameStatePort, sessionContextPort)
+  const handleMatchFoundUseCase = new HandleMatchFoundUseCase(matchmakingStatePort, navigationPort, gameStatePort, sessionContextPort, privateRoomStatePort)
   const handleMatchmakingErrorUseCase = new HandleMatchmakingErrorUseCase(matchmakingStatePort)
   const handleMatchFailedUseCase = new HandleMatchFailedUseCase(matchmakingStatePort, sessionContextPort)
+  const handleRoomDissolvedUseCase = new HandleRoomDissolvedUseCase(privateRoomStatePort, navigationPort, notificationPort)
+  const handleRoomExpiringUseCase = new HandleRoomExpiringUseCase(notificationPort)
 
   // 註冊事件處理器
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingStatus, handleMatchmakingStatusUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchFound, handleMatchFoundUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchmakingError, handleMatchmakingErrorUseCase)
   router.register(MATCHMAKING_EVENT_TYPES.MatchFailed, handleMatchFailedUseCase)
+  router.register(MATCHMAKING_EVENT_TYPES.RoomDissolved, handleRoomDissolvedUseCase)
+  router.register(MATCHMAKING_EVENT_TYPES.RoomExpiring, handleRoomExpiringUseCase)
 }

@@ -88,7 +88,17 @@
           >
             Close
           </button>
+          <!-- 私房遊戲：Return to Lobby / 公開配對：Rematch -->
           <button
+            v-if="matchmakingStateStore.isPrivateMatch"
+            type="button"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
+            @click="handleReturnToLobby"
+          >
+            Return to Lobby
+          </button>
+          <button
+            v-else
             type="button"
             :disabled="isRematching"
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
@@ -122,17 +132,19 @@ import { inject } from 'vue'
 import { Z_INDEX } from '~/constants'
 import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 import { useGameStateStore } from '~/game-client/adapter/stores/gameState'
+import { useMatchmakingStateStore } from '~/game-client/adapter/stores/matchmakingState'
 import { useLeaveGame } from '~/game-client/adapter/composables/useLeaveGame'
 import type { useGatewayConnection } from '~/game-client/adapter/composables/useGatewayConnection'
 
 const uiStateStore = useUIStateStore()
 const gameStateStore = useGameStateStore()
+const matchmakingStateStore = useMatchmakingStateStore()
 
 // 從父元件注入 gatewayConnection（用於 Rematch 直接重連）
 const gatewayConnection = inject<ReturnType<typeof useGatewayConnection> | null>('gatewayConnection', null)
 
-// 使用 useLeaveGame 處理 Rematch 邏輯
-const { handleRematch, isRematching } = useLeaveGame({ gatewayConnection })
+// 使用 useLeaveGame 處理 Rematch / Return to Lobby 邏輯
+const { handleRematch, handleReturnToLobby, isRematching } = useLeaveGame({ gatewayConnection })
 
 /**
  * 取得玩家名稱
