@@ -40,6 +40,7 @@ export class HandleMatchFoundUseCase implements HandleMatchFoundPort {
       opponentName: event.opponent_name,
       isBot: event.is_bot,
       gameId: event.game_id,
+      isPrivateMatch: event.match_type === 'PRIVATE',
     })
 
     // 2. 設定 gameState 的 currentGameId

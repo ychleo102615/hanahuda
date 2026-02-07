@@ -153,6 +153,7 @@ export interface MatchedStatePayload {
   opponentName: string
   isBot: boolean
   gameId: string
+  isPrivateMatch: boolean
 }
 
 /**
