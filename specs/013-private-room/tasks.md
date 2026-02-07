@@ -19,8 +19,8 @@
 
 **Purpose**: Install dependencies and shared type extensions
 
-- [ ] T001 Install nanoid dependency via `pnpm --prefix front-end add nanoid`
-- [ ] T002 Extend MatchType with 'PRIVATE' in `front-end/server/shared/infrastructure/event-bus/types.ts`
+- [x] T001 Install nanoid dependency via `pnpm --prefix front-end add nanoid`
+- [x] T002 Extend MatchType with 'PRIVATE' in `front-end/server/shared/infrastructure/event-bus/types.ts`
 
 ---
 
@@ -34,16 +34,16 @@
 
 > **Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T003 [P] PrivateRoom aggregate unit tests: create, join (→FULL), state transitions, validation rules in `front-end/tests/server/matchmaking/domain/privateRoom.test.ts`
-- [ ] T004 [P] InMemoryPrivateRoomStore unit tests: save, findByRoomId, findByPlayerId, findAllWaiting, findAllFull, delete in `front-end/tests/server/matchmaking/adapters/persistence/inMemoryPrivateRoomStore.test.ts`
+- [x] T003 [P] PrivateRoom aggregate unit tests: create, join (→FULL), state transitions, validation rules in `front-end/tests/server/matchmaking/domain/privateRoom.test.ts`
+- [x] T004 [P] InMemoryPrivateRoomStore unit tests: save, findByRoomId, findByPlayerId, findAllWaiting, findAllFull, delete in `front-end/tests/server/matchmaking/adapters/persistence/inMemoryPrivateRoomStore.test.ts`
 
 ### Implementation for Foundational
 
-- [ ] T005 [P] Create PrivateRoom aggregate root with state machine (WAITING/FULL/IN_GAME/EXPIRED/DISSOLVED), factory methods (create/reconstitute), transition methods, Room ID generation (NanoID + custom alphabet per R-002) in `front-end/server/matchmaking/domain/privateRoom.ts`. Note: shareUrl 不在 Domain 層，由 API Adapter 層組裝
-- [ ] T006 [P] Create PrivateRoomRepositoryPort abstract class (save, findByRoomId, findById, findByPlayerId, delete, findAllWaiting, findAllFull) in `front-end/server/matchmaking/application/ports/output/privateRoomRepositoryPort.ts`
-- [ ] T007 [P] Create PlayerConnectionPort abstract class (isConnected) in `front-end/server/matchmaking/application/ports/output/playerConnectionPort.ts`
-- [ ] T007b [P] Create PrivateRoomTimerPort abstract class (setExpirationTimer, setWarningTimer, clearTimers) in `front-end/server/matchmaking/application/ports/output/privateRoomTimerPort.ts`. UseCase 透過此 Port 操作計時器，避免直接依賴 Adapter
-- [ ] T008 Create InMemoryPrivateRoomStore implementing PrivateRoomRepositoryPort, with singleton pattern (getInMemoryPrivateRoomStore/resetInMemoryPrivateRoomStore) in `front-end/server/matchmaking/adapters/persistence/inMemoryPrivateRoomStore.ts`
+- [x] T005 [P] Create PrivateRoom aggregate root with state machine (WAITING/FULL/IN_GAME/EXPIRED/DISSOLVED), factory methods (create/reconstitute), transition methods, Room ID generation (NanoID + custom alphabet per R-002) in `front-end/server/matchmaking/domain/privateRoom.ts`. Note: shareUrl 不在 Domain 層，由 API Adapter 層組裝
+- [x] T006 [P] Create PrivateRoomRepositoryPort abstract class (save, findByRoomId, findById, findByPlayerId, delete, findAllWaiting, findAllFull) in `front-end/server/matchmaking/application/ports/output/privateRoomRepositoryPort.ts`
+- [x] T007 [P] Create PlayerConnectionPort abstract class (isConnected) in `front-end/server/matchmaking/application/ports/output/playerConnectionPort.ts`
+- [x] T007b [P] Create PrivateRoomTimerPort abstract class (setExpirationTimer, setWarningTimer, clearTimers) in `front-end/server/matchmaking/application/ports/output/privateRoomTimerPort.ts`. UseCase 透過此 Port 操作計時器，避免直接依賴 Adapter
+- [x] T008 Create InMemoryPrivateRoomStore implementing PrivateRoomRepositoryPort, with singleton pattern (getInMemoryPrivateRoomStore/resetInMemoryPrivateRoomStore) in `front-end/server/matchmaking/adapters/persistence/inMemoryPrivateRoomStore.ts`
 
 **Checkpoint**: Foundation ready - Domain model tested, repository operational
 

@@ -28,6 +28,9 @@ export const TOKENS = {
   // ===== Output Ports - Connection =====
   ConnectionReadyPort: Symbol('ConnectionReadyPort'),
 
+  // ===== Output Ports - Private Room =====
+  PrivateRoomStatePort: Symbol('PrivateRoomStatePort'),
+
   // ===== Input Ports - Game Initialization =====
   StartGamePort: Symbol('StartGamePort'),
 
@@ -68,6 +71,7 @@ export const TOKENS = {
   AnimationLayerStore: Symbol('AnimationLayerStore'),
   ZoneRegistry: Symbol('ZoneRegistry'),
   MatchmakingStateStore: Symbol('MatchmakingStateStore'),
+  PrivateRoomStateStore: Symbol('PrivateRoomStateStore'),
 
   // ===== Services =====
   CountdownManager: Symbol('CountdownManager'),

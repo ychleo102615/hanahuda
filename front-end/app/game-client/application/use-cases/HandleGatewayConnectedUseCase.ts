@@ -18,20 +18,24 @@
  */
 
 import type { EventHandlerPort, ExecuteOptions } from '../ports/input'
-import type { MatchmakingStatePort, SessionContextPort, GameStatePort, ConnectionReadyPort } from '../ports/output'
+import type { MatchmakingStatePort, SessionContextPort, GameStatePort, ConnectionReadyPort, PrivateRoomStatePort } from '../ports/output'
 
 /**
  * GatewayConnected 事件 Payload
  */
 export interface GatewayConnectedPayload {
   readonly player_id: string
-  readonly status: 'IDLE' | 'MATCHMAKING' | 'IN_GAME'
+  readonly status: 'IDLE' | 'MATCHMAKING' | 'IN_GAME' | 'IN_PRIVATE_ROOM'
   // MATCHMAKING 狀態
   readonly roomType?: string
   readonly elapsedSeconds?: number
   // IN_GAME 狀態
   readonly gameId?: string
   readonly gameStatus?: string
+  // IN_PRIVATE_ROOM 狀態
+  readonly roomId?: string
+  readonly hostName?: string
+  readonly roomStatus?: string
 }
 
 /**
@@ -45,7 +49,8 @@ export class HandleGatewayConnectedUseCase implements EventHandlerPort<GatewayCo
     private readonly matchmakingState: MatchmakingStatePort,
     private readonly sessionContext: SessionContextPort,
     private readonly gameState: GameStatePort,
-    private readonly connectionReady: ConnectionReadyPort
+    private readonly connectionReady: ConnectionReadyPort,
+    private readonly privateRoomState: PrivateRoomStatePort
   ) {}
 
   async execute(payload: GatewayConnectedPayload, _options?: ExecuteOptions): Promise<void> {
@@ -69,6 +74,18 @@ export class HandleGatewayConnectedUseCase implements EventHandlerPort<GatewayCo
           this.matchmakingState.setElapsedSeconds(payload.elapsedSeconds)
         }
         this.matchmakingState.setStatus('searching')
+        break
+
+      case 'IN_PRIVATE_ROOM':
+        // 私人房間中：恢復房間 UI
+        if (payload.roomId && payload.roomType && payload.hostName && payload.roomStatus) {
+          this.privateRoomState.setRoomInfo({
+            roomId: payload.roomId,
+            roomType: payload.roomType,
+            hostName: payload.hostName,
+            roomStatus: payload.roomStatus as 'WAITING' | 'FULL' | 'IN_GAME' | 'EXPIRED' | 'DISSOLVED',
+          })
+        }
         break
 
       case 'IN_GAME':
@@ -100,6 +117,7 @@ export class HandleGatewayConnectedUseCase implements EventHandlerPort<GatewayCo
       roomType: payload.roomType,
       elapsedSeconds: payload.elapsedSeconds,
       gameId: payload.gameId,
+      roomId: payload.roomId,
     })
   }
 }

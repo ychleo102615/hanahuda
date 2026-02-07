@@ -39,7 +39,7 @@ export interface EnterMatchmakingSuccessOutput {
 export interface EnterMatchmakingErrorOutput {
   readonly success: false
   /** 錯誤碼 */
-  readonly errorCode: 'ALREADY_IN_QUEUE' | 'ALREADY_IN_GAME' | 'INVALID_ROOM_TYPE'
+  readonly errorCode: 'ALREADY_IN_QUEUE' | 'ALREADY_IN_GAME' | 'INVALID_ROOM_TYPE' | 'PLAYER_IN_ROOM'
   /** 錯誤訊息 */
   readonly message: string
 }

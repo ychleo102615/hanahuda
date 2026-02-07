@@ -20,6 +20,8 @@ import type {
   MatchFoundEvent,
   MatchmakingErrorEvent,
   MatchFailedEvent,
+  RoomDissolvedEvent,
+  RoomExpiringEvent,
 } from '#shared/contracts'
 
 /**
@@ -61,3 +63,23 @@ export interface HandleMatchmakingErrorPort
  */
 export interface HandleMatchFailedPort
   extends EventHandlerPort<MatchFailedEvent> {}
+
+/**
+ * HandleRoomDissolvedPort - Input Port
+ *
+ * @description
+ * 處理 RoomDissolved 事件（房主解散或房間過期）。
+ * 清除私人房間狀態並通知用戶。
+ */
+export interface HandleRoomDissolvedPort
+  extends EventHandlerPort<RoomDissolvedEvent> {}
+
+/**
+ * HandleRoomExpiringPort - Input Port
+ *
+ * @description
+ * 處理 RoomExpiring 事件（房間即將過期警告）。
+ * 通知用戶房間即將過期。
+ */
+export interface HandleRoomExpiringPort
+  extends EventHandlerPort<RoomExpiringEvent> {}

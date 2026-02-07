@@ -63,7 +63,7 @@ export class GameCreationHandler {
    * 處理配對成功事件
    */
   private async handleMatchFound(payload: MatchFoundPayload): Promise<void> {
-    if (payload.matchType === 'HUMAN') {
+    if (payload.matchType === 'HUMAN' || payload.matchType === 'PRIVATE') {
       await this.handleHumanMatch(payload)
     } else {
       await this.handleBotMatch(payload)
@@ -115,6 +115,7 @@ export class GameCreationHandler {
       game_id: gameId,
       opponent_name: payload.player2Name,
       is_bot: false,
+      match_type: payload.matchType,
     })
     playerEventBus.publishToPlayer(payload.player1Id, event1)
 
@@ -123,6 +124,7 @@ export class GameCreationHandler {
       game_id: gameId,
       opponent_name: payload.player1Name,
       is_bot: false,
+      match_type: payload.matchType,
     })
     playerEventBus.publishToPlayer(payload.player2Id, event2)
   }
