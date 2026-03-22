@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import type { YakuCard } from '~/types/rules';
 import SvgIcon from '~/components/SvgIcon.vue';
-import { getCardIconName } from '~/utils/cardMapping';
+import { getCardIconName, getCardJapaneseName } from '~/utils/cardMapping';
 
 interface Props {
   yakuList: YakuCard[];
@@ -126,7 +126,7 @@ const getCategoryDisplayName = (category: string): string => {
             :key="cardId"
             :name="getCardIconName(cardId)"
             :class-name="getCardIconClass(currentYaku.category)"
-            :aria-label="`Card ${cardId}`"
+            :aria-label="getCardJapaneseName(cardId) || `Card ${cardId}`"
           />
         </div>
       </div>
