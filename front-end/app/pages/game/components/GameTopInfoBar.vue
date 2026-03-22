@@ -197,7 +197,7 @@ const closeMenu = () => {
         <div
           v-if="statusText"
           class="text-lg font-semibold truncate max-w-full"
-          :class="{ 'text-yellow-400': isMyTurnStatus }"
+          :class="{ 'text-status-turn': isMyTurnStatus }"
         >
           {{ statusText }}
         </div>
