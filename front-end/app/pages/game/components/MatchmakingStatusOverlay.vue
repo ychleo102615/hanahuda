@@ -247,7 +247,7 @@ async function handleDissolveRoom() {
         固定尺寸容器：所有狀態的總高度必須一致
         這樣 flex items-center 計算的置中點才不會改變
       -->
-      <div class="text-center p-8 w-80">
+      <div class="text-center p-8 w-80 max-w-[calc(100vw-2rem)]">
         <!-- 旋轉圓環動畫：h-32 (128px) + mb-8 (32px) = 160px -->
         <div class="flex justify-center mb-8">
           <div class="relative w-32 h-32">
@@ -327,7 +327,7 @@ async function handleDissolveRoom() {
                 </span>
                 <button
                   type="button"
-                  class="text-xs text-gray-400 hover:text-white transition-colors underline"
+                  class="text-xs text-gray-400 hover:text-white transition-colors underline min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
                   @click="handleCopyRoomId"
                 >
                   Copy
@@ -347,7 +347,7 @@ async function handleDissolveRoom() {
                 />
                 <button
                   type="button"
-                  class="px-3 py-1.5 text-xs text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded transition-colors shrink-0"
+                  class="px-3 py-1.5 text-xs text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded transition-colors shrink-0 min-h-[44px] inline-flex items-center"
                   @click="handleCopyShareUrl"
                 >
                   Copy
