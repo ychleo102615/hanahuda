@@ -28,7 +28,7 @@ import { COMMAND_TYPES } from '~~/server/database/schema/gameLogs'
 /**
  * 遊戲啟動延遲（毫秒）
  *
- * 延遲發牌和遊戲開始，給予客戶端時間建立 WebSocket 連線並完成應用層初始化。
+ * 延遲發牌和遊戲開始，給予客戶端時間建立 SSE 連線並完成應用層初始化。
  * 在這段期間，遊戲狀態為 STARTING，重連時會看到「遊戲開始中」而非遊戲畫面。
  */
 const GAME_START_DELAY_MS = 1000

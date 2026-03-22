@@ -57,7 +57,7 @@ export interface MatchmakingStatePort {
    *
    * @description
    * GameRequestJoin 成功後，伺服器返回 game_id。
-   * 保存此 ID 用於建立 WebSocket 連線。
+   * 保存此 ID 用於建立 SSE 連線。
    */
   setGameId(gameId: string | null): void
 
@@ -161,7 +161,7 @@ export interface MatchedStatePayload {
  */
 export type MatchmakingStatus =
   | 'idle' // 初始狀態（顯示 "Find Match" 按鈕）
-  | 'connecting' // WebSocket 連線中，等待 GatewayConnected 事件
+  | 'connecting' // SSE 連線中，等待 GatewayConnected 事件
   | 'finding' // 配對中（顯示 "Finding match..." 載入提示）
   | 'waiting' // 等待對手（遊戲已建立，等待對手加入）
   | 'error' // 錯誤狀態（顯示錯誤訊息）

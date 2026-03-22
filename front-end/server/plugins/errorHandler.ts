@@ -3,7 +3,7 @@
  *
  * @description
  * Nitro Plugin，處理未捕獲的 Promise rejection 和異常。
- * 主要用於捕捉 WebSocket 底層的 ECONNRESET/EPIPE 錯誤，
+ * 主要用於捕捉 SSE 底層的 ECONNRESET/EPIPE 錯誤，
  * 避免這些正常的網路斷線錯誤導致 unhandledRejection 警告。
  *
  * @module server/plugins/errorHandler
@@ -49,7 +49,7 @@ export default defineNitroPlugin(() => {
   process.on('unhandledRejection', (reason: unknown) => {
     // 網路連線重置是正常情況，降級為 debug 級別
     if (isConnectionResetError(reason) || isConnectionResetMessage(reason)) {
-      logger.warn('WebSocket connection reset (unhandledRejection)', {
+      logger.warn('SSE connection reset (unhandledRejection)', {
         code: (reason as NodeJS.ErrnoException)?.code,
       })
       return
@@ -63,7 +63,7 @@ export default defineNitroPlugin(() => {
   process.on('uncaughtException', (error: Error) => {
     // 網路連線重置是正常情況
     if (isConnectionResetError(error) || isConnectionResetMessage(error)) {
-      logger.warn('WebSocket connection reset (uncaughtException)', {
+      logger.warn('SSE connection reset (uncaughtException)', {
         code: (error as NodeJS.ErrnoException)?.code,
       })
       return

@@ -173,16 +173,16 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
    * Rematch - 使用相同房間類型重新配對
    *
    * @description
-   * 遊戲結束後 WebSocket 已斷線，因此 Rematch 需要重新建立連線。
+   * 遊戲結束後 SSE 已斷線，因此 Rematch 需要重新建立連線。
    * 流程：
    * 1. 取得 roomTypeId（從 gameState）
    * 2. 設定 selectedRoomTypeId
    * 3. 重置 stores 並設定配對狀態
-   * 4. 重新建立 WebSocket 連線
+   * 4. 重新建立 SSE 連線
    * 5. Game 頁面 onConnected 回調會偵測 selectedRoomTypeId 並發送配對命令
    */
   async function handleRematch(): Promise<void> {
-    // 取得 roomTypeId（從 gameState，由 WebSocket 事件設定）
+    // 取得 roomTypeId（從 gameState，由 SSE 事件設定）
     const roomTypeId = gameState.roomTypeId
     if (!roomTypeId) {
       // 沒有 roomTypeId，導航回 lobby
@@ -212,7 +212,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
     // 4. 設定配對狀態為 connecting（等待 GatewayConnected 確認後才切換到 searching）
     matchmakingState.setStatus('connecting')
 
-    // 5. 重新建立 WebSocket 連線
+    // 5. 重新建立 SSE 連線
     // onConnected 回調會偵測 selectedRoomTypeId 並發送 JOIN_MATCHMAKING
     if (gatewayConnection) {
       gatewayConnection.connect()

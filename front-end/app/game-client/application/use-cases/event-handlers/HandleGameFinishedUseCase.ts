@@ -30,7 +30,7 @@ export class HandleGameFinishedUseCase implements HandleGameFinishedPort {
     this.gameState.setGameEnded(true)
     this.gameState.setCurrentGameId(null)
 
-    // 1.1 設定預期斷線標記（後端會在發送此事件後主動關閉 WebSocket）
+    // 1.1 設定預期斷線標記（後端會在發送此事件後主動關閉 SSE 連線）
     this.gameConnection.setExpectingDisconnect(true)
 
     // 2. 取得當前玩家 ID

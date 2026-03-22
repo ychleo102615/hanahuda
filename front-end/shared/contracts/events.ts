@@ -4,7 +4,7 @@
  * 參考: doc/shared/protocol.md#Events
  *
  * @description
- * 這些事件由伺服器通過 WebSocket 推送到客戶端，
+ * 這些事件由伺服器通過 SSE 推送到客戶端，
  * 由對應的 Handle*UseCase 處理。
  */
 
@@ -464,7 +464,7 @@ export type GameEvent =
  * 遊戲事件類型常數陣列（從 EVENT_TYPES 推導）
  *
  * @description
- * 所有 WebSocket 推送事件的類型列表。
+ * 所有 SSE 推送事件的類型列表。
  * 用於客戶端註冊事件監聽器。
  */
 export const GAME_EVENT_TYPES = [

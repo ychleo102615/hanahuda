@@ -69,8 +69,8 @@ export class IdentityPortAdapter extends PlayerIdentityPort {
    * @returns playerId 或 null
    *
    * @description
-   * 用於 WebSocket 連線時的認證。
-   * WebSocket 升級階段無法使用 H3Event，需要直接傳入 sessionId。
+   * 用於 SSE 連線時的認證。
+   * SSE 連線階段無法使用 H3Event，需要直接傳入 sessionId。
    */
   async getPlayerIdFromSessionId(sessionId: string): Promise<string | null> {
     if (!sessionId) {

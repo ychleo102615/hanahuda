@@ -523,7 +523,7 @@ function registerInputPorts(container: DIContainer): void {
   )
 
   // T084 [US4]: 註冊 GameFinished 事件處理器
-  // 需要 GameConnectionPort 以設定預期斷線標記（後端會在發送此事件後主動關閉 WebSocket）
+  // 需要 GameConnectionPort 以設定預期斷線標記（後端會在發送此事件後主動關閉 SSE 連線）
   container.register(
     TOKENS.HandleGameFinishedPort,
     () => {
@@ -810,7 +810,7 @@ function registerEventRoutes(container: DIContainer): void {
   const gameErrorPort = container.resolve(TOKENS.HandleGameErrorPort) as { execute: (payload: unknown) => void }
   router.register('GameError', gameErrorPort)
 
-  // Gateway: 綁定 GatewayConnected 事件（Gateway WebSocket 連線後的初始狀態）
+  // Gateway: 綁定 GatewayConnected 事件（Gateway SSE 連線後的初始狀態）
   const gatewayConnectedPort = container.resolve(TOKENS.HandleGatewayConnectedPort) as { execute: (payload: unknown) => void }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   router.register('GatewayConnected' as any, gatewayConnectedPort)

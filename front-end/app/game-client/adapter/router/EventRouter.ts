@@ -170,7 +170,7 @@ export class EventRouter {
    *
    * @example
    * ```typescript
-   * // 1. 先斷開 WebSocket
+   * // 1. 先斷開 SSE
    * gatewayClient.disconnect()
    * // 2. 再清空事件鏈
    * router.clearEventChain()
