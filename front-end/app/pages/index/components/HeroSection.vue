@@ -140,8 +140,8 @@ onUnmounted(() => {
         :disabled="isNavigating"
         :aria-busy="isNavigating"
         :class="[
-          'pointer-events-auto inline-flex items-center rounded-lg border border-gold-light text-gold-light px-8 py-4 text-lg font-semibold transition-all duration-300 cursor-pointer',
-          'hover:bg-gold-light/10 hover:shadow-lg hover:shadow-gold-light/20',
+          'pointer-events-auto inline-flex items-center rounded-lg bg-lacquer-black/80 border border-gold-light text-gold-light px-8 py-4 text-lg font-semibold transition-all duration-300 cursor-pointer',
+          'hover:bg-lacquer-black hover:shadow-lg hover:shadow-gold-light/20',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-light',
           'disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100',
           'md:px-10 md:py-5 md:text-xl',

@@ -172,12 +172,10 @@ const closeMenu = () => {
           <div class="text-xl font-bold">{{ opponentScore }}</div>
           <!-- Koi-Koi 狀態 -->
           <div class="flex h-4 items-center justify-center">
-            <span
-              v-if="opponentKoiKoiMultiplier > 1"
-              class="text-xs text-amber-400"
-            >
-              koikoi
-            </span>
+            <div v-if="opponentKoiKoiMultiplier > 1" class="koikoi-indicator">
+              <span class="text-xs leading-none text-amber-400">koikoi</span>
+              <span class="koikoi-echo text-xs leading-none text-amber-400" aria-hidden="true">koikoi</span>
+            </div>
           </div>
         </div>
         <!-- 手牌數欄：小螢幕隱藏 -->
@@ -225,24 +223,20 @@ const closeMenu = () => {
           <div class="text-xl font-bold">{{ myScore }}</div>
           <!-- Koi-Koi 狀態 -->
           <div class="flex h-4 items-center justify-center">
-            <span
-              v-if="myKoiKoiMultiplier > 1"
-              class="text-xs text-amber-400"
-            >
-              koikoi
-            </span>
+            <div v-if="myKoiKoiMultiplier > 1" class="koikoi-indicator">
+              <span class="text-xs leading-none text-amber-400">koikoi</span>
+              <span class="koikoi-echo text-xs leading-none text-amber-400" aria-hidden="true">koikoi</span>
+            </div>
           </div>
         </div>
         <!-- Clickable player avatar (for info card) -->
         <button
           ref="playerAvatarRef"
-          class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center hover:bg-gray-500 transition-colors"
+          class="w-8 h-8 rounded-full bg-game-table-light border border-gold-dark/40 flex items-center justify-center hover:border-gold-dark/70 transition-colors"
           @click="emit('playerClick')"
           aria-label="View player info"
         >
-          <svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-          </svg>
+          <span class="text-xs font-bold text-gold-light">{{ displayName ? displayName.charAt(0).toUpperCase() : '?' }}</span>
         </button>
         <!-- Menu Button -->
         <button
@@ -286,3 +280,29 @@ const closeMenu = () => {
     />
   </div>
 </template>
+
+<style scoped>
+.koikoi-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.koikoi-echo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  pointer-events: none;
+  transform-origin: center;
+  animation: koikoi-echo 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes koikoi-echo {
+  0%   { transform: scale(1);   opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0;   }
+}
+</style>
