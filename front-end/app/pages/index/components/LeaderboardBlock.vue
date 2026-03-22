@@ -365,7 +365,7 @@ onMounted(() => {
 /* Tab Buttons */
 .tab-button-active {
   background: linear-gradient(180deg, #D4AF37 0%, #B8860B 100%);
-  color: #1a1a1a;
+  color: var(--color-lacquer-black);
   box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
 }
 
@@ -402,7 +402,7 @@ onMounted(() => {
 /* CTA Button */
 .cta-button {
   background: linear-gradient(180deg, #D4AF37 0%, #B8860B 100%);
-  color: #1a1a1a;
+  color: var(--color-lacquer-black);
   box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
 }
 

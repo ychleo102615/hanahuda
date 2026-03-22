@@ -63,34 +63,34 @@ defineProps<Props>();
 
 .month-number {
   font-weight: 700;
-  color: #f87171;
+  color: var(--color-card-type-bright);
   min-width: 2.5rem;
 }
 
 .name-ja {
   font-family: var(--font-jp, 'Noto Sans JP', sans-serif);
   font-weight: 600;
-  color: #f3f4f6;
+  color: var(--color-text-primary);
 }
 
 .name-romaji {
   font-size: 0.875rem;
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 .divider {
-  color: #6b7280;
+  color: var(--color-text-dimmed);
 }
 
 .flower-ja {
   font-family: var(--font-jp, 'Noto Sans JP', sans-serif);
-  color: #86efac;
+  color: var(--color-card-type-seed);
   font-weight: 500;
 }
 
 .flower-en {
   font-size: 0.875rem;
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 .cards-row {
@@ -128,12 +128,12 @@ defineProps<Props>();
   font-family: var(--font-jp, 'Noto Sans JP', sans-serif);
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #e5e7eb;
+  color: var(--color-text-card-name);
 }
 
 .card-name-en {
   font-size: 0.6875rem;
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 @media (max-width: 640px) {
