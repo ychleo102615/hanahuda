@@ -197,7 +197,7 @@ const getCategoryDisplayName = (category: string): string => {
 .nav-icon {
   width: 1.5rem;
   height: 1.5rem;
-  color: #6b7280;
+  color: var(--color-primary-400);
   transition: color 0.2s ease;
 }
 
@@ -206,11 +206,19 @@ const getCategoryDisplayName = (category: string): string => {
 }
 
 .nav-zone:hover .nav-icon {
-  color: #d1d5db;
+  color: var(--color-primary-200);
 }
 
 .nav-zone:active {
   background-color: rgba(0, 0, 0, 0.12);
+}
+
+.nav-zone:focus-visible {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-zone:focus-visible .nav-icon {
+  color: var(--color-gold-bright);
 }
 
 /* Indicator dot transitions */
@@ -221,7 +229,7 @@ const getCategoryDisplayName = (category: string): string => {
 /* Focus visible styles for accessibility */
 .nav-zone:focus-visible,
 button:focus-visible {
-  outline: 2px solid var(--color-primary-900);
-  outline-offset: 2px;
+  outline: 2px solid var(--color-gold-bright);
+  outline-offset: 3px;
 }
 </style>
