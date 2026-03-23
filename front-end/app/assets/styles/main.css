@@ -174,16 +174,39 @@
     }
   }
 
+  @keyframes mask-dim {
+    from { opacity: 0.8; }
+    to   { opacity: 0.35; }
+  }
+
   .animate-pulse-subtle {
     animation: pulse-subtle 2s ease-in-out infinite;
   }
 
+  /* fill-mode: both — delay 期間套用 from 狀態（opacity: 0），完成後保持 to 狀態 */
+  /* will-change: 提前提升至 GPU 合成層，避免動畫啟動時掉幀 */
   .animate-slide-up-fade-in {
-    animation: slide-up-fade-in 0.6s ease-out forwards;
+    animation: slide-up-fade-in 0.6s ease-out both;
+    will-change: opacity, transform;
   }
 
   .animate-fade-in {
-    animation: fade-in 0.6s ease-out forwards;
+    animation: fade-in 0.6s ease-out both;
+    will-change: opacity;
+  }
+
+  /* Hero 遮罩：800ms 後花 2500ms 從 0.8 淡至 0.35 */
+  .animate-mask-dim {
+    animation: mask-dim 2500ms ease-out 800ms both;
+    will-change: opacity;
+  }
+
+  /* Hero CTA：先 fade-in（500ms 後），完成後接 pulse（1100ms 後） */
+  .animate-hero-cta {
+    animation:
+      fade-in 0.6s ease-out 500ms both,
+      pulse-subtle 2s ease-in-out 1100ms infinite;
+    will-change: opacity, transform;
   }
 
   /* Hero 卡片進場動畫 */

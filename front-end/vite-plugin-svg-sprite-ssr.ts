@@ -30,11 +30,12 @@ export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
         .replace(new RegExp(`xmlns="${XMLNS}"`, 'g'), '')
         .replace(new RegExp(`xmlns:xlink="${XMLNS_LINK}"`, 'g'), '')
 
-      const spriteHtml = `<svg id="${options.customDomId}" xmlns="${XMLNS}" xmlns:xlink="${XMLNS_LINK}" style="position:absolute;width:0;height:0">${innerHtml}</svg>`
+      // 輸出為外部靜態 SVG 檔（display:none 隱藏，供 <use href="/sprite.svg#..."> 引用）
+      const spriteSvg = `<svg xmlns="${XMLNS}" xmlns:xlink="${XMLNS_LINK}" style="display:none">${innerHtml}</svg>`
 
-      const outputDir = path.resolve(process.cwd(), '.nuxt/svg')
+      const outputDir = path.resolve(process.cwd(), 'public')
       await mkdir(outputDir, { recursive: true })
-      await writeFile(path.join(outputDir, 'sprite.html'), spriteHtml, 'utf-8')
+      await writeFile(path.join(outputDir, 'sprite.svg'), spriteSvg, 'utf-8')
     },
   }
 }
