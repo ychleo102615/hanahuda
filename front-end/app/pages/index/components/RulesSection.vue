@@ -92,7 +92,7 @@ const isScoringRules = (cat: RuleCategoryUnion): cat is ScoringRulesCategory =>
         <p class="text-gold-light text-sm font-semibold uppercase tracking-wider mb-4">
           HOW TO PLAY
         </p>
-        <h2 class="text-4xl md:text-5xl font-bold font-serif text-white mb-4">
+        <h2 class="text-4xl md:text-5xl font-bold font-serif tracking-wider text-white mb-4">
           Game Rules &amp; Strategy
         </h2>
         <p class="text-gray-300 max-w-2xl mx-auto">

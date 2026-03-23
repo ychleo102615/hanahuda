@@ -58,8 +58,8 @@
   --color-status-turn: #D4AF37;
 
   /* 字體家族 */
-  --font-sans: Inter, 'Noto Sans', sans-serif;
-  --font-serif: 'Noto Serif', serif;
+  --font-sans: 'Noto Sans JP', sans-serif;
+  --font-serif: 'Shippori Mincho', serif;
   --font-jp: 'Noto Sans JP', sans-serif;
 
   /* 自訂間距 */
@@ -96,6 +96,7 @@
 
   body {
     font-family: var(--font-sans);
+    line-height: 1.8;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* 使用 clip 而非 hidden：clip 裁剪溢出但不建立 scroll container，
