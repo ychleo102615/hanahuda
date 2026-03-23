@@ -197,7 +197,7 @@ onUnmounted(() => {
             <a
               v-if="link.isCta"
               :href="link.target"
-              class="px-4 py-2 text-sm font-medium transition-all duration-200 bg-accent-red text-white rounded-md hover:bg-accent-red/90 hover:shadow-lg whitespace-nowrap"
+              class="px-4 py-2 text-sm font-medium transition-all duration-200 border border-gold-light text-gold-light rounded-md hover:bg-gold-light/10 whitespace-nowrap"
               @click="handleLinkClick(link, $event)"
               @keydown.enter="handleLinkClick(link, $event)"
               tabindex="0"
@@ -315,7 +315,7 @@ onUnmounted(() => {
             <a
               v-if="link.isCta"
               :href="link.target"
-              class="block px-4 py-3 text-sm font-medium rounded-md transition-colors bg-accent-red text-white hover:bg-accent-red/90"
+              class="block px-4 py-3 text-sm font-medium rounded-md transition-colors border border-gold-light text-gold-light hover:bg-gold-light/10"
               @click="handleLinkClick(link, $event)"
               @keydown.enter="handleLinkClick(link, $event)"
               tabindex="0"

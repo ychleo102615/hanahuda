@@ -113,6 +113,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
 watch(
   () => props.isOpen,
   (isOpen) => {
+    if (!import.meta.client) return
     if (isOpen) {
       document.body.style.overflow = 'hidden'
       window.addEventListener('keydown', handleKeyDown)

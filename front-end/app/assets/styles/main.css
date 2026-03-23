@@ -41,9 +41,25 @@
   /* 和紙象牙色 */
   --color-washi: #FAF8F0;
 
+  /* 花牌種類語意色彩 */
+  --color-card-type-bg: #2a3530;
+  --color-card-type-border: #3a4840;
+  --color-card-type-sub-bg: #222a25;
+  --color-card-type-sub-item: #303d35;
+  --color-card-type-bright: #f87171;
+  --color-card-type-seed: #86efac;
+
+  /* 文字層次 token */
+  --color-text-primary: #f3f4f6;
+  --color-text-secondary: #d1d5db;
+  --color-text-muted: #9ca3af;
+  --color-text-dimmed: #6b7280;
+  --color-text-card-name: #e5e7eb;
+  --color-status-turn: #D4AF37;
+
   /* 字體家族 */
-  --font-sans: Inter, 'Noto Sans', sans-serif;
-  --font-serif: 'Noto Serif', serif;
+  --font-sans: 'Noto Sans JP', sans-serif;
+  --font-serif: 'Shippori Mincho', serif;
   --font-jp: 'Noto Sans JP', sans-serif;
 
   /* 自訂間距 */
@@ -80,6 +96,7 @@
 
   body {
     font-family: var(--font-sans);
+    line-height: 1.8;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* 使用 clip 而非 hidden：clip 裁剪溢出但不建立 scroll container，

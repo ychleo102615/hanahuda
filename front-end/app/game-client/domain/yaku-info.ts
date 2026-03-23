@@ -40,6 +40,7 @@ const YAKU_TYPE_MAP: Record<string, string> = {
   'TANZAKU': 'tanzaku',
   'TAN': 'tanzaku',
   // 種牌系
+  'INOU_SHIKO': 'inoshikacho',
   'INOSHIKACHO': 'inoshikacho',
   'HANAMI_ZAKE': 'hanamizake',
   'HANAMI': 'hanamizake',

@@ -7,7 +7,7 @@
  * 流程：
  * 1. 更新配對狀態為 'matched'
  * 2. 儲存對手資訊
- * 3. 儲存 game_id 供後續 WebSocket 連線使用
+ * 3. 儲存 game_id 供後續 SSE 連線使用
  * 4. 清除 selectedRoomTypeId（配對完成，遊戲已開始）
  *
  * @module app/game-client/application/use-cases/matchmaking/HandleMatchFoundUseCase

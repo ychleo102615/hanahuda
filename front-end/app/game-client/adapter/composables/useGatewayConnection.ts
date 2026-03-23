@@ -289,7 +289,7 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
    *
    * 推薦使用此方法取代 onConnected，因為它：
    * - 等待後端確認玩家狀態後才觸發
-   * - 避免 WebSocket onopen 和 GatewayConnected 的時序問題
+   * - 避免 SSE onopen 和 GatewayConnected 的時序問題
    * - 根據狀態決定行為，避免無謂的 API 調用
    *
    * @param callback - 接收玩家初始狀態的回調函數

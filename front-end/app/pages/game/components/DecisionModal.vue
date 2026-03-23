@@ -170,13 +170,13 @@ function handleEndRound() {
           <!-- T076 [US3]: Decision buttons -->
           <div class="grid grid-cols-2 gap-4">
             <button
-              class="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+              class="rounded-lg bg-gradient-to-b from-gold-light to-gold-dark px-6 py-3 font-semibold text-lacquer-black transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-gold-light"
               @click="handleKoiKoi"
             >
               Koi-Koi
             </button>
             <button
-              class="rounded-lg bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+              class="rounded-lg bg-accent-red px-6 py-3 font-semibold text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-accent-red"
               @click="handleEndRound"
             >
               End Round

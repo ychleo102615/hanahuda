@@ -84,8 +84,13 @@ onUnmounted(() => {
     :style="backgroundImage ? `background-image: url('${backgroundImage}')` : ''"
     aria-labelledby="hero-title"
   >
-    <!-- Card grid background -->
-    <HeroCardGrid :parallax-offset="parallaxOffset" />
+    <!-- Card grid background with parallax -->
+    <div
+      class="absolute inset-0"
+      :style="{ transform: `translateY(${parallaxOffset * 0.2}px)` }"
+    >
+      <HeroCardGrid />
+    </div>
 
     <!-- Dynamic mask layer - fades from dark to light with entry animation -->
     <div
@@ -103,7 +108,7 @@ onUnmounted(() => {
       <h1
         id="hero-title"
         :class="[
-          'mb-6 text-4xl font-bold font-serif tracking-tight md:text-6xl lg:text-7xl',
+          'mb-6 text-4xl font-bold font-serif tracking-wider md:text-6xl lg:text-7xl',
           'bg-linear-to-r from-amber-200 via-yellow-100 to-white bg-clip-text text-transparent',
           'opacity-0',
           isVisible && 'animate-slide-up-fade-in'
@@ -140,9 +145,9 @@ onUnmounted(() => {
         :disabled="isNavigating"
         :aria-busy="isNavigating"
         :class="[
-          'pointer-events-auto inline-flex items-center rounded-lg bg-accent-red px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 cursor-pointer',
-          'hover:bg-red-600 hover:shadow-xl',
-          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-red',
+          'pointer-events-auto inline-flex items-center rounded-lg bg-lacquer-black/80 border border-gold-light text-gold-light px-8 py-4 text-lg font-semibold transition-all duration-300 cursor-pointer',
+          'hover:bg-lacquer-black hover:shadow-lg hover:shadow-gold-light/20',
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-light',
           'disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100',
           'md:px-10 md:py-5 md:text-xl',
           (!isVisible || showEntryAnimation) && 'opacity-0',

@@ -256,7 +256,7 @@ const handleLoginSuccess = () => {
             <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
               <!-- 左側：文字內容 -->
               <div class="flex-1 space-y-6">
-                <h2 class="text-3xl md:text-4xl font-bold font-serif text-white">
+                <h2 class="text-3xl md:text-4xl font-bold font-serif tracking-wider text-white">
                   About the Project
                 </h2>
                 <p class="text-gray-300 text-lg leading-relaxed">

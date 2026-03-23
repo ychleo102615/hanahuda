@@ -112,7 +112,7 @@ const LOGGABLE_EVENT_TYPES: Set<GameLogEventType> = new Set([
 /**
  * CompositeEventPublisher
  *
- * 實作 EventPublisherPort，將事件廣播到 WebSocket、AI 對手，並記錄到資料庫。
+ * 實作 EventPublisherPort，將事件廣播到 SSE、AI 對手，並記錄到資料庫。
  */
 export class CompositeEventPublisher implements EventPublisherPort {
   constructor(
@@ -124,7 +124,7 @@ export class CompositeEventPublisher implements EventPublisherPort {
    *
    * @description
    * 1. 發布到 AI 對手
-   * 2. 發布到 PlayerEventBus（WebSocket Gateway 架構 /_ws）
+   * 2. 發布到 PlayerEventBus（SSE Gateway 架構 /api/v1/events）
    * 3. 記錄到資料庫
    * 4. 若為 GameFinished 事件，延遲後關閉玩家連線
    *
@@ -142,7 +142,7 @@ export class CompositeEventPublisher implements EventPublisherPort {
       opponentStore.sendEvent(gameId, event)
     }
 
-    // 2. 發布到 PlayerEventBus（WebSocket Gateway 架構）
+    // 2. 發布到 PlayerEventBus（SSE Gateway 架構）
     this.publishToPlayerEventBus(gameId, event)
 
     // 3. 記錄到資料庫（Fire-and-Forget）
@@ -326,7 +326,7 @@ export class CompositeEventPublisher implements EventPublisherPort {
    * - 重連時發送 GameSnapshotRestore 事件給單一玩家
    *
    * 若目標玩家是 AI 對手，透過 OpponentStore 發送。
-   * 否則透過 PlayerEventBus（WebSocket Gateway 架構）發送。
+   * 否則透過 PlayerEventBus（SSE Gateway 架構）發送。
    *
    * @param gameId - 遊戲 ID
    * @param playerId - 玩家 ID
@@ -341,7 +341,7 @@ export class CompositeEventPublisher implements EventPublisherPort {
       return
     }
 
-    // 人類玩家：透過 PlayerEventBus（WebSocket Gateway 架構）發送
+    // 人類玩家：透過 PlayerEventBus（SSE Gateway 架構）發送
     const gatewayEvent = createGameEvent(event.event_type, event)
     playerEventBus.publishToPlayer(playerId, gatewayEvent)
   }

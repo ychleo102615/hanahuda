@@ -14,7 +14,7 @@
  * 3. GameCreationHandler 接收 MATCH_FOUND，建立遊戲
  *    - HUMAN match: 直接建立雙人遊戲
  *    - BOT match: 發布 AI_OPPONENT_NEEDED 事件
- * 4. 遊戲建立後，玩家可透過 WebSocket 接收遊戲狀態
+ * 4. 遊戲建立後，玩家可透過 SSE 接收遊戲狀態
  *
  * @module server/plugins/matchmaking
  */

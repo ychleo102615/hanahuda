@@ -10,7 +10,8 @@
       @click.self="handleDismiss"
     >
       <div
-        class="modal-panel rounded-lg max-w-md w-full mx-4 overflow-hidden transform transition-all"
+        :class="['modal-panel rounded-lg max-w-md w-full mx-4 overflow-hidden transform transition-all',
+          uiStateStore.gameFinishedModalData.isPlayerWinner && 'victory-modal-panel']"
       >
         <!-- Header -->
         <div
@@ -21,7 +22,11 @@
               : 'bg-gradient-to-r from-game-table-light/90 to-game-table/90',
           ]"
         >
-          <h2 id="game-finished-title" class="text-2xl font-bold font-serif text-gold-light text-center">
+          <h2
+            id="game-finished-title"
+            :class="['text-2xl font-bold font-serif text-center',
+              uiStateStore.gameFinishedModalData.isPlayerWinner ? 'victory-title' : 'text-gold-light']"
+          >
             {{
               uiStateStore.gameFinishedModalData.isPlayerWinner
                 ? 'Victory!'
@@ -83,7 +88,7 @@
         <div class="px-6 py-4 modal-footer flex gap-3 justify-end">
           <button
             type="button"
-            class="px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+            class="px-4 py-2 bg-game-table-light/80 text-gray-300 rounded-lg border border-gold-dark/20 hover:bg-game-table-light transition-colors font-medium"
             @click="handleDismiss"
           >
             Close
@@ -92,7 +97,7 @@
           <button
             v-if="matchmakingStateStore.isPrivateMatch"
             type="button"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
+            class="px-4 py-2 bg-gradient-to-b from-gold-light to-gold-dark text-lacquer-black rounded-lg hover:brightness-110 transition-colors font-medium"
             @click="handleReturnToLobby"
           >
             Return to Lobby
@@ -101,7 +106,7 @@
             v-else
             type="button"
             :disabled="isRematching"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-4 py-2 bg-gradient-to-b from-gold-light to-gold-dark text-lacquer-black rounded-lg hover:brightness-110 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             @click="handleRematch"
           >
             {{ isRematching ? 'Finding...' : 'Rematch' }}
@@ -168,6 +173,46 @@ function handleDismiss(): void {
 </script>
 
 <style scoped>
+/* 勝利 Modal 入場（只在勝利時套用） */
+@keyframes victoryModalIn {
+  from { transform: scale(0.86) translateY(12px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* 金屬漸層文字高光掃過，播一次後固定 */
+@keyframes victoryGradientSettle {
+  0%   { background-position: 120% 50%; }
+  65%  { background-position: 28% 50%; }
+  80%  { background-position: 22% 50%; }
+  100% { background-position: 25% 50%; }
+}
+
+.victory-modal-panel {
+  animation: victoryModalIn 0.55s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.victory-title {
+  background: linear-gradient(
+    105deg,
+    #5a3f05  0%,
+    #8B6914 12%,
+    #C49A27 25%,
+    #D4AF37 34%,
+    #F5E090 46%,
+    #FFFBE8 50%,
+    #F5E090 54%,
+    #D4AF37 66%,
+    #B8860B 78%,
+    #7a5a08 90%,
+    #4a3004 100%
+  );
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: victoryGradientSettle 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s both;
+}
+
 /* Modal 淡入/淡出動畫 */
 .modal-fade-enter-active {
   transition: opacity 0.3s ease;
@@ -182,7 +227,7 @@ function handleDismiss(): void {
   opacity: 0;
 }
 
-.modal-fade-enter-active .modal-panel {
+.modal-fade-enter-active .modal-panel:not(.victory-modal-panel) {
   animation: modal-scale-up 0.3s ease;
 }
 
