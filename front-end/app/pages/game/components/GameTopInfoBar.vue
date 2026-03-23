@@ -167,7 +167,7 @@ const closeMenu = () => {
           <div class="flex text-xs text-gray-400 items-center justify-center gap-1">
             <span class="sm:hidden">Opp.</span>
             <span class="hidden sm:inline">{{ opponentPlayerName || 'Opponent' }}</span>
-            <span v-if="isOpponentDealer" class="text-amber-500 font-bold" title="Dealer">(親)</span>
+            <span v-if="isOpponentDealer" class="inline-flex items-center rounded px-1 py-px text-[10px] font-bold leading-none bg-gold-dark/30 text-gold-light border border-gold-dark/50" aria-label="Dealer – plays first">親</span>
           </div>
           <div class="text-xl font-bold">{{ opponentScore }}</div>
           <!-- Koi-Koi 狀態 -->
@@ -218,7 +218,7 @@ const closeMenu = () => {
           <div class="flex text-xs text-gray-400 items-center justify-center gap-1">
             <span class="sm:hidden">You</span>
             <span class="hidden sm:inline">{{ localPlayerName || 'You' }}</span>
-            <span v-if="isPlayerDealer" class="text-amber-500 font-bold" title="Dealer">(親)</span>
+            <span v-if="isPlayerDealer" class="inline-flex items-center rounded px-1 py-px text-[10px] font-bold leading-none bg-gold-dark/30 text-gold-light border border-gold-dark/50" aria-label="Dealer – plays first">親</span>
           </div>
           <div class="text-xl font-bold">{{ myScore }}</div>
           <!-- Koi-Koi 狀態 -->

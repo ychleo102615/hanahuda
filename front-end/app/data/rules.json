@@ -235,6 +235,18 @@
           ]
         },
         {
+          "title": "Dealer (親)",
+          "content": [
+            { "type": "text", "content": "The " },
+            { "type": "keyword-ja", "content": "親" },
+            { "type": "text", "content": " (dealer) plays " },
+            { "type": "keyword-en", "content": "first" },
+            { "type": "text", "content": " each round, gaining the first chance to capture cards from the field. The dealer role " },
+            { "type": "keyword-en", "content": "alternates" },
+            { "type": "text", "content": " each round." }
+          ]
+        },
+        {
           "title": "Turn",
           "content": [
             { "type": "text", "content": "On your turn:" }
