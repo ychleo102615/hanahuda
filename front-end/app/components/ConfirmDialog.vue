@@ -96,6 +96,7 @@ const handleCancel = () => {
 watch(
   () => props.isOpen,
   (isOpen) => {
+    if (!import.meta.client) return
     if (isOpen) {
       document.body.style.overflow = 'hidden'
     } else {

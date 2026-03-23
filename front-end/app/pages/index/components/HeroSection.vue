@@ -84,8 +84,13 @@ onUnmounted(() => {
     :style="backgroundImage ? `background-image: url('${backgroundImage}')` : ''"
     aria-labelledby="hero-title"
   >
-    <!-- Card grid background -->
-    <HeroCardGrid :parallax-offset="parallaxOffset" />
+    <!-- Card grid background with parallax -->
+    <div
+      class="absolute inset-0"
+      :style="{ transform: `translateY(${parallaxOffset * 0.2}px)` }"
+    >
+      <HeroCardGrid />
+    </div>
 
     <!-- Dynamic mask layer - fades from dark to light with entry animation -->
     <div

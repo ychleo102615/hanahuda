@@ -8,17 +8,12 @@
  */
 
 import { computed, ref, shallowRef, onMounted } from 'vue'
+import { useState } from '#app'
 import SvgIcon from '~/components/SvgIcon.vue'
 import { ALL_CARD_IDS } from '#shared/constants/cardConstants'
 import { getCardIconName } from '~/utils/cardMapping'
 
-interface Props {
-  parallaxOffset?: number
-}
-
-withDefaults(defineProps<Props>(), {
-  parallaxOffset: 0,
-})
+// No props needed — parallax is handled by the parent wrapper
 
 /**
  * Fisher-Yates 洗牌演算法（使用種子確保 SSR 一致性）
@@ -88,13 +83,8 @@ onMounted(() => {
   supportsHover.value = window.matchMedia('(hover: hover)').matches
 })
 
-// 動態種子（SSR 用固定值，CSR 重新洗牌）
-const seed = ref(42)
-
-onMounted(() => {
-  // 客戶端載入時使用時間戳重新洗牌
-  seed.value = Date.now()
-})
+// Server 生成種子並序列化至 HTML payload，client 直接複用（無需前後端一致約束）
+const seed = useState('hero-card-seed', () => Date.now())
 
 // hover 狀態追蹤（每張卡片獨立）
 const hoveredIndex = ref<number | null>(null)
@@ -147,7 +137,6 @@ const getCardStyle = (index: number) => {
 <template>
   <div
     class="hero-card-grid absolute inset-0 overflow-clip"
-    :style="{ transform: `translateY(${parallaxOffset * 0.2}px)` }"
     aria-hidden="true"
   >
     <!-- 網格容器 - 置中顯示，自動行高 -->

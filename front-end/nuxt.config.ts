@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import path from 'path'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import tailwindcss from '@tailwindcss/vite'
+import { svgSpriteSSRPlugin } from './vite-plugin-svg-sprite-ssr'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -55,6 +56,23 @@ export default defineNuxtConfig({
 
   vite: {
     plugins: [
+      svgSpriteSSRPlugin({
+        iconDirs: [path.resolve(process.cwd(), 'app/assets/icons')],
+        symbolId: 'icon-[name]',
+        customDomId: '__playing_cards_svg_sprite__',
+        svgoOptions: {
+          plugins: [
+            {
+              name: 'preset-default',
+              params: {
+                overrides: {
+                  removeViewBox: false,
+                },
+              },
+            },
+          ],
+        },
+      }),
       tailwindcss(),
       createSvgIconsPlugin({
         // 指定需要快取的圖示資料夾路徑
@@ -105,6 +123,13 @@ export default defineNuxtConfig({
     },
   },
 
+  nitro: {
+    serverAssets: [{
+      baseName: 'svg',
+      dir: '.nuxt/svg',
+    }],
+  },
+
   devServer: {
     host: '0.0.0.0',
     port: 5173, // 保持與原 Vite 一致
@@ -112,7 +137,6 @@ export default defineNuxtConfig({
 
   // Route Rules: 禁用特定頁面的 SSR
   routeRules: {
-    '/': { ssr: false },  // 測試：首頁禁用 SSR
     '/lobby': { ssr: false },
     '/game': { ssr: false },
     '/game/**': { ssr: false },
