@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<Props>(), {
   className: '',
 })
 
-const symbolId = computed(() => `#${props.prefix}-${props.name}`)
+const symbolId = computed(() => `/sprite.svg#${props.prefix}-${props.name}`)
 </script>
 
 <template>

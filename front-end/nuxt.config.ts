@@ -1,6 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
 import path from 'path'
-import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import tailwindcss from '@tailwindcss/vite'
 import { svgSpriteSSRPlugin } from './vite-plugin-svg-sprite-ssr'
 
@@ -17,6 +16,8 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
+        // 預載 SVG sprite（與 HTML 平行下載，避免花牌首屏空白）
+        { rel: 'preload', href: '/sprite.svg', as: 'image', type: 'image/svg+xml' },
         // Emoji favicon（花牌 🎴）
         { rel: 'icon', href: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎴</text></svg>' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -74,33 +75,6 @@ export default defineNuxtConfig({
         },
       }),
       tailwindcss(),
-      createSvgIconsPlugin({
-        // 指定需要快取的圖示資料夾路徑
-        iconDirs: [path.resolve(process.cwd(), 'app/assets/icons')],
-
-        // 指定 symbolId 格式 - 直接使用檔名（所有 SVG 都在根目錄）
-        symbolId: 'icon-[name]',
-
-        // SVG 優化選項
-        svgoOptions: {
-          plugins: [
-            {
-              name: 'preset-default',
-              params: {
-                overrides: {
-                  removeViewBox: false, // 保留 viewBox 以確保縮放正確
-                },
-              },
-            },
-          ],
-        },
-
-        // DOM 插入位置
-        inject: 'body-last',
-
-        // 自定義容器 ID
-        customDomId: '__playing_cards_svg_sprite__',
-      }),
     ],
     resolve: {
       alias: {
@@ -109,7 +83,13 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@pinia/nuxt', '@vueuse/nuxt'],
+  modules: ['@pinia/nuxt', '@vueuse/nuxt', 'nuxt-delay-hydration'],
+
+  delayHydration: {
+    // 等待瀏覽器閒置後才開始 hydration（不阻塞 CSS animation）
+    mode: 'init',
+    debug: process.env.NODE_ENV === 'development',
+  },
 
   runtimeConfig: {
     // 私有變數（僅 server 可用）
@@ -123,12 +103,6 @@ export default defineNuxtConfig({
     },
   },
 
-  nitro: {
-    serverAssets: [{
-      baseName: 'svg',
-      dir: '.nuxt/svg',
-    }],
-  },
 
   devServer: {
     host: '0.0.0.0',

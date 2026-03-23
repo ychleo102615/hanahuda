@@ -13,9 +13,6 @@ const router = useRouter()
 // State
 const isNavigating = ref(false)
 const parallaxOffset = ref(0)
-const isVisible = ref(false)
-const isMaskFaded = ref(false)
-const showEntryAnimation = ref(true)
 
 // Methods
 const handleCtaClick = async () => {
@@ -46,27 +43,9 @@ const handleScroll = () => {
   parallaxOffset.value = window.scrollY
 }
 
-// Entry animation completion handler
-const handleEntryAnimationStop = (event: AnimationEvent) => {
-  if (event.animationName.includes('fade-in')) {
-    showEntryAnimation.value = false
-  }
-}
-
 // Lifecycle
 onMounted(() => {
-  // Add scroll listener
   window.addEventListener('scroll', handleScroll, { passive: true })
-
-  // Trigger entry animation for text content
-  setTimeout(() => {
-    isVisible.value = true
-  }, 100)
-
-  // Trigger mask fade after text animation starts
-  setTimeout(() => {
-    isMaskFaded.value = true
-  }, 800)
 })
 
 onUnmounted(() => {
@@ -92,10 +71,11 @@ onUnmounted(() => {
       <HeroCardGrid />
     </div>
 
-    <!-- Dynamic mask layer - fades from dark to light with entry animation -->
+    <!-- Mask layer — CSS animation: opacity 0.8 → 0.35 after 800ms delay -->
+    <!-- Inline style provides initial value before CSS loads (FOUC protection) -->
     <div
-      class="pointer-events-none absolute inset-0 bg-black transition-opacity duration-[2500ms] ease-out"
-      :class="isMaskFaded ? 'opacity-35' : 'opacity-80'"
+      class="animate-mask-dim pointer-events-none absolute inset-0"
+      style="background-color: black; opacity: 0.8"
       aria-hidden="true"
     />
 
@@ -104,15 +84,10 @@ onUnmounted(() => {
       class="pointer-events-none relative z-10 mx-auto max-w-4xl text-center"
       :style="{ transform: `translateY(${parallaxOffset * 0.1}px)` }"
     >
-      <!-- Game title -->
+      <!-- Game title — CSS animation starts immediately from SSR HTML -->
       <h1
         id="hero-title"
-        :class="[
-          'mb-6 text-4xl font-bold font-serif tracking-wider md:text-6xl lg:text-7xl',
-          'bg-linear-to-r from-amber-200 via-yellow-100 to-white bg-clip-text text-transparent',
-          'opacity-0',
-          isVisible && 'animate-slide-up-fade-in'
-        ]"
+        class="animate-slide-up-fade-in mb-6 text-4xl font-bold font-serif tracking-wider md:text-6xl lg:text-7xl bg-linear-to-r from-amber-200 via-yellow-100 to-white bg-clip-text text-transparent"
         :style="{
           animationDelay: '100ms',
           textShadow: '0 0 30px rgba(251, 191, 36, 0.3)'
@@ -124,24 +99,16 @@ onUnmounted(() => {
 
       <!-- Subtitle -->
       <p
-        :class="[
-          'mb-10 text-lg text-gray-200 md:text-xl lg:text-2xl',
-          'opacity-0',
-          isVisible && 'animate-slide-up-fade-in'
-        ]"
-        :style="{
-          animationDelay: '300ms'
-        }"
+        class="animate-slide-up-fade-in mb-10 text-lg text-gray-200 md:text-xl lg:text-2xl"
+        style="animation-delay: 300ms"
       >
         {{ subtitle }}
       </p>
 
-      <!-- CTA Button -->
+      <!-- CTA Button — fade-in at 500ms, then pulse; hover pauses pulse -->
       <button
         @click="handleCtaClick"
         @keydown="handleKeyDown"
-        @animationend="handleEntryAnimationStop"
-        @animationcancel="handleEntryAnimationStop"
         :disabled="isNavigating"
         :aria-busy="isNavigating"
         :class="[
@@ -150,14 +117,8 @@ onUnmounted(() => {
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-light',
           'disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100',
           'md:px-10 md:py-5 md:text-xl',
-          (!isVisible || showEntryAnimation) && 'opacity-0',
-          // normal state
-          !isNavigating && !showEntryAnimation && 'animate-pulse-subtle hover:animate-none',
-          isVisible && showEntryAnimation && 'animate-fade-in'
+          !isNavigating && 'animate-hero-cta hover:[animation-play-state:paused]',
         ]"
-        :style="{
-          animationDelay: '500ms'
-        }"
         tabindex="0"
       >
         <span>{{ ctaText }}</span>

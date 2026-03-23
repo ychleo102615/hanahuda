@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Client JS",
+    "path": ".output/public/_nuxt/*.js",
+    "limit": "1100 kB",
+    "gzip": true
+  },
+  {
+    "name": "Client CSS",
+    "path": ".output/public/_nuxt/*.css",
+    "limit": "40 kB",
+    "gzip": true
+  }
+]
