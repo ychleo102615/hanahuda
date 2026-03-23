@@ -104,7 +104,7 @@ onUnmounted(() => {
         id="hero-title"
         :class="[
           'mb-6 text-4xl font-bold font-serif tracking-tight md:text-6xl lg:text-7xl',
-          'text-washi',
+          'bg-linear-to-r from-amber-200 via-yellow-100 to-white bg-clip-text text-transparent',
           'opacity-0',
           isVisible && 'animate-slide-up-fade-in'
         ]"
