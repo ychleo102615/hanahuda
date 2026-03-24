@@ -6,6 +6,6 @@ export default defineNitroPlugin((nitroApp) => {
     const spriteHtml = await useStorage('assets/svg').getItem<string>('sprite.html')
     if (!spriteHtml) return
 
-    html.body.unshift(spriteHtml)
+    html.bodyPrepend.push(spriteHtml)
   })
 })

@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { mkdirSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { compilerIcons } from 'vite-plugin-svg-icons'
 import type { ViteSvgIconsPlugin } from 'vite-plugin-svg-icons'
@@ -11,6 +12,11 @@ type SvgSpriteSSROptions = Required<Pick<ViteSvgIconsPlugin, 'iconDirs' | 'symbo
 
 export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
   let written = false
+
+  // 在 plugin 建立時立即建立目錄，確保 Nitro storage mount 能成功初始化
+  // （不能等到 buildStart，因為 Nitro 會在 buildStart 之前就掛載 storage）
+  mkdirSync(path.resolve(process.cwd(), '.nuxt/svg'), { recursive: true })
+
   return {
     name: 'svg-sprite-ssr',
     async buildStart() {
