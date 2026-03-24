@@ -20,9 +20,11 @@ export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
     name: 'svg-sprite-ssr',
     configResolved(config: { root: string }) {
       root = config.root
+      const dir = path.resolve(root, '.nuxt/svg')
       // 確保目錄存在，讓 Nitro storage mount 能成功初始化
       // 必須在 configResolved 而非 buildStart，Nitro 會在 buildStart 前就掛載 storage
-      mkdirSync(path.resolve(root, '.nuxt/svg'), { recursive: true })
+      mkdirSync(dir, { recursive: true })
+      console.log('[svg-sprite-ssr] configResolved — created dir:', dir)
     },
     // icon 檔案變更時重置 written flag，確保 HMR 能重新生成 sprite
     watchChange(id: string) {
@@ -33,6 +35,7 @@ export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
     async buildStart() {
       if (written) return
       written = true
+      console.log('[svg-sprite-ssr] buildStart — begin, root:', root)
 
       const cache = new Map()
       // compilerIcons JS implementation accepts boolean/object/undefined;
@@ -58,6 +61,7 @@ export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
       const nuxtSvgDir = path.resolve(root, '.nuxt/svg')
       await mkdir(nuxtSvgDir, { recursive: true })
       await writeFile(path.join(nuxtSvgDir, NITRO_SPRITE_FILENAME), spriteSvg, 'utf-8')
+      console.log('[svg-sprite-ssr] buildStart — wrote sprite.html to:', path.join(nuxtSvgDir, NITRO_SPRITE_FILENAME))
     },
   }
 }
