@@ -5,14 +5,20 @@ interface Props {
   prefix?: string
   name: string
   className?: string
+  inline?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   prefix: 'icon',
   className: '',
+  inline: false,
 })
 
-const symbolId = computed(() => `/sprite.svg#${props.prefix}-${props.name}`)
+const symbolId = computed(() =>
+  props.inline
+    ? `#${props.prefix}-${props.name}`
+    : `/sprite.svg#${props.prefix}-${props.name}`,
+)
 </script>
 
 <template>
