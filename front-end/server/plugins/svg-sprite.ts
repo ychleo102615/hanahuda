@@ -14,10 +14,15 @@ export default defineNitroPlugin(async (nitroApp) => {
 
   // Fallback：直接讀取 public/sprite.svg（dev 模式，已 commit 到 git）
   if (!spriteHtml) {
-    console.error('[svg-sprite] assets:svg storage returned null')
-    const fallbackPath = resolve(process.cwd(), 'public', SPRITE_FILENAME)
-    console.error('[svg-sprite] cwd:', process.cwd())
-    console.error('[svg-sprite] fallback path:', fallbackPath)
+    const storageKeys = await useStorage('assets:svg').getKeys()
+    console.error('[svg-sprite] assets:svg storage returned null, available keys:', storageKeys)
+
+    // Production（fly.io）：Nuxt build 把 public/ 複製到 .output/public/，
+    // runner stage 只複製 .output/，所以 cwd/public/ 不存在
+    const fallbackPath = process.env.NODE_ENV === 'production'
+      ? resolve(process.cwd(), '.output', 'public', SPRITE_FILENAME)
+      : resolve(process.cwd(), 'public', SPRITE_FILENAME)
+    console.error('[svg-sprite] cwd:', process.cwd(), '| fallback path:', fallbackPath)
     try {
       spriteHtml = await readFile(fallbackPath, 'utf-8')
       console.error('[svg-sprite] fallback readFile succeeded, length:', spriteHtml.length)
