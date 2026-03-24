@@ -14,13 +14,14 @@ type SvgSpriteSSROptions = Required<Pick<ViteSvgIconsPlugin, 'iconDirs' | 'symbo
 
 export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
   let written = false
-  let root = process.cwd() // 由 configResolved 覆寫為準確的 Vite project root
+  // Nuxt rootDir（nuxt.config.ts 所在位置）= process.cwd() at plugin creation time
+  // Nuxt 4 中 config.root（Vite root）= srcDir（app/），不能用來定位 .nuxt/ 或 public/
+  const nuxtRoot = process.cwd()
 
   return {
     name: 'svg-sprite-ssr',
-    configResolved(config: { root: string }) {
-      root = config.root
-      const dir = path.resolve(root, '.nuxt/svg')
+    configResolved(_config: { root: string }) {
+      const dir = path.resolve(nuxtRoot, '.nuxt/svg')
       // 確保目錄存在，讓 Nitro storage mount 能成功初始化
       // 必須在 configResolved 而非 buildStart，Nitro 會在 buildStart 前就掛載 storage
       mkdirSync(dir, { recursive: true })
@@ -35,7 +36,7 @@ export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
     async buildStart() {
       if (written) return
       written = true
-      console.log('[svg-sprite-ssr] buildStart — begin, root:', root)
+      console.log('[svg-sprite-ssr] buildStart — begin, nuxtRoot:', nuxtRoot)
 
       const cache = new Map()
       // compilerIcons JS implementation accepts boolean/object/undefined;
@@ -53,12 +54,12 @@ export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
       // 輸出為外部靜態 SVG 檔（display:none 隱藏，供 <use href="/sprite.svg#..."> 引用）
       const spriteSvg = `<svg xmlns="${XMLNS}" xmlns:xlink="${XMLNS_LINK}" style="display:none">${innerHtml}</svg>`
 
-      const outputDir = path.resolve(root, 'public')
+      const outputDir = path.resolve(nuxtRoot, 'public')
       await mkdir(outputDir, { recursive: true })
       await writeFile(path.join(outputDir, SPRITE_FILENAME), spriteSvg, 'utf-8')
 
       // 同步寫入 .nuxt/svg/sprite.html 供 Nitro server asset 讀取（首頁 inline 注入用）
-      const nuxtSvgDir = path.resolve(root, '.nuxt/svg')
+      const nuxtSvgDir = path.resolve(nuxtRoot, '.nuxt/svg')
       await mkdir(nuxtSvgDir, { recursive: true })
       await writeFile(path.join(nuxtSvgDir, NITRO_SPRITE_FILENAME), spriteSvg, 'utf-8')
       console.log('[svg-sprite-ssr] buildStart — wrote sprite.html to:', path.join(nuxtSvgDir, NITRO_SPRITE_FILENAME))
