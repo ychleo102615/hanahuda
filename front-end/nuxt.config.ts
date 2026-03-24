@@ -108,10 +108,6 @@ export default defineNuxtConfig({
     port: 5173, // 保持與原 Vite 一致
   },
 
-  nitro: {
-    serverAssets: [{ baseName: 'svg', dir: '.nuxt/svg' }],
-  },
-
   // Route Rules: 禁用特定頁面的 SSR + sprite.svg 快取
   routeRules: {
     [SPRITE_PATH]: { headers: { 'cache-control': `public, max-age=${SPRITE_CACHE_MAX_AGE_SECONDS}` } },
