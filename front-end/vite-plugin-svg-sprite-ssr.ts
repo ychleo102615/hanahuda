@@ -36,6 +36,11 @@ export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
       const outputDir = path.resolve(process.cwd(), 'public')
       await mkdir(outputDir, { recursive: true })
       await writeFile(path.join(outputDir, 'sprite.svg'), spriteSvg, 'utf-8')
+
+      // 同步寫入 .nuxt/svg/sprite.html 供 Nitro server asset 讀取（首頁 inline 注入用）
+      const nuxtSvgDir = path.resolve(process.cwd(), '.nuxt/svg')
+      await mkdir(nuxtSvgDir, { recursive: true })
+      await writeFile(path.join(nuxtSvgDir, 'sprite.html'), spriteSvg, 'utf-8')
     },
   }
 }

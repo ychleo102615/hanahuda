@@ -157,6 +157,7 @@ const getCardStyle = (index: number) => {
           <SvgIcon
             :name="card"
             class-name="w-full h-full object-cover"
+            :inline="true"
           />
         </div>
       </div>
