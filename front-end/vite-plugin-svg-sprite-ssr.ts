@@ -12,13 +12,16 @@ type SvgSpriteSSROptions = Required<Pick<ViteSvgIconsPlugin, 'iconDirs' | 'symbo
 
 export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
   let written = false
-
-  // 在 plugin 建立時立即建立目錄，確保 Nitro storage mount 能成功初始化
-  // （不能等到 buildStart，因為 Nitro 會在 buildStart 之前就掛載 storage）
-  mkdirSync(path.resolve(process.cwd(), '.nuxt/svg'), { recursive: true })
+  let root = process.cwd() // 由 configResolved 覆寫為準確的 Vite project root
 
   return {
     name: 'svg-sprite-ssr',
+    configResolved(config: { root: string }) {
+      root = config.root
+      // 確保目錄存在，讓 Nitro storage mount 能成功初始化
+      // 必須在 configResolved 而非 buildStart，Nitro 會在 buildStart 前就掛載 storage
+      mkdirSync(path.resolve(root, '.nuxt/svg'), { recursive: true })
+    },
     async buildStart() {
       if (written) return
       written = true
@@ -39,12 +42,12 @@ export function svgSpriteSSRPlugin(options: SvgSpriteSSROptions) {
       // 輸出為外部靜態 SVG 檔（display:none 隱藏，供 <use href="/sprite.svg#..."> 引用）
       const spriteSvg = `<svg xmlns="${XMLNS}" xmlns:xlink="${XMLNS_LINK}" style="display:none">${innerHtml}</svg>`
 
-      const outputDir = path.resolve(process.cwd(), 'public')
+      const outputDir = path.resolve(root, 'public')
       await mkdir(outputDir, { recursive: true })
       await writeFile(path.join(outputDir, 'sprite.svg'), spriteSvg, 'utf-8')
 
       // 同步寫入 .nuxt/svg/sprite.html 供 Nitro server asset 讀取（首頁 inline 注入用）
-      const nuxtSvgDir = path.resolve(process.cwd(), '.nuxt/svg')
+      const nuxtSvgDir = path.resolve(root, '.nuxt/svg')
       await mkdir(nuxtSvgDir, { recursive: true })
       await writeFile(path.join(nuxtSvgDir, 'sprite.html'), spriteSvg, 'utf-8')
     },
