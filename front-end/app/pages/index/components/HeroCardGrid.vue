@@ -83,15 +83,13 @@ const supportsHover = ref(true)
 onMounted(() => {
   supportsHover.value = window.matchMedia('(hover: hover)').matches
 
-  // fetch 完成後才設定 cookie，確保「fetch」cache bucket 已暖機。
-  // Safari（ITP）的 <use href="/sprite.svg#..."> 與 fetch() 使用不同 cache bucket，
-  // 若 cookie 在 fetch 完成前就設定，第二次訪問的 FETCH_SCRIPT 會遇到 cold miss。
-  // Chrome 共用 cache bucket，即使 cookie 先設定也沒問題，但統一以 Safari 為準。
-  fetch(SPRITE_PATH)
-    .then(() => {
-      document.cookie = `${SPRITE_CACHED_COOKIE}=1; max-age=${SPRITE_CACHE_MAX_AGE_SECONDS}; path=/`
-    })
-    .catch(() => {})
+  // 安全網：確保 sprite.svg 存入 HTTP cache，讓第二次訪問的 inline script 能命中 disk cache。
+  // 現階段 MonthRow（首頁下方）的 <use href="/sprite.svg#..."> 已在 HTML 解析時觸發相同下載，
+  // 此 fetch 為冗餘；保留以防 MonthRow 未來改為 inline 或被移除時 cache 建立機制消失。
+  fetch(SPRITE_PATH).catch(() => {})
+
+  // 標記 sprite.svg 已快取，下次 server 可改注入輕量 fetch script 取代 inline sprite
+  document.cookie = `${SPRITE_CACHED_COOKIE}=1; max-age=${SPRITE_CACHE_MAX_AGE_SECONDS}; path=/`
 })
 
 // Server 生成種子並序列化至 HTML payload，client 直接複用（無需前後端一致約束）
