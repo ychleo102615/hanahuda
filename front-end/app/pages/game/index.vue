@@ -19,6 +19,10 @@ definePageMeta({
   middleware: 'game',
 })
 
+useHead({
+  meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover' }],
+})
+
 import { ref, provide, onMounted, onUnmounted } from 'vue'
 import { resolveDependency, tryResolveDependency } from '~/game-client/adapter/di/resolver'
 import type { MockEventEmitter } from '~/game-client/adapter/mock/MockEventEmitter'
