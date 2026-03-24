@@ -14,13 +14,18 @@ export default defineNitroPlugin(async (nitroApp) => {
 
   // Fallback：直接讀取 public/sprite.svg（dev 模式，已 commit 到 git）
   if (!spriteHtml) {
+    console.error('[svg-sprite] assets:svg storage returned null')
+    const fallbackPath = resolve(process.cwd(), 'public', SPRITE_FILENAME)
+    console.error('[svg-sprite] cwd:', process.cwd())
+    console.error('[svg-sprite] fallback path:', fallbackPath)
     try {
-      spriteHtml = await readFile(resolve(process.cwd(), 'public', SPRITE_FILENAME), 'utf-8')
+      spriteHtml = await readFile(fallbackPath, 'utf-8')
+      console.error('[svg-sprite] fallback readFile succeeded, length:', spriteHtml.length)
     }
-    catch {
+    catch (err) {
+      console.error('[svg-sprite] fallback readFile failed:', err)
       // sprite 載入失敗時不 return——仍注入 FETCH_SCRIPT 作為保底
       // 若直接 return，hook 不會被註冊，fetch script 也不會被注入，卡牌完全空白
-      console.error('[svg-sprite] Sprite not found in storage or filesystem — falling back to fetch script only')
     }
   }
 
