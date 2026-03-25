@@ -659,11 +659,12 @@ pnpm dev
 ### Testing
 
 ```bash
-# Unit tests
+# All tests (client + server)
 pnpm test:unit
 
-# Backend tests
-pnpm test:server
+# Run individually
+pnpm test:unit:client   # jsdom environment
+pnpm test:unit:server   # node environment
 
 # Type checking
 pnpm type-check

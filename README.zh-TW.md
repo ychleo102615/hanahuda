@@ -329,9 +329,15 @@ pnpm dev
 ### 測試
 
 ```bash
-pnpm test:unit    # 單元測試
-pnpm test:server  # 後端測試
-pnpm type-check   # 型別檢查
+# 全部測試（client + server）
+pnpm test:unit
+
+# 個別執行
+pnpm test:unit:client   # jsdom 環境
+pnpm test:unit:server   # node 環境
+
+# 型別檢查
+pnpm type-check
 ```
 
 ---
