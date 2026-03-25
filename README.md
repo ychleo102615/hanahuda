@@ -9,6 +9,7 @@ A Japanese Hanafuda card game showcasing **Clean Architecture**, **Domain-Driven
 | **Architecture** | Strict Clean Architecture layering, DDD Bounded Contexts, Dependency Inversion |
 | **Frontend** | Nuxt 4 + Vue 3 + TypeScript, Custom DI Container, SVG Sprite optimization |
 | **Performance** | SSR-first SVG sprite injection; localStorage restore eliminates repeat-visit re-download — zero render-blocking across Chrome & Safari |
+| **CI/CD** | GitHub Actions: parallel type-check / lint / unit-tests / build on every push; deploy pipeline includes DB migration, Fly.io deploy, and automated Lighthouse CI audit |
 | **Backend** | Nuxt 4 Nitro + Drizzle ORM + PostgreSQL, SSE + REST API real-time communication, Pessimistic locking |
 | **Game Logic** | Complete Yaku detection engine (12 hand types), Koi-Koi rule implementation, Special rule handling |
 | **Matchmaking** | Online human vs human, AI opponent matching, Room type management, PlayerEventBus |
@@ -395,6 +396,26 @@ Repeat visit:  Server detects cookie → injects RESTORE_SCRIPT at parse time
 | `MonthRow`, `CardComponent` (game) | `inline: false` → `href="/sprite.svg#..."` | External file, HTTP cache |
 
 Game pages are SPA (`ssr: false`) — all rendering is post-JS, so HTTP disk cache is sufficient and external file keeps the JS bundle smaller.
+
+### 9. CI/CD Pipeline
+
+**CI** — triggered on every push to `develop` and all PRs to `main`/`develop`, running four parallel jobs:
+
+| Job | What it checks |
+|-----|---------------|
+| Type Check | `vue-tsc` full type validation |
+| Lint | ESLint with auto-fix |
+| Unit Tests | Client tests + server tests (877 tests) |
+| Build | Production build + bundle size check (`pnpm size`) |
+
+**CD** — triggered on push to `main`, sequential:
+
+```
+type-check → lint → unit tests → DB migration → Fly.io deploy → Lighthouse CI
+```
+
+- **DB migration** runs against production `DATABASE_URL` before the new binary lands, ensuring schema is ready
+- **Lighthouse CI** runs automatically after the deployment stabilises (30s wait), auditing performance, accessibility, and best practices; results are posted back to the PR via GitHub App token
 
 ---
 
