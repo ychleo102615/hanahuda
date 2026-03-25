@@ -8,6 +8,7 @@ A Japanese Hanafuda card game showcasing **Clean Architecture**, **Domain-Driven
 |------|-------------------------|
 | **Architecture** | Strict Clean Architecture layering, DDD Bounded Contexts, Dependency Inversion |
 | **Frontend** | Nuxt 4 + Vue 3 + TypeScript, Custom DI Container, SVG Sprite optimization |
+| **Performance** | SSR-first SVG sprite injection; localStorage restore eliminates repeat-visit re-download — zero render-blocking across Chrome & Safari |
 | **Backend** | Nuxt 4 Nitro + Drizzle ORM + PostgreSQL, SSE + REST API real-time communication, Pessimistic locking |
 | **Game Logic** | Complete Yaku detection engine (12 hand types), Koi-Koi rule implementation, Special rule handling |
 | **Matchmaking** | Online human vs human, AI opponent matching, Room type management, PlayerEventBus |
@@ -359,6 +360,41 @@ GAME_FINISHED event → GameFinishedEventHandler
 - **PlayerStats Entity**: Tracks games played, wins, yaku achievements
 - **LeaderboardQuery**: Aggregates rankings by win rate and total games
 - **Personal Stats**: Per-player yaku breakdown and historical performance
+
+### 8. SVG Sprite Loading Strategy
+
+**Problem**: Homepage hero cards use `<use href="#icon-...">`, which requires SVG symbols to exist in the DOM at HTML parse time. `vite-plugin-svg-icons` injects the sprite via JavaScript after hydration — fine for CSR, but causes a blank card area on SSR pages before JS runs.
+
+**Evolution**:
+1. **CSR phase**: Sprite bundled into JS via `vite-plugin-svg-icons`, injected at runtime. No first-paint concern since Vue renders everything post-JS anyway.
+2. **SSR introduced**: Blank period emerged — `<use href="#...">` is a DOM anchor reference, not an external request. It cannot resolve until the referenced `<symbol>` is physically in the DOM. Solution: server inlines the full sprite on first visit.
+3. **Repeat-visit optimization**: Inlining ~700 KB of SVG in every HTML response is wasteful. The sprite is persisted to `localStorage` after the first visit and synchronously restored on subsequent visits via an injected inline script at parse time — same timing as server inline, zero HTTP request.
+
+**Why not HTTP cache for inline mode**: `href="#..."` references DOM content, not an external file. HTTP cache has no mechanism to inject content into the DOM. Even a disk cache hit still requires a request round-trip; `localStorage` reads are synchronous.
+
+**Why the fetch approach failed on Safari**: Safari does not write `fetch()` responses to disk cache (memory-only, cleared on reload). Every hard refresh re-downloaded 700 KB regardless of cache headers.
+
+```
+First visit:   Server inlines sprite in HTML body
+               → app:mounted saves sprite to localStorage + sets cookie
+
+Repeat visit:  Server detects cookie → injects RESTORE_SCRIPT at parse time
+               → RESTORE_SCRIPT reads localStorage synchronously → injects SVG
+               → Result: zero HTTP request, same first-paint timing as inline
+```
+
+**Edge cases**:
+- `localStorage` cleared but cookie present: RESTORE_SCRIPT detects empty value, deletes cookie → next visit server re-inlines
+- Private/Incognito mode: `localStorage` throws `SecurityError` → cookie never set → server always inlines
+
+**Dual-mode `SvgIcon`**:
+
+| Component | Mode | Source |
+|-----------|------|--------|
+| `HeroCardGrid` (homepage hero) | `inline: true` → `href="#icon-..."` | DOM inline SVG |
+| `MonthRow`, `CardComponent` (game) | `inline: false` → `href="/sprite.svg#..."` | External file, HTTP cache |
+
+Game pages are SPA (`ssr: false`) — all rendering is post-JS, so HTTP disk cache is sufficient and external file keeps the JS bundle smaller.
 
 ---
 
