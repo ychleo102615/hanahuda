@@ -19,6 +19,7 @@
 -->
 
 <script setup lang="ts">
+import { APP_TITLE } from '#shared/constants/app'
 import { useResponsiveMenu } from '~/composables/useResponsiveMenu'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useTelegram } from '~/composables/useTelegram'
@@ -273,7 +274,7 @@ const handleDeleteAccount = () => {
 
         <!-- Footer -->
         <div class="p-4 border-t border-gold-dark/15 text-xs text-gray-500 text-center">
-          Hanafuda Koi-Koi
+          {{ APP_TITLE }}
         </div>
       </div>
     </Transition>
