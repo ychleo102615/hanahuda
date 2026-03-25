@@ -11,7 +11,6 @@ import { computed, ref, shallowRef, onMounted } from 'vue'
 import { useState } from '#app'
 import SvgIcon from '~/components/SvgIcon.vue'
 import { ALL_CARD_IDS } from '#shared/constants/cardConstants'
-import { SPRITE_PATH, SPRITE_CACHED_COOKIE, SPRITE_CACHE_MAX_AGE_SECONDS } from '#shared/constants/svgSprite'
 import { getCardIconName } from '~/utils/cardMapping'
 
 // No props needed — parallax is handled by the parent wrapper
@@ -82,15 +81,6 @@ const supportsHover = ref(true)
 
 onMounted(() => {
   supportsHover.value = window.matchMedia('(hover: hover)').matches
-
-  // fetch 完成後才設定 cookie，確保「fetch」cache bucket 已暖機。
-  // Safari 的 <use href="/sprite.svg#..."> 與 fetch() 使用不同 cache bucket，
-  // 若 cookie 在 fetch 完成前就設定，第二次訪問的 FETCH_SCRIPT 會遇到 cold miss。
-  fetch(SPRITE_PATH)
-    .then(() => {
-      document.cookie = `${SPRITE_CACHED_COOKIE}=1; max-age=${SPRITE_CACHE_MAX_AGE_SECONDS}; path=/`
-    })
-    .catch(() => {})
 })
 
 // Server 生成種子並序列化至 HTML payload，client 直接複用（無需前後端一致約束）
