@@ -3,6 +3,7 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import { svgSpriteSSRPlugin } from './vite-plugin-svg-sprite-ssr'
 import { SPRITE_PATH, SPRITE_CACHE_MAX_AGE_SECONDS } from './shared/constants/svgSprite'
+import { APP_TITLE } from './shared/constants/app'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -16,6 +17,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
+      title: APP_TITLE,
       link: [
         // Emoji favicon（花牌 🎴）
         { rel: 'icon', href: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎴</text></svg>' },
@@ -106,10 +108,6 @@ export default defineNuxtConfig({
   devServer: {
     host: '0.0.0.0',
     port: 5173, // 保持與原 Vite 一致
-  },
-
-  nitro: {
-    serverAssets: [{ baseName: 'svg', dir: '.nuxt/svg' }],
   },
 
   // Route Rules: 禁用特定頁面的 SSR + sprite.svg 快取

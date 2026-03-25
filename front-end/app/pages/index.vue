@@ -18,6 +18,7 @@ import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-pla
 import { useAuth } from '~/identity/adapter/composables/use-auth'
 import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
 import { resolveDependency } from '~/game-client/adapter/di/resolver'
+import { APP_TITLE } from '#shared/constants/app'
 import { TOKENS } from '~/game-client/adapter/di/tokens'
 import type { ClearOrphanedSessionPort } from '~/game-client/application/ports/input'
 
@@ -124,7 +125,7 @@ const handleDeleteAccountConfirm = async (password: string | undefined) => {
 
 // Hero Section data
 const heroData = {
-  title: 'Hanafuda Koi-Koi こいこい',
+  title: APP_TITLE,
   subtitle: 'Experience the classic Japanese card game online',
   ctaText: 'Start Playing',
   ctaTarget: '/lobby',

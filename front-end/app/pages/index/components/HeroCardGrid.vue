@@ -11,7 +11,6 @@ import { computed, ref, shallowRef, onMounted } from 'vue'
 import { useState } from '#app'
 import SvgIcon from '~/components/SvgIcon.vue'
 import { ALL_CARD_IDS } from '#shared/constants/cardConstants'
-import { SPRITE_PATH, SPRITE_CACHED_COOKIE, SPRITE_CACHE_MAX_AGE_SECONDS } from '#shared/constants/svgSprite'
 import { getCardIconName } from '~/utils/cardMapping'
 
 // No props needed — parallax is handled by the parent wrapper
@@ -82,14 +81,6 @@ const supportsHover = ref(true)
 
 onMounted(() => {
   supportsHover.value = window.matchMedia('(hover: hover)').matches
-
-  // 安全網：確保 sprite.svg 存入 HTTP cache，讓第二次訪問的 inline script 能命中 disk cache。
-  // 現階段 MonthRow（首頁下方）的 <use href="/sprite.svg#..."> 已在 HTML 解析時觸發相同下載，
-  // 此 fetch 為冗餘；保留以防 MonthRow 未來改為 inline 或被移除時 cache 建立機制消失。
-  fetch(SPRITE_PATH).catch(() => {})
-
-  // 標記 sprite.svg 已快取，下次 server 可改注入輕量 fetch script 取代 inline sprite
-  document.cookie = `${SPRITE_CACHED_COOKIE}=1; max-age=${SPRITE_CACHE_MAX_AGE_SECONDS}; path=/`
 })
 
 // Server 生成種子並序列化至 HTML payload，client 直接複用（無需前後端一致約束）

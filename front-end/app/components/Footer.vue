@@ -4,10 +4,11 @@
  * Displays copyright notice, personal info, and resource attribution information
  */
 import ExternalLinkIcon from './ExternalLinkIcon.vue'
+import { APP_TITLE } from '#shared/constants/app'
 
 // 版權資訊
 const copyrightYear = new Date().getFullYear()
-const projectName = 'Hanafuda Koi-Koi こいこい'
+const projectName = APP_TITLE
 
 // 個人資訊
 const personalInfo = {

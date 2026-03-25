@@ -8,6 +8,8 @@ A Japanese Hanafuda card game showcasing **Clean Architecture**, **Domain-Driven
 |------|-------------------------|
 | **Architecture** | Strict Clean Architecture layering, DDD Bounded Contexts, Dependency Inversion |
 | **Frontend** | Nuxt 4 + Vue 3 + TypeScript, Custom DI Container, SVG Sprite optimization |
+| **Performance** | SSR-first SVG sprite injection; localStorage restore eliminates repeat-visit re-download — zero render-blocking across Chrome & Safari |
+| **CI/CD** | GitHub Actions: parallel type-check / lint / unit-tests (Vitest) / build on every push; deploy pipeline includes DB migration, Fly.io deploy, and automated Lighthouse CI audit |
 | **Backend** | Nuxt 4 Nitro + Drizzle ORM + PostgreSQL, SSE + REST API real-time communication, Pessimistic locking |
 | **Game Logic** | Complete Yaku detection engine (12 hand types), Koi-Koi rule implementation, Special rule handling |
 | **Matchmaking** | Online human vs human, AI opponent matching, Room type management, PlayerEventBus |
@@ -360,6 +362,61 @@ GAME_FINISHED event → GameFinishedEventHandler
 - **LeaderboardQuery**: Aggregates rankings by win rate and total games
 - **Personal Stats**: Per-player yaku breakdown and historical performance
 
+### 8. SVG Sprite Loading Strategy
+
+**Problem**: Homepage hero cards use `<use href="#icon-...">`, which requires SVG symbols to exist in the DOM at HTML parse time. `vite-plugin-svg-icons` injects the sprite via JavaScript after hydration — fine for CSR, but causes a blank card area on SSR pages before JS runs.
+
+**Evolution**:
+1. **CSR phase**: Sprite bundled into JS via `vite-plugin-svg-icons`, injected at runtime. No first-paint concern since Vue renders everything post-JS anyway.
+2. **SSR introduced**: Blank period emerged — `<use href="#...">` is a DOM anchor reference, not an external request. It cannot resolve until the referenced `<symbol>` is physically in the DOM. Solution: server inlines the full sprite on first visit.
+3. **Repeat-visit optimization**: Inlining ~700 KB of SVG in every HTML response is wasteful. The sprite is persisted to `localStorage` after the first visit and synchronously restored on subsequent visits via an injected inline script at parse time — same timing as server inline, zero HTTP request.
+
+**Why not HTTP cache for inline mode**: `href="#..."` references DOM content, not an external file. HTTP cache has no mechanism to inject content into the DOM. Even a disk cache hit still requires a request round-trip; `localStorage` reads are synchronous.
+
+**Why the fetch approach failed on Safari**: Safari does not write `fetch()` responses to disk cache (memory-only, cleared on reload). Every hard refresh re-downloaded 700 KB regardless of cache headers.
+
+```
+First visit:   Server inlines sprite in HTML body
+               → app:mounted saves sprite to localStorage + sets cookie
+
+Repeat visit:  Server detects cookie → injects RESTORE_SCRIPT at parse time
+               → RESTORE_SCRIPT reads localStorage synchronously → injects SVG
+               → Result: zero HTTP request, same first-paint timing as inline
+```
+
+**Edge cases**:
+- `localStorage` cleared but cookie present: RESTORE_SCRIPT detects empty value, deletes cookie → next visit server re-inlines
+- Private/Incognito mode: `localStorage` throws `SecurityError` → cookie never set → server always inlines
+
+**Dual-mode `SvgIcon`**:
+
+| Component | Mode | Source |
+|-----------|------|--------|
+| `HeroCardGrid` (homepage hero) | `inline: true` → `href="#icon-..."` | DOM inline SVG |
+| `MonthRow`, `CardComponent` (game) | `inline: false` → `href="/sprite.svg#..."` | External file, HTTP cache |
+
+Game pages are SPA (`ssr: false`) — all rendering is post-JS, so HTTP disk cache is sufficient and external file keeps the JS bundle smaller.
+
+### 9. CI/CD Pipeline
+
+**CI** — triggered on every push to `develop` and all PRs to `main`/`develop`, running four parallel jobs:
+
+| Job | What it checks |
+|-----|---------------|
+| Type Check | `vue-tsc` full type validation |
+| Lint | ESLint with auto-fix |
+| Unit Tests | Vitest — 877 tests across `jsdom` (client) and `node` (server) environments |
+| Build | Production build + bundle size check (`pnpm size`) |
+
+**CD** — triggered on push to `main`, sequential:
+
+```
+type-check → lint → unit tests → DB migration → Fly.io deploy → Lighthouse CI
+```
+
+- **DB migration** runs against production `DATABASE_URL` before the new binary lands, ensuring schema is ready
+- **Lighthouse CI** runs automatically after the deployment stabilises (30s wait), auditing performance, accessibility, and best practices; results are posted back to the PR via GitHub App token
+
 ---
 
 ## Key Technical Decisions
@@ -558,13 +615,14 @@ front-end/
 
 ## Current Version
 
-**v1.2.0** (2025-01-17)
+**v1.3.0** (2026-03-25)
 
 ### Recent Changes
-- Leaderboard and personal statistics feature
-- SSE + REST API real-time communication architecture
-- Telegram Mini App authentication integration
-- Unified homepage with gold-leaf Makie style and emerald Modal design
+- Private room feature (create, invite, wait, start)
+- SSR-first SVG sprite with localStorage restore — zero render-blocking across browsers
+- Migrated real-time communication back to SSE + REST API for HTTP/2 compatibility
+- CI/CD: Lighthouse CI post-deploy audit, bundle size monitoring
+- Typography system upgrade: Shippori Mincho + Noto Sans JP
 
 [View Full Changelog](./CHANGELOG.md)
 
@@ -602,11 +660,12 @@ pnpm dev
 ### Testing
 
 ```bash
-# Unit tests
+# All tests (client + server)
 pnpm test:unit
 
-# Backend tests
-pnpm test:server
+# Run individually
+pnpm test:unit:client   # jsdom environment
+pnpm test:unit:server   # node environment
 
 # Type checking
 pnpm type-check
