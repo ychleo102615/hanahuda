@@ -10,7 +10,7 @@
 | **前端** | Nuxt 4 + Vue 3 + TypeScript、自製 DI Container、SVG Sprite 最佳化 |
 | **後端** | Nuxt 4 Nitro + Drizzle ORM + PostgreSQL、SSE + REST API 即時通訊、悲觀鎖 |
 | **效能** | SSR 首次 inline SVG sprite；localStorage 恢復機制消除重複下載，Chrome 與 Safari 皆零渲染阻塞 |
-| **CI/CD** | GitHub Actions：每次 push 平行執行型別檢查 / Lint / 單元測試 / Build；部署流程包含 DB migration、Fly.io 部署及自動化 Lighthouse CI 效能稽核 |
+| **CI/CD** | GitHub Actions：每次 push 平行執行型別檢查 / Lint / 單元測試（Vitest）/ Build；部署流程包含 DB migration、Fly.io 部署及自動化 Lighthouse CI 效能稽核 |
 | **遊戲邏輯** | 完整役種偵測引擎（12 種役型）、Koi-Koi 規則、特殊規則處理 |
 | **配對** | 線上人機/人人對戰、AI 對手配對、房間類型管理、PlayerEventBus |
 | **身份識別** | 玩家帳號、訪客模式、軟刪除機制、Telegram Mini App OAuth |
@@ -226,7 +226,7 @@ GAME_FINISHED event → GameFinishedEventHandler
 |-----|---------|
 | Type Check | `vue-tsc` 完整型別驗證 |
 | Lint | ESLint with auto-fix |
-| Unit Tests | Client 測試 + Server 測試（877 tests） |
+| Unit Tests | Vitest — Client 測試 + Server 測試（877 tests） |
 | Build | 生產環境建構 + bundle size 檢查 |
 
 **CD** — push 至 `main` 觸發，循序執行：
