@@ -226,7 +226,7 @@ GAME_FINISHED event → GameFinishedEventHandler
 |-----|---------|
 | Type Check | `vue-tsc` 完整型別驗證 |
 | Lint | ESLint with auto-fix |
-| Unit Tests | Vitest — Client 測試 + Server 測試（877 tests） |
+| Unit Tests | Vitest — 877 tests，分 `jsdom`（client）與 `node`（server）環境執行 |
 | Build | 生產環境建構 + bundle size 檢查 |
 
 **CD** — push 至 `main` 觸發，循序執行：

@@ -405,7 +405,7 @@ Game pages are SPA (`ssr: false`) — all rendering is post-JS, so HTTP disk cac
 |-----|---------------|
 | Type Check | `vue-tsc` full type validation |
 | Lint | ESLint with auto-fix |
-| Unit Tests | Vitest — client tests + server tests (877 tests) |
+| Unit Tests | Vitest — 877 tests across `jsdom` (client) and `node` (server) environments |
 | Build | Production build + bundle size check (`pnpm size`) |
 
 **CD** — triggered on push to `main`, sequential:
