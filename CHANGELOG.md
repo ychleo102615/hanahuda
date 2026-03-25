@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-03-25
+
+### Added
+- 私人房間功能：建立房間、邀請連結、等待對手加入、雙方就緒後開始對局
+- CI/CD: build 驗證、bundle size 監控、Lighthouse CI 自動化效能稽核（部署後觸發）
+- 首頁改為 SSR，SVG sprite server-side inline 注入，確保首次繪製牌面即時可見
+- SVG sprite localStorage 恢復機制，後續訪問透過 parse 階段同步注入，零 HTTP 請求
+- 字體系統升級：Shippori Mincho + Noto Sans JP
+- 首頁新增親（oya）規則說明
+- 中文版 README（README.zh-TW.md）與 SVG sprite 策略完整文件
+
+### Changed
+- 即時通訊從 WebSocket 遷移回 SSE + REST API，恢復 HTTP/2 多路複用
+- SVG sprite 改為外部靜態檔案，搭配 `Cache-Control: public, max-age=86400`
+- sprite 快取寫入邏輯從 UI 元件移至 `svg-sprite-cache.client.ts`（Infrastructure 層）
+- 移除 Nitro serverAssets，改用 filesystem 直接讀取 sprite（簡化架構）
+- 語意色彩 token 重構，消除元件中的硬寫色碼
+- 首頁多項 UI 調整：CTA 漆黑描金框、玩家頭像顯示首字母、勝利動畫、Koi-Koi echo 動畫
+
+### Fixed
+- 修正 SVG sprite cookie 設定時序，確保 fetch cache 暖機後才寫入
+- 修正 a11y：YakuCarousel focus outline 改用金色、aria-label 使用日文牌名
+- 修正 Responsive：Overlay 最大寬度限制、Copy 按鈕觸控目標擴大至 44px
+- 修正 Lighthouse CI 設定（移除過嚴 preset）
+- 修正首頁無法用滑鼠滾輪捲動的問題
+- 修正 fly.io 部署 502 錯誤（移除 h2_backend 設定）
+
 ## [1.2.0] - 2025-01-17
 
 ### Added
@@ -82,7 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Interruptible animation system
 - Reconnection and state recovery mechanism
 
-[Unreleased]: https://github.com/ychleo102615/hanahuda/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/ychleo102615/hanahuda/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/ychleo102615/hanahuda/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/ychleo102615/hanahuda/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ychleo102615/hanahuda/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ychleo102615/hanahuda/releases/tag/v1.0.0

@@ -615,13 +615,14 @@ front-end/
 
 ## Current Version
 
-**v1.2.0** (2025-01-17)
+**v1.3.0** (2026-03-25)
 
 ### Recent Changes
-- Leaderboard and personal statistics feature
-- SSE + REST API real-time communication architecture
-- Telegram Mini App authentication integration
-- Unified homepage with gold-leaf Makie style and emerald Modal design
+- Private room feature (create, invite, wait, start)
+- SSR-first SVG sprite with localStorage restore — zero render-blocking across browsers
+- Migrated real-time communication back to SSE + REST API for HTTP/2 compatibility
+- CI/CD: Lighthouse CI post-deploy audit, bundle size monitoring
+- Typography system upgrade: Shippori Mincho + Noto Sans JP
 
 [View Full Changelog](./CHANGELOG.md)
 
