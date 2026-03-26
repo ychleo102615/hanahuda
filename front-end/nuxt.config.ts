@@ -24,6 +24,12 @@ export default defineNuxtConfig({
       link: [
         // Emoji favicon（花牌 🎴）
         { rel: 'icon', href: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎴</text></svg>' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600&family=Noto+Sans+JP:wght@400;500;700&display=swap',
+        },
       ],
       meta: [
         { name: 'description', content: 'Play Hanafuda Koi-Koi online — a classic Japanese card game of strategy and skill.' },
@@ -81,7 +87,7 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@pinia/nuxt', '@vueuse/nuxt', 'nuxt-delay-hydration', '@nuxt/fonts'],
+  modules: ['@pinia/nuxt', '@vueuse/nuxt', 'nuxt-delay-hydration'],
 
   delayHydration: {
     // 等待瀏覽器閒置後才開始 hydration（不阻塞 CSS animation）
@@ -105,6 +111,13 @@ export default defineNuxtConfig({
   devServer: {
     host: '0.0.0.0',
     port: 5173, // 保持與原 Vite 一致
+  },
+
+  nitro: {
+    compressPublicAssets: {
+      gzip: true,
+      brotli: true,
+    },
   },
 
   // Route Rules: 禁用特定頁面的 SSR + sprite.svg 快取
