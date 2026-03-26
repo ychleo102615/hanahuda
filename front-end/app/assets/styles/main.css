@@ -57,10 +57,10 @@
   --color-text-card-name: #e5e7eb;
   --color-status-turn: #D4AF37;
 
-  /* 字體家族 */
-  --font-sans: 'Noto Sans JP', sans-serif;
+  /* 字體家族 — 日文 fallback 到系統字體（Hiragino Sans / Yu Gothic / Noto Sans CJK） */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
   --font-serif: 'Shippori Mincho', serif;
-  --font-jp: 'Noto Sans JP', sans-serif;
+  --font-jp: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Noto Sans CJK JP', sans-serif;
 
   /* 自訂間距 */
   --spacing-18: 4.5rem;

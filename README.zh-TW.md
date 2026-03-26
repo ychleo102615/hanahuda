@@ -201,21 +201,16 @@ GAME_FINISHED event → GameFinishedEventHandler
 - `localStorage` 被清除但 cookie 存在：RESTORE_SCRIPT 偵測空值，刪除 cookie → 下次 server 重新 inline
 - 私密模式：`localStorage` 拋出 `SecurityError` → 不設 cookie → server 每次 inline
 
-**雙模式 `SvgIcon`**：
+**統一 inline 模式**：所有 `SvgIcon` 均使用 `inline: true`（`href="#icon-..."`），從 DOM 內的 sprite 讀取 symbol。這消除了外部模式 `<use>` 觸發的重複 `/sprite.svg` 下載（~700 KB）——原先 HTML 已 inline sprite，外部引用等於同份資料下載兩次。`sprite.svg` 靜態檔保留作為 fetch fallback（直接訪問 SPA 頁面且 `localStorage` 為空時使用）。
 
-| 元件 | 模式 | 資源來源 |
-|------|------|---------|
-| `HeroCardGrid`（首頁英雄） | `inline: true` → `href="#icon-..."` | DOM inline SVG |
-| `MonthRow`、`CardComponent`（遊戲） | `inline: false` → `href="/sprite.svg#..."` | 外部檔案，HTTP cache |
-
-遊戲頁面為 SPA（`ssr: false`），所有渲染皆在 JS 執行後，HTTP disk cache 已足夠，外部檔案也使 JS bundle 更小。
+**效能取捨**：inline sprite 為 HTML 文件增加 ~700 KB（gzip），在節流連線下主導 First Contentful Paint。這是刻意的取捨——替代方案（外部檔案或延遲載入）會在首頁英雄區的首次繪製產生可見的空白牌面閃爍，抵消 SSR 的優勢。重複訪問從 `localStorage` 恢復，零網路成本。
 
 **職責分配**：
 
 | 位置 | 職責 |
 |------|------|
 | `server/plugins/svg-sprite.ts` | 讀 cookie → inline sprite 或注入 RESTORE_SCRIPT |
-| `app/plugins/svg-sprite-cache.client.ts` | hydration 後存 localStorage + 設 cookie（Infrastructure 層） |
+| `app/plugins/svg-sprite-cache.client.ts` | 確保 sprite 在 DOM 中（四種情境處理）+ 存 localStorage + 設 cookie |
 | RESTORE_SCRIPT（server 注入的 inline script） | parse 階段同步讀 localStorage → 注入 DOM |
 
 ### 9. CI/CD Pipeline

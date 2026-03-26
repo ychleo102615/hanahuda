@@ -119,9 +119,9 @@ const handleCardClick = (targetId: string, event: Event) => {
 
             <!-- Content -->
             <div class="flex-1 min-w-0">
-              <h3 class="text-lg font-semibold text-white group-hover:text-gold-light transition-colors">
+              <p class="text-lg font-semibold text-white group-hover:text-gold-light transition-colors">
                 {{ card.title }}
-              </h3>
+              </p>
               <p class="text-sm text-gray-400 mt-1">
                 {{ card.description }}
               </p>
@@ -185,7 +185,7 @@ const handleCardClick = (targetId: string, event: Event) => {
 @media (prefers-reduced-motion: reduce) {
   .nav-card,
   .nav-card svg,
-  .nav-card h3 {
+  .nav-card p {
     transition: none;
   }
 }

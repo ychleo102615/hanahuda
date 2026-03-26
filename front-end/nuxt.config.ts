@@ -18,6 +18,9 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: APP_TITLE,
+      htmlAttrs: {
+        lang: 'en',
+      },
       link: [
         // Emoji favicon（花牌 🎴）
         { rel: 'icon', href: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎴</text></svg>' },
@@ -25,12 +28,12 @@ export default defineNuxtConfig({
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap',
+          href: 'https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600&display=swap',
         },
       ],
       meta: [
+        { name: 'description', content: 'Play Hanafuda Koi-Koi online — a classic Japanese card game of strategy and skill.' },
         // viewport-fit=cover: 讓內容延伸到 safe area
-        // maximum-scale=1, user-scalable=no: 禁用雙擊放大和捏合縮放
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         // theme-color: Safari 頂部/底部 UI 顏色（配合 TopInfoBar 背景色）
         { name: 'theme-color', content: '#1f2937' }, // gray-800
@@ -108,6 +111,13 @@ export default defineNuxtConfig({
   devServer: {
     host: '0.0.0.0',
     port: 5173, // 保持與原 Vite 一致
+  },
+
+  nitro: {
+    compressPublicAssets: {
+      gzip: true,
+      brotli: true,
+    },
   },
 
   // Route Rules: 禁用特定頁面的 SSR + sprite.svg 快取

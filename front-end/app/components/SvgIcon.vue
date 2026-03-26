@@ -11,7 +11,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   prefix: 'icon',
   className: '',
-  inline: false,
+  inline: true,
 })
 
 const symbolId = computed(() =>
