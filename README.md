@@ -388,14 +388,9 @@ Repeat visit:  Server detects cookie → injects RESTORE_SCRIPT at parse time
 - `localStorage` cleared but cookie present: RESTORE_SCRIPT detects empty value, deletes cookie → next visit server re-inlines
 - Private/Incognito mode: `localStorage` throws `SecurityError` → cookie never set → server always inlines
 
-**Dual-mode `SvgIcon`**:
+**Unified inline mode**: All `SvgIcon` instances use `inline: true` (`href="#icon-..."`), referencing symbols from the DOM-resident sprite. This eliminates a duplicate `/sprite.svg` download (~700 KB) that occurred when external-mode `<use>` triggered a separate HTTP request alongside the already-inlined sprite. The `sprite.svg` static file is retained as a fetch fallback for edge cases (direct SPA page visit with empty `localStorage`).
 
-| Component | Mode | Source |
-|-----------|------|--------|
-| `HeroCardGrid` (homepage hero) | `inline: true` → `href="#icon-..."` | DOM inline SVG |
-| `MonthRow`, `CardComponent` (game) | `inline: false` → `href="/sprite.svg#..."` | External file, HTTP cache |
-
-Game pages are SPA (`ssr: false`) — all rendering is post-JS, so HTTP disk cache is sufficient and external file keeps the JS bundle smaller.
+**Performance trade-off**: The inline sprite adds ~700 KB (gzip) to the HTML document, which dominates First Contentful Paint on throttled connections. This is an intentional trade-off — the alternative (external file or lazy loading) would cause a visible blank-card flash on the hero section during first paint, undermining the SSR benefit. Repeat visits restore from `localStorage` with zero network cost.
 
 ### 9. CI/CD Pipeline
 
@@ -622,7 +617,7 @@ front-end/
 - SSR-first SVG sprite with localStorage restore — zero render-blocking across browsers
 - Migrated real-time communication back to SSE + REST API for HTTP/2 compatibility
 - CI/CD: Lighthouse CI post-deploy audit, bundle size monitoring
-- Typography system upgrade: Shippori Mincho + Noto Sans JP
+- Typography: Shippori Mincho for headings; Japanese text uses system fonts (Hiragino Sans / Yu Gothic / Noto Sans CJK) — eliminated ~400 KB CJK font download
 
 [View Full Changelog](./CHANGELOG.md)
 
