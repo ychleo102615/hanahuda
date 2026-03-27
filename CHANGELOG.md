@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-03-27
+
+### Changed
+- 消除 sprite 雙重下載、啟用 SSR gzip 壓縮、精簡 Google Fonts
+- 移除 Noto Sans JP 下載，改用系統日文字體
+- 集中管理 APP_TITLE 常數，設定全域 head title
+
+### Fixed
+- 修正 svg-sprite.ts production 路徑解析，恢復 sprite inline 功能（Docker 容器內改用 `.output/public/` 路徑）
+- 修正 Lighthouse 稽核問題：標題層級與字型優化
+- 補充 html lang 屬性與 meta description（SEO/無障礙）
+
 ## [1.3.0] - 2026-03-25
 
 ### Added
@@ -109,7 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Interruptible animation system
 - Reconnection and state recovery mechanism
 
-[Unreleased]: https://github.com/ychleo102615/hanahuda/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/ychleo102615/hanahuda/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/ychleo102615/hanahuda/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/ychleo102615/hanahuda/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/ychleo102615/hanahuda/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ychleo102615/hanahuda/compare/v1.0.0...v1.1.0
