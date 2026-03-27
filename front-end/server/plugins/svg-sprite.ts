@@ -8,7 +8,9 @@ import { SPRITE_FILENAME, SPRITE_CACHED_COOKIE, SPRITE_LS_KEY } from '#shared/co
 const RESTORE_SCRIPT = `<script>(function(){var s;try{s=localStorage.getItem('${SPRITE_LS_KEY}')}catch(e){return}if(!s){document.cookie='${SPRITE_CACHED_COOKIE}=;max-age=0;path=/';return}var d=document.createElement('div');d.innerHTML=s;var svg=d.firstElementChild;if(svg)document.currentScript.before(svg)})()</script>`
 
 export default defineNitroPlugin(async (nitroApp) => {
-  const spritePath = resolve(process.cwd(), 'public', SPRITE_FILENAME)
+  const spritePath = process.env.NODE_ENV === 'production'
+    ? resolve(process.cwd(), '.output', 'public', SPRITE_FILENAME)
+    : resolve(process.cwd(), 'public', SPRITE_FILENAME)
 
   let spriteHtml: string | null = null
   try {

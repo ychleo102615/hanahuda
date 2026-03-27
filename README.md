@@ -610,14 +610,13 @@ front-end/
 
 ## Current Version
 
-**v1.3.0** (2026-03-25)
+**v1.3.1** (2026-03-27)
 
 ### Recent Changes
-- Private room feature (create, invite, wait, start)
-- SSR-first SVG sprite with localStorage restore — zero render-blocking across browsers
-- Migrated real-time communication back to SSE + REST API for HTTP/2 compatibility
-- CI/CD: Lighthouse CI post-deploy audit, bundle size monitoring
-- Typography: Shippori Mincho for headings; Japanese text uses system fonts (Hiragino Sans / Yu Gothic / Noto Sans CJK) — eliminated ~400 KB CJK font download
+- 修正 svg-sprite production 路徑解析，恢復 sprite inline 與 localStorage 快取機制
+- SSR gzip 壓縮（首次訪問 ~1.88 MB → ~734 KB），fly.io 不提供自動壓縮
+- 移除 Noto Sans JP 下載，改用系統日文字體（Hiragino Sans / Yu Gothic）
+- 修正 Lighthouse 稽核：html lang、meta description、標題層級
 
 [View Full Changelog](./CHANGELOG.md)
 
