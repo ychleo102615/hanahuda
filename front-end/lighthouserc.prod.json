@@ -1,11 +1,8 @@
 {
   "ci": {
     "collect": {
-      "url": ["http://localhost:3000"],
-      "numberOfRuns": 2,
-      "settings": {
-        "chromeFlags": "--no-sandbox"
-      }
+      "url": ["https://hanafuda-koikoi.fly.dev"],
+      "numberOfRuns": 2
     },
     "assert": {
       "assertions": {
