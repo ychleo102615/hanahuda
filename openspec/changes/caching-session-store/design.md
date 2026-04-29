@@ -22,9 +22,11 @@
 
 ## Decisions
 
-### 1. 新增 `CachingSessionStore` 作為唯一 Port 實作（Decorator pattern）
+### 1. 新增 `CachingSessionStore` 作為唯一 Port 實作（Composition）
 
-`CachingSessionStore` 實作 `SessionStorePort`，內部持有 `SessionMemoryStore`（in-memory Map）與 `SessionDbStore`（DB）。所有 Port 操作透過這層協調。
+`CachingSessionStore` 實作 `SessionStorePort`，內部組合 `SessionMemoryStore`（in-memory Map）與 `SessionDbStore`（DB）。所有 Port 操作透過這層協調。
+
+非嚴格的 Decorator pattern——因為 internal store 不再實作 `SessionStorePort`，兩者是 `CachingSessionStore` 的私有依賴而非可互換的同型別實作，所以採用 Composition / Facade 描述更精確。
 
 **拒絕的替代方案：讓 `InMemorySessionStore` 直接加入 DB 存取能力**
 → 命名說謊（叫 InMemory 卻偷偷用 DB），兩個 store 的職責模糊，測試複雜度上升。
@@ -33,7 +35,7 @@
 
 兩者不再 extend `SessionStorePort`，成為純粹的基礎設施工具，只服務 `CachingSessionStore`。命名去掉語意過重的 `Drizzle` / `InMemory` 前綴，改為反映角色的 `Db` / `Memory` 後綴詞。
 
-檔案移至 `adapters/session/internal/` 以表達非 Port 身份。
+檔案移至 `adapters/session/internal/` 以表達非 Port 身份。`SessionMemoryStore` 不再保留 `getSessionStore()` 全域單例（原本就是 dead code），也不再保留 `clear()`（原本只給測試用，CachingSessionStore 不需要）。
 
 ### 3. Cache 策略：Read-through + Write-through
 
@@ -59,9 +61,32 @@ cleanupExpired:
 **為何 delete 也同步清 memory？**
 雖然 logout 後 cookie 已清，殘留的 stale session 在實際上不會被使用，但同步清除能保持兩層一致，避免未來 debug 困惑。
 
-### 4. `sessionCleanup.ts` 改呼叫 `CachingSessionStore.cleanupExpired()`
+### 4. `cleanupExpired` 不加進 `SessionStorePort`，由 Container 額外暴露維護介面
 
-透過 DI Container 取得 `CachingSessionStore` 實例，而非呼叫 `getSessionStore()` 的孤立全域單例。
+`cleanupExpired` 是 infra layer 的維護操作（排程清理過期資料），不是 Use Case 會用到的 Port 契約。將它加進 `SessionStorePort` 會讓 Application layer 的 Use Cases 看見一個它們不該關心的方法。
+
+選擇：`IdentityContainer` 在 `sessionStore: SessionStorePort` 之外，額外暴露 `sessionMaintenance: { cleanupExpired(): Promise<number> }`，型別由 `CachingSessionStore` 直接提供（concrete export 中包含 `cleanupExpired`）。Plugin 透過 `getIdentityContainer().sessionMaintenance.cleanupExpired()` 呼叫。
+
+**拒絕的替代方案 A：把 `cleanupExpired` 加進 `SessionStorePort`**
+→ 污染 Port 契約，Use Cases 都看得到一個不該用的方法。
+
+**拒絕的替代方案 B：plugin 直接 import `CachingSessionStore` concrete type**
+→ Plugin 跨層直接依賴 concrete adapter，違反 DI Container 作為唯一裝配點的原則。
+
+### 5. Cache 層為過期負責
+
+`CachingSessionStore.findById` 在 memory hit 與 DB fallback 兩條路徑都檢查 `expiresAt`：
+- Memory hit 但已過期 → 從 memory 移除，視為 miss，繼續走 DB fallback
+- DB 撈到但已過期 → 不存入 memory，回傳 null（並可選地觸發 lazy delete）
+
+理由：
+- **契約一致性**：`findById` 不應回傳「DB 已該被 cleanup 但還沒清」的 stale row
+- **單一責任**：過期判斷集中在 store 層，Use Case 的 `isSessionExpired` 退為深度防禦而非唯一防線
+- **避免 cold-start window**：機器重啟後第一次 `cleanupExpired` 要等 30 分鐘，這期間若無 cache 過期檢查，過期 session 會被 `findById` 回傳
+
+### 6. `sessionCleanup.ts` 改呼叫 `sessionMaintenance.cleanupExpired()`
+
+透過 DI Container 取得 `sessionMaintenance` 介面，而非呼叫 `getSessionStore()` 的孤立全域單例。
 
 ## Risks / Trade-offs
 

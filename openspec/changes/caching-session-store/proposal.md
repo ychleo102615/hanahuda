@@ -22,13 +22,17 @@
 ## Impact
 
 **修改的檔案：**
-- `front-end/server/identity/adapters/di/container.ts` — 改接 `CachingSessionStore`
-- `front-end/server/identity/adapters/session/in-memory-session-store.ts` — 退階重命名為 `session-memory-store.ts`，移除 `SessionStorePort` 繼承
-- `front-end/server/identity/adapters/persistence/drizzle-session-store.ts` — 退階重命名為 `session-db-store.ts`，移除 `SessionStorePort` 繼承
+- `front-end/server/identity/adapters/di/container.ts` — 改接 `CachingSessionStore`，並暴露 `cleanupExpired` 維護介面給 plugin
 - `front-end/server/plugins/sessionCleanup.ts` — 修正連接目標
 
 **新增的檔案：**
 - `front-end/server/identity/adapters/session/caching-session-store.ts`
+- `front-end/server/identity/adapters/session/internal/session-db-store.ts`（從 `drizzle-session-store.ts` 提取，移除 Port 繼承）
+- `front-end/server/identity/adapters/session/internal/session-memory-store.ts`（從 `in-memory-session-store.ts` 提取，移除 Port 繼承與全域單例）
+
+**刪除的檔案：**
+- `front-end/server/identity/adapters/persistence/drizzle-session-store.ts`
+- `front-end/server/identity/adapters/session/in-memory-session-store.ts`
 
 **不受影響：**
 - 所有 Use Cases（依賴 `SessionStorePort` 抽象，不感知實作）
