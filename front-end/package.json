@@ -54,6 +54,9 @@
     "vue": "^3.5.22",
     "zod": "^4.1.13"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@parcel/watcher", "esbuild"]
+  },
   "devDependencies": {
     "@lhci/cli": "^0.14.0",
     "@playwright/test": "^1.56.1",
