@@ -14,7 +14,8 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml ./
 
 # 安裝所有依賴（包含 devDependencies，構建需要）
-RUN pnpm install --frozen-lockfile
+# --no-frozen-lockfile: 允許 pnpm 10 在 install 時授權 native build scripts (@parcel/watcher, esbuild)
+RUN pnpm install --no-frozen-lockfile
 
 # ============================================
 # Stage 2: 構建應用
