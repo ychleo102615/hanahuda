@@ -8,7 +8,7 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 
 # 安裝 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # 複製 package 檔案
 COPY package.json pnpm-lock.yaml ./
@@ -24,7 +24,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # 安裝 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # 複製依賴
 COPY --from=deps /app/node_modules ./node_modules
