@@ -1,22 +1,8 @@
-/**
- * DrizzleSessionStore
- *
- * @description
- * Session Store 的 Drizzle ORM 實作。
- * 將 Session 持久化到 PostgreSQL。
- *
- * 參考: specs/010-player-account/plan.md - Adapter Layer
- */
-
 import { eq, lt } from 'drizzle-orm'
-import { SessionStorePort } from '../../application/ports/output/session-store-port'
 import { sessions, type NewSession } from '~~/server/database/schema'
-import { refreshSession, type Session, type SessionId } from '../../domain/types/session'
-import type { PlayerId } from '../../domain/player/player'
+import { refreshSession, type Session, type SessionId } from '../../../domain/types/session'
+import type { PlayerId } from '../../../domain/player/player'
 
-/**
- * 將 Domain Session 轉換為資料庫記錄格式
- */
 function toDbRecord(session: Session): NewSession {
   return {
     id: session.id,
@@ -27,9 +13,6 @@ function toDbRecord(session: Session): NewSession {
   }
 }
 
-/**
- * 將資料庫記錄轉換為 Domain Session
- */
 function toDomainSession(record: typeof sessions.$inferSelect): Session {
   return Object.freeze({
     id: record.id as SessionId,
@@ -40,13 +23,8 @@ function toDomainSession(record: typeof sessions.$inferSelect): Session {
   })
 }
 
-/**
- * Drizzle ORM 實作的 Session Store
- */
-export class DrizzleSessionStore extends SessionStorePort {
-  constructor(private readonly db: typeof import('~~/server/utils/db').db) {
-    super()
-  }
+export class SessionDbStore {
+  constructor(private readonly db: typeof import('~~/server/utils/db').db) {}
 
   async save(session: Session): Promise<Session> {
     const [inserted] = await this.db
@@ -84,10 +62,8 @@ export class DrizzleSessionStore extends SessionStorePort {
   }
 
   async refresh(session: Session): Promise<Session> {
-    // 使用 domain 函數計算新的過期時間
     const refreshed = refreshSession(session)
 
-    // 更新資料庫
     const [updated] = await this.db
       .update(sessions)
       .set({
@@ -104,11 +80,6 @@ export class DrizzleSessionStore extends SessionStorePort {
     return toDomainSession(updated)
   }
 
-  /**
-   * 清除所有過期的 Sessions
-   *
-   * 可由排程任務定期呼叫
-   */
   async cleanupExpired(): Promise<number> {
     const deleted = await this.db
       .delete(sessions)

@@ -83,7 +83,8 @@
       "Bash(pkill:*)",
       "Bash(cloudflared tunnel:*)",
       "Bash(pnpm lint:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "WebFetch(domain:fly.io)"
     ],
     "deny": [],
     "ask": []

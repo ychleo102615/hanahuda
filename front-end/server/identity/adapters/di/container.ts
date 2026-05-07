@@ -12,7 +12,9 @@ import { db } from '~~/server/utils/db'
 import { DrizzlePlayerRepository } from '../persistence/drizzle-player-repository'
 import { DrizzleAccountRepository } from '../persistence/drizzle-account-repository'
 import { DrizzleOAuthLinkRepository } from '../persistence/drizzle-oauth-link-repository'
-import { DrizzleSessionStore } from '../persistence/drizzle-session-store'
+import { CachingSessionStore } from '../session/caching-session-store'
+import { SessionDbStore } from '../session/internal/session-db-store'
+import { SessionMemoryStore } from '../session/internal/session-memory-store'
 import { BcryptPasswordHasher } from '../crypto/bcrypt-password-hasher'
 import { DrizzlePlayerStatsRepository } from '~~/server/leaderboard/adapters/persistence/drizzle-player-stats-repository'
 import { CreateGuestUseCase } from '../../application/use-cases/create-guest-use-case'
@@ -44,6 +46,7 @@ export interface IdentityContainer {
   oauthLinkRepository: OAuthLinkRepositoryPort
   sessionStore: SessionStorePort
   passwordHasher: PasswordHashPort
+  sessionMaintenance: { cleanupExpired(): Promise<number> }
 
   // Use Cases
   createGuestUseCase: CreateGuestUseCase
@@ -79,7 +82,8 @@ export function getIdentityContainer(): IdentityContainer {
   const playerRepository = new DrizzlePlayerRepository(db)
   const accountRepository = new DrizzleAccountRepository(db)
   const oauthLinkRepository = new DrizzleOAuthLinkRepository(db)
-  const sessionStore = new DrizzleSessionStore(db)
+  const cachingSessionStore = new CachingSessionStore(new SessionDbStore(db), new SessionMemoryStore())
+  const sessionStore = cachingSessionStore
   const passwordHasher = new BcryptPasswordHasher()
 
   // 建立 Use Cases
@@ -113,6 +117,7 @@ export function getIdentityContainer(): IdentityContainer {
     oauthLinkRepository,
     sessionStore,
     passwordHasher,
+    sessionMaintenance: cachingSessionStore,
     createGuestUseCase,
     getCurrentPlayerUseCase,
     registerAccountUseCase,
