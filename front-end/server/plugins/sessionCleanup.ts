@@ -3,14 +3,14 @@
  *
  * @description
  * Nitro Plugin，定期清理過期的 Session 資料。
- * 防止記憶體無限增長。
+ * 防止記憶體與資料庫無限增長。
  *
  * 清理策略：
  * - 每 30 分鐘執行一次清理
  * - 清理 expiresAt 已過期的 Session
  */
 
-import { getSessionStore } from '~~/server/identity/adapters/session/in-memory-session-store'
+import { getIdentityContainer } from '~~/server/identity/adapters/di/container'
 import { logger } from '~~/server/utils/logger'
 
 /** 清理間隔（毫秒）：30 分鐘 */
@@ -24,14 +24,10 @@ let cleanupTimer: ReturnType<typeof setInterval> | null = null
  */
 async function performCleanup(): Promise<void> {
   try {
-    const sessionStore = getSessionStore()
-    const beforeCount = sessionStore.size
-    const deletedCount = await sessionStore.cleanupExpired()
+    const deletedCount = await getIdentityContainer().sessionMaintenance.cleanupExpired()
 
     logger.info('[SessionCleanup] Cleanup completed', {
       deletedCount,
-      beforeCount,
-      afterCount: sessionStore.size,
     })
   } catch (error) {
     logger.error('[SessionCleanup] Cleanup failed', {
