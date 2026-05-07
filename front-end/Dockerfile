@@ -8,14 +8,13 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 
 # 安裝 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # 複製 package 檔案
 COPY package.json pnpm-lock.yaml ./
 
 # 安裝所有依賴（包含 devDependencies，構建需要）
-# --no-frozen-lockfile: 允許 pnpm 10 在 install 時授權 native build scripts (@parcel/watcher, esbuild)
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # ============================================
 # Stage 2: 構建應用
@@ -25,7 +24,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # 安裝 pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # 複製依賴
 COPY --from=deps /app/node_modules ./node_modules
