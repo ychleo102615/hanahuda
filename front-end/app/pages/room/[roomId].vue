@@ -44,7 +44,7 @@ onMounted(async () => {
       host_name: string
       room_type: string
       error?: { code: string; message: string }
-    }>(`/api/private-room/${roomId}/join`, {
+    }>(`/api/v1/private-room/${roomId}/join`, {
       method: 'POST',
     })
 

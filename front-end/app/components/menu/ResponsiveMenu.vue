@@ -22,7 +22,7 @@
 import { APP_TITLE } from '#shared/constants/app'
 import { useResponsiveMenu } from '~/composables/useResponsiveMenu'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
-import { useTelegram } from '~/composables/useTelegram'
+import { useTelegram } from '~/identity/adapter/composables/useTelegram'
 import { Z_INDEX } from '~/constants'
 import PlayerBadge from '~/components/PlayerBadge.vue'
 import { type MenuItem, iconPaths } from './types'

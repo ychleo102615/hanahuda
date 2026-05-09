@@ -29,8 +29,8 @@
  */
 
 import { ref, computed } from 'vue'
-import { getTelegramAuthAdapter } from '~/game-client/adapter/api/TelegramAuthAdapter'
-import { getTelegramSdkClient, type TelegramUserInfo } from '~/game-client/adapter/telegram/TelegramSdkClient'
+import { getTelegramAuthAdapter } from '~/identity/adapter/api/TelegramAuthAdapter'
+import { getTelegramSdkClient, type TelegramUserInfo } from '~/identity/adapter/telegram/TelegramSdkClient'
 
 // =============================================================================
 // State

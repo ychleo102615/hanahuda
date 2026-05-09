@@ -22,7 +22,7 @@ import type { GameLogRepositoryPort } from '~~/server/core-game/application/port
 import type { GameEvent, GameStartedEvent, RoundDealtEvent, CardPlay } from '#shared/contracts'
 import { EVENT_TYPES } from '#shared/contracts'
 import type { GameLogEventType } from '~~/server/database/schema/gameLogs'
-import { opponentStore } from '~~/server/opponent/adapter/store/opponentStore'
+import { opponentStore } from '~~/server/opponent/adapters/store/opponentStore'
 import { inMemoryGameStore } from '~~/server/core-game/adapters/persistence/inMemoryGameStore'
 import {
   playerEventBus,

@@ -217,7 +217,7 @@ async function handleDissolveRoom() {
 
   isDissolving.value = true
   try {
-    await $fetch(`/api/private-room/${roomId}/dissolve`, {
+    await $fetch(`/api/v1/private-room/${roomId}/dissolve`, {
       method: 'POST',
     })
     privateRoomStore.clearRoom()

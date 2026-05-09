@@ -12,7 +12,7 @@ export {
   createOpponentContainer,
   type OpponentContainer,
   type OpponentContainerDependencies,
-} from './adapter/di/container'
+} from './adapters/di/container'
 
 // 內部元件不對外暴露
 // - AiNeededHandler

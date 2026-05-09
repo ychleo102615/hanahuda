@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useScrollTo } from '~/composables/useScrollTo';
-import { useTelegram } from '~/composables/useTelegram';
+import { useTelegram } from '~/identity/adapter/composables/useTelegram';
 import PlayerBadge from '~/components/PlayerBadge.vue';
 
 // Types

@@ -29,7 +29,7 @@ import { DEFAULT_TOTAL_DECK_CARDS } from '#shared/constants/roomTypes'
 import type { DomainFacade } from '../../application/types/domain-facade'
 import { container } from '../di/container'
 import { TOKENS } from '../di/tokens'
-import { createCurrentPlayerContextAdapter } from '~/shared/adapters'
+import { createCurrentPlayerContextAdapter } from '~/shared/adapter'
 
 /**
  * 獲得區分組資料結構

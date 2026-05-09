@@ -30,7 +30,7 @@ import { useGameMode } from './useGameMode'
 import { TOKENS } from '../di/tokens'
 import type { GatewayEventClient } from '../sse/GatewayEventClient'
 import type { AnimationPort } from '../../application/ports/output'
-import { createCurrentPlayerContextAdapter } from '~/shared/adapters'
+import { createCurrentPlayerContextAdapter } from '~/shared/adapter'
 
 /** 防抖間隔（毫秒）- iOS 上 visibilitychange 可能短時間內觸發多次 */
 const RECONNECT_DEBOUNCE_MS = 2000

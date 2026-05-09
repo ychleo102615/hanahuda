@@ -13,7 +13,7 @@
  */
 
 import { useAuthStore } from '~/identity/adapter/stores/auth-store'
-import { useTelegram } from '~/composables/useTelegram'
+import { useTelegram } from '~/identity/adapter/composables/useTelegram'
 
 export default defineNuxtRouteMiddleware(async () => {
   // 只在 client 端執行

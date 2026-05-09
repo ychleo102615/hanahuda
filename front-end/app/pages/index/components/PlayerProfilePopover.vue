@@ -16,7 +16,7 @@
 
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { Z_INDEX } from '~/constants/z-index'
-import { useTelegram } from '~/composables/useTelegram'
+import { useTelegram } from '~/identity/adapter/composables/useTelegram'
 
 const { shouldShowLogout } = useTelegram()
 

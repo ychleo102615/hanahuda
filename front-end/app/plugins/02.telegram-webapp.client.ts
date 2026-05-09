@@ -12,7 +12,7 @@
  * 4. 提供 $telegramEnv 給應用程式
  */
 
-import { getTelegramSdkClient, type TelegramEnvironment } from '~/game-client/adapter/telegram/TelegramSdkClient'
+import { getTelegramSdkClient, type TelegramEnvironment } from '~/identity/adapter/telegram/TelegramSdkClient'
 
 export default defineNuxtPlugin(() => {
   // 取得 SDK Client 單例

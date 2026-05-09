@@ -370,7 +370,7 @@ const handleCreateRoom = async (roomTypeId: string) => {
       share_url: string
       expires_at: string
       error?: { code: string; message: string }
-    }>('/api/private-room/create', {
+    }>('/api/v1/private-room/create', {
       method: 'POST',
       body: { room_type: roomTypeId },
     })
@@ -414,7 +414,7 @@ const handleJoinRoom = async () => {
       host_name: string
       room_type: string
       error?: { code: string; message: string }
-    }>(`/api/private-room/${roomId}/join`, {
+    }>(`/api/v1/private-room/${roomId}/join`, {
       method: 'POST',
     })
 

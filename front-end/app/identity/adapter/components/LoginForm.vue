@@ -11,7 +11,7 @@
 
 import { ref, computed } from 'vue'
 import { useAuth } from '../composables/use-auth'
-import { createToastNotificationAdapter } from '~/shared/adapters'
+import { createToastNotificationAdapter } from '~/shared/adapter'
 
 const emit = defineEmits<{
   success: []
