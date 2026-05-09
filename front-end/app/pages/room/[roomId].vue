@@ -14,15 +14,15 @@ definePageMeta({
 
 import { ref, onMounted } from 'vue'
 import { usePrivateRoomStateStore } from '~/game-client/adapter/stores/privateRoomState'
-import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { useToastStore } from '~/shared/stores'
 import { resolveDependency } from '~/game-client/adapter/di/resolver'
 import { TOKENS } from '~/game-client/adapter/di/tokens'
 import type { SessionContextPort } from '~/game-client/application/ports/output'
 import type { RoomTypeId } from '~~/shared/constants/roomTypes'
+import { createPrivateRoomApiClient } from '~/game-client/adapter/api/PrivateRoomApiClient'
 
 const route = useRoute()
 const privateRoomStore = usePrivateRoomStateStore()
-const uiStore = useUIStateStore()
 const sessionContext = resolveDependency<SessionContextPort>(TOKENS.SessionContextPort)
 
 const isJoining = ref(true)
@@ -38,15 +38,7 @@ onMounted(async () => {
   }
 
   try {
-    const response = await $fetch<{
-      success: boolean
-      room_id: string
-      host_name: string
-      room_type: string
-      error?: { code: string; message: string }
-    }>(`/api/v1/private-room/${roomId}/join`, {
-      method: 'POST',
-    })
+    const response = await createPrivateRoomApiClient().join(roomId)
 
     if (response.success) {
       privateRoomStore.setRoomInfo({
@@ -64,7 +56,7 @@ onMounted(async () => {
     const message = errorData?.data?.error?.message ?? 'Failed to join room'
     errorMessage.value = message
 
-    uiStore.addToast({
+    useToastStore().addToast({
       type: 'error',
       message,
       duration: 4000,

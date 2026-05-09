@@ -45,7 +45,8 @@ import RegisterPrompt from '~/identity/adapter/components/RegisterPrompt.vue'
 import MatchmakingErrorModal from './components/MatchmakingErrorModal.vue'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
-import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { useToastStore } from '~/shared/stores'
+import { createPrivateRoomApiClient } from '~/game-client/adapter/api/PrivateRoomApiClient'
 
 // Pinia Store
 const matchmakingStore = useMatchmakingStateStore()
@@ -179,8 +180,7 @@ const handleBackToHome = () => {
 // 登出
 const handleLogout = async () => {
   await logout()
-  const uiStore = useUIStateStore()
-  uiStore.addToast({
+  useToastStore().addToast({
     type: 'success',
     message: 'You have been signed out',
     duration: 3000,
@@ -207,8 +207,7 @@ const handleDeleteAccountConfirm = async (password: string | undefined) => {
   try {
     await deleteAccount(password)
     isDeleteAccountModalOpen.value = false
-    const uiStore = useUIStateStore()
-    uiStore.addToast({
+    useToastStore().addToast({
       type: 'success',
       message: 'Your account has been deleted',
       duration: 3000,
@@ -295,8 +294,7 @@ const handleSelectRoom = async (roomTypeId: string) => {
     }
 
     if (status.status === 'IN_PRIVATE_ROOM') {
-      const uiStore = useUIStateStore()
-      uiStore.addToast({
+      useToastStore().addToast({
         type: 'warning',
         message: 'You have an active private room. Dissolve it first.',
         duration: 4000,
@@ -361,19 +359,9 @@ const handleRetry = () => {
 
 const handleCreateRoom = async (roomTypeId: string) => {
   isCreatingRoom.value = true
-  const uiStore = useUIStateStore()
 
   try {
-    const response = await $fetch<{
-      success: boolean
-      room_id: string
-      share_url: string
-      expires_at: string
-      error?: { code: string; message: string }
-    }>('/api/v1/private-room/create', {
-      method: 'POST',
-      body: { room_type: roomTypeId },
-    })
+    const response = await createPrivateRoomApiClient().create({ roomType: roomTypeId })
 
     if (response.success) {
       privateRoomStore.setRoomInfo({
@@ -389,7 +377,7 @@ const handleCreateRoom = async (roomTypeId: string) => {
   } catch (error: unknown) {
     const errorData = error as { data?: { error?: { code?: string; message?: string } } }
     const message = errorData?.data?.error?.message ?? 'Failed to create private room'
-    uiStore.addToast({
+    useToastStore().addToast({
       type: 'error',
       message,
       duration: 4000,
@@ -405,18 +393,9 @@ const handleJoinRoom = async () => {
   if (!roomId) return
 
   isJoiningRoom.value = true
-  const uiStore = useUIStateStore()
 
   try {
-    const response = await $fetch<{
-      success: boolean
-      room_id: string
-      host_name: string
-      room_type: string
-      error?: { code: string; message: string }
-    }>(`/api/v1/private-room/${roomId}/join`, {
-      method: 'POST',
-    })
+    const response = await createPrivateRoomApiClient().join(roomId)
 
     if (response.success) {
       privateRoomStore.setRoomInfo({
@@ -433,7 +412,7 @@ const handleJoinRoom = async () => {
   } catch (error: unknown) {
     const errorData = error as { data?: { error?: { code?: string; message?: string } } }
     const message = errorData?.data?.error?.message ?? 'Failed to join room'
-    uiStore.addToast({
+    useToastStore().addToast({
       type: 'error',
       message,
       duration: 4000,

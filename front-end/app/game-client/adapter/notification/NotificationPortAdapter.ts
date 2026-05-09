@@ -13,6 +13,7 @@
 import type { NotificationPort } from '../../application/ports/output/notification.port'
 import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers, RoundEndReason } from '#shared/contracts'
 import { useUIStateStore } from '../stores/uiState'
+import { useToastStore } from '~/shared/stores'
 import type { CountdownManager } from '../services/CountdownManager'
 import type { YakuCategory } from '~/constants/announcement-styles'
 
@@ -26,6 +27,7 @@ export function createNotificationPortAdapter(
   countdown: CountdownManager
 ): NotificationPort {
   const store = useUIStateStore()
+  const toastStore = useToastStore()
 
   return {
     // ===== Modal =====
@@ -85,7 +87,7 @@ export function createNotificationPortAdapter(
 
     // ===== Toast (Unified Toast System) =====
     showErrorMessage(message: string): void {
-      store.addToast({
+      toastStore.addToast({
         type: 'error',
         message,
         duration: 5000,
@@ -94,7 +96,7 @@ export function createNotificationPortAdapter(
     },
 
     showSuccessMessage(message: string): void {
-      store.addToast({
+      toastStore.addToast({
         type: 'success',
         message,
         duration: 3000,
@@ -103,7 +105,7 @@ export function createNotificationPortAdapter(
     },
 
     showInfoMessage(message: string): void {
-      store.addToast({
+      toastStore.addToast({
         type: 'info',
         message,
         duration: 5000,
@@ -112,7 +114,7 @@ export function createNotificationPortAdapter(
     },
 
     showWarningMessage(message: string): void {
-      store.addToast({
+      toastStore.addToast({
         type: 'warning',
         message,
         duration: 5000,
@@ -121,10 +123,8 @@ export function createNotificationPortAdapter(
     },
 
     showReconnectionMessage(): void {
-      // Remove any existing loading toast first
-      store.removeToastByType('loading')
-      // Add persistent loading toast
-      store.addToast({
+      toastStore.removeToastByType('loading')
+      toastStore.addToast({
         type: 'loading',
         message: 'Connection lost, reconnecting...',
         duration: null, // Persistent until manually removed
@@ -136,12 +136,11 @@ export function createNotificationPortAdapter(
     hideReconnectionMessage(): void {
       // 先記錄狀態，避免重複顯示 Toast
       const wasReconnecting = store.reconnecting
-      // Remove loading toast
-      store.removeToastByType('loading')
+      toastStore.removeToastByType('loading')
       store.reconnecting = false
       // 只有從 reconnecting 狀態恢復時才顯示成功 Toast
       if (wasReconnecting) {
-        store.addToast({
+        toastStore.addToast({
           type: 'success',
           message: 'Connection restored',
           duration: 3000,

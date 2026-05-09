@@ -16,7 +16,7 @@ import rulesDataJson from '~/data/rules.json'
 import yakuDataJson from '~/data/yaku.json'
 import { useCurrentPlayer } from '~/identity/adapter/composables/use-current-player'
 import { useAuth } from '~/identity/adapter/composables/use-auth'
-import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { useToastStore } from '~/shared/stores'
 import { resolveDependency } from '~/game-client/adapter/di/resolver'
 import { APP_TITLE } from '#shared/constants/app'
 import { TOKENS } from '~/game-client/adapter/di/tokens'
@@ -70,9 +70,7 @@ const handlePlayerPopoverClose = () => {
 
 const handleLogout = async () => {
   await logout()
-  // 顯示登出成功提示
-  const uiStore = useUIStateStore()
-  uiStore.addToast({
+  useToastStore().addToast({
     type: 'success',
     message: 'You have been signed out',
     duration: 3000,
@@ -102,9 +100,7 @@ const handleDeleteAccountConfirm = async (password: string | undefined) => {
   try {
     await deleteAccount(password)
     isDeleteAccountModalOpen.value = false
-    // 顯示刪除成功提示
-    const uiStore = useUIStateStore()
-    uiStore.addToast({
+    useToastStore().addToast({
       type: 'success',
       message: 'Your account has been deleted',
       duration: 3000,

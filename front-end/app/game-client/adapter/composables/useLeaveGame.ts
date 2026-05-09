@@ -15,6 +15,7 @@ import { storeToRefs } from 'pinia'
 import { useGameStateStore } from '../stores/gameState'
 import { useUIStateStore } from '../stores/uiState'
 import { useMatchmakingStateStore } from '../stores/matchmakingState'
+import { useToastStore } from '~/shared/stores'
 import { resolveDependency } from '../di/resolver'
 import { TOKENS } from '../di/tokens'
 import type { SendCommandPort, NotificationPort, SessionContextPort } from '../../application/ports/output'
@@ -186,7 +187,7 @@ export function useLeaveGame(options: UseLeaveGameOptions = {}) {
     const roomTypeId = gameState.roomTypeId
     if (!roomTypeId) {
       // 沒有 roomTypeId，導航回 lobby
-      uiState.addToast({
+      useToastStore().addToast({
         type: 'error',
         message: 'Unable to rematch. Please select a game mode.',
         duration: 3000,

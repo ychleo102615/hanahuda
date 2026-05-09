@@ -8,15 +8,15 @@
  */
 
 import type { ToastNotificationPort, ToastNotification } from '../ports'
-import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { useToastStore } from '~/shared/stores'
 
 const DEFAULT_TOAST_DURATION = 3000
 
 export class ToastNotificationAdapter implements ToastNotificationPort {
   addToast(notification: ToastNotification): string {
-    const uiStore = useUIStateStore()
+    const toastStore = useToastStore()
 
-    return uiStore.addToast({
+    return toastStore.addToast({
       type: notification.type,
       message: notification.message,
       duration: notification.duration ?? DEFAULT_TOAST_DURATION,

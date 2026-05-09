@@ -21,11 +21,11 @@
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useMatchmakingStateStore } from '~/game-client/adapter/stores/matchmakingState'
 import { usePrivateRoomStateStore } from '~/game-client/adapter/stores/privateRoomState'
-import { useUIStateStore } from '~/game-client/adapter/stores/uiState'
+import { useToastStore } from '~/shared/stores'
+import { createPrivateRoomApiClient } from '~/game-client/adapter/api/PrivateRoomApiClient'
 
 const matchmakingStore = useMatchmakingStateStore()
 const privateRoomStore = usePrivateRoomStateStore()
-const uiStore = useUIStateStore()
 
 const isDissolving = ref(false)
 
@@ -217,14 +217,12 @@ async function handleDissolveRoom() {
 
   isDissolving.value = true
   try {
-    await $fetch(`/api/v1/private-room/${roomId}/dissolve`, {
-      method: 'POST',
-    })
+    await createPrivateRoomApiClient().dissolve(roomId)
     privateRoomStore.clearRoom()
     matchmakingStore.setStatus('idle')
     navigateTo('/lobby')
   } catch {
-    uiStore.addToast({
+    useToastStore().addToast({
       type: 'error',
       message: 'Failed to dissolve room',
       duration: 4000,

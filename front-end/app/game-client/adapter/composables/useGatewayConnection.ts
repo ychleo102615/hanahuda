@@ -25,6 +25,7 @@ import { TOKENS } from '../di/tokens'
 import type { GatewayEventClient } from '../sse/GatewayEventClient'
 import type { useUIStateStore } from '../stores/uiState'
 import type { useMatchmakingStateStore } from '../stores/matchmakingState'
+import { useToastStore } from '~/shared/stores'
 import type { SessionContextPort, ConnectionReadyPayload } from '../../application/ports/output'
 import type { ConnectionReadyAdapter } from '../connection/ConnectionReadyAdapter'
 
@@ -192,7 +193,7 @@ export function useGatewayConnection(options: UseGatewayConnectionOptions = {}) 
 
     if (navigateHomeOnFailure) {
       // 連線永久失敗：顯示 Toast 並導向首頁
-      uiStateStore.addToast({
+      useToastStore().addToast({
         type: 'error',
         message: 'Connection lost. You may have opened the game in another window.',
         duration: 5000,

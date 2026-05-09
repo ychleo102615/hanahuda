@@ -18,6 +18,7 @@
 import { defineStore } from 'pinia'
 import type { YakuScore, PlayerScore, Yaku, ScoreMultipliers, RoundEndReason } from '#shared/contracts'
 import type { YakuCategory } from '~/constants/announcement-styles'
+import { useToastStore } from '~/shared/stores'
 
 /**
  * 決策 Modal 資料
@@ -87,22 +88,6 @@ export interface RedirectModalData {
  * - AWAITING_SERVER: 等待伺服器回應（顯示 Processing...）
  */
 export type ContinueConfirmationState = 'HIDDEN' | 'AWAITING_INPUT' | 'AWAITING_SERVER'
-
-/**
- * Toast 類型
- */
-export type ToastType = 'info' | 'success' | 'error' | 'warning' | 'loading'
-
-/**
- * Toast 資料
- */
-export interface ToastData {
-  id: string
-  type: ToastType
-  message: string
-  duration: number | null // null = persistent (won't auto-dismiss)
-  dismissible: boolean
-}
 
 /**
  * 公告類型
@@ -202,9 +187,6 @@ export interface UIStateStoreState {
   // 待處理的遊戲結束資料（最後一回合緩存用）
   pendingGameFinishedData: GameFinishedData | null
 
-  // 統一 Toast 系統
-  activeToasts: ToastData[]
-
   // 遊戲公告佇列系統
   announcementQueue: AnnouncementData[]
   currentAnnouncement: AnnouncementData | null
@@ -254,12 +236,6 @@ export interface UIStateStoreActions {
   // 場牌選擇模式管理
   enterFieldCardSelectionMode(sourceCard: string, selectableTargets: string[], highlightType: 'single' | 'multiple'): void
   exitFieldCardSelectionMode(): void
-
-  // 統一 Toast 系統
-  addToast(toast: Omit<ToastData, 'id'>): string
-  removeToast(id: string): void
-  removeToastByType(type: ToastType): void
-  clearAllToasts(): void
 
   // 遊戲公告佇列系統
   queueAnnouncement(announcement: Omit<AnnouncementData, 'id'>): void
@@ -350,9 +326,6 @@ export const useUIStateStore = defineStore('uiState', {
 
     // 待處理的遊戲結束資料
     pendingGameFinishedData: null,
-
-    // 統一 Toast 系統
-    activeToasts: [],
 
     // 遊戲公告佇列系統
     announcementQueue: [],
@@ -753,8 +726,8 @@ export const useUIStateStore = defineStore('uiState', {
       // 待處理的遊戲結束資料
       this.pendingGameFinishedData = null
 
-      // 統一 Toast 系統
-      this.activeToasts = []
+      // 統一 Toast 系統（state 已移至 shared toastStore）
+      useToastStore().clearAllToasts()
 
       // 遊戲公告佇列系統
       this.announcementQueue = []
@@ -824,63 +797,6 @@ export const useUIStateStore = defineStore('uiState', {
       this.fieldCardSelectableTargets = []
       this.fieldCardHighlightType = null
       this.fieldCardSourceCard = null
-    },
-
-    // ========================================
-    // 統一 Toast 系統
-    // ========================================
-
-    /**
-     * 添加 Toast
-     *
-     * @param toast - Toast 資料（不含 id）
-     * @returns 生成的 Toast ID
-     */
-    addToast(toast: Omit<ToastData, 'id'>): string {
-      const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-      const newToast: ToastData = { ...toast, id }
-      this.activeToasts.push(newToast)
-
-      // 設定自動移除計時器
-      if (toast.duration !== null) {
-        setTimeout(() => {
-          this.removeToast(id)
-        }, toast.duration)
-      }
-
-      return id
-    },
-
-    /**
-     * 移除指定 Toast
-     *
-     * @param id - Toast ID
-     */
-    removeToast(id: string): void {
-      const index = this.activeToasts.findIndex((t) => t.id === id)
-      if (index !== -1) {
-        this.activeToasts.splice(index, 1)
-      }
-    },
-
-    /**
-     * 移除指定類型的所有 Toast
-     *
-     * @param type - Toast 類型
-     */
-    removeToastByType(type: ToastType): void {
-      const initialLength = this.activeToasts.length
-      this.activeToasts = this.activeToasts.filter((t) => t.type !== type)
-      const removedCount = initialLength - this.activeToasts.length
-      if (removedCount > 0) {
-      }
-    },
-
-    /**
-     * 清除所有 Toast
-     */
-    clearAllToasts(): void {
-      this.activeToasts = []
     },
 
     // ========================================

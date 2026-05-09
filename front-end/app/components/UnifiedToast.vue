@@ -18,10 +18,10 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Z_INDEX } from '~/constants'
-import { useUIStateStore, type ToastData, type ToastType } from '~/game-client/adapter/stores/uiState'
+import { useToastStore, type ToastData, type ToastType } from '~/shared/stores'
 
-const uiStore = useUIStateStore()
-const { activeToasts } = storeToRefs(uiStore)
+const toastStore = useToastStore()
+const { activeToasts } = storeToRefs(toastStore)
 
 /**
  * Get background color class based on toast type
@@ -67,7 +67,7 @@ function getIcon(type: ToastType): string {
  * Handle dismiss button click
  */
 function handleDismiss(id: string): void {
-  uiStore.removeToast(id)
+  toastStore.removeToast(id)
 }
 
 /**
