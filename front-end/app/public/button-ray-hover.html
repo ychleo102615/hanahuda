@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Button Hover Ray Effects — Hanahuda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Noto+Sans+JP:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --c-gold:       #D4AF37;
+      --c-gold-light: #F0D870;
+      --c-bg:         #0a1a10;
+      --c-surface:    #111827;
+      --c-text:       #e0d5b0;
+      --c-muted:      rgba(224, 213, 176, 0.42);
+      --c-border:     rgba(212, 175, 55, 0.22);
+
+      /* Rails */
+      --rail-w:         1.5px;
+      --rail-overhang:  8px;       /* how far each rail extends past the corner */
+      --glow-close:     rgba(212, 175, 55, 0.95);
+      --glow-mid:       rgba(212, 175, 55, 0.4);
+
+      /* Animation */
+      --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-exit:  cubic-bezier(0.4,  0, 1,   1);
+      --t-move:     350ms;
+      --t-move-out: 390ms;
+      --t-fade-in:  160ms;
+      --t-fade-out: 260ms;
+    }
+
+    body {
+      background: var(--c-bg);
+      font-family: 'Noto Serif JP', serif;
+      color: var(--c-text);
+      min-height: 100vh;
+      padding: 60px 28px 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 72px;
+    }
+
+    /* ── Page header ── */
+    header {
+      width: 100%;
+      max-width: 900px;
+      text-align: center;
+      padding-bottom: 26px;
+      border-bottom: 1px solid var(--c-border);
+    }
+    header h1 {
+      font-size: 1rem;
+      font-weight: 400;
+      letter-spacing: 0.26em;
+      color: var(--c-gold);
+      margin-bottom: 10px;
+    }
+    header p {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.74rem;
+      font-weight: 300;
+      color: var(--c-muted);
+      letter-spacing: 0.06em;
+      line-height: 1.9;
+    }
+
+    /* ── Section ── */
+    .section {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .section.archived { opacity: 0.45; }
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .tag {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 300;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--c-gold);
+      border: 1px solid var(--c-border);
+      padding: 2px 9px;
+      border-radius: 2px;
+    }
+    .tag.archived-tag {
+      color: var(--c-muted);
+      border-color: rgba(224, 213, 176, 0.15);
+    }
+    .section-name {
+      font-size: 0.9rem;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+    }
+    .section-desc {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 300;
+      color: var(--c-muted);
+      letter-spacing: 0.04em;
+      line-height: 1.9;
+    }
+    .preview-box {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+      padding: 60px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 80px;
+      flex-wrap: wrap;
+    }
+    .demo-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .variant-label {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.64rem;
+      font-weight: 300;
+      color: var(--c-muted);
+      letter-spacing: 0.14em;
+    }
+
+    /* ── Base buttons ── */
+    button {
+      position: relative;
+      font-family: 'Noto Serif JP', serif;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      outline: none;
+      border-radius: 3px;
+      transition:
+        color 200ms ease,
+        background 200ms ease,
+        border-color 200ms ease,
+        box-shadow 280ms ease;
+    }
+    .btn-primary {
+      padding: 13px 44px;
+      font-size: 0.88rem;
+      color: var(--c-gold);
+      background: transparent;
+      border: 1px solid rgba(212, 175, 55, 0.38);
+    }
+    .btn-primary:hover {
+      color: var(--c-gold-light);
+      background: rgba(212, 175, 55, 0.07);
+      border-color: rgba(212, 175, 55, 0.6);
+    }
+    .btn-ghost {
+      padding: 9px 28px;
+      font-size: 0.78rem;
+      color: rgba(212, 175, 55, 0.72);
+      background: transparent;
+      border: 1px solid rgba(212, 175, 55, 0.22);
+    }
+    .btn-ghost:hover {
+      color: var(--c-gold-light);
+      background: rgba(212, 175, 55, 0.05);
+      border-color: rgba(212, 175, 55, 0.5);
+    }
+
+    /* ═══════════════════════════════════════
+       RAY WRAPPER — shared structure
+       ═══════════════════════════════════════ */
+    .rw {
+      position: relative;
+      display: inline-flex;
+    }
+    .rw .r {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    /* Shared rail shapes */
+    .r-t, .r-b {
+      height: var(--rail-w);
+      width: calc(100% + var(--rail-overhang) * 2);
+      left: calc(-1 * var(--rail-overhang));
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(212,175,55,0.08) 5%,
+        var(--c-gold) 25%,
+        var(--c-gold-light) 50%,
+        var(--c-gold) 75%,
+        rgba(212,175,55,0.08) 95%,
+        transparent 100%
+      );
+      box-shadow: 0 0 5px var(--glow-close), 0 0 12px var(--glow-mid);
+    }
+    .r-t { top: -1px; }
+    .r-b { bottom: -1px; }
+
+    .r-l, .r-r {
+      width: var(--rail-w);
+      height: calc(100% + var(--rail-overhang) * 2);
+      top: calc(-1 * var(--rail-overhang));
+      background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(212,175,55,0.08) 5%,
+        var(--c-gold) 25%,
+        var(--c-gold-light) 50%,
+        var(--c-gold) 75%,
+        rgba(212,175,55,0.08) 95%,
+        transparent 100%
+      );
+      box-shadow: 0 0 5px var(--glow-close), 0 0 12px var(--glow-mid);
+    }
+    .r-l { left: -1px; }
+    .r-r { right: -1px; }
+
+
+    /* ═══════════════════════════════════════
+       STYLE 01 — 封存 · 法向進場（Normal Vector）
+       從垂直方向滑入（已廢棄，保留作對照）
+       ═══════════════════════════════════════ */
+    .s1 .r {
+      transition:
+        transform var(--t-move-out) var(--ease-exit),
+        opacity var(--t-fade-out) ease;
+    }
+    .s1 .r-t { transform: translateY(-44px); }
+    .s1 .r-b { transform: translateY(44px); }
+    .s1 .r-l { transform: translateX(-44px); }
+    .s1 .r-r { transform: translateX(44px); }
+    .s1:hover .r {
+      opacity: 1;
+      transform: translate(0, 0);
+      transition:
+        transform var(--t-move) var(--ease-enter),
+        opacity var(--t-fade-in) ease;
+    }
+
+
+    /* ═══════════════════════════════════════
+       STYLE 02 — 順時針旋入 · CW Rotate
+       切線進場：
+         上軌 ← 左方  右軌 ← 上方
+         下軌 ← 右方  左軌 ← 下方
+       ═══════════════════════════════════════ */
+    .s2 .r {
+      transition:
+        transform var(--t-move-out) var(--ease-exit),
+        opacity var(--t-fade-out) ease;
+    }
+    .s2 .r-t { transform: translateX(-100%); }   /* 從左進，向右滑（上下 CW）  */
+    .s2 .r-b { transform: translateX(100%); }    /* 從右進，向左滑（上下 CW）  */
+    .s2 .r-r { transform: translateY(100%); }    /* 從下進，向上滑（左右 CCW） */
+    .s2 .r-l { transform: translateY(-100%); }   /* 從上進，向下滑（左右 CCW） */
+
+    .s2:hover .r {
+      opacity: 1;
+      transform: translate(0, 0);
+      transition:
+        transform var(--t-move) var(--ease-enter),
+        opacity var(--t-fade-in) ease;
+    }
+
+
+    /* ═══════════════════════════════════════
+       STYLE 03 — 逆時針旋入 · CCW Rotate
+       切線進場（順時針反向）：
+         上軌 ← 右方  右軌 ← 下方
+         下軌 ← 左方  左軌 ← 上方
+       ═══════════════════════════════════════ */
+    .s3 .r {
+      transition:
+        transform var(--t-move-out) var(--ease-exit),
+        opacity var(--t-fade-out) ease;
+    }
+    .s3 .r-t { transform: translateX(100%); }    /* off to the right */
+    .s3 .r-b { transform: translateX(-100%); }   /* off to the left  */
+    .s3 .r-r { transform: translateY(100%); }    /* off to the bottom */
+    .s3 .r-l { transform: translateY(-100%); }   /* off to the top   */
+
+    .s3:hover .r {
+      opacity: 1;
+      transform: translate(0, 0);
+      transition:
+        transform var(--t-move) var(--ease-enter),
+        opacity var(--t-fade-in) ease;
+    }
+
+
+    /* ═══════════════════════════════════════
+       STYLE 04 — 由中延展 · Center Bloom
+       光線從邊框中點向兩端展開（scaleX/scaleY from center）
+       ═══════════════════════════════════════ */
+    .s4 .r {
+      transition:
+        transform var(--t-move-out) var(--ease-exit),
+        opacity var(--t-fade-out) ease;
+    }
+    .s4 .r-t, .s4 .r-b {
+      transform: scaleX(0);
+      transform-origin: center center;
+    }
+    .s4 .r-l, .s4 .r-r {
+      transform: scaleY(0);
+      transform-origin: center center;
+    }
+    .s4:hover .r-t, .s4:hover .r-b {
+      opacity: 1;
+      transform: scaleX(1);
+      transition: transform var(--t-move) var(--ease-enter), opacity var(--t-fade-in) ease;
+    }
+    .s4:hover .r-l, .s4:hover .r-r {
+      opacity: 1;
+      transform: scaleY(1);
+      transition: transform var(--t-move) var(--ease-enter), opacity var(--t-fade-in) ease;
+    }
+
+
+    /* ═══════════════════════════════════════
+       STYLE 05 — 書法筆順 · Calligraphic Stroke
+       與 Style 02 同方向（CW 切線），但四條線依序出現（80ms 間隔）
+       退場時反序：先出現者最後消失
+       ═══════════════════════════════════════ */
+    .s5 .r {
+      /* Exit: reverse order — left exits first, top last */
+    }
+    .s5 .r-t {
+      transform: translateX(-100%);
+      transition: transform var(--t-move-out) var(--ease-exit) 150ms, opacity var(--t-fade-out) ease 150ms;
+    }
+    .s5 .r-r {
+      transform: translateY(-100%);
+      transition: transform var(--t-move-out) var(--ease-exit) 100ms, opacity var(--t-fade-out) ease 100ms;
+    }
+    .s5 .r-b {
+      transform: translateX(100%);
+      transition: transform var(--t-move-out) var(--ease-exit) 50ms, opacity var(--t-fade-out) ease 50ms;
+    }
+    .s5 .r-l {
+      transform: translateY(100%);
+      transition: transform var(--t-move-out) var(--ease-exit) 0ms, opacity var(--t-fade-out) ease 0ms;
+    }
+
+    .s5:hover .r-t {
+      opacity: 1; transform: translate(0,0);
+      transition: transform var(--t-move) var(--ease-enter) 0ms, opacity var(--t-fade-in) ease 0ms;
+    }
+    .s5:hover .r-r {
+      opacity: 1; transform: translate(0,0);
+      transition: transform var(--t-move) var(--ease-enter) 80ms, opacity var(--t-fade-in) ease 80ms;
+    }
+    .s5:hover .r-b {
+      opacity: 1; transform: translate(0,0);
+      transition: transform var(--t-move) var(--ease-enter) 160ms, opacity var(--t-fade-in) ease 160ms;
+    }
+    .s5:hover .r-l {
+      opacity: 1; transform: translate(0,0);
+      transition: transform var(--t-move) var(--ease-enter) 240ms, opacity var(--t-fade-in) ease 240ms;
+    }
+
+
+    /* ═══════════════════════════════════════
+       STYLE 06 — 角落蔓生 · Corner Unfold
+       四條線從各自起始角落延伸至對角，依 CW 方向錯落出現
+       上軌：從左角延伸向右  右軌：從上角延伸向下
+       下軌：從右角延伸向左  左軌：從下角延伸向上
+       ═══════════════════════════════════════ */
+    .s6 .r {
+      /* Exit: reverse sequence */
+    }
+    .s6 .r-t {
+      transform: scaleX(0); transform-origin: left center;
+      transition: transform var(--t-move-out) var(--ease-exit) 150ms, opacity var(--t-fade-out) ease 150ms;
+    }
+    .s6 .r-r {
+      transform: scaleY(0); transform-origin: top center;
+      transition: transform var(--t-move-out) var(--ease-exit) 100ms, opacity var(--t-fade-out) ease 100ms;
+    }
+    .s6 .r-b {
+      transform: scaleX(0); transform-origin: right center;
+      transition: transform var(--t-move-out) var(--ease-exit) 50ms, opacity var(--t-fade-out) ease 50ms;
+    }
+    .s6 .r-l {
+      transform: scaleY(0); transform-origin: bottom center;
+      transition: transform var(--t-move-out) var(--ease-exit) 0ms, opacity var(--t-fade-out) ease 0ms;
+    }
+
+    .s6:hover .r-t {
+      opacity: 1; transform: scaleX(1);
+      transition: transform var(--t-move) var(--ease-enter) 0ms, opacity var(--t-fade-in) ease 0ms;
+    }
+    .s6:hover .r-r {
+      opacity: 1; transform: scaleY(1);
+      transition: transform var(--t-move) var(--ease-enter) 90ms, opacity var(--t-fade-in) ease 90ms;
+    }
+    .s6:hover .r-b {
+      opacity: 1; transform: scaleX(1);
+      transition: transform var(--t-move) var(--ease-enter) 180ms, opacity var(--t-fade-in) ease 180ms;
+    }
+    .s6:hover .r-l {
+      opacity: 1; transform: scaleY(1);
+      transition: transform var(--t-move) var(--ease-enter) 270ms, opacity var(--t-fade-in) ease 270ms;
+    }
+
+
+    /* ── Accessibility ── */
+    @media (prefers-reduced-motion: reduce) {
+      .r { transition: opacity 180ms ease !important; }
+      /* Resting positions for each style */
+      .s1 .r-t, .s1 .r-b, .s1 .r-l, .s1 .r-r { transform: translate(0,0) !important; }
+      .s2 .r, .s3 .r, .s5 .r { transform: translate(0,0) !important; }
+      .s4 .r-t, .s4 .r-b { transform: scaleX(1) !important; }
+      .s4 .r-l, .s4 .r-r { transform: scaleY(1) !important; }
+      .s6 .r-t, .s6 .r-b { transform: scaleX(1) !important; }
+      .s6 .r-l, .s6 .r-r { transform: scaleY(1) !important; }
+    }
+
+
+    /* ── Impl notes ── */
+    .impl {
+      width: 100%;
+      max-width: 900px;
+      padding-top: 40px;
+      border-top: 1px solid var(--c-border);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .impl h2 {
+      font-size: 0.8rem;
+      font-weight: 400;
+      letter-spacing: 0.22em;
+      color: var(--c-gold);
+    }
+    .impl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 14px;
+    }
+    .impl-card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: 6px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .impl-card h3 {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      color: var(--c-gold);
+    }
+    .impl-card p, .impl-card li {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 300;
+      color: var(--c-muted);
+      letter-spacing: 0.04em;
+      line-height: 1.9;
+    }
+    .impl-card ul { padding-left: 14px; }
+    code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.65rem;
+      background: rgba(212,175,55,0.1);
+      color: var(--c-gold-light);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>BUTTON HOVER — 切線進場設計</h1>
+    <p>
+      光線與按鈕邊框共面，沿切線方向滑入定位。五種設計 + 一種封存對照。<br>
+      <code>#D4AF37</code> · <code>#0d1f17</code> · 進場 350ms ease-enter · 退場 390ms ease-exit
+    </p>
+  </header>
+
+
+  <!-- ── ARCHIVED Style 01 ── -->
+  <section class="section archived">
+    <div class="section-label">
+      <span class="tag archived-tag">封存 01</span>
+      <span class="section-name" style="color:var(--c-muted)">法向進場（對照用）</span>
+    </div>
+    <p class="section-desc">原始版本。光線從邊框外側垂直方向聚攏。保留作設計對照，不建議採用。</p>
+    <div class="preview-box">
+      <div class="demo-item">
+        <div class="rw s1">
+          <button class="btn-primary">開始對局</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Primary</span>
+      </div>
+      <div class="demo-item">
+        <div class="rw s1">
+          <button class="btn-ghost">邀請對手</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Ghost</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── Style 02: CW Rotate ── -->
+  <section class="section">
+    <div class="section-label">
+      <span class="tag">Style 02</span>
+      <span class="section-name">雙向夾擊 · H-CW × V-CCW</span>
+    </div>
+    <p class="section-desc">
+      上下軌維持順時針（上←左、下←右），左右軌改為逆時針（左←上、右←下）。<br>
+      四條光線對向夾入：水平方向互相迎合，垂直方向也互相迎合，但兩組各自獨立旋向。<br>
+      退場沿原路退回。視覺感：張力交匯、動感不規則，呼應示意圖中的「不穩定聚焦」。
+    </p>
+    <div class="preview-box">
+      <div class="demo-item">
+        <div class="rw s2">
+          <button class="btn-primary">開始對局</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Primary</span>
+      </div>
+      <div class="demo-item">
+        <div class="rw s2">
+          <button class="btn-ghost">邀請對手</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Ghost</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── Style 03: CCW Rotate ── -->
+  <section class="section">
+    <div class="section-label">
+      <span class="tag">Style 03</span>
+      <span class="section-name">逆時針旋入 · CCW Rotate</span>
+    </div>
+    <p class="section-desc">
+      方向與 Style 02 完全相反：上軌從右、右軌從下、下軌從左、左軌從上。<br>
+      退場沿原路退回。視覺感：向外開展，比 CW 版本更有「歡迎/接納」的語意。
+    </p>
+    <div class="preview-box">
+      <div class="demo-item">
+        <div class="rw s3">
+          <button class="btn-primary">開始對局</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Primary</span>
+      </div>
+      <div class="demo-item">
+        <div class="rw s3">
+          <button class="btn-ghost">邀請對手</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Ghost</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── Style 04: Center Bloom ── -->
+  <section class="section">
+    <div class="section-label">
+      <span class="tag">Style 04</span>
+      <span class="section-name">由中延展 · Center Bloom</span>
+    </div>
+    <p class="section-desc">
+      光線從各邊框中點同時向兩端延伸（<code>scaleX</code> / <code>scaleY</code> from center）。<br>
+      退場時光線對稱收縮回中點。視覺感：最對稱、最穩定，有「充能完畢」的靜態美感。
+    </p>
+    <div class="preview-box">
+      <div class="demo-item">
+        <div class="rw s4">
+          <button class="btn-primary">開始對局</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Primary</span>
+      </div>
+      <div class="demo-item">
+        <div class="rw s4">
+          <button class="btn-ghost">邀請對手</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Ghost</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── Style 05: Calligraphic Stroke ── -->
+  <section class="section">
+    <div class="section-label">
+      <span class="tag">Style 05</span>
+      <span class="section-name">書法筆順 · Calligraphic Stroke</span>
+    </div>
+    <p class="section-desc">
+      與 Style 02 同方向（CW 切線），但四條光線以 80ms 間隔依序出現：上 → 右 → 下 → 左。<br>
+      退場以反序消退：左 → 下 → 右 → 上。視覺感：「描繪邊框」的書寫感，有東方墨跡的節奏。
+    </p>
+    <div class="preview-box">
+      <div class="demo-item">
+        <div class="rw s5">
+          <button class="btn-primary">開始對局</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Primary</span>
+      </div>
+      <div class="demo-item">
+        <div class="rw s5">
+          <button class="btn-ghost">邀請對手</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Ghost</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── Style 06: Corner Unfold ── -->
+  <section class="section">
+    <div class="section-label">
+      <span class="tag">Style 06</span>
+      <span class="section-name">角落蔓生 · Corner Unfold</span>
+    </div>
+    <p class="section-desc">
+      每條光線從各自起始角展開：上軌從左角向右延伸、右軌從上角向下延伸、依此 CW 循環。<br>
+      同樣有 90ms 間隔錯落，但進場語意是「從角落生長」而非「橫掃」。視覺感：植物蔓延、舒展的有機感。
+    </p>
+    <div class="preview-box">
+      <div class="demo-item">
+        <div class="rw s6">
+          <button class="btn-primary">開始對局</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Primary</span>
+      </div>
+      <div class="demo-item">
+        <div class="rw s6">
+          <button class="btn-ghost">邀請對手</button>
+          <span class="r r-t"></span><span class="r r-b"></span>
+          <span class="r r-l"></span><span class="r r-r"></span>
+        </div>
+        <span class="variant-label">Ghost</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ── Implementation Notes ── -->
+  <div class="impl">
+    <h2>IMPLEMENTATION NOTES — 實作交接</h2>
+    <div class="impl-grid">
+
+      <div class="impl-card">
+        <h3>HTML 結構（通用）</h3>
+        <p>以 <code>.rw</code> 包裹按鈕（<code>position:relative; display:inline-flex</code>），button 後插入 4 個 <code>&lt;span class="r r-{t|b|l|r}"&gt;</code>。Style class（<code>.s2</code> 等）掛在 <code>.rw</code> 上。</p>
+      </div>
+
+      <div class="impl-card">
+        <h3>切線進場原理</h3>
+        <ul>
+          <li>光線已在正確的 Y 位（上軌 <code>top:-1px</code>），只需在 X 軸位移</li>
+          <li>初始 <code>translateX(-100%)</code> 讓整條線滑出左側（-100% = 自身寬度）</li>
+          <li>Hover 目標 <code>translate(0,0)</code> 即回到定位</li>
+          <li>scaleX/scaleY 版同理：從 0 延展至 1，transform-origin 決定起始點</li>
+        </ul>
+      </div>
+
+      <div class="impl-card">
+        <h3>動畫 Token</h3>
+        <ul>
+          <li>進場緩動：<code>cubic-bezier(0.22,1,0.36,1)</code> · 350ms</li>
+          <li>退場緩動：<code>cubic-bezier(0.4,0,1,1)</code> · 390ms</li>
+          <li>透明度進 <code>160ms ease</code> / 退 <code>260ms ease</code></li>
+          <li>S05 筆順 delay：0 / 80 / 160 / 240ms（入），150 / 100 / 50 / 0ms（出）</li>
+          <li>S06 角落 delay：0 / 90 / 180 / 270ms（入），150 / 100 / 50 / 0ms（出）</li>
+        </ul>
+      </div>
+
+      <div class="impl-card">
+        <h3>S02 / S03 — 注意</h3>
+        <p><code>translate(0,0)</code> 可對所有軌道統一使用（對 translateX 和 translateY 都有效）。進退場只需切換一條 hover rule。</p>
+        <p>退場時光線沿「進場的反方向」退出，即原路折返，實作上只需讓 non-hover transition 接管即可。</p>
+      </div>
+
+      <div class="impl-card">
+        <h3>S04 — 注意</h3>
+        <p><code>scaleX / scaleY</code> 的 hover rule 必須按方向分開寫（不可用 <code>translate(0,0)</code> 合併），否則 transform 會被覆蓋為 translate。</p>
+        <p>可選：搭配 <code>--rail-overhang: 0px</code> 讓中心對稱更精確。</p>
+      </div>
+
+      <div class="impl-card">
+        <h3>選型建議</h3>
+        <ul>
+          <li><strong>S02</strong>：最直接的「鎖定」感，推薦主要遊戲按鈕</li>
+          <li><strong>S04</strong>：最對稱，適合對話框內的確認按鈕</li>
+          <li><strong>S05</strong>：有節奏感，適合勝局/儀式性互動</li>
+          <li><strong>S06</strong>：有機蔓延，適合探索/選牌相關按鈕</li>
+          <li><strong>S03</strong>：開展感，可作為次要/返回類按鈕的對比</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

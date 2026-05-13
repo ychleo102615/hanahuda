@@ -194,16 +194,17 @@ onUnmounted(() => {
 
           <!-- CTA Links (Start Game) - At the end -->
           <template v-for="link in links" :key="`cta-${link.label}`">
-            <a
-              v-if="link.isCta"
-              :href="link.target"
-              class="px-4 py-2 text-sm font-medium transition-all duration-200 border border-gold-light text-gold-light rounded-md hover:bg-gold-light/10 whitespace-nowrap"
-              @click="handleLinkClick(link, $event)"
-              @keydown.enter="handleLinkClick(link, $event)"
-              tabindex="0"
-            >
-              {{ link.label }}
-            </a>
+            <GoldRayWrapper v-if="link.isCta" inline>
+              <a
+                :href="link.target"
+                class="inline-flex items-center px-4 py-2 text-sm font-medium transition-all duration-200 border border-gold-light text-gold-light rounded-md hover:bg-gold-light/10 whitespace-nowrap"
+                @click="handleLinkClick(link, $event)"
+                @keydown.enter="handleLinkClick(link, $event)"
+                tabindex="0"
+              >
+                {{ link.label }}
+              </a>
+            </GoldRayWrapper>
           </template>
         </div>
 
@@ -312,16 +313,17 @@ onUnmounted(() => {
 
           <!-- CTA Links (Start Game) - At the bottom -->
           <template v-for="link in links" :key="`mobile-cta-${link.label}`">
-            <a
-              v-if="link.isCta"
-              :href="link.target"
-              class="block px-4 py-3 text-sm font-medium rounded-md transition-colors border border-gold-light text-gold-light hover:bg-gold-light/10"
-              @click="handleLinkClick(link, $event)"
-              @keydown.enter="handleLinkClick(link, $event)"
-              tabindex="0"
-            >
-              {{ link.label }}
-            </a>
+            <GoldRayWrapper v-if="link.isCta">
+              <a
+                :href="link.target"
+                class="block px-4 py-3 text-sm font-medium rounded-md transition-colors border border-gold-light text-gold-light hover:bg-gold-light/10"
+                @click="handleLinkClick(link, $event)"
+                @keydown.enter="handleLinkClick(link, $event)"
+                tabindex="0"
+              >
+                {{ link.label }}
+              </a>
+            </GoldRayWrapper>
           </template>
         </div>
       </div>

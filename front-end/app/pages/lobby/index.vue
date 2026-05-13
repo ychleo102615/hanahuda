@@ -502,12 +502,14 @@ const conflictDialogConfirmText = computed(() => {
               You have an active private room.
             </template>
           </p>
-          <button
-            class="shrink-0 px-4 py-1.5 text-sm font-medium rounded-lg bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-light hover:to-gold transition-all"
-            @click="handleReturnToActiveSession"
-          >
-            Return
-          </button>
+          <GoldRayWrapper inline>
+            <button
+              class="shrink-0 px-4 py-1.5 text-sm font-medium rounded-lg bg-gradient-to-r from-gold to-gold-dark text-black hover:from-gold-light hover:to-gold transition-all"
+              @click="handleReturnToActiveSession"
+            >
+              Return
+            </button>
+          </GoldRayWrapper>
         </div>
 
         <!-- 標籤列（獨立 sibling） -->
@@ -556,40 +558,15 @@ const conflictDialogConfirmText = computed(() => {
 
           <!-- Quick Match 標籤 -->
           <div v-else-if="activeTab === 'public'" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <button
+            <GoldRayWrapper
               v-for="room in roomTypes"
               :key="room.id"
-              :disabled="isCheckingStatus"
-              class="group lobby-card rounded-lg p-6 text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
-              @click="handleSelectRoom(room.id)"
+              :enabled="!isCheckingStatus"
             >
-              <!-- 房間名稱 - 金色漸層 -->
-              <h2 class="text-xl font-bold mb-2 bg-gradient-to-r from-gold-light to-gold-pale bg-clip-text text-transparent group-hover:from-gold-bright group-hover:to-gold-light transition-all">
-                {{ room.name }}
-              </h2>
-
-              <!-- 房間描述 -->
-              <p class="text-gray-400 text-sm mb-4 leading-relaxed">
-                {{ room.description }}
-              </p>
-
-              <!-- 房間規格 - 金色分隔線 -->
-              <div class="text-xs text-gold-dark pt-4 border-t border-gold-dark/30">
-                <span>{{ room.rounds }} rounds</span>
-              </div>
-            </button>
-          </div>
-
-          <!-- Private Room 標籤 -->
-          <div v-else>
-            <!-- 建立房間 — 與公開配對相同的卡片設計 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <button
-                v-for="room in roomTypes"
-                :key="room.id"
-                :disabled="isCreatingRoom"
-                class="group lobby-card rounded-lg p-6 text-left disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
-                @click="handleCreateRoom(room.id)"
+                :disabled="isCheckingStatus"
+                class="group lobby-card rounded-lg p-6 text-left w-full disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
+                @click="handleSelectRoom(room.id)"
               >
                 <!-- 房間名稱 - 金色漸層 -->
                 <h2 class="text-xl font-bold mb-2 bg-gradient-to-r from-gold-light to-gold-pale bg-clip-text text-transparent group-hover:from-gold-bright group-hover:to-gold-light transition-all">
@@ -606,6 +583,39 @@ const conflictDialogConfirmText = computed(() => {
                   <span>{{ room.rounds }} rounds</span>
                 </div>
               </button>
+            </GoldRayWrapper>
+          </div>
+
+          <!-- Private Room 標籤 -->
+          <div v-else>
+            <!-- 建立房間 — 與公開配對相同的卡片設計 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <GoldRayWrapper
+                v-for="room in roomTypes"
+                :key="room.id"
+                :enabled="!isCreatingRoom"
+              >
+                <button
+                  :disabled="isCreatingRoom"
+                  class="group lobby-card rounded-lg p-6 text-left w-full disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
+                  @click="handleCreateRoom(room.id)"
+                >
+                  <!-- 房間名稱 - 金色漸層 -->
+                  <h2 class="text-xl font-bold mb-2 bg-gradient-to-r from-gold-light to-gold-pale bg-clip-text text-transparent group-hover:from-gold-bright group-hover:to-gold-light transition-all">
+                    {{ room.name }}
+                  </h2>
+
+                  <!-- 房間描述 -->
+                  <p class="text-gray-400 text-sm mb-4 leading-relaxed">
+                    {{ room.description }}
+                  </p>
+
+                  <!-- 房間規格 - 金色分隔線 -->
+                  <div class="text-xs text-gold-dark pt-4 border-t border-gold-dark/30">
+                    <span>{{ room.rounds }} rounds</span>
+                  </div>
+                </button>
+              </GoldRayWrapper>
             </div>
 
             <!-- 加入房間 -->

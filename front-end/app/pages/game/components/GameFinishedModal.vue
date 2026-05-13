@@ -94,23 +94,25 @@
             Close
           </button>
           <!-- 私房遊戲：Return to Lobby / 公開配對：Rematch -->
-          <button
-            v-if="matchmakingStateStore.isPrivateMatch"
-            type="button"
-            class="px-4 py-2 bg-gradient-to-b from-gold-light to-gold-dark text-lacquer-black rounded-lg hover:brightness-110 transition-colors font-medium"
-            @click="handleReturnToLobby"
-          >
-            Return to Lobby
-          </button>
-          <button
-            v-else
-            type="button"
-            :disabled="isRematching"
-            class="px-4 py-2 bg-gradient-to-b from-gold-light to-gold-dark text-lacquer-black rounded-lg hover:brightness-110 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="handleRematch"
-          >
-            {{ isRematching ? 'Finding...' : 'Rematch' }}
-          </button>
+          <GoldRayWrapper v-if="matchmakingStateStore.isPrivateMatch" class="self-center">
+            <button
+              type="button"
+              class="px-4 py-2 bg-gradient-to-b from-gold-light to-gold-dark text-lacquer-black rounded-lg hover:brightness-110 transition-colors font-medium"
+              @click="handleReturnToLobby"
+            >
+              Return to Lobby
+            </button>
+          </GoldRayWrapper>
+          <GoldRayWrapper v-else :enabled="!isRematching" class="self-center">
+            <button
+              type="button"
+              :disabled="isRematching"
+              class="px-4 py-2 bg-gradient-to-b from-gold-light to-gold-dark text-lacquer-black rounded-lg hover:brightness-110 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="handleRematch"
+            >
+              {{ isRematching ? 'Finding...' : 'Rematch' }}
+            </button>
+          </GoldRayWrapper>
         </div>
       </div>
     </div>

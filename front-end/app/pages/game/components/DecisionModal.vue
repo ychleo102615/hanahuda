@@ -168,13 +168,16 @@ function handleEndRound() {
           </p>
 
           <!-- T076 [US3]: Decision buttons -->
-          <div class="grid grid-cols-2 gap-4">
-            <button
-              class="rounded-lg bg-gradient-to-b from-gold-light to-gold-dark px-6 py-3 font-semibold text-lacquer-black transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-gold-light"
-              @click="handleKoiKoi"
-            >
-              Koi-Koi
-            </button>
+          <!-- [overflow:clip] 阻止 rails 觸發祖先 overflow-y-auto 的水平捲軸；p-3 -m-3 給 rails 8px 超出量留空間 -->
+          <div class="grid grid-cols-2 gap-4 [overflow:clip] p-3 -m-3">
+            <GoldRayWrapper>
+              <button
+                class="w-full rounded-lg bg-gradient-to-b from-gold-light to-gold-dark px-6 py-3 font-semibold text-lacquer-black transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-gold-light"
+                @click="handleKoiKoi"
+              >
+                Koi-Koi
+              </button>
+            </GoldRayWrapper>
             <button
               class="rounded-lg bg-accent-red px-6 py-3 font-semibold text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-accent-red"
               @click="handleEndRound"

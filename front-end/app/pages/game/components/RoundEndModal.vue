@@ -172,13 +172,15 @@
                 Confirm to continue playing.
               </p>
               <div class="flex gap-3">
-                <button
-                  type="button"
-                  class="px-6 py-2 bg-gradient-to-b from-gold-light to-gold-dark text-lacquer-black font-medium rounded-lg hover:brightness-110 transition-colors focus:outline-none focus:ring-2 focus:ring-gold-light"
-                  @click="handleConfirmContinue('CONTINUE')"
-                >
-                  Continue
-                </button>
+                <GoldRayWrapper class="self-center">
+                  <button
+                    type="button"
+                    class="px-6 py-2 bg-gradient-to-b from-gold-light to-gold-dark text-lacquer-black font-medium rounded-lg hover:brightness-110 transition-colors focus:outline-none focus:ring-2 focus:ring-gold-light"
+                    @click="handleConfirmContinue('CONTINUE')"
+                  >
+                    Continue
+                  </button>
+                </GoldRayWrapper>
                 <button
                   type="button"
                   class="px-6 py-2 bg-game-table-light/80 text-gray-300 font-medium rounded-lg border border-gold-dark/20 hover:bg-game-table-light transition-colors focus:outline-none focus:ring-2 focus:ring-gold-dark"
@@ -235,13 +237,15 @@
           <!-- 有待處理的遊戲結束資料時顯示 Continue 按鈕 -->
           <template v-else-if="pendingGameFinishedData">
             <div class="flex flex-col items-center gap-2">
-              <button
-                type="button"
-                class="px-6 py-2 bg-gradient-to-b from-gold-light to-gold-dark text-lacquer-black font-medium rounded-lg hover:brightness-110 transition-colors focus:outline-none focus:ring-2 focus:ring-gold-light"
-                @click="handleContinue"
-              >
-                Continue
-              </button>
+              <GoldRayWrapper>
+                <button
+                  type="button"
+                  class="px-6 py-2 bg-gradient-to-b from-gold-light to-gold-dark text-lacquer-black font-medium rounded-lg hover:brightness-110 transition-colors focus:outline-none focus:ring-2 focus:ring-gold-light"
+                  @click="handleContinue"
+                >
+                  Continue
+                </button>
+              </GoldRayWrapper>
               <p class="text-xs text-gray-500 text-center">
                 Click to view game results
               </p>
